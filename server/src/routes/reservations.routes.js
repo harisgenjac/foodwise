@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createReservation,
+  getReservationById,
   getMineReservations,
   getStoreReservations,
   acceptReservation,
@@ -31,5 +32,6 @@ router.patch(
   authorize("RESTAURANT"),
   cancelReservation,
 );
+router.get("/:id", authenticate, getReservationById);
 
 export default router;

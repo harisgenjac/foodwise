@@ -1,11 +1,14 @@
 import { useState } from "react";
 import api from "../api/axios.js";
 import { CATEGORY_LABELS } from "../utils/categories.js";
+import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import toast from "react-hot-toast";
 import { useFetch } from "../hooks/useFetch.js";
+import { useNavigate } from "react-router-dom";
 
 function BrowseProductsPage() {
+  const navigate = useNavigate();
   const [category, setCategory] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [name, setName] = useState("");
@@ -13,8 +16,16 @@ function BrowseProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [reservationQuantity, setReservationQuantity] = useState("");
   const [pickupDate, setPickupDate] = useState("");
-  const { data: productsList, loading, refetch} = useFetch("/products", "products", {category, maxPrice,name,expiryWithinDays})
-
+  const {
+    data: productsList,
+    loading,
+    refetch,
+  } = useFetch("/products", "products", {
+    category,
+    maxPrice,
+    name,
+    expiryWithinDays,
+  });
 
   const handleReservation = async () => {
     try {
@@ -92,7 +103,9 @@ function BrowseProductsPage() {
               🔍
             </div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
-              {hasActiveFilters ? "Nema rezultata" : "Trenutno nema dostupnih proizvoda"}
+              {hasActiveFilters
+                ? "Nema rezultata"
+                : "Trenutno nema dostupnih proizvoda"}
             </h3>
             <p className="text-gray-500 mb-6">
               {hasActiveFilters
@@ -105,9 +118,17 @@ function BrowseProductsPage() {
             {visibleProducts.map((product) => (
               <div
                 key={product.id}
-                className="bg-white rounded-xl shadow overflow-hidden flex flex-col"
+                onClick={() => navigate(`/products/${product.id}`)}
+                className="bg-white rounded-xl cursor-pointer shadow overflow-hidden flex flex-col"
               >
-                <div className="relative h-32 bg-gradient-to-br from-emerald-700 via-teal-800 to-gray-900">
+                <div className="relative h-32">
+                  <img
+                    src={
+                      CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES.Other
+                    }
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
                   <span className="absolute top-3 right-3 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full">
                     {CATEGORY_LABELS[product.category] || product.category}
                   </span>
@@ -115,7 +136,7 @@ function BrowseProductsPage() {
 
                 <div className="p-4 flex flex-col gap-3 flex-1">
                   <div>
-                    <p className="text-xs text-gray-400">{product.unit}</p>
+                    <p className="text-xs text-gray-400">{product.business_name} - {product.city}</p>
                     <h3 className="text-lg font-bold text-gray-800">
                       {product.name}
                     </h3>
@@ -157,8 +178,11 @@ function BrowseProductsPage() {
 
                   <div className="mt-auto flex gap-2">
                     <button
-                      onClick={() => setSelectedProduct(product)}
-                      className="flex-1 bg-orange-100 hover:bg-orange-200 transition-colors text-gray-800 font-medium py-2 rounded-lg"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProduct(product);
+                      }}
+                      className="flex-1 bg-orange-100 cursor-pointer hover:bg-orange-200 transition-colors text-gray-800 font-medium py-2 rounded-lg"
                     >
                       Rezerviši
                     </button>

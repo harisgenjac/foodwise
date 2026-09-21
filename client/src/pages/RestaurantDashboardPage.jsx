@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios.js";
 import { CATEGORY_LABELS } from "../utils/categories.js";
+import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 
 const RestaurantDashboardPage = () => {
@@ -65,7 +66,14 @@ const RestaurantDashboardPage = () => {
               key={product.id}
               className="bg-white rounded-xl shadow overflow-hidden flex flex-col"
             >
-              <div className="relative h-32 bg-gradient-to-br from-emerald-700 via-teal-800 to-gray-900">
+              <div className="relative h-32">
+                <img
+                  src={
+                    CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES.Other
+                  }
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
                 <span className="absolute top-3 right-3 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full">
                   {CATEGORY_LABELS[product.category] || product.category}
                 </span>
@@ -73,7 +81,7 @@ const RestaurantDashboardPage = () => {
 
               <div className="p-4 flex flex-col gap-3 flex-1">
                 <div>
-                  <p className="text-xs text-gray-400">{product.unit}</p>
+                  <p className="text-xs text-gray-400">{product.business_name} - {product.city}</p>
                   <h3 className="text-lg font-bold text-gray-800">
                     {product.name}
                   </h3>
@@ -112,10 +120,12 @@ const RestaurantDashboardPage = () => {
                     </span>
                   </div>
                 </div>
-
-                <button className="mt-auto w-full bg-orange-100 hover:bg-orange-200 transition-colors text-gray-800 font-medium py-2 rounded-lg">
+                <Link
+                  to={`/products/${product.id}`}
+                  className="mt-auto w-full text-center bg-orange-100 hover:bg-orange-200 transition-colors text-gray-800 font-medium py-2 rounded-lg"
+                >
                   Detalji
-                </button>
+                </Link>
               </div>
             </div>
           ))}
@@ -139,7 +149,12 @@ const RestaurantDashboardPage = () => {
               key={reservation.id}
               className="bg-white rounded-xl shadow overflow-hidden flex flex-col"
             >
-              <div className="relative h-32 bg-gradient-to-br from-amber-600 via-orange-700 to-gray-900">
+              <div className="relative h-32">
+                <img
+                  src="https://st2.depositphotos.com/1734074/8285/v/450/depositphotos_82857018-stock-illustration-paper-bag-full-of-food.jpg"
+                  alt={reservation.product_name}
+                  className="w-1/4 h-full object-cover mx-auto"
+                />
                 <span className="absolute top-3 right-3 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full">
                   {reservation.status}
                 </span>
@@ -185,9 +200,12 @@ const RestaurantDashboardPage = () => {
                   </div>
                 </div>
 
-                <button className="mt-auto w-full bg-orange-100 hover:bg-orange-200 transition-colors text-gray-800 font-medium py-2 rounded-lg">
+                <Link
+                  to={`/reservation/${reservation.id}`}
+                  className="mt-auto w-full text-center bg-orange-100 hover:bg-orange-200 transition-colors text-gray-800 font-medium py-2 rounded-lg"
+                >
                   Detalji
-                </button>
+                </Link>
               </div>
             </div>
           ))}

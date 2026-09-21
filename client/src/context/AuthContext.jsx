@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await api.get('/auth/me');
+        const response = await api.get('/users/me');
         setUser(response.data.user);
       } catch (error) {
         setUser(null);

@@ -50,6 +50,8 @@ export const getProducts = async (req, res) => {
     let query = `
       SELECT 
         products.*, 
+        users.business_name,
+        users.city,
         products.quantity - COALESCE(
           (SELECT SUM(quantity) FROM reservations 
            WHERE reservations.product_id = products.id 
@@ -58,29 +60,30 @@ export const getProducts = async (req, res) => {
         ) AS available_quantity,
         products.expiry_date - CURRENT_DATE AS days_until_expiry
       FROM products 
-      WHERE status = 'Available'
-      AND expiry_date >= CURRENT_DATE
+      JOIN users ON products.store_id = users.id
+      WHERE products.status = 'Available'
+      AND products.expiry_date >= CURRENT_DATE
     `;
     let values = [];
 
     if (category) {
       values.push(category);
-      query += ` AND category = $${values.length}`;
+      query += ` AND products.category = $${values.length}`;
     }
 
     if (maxPrice) {
       values.push(parseFloat(maxPrice));
-      query += ` AND discounted_price <= $${values.length}`;
+      query += ` AND products.discounted_price <= $${values.length}`;
     }
 
     if (expiryWithinDays) {
       values.push(parseInt(expiryWithinDays));
-      query += ` AND expiry_date <= CURRENT_DATE + ($${values.length} * INTERVAL '1 day')`;
+      query += ` AND products.expiry_date <= CURRENT_DATE + ($${values.length} * INTERVAL '1 day')`;
     }
 
     if (name) {
       values.push(`%${name}%`);
-      query += ` AND name ILIKE $${values.length}`;
+      query += ` AND products.name ILIKE $${values.length}`;
     }
     query += " ORDER BY products.created_at DESC";
 
@@ -102,6 +105,8 @@ export const getProductById = async (req, res) => {
     const result = await pool.query(
       `SELECT 
     products.*, 
+    users.business_name,
+    users.city,
     products.quantity - COALESCE(
       (SELECT SUM(quantity) FROM reservations 
        WHERE reservations.product_id = products.id 
@@ -110,6 +115,7 @@ export const getProductById = async (req, res) => {
     ) AS available_quantity,
      products.expiry_date - CURRENT_DATE AS days_until_expiry
    FROM products
+   JOIN users ON products.store_id = users.id
    WHERE products.id = $1`,
       [productId],
     );
@@ -155,7 +161,14 @@ export const getMineProducts = async (req, res) => {
       query += ` AND name ILIKE $${values.length}`;
     }
 
-    query += " ORDER BY created_at DESC";
+    query += ` ORDER BY 
+  CASE 
+    WHEN status = 'Available' THEN 0
+    WHEN status = 'Sold' THEN 1
+    WHEN status = 'Expired' THEN 2
+    ELSE 3
+  END,
+  created_at DESC`;
 
     const result = await pool.query(query, values);
     return res.status(200).json({ products: result.rows });

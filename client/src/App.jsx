@@ -10,11 +10,15 @@ import MyProductsPage from './pages/MyProductsPage.jsx';
 import EditProductPage from './pages/EditProductPage.jsx';
 import ReservationsPage from './pages/ReservationsPage.jsx'
 import BrowseProductsPage from './pages/BrowseProductsPage.jsx';
+import StoresPage from './pages/StoresPage.jsx'
+import StoreDetailsPage from './pages/StoreDetailsPage.jsx';
 import MyReservationsPage from './pages/MyReservationsPage.jsx';
 import MyProfilePage from './pages/MyProfilePage.jsx'
 import DonateFoodPage from './pages/DonateFoodPage.jsx';
 import SponsorPage from './pages/SponsorPage.jsx';
 import NotificationsPage from './pages/NotificationsPage.jsx'
+import ProductDetailsPage from "./pages/ProductDetailsPage.jsx"
+import ReservationDetailsPage from "./pages/ReservationDetailsPage.jsx"
 
 function App() {
   return (
@@ -29,11 +33,15 @@ function App() {
         <Route path="/edit-product/:id" element={<EditProductPage />} />
         <Route path="/reservations" element={<ReservationsPage />} />
         <Route path="/browse-products" element={<BrowseProductsPage />} />
+        <Route path="/stores" element={<StoresPage />} />
+        <Route path="/stores/:id" element={<StoreDetailsPage />} />
         <Route path="/my-reservations" element={<MyReservationsPage />} />
         <Route path="/my-profile" element={<MyProfilePage />} />
         <Route path="/donate-food" element={<DonateFoodPage />} />
         <Route path="/sponsor" element={<SponsorPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/products/:id" element={<ProductDetailsPage />} />
+        <Route path="/reservation/:id" element={<ReservationDetailsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

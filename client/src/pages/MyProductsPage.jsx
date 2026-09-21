@@ -1,12 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import api from "../api/axios.js";
+import { useNavigate } from "react-router-dom";
 import { CATEGORY_LABELS } from "../utils/categories.js";
+import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
 import { Link } from "react-router-dom";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import toast from "react-hot-toast";
 import { useFetch } from "../hooks/useFetch.js";
 
 function MyProductsPage() {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [status, setStatus] = useState("Available");
   const [category, setCategory] = useState("");
@@ -121,9 +124,17 @@ function MyProductsPage() {
             {productsList.map((product) => (
               <div
                 key={product.id}
-                className="bg-white rounded-xl shadow overflow-hidden flex flex-col"
+                onClick={() => navigate(`/products/${product.id}`)}
+                className="bg-white rounded-xl shadow overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
               >
-                <div className="relative h-32 bg-gradient-to-br from-emerald-700 via-teal-800 to-gray-900">
+                <div className="relative h-32">
+                  <img
+                    src={
+                      CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES.Other
+                    }
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
                   <span className="absolute top-3 right-3 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full">
                     {CATEGORY_LABELS[product.category] || product.category}
                   </span>
@@ -131,7 +142,7 @@ function MyProductsPage() {
 
                 <div className="p-4 flex flex-col gap-3 flex-1">
                   <div>
-                    <p className="text-xs text-gray-400">{product.unit}</p>
+                    <p className="text-xs text-gray-400">{new Date(product.created_at).toLocaleString()}</p>
                     <h3 className="text-lg font-bold text-gray-800">
                       {product.name}
                     </h3>
@@ -174,13 +185,17 @@ function MyProductsPage() {
                   <div className="mt-auto flex gap-2">
                     <Link
                       to={`/edit-product/${product.id}`}
+                      onClick={(e) => e.stopPropagation()}
                       className="flex-1 text-center bg-orange-100 hover:bg-orange-200 transition-colors text-gray-800 font-medium py-2 rounded-lg"
                     >
                       Uredi
                     </Link>
                     <button
-                      onClick={() => setSelectedProduct(product)}
-                      className="flex-1 bg-red-100 hover:bg-red-200 transition-colors text-red-700 font-medium py-2 rounded-lg"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProduct(product);
+                      }}
+                      className="flex-1 bg-red-100 hover:bg-red-200 transition-colors text-red-700 font-medium py-2 rounded-lg cursor-pointer"
                     >
                       Obriši
                     </button>

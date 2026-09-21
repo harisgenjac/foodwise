@@ -17,6 +17,7 @@ function Sidebar({ isSidebarOpen }) {
   const restaurantLinks = [
     { to: "/dashboard", label: "Dashboard" },
     { to: "/my-profile", label: "Moj Profil" },
+    { to: "/stores", label: "Prodavnice"},
     { to: "/browse-products", label: "Pretraži Proizvode" },
     { to: "/my-reservations", label: "Moje Rezervacije" },
     { to: "/donate-food", label: "Doniraj obrok" },

@@ -61,9 +61,54 @@ export const createReservation = async (req, res) => {
   }
 };
 
+export const getReservationById = async (req, res) => {
+  try {
+    const reservationId = req.params.id;
+    const restorantId = req.user.id;
+
+    const result = await pool.query(
+      `SELECT 
+    reservations.id, 
+    reservations.restaurant_id, 
+    reservations.quantity, 
+    reservations.status, 
+    reservations.pickup_date, 
+    reservations.created_at, 
+    reservations.updated_at, 
+    products.name AS product_name, 
+    products.description, 
+    products.discounted_price, 
+    products.original_price, 
+    products.category, 
+    users.business_name, 
+    users.city
+    FROM reservations 
+    JOIN products ON reservations.product_id = products.id
+    JOIN users ON products.store_id = users.id
+    WHERE reservations.id = $1 
+    AND (reservations.restaurant_id = $2 OR products.store_id = $2)`,
+      [reservationId, restorantId],
+    );
+    if (result.rows.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "Ne postoji rezervacija sa tim ID" });
+    }
+    return res.status(200).json({
+      message: "Uspješno dohvačena rezervacija",
+      reservation: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Greška prilikom dohvatanja rezervacije:", error);
+    return res
+      .status(500)
+      .json({ error: "Došlo je do greške prilikom dohvatanja rezervacija." });
+  }
+};
+
 export const getMineReservations = async (req, res) => {
   const restaurant_id = req.user.id;
-  const { status, name, business_name } = req.query;
+  const { status, name, business_name, store_id } = req.query;
   try {
     let query = `SELECT 
     reservations.id, 
@@ -98,15 +143,19 @@ export const getMineReservations = async (req, res) => {
       values.push(`%${business_name}%`);
       query += ` AND users.business_name ILIKE $${values.length}`;
     }
+    if (store_id) {
+      values.push(store_id);
+      query += ` AND products.store_id = $${values.length}`;
+    }
 
     query += ` ORDER BY 
-  CASE 
-    WHEN reservations.status = 'Pending' THEN 0
-    WHEN reservations.status = 'Confirmed' THEN 1
-    WHEN reservations.status = 'Completed' THEN 2
-    WHEN reservations.status = 'Cancelled' THEN 3
-  END,
-  reservations.created_at DESC`;
+      CASE 
+        WHEN reservations.status = 'Pending' THEN 0
+        WHEN reservations.status = 'Confirmed' THEN 1
+        WHEN reservations.status = 'Completed' THEN 2
+        WHEN reservations.status = 'Cancelled' THEN 3
+      END,
+      reservations.created_at DESC`;
 
     const result = await pool.query(query, values);
     return res.status(200).json({

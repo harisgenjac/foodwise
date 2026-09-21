@@ -12,13 +12,13 @@ export const up = (pgm) => {
   pgm.createType('user_role', ['STORE', 'RESTAURANT']);
 
   pgm.createTable('users', {
-    id: 'id', // shorthand za SERIAL PRIMARY KEY - pg-migrate ovo prepoznaje automatski
+    id: 'id',
     first_name: { type: 'varchar(100)', notNull: true },
     last_name: { type: 'varchar(100)', notNull: true },
     email: { type: 'varchar(255)', notNull: true, unique: true },
     password_hash: { type: 'varchar(255)', notNull: true },
     role: { type: 'user_role', notNull: true },
-    business_name: { type: 'varchar(255)' }, // nullable - ovo je opciono polje
+    business_name: { type: 'varchar(255)' },
     logo_url: { type: 'text' },
     address: { type: 'varchar(255)' },
     city: { type: 'varchar(100)' },

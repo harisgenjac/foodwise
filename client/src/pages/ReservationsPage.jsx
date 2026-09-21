@@ -3,8 +3,10 @@ import api from "../api/axios.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import toast from "react-hot-toast";
 import { useFetch } from "../hooks/useFetch.js";
+import { useNavigate } from "react-router-dom";
 
 function ReservationsPage() {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [status, setStatus] = useState("");
   const [city, setCity] = useState("");
@@ -97,9 +99,15 @@ function ReservationsPage() {
           {reservationsList.map((reservation) => (
             <div
               key={reservation.id}
-              className="bg-white rounded-xl shadow overflow-hidden flex flex-col"
+              onClick={() => navigate(`/reservation/${reservation.id}`)}
+              className="bg-white rounded-xl cursor-pointer shadow overflow-hidden flex flex-col"
             >
-              <div className="relative h-32 bg-gradient-to-br from-amber-600 via-orange-700 to-gray-900">
+              <div className="relative h-32">
+                <img
+                  src="https://st2.depositphotos.com/1734074/8285/v/450/depositphotos_82857018-stock-illustration-paper-bag-full-of-food.jpg"
+                  alt={reservation.product_name}
+                  className="w-1/4 h-full object-cover mx-auto"
+                />
                 <span className="absolute top-3 right-3 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full">
                   {reservation.status}
                 </span>
@@ -151,14 +159,20 @@ function ReservationsPage() {
                 {reservation.status === "Pending" && (
                   <div className="mt-auto flex gap-2">
                     <button
-                      onClick={() => handleAccept(reservation.id)}
-                      className="flex-1 bg-green-100 hover:bg-green-200 transition-colors text-green-700 font-medium py-2 rounded-lg"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAccept(reservation.id);
+                      }}
+                      className="flex-1 bg-green-100 cursor-pointer hover:bg-green-200 transition-colors text-green-700 font-medium py-2 rounded-lg"
                     >
                       Prihvati
                     </button>
                     <button
-                      onClick={() => handleReject(reservation.id)}
-                      className="flex-1 bg-red-100 hover:bg-red-200 transition-colors text-red-700 font-medium py-2 rounded-lg"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReject(reservation.id);
+                      }}
+                      className="flex-1 bg-red-100 cursor-pointer hover:bg-red-200 transition-colors text-red-700 font-medium py-2 rounded-lg"
                     >
                       Odbij
                     </button>
