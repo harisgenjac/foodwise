@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import app from './src/app.js';
-import { startExpirationJob } from './src/jobs/expireProducts.js';
+import app from './app.js';
+import { startExpirationJob } from './jobs/expireProducts.js';
 
 const PORT = process.env.PORT || 3000;
 

@@ -1,8 +1,9 @@
 import pool from "../config/db.js";
+import type { Request, Response } from "express";
 
-export const createReservation = async (req, res) => {
+export const createReservation = async (req: Request, res: Response) => {
   const { product_id, quantity, pickup_date } = req.body;
-  const restaurant_id = req.user.id;
+  const restaurant_id = req.user!.id;
 
   if (!product_id || !quantity || !pickup_date) {
     return res.status(400).json({ error: "Sva polja su obavezna." });
@@ -61,10 +62,10 @@ export const createReservation = async (req, res) => {
   }
 };
 
-export const getReservationById = async (req, res) => {
+export const getReservationById = async (req: Request, res: Response) => {
   try {
     const reservationId = req.params.id;
-    const restorantId = req.user.id;
+    const restorantId = req.user!.id;
 
     const result = await pool.query(
       `SELECT 
@@ -106,8 +107,8 @@ export const getReservationById = async (req, res) => {
   }
 };
 
-export const getMineReservations = async (req, res) => {
-  const restaurant_id = req.user.id;
+export const getMineReservations = async (req: Request, res: Response) => {
+  const restaurant_id = req.user!.id;
   const { status, name, business_name, store_id } = req.query;
   try {
     let query = `SELECT 
@@ -129,22 +130,22 @@ export const getMineReservations = async (req, res) => {
   JOIN products ON reservations.product_id = products.id
   JOIN users ON products.store_id = users.id
   WHERE reservations.restaurant_id = $1`;
-    let values = [restaurant_id];
+    let values: (string | Number) [] = [restaurant_id];
 
     if (status) {
-      values.push(status);
+      values.push(status as string);
       query += ` AND reservations.status = $${values.length}`;
     }
     if (name) {
-      values.push(`%${name}%`);
+      values.push(`%${name}%` as string);
       query += ` AND products.name ILIKE $${values.length}`;
     }
     if (business_name) {
-      values.push(`%${business_name}%`);
+      values.push(`%${business_name}%` as string);
       query += ` AND users.business_name ILIKE $${values.length}`;
     }
     if (store_id) {
-      values.push(store_id);
+      values.push(store_id as string);
       query += ` AND products.store_id = $${values.length}`;
     }
 
@@ -170,8 +171,8 @@ export const getMineReservations = async (req, res) => {
   }
 };
 
-export const getStoreReservations = async (req, res) => {
-  const store_id = req.user.id;
+export const getStoreReservations = async (req: Request, res: Response) => {
+  const store_id = req.user!.id;
   const { status, name, city } = req.query;
   try {
     let query = `SELECT 
@@ -193,18 +194,18 @@ export const getStoreReservations = async (req, res) => {
       JOIN products ON reservations.product_id = products.id
       JOIN users ON reservations.restaurant_id = users.id
       WHERE products.store_id = $1`;
-    let values = [store_id];
+    let values: (string | number)[] = [store_id];
 
     if (status) {
-      values.push(status);
+      values.push(status as string);
       query += ` AND reservations.status = $${values.length}`;
     }
     if (name) {
-      values.push(`%${name}%`);
+      values.push(`%${name}%` as string);
       query += ` AND products.name ILIKE $${values.length}`;
     }
     if (city) {
-      values.push(`%${city}%`);
+      values.push(`%${city}%` as string);
       query += ` AND users.city ILIKE $${values.length}`;
     }
 
@@ -226,9 +227,9 @@ export const getStoreReservations = async (req, res) => {
   }
 };
 
-export const acceptReservation = async (req, res) => {
+export const acceptReservation = async (req: Request, res: Response) => {
   const reservationId = req.params.id;
-  const store_id = req.user.id;
+  const store_id = req.user!.id;
 
   if (!reservationId) {
     return res.status(400).json({ error: "ID rezervacije je obavezan." });
@@ -306,9 +307,9 @@ export const acceptReservation = async (req, res) => {
   }
 };
 
-export const rejectReservation = async (req, res) => {
+export const rejectReservation = async (req: Request, res: Response) => {
   const reservationId = req.params.id;
-  const store_id = req.user.id;
+  const store_id = req.user!.id;
   try {
     if (!reservationId) {
       return res.status(400).json({ error: "ID rezervacije je obavezan." });
@@ -357,9 +358,9 @@ export const rejectReservation = async (req, res) => {
   }
 };
 
-export const cancelReservation = async (req, res) => {
+export const cancelReservation = async (req: Request, res: Response) => {
   const reservationId = req.params.id;
-  const restaurant_id = req.user.id;
+  const restaurant_id = req.user!.id;
   try {
     if (!reservationId) {
       return res.status(400).json({ error: "ID rezervacije je obavezan." });
