@@ -1,7 +1,8 @@
 import pool from "../config/db.js";
-import { validateProductFields } from "../utils/validateProduct.js";
+import type { Request, Response } from 'express';
+import { validateProductFields, type ProductFields } from '../utils/validateProduct.js';
 
-export const createProduct = async (req, res) => {
+export const createProduct = async (req: Request, res: Response) => {
   try {
     const {
       name,
@@ -12,8 +13,8 @@ export const createProduct = async (req, res) => {
       quantity,
       unit,
       expiry_date,
-    } = req.body;
-    const store_id = req.user.id;
+    }: ProductFields = req.body;
+    const store_id = req.user!.id;
     const validationError = validateProductFields(req.body);
     if (validationError) {
       return res.status(400).json({ error: validationError });
@@ -43,7 +44,7 @@ export const createProduct = async (req, res) => {
   }
 };
 
-export const getProducts = async (req, res) => {
+export const getProducts = async (req: Request, res: Response) => {
   try {
     const { category, maxPrice, expiryWithinDays, name } = req.query;
 
@@ -72,12 +73,12 @@ export const getProducts = async (req, res) => {
     }
 
     if (maxPrice) {
-      values.push(parseFloat(maxPrice));
+      values.push(parseFloat(maxPrice as string));
       query += ` AND products.discounted_price <= $${values.length}`;
     }
 
     if (expiryWithinDays) {
-      values.push(parseInt(expiryWithinDays));
+      values.push(parseInt(expiryWithinDays as string));
       query += ` AND products.expiry_date <= CURRENT_DATE + ($${values.length} * INTERVAL '1 day')`;
     }
 
@@ -98,7 +99,7 @@ export const getProducts = async (req, res) => {
   }
 };
 
-export const getProductById = async (req, res) => {
+export const getProductById = async (req: Request, res: Response) => {
   try {
     const productId = req.params.id;
 
@@ -132,32 +133,32 @@ export const getProductById = async (req, res) => {
   }
 };
 
-export const getMineProducts = async (req, res) => {
+export const getMineProducts = async (req: Request, res: Response) => {
   try {
-    const store_id = req.user.id;
+    const store_id = req.user!.id;
     const { status, category, name, expiryWithinDays } = req.query;
 
     let query =
       "SELECT * FROM products WHERE store_id = $1 AND status != 'Removed'";
-    let values = [store_id];
+    let values: (string | number)[] = [store_id];
 
     if (category) {
-      values.push(category);
+      values.push(category as string);
       query += ` AND category = $${values.length}`;
     }
 
     if (status) {
-      values.push(status);
+      values.push(status as string);
       query += ` AND status = $${values.length}`;
     }
 
     if (expiryWithinDays) {
-      values.push(parseInt(expiryWithinDays));
+      values.push(parseInt(expiryWithinDays as string));
       query += ` AND expiry_date <= CURRENT_DATE + ($${values.length} * INTERVAL '1 day')`;
     }
 
     if (name) {
-      values.push(`%${name}%`);
+      values.push(`%${name}%` as string);
       query += ` AND name ILIKE $${values.length}`;
     }
 
@@ -180,7 +181,7 @@ export const getMineProducts = async (req, res) => {
   }
 };
 
-export const updateProduct = async (req, res) => {
+export const updateProduct = async (req: Request, res: Response) => {
   try {
     const productId = req.params.id;
     const {
@@ -192,7 +193,7 @@ export const updateProduct = async (req, res) => {
       quantity,
       unit,
       expiry_date,
-    } = req.body || {};
+    }: ProductFields = req.body || {};
     const validationError = validateProductFields(req.body);
     if (validationError) {
       return res.status(400).json({ error: validationError });
@@ -205,7 +206,7 @@ export const updateProduct = async (req, res) => {
       return res.status(404).json({ error: "Proizvod nije pronađen." });
     }
 
-    if (existing.rows[0].store_id !== req.user.id) {
+    if (existing.rows[0].store_id !== req.user!.id) {
       return res
         .status(403)
         .json({ error: "Nemate dozvolu za izmjenu ovog proizvoda." });
@@ -242,7 +243,7 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-export const deleteProduct = async (req, res) => {
+export const deleteProduct = async (req: Request, res: Response) => {
   try {
     const productId = req.params.id;
 
@@ -253,7 +254,7 @@ export const deleteProduct = async (req, res) => {
       return res.status(404).json({ error: "Proizvod nije pronađen." });
     }
 
-    if (existing.rows[0].store_id !== req.user.id) {
+    if (existing.rows[0].store_id !== req.user!.id) {
       return res
         .status(403)
         .json({ error: "Nemate dozvolu za brisanje ovog proizvoda." });

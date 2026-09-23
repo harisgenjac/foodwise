@@ -1,13 +1,41 @@
 import pool from "../config/db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import type { Request, Response } from "express";
 
-export const register = async (req, res) => {
+interface RegisterBody {
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+  role: string;
+}
+function validateRegFields(fields: RegisterBody) {
+  const { first_name, last_name, email, password, role } = fields;
+  if (!first_name || !last_name || !email || !password || !role) {
+    return "Sva polja su obavezna.";
+  }
+}
+
+interface LoginBody {
+  email: string;
+  password: string;
+}
+function validateLoginFields(fields: LoginBody) {
+  const { email, password } = fields;
+  if (!email || !password) {
+    return "Sva polja su obavezna.";
+  }
+}
+
+export const register = async (req: Request, res: Response) => {
   try {
-    const { first_name, last_name, email, password, role } = req.body;
+    const { first_name, last_name, email, password, role }: RegisterBody =
+      req.body;
+    const validationError = validateRegFields(req.body);
 
-    if (!first_name || !last_name || !email || !password || !role) {
-      return res.status(400).json({ error: "Sva polja su obavezna." });
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
     }
     if (!["STORE", "RESTAURANT"].includes(role)) {
       return res
@@ -40,12 +68,13 @@ export const register = async (req, res) => {
   }
 };
 
-export const login = async (req, res) => {
+export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password }: LoginBody = req.body;
+    const validationError = validateLoginFields(req.body);
 
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email i lozinka su obavezni." });
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
     }
 
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [
@@ -61,7 +90,7 @@ export const login = async (req, res) => {
     }
     const token = jwt.sign(
       { id: user.id, role: user.role },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET!,
       { expiresIn: "7d" },
     );
     res.cookie("token", token, {
@@ -89,7 +118,7 @@ export const login = async (req, res) => {
   }
 };
 
-export const logout = (req, res) => {
+export const logout = (req: Request, res: Response) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -98,6 +127,6 @@ export const logout = (req, res) => {
   return res.status(200).json({ message: "Uspješno ste se odjavili." });
 };
 
-export const me = (req, res) => {
+export const me = (req: Request, res: Response) => {
   return res.status(200).json({ user: req.user });
 };

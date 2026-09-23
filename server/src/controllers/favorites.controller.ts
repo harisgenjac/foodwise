@@ -1,8 +1,9 @@
 import pool from "../config/db.js";
+import type { Request, Response } from "express";
 
-export const addFavorite = async (req, res) => {
+export const addFavorite = async (req: Request, res: Response) => {
   try {
-    const restaurant_id = req.user.id;
+    const restaurant_id = req.user!.id;
     const { store_id } = req.body;
 
     await pool.query(
@@ -11,7 +12,7 @@ export const addFavorite = async (req, res) => {
     );
     return res.status(201).json({ message: "Prodavnica dodana u omiljene" });
   } catch (error) {
-    if (error.code === "23505") {
+    if (error instanceof Error && 'code' in error && error.code === "23505") {
       return res
         .status(409)
         .json({ error: "Prodavnica je vec dodana u omiljene." });
@@ -26,9 +27,9 @@ export const addFavorite = async (req, res) => {
   }
 };
 
-export const removeFavorite = async (req, res) => {
+export const removeFavorite = async (req: Request, res: Response) => {
   try {
-    const restaurant_id = req.user.id;
+    const restaurant_id = req.user!.id;
     const storeId = req.params.storeId;
 
     const result = await pool.query(
@@ -53,9 +54,9 @@ export const removeFavorite = async (req, res) => {
   }
 };
 
-export const getFavorites = async (req, res) => {
+export const getFavorites = async (req: Request, res: Response) => {
   try {
-    const restaurant_id = req.user.id;
+    const restaurant_id = req.user!.id;
 
     const result = await pool.query(
       `SELECT users.id, users.business_name, users.city, users.address, 

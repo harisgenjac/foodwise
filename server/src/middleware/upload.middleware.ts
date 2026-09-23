@@ -1,6 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import type { Request, Response } from 'express';
 
 const uploadDir = 'uploads/logos';
 
@@ -9,11 +10,11 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (req: Request, file, cb) => {
     cb(null, uploadDir);
   },
-  filename: (req, file, cb) => {
-    const uniqueName = `${req.user.id}-${Date.now()}${path.extname(file.originalname)}`;
+  filename: (req: Request, file, cb) => {
+    const uniqueName = `${req.user!.id}-${Date.now()}${path.extname(file.originalname)}`;
     cb(null, uniqueName);
   },
 });
@@ -21,7 +22,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: Request, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);

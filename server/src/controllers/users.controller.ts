@@ -1,8 +1,9 @@
 import pool from "../config/db.js";
+import type { Request, Response } from "express";
 
-export const getUser = async (req, res) => {
+export const getUser = async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const result = await pool.query(
       "SELECT id, first_name, last_name, email, role, business_name, logo_url, address, city, opening_hours, pickup_hours, description, phone, created_at FROM users WHERE id = $1",
       [userId],
@@ -16,9 +17,39 @@ export const getUser = async (req, res) => {
   }
 };
 
-export const updateUser = async (req, res) => {
+interface UserFields {
+  first_name: string;
+  last_name: string;
+  business_name: string;
+  logo_url?: string;
+  address?: string;
+  city: string;
+  opening_hours?: string;
+  pickup_hours?: string;
+  description?: string;
+  phone: string;
+}
+function validateUserFields(fields: UserFields) {
+  const {
+    first_name,
+    last_name,
+    business_name,
+    logo_url,
+    address,
+    city,
+    opening_hours,
+    pickup_hours,
+    description,
+    phone,
+  } = fields;
+  if (!first_name || !last_name || !business_name || !city || !phone) {
+    return "Ime, prezime, naziv biznisa, grad i telefon su obavezni.";
+  }
+}
+
+export const updateUser = async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const {
       first_name,
       last_name,
@@ -30,11 +61,12 @@ export const updateUser = async (req, res) => {
       pickup_hours,
       description,
       phone,
-    } = req.body;
+    }: UserFields = req.body;
+    const validationError = validateUserFields(req.body);
 
-    if (!first_name || !last_name || !business_name || !city || !phone) {
+    if (validationError) {
       return res.status(400).json({
-        error: "Ime, prezime, naziv biznisa, grad i telefon su obavezni.",
+        error: validationError,
       });
     }
 
@@ -77,7 +109,7 @@ export const updateUser = async (req, res) => {
   }
 };
 
-export const getStores = async (req, res) => {
+export const getStores = async (req: Request, res: Response) => {
   try {
     const { city, business_name } = req.query;
     let query = `SELECT id, business_name, city, address, logo_url, 
@@ -87,12 +119,12 @@ export const getStores = async (req, res) => {
     let values = [];
 
     if (city) {
-      values.push(`%${city}%`);
+      values.push(`%${city}%` as string);
       query += ` AND city ILIKE $${values.length}`;
     }
 
     if (business_name) {
-      values.push(`%${business_name}%`);
+      values.push(`%${business_name}%` as string);
       query += ` AND business_name ILIKE $${values.length}`;
     }
 
@@ -110,10 +142,10 @@ export const getStores = async (req, res) => {
   }
 };
 
-export const getStoreDetails = async (req, res) => {
+export const getStoreDetails = async (req: Request, res: Response) => {
   try {
     const storeId = req.params.id;
-    const userRole = req.user.role;
+    const userRole = req.user!.role;
 
     if (userRole === "STORE") {
       return res.status(403).json({ error: "Nemate permisiju za ovu akciju." });
@@ -161,7 +193,7 @@ export const getStoreDetails = async (req, res) => {
    FROM reservations r
    JOIN products p ON r.product_id = p.id
    WHERE p.store_id = $1 AND r.restaurant_id = $2 AND r.status IN ('Confirmed', 'Completed')`,
-      [storeId, req.user.id],
+      [storeId, req.user!.id],
     );
     return res.status(200).json({
       message: "Uspješno dohvaćena prodavnica",
@@ -178,13 +210,13 @@ export const getStoreDetails = async (req, res) => {
   }
 };
 
-export const uploadLogo = async (req, res) => {
+export const uploadLogo = async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "Slika nije poslana." });
     }
 
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const logoUrl = `/uploads/logos/${req.file.filename}`;
 
     const result = await pool.query(
