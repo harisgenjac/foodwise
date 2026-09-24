@@ -1,10 +1,10 @@
 import { useState } from "react";
 import api from "../api/axios.js";
+import axios from 'axios';
 import { useNavigate } from "react-router-dom";
 import { CATEGORY_LABELS } from "../utils/categories.js";
 import { UNIT_LABELS } from "../utils/units.js";
 import toast from "react-hot-toast";
-
 
 function AddProductPage() {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ function AddProductPage() {
   const [expiry_date, setExpiryDate] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (
       !name ||
@@ -48,7 +48,13 @@ function AddProductPage() {
       navigate("/dashboard");
     } catch (err) {
       setError("Greška prilikom dodavanja proizvoda. Molimo pokušajte ponovo.");
-      toast.error(err.response?.data?.error || "Greška prilikom dodavanja proizvoda. Molimo pokušajte ponovo.")
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error
+        : null;
+      toast.error(
+        message ||
+          "Greška prilikom dodavanja proizvoda. Molimo pokušajte ponovo.",
+      );
     }
   };
 
@@ -74,7 +80,7 @@ function AddProductPage() {
             type="text"
             placeholder="Naziv proizvoda"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
           />
         </div>
@@ -86,7 +92,7 @@ function AddProductPage() {
             type="text"
             placeholder="Opis proizvoda"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDescription(e.target.value)}
             className={inputStyle}
           />
         </div>
@@ -96,7 +102,7 @@ function AddProductPage() {
           </label>
           <select
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setCategory(e.target.value)}
             className={inputStyle}
           >
             <option value="">-- Odaberite kategoriju --</option>
@@ -115,7 +121,7 @@ function AddProductPage() {
             type="number"
             placeholder="Originalna cijena"
             value={original_price}
-            onChange={(e) => setOriginalPrice(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOriginalPrice(e.target.value)}
             className={inputStyle}
           />
         </div>
@@ -127,7 +133,7 @@ function AddProductPage() {
             type="number"
             placeholder="Snižena cijena"
             value={discounted_price}
-            onChange={(e) => setDiscountedPrice(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDiscountedPrice(e.target.value)}
             className={inputStyle}
           />
         </div>
@@ -139,7 +145,7 @@ function AddProductPage() {
             type="number"
             placeholder="Količina"
             value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuantity(e.target.value)}
             className={inputStyle}
           />
         </div>
@@ -149,7 +155,7 @@ function AddProductPage() {
           </label>
           <select
             value={unit}
-            onChange={(e) => setUnit(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setUnit(e.target.value)}
             className={inputStyle}
           >
             <option value="">-- Odaberite jedinicu --</option>
@@ -167,7 +173,7 @@ function AddProductPage() {
           <input
             type="date"
             value={expiry_date}
-            onChange={(e) => setExpiryDate(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setExpiryDate(e.target.value)}
             className={inputStyle}
           />
         </div>
@@ -175,7 +181,6 @@ function AddProductPage() {
           type="submit"
           className="w-full bg-orange-500 hover:bg-orange-600 transition-colors text-white font-medium py-2 rounded-lg"
         >
-          
           Dodaj proizvod
         </button>
       </form>

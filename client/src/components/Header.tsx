@@ -4,7 +4,20 @@ import { useNavigate, Link } from "react-router-dom";
 import logo from "../assets/logoApp.png";
 import { useNotifications } from "../hooks/useNotifications.js";
 
-function Header({ isSidebarOpen, onToggleSidebar }) {
+interface Notification {
+  id: number;
+  user_id: number;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+interface HeaderProps {
+  isSidebarOpen: boolean;
+  onToggleSidebar: () => void;
+}
+
+function Header({ isSidebarOpen, onToggleSidebar }: HeaderProps) {
   const { user, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -16,7 +29,7 @@ function Header({ isSidebarOpen, onToggleSidebar }) {
     navigate("/login");
   };
 
-  const handleNotificationClick = async (notification) => {
+  const handleNotificationClick = async (notification: Notification) => {
     markAsRead(notification);
     setIsNotifOpen(false);
     navigate(user?.role === "STORE" ? "/reservations" : "/my-reservations");
@@ -71,7 +84,7 @@ function Header({ isSidebarOpen, onToggleSidebar }) {
                   Nemate notifikacija.
                 </p>
               ) : (
-                notifications.slice(0, 5).map((notification) => (
+                notifications.slice(0, 5).map((notification: Notification) => (
                   <button
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}

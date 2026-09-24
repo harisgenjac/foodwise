@@ -1,4 +1,4 @@
-export const CATEGORY_LABELS = {
+export const CATEGORY_LABELS: Record<string, string> = {
   Meat: 'Meso',
   Fish: 'Riba',
   Dairy: 'Mliječni proizvodi',

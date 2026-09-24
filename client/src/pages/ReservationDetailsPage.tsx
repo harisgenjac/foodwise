@@ -4,18 +4,21 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import api from "../api/axios.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import toast from "react-hot-toast";
+import type { Reservation } from "../types/index.js";
+import axios from "axios";
 
 function ReservationDetailsPage() {
   const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
-  const [reservation, setReservation] = useState(null);
+  const [reservation, setReservation] = useState<Reservation | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchReservation = async () => {
     try {
       const response = await api.get("/reservations/" + id);
-      setReservation(response.data.reservation);
+      const data: Reservation = response.data.reservation
+      setReservation(data);
     } catch (err) {
       console.error("Error fetching reservation:", err);
     } finally {
@@ -23,35 +26,44 @@ function ReservationDetailsPage() {
     }
   };
 
-  const handleAccept = async (reservationId) => {
+  const handleAccept = async (reservationId: number) => {
     try {
       const response = await api.patch(`/reservations/${reservationId}/accept`);
       toast.success(response.data.message);
       fetchReservation();
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.error || "Greška prilikom akcije.");
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error
+        : null;
+      toast.error(message || "Greška prilikom akcije.");
     }
   };
 
-  const handleReject = async (reservationId) => {
+  const handleReject = async (reservationId: number) => {
     try {
       const response = await api.patch(`/reservations/${reservationId}/reject`);
       toast.success(response.data.message);
       fetchReservation();
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.error || "Greška prilikom akcije.");
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error
+        : null;
+      toast.error(message || "Greška prilikom akcije.");
     }
   };
-  const handleCancellation = async (reservationId) => {
+  const handleCancellation = async (reservationId: number) => {
     try {
       const response = await api.patch(`/reservations/${reservationId}/cancel`);
       toast.success(response.data.message);
       fetchReservation();
     } catch (err) {
       console.error("Error canceling reservation:", err);
-      toast.error(err.response?.data?.error || "Greška prilikom akcije.");
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error
+        : null;
+      toast.error(message || "Greška prilikom akcije.");
     }
   };
 
@@ -142,7 +154,7 @@ function ReservationDetailsPage() {
             <div className="mt-6 pt-6 border-t border-gray-100 flex gap-2">
               <button
                 onClick={() => handleAccept(reservation.id)}
-                className="flex-1 text-centerhover:  bg-green-100 cursor-pointer hover:bg-green-200 transition-colors text-green-700 font-medium py-2 rounded-lg"
+                className="flex-1 text-center bg-green-100 cursor-pointer hover:bg-green-200 transition-colors text-green-700 font-medium py-2 rounded-lg"
               >
                 Prihvati
               </button>

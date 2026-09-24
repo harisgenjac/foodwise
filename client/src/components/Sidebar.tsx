@@ -1,7 +1,7 @@
 import { useAuth } from "../context/AuthContext.jsx";
 import { Link } from "react-router-dom";
 
-function Sidebar({ isSidebarOpen }) {
+function Sidebar({ isSidebarOpen }: { isSidebarOpen: boolean}) {
   const { user } = useAuth();
 
   const storeLinks = [

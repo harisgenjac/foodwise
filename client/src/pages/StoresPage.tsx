@@ -4,18 +4,21 @@ import { useNavigate, Link } from "react-router-dom";
 import api from "../api/axios.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import toast from "react-hot-toast";
+import type { Favorites } from "../types/index.js";
+import type { User } from "../types/index.js";
+import axios from "axios";
 
 function StoresPage() {
   const navigate = useNavigate();
   const [city, setCity] = useState("");
   const [businessName, setBusinessName] = useState("");
-  const [favoriteIds, setFavoriteIds] = useState([]);
+  const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const {
     data: storesList,
     loading,
     refetch,
-  } = useFetch("/users/stores", "stores", {
+  } = useFetch<User>("/users/stores", "stores", {
     city,
     business_name: businessName,
   });
@@ -23,13 +26,13 @@ function StoresPage() {
   const fetchFavorites = async () => {
     try {
       const response = await api.get("/favorites");
-      setFavoriteIds(response.data.favorites.map((f) => f.id));
+      setFavoriteIds(response.data.favorites.map((f: Favorites) => f.id));
     } catch (error) {
       console.error(error);
     }
   };
 
-  const handleAddFavorite = async (storeId) => {
+  const handleAddFavorite = async (storeId: number) => {
     try {
       await api.post(`/favorites`, {
         store_id: storeId,
@@ -38,22 +41,28 @@ function StoresPage() {
       toast.success("Prodavnica uspješno dodana u omiljene.");
     } catch (err) {
       console.error(err);
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error
+        : null;
       toast.error(
-        err.response?.data?.error ||
+        message ||
           "Greška prilikom dodavanja prodavnice u omiljene.",
       );
     }
   };
 
-  const handleRemoveFavorite = async (storeId) => {
+  const handleRemoveFavorite = async (storeId: number) => {
     try {
       await api.delete(`/favorites/${storeId}`);
       fetchFavorites();
       toast.success("Prodavnica izbrisana iz omiljenih");
     } catch (err) {
       console.error(err);
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error
+        : null;
       toast.error(
-        err.response?.data?.error ||
+        message ||
           "Greška prilikom brisanja prodavnice iz omiljenih.",
       );
     }
@@ -126,7 +135,7 @@ function StoresPage() {
                 onClick={() => navigate(`/stores/${store.id}`)}
                 className="bg-white rounded-xl shadow overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
               >
-                <div className="relative h-32 bg-gradient-to-br from-emerald-700 via-teal-800 to-gray-900 flex items-center justify-center overflow-hidden">
+                <div className="relative h-32 bg-linear-to-br from-emerald-700 via-teal-800 to-gray-900 flex items-center justify-center overflow-hidden">
                   {store.logo_url ? (
                     <img
                       src={`http://localhost:3000${store.logo_url}`}

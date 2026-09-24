@@ -7,6 +7,8 @@ import { Link } from "react-router-dom";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import toast from "react-hot-toast";
 import { useFetch } from "../hooks/useFetch.js";
+import type { Product } from "../types/index.js";
+import axios from "axios";
 
 function MyProductsPage() {
   const navigate = useNavigate();
@@ -14,19 +16,19 @@ function MyProductsPage() {
   const [status, setStatus] = useState("Available");
   const [category, setCategory] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const {
     data: productsList,
     loading,
     refetch,
-  } = useFetch("/products/mine", "products", {
+  } = useFetch<Product>("/products/mine", "products", {
     name,
     status,
     category,
     expiryWithinDays,
   });
 
-  const handleDelete = async (productId) => {
+  const handleDelete = async (productId: number) => {
     try {
       await api.delete(`/products/${productId}`);
       setSelectedProduct(null);
@@ -34,8 +36,9 @@ function MyProductsPage() {
       toast.success("Proizvod uspješno obrisan.");
     } catch (err) {
       console.error(err);
+      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
       toast.error(
-        err.response?.data?.error || "Greška prilikom brisanja proizvoda.",
+        message || "Greška prilikom brisanja proizvoda.",
       );
     }
   };
@@ -121,7 +124,7 @@ function MyProductsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {productsList.map((product) => (
+            {productsList.map((product: Product) => (
               <div
                 key={product.id}
                 onClick={() => navigate(`/products/${product.id}`)}
