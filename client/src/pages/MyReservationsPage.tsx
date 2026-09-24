@@ -4,48 +4,43 @@ import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import toast from "react-hot-toast";
 import { useFetch } from "../hooks/useFetch.js";
 import { useNavigate } from "react-router-dom";
+import type { Reservation } from "../types/index.js";
+import { RESERVATION_DEFAULT_IMAGE } from "../utils/categoryImages.js";
+import axios from "axios";
 
-function ReservationsPage() {
+function MyReservationsPage() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [status, setStatus] = useState("");
-  const [city, setCity] = useState("");
+  const [businessName, setBusinessName] = useState("");
   const {
     data: reservationsList,
     loading,
     refetch,
-  } = useFetch("/reservations/store", "reservations", {
+  } = useFetch<Reservation>("/reservations/mine", "reservations", {
     name,
     status,
-    city,
+    business_name: businessName,
   });
 
-  const handleAccept = async (reservationId) => {
+  const handleCancellation = async (reservationId: number) => {
     try {
-      const response = await api.patch(`/reservations/${reservationId}/accept`);
+      const response = await api.patch(`/reservations/${reservationId}/cancel`);
       toast.success(response.data.message);
       refetch();
     } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.error || "Greška prilikom akcije.");
-    }
-  };
-
-  const handleReject = async (reservationId) => {
-    try {
-      const response = await api.patch(`/reservations/${reservationId}/reject`);
-      toast.success(response.data.message);
-      refetch();
-    } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.error || "Greška prilikom akcije.");
+      console.error("Error canceling reservation:", err);
+      const message = axios.isAxiosError(err) ? err.response?.data?.error : null
+      toast.error(message || "Greška prilikom akcije.");
     }
   };
 
   if (loading) {
     return <LoadingSpinner />;
   }
-  const hasActiveFilters = name || status || city;
+
+  const hasActiveFilters = name || status || businessName;
+
   return (
     <div className="max-w-5xl mx-auto">
       <h2 className="text-2xl font-semibold mb-6">Moje Rezervacije</h2>
@@ -53,16 +48,16 @@ function ReservationsPage() {
       <div className="flex gap-4 mb-6">
         <input
           type="text"
-          placeholder="Pretraga po imenu"
+          placeholder="Pretraga po imenu proizvoda"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2"
         />
         <input
           type="text"
-          placeholder="Pretraga po gradu"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
+          placeholder="Pretraga po prodavnici"
+          value={businessName}
+          onChange={(e) => setBusinessName(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2"
         />
         <select
@@ -86,12 +81,12 @@ function ReservationsPage() {
           <h3 className="text-xl font-semibold text-gray-800 mb-2">
             {hasActiveFilters
               ? "Nema rezultata"
-              : "Nemate još nijednu rezervaciju"}
+              : "Niste kreirali još nijednu rezervaciju"}
           </h3>
           <p className="text-gray-500 mb-6">
             {hasActiveFilters
               ? "Pokušajte promijeniti ili ukloniti filtere."
-              : "Kada restoran rezerviše neki od vaših proizvoda, rezervacija će se pojaviti ovdje."}
+              : "Kada budete napravili rezervaciju, ona će se pojaviti ovdje."}
           </p>
         </div>
       ) : (
@@ -104,7 +99,7 @@ function ReservationsPage() {
             >
               <div className="relative h-32">
                 <img
-                  src="https://st2.depositphotos.com/1734074/8285/v/450/depositphotos_82857018-stock-illustration-paper-bag-full-of-food.jpg"
+                  src={RESERVATION_DEFAULT_IMAGE}
                   alt={reservation.product_name}
                   className="w-1/4 h-full object-cover mx-auto"
                 />
@@ -135,7 +130,7 @@ function ReservationsPage() {
                   </div>
 
                   <div className="flex justify-between">
-                    <span className="text-blue-500">Kupac</span>
+                    <span className="text-blue-500">Prodavac</span>
                     <span className="font-medium text-gray-700">
                       {reservation.business_name}
                     </span>
@@ -155,28 +150,16 @@ function ReservationsPage() {
                     </span>
                   </div>
                 </div>
-
                 {reservation.status === "Pending" && (
-                  <div className="mt-auto flex gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAccept(reservation.id);
-                      }}
-                      className="flex-1 bg-green-100 cursor-pointer hover:bg-green-200 transition-colors text-green-700 font-medium py-2 rounded-lg"
-                    >
-                      Prihvati
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleReject(reservation.id);
-                      }}
-                      className="flex-1 bg-red-100 cursor-pointer hover:bg-red-200 transition-colors text-red-700 font-medium py-2 rounded-lg"
-                    >
-                      Odbij
-                    </button>
-                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancellation(reservation.id);
+                    }}
+                    className="mt-auto w-full bg-red-100 cursor-pointer hover:bg-red-200 transition-colors text-red-700 font-medium py-2 rounded-lg"
+                  >
+                    Otkazi rezervaciju
+                  </button>
                 )}
               </div>
             </div>
@@ -187,4 +170,4 @@ function ReservationsPage() {
   );
 }
 
-export default ReservationsPage;
+export default MyReservationsPage;

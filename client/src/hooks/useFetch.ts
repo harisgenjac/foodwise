@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios.js';
 
-export function useFetch(url, dataKey, params) {
-  const [data, setData] = useState([]);
+export function useFetch<T>(
+  url: string,
+  dataKey: string,
+  params: Record<string, string | number>
+) {
+  const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {

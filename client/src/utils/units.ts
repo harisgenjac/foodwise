@@ -1,4 +1,4 @@
-export const UNIT_LABELS = {
+export const UNIT_LABELS: Record<string, string> = {
   kg: 'kilogram (kg)',
   g: 'gram (g)',
   l: 'litar (l)',

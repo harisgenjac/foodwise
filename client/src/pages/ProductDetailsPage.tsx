@@ -7,23 +7,26 @@ import { UNIT_LABELS } from "../utils/units.js";
 import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import toast from "react-hot-toast";
+import type { Product } from "../types/index.js";
+import axios from "axios";
 
 function ProductDetailsPage() {
   const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [reservationQuantity, setReservationQuantity] = useState("");
   const [pickupDate, setPickupDate] = useState("");
-  const [product, setProduct] = useState(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const fetchProduct = async () => {
     try {
       const response = await api.get("/products/" + id);
-      setProduct(response.data.product);
+      const data: Product = response.data.product;
+      setProduct(data);
     } catch (err) {
       console.error("Error fetching product:", err);
     } finally {
@@ -38,16 +41,17 @@ function ProductDetailsPage() {
       navigate("/my-products");
     } catch (err) {
       console.error(err);
-      toast.error(
-        err.response?.data?.error || "Greška prilikom brisanja proizvoda.",
-      );
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error
+        : null;
+      toast.error(message || "Greška prilikom brisanja proizvoda.");
     }
   };
 
   const handleReservation = async () => {
     try {
       await api.post("/reservations", {
-        product_id: selectedProduct.id,
+        product_id: selectedProduct!.id,
         quantity: reservationQuantity,
         pickup_date: pickupDate,
       });
@@ -58,7 +62,10 @@ function ProductDetailsPage() {
       fetchProduct();
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.error || "Greška prilikom akcije.");
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error
+        : null;
+      toast.error(message || "Greška prilikom akcije.");
     }
   };
 
@@ -126,9 +133,7 @@ function ProductDetailsPage() {
             </div>
             <div>
               <p className="text-xs text-gray-400 mb-1">Grad</p>
-              <p className="font-semibold text-gray-800">
-                {product.city}
-              </p>
+              <p className="font-semibold text-gray-800">{product.city}</p>
             </div>
             <div>
               <p className="text-xs text-gray-400 mb-1">Dostupna količina</p>

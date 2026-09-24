@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import api from "../api/axios.js";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { CATEGORY_LABELS } from "../utils/categories.js";
 import { UNIT_LABELS } from "../utils/units.js";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import type { Product } from "../types/index.js";
 
 function EditProductPage() {
   const { id } = useParams();
@@ -22,7 +24,7 @@ function EditProductPage() {
   const fetchProducts = async () => {
     try {
       const response = await api.get("/products/" + id);
-      const data = response.data.product;
+      const data: Product = response.data.product;
       setName(data.name);
       setDescription(data.description);
       setCategory(data.category);
@@ -40,7 +42,7 @@ function EditProductPage() {
     fetchProducts();
   }, [id]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (
       !name ||
@@ -70,7 +72,8 @@ function EditProductPage() {
       navigate("/my-products");
     } catch (err) {
       setError("Greška prilikom dodavanja proizvoda. Molimo pokušajte ponovo.");
-      toast.error(err.response?.data?.error || "Greška prilikom akcije.")
+      const message = axios.isAxiosError(err) ? err.response?.data?.error : null
+      toast.error(message || "Greška prilikom akcije.")
     }
   };
 

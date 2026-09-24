@@ -1,4 +1,4 @@
-export const CATEGORY_IMAGES = {
+export const CATEGORY_IMAGES: Record<string, string> = {
   Meat: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=800',
   Dairy: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=800',
   Vegetables: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800',

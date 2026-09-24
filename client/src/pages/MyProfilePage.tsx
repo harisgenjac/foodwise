@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../api/axios.js";
+import type { User } from "../types/index.js";
+import axios from "axios";
 
 function MyProfilePage() {
   const [email, setEmail] = useState("");
@@ -14,15 +16,15 @@ function MyProfilePage() {
   const [pickupHours, setPickupHours] = useState("");
   const [description, setDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
-  const [logoFile, setLogoFile] = useState(null);
-  const [logoPreview, setLogoPreview] = useState(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const fetchProfile = async () => {
     try {
       const response = await api.get("/users/me");
-      const data = response.data.user;
+      const data: User = response.data.user;
       setEmail(data.email);
       setRole(data.role);
       setFirstName(data.first_name);
@@ -44,8 +46,8 @@ function MyProfilePage() {
     fetchProfile();
   }, []);
 
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       setLogoFile(file);
       setLogoPreview(URL.createObjectURL(file));
@@ -68,13 +70,14 @@ function MyProfilePage() {
       document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.error || "Greška prilikom uploada slike.");
+      const message = axios.isAxiosError(err) ? err.response?.data?.error : null
+      setError(message || "Greška prilikom uploada slike.");
       setSuccess("");
       document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       await api.put("/users/me", {
@@ -93,8 +96,9 @@ function MyProfilePage() {
       document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       console.error("Error updating user:", err);
+      const message = axios.isAxiosError(err) ? err.response?.data?.error : null
       setError(
-        err.response?.data?.error || "Greška prilikom ažuriranja profila.",
+        message || "Greška prilikom ažuriranja profila.",
       );
       setSuccess("");
       document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });

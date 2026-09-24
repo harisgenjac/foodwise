@@ -1,11 +1,13 @@
 import { useState } from "react";
 import api from "../api/axios.js";
+import axios from "axios";
 import { CATEGORY_LABELS } from "../utils/categories.js";
 import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import toast from "react-hot-toast";
 import { useFetch } from "../hooks/useFetch.js";
 import { useNavigate } from "react-router-dom";
+import type { Product } from "../types/index.js";
 
 function BrowseProductsPage() {
   const navigate = useNavigate();
@@ -13,14 +15,14 @@ function BrowseProductsPage() {
   const [maxPrice, setMaxPrice] = useState("");
   const [name, setName] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [reservationQuantity, setReservationQuantity] = useState("");
   const [pickupDate, setPickupDate] = useState("");
   const {
     data: productsList,
     loading,
     refetch,
-  } = useFetch("/products", "products", {
+  } = useFetch<Product>("/products", "products", {
     category,
     maxPrice,
     name,
@@ -30,7 +32,7 @@ function BrowseProductsPage() {
   const handleReservation = async () => {
     try {
       await api.post("/reservations", {
-        product_id: selectedProduct.id,
+        product_id: selectedProduct!.id,
         quantity: reservationQuantity,
         pickup_date: pickupDate,
       });
@@ -41,7 +43,10 @@ function BrowseProductsPage() {
       refetch();
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.error || "Greška prilikom akcije.");
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error
+        : null;
+      toast.error(message || "Greška prilikom akcije.");
     }
   };
 
@@ -49,7 +54,9 @@ function BrowseProductsPage() {
     return <LoadingSpinner />;
   }
 
-  const visibleProducts = productsList.filter((p) => p.available_quantity > 0);
+  const visibleProducts = productsList.filter(
+    (p) => parseFloat(p.available_quantity || "0") > 0,
+  );
   const hasActiveFilters = name || category || maxPrice || expiryWithinDays;
 
   return (
@@ -136,7 +143,9 @@ function BrowseProductsPage() {
 
                 <div className="p-4 flex flex-col gap-3 flex-1">
                   <div>
-                    <p className="text-xs text-gray-400">{product.business_name} - {product.city}</p>
+                    <p className="text-xs text-gray-400">
+                      {product.business_name} - {product.city}
+                    </p>
                     <h3 className="text-lg font-bold text-gray-800">
                       {product.name}
                     </h3>

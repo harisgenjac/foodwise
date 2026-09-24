@@ -4,39 +4,57 @@ import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import toast from "react-hot-toast";
 import { useFetch } from "../hooks/useFetch.js";
 import { useNavigate } from "react-router-dom";
+import type { Reservation } from "../types/index.js";
+import axios from "axios";
+import { RESERVATION_DEFAULT_IMAGE } from "../utils/categoryImages.js";
 
-function MyReservationsPage() {
+function ReservationsPage() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [status, setStatus] = useState("");
-  const [businessName, setBusinessName] = useState("");
+  const [city, setCity] = useState("");
   const {
     data: reservationsList,
     loading,
     refetch,
-  } = useFetch("/reservations/mine", "reservations", {
+  } = useFetch<Reservation>("/reservations/store", "reservations", {
     name,
     status,
-    business_name: businessName,
+    city,
   });
 
-  const handleCancellation = async (reservationId) => {
+  const handleAccept = async (reservationId: number) => {
     try {
-      const response = await api.patch(`/reservations/${reservationId}/cancel`);
+      const response = await api.patch(`/reservations/${reservationId}/accept`);
       toast.success(response.data.message);
       refetch();
     } catch (err) {
-      console.error("Error canceling reservation:", err);
-      toast.error(err.response?.data?.error || "Greška prilikom akcije.");
+      console.error(err);
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error
+        : null;
+      toast.error(message || "Greška prilikom akcije.");
+    }
+  };
+
+  const handleReject = async (reservationId: number) => {
+    try {
+      const response = await api.patch(`/reservations/${reservationId}/reject`);
+      toast.success(response.data.message);
+      refetch();
+    } catch (err) {
+      console.error(err);
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error
+        : null;
+      toast.error(message || "Greška prilikom akcije.");
     }
   };
 
   if (loading) {
     return <LoadingSpinner />;
   }
-
-  const hasActiveFilters = name || status || businessName;
-
+  const hasActiveFilters = name || status || city;
   return (
     <div className="max-w-5xl mx-auto">
       <h2 className="text-2xl font-semibold mb-6">Moje Rezervacije</h2>
@@ -44,16 +62,16 @@ function MyReservationsPage() {
       <div className="flex gap-4 mb-6">
         <input
           type="text"
-          placeholder="Pretraga po imenu proizvoda"
+          placeholder="Pretraga po imenu"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2"
         />
         <input
           type="text"
-          placeholder="Pretraga po prodavnici"
-          value={businessName}
-          onChange={(e) => setBusinessName(e.target.value)}
+          placeholder="Pretraga po gradu"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2"
         />
         <select
@@ -77,12 +95,12 @@ function MyReservationsPage() {
           <h3 className="text-xl font-semibold text-gray-800 mb-2">
             {hasActiveFilters
               ? "Nema rezultata"
-              : "Niste kreirali još nijednu rezervaciju"}
+              : "Nemate još nijednu rezervaciju"}
           </h3>
           <p className="text-gray-500 mb-6">
             {hasActiveFilters
               ? "Pokušajte promijeniti ili ukloniti filtere."
-              : "Kada budete napravili rezervaciju, ona će se pojaviti ovdje."}
+              : "Kada restoran rezerviše neki od vaših proizvoda, rezervacija će se pojaviti ovdje."}
           </p>
         </div>
       ) : (
@@ -95,7 +113,7 @@ function MyReservationsPage() {
             >
               <div className="relative h-32">
                 <img
-                  src="https://st2.depositphotos.com/1734074/8285/v/450/depositphotos_82857018-stock-illustration-paper-bag-full-of-food.jpg"
+                  src={RESERVATION_DEFAULT_IMAGE}
                   alt={reservation.product_name}
                   className="w-1/4 h-full object-cover mx-auto"
                 />
@@ -126,7 +144,7 @@ function MyReservationsPage() {
                   </div>
 
                   <div className="flex justify-between">
-                    <span className="text-blue-500">Prodavac</span>
+                    <span className="text-blue-500">Kupac</span>
                     <span className="font-medium text-gray-700">
                       {reservation.business_name}
                     </span>
@@ -146,16 +164,28 @@ function MyReservationsPage() {
                     </span>
                   </div>
                 </div>
+
                 {reservation.status === "Pending" && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCancellation(reservation.id);
-                    }}
-                    className="mt-auto w-full bg-red-100 cursor-pointer hover:bg-red-200 transition-colors text-red-700 font-medium py-2 rounded-lg"
-                  >
-                    Otkazi rezervaciju
-                  </button>
+                  <div className="mt-auto flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAccept(reservation.id);
+                      }}
+                      className="flex-1 bg-green-100 cursor-pointer hover:bg-green-200 transition-colors text-green-700 font-medium py-2 rounded-lg"
+                    >
+                      Prihvati
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReject(reservation.id);
+                      }}
+                      className="flex-1 bg-red-100 cursor-pointer hover:bg-red-200 transition-colors text-red-700 font-medium py-2 rounded-lg"
+                    >
+                      Odbij
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -166,4 +196,4 @@ function MyReservationsPage() {
   );
 }
 
-export default MyReservationsPage;
+export default ReservationsPage;

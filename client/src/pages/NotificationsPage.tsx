@@ -1,10 +1,11 @@
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import { useNotifications } from "../hooks/useNotifications.js";
+import type { Notification } from "../hooks/useNotifications.js";
 
 function NotificationsPage() {
   const { notifications, markAsRead, loading } = useNotifications();
 
-  const handleNotificationClick = async (notification) => {
+  const handleNotificationClick = async (notification: Notification) => {
     markAsRead(notification);
   };
 

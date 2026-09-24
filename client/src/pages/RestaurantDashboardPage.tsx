@@ -2,18 +2,20 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios.js";
 import { CATEGORY_LABELS } from "../utils/categories.js";
-import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
+import { CATEGORY_IMAGES, RESERVATION_DEFAULT_IMAGE } from "../utils/categoryImages.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
+import type { Reservation, Product } from "../types/index.js";
 
 const RestaurantDashboardPage = () => {
-  const [productsList, setProductsList] = useState([]);
-  const [reservationsList, setReservationsList] = useState([]);
+  const [productsList, setProductsList] = useState<Product[]>([]);
+  const [reservationsList, setReservationsList] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProducts = async () => {
     try {
       const response = await api.get("/products");
-      setProductsList(response.data.products);
+      const data: Product[] = response.data.products
+      setProductsList(data);
     } catch (err) {
       console.error("Error fetching products:", err);
     }
@@ -22,7 +24,8 @@ const RestaurantDashboardPage = () => {
   const fetchReservations = async () => {
     try {
       const response = await api.get("/reservations/mine");
-      setReservationsList(response.data.reservations);
+      const data: Reservation[] = response.data.reservations
+      setReservationsList(data);
     } catch (err) {
       console.error("Error fetching reservations:", err);
     }
@@ -151,7 +154,7 @@ const RestaurantDashboardPage = () => {
             >
               <div className="relative h-32">
                 <img
-                  src="https://st2.depositphotos.com/1734074/8285/v/450/depositphotos_82857018-stock-illustration-paper-bag-full-of-food.jpg"
+                  src={RESERVATION_DEFAULT_IMAGE}
                   alt={reservation.product_name}
                   className="w-1/4 h-full object-cover mx-auto"
                 />

@@ -9,14 +9,24 @@ import {
   CATEGORY_IMAGES,
   RESERVATION_DEFAULT_IMAGE,
 } from "../utils/categoryImages.js";
+import type { Product, Reservation, User, Favorites } from "../types/index.js";
+import axios from "axios";
+
+interface StoreStats {
+  sold_articles: string;
+  successful_reservations: string;
+}
+interface MyReservationsCount {
+  my_reservations_count: string;
+}
 
 function StoreDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [store, setStore] = useState(null);
-  const [products, setProducts] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [myReservations, setMyReservations] = useState(null);
+  const [store, setStore] = useState<User | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [stats, setStats] = useState<StoreStats | null>(null);
+  const [myReservations, setMyReservations] = useState<MyReservationsCount | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState("products");
@@ -25,10 +35,14 @@ function StoreDetailsPage() {
   const fetchStoreDetails = async () => {
     try {
       const response = await api.get(`/users/stores/${id}`);
-      setStore(response.data.store);
-      setProducts(response.data.products);
-      setStats(response.data.stats);
-      setMyReservations(response.data.myReservations);
+      const storeData: User = response.data.store
+      const productsData: Product[] = response.data.products
+      const reservationsData: MyReservationsCount = response.data.myReservations;
+      const statsData: StoreStats = response.data.stats
+      setStore(storeData);
+      setProducts(productsData);
+      setStats(statsData);
+      setMyReservations(reservationsData);
     } catch (err) {
       console.error(err);
     } finally {
@@ -39,7 +53,7 @@ function StoreDetailsPage() {
   const fetchFavorites = async () => {
     try {
       const response = await api.get("/favorites");
-      setIsFavorite(response.data.favorites.some((f) => f.id === parseInt(id)));
+      setIsFavorite(response.data.favorites.some((f: Favorites) => f.id === parseInt(id!)));
     } catch (error) {
       console.error(error);
     }
@@ -52,7 +66,10 @@ function StoreDetailsPage() {
       toast.success("Prodavnica uspješno dodana u omiljene.");
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.error || "Greška prilikom akcije.");
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error
+        : null;
+      toast.error(message || "Greška prilikom akcije.");
     }
   };
 
@@ -63,7 +80,10 @@ function StoreDetailsPage() {
       toast.success("Prodavnica izbrisana iz omiljenih.");
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.error || "Greška prilikom akcije.");
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error
+        : null;
+      toast.error(message || "Greška prilikom akcije.");
     }
   };
 
@@ -72,12 +92,11 @@ function StoreDetailsPage() {
     fetchFavorites();
   }, [id]);
 
-  // Poseban hook SAMO za "Moje rezervacije" tab, sa filterom po statusu
-  const { data: reservationsList, loading: reservationsLoading } = useFetch(
+  const { data: reservationsList, loading: reservationsLoading } = useFetch<Reservation>(
     "/reservations/mine",
     "reservations",
     {
-      store_id: id,
+      store_id: id!,
       status: reservationStatus,
     },
   );
@@ -86,13 +105,13 @@ function StoreDetailsPage() {
     return <LoadingSpinner />;
   }
 
-  if (!store) {
-    return (
-      <div className="max-w-3xl mx-auto text-center py-20">
-        <p className="text-gray-500">Prodavnica nije pronađena.</p>
-      </div>
-    );
-  }
+  if (!store || !stats || !myReservations) {
+  return (
+    <div className="max-w-3xl mx-auto text-center py-20">
+      <p className="text-gray-500">Prodavnica nije pronađena.</p>
+    </div>
+  );
+}
 
   return (
     <div className="max-w-4xl mx-auto pb-16">
@@ -104,7 +123,7 @@ function StoreDetailsPage() {
       </button>
 
       <div className="bg-white rounded-2xl shadow overflow-hidden md:flex mb-8">
-        <div className="w-full md:w-2/5 h-48 md:h-auto bg-gradient-to-br from-emerald-700 via-teal-800 to-gray-900 flex items-center justify-center shrink-0 overflow-hidden">
+        <div className="w-full md:w-2/5 h-48 md:h-auto bg-linear-to-br from-emerald-700 via-teal-800 to-gray-900 flex items-center justify-center shrink-0 overflow-hidden">
           {store.logo_url ? (
             <img
               src={`http://localhost:3000${store.logo_url}`}

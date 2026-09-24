@@ -1,8 +1,16 @@
 import { useState, useEffect } from "react";
 import api from "../api/axios.js";
 
+export interface Notification {
+  id: number;
+  user_id: number;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
+
 export function useNotifications() {
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -18,7 +26,7 @@ export function useNotifications() {
     }
   };
 
-  const markAsRead = async (notification) => {
+  const markAsRead = async (notification: Notification) => {
     if (!notification.is_read) {
       try {
         await api.patch(`/notifications/${notification.id}/read`);
