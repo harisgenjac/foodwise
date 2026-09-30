@@ -1,10 +1,9 @@
 import { useState } from "react";
 import api from "../api/axios.js";
-import axios from 'axios';
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { CATEGORY_LABELS } from "../utils/categories.js";
-import { UNIT_LABELS } from "../utils/units.js";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 function AddProductPage() {
   const navigate = useNavigate();
@@ -17,6 +16,12 @@ function AddProductPage() {
   const [unit, setUnit] = useState("");
   const [expiry_date, setExpiryDate] = useState("");
   const [error, setError] = useState("");
+  const { t } = useTranslation();
+  const categories = t("categories", { returnObjects: true }) as Record<
+    string,
+    string
+  >;
+  const units = t("units", { returnObjects: true }) as Record<string, string>;
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -30,7 +35,7 @@ function AddProductPage() {
       !unit ||
       !expiry_date
     ) {
-      setError("Molimo popunite sva polja.");
+      setError(t("product.fillAllFields"));
       return;
     }
     try {
@@ -44,17 +49,14 @@ function AddProductPage() {
         unit,
         expiry_date,
       });
-      toast.success("Proizvod uspješno kreiran.");
+      toast.success(t("product.addedSuccess"));
       navigate("/dashboard");
     } catch (err) {
-      setError("Greška prilikom dodavanja proizvoda. Molimo pokušajte ponovo.");
+      setError(t("product.addError"));
       const message = axios.isAxiosError(err)
         ? err.response?.data?.error
         : null;
-      toast.error(
-        message ||
-          "Greška prilikom dodavanja proizvoda. Molimo pokušajte ponovo.",
-      );
+      toast.error(message || t("product.addError"));
     }
   };
 
@@ -63,7 +65,7 @@ function AddProductPage() {
 
   return (
     <div className="max-w-md mx-auto bg-white rounded-xl shadow p-6">
-      <h1 className="text-2xl font-bold mb-6">Dodaj proizvod</h1>
+      <h1 className="text-2xl font-bold mb-6">{t("product.addTitle")}</h1>
 
       {error && (
         <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
@@ -74,39 +76,45 @@ function AddProductPage() {
       <form onSubmit={handleSubmit}>
         <div className="mb-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Naziv proizvoda
+            {t("product.name")}
           </label>
           <input
             type="text"
-            placeholder="Naziv proizvoda"
+            placeholder={t("product.name")}
             value={name}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setName(e.target.value)
+            }
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
           />
         </div>
         <div className="mb-0">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Opis
+            {t("product.description")}
           </label>
           <input
             type="text"
-            placeholder="Opis proizvoda"
+            placeholder={t("product.description")}
             value={description}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDescription(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setDescription(e.target.value)
+            }
             className={inputStyle}
           />
         </div>
         <div className="mb-0">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Kategorija
+            {t("product.category")}
           </label>
           <select
             value={category}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setCategory(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              setCategory(e.target.value)
+            }
             className={inputStyle}
           >
-            <option value="">-- Odaberite kategoriju --</option>
-            {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+            <option value="">{t("product.selectCategory")}</option>
+            {Object.entries(categories).map(([key, label]) => (
               <option key={key} value={key}>
                 {label}
               </option>
@@ -115,51 +123,59 @@ function AddProductPage() {
         </div>
         <div className="mb-0">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Originalna cijena
+            {t("product.originalPrice")}
           </label>
           <input
             type="number"
-            placeholder="Originalna cijena"
+            placeholder={t("product.originalPrice")}
             value={original_price}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOriginalPrice(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setOriginalPrice(e.target.value)
+            }
             className={inputStyle}
           />
         </div>
         <div className="mb-0">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Snižena cijena
+            {t("product.discountedPrice")}
           </label>
           <input
             type="number"
-            placeholder="Snižena cijena"
+            placeholder={t("product.discountedPrice")}
             value={discounted_price}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDiscountedPrice(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setDiscountedPrice(e.target.value)
+            }
             className={inputStyle}
           />
         </div>
         <div className="mb-0">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Količina
+            {t("product.quantity")}
           </label>
           <input
             type="number"
-            placeholder="Količina"
+            placeholder={t("product.quantity")}
             value={quantity}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuantity(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setQuantity(e.target.value)
+            }
             className={inputStyle}
           />
         </div>
         <div className="mb-0">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Jedinica mjere
+            {t("product.unit")}
           </label>
           <select
             value={unit}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setUnit(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              setUnit(e.target.value)
+            }
             className={inputStyle}
           >
-            <option value="">-- Odaberite jedinicu --</option>
-            {Object.entries(UNIT_LABELS).map(([key, label]) => (
+            <option value="">{t("product.selectUnit")}</option>
+            {Object.entries(units).map(([key, label]) => (
               <option key={key} value={key}>
                 {label}
               </option>
@@ -168,12 +184,14 @@ function AddProductPage() {
         </div>
         <div className="mb-0">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Datum isteka
+            {t("product.expiryDate")}
           </label>
           <input
             type="date"
             value={expiry_date}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setExpiryDate(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setExpiryDate(e.target.value)
+            }
             className={inputStyle}
           />
         </div>
@@ -181,7 +199,7 @@ function AddProductPage() {
           type="submit"
           className="w-full bg-orange-500 hover:bg-orange-600 transition-colors text-white font-medium py-2 rounded-lg"
         >
-          Dodaj proizvod
+          {t("product.addButton")}
         </button>
       </form>
     </div>

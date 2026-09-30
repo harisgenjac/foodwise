@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import type { Favorites } from "../types/index.js";
 import type { User } from "../types/index.js";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 
 function StoresPage() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ function StoresPage() {
   const [businessName, setBusinessName] = useState("");
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const { t } = useTranslation();
   const {
     data: storesList,
     loading,
@@ -38,7 +40,7 @@ function StoresPage() {
         store_id: storeId,
       });
       fetchFavorites();
-      toast.success("Prodavnica uspješno dodana u omiljene.");
+      toast.success(t("store.addFavoriteSucces"));
     } catch (err) {
       console.error(err);
       const message = axios.isAxiosError(err)
@@ -46,7 +48,7 @@ function StoresPage() {
         : null;
       toast.error(
         message ||
-          "Greška prilikom dodavanja prodavnice u omiljene.",
+          t("store.addFavoriteError"),
       );
     }
   };
@@ -55,7 +57,7 @@ function StoresPage() {
     try {
       await api.delete(`/favorites/${storeId}`);
       fetchFavorites();
-      toast.success("Prodavnica izbrisana iz omiljenih");
+      toast.success(t("store.deleteFavoriteSucces"));
     } catch (err) {
       console.error(err);
       const message = axios.isAxiosError(err)
@@ -63,7 +65,7 @@ function StoresPage() {
         : null;
       toast.error(
         message ||
-          "Greška prilikom brisanja prodavnice iz omiljenih.",
+          t("store.deleteFavoriteError"),
       );
     }
   };
@@ -83,18 +85,18 @@ function StoresPage() {
   return (
     <div className="pb-16">
       <div className="max-w-5xl mx-auto mb-20">
-        <h2 className="text-2xl font-semibold mb-6">Prodavnice</h2>
+        <h2 className="text-2xl font-semibold mb-6">{t("store.title")}</h2>
         <div className="flex gap-4 mb-6">
           <input
             type="text"
-            placeholder="Pretraga po gradu"
+            placeholder={t("filters.searchByCity")}
             value={city}
             onChange={(e) => setCity(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2"
           />
           <input
             type="text"
-            placeholder="Pretraga po imenu prodavnice"
+            placeholder={t("filters.searchByStore")}
             value={businessName}
             onChange={(e) => setBusinessName(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2"
@@ -107,7 +109,7 @@ function StoresPage() {
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            ⭐ Samo omiljene
+            ⭐ {t("store.onlyFavorites")}
           </button>
         </div>
 
@@ -118,13 +120,13 @@ function StoresPage() {
             </div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
               {hasActiveFilters
-                ? "Nema rezultata"
-                : "Još nijedna prodavnica nije registrovana"}
+                ? t("store.noResultsTitle")
+                : t("store.noStoresTitle")}
             </h3>
             <p className="text-gray-500 mb-6">
               {hasActiveFilters
-                ? "Pokušajte promijeniti ili ukloniti filtere."
-                : "Kada bude registrovana prodavnica, ovdje će biti prikazana."}
+                ? t("store.noResultsSubtitle")
+                : t("store.noStoresSubtitle")}
             </p>
           </div>
         ) : (
@@ -164,19 +166,19 @@ function StoresPage() {
 
                   <div className="border-t border-gray-100 pt-3 flex flex-col gap-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-blue-500">Adresa</span>
+                      <span className="text-blue-500">{t("user.address")}</span>
                       <span className="font-medium text-gray-700 text-right">
                         {store.address || "—"}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-blue-500">Radno vrijeme</span>
+                      <span className="text-blue-500">{t("user.workingHours")}</span>
                       <span className="font-medium text-gray-700 text-right">
                         {store.opening_hours || "—"}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-blue-500">Telefon</span>
+                      <span className="text-blue-500">{t("user.phone")}</span>
                       <span className="font-medium text-gray-700 text-right">
                         {store.phone || "—"}
                       </span>
@@ -189,7 +191,7 @@ function StoresPage() {
                       onClick={(e) => e.stopPropagation()}
                       className="flex-1 text-center bg-orange-100 hover:bg-orange-200 transition-colors text-gray-800 font-medium py-2 rounded-lg"
                     >
-                      Detalji
+                      {t("store.detailsButton")}
                     </Link>
                     {favoriteIds.includes(store.id) ? (
                       <button
@@ -199,7 +201,7 @@ function StoresPage() {
                         }}
                         className="flex-1 bg-red-100 hover:bg-red-200 transition-colors text-red-700 font-medium py-2 rounded-lg cursor-pointer"
                       >
-                        ★ Ukloni
+                        ★ {t("store.removeFromFavButton")}
                       </button>
                     ) : (
                       <button
@@ -209,7 +211,7 @@ function StoresPage() {
                         }}
                         className="flex-1 bg-gray-100 hover:bg-gray-200 transition-colors text-gray-700 font-medium py-2 rounded-lg cursor-pointer"
                       >
-                        ☆ Dodaj
+                        ☆ {t("store.addToFavButton")}
                       </button>
                     )}
                   </div>

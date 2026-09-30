@@ -1,28 +1,44 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import logo from "../assets/logoApp.png";
 import { useNotifications } from "../hooks/useNotifications.js";
-
-interface Notification {
-  id: number;
-  user_id: number;
-  message: string;
-  is_read: boolean;
-  created_at: string;
-}
+import type { Notification } from "../hooks/useNotifications.js";
+import LanguageSwitcher from "./LanguageSwitcher.js";
 
 interface HeaderProps {
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
 }
 
+interface Language {
+  code: string;
+  label: string;
+  flag: string;
+}
+
+const LANGUAGES: Language[] = [
+  { code: "bs", label: "Bosanski", flag: "https://flagcdn.com/24x18/ba.png" },
+  { code: "en", label: "English", flag: "https://flagcdn.com/24x18/gb.png" },
+];
+
 function Header({ isSidebarOpen, onToggleSidebar }: HeaderProps) {
   const { user, logout } = useAuth();
+  const { t, i18n } = useTranslation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isLangOpen, setIsLangOpen] = useState(false);
   const { notifications, unreadCount, markAsRead } = useNotifications();
   const navigate = useNavigate();
+
+  const currentLanguage =
+    LANGUAGES.find((lang) => lang.code === i18n.language) || LANGUAGES[0];
+
+  const handleLanguageChange = (code: string) => {
+    i18n.changeLanguage(code);
+    setIsLangOpen(false);
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -48,6 +64,8 @@ function Header({ isSidebarOpen, onToggleSidebar }: HeaderProps) {
         <span className="font-bold text-2xl">FoodWize</span>
       </div>
       <div className="flex items-center gap-2">
+        <LanguageSwitcher />
+
         <div className="relative">
           <button
             onClick={() => setIsNotifOpen(!isNotifOpen)}
@@ -77,14 +95,14 @@ function Header({ isSidebarOpen, onToggleSidebar }: HeaderProps) {
           {isNotifOpen && (
             <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
               <div className="p-3 border-b border-gray-200 font-semibold text-gray-700">
-                Notifikacije
+                {t("header.notificationsLabel")}
               </div>
               {notifications.length === 0 ? (
                 <p className="p-4 text-sm text-gray-500 text-center">
-                  Nemate notifikacija.
+                  {t("header.noNotifications")}
                 </p>
               ) : (
-                notifications.slice(0, 5).map((notification: Notification) => (
+                notifications.slice(0, 5).map((notification) => (
                   <button
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
@@ -107,7 +125,7 @@ function Header({ isSidebarOpen, onToggleSidebar }: HeaderProps) {
                 onClick={() => setIsNotifOpen(false)}
                 className="block text-center p-3 text-sm text-orange-600 font-medium hover:bg-gray-50 border-t border-gray-100"
               >
-                Vidi sve notifikacije
+                {t("header.viewAllNotifications")}
               </Link>
             </div>
           )}
@@ -137,13 +155,13 @@ function Header({ isSidebarOpen, onToggleSidebar }: HeaderProps) {
                 className="block px-4 py-2 hover:bg-gray-100"
                 onClick={() => setIsDropdownOpen(false)}
               >
-                My Profile
+                {t("sidebar.myProfile")}
               </Link>
               <button
                 onClick={handleLogout}
                 className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
               >
-                Logout
+                {t("header.logout")}
               </button>
             </div>
           )}

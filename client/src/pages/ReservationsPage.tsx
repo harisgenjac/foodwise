@@ -7,12 +7,17 @@ import { useNavigate } from "react-router-dom";
 import type { Reservation } from "../types/index.js";
 import axios from "axios";
 import { RESERVATION_DEFAULT_IMAGE } from "../utils/categoryImages.js";
+import { useTranslation } from "react-i18next";
 
 function ReservationsPage() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [status, setStatus] = useState("");
   const [city, setCity] = useState("");
+  const { t } = useTranslation();
+  const reservationStatuses = t("reservationStatus", {
+    returnObjects: true,
+  }) as Record<string, string>;
   const {
     data: reservationsList,
     loading,
@@ -33,7 +38,7 @@ function ReservationsPage() {
       const message = axios.isAxiosError(err)
         ? err.response?.data?.error
         : null;
-      toast.error(message || "Greška prilikom akcije.");
+      toast.error(message || t("reservations.actionError"));
     }
   };
 
@@ -47,7 +52,7 @@ function ReservationsPage() {
       const message = axios.isAxiosError(err)
         ? err.response?.data?.error
         : null;
-      toast.error(message || "Greška prilikom akcije.");
+      toast.error(message || t("reservations.actionError"));
     }
   };
 
@@ -57,19 +62,19 @@ function ReservationsPage() {
   const hasActiveFilters = name || status || city;
   return (
     <div className="max-w-5xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-6">Moje Rezervacije</h2>
+      <h2 className="text-2xl font-semibold mb-6">{t("reservations.title")}</h2>
 
       <div className="flex gap-4 mb-6">
         <input
           type="text"
-          placeholder="Pretraga po imenu"
+          placeholder={t("filters.searchByName")}
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2"
         />
         <input
           type="text"
-          placeholder="Pretraga po gradu"
+          placeholder={t("filters.searchByCity")}
           value={city}
           onChange={(e) => setCity(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2"
@@ -79,11 +84,11 @@ function ReservationsPage() {
           onChange={(e) => setStatus(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2"
         >
-          <option value="">-- Status rezervacije --</option>
-          <option value="Pending">Na čekanju</option>
-          <option value="Confirmed">Potvrđene</option>
-          <option value="Completed">Završene</option>
-          <option value="Cancelled">Otkazane</option>
+          <option value="">{t("filters.selectResStatus")}</option>
+          <option value="Pending">{t("reservationStatus.Pending")}</option>
+          <option value="Confirmed">{t("reservationStatus.Confirmed")}</option>
+          <option value="Completed">{t("reservationStatus.Completed")}</option>
+          <option value="Cancelled">{t("reservationStatus.Cancelled")}</option>
         </select>
       </div>
 
@@ -94,13 +99,13 @@ function ReservationsPage() {
           </div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">
             {hasActiveFilters
-              ? "Nema rezultata"
-              : "Nemate još nijednu rezervaciju"}
+              ? t("reservations.noResultsTitle")
+              : t("reservations.noReservationsTitle")}
           </h3>
           <p className="text-gray-500 mb-6">
             {hasActiveFilters
-              ? "Pokušajte promijeniti ili ukloniti filtere."
-              : "Kada restoran rezerviše neki od vaših proizvoda, rezervacija će se pojaviti ovdje."}
+              ? t("reservations.noResultsSubtitle")
+              : t("reservations.noReservationsSubtitle")}
           </p>
         </div>
       ) : (
@@ -118,7 +123,8 @@ function ReservationsPage() {
                   className="w-1/4 h-full object-cover mx-auto"
                 />
                 <span className="absolute top-3 right-3 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full">
-                  {reservation.status}
+                  {reservationStatuses[reservation.status] ||
+                    reservation.status}
                 </span>
               </div>
 
@@ -137,28 +143,34 @@ function ReservationsPage() {
 
                 <div className="border-t border-gray-100 pt-3 flex flex-col gap-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-blue-500">Količina</span>
+                    <span className="text-blue-500">
+                      {t("dashboard.quantity")}
+                    </span>
                     <span className="font-medium text-gray-700">
                       {reservation.quantity}
                     </span>
                   </div>
 
                   <div className="flex justify-between">
-                    <span className="text-blue-500">Kupac</span>
+                    <span className="text-blue-500">
+                      {t("reservations.buyer")}
+                    </span>
                     <span className="font-medium text-gray-700">
                       {reservation.business_name}
                     </span>
                   </div>
 
                   <div className="flex justify-between">
-                    <span className="text-blue-500">Grad</span>
+                    <span className="text-blue-500">{t("dashboard.city")}</span>
                     <span className="font-medium text-gray-700">
                       {reservation.city}
                     </span>
                   </div>
 
                   <div className="flex justify-between">
-                    <span className="text-blue-500">Preuzimanje</span>
+                    <span className="text-blue-500">
+                      {t("dashboard.pickupDate")}
+                    </span>
                     <span className="font-medium text-gray-700">
                       {new Date(reservation.pickup_date).toLocaleString()}
                     </span>
@@ -174,7 +186,7 @@ function ReservationsPage() {
                       }}
                       className="flex-1 bg-green-100 cursor-pointer hover:bg-green-200 transition-colors text-green-700 font-medium py-2 rounded-lg"
                     >
-                      Prihvati
+                      {t("reservations.acceptButton")}
                     </button>
                     <button
                       onClick={(e) => {
@@ -183,7 +195,7 @@ function ReservationsPage() {
                       }}
                       className="flex-1 bg-red-100 cursor-pointer hover:bg-red-200 transition-colors text-red-700 font-medium py-2 rounded-lg"
                     >
-                      Odbij
+                      {t("reservations.rejectButton")}
                     </button>
                   </div>
                 )}

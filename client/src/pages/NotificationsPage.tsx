@@ -1,9 +1,11 @@
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import { useNotifications } from "../hooks/useNotifications.js";
 import type { Notification } from "../hooks/useNotifications.js";
+import { useTranslation } from "react-i18next";
 
 function NotificationsPage() {
   const { notifications, markAsRead, loading } = useNotifications();
+  const { t } = useTranslation();
 
   const handleNotificationClick = async (notification: Notification) => {
     markAsRead(notification);
@@ -15,7 +17,7 @@ function NotificationsPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-6">Notifikacije</h2>
+      <h2 className="text-2xl font-semibold mb-6">{t("notifications.title")}</h2>
 
       {notifications.length === 0 ? (
         <div className="flex flex-col items-center text-center py-20">
@@ -23,10 +25,10 @@ function NotificationsPage() {
             🔔
           </div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">
-            Nemate notifikacija
+            {t("notifications.noNotificationsTitle")}
           </h3>
           <p className="text-gray-500">
-            Ovdje će se pojaviti obavijesti o vašim rezervacijama i proizvodima.
+           {t("notifications.noNotificationsSubtitle")}
           </p>
         </div>
       ) : (

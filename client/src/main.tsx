@@ -4,6 +4,7 @@ import "./index.css";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { Toaster } from "react-hot-toast";
+import './i18n/config.js';
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

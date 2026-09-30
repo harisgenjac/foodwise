@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../api/axios.js";
 import type { User } from "../types/index.js";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 
 function MyProfilePage() {
   const [email, setEmail] = useState("");
@@ -20,6 +21,7 @@ function MyProfilePage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const { t } = useTranslation();
 
   const fetchProfile = async () => {
     try {
@@ -65,13 +67,13 @@ function MyProfilePage() {
       });
       setLogoUrl(response.data.logo_url);
       setLogoFile(null);
-      setSuccess("Slika uspješno postavljena.");
+      setSuccess(t("user.addedLogoSuccess"));
       setError("");
       document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       console.error(err);
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null
-      setError(message || "Greška prilikom uploada slike.");
+      setError(message || t("user.uploadError"));
       setSuccess("");
       document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -91,14 +93,14 @@ function MyProfilePage() {
         pickup_hours: pickupHours,
         description,
       });
-      setSuccess("Profil uspješno ažuriran.");
+      setSuccess(t("user.editedSuccess"));
       setError("");
       document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       console.error("Error updating user:", err);
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null
       setError(
-        message || "Greška prilikom ažuriranja profila.",
+        message || t("user.editError"),
       );
       setSuccess("");
       document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
@@ -111,7 +113,7 @@ function MyProfilePage() {
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
-      <h1 className="text-2xl font-bold mb-6">Moj profil</h1>
+      <h1 className="text-2xl font-bold mb-6">{t("user.editTitle")}</h1>
 
       {error && (
         <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
@@ -137,7 +139,7 @@ function MyProfilePage() {
               <span className="text-s text-gray-400 text-center px-2">
                 📷
                 <br />
-                Dodaj logo
+                {t("user.addLogoTitle")}
               </span>
             )}
             <input
@@ -152,8 +154,7 @@ function MyProfilePage() {
             <span className="group relative inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-500 text-gray-100 text-xs font-bold cursor-help">
               i
               <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 rounded-lg bg-gray-800 text-white text-xs px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                Kvadratna slika, minimalno 200x200px. JPEG, PNG ili WEBP, do
-                5MB.
+                {t("user.tooltipLogoText")}
               </span>
             </span>
 
@@ -163,7 +164,7 @@ function MyProfilePage() {
                 onClick={handleLogoUpload}
                 className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg"
               >
-                Sačuvaj sliku
+                {t("user.saveImage")}
               </button>
             )}
           </div>
@@ -172,7 +173,7 @@ function MyProfilePage() {
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div>
-              <label className={labelStyle}>Email</label>
+              <label className={labelStyle}>{t("user.email")}</label>
               <input
                 type="email"
                 value={email}
@@ -181,16 +182,16 @@ function MyProfilePage() {
               />
             </div>
             <div>
-              <label className={labelStyle}>Uloga</label>
+              <label className={labelStyle}>{t("user.role")}</label>
               <input
                 type="text"
-                value={role === "STORE" ? "Prodavnica" : "Restoran"}
+                value={role === "STORE" ? t("user.storeRole") : t("user.restaurantRole")}
                 disabled
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-500 cursor-not-allowed"
               />
             </div>
             <div>
-              <label className={labelStyle}>Ime</label>
+              <label className={labelStyle}>{t("user.firstName")}</label>
               <input
                 type="text"
                 value={firstName}
@@ -199,7 +200,7 @@ function MyProfilePage() {
               />
             </div>
             <div>
-              <label className={labelStyle}>Prezime</label>
+              <label className={labelStyle}>{t("user.lastName")}</label>
               <input
                 type="text"
                 value={lastName}
@@ -209,7 +210,7 @@ function MyProfilePage() {
             </div>
 
             <div>
-              <label className={labelStyle}>Naziv biznisa</label>
+              <label className={labelStyle}>{t("user.businessName")}</label>
               <input
                 type="text"
                 value={businessName}
@@ -218,7 +219,7 @@ function MyProfilePage() {
               />
             </div>
             <div>
-              <label className={labelStyle}>Grad</label>
+              <label className={labelStyle}>{t("user.city")}</label>
               <input
                 type="text"
                 value={city}
@@ -227,7 +228,7 @@ function MyProfilePage() {
               />
             </div>
             <div>
-              <label className={labelStyle}>Telefon</label>
+              <label className={labelStyle}>{t("user.phone")}</label>
               <input
                 type="text"
                 value={phone}
@@ -236,7 +237,7 @@ function MyProfilePage() {
               />
             </div>
             <div>
-              <label className={labelStyle}>Adresa</label>
+              <label className={labelStyle}>{t("user.address")}</label>
               <input
                 type="text"
                 value={address}
@@ -246,7 +247,7 @@ function MyProfilePage() {
             </div>
 
             <div>
-              <label className={labelStyle}>Radno vrijeme</label>
+              <label className={labelStyle}>{t("user.workingHours")}</label>
               <input
                 type="text"
                 value={openingHours}
@@ -255,7 +256,7 @@ function MyProfilePage() {
               />
             </div>
             <div>
-              <label className={labelStyle}>Vrijeme preuzimanja</label>
+              <label className={labelStyle}>{t("user.pickupHours")}</label>
               <input
                 type="text"
                 value={pickupHours}
@@ -264,7 +265,7 @@ function MyProfilePage() {
               />
             </div>
             <div className="sm:col-span-2 lg:col-span-2">
-              <label className={labelStyle}>Opis</label>
+              <label className={labelStyle}>{t("user.description")}</label>
               <input
                 type="text"
                 value={description}
@@ -278,7 +279,7 @@ function MyProfilePage() {
             type="submit"
             className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 transition-colors text-white font-medium px-8 py-2 rounded-lg"
           >
-            Sačuvaj
+            {t("user.saveButton")}
           </button>
         </form>
       </div>

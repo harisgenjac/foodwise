@@ -1,13 +1,13 @@
 import { useState } from "react";
 import api from "../api/axios.js";
 import axios from "axios";
-import { CATEGORY_LABELS } from "../utils/categories.js";
 import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import toast from "react-hot-toast";
 import { useFetch } from "../hooks/useFetch.js";
 import { useNavigate } from "react-router-dom";
 import type { Product } from "../types/index.js";
+import { useTranslation } from "react-i18next";
 
 function BrowseProductsPage() {
   const navigate = useNavigate();
@@ -18,6 +18,16 @@ function BrowseProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [reservationQuantity, setReservationQuantity] = useState("");
   const [pickupDate, setPickupDate] = useState("");
+  const { t } = useTranslation();
+  const categories = t("categories", { returnObjects: true }) as Record<
+    string,
+    string
+  >;
+  const productStatuses = t("productStatus", { returnObjects: true }) as Record<
+    string,
+    string
+  >;
+  const units = t("units", { returnObjects: true }) as Record<string, string>;
   const {
     data: productsList,
     loading,
@@ -36,7 +46,7 @@ function BrowseProductsPage() {
         quantity: reservationQuantity,
         pickup_date: pickupDate,
       });
-      toast.success("Rezervacija uspješno kreirana.");
+      toast.success(t("myProducts.reservationCreated"));
       setSelectedProduct(null);
       setReservationQuantity("");
       setPickupDate("");
@@ -46,7 +56,7 @@ function BrowseProductsPage() {
       const message = axios.isAxiosError(err)
         ? err.response?.data?.error
         : null;
-      toast.error(message || "Greška prilikom akcije.");
+      toast.error(message || t("reservations.actionError"));
     }
   };
 
@@ -62,11 +72,13 @@ function BrowseProductsPage() {
   return (
     <div className="pb-16">
       <div className="max-w-5xl mx-auto mb-20">
-        <h2 className="text-2xl font-semibold mb-6">Proizvodi</h2>
+        <h2 className="text-2xl font-semibold mb-6">
+          {t("product.browseTitle")}
+        </h2>
         <div className="flex gap-4 mb-6">
           <input
             type="text"
-            placeholder="Pretraga po imenu"
+            placeholder={t("filters.searchByName")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2"
@@ -76,8 +88,8 @@ function BrowseProductsPage() {
             onChange={(e) => setCategory(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2"
           >
-            <option value="">-- Sve kategorije --</option>
-            {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+            <option value="">{t("filters.allCategories")}</option>
+            {Object.entries(categories).map(([key, label]) => (
               <option key={key} value={key}>
                 {label}
               </option>
@@ -86,7 +98,7 @@ function BrowseProductsPage() {
 
           <input
             type="number"
-            placeholder="Maksimalna cijena"
+            placeholder={t("filters.maxPrice")}
             value={maxPrice}
             onChange={(e) => setMaxPrice(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2"
@@ -96,11 +108,11 @@ function BrowseProductsPage() {
             onChange={(e) => setExpiryWithinDays(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2"
           >
-            <option value="">-- Rok trajanja --</option>
-            <option value="1">Danas</option>
-            <option value="2">Sutra</option>
-            <option value="3">Unutar 3 dana</option>
-            <option value="7">Unutar 7 dana</option>
+            <option value="">{t("filters.expiryDate")}</option>
+            <option value="1">{t("filters.today")}</option>
+            <option value="2">{t("filters.tomorrow")}</option>
+            <option value="3">{t("filters.within3Days")}</option>
+            <option value="7">{t("filters.within7Days")}</option>
           </select>
         </div>
 
@@ -111,13 +123,13 @@ function BrowseProductsPage() {
             </div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
               {hasActiveFilters
-                ? "Nema rezultata"
-                : "Trenutno nema dostupnih proizvoda"}
+                ? t("myProducts.noResultsTitle")
+                : t("product.noAvailableProductsTitle")}
             </h3>
             <p className="text-gray-500 mb-6">
               {hasActiveFilters
-                ? "Pokušajte promijeniti ili ukloniti filtere."
-                : "Vratite se kasnije, prodavnice redovno dodaju nove proizvode."}
+                ? t("myProducts.noResultsSubtitle")
+                : t("product.noAvailableProductsSubtitle")}
             </p>
           </div>
         ) : (
@@ -137,7 +149,7 @@ function BrowseProductsPage() {
                     className="w-full h-full object-cover"
                   />
                   <span className="absolute top-3 right-3 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full">
-                    {CATEGORY_LABELS[product.category] || product.category}
+                    {categories[product.category] || product.category}
                   </span>
                 </div>
 
@@ -152,7 +164,7 @@ function BrowseProductsPage() {
                   </div>
 
                   <span className="w-fit text-xs font-medium px-2 py-1 rounded-full bg-orange-50 text-orange-600">
-                    {product.status}
+                    {productStatuses[product.status] || product.status}
                   </span>
 
                   <p className="text-sm text-gray-500 line-clamp-2">
@@ -161,7 +173,9 @@ function BrowseProductsPage() {
 
                   <div className="border-t border-gray-100 pt-3 flex flex-col gap-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-blue-500">Cijena</span>
+                      <span className="text-blue-500">
+                        {t("dashboard.price")}
+                      </span>
                       <span className="text-right">
                         <span className="line-through text-gray-400 mr-1">
                           {product.original_price} KM
@@ -172,13 +186,16 @@ function BrowseProductsPage() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-blue-500">Dostupno</span>
+                      <span className="text-blue-500">{t("product.available")}</span>
                       <span className="font-medium text-gray-700">
-                        {product.available_quantity} {product.unit}
+                        {product.available_quantity}{" "}
+                        {units[product.unit] || product.unit}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-blue-500">Rok trajanja</span>
+                      <span className="text-blue-500">
+                        {t("dashboard.expiryDate")}
+                      </span>
                       <span className="font-medium text-gray-700">
                         {new Date(product.expiry_date).toLocaleDateString()}
                       </span>
@@ -193,7 +210,7 @@ function BrowseProductsPage() {
                       }}
                       className="flex-1 bg-orange-100 cursor-pointer hover:bg-orange-200 transition-colors text-gray-800 font-medium py-2 rounded-lg"
                     >
-                      Rezerviši
+                      {t("myProducts.reserveButton")}
                     </button>
                   </div>
                 </div>
@@ -207,22 +224,22 @@ function BrowseProductsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-bold mb-4">
-              Rezerviši: {selectedProduct.name}
+              {t("myReservations.reservePopupTitle")}: {selectedProduct.name}
             </h3>
 
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Količina ({selectedProduct.unit})
+              {t("dashboard.quantity")} ({selectedProduct.unit})
             </label>
             <input
               type="number"
-              placeholder={`Maksimalno: ${selectedProduct.available_quantity}`}
+              placeholder={`${t("myReservations.placeholderMax")}: ${selectedProduct.available_quantity}`}
               value={reservationQuantity}
               onChange={(e) => setReservationQuantity(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4"
             />
 
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Datum preuzimanja
+              {t("myReservations.pickupDate")}
             </label>
             <input
               type="datetime-local"
@@ -236,13 +253,13 @@ function BrowseProductsPage() {
                 onClick={() => setSelectedProduct(null)}
                 className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 rounded-lg"
               >
-                Otkaži
+                {t("myReservations.cancelButton")}
               </button>
               <button
                 onClick={handleReservation}
                 className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 rounded-lg"
               >
-                Potvrdi
+                {t("myReservations.confirmButton")}
               </button>
             </div>
           </div>

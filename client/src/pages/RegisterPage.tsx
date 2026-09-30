@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../api/axios.js";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "../components/LanguageSwitcher.js";
 
 function RegisterPage() {
   const [firstName, setFirstName] = useState("");
@@ -10,6 +12,7 @@ function RegisterPage() {
   const [role, setRole] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -23,7 +26,7 @@ function RegisterPage() {
       });
       navigate("/login");
     } catch (err) {
-      setError("Neuspješna registracija. Molimo pokušajte ponovo.");
+      setError(t("auth.registrationError"));
     }
   };
 
@@ -32,10 +35,15 @@ function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="fixed top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <div className="max-w-md w-full mx-4 bg-white rounded-xl shadow p-8">
-        <h1 className="text-2xl font-bold mb-2 text-center">Napravite nalog</h1>
+        <h1 className="text-2xl font-bold mb-2 text-center">
+          {t("auth.createAccount")}
+        </h1>
         <p className="text-sm text-gray-500 mb-6 text-center">
-          Pridružite se FoodWise platformi
+          {t("auth.registrationSubtitle")}
         </p>
 
         {error && (
@@ -49,7 +57,7 @@ function RegisterPage() {
             type="text"
             name="given-name"
             autoComplete="given-name"
-            placeholder="Ime"
+            placeholder={t("auth.firstName")}
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             className={inputStyle}
@@ -58,7 +66,7 @@ function RegisterPage() {
             type="text"
             name="family-name"
             autoComplete="family-name"
-            placeholder="Prezime"
+            placeholder={t("auth.lastName")}
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             className={inputStyle}
@@ -67,7 +75,7 @@ function RegisterPage() {
             type="email"
             name="email"
             autoComplete="username"
-            placeholder="Email"
+            placeholder={t("auth.email")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={inputStyle}
@@ -76,7 +84,7 @@ function RegisterPage() {
             type="password"
             name="password"
             autoComplete="new-password"
-            placeholder="Lozinka"
+            placeholder={t("auth.password")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className={inputStyle}
@@ -86,22 +94,25 @@ function RegisterPage() {
             onChange={(e) => setRole(e.target.value)}
             className={inputStyle}
           >
-            <option value="">-- Odaberite ulogu --</option>
-            <option value="STORE">Prodavnica</option>
-            <option value="RESTAURANT">Restoran</option>
+            <option value="">{t("auth.selectRole")}</option>
+            <option value="STORE">{t("auth.storeRole")}</option>
+            <option value="RESTAURANT">{t("auth.restaurantRole")}</option>
           </select>
           <button
             type="submit"
             className="w-full bg-orange-500 hover:bg-orange-600 transition-colors text-white font-medium py-2 rounded-lg mt-2"
           >
-            Registruj se
+            {t("auth.registerButton")}
           </button>
         </form>
 
         <p className="text-sm text-gray-500 text-center mt-6">
-          Već imate nalog?{' '}
-          <Link to="/login" className="text-orange-600 font-medium hover:underline">
-            Prijavite se
+          {t("auth.alreadyHaveAccount")}{" "}
+          <Link
+            to="/login"
+            className="text-orange-600 font-medium hover:underline"
+          >
+            {t("auth.loginLink")}
           </Link>
         </p>
       </div>

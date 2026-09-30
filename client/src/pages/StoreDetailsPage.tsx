@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import api from "../api/axios.js";
 import { useFetch } from "../hooks/useFetch.js";
-import { CATEGORY_LABELS } from "../utils/categories.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import toast from "react-hot-toast";
 import {
@@ -11,6 +10,7 @@ import {
 } from "../utils/categoryImages.js";
 import type { Product, Reservation, User, Favorites } from "../types/index.js";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 
 interface StoreStats {
   sold_articles: string;
@@ -26,19 +26,30 @@ function StoreDetailsPage() {
   const [store, setStore] = useState<User | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState<StoreStats | null>(null);
-  const [myReservations, setMyReservations] = useState<MyReservationsCount | null>(null);
+  const [myReservations, setMyReservations] =
+    useState<MyReservationsCount | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState("products");
   const [reservationStatus, setReservationStatus] = useState("");
+  const { t } = useTranslation();
+  const categories = t("categories", { returnObjects: true }) as Record<
+    string,
+    string
+  >;
+  const reservationStatuses = t("reservationStatus", {
+    returnObjects: true,
+  }) as Record<string, string>;
+  const units = t("units", { returnObjects: true }) as Record<string, string>;
 
   const fetchStoreDetails = async () => {
     try {
       const response = await api.get(`/users/stores/${id}`);
-      const storeData: User = response.data.store
-      const productsData: Product[] = response.data.products
-      const reservationsData: MyReservationsCount = response.data.myReservations;
-      const statsData: StoreStats = response.data.stats
+      const storeData: User = response.data.store;
+      const productsData: Product[] = response.data.products;
+      const reservationsData: MyReservationsCount =
+        response.data.myReservations;
+      const statsData: StoreStats = response.data.stats;
       setStore(storeData);
       setProducts(productsData);
       setStats(statsData);
@@ -53,7 +64,9 @@ function StoreDetailsPage() {
   const fetchFavorites = async () => {
     try {
       const response = await api.get("/favorites");
-      setIsFavorite(response.data.favorites.some((f: Favorites) => f.id === parseInt(id!)));
+      setIsFavorite(
+        response.data.favorites.some((f: Favorites) => f.id === parseInt(id!)),
+      );
     } catch (error) {
       console.error(error);
     }
@@ -63,13 +76,13 @@ function StoreDetailsPage() {
     try {
       await api.post(`/favorites`, { store_id: id });
       setIsFavorite(true);
-      toast.success("Prodavnica uspješno dodana u omiljene.");
+      toast.success(t("store.addFavoriteSucces"));
     } catch (err) {
       console.error(err);
       const message = axios.isAxiosError(err)
         ? err.response?.data?.error
         : null;
-      toast.error(message || "Greška prilikom akcije.");
+      toast.error(message || t("store.addFavoriteError"));
     }
   };
 
@@ -77,13 +90,13 @@ function StoreDetailsPage() {
     try {
       await api.delete(`/favorites/${id}`);
       setIsFavorite(false);
-      toast.success("Prodavnica izbrisana iz omiljenih.");
+      toast.success(t("store.deleteFavoriteSucces"));
     } catch (err) {
       console.error(err);
       const message = axios.isAxiosError(err)
         ? err.response?.data?.error
         : null;
-      toast.error(message || "Greška prilikom akcije.");
+      toast.error(message || t("store.deleteFavoriteError"));
     }
   };
 
@@ -92,26 +105,23 @@ function StoreDetailsPage() {
     fetchFavorites();
   }, [id]);
 
-  const { data: reservationsList, loading: reservationsLoading } = useFetch<Reservation>(
-    "/reservations/mine",
-    "reservations",
-    {
+  const { data: reservationsList, loading: reservationsLoading } =
+    useFetch<Reservation>("/reservations/mine", "reservations", {
       store_id: id!,
       status: reservationStatus,
-    },
-  );
+    });
 
   if (loading) {
     return <LoadingSpinner />;
   }
 
   if (!store || !stats || !myReservations) {
-  return (
-    <div className="max-w-3xl mx-auto text-center py-20">
-      <p className="text-gray-500">Prodavnica nije pronađena.</p>
-    </div>
-  );
-}
+    return (
+      <div className="max-w-3xl mx-auto text-center py-20">
+        <p className="text-gray-500">{t("store.storeNotFound")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto pb-16">
@@ -119,7 +129,7 @@ function StoreDetailsPage() {
         onClick={() => navigate(-1)}
         className="mb-6 text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
       >
-        ← Nazad
+        ← {t("store.backButton")}
       </button>
 
       <div className="bg-white rounded-2xl shadow overflow-hidden md:flex mb-8">
@@ -159,25 +169,29 @@ function StoreDetailsPage() {
 
           <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-6">
             <div>
-              <p className="text-xs text-gray-400 mb-1">Adresa</p>
+              <p className="text-xs text-gray-400 mb-1">{t("user.address")}</p>
               <p className="font-semibold text-gray-800">
                 {store.address || "—"}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Telefon</p>
+              <p className="text-xs text-gray-400 mb-1">{t("user.phone")}</p>
               <p className="font-semibold text-gray-800">
                 {store.phone || "—"}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Radno vrijeme</p>
+              <p className="text-xs text-gray-400 mb-1">
+                {t("user.workingHours")}
+              </p>
               <p className="font-semibold text-gray-800">
                 {store.opening_hours || "—"}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Vrijeme preuzimanja</p>
+              <p className="text-xs text-gray-400 mb-1">
+                {t("user.pickupHours")}
+              </p>
               <p className="font-semibold text-gray-800">
                 {store.pickup_hours || "—"}
               </p>
@@ -189,25 +203,31 @@ function StoreDetailsPage() {
               <p className="text-2xl font-bold text-green-600">
                 {products.length}
               </p>
-              <p className="text-xs text-gray-400">Aktivnih proizvoda</p>
+              <p className="text-xs text-gray-400">
+                {t("store.activeProducts")}
+              </p>
             </div>
             <div>
               <p className="text-2xl font-bold text-orange-600">
                 {stats.sold_articles}
               </p>
-              <p className="text-xs text-gray-400">Prodano artikala</p>
+              <p className="text-xs text-gray-400">{t("store.soldProducts")}</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-blue-600">
                 {stats.successful_reservations}
               </p>
-              <p className="text-xs text-gray-400">Uspješno isporučeno</p>
+              <p className="text-xs text-gray-400">
+                {t("store.successfullyReservations")}
+              </p>
             </div>
             <div>
               <p className="text-2xl font-bold text-purple-600">
                 {myReservations.my_reservations_count}
               </p>
-              <p className="text-xs text-gray-400">Vaših rezervacija ovdje</p>
+              <p className="text-xs text-gray-400">
+                {t("store.mineReservations")}
+              </p>
             </div>
           </div>
         </div>
@@ -223,7 +243,7 @@ function StoreDetailsPage() {
               : "text-gray-500 hover:text-gray-700"
           }`}
         >
-          Proizvodi
+          {t("store.productsTab")}
         </button>
         <button
           onClick={() => setActiveTab("reservations")}
@@ -233,7 +253,7 @@ function StoreDetailsPage() {
               : "text-gray-500 hover:text-gray-700"
           }`}
         >
-          Moje rezervacije
+          {t("store.reservationsTab")}
         </button>
       </div>
 
@@ -241,7 +261,7 @@ function StoreDetailsPage() {
         <div>
           {products.length === 0 ? (
             <p className="text-center text-gray-500 py-10">
-              Ova prodavnica trenutno nema dostupnih proizvoda.
+              {t("store.storeNoProducts")}
             </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -261,7 +281,7 @@ function StoreDetailsPage() {
                       className="w-full h-full object-cover"
                     />
                     <span className="absolute top-3 right-3 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full">
-                      {CATEGORY_LABELS[product.category] || product.category}
+                      {categories[product.category] || product.category}
                     </span>
                   </div>
                   <div className="p-4 flex flex-col gap-2 flex-1">
@@ -277,7 +297,8 @@ function StoreDetailsPage() {
                       </span>
                     </div>
                     <p className="text-sm text-gray-500">
-                      Dostupno: {product.available_quantity} {product.unit}
+                      {t("store.available")}: {product.available_quantity}{" "}
+                      {units[product.unit] || product.unit}
                     </p>
                   </div>
                 </div>
@@ -295,11 +316,17 @@ function StoreDetailsPage() {
               onChange={(e) => setReservationStatus(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-2"
             >
-              <option value="">-- Svi statusi --</option>
-              <option value="Pending">Na čekanju</option>
-              <option value="Confirmed">Potvrđene</option>
-              <option value="Completed">Završene</option>
-              <option value="Cancelled">Otkazane</option>
+              <option value="">{t("filters.selectResStatus")}</option>
+              <option value="Pending">{t("reservationStatus.Pending")}</option>
+              <option value="Confirmed">
+                {t("reservationStatus.Confirmed")}
+              </option>
+              <option value="Completed">
+                {t("reservationStatus.Completed")}
+              </option>
+              <option value="Cancelled">
+                {t("reservationStatus.Cancelled")}
+              </option>
             </select>
           </div>
 
@@ -307,7 +334,7 @@ function StoreDetailsPage() {
             <LoadingSpinner />
           ) : reservationsList.length === 0 ? (
             <p className="text-center text-gray-500 py-10">
-              Nemate rezervacija kod ove prodavnice.
+               {t("store.restaurantNoRes")}
             </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -324,7 +351,8 @@ function StoreDetailsPage() {
                       className="w-full h-full object-cover"
                     />
                     <span className="absolute top-3 right-3 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full">
-                      {reservation.status}
+                      {reservationStatuses[reservation.status] ||
+                    reservation.status}
                     </span>
                   </div>
                   <div className="p-4 flex flex-col gap-2 flex-1">
@@ -332,10 +360,10 @@ function StoreDetailsPage() {
                       {reservation.product_name}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      Količina: {reservation.quantity}
+                      {t("store.quantity")}: {reservation.quantity}
                     </p>
                     <p className="text-sm text-gray-500">
-                      Preuzimanje:{" "}
+                      {t("store.pickupDate")}:{" "}
                       {new Date(reservation.pickup_date).toLocaleString()}
                     </p>
                   </div>

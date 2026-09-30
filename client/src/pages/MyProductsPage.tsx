@@ -1,7 +1,6 @@
 import { useState } from "react";
 import api from "../api/axios.js";
 import { useNavigate } from "react-router-dom";
-import { CATEGORY_LABELS } from "../utils/categories.js";
 import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
 import { Link } from "react-router-dom";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
@@ -9,6 +8,7 @@ import toast from "react-hot-toast";
 import { useFetch } from "../hooks/useFetch.js";
 import type { Product } from "../types/index.js";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
 
 function MyProductsPage() {
   const navigate = useNavigate();
@@ -17,6 +17,16 @@ function MyProductsPage() {
   const [category, setCategory] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const { t } = useTranslation();
+  const categories = t("categories", { returnObjects: true }) as Record<
+    string,
+    string
+  >;
+  const productStatuses = t("productStatus", { returnObjects: true }) as Record<
+    string,
+    string
+  >;
+  const units = t("units", { returnObjects: true }) as Record<string, string>;
   const {
     data: productsList,
     loading,
@@ -33,13 +43,13 @@ function MyProductsPage() {
       await api.delete(`/products/${productId}`);
       setSelectedProduct(null);
       refetch();
-      toast.success("Proizvod uspješno obrisan.");
+      toast.success(t("myProducts.deleteSuccess"));
     } catch (err) {
       console.error(err);
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
-      toast.error(
-        message || "Greška prilikom brisanja proizvoda.",
-      );
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error
+        : null;
+      toast.error(message || t("myProducts.deleteError"));
     }
   };
 
@@ -53,11 +63,11 @@ function MyProductsPage() {
   return (
     <div className="pb-16">
       <div className="max-w-5xl mx-auto mb-20">
-        <h2 className="text-2xl font-semibold mb-6">Moji Proizvodi</h2>
+        <h2 className="text-2xl font-semibold mb-6">{t("myProducts.title")}</h2>
         <div className="flex gap-4 mb-6">
           <input
             type="text"
-            placeholder="Pretraga po imenu"
+            placeholder={t("filters.searchByName")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2"
@@ -67,8 +77,8 @@ function MyProductsPage() {
             onChange={(e) => setCategory(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2"
           >
-            <option value="">-- Sve kategorije --</option>
-            {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+            <option value="">{t("filters.allCategories")}</option>
+            {Object.entries(categories).map(([key, label]) => (
               <option key={key} value={key}>
                 {label}
               </option>
@@ -80,21 +90,21 @@ function MyProductsPage() {
             onChange={(e) => setStatus(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2"
           >
-            <option value="">-- Status proizvoda --</option>
-            <option value="Available">Dostupno</option>
-            <option value="Sold">Prodano</option>
-            <option value="Expired">Istekao rok</option>
+            <option value="">{t("filters.selectStatus")}</option>
+            <option value="Available">{productStatuses.Available}</option>
+            <option value="Sold">{productStatuses.Sold}</option>
+            <option value="Expired">{productStatuses.Expired}</option>
           </select>
           <select
             value={expiryWithinDays}
             onChange={(e) => setExpiryWithinDays(e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2"
           >
-            <option value="">-- Rok trajanja --</option>
-            <option value="1">Danas</option>
-            <option value="2">Sutra</option>
-            <option value="3">Unutar 3 dana</option>
-            <option value="7">Unutar 7 dana</option>
+            <option value="">{t("filters.expiryDate")}</option>
+            <option value="1">{t("filters.today")}</option>
+            <option value="2">{t("filters.tomorrow")}</option>
+            <option value="3">{t("filters.within3Days")}</option>
+            <option value="7">{t("filters.within7Days")}</option>
           </select>
         </div>
 
@@ -105,20 +115,20 @@ function MyProductsPage() {
             </div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
               {hasActiveFilters
-                ? "Nema rezultata"
-                : "Nemate još nijedan proizvod"}
+                ? t("myProducts.noResultsTitle")
+                : t("myProducts.noProductsTitle")}
             </h3>
             <p className="text-gray-500 mb-6">
               {hasActiveFilters
-                ? "Pokušajte promijeniti ili ukloniti filtere."
-                : "Dodajte svoj prvi proizvod i počnite smanjivati bacanje hrane."}
+                ? t("myProducts.noResultsSubtitle")
+                : t("myProducts.noProductsSubtitle")}
             </p>
             {!hasActiveFilters && (
               <Link
                 to="/add-product"
                 className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-medium px-6 py-2 rounded-full transition-colors"
               >
-                Dodaj proizvod <span>→</span>
+                {t("myProducts.addProductButton")} <span>→</span>
               </Link>
             )}
           </div>
@@ -139,20 +149,22 @@ function MyProductsPage() {
                     className="w-full h-full object-cover"
                   />
                   <span className="absolute top-3 right-3 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full">
-                    {CATEGORY_LABELS[product.category] || product.category}
+                    {categories[product.category] || product.category}
                   </span>
                 </div>
 
                 <div className="p-4 flex flex-col gap-3 flex-1">
                   <div>
-                    <p className="text-xs text-gray-400">{new Date(product.created_at).toLocaleString()}</p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(product.created_at).toLocaleString()}
+                    </p>
                     <h3 className="text-lg font-bold text-gray-800">
                       {product.name}
                     </h3>
                   </div>
 
                   <span className="w-fit text-xs font-medium px-2 py-1 rounded-full bg-orange-50 text-orange-600">
-                    {product.status}
+                    {productStatuses[product.status] || product.status}
                   </span>
 
                   <p className="text-sm text-gray-500 line-clamp-2">
@@ -161,7 +173,9 @@ function MyProductsPage() {
 
                   <div className="border-t border-gray-100 pt-3 flex flex-col gap-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-blue-500">Cijena</span>
+                      <span className="text-blue-500">
+                        {t("dashboard.price")}
+                      </span>
                       <span className="text-right">
                         <span className="line-through text-gray-400 mr-1">
                           {product.original_price} KM
@@ -172,13 +186,17 @@ function MyProductsPage() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-blue-500">Količina</span>
+                      <span className="text-blue-500">
+                        {t("dashboard.quantity")}
+                      </span>
                       <span className="font-medium text-gray-700">
-                        {product.quantity} {product.unit}
+                        {product.quantity} {units[product.unit] || product.unit}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-blue-500">Rok trajanja</span>
+                      <span className="text-blue-500">
+                        {t("dashboard.expiryDate")}
+                      </span>
                       <span className="font-medium text-gray-700">
                         {new Date(product.expiry_date).toLocaleDateString()}
                       </span>
@@ -191,7 +209,7 @@ function MyProductsPage() {
                       onClick={(e) => e.stopPropagation()}
                       className="flex-1 text-center bg-orange-100 hover:bg-orange-200 transition-colors text-gray-800 font-medium py-2 rounded-lg"
                     >
-                      Uredi
+                      {t("myProducts.editButton")}
                     </Link>
                     <button
                       onClick={(e) => {
@@ -200,7 +218,7 @@ function MyProductsPage() {
                       }}
                       className="flex-1 bg-red-100 hover:bg-red-200 transition-colors text-red-700 font-medium py-2 rounded-lg cursor-pointer"
                     >
-                      Obriši
+                      {t("myProducts.deleteButton")}
                     </button>
                   </div>
                 </div>
@@ -214,20 +232,20 @@ function MyProductsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-bold mb-4">
-              Da li ste sigurni da želite obrisati ovaj proizvod?
+              {t("myProducts.deleteConfirmation")}
             </h3>
             <div className="flex gap-2">
               <button
                 onClick={() => setSelectedProduct(null)}
                 className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 rounded-lg"
               >
-                Otkaži
+                {t("myProducts.cancelButton")}
               </button>
               <button
                 onClick={() => handleDelete(selectedProduct.id)}
                 className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 rounded-lg"
               >
-                Izbriši
+                {t("myProducts.confirmDeleteButton")}
               </button>
             </div>
           </div>

@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import api from "../api/axios.js";
-import { CATEGORY_LABELS } from "../utils/categories.js";
-import { UNIT_LABELS } from "../utils/units.js";
 import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import toast from "react-hot-toast";
 import type { Product } from "../types/index.js";
 import axios from "axios";
+import { useTranslation } from "react-i18next";
+
 
 function ProductDetailsPage() {
   const { user } = useAuth();
@@ -21,6 +21,16 @@ function ProductDetailsPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { t } = useTranslation();
+  const productStatuses = t("productStatus", { returnObjects: true }) as Record<
+    string,
+    string
+  >;
+  const categories = t("categories", { returnObjects: true }) as Record<
+    string,
+    string
+  >;
+  const units = t("units", { returnObjects: true }) as Record<string, string>;
 
   const fetchProduct = async () => {
     try {
@@ -37,14 +47,14 @@ function ProductDetailsPage() {
   const handleDelete = async () => {
     try {
       await api.delete(`/products/${id}`);
-      toast.success("Proizvod uspješno obrisan.");
+      toast.success(t("myProducts.deleteSuccess"));
       navigate("/my-products");
     } catch (err) {
       console.error(err);
       const message = axios.isAxiosError(err)
         ? err.response?.data?.error
         : null;
-      toast.error(message || "Greška prilikom brisanja proizvoda.");
+      toast.error(message || t("reservations.actionError"));
     }
   };
 
@@ -55,7 +65,7 @@ function ProductDetailsPage() {
         quantity: reservationQuantity,
         pickup_date: pickupDate,
       });
-      toast.success("Rezervacija uspješno kreirana.");
+      toast.success(t("myProducts.reservationCreated"));
       setSelectedProduct(null);
       setReservationQuantity("");
       setPickupDate("");
@@ -65,7 +75,7 @@ function ProductDetailsPage() {
       const message = axios.isAxiosError(err)
         ? err.response?.data?.error
         : null;
-      toast.error(message || "Greška prilikom akcije.");
+      toast.error(message || t("reservations.actionError"));
     }
   };
 
@@ -80,7 +90,7 @@ function ProductDetailsPage() {
   if (!product) {
     return (
       <div className="max-w-3xl mx-auto text-center py-20">
-        <p className="text-gray-500">Proizvod nije pronađen.</p>
+        <p className="text-gray-500">{t("myProducts.productNotFoundTitle")}</p>
       </div>
     );
   }
@@ -91,7 +101,7 @@ function ProductDetailsPage() {
         onClick={() => navigate(-1)}
         className="mb-6 text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
       >
-        ← Nazad
+        ← {t("myProducts.backButton")}
       </button>
 
       <div className="bg-white rounded-2xl shadow overflow-hidden md:flex">
@@ -105,12 +115,12 @@ function ProductDetailsPage() {
           <div className="flex items-start justify-between gap-4 mb-2">
             <h1 className="text-2xl font-bold text-gray-800">{product.name}</h1>
             <span className="shrink-0 text-xs font-medium px-3 py-1 rounded-full bg-orange-50 text-orange-600">
-              {product.status}
+              {productStatuses[product.status] || product.status}
             </span>
           </div>
 
           <span className="inline-block text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-600 mb-4">
-            {CATEGORY_LABELS[product.category] || product.category}
+            {categories[product.category] || product.category}
           </span>
 
           <p className="text-gray-600 mb-6">{product.description}</p>
@@ -126,36 +136,36 @@ function ProductDetailsPage() {
 
           <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-6">
             <div>
-              <p className="text-xs text-gray-400 mb-1">Prodavnica</p>
+              <p className="text-xs text-gray-400 mb-1">{t("myProducts.store")}</p>
               <p className="font-semibold text-gray-800">
                 {product.business_name}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Grad</p>
+              <p className="text-xs text-gray-400 mb-1">{t("dashboard.city")}</p>
               <p className="font-semibold text-gray-800">{product.city}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Dostupna količina</p>
+              <p className="text-xs text-gray-400 mb-1">{t("myProducts.availableQuantity")}</p>
               <p className="font-semibold text-gray-800">
                 {product.available_quantity}{" "}
-                {UNIT_LABELS[product.unit] || product.unit}
+                {units[product.unit] || product.unit}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Ukupna količina</p>
+              <p className="text-xs text-gray-400 mb-1">{t("myProducts.totalQuantity")}</p>
               <p className="font-semibold text-gray-800">
-                {product.quantity} {UNIT_LABELS[product.unit] || product.unit}
+                {product.quantity} {units[product.unit] || product.unit}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Rok trajanja</p>
+              <p className="text-xs text-gray-400 mb-1">{t("dashboard.expiryDate")}</p>
               <p className="font-semibold text-gray-800">
                 {new Date(product.expiry_date).toLocaleDateString()}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Dana do isteka</p>
+              <p className="text-xs text-gray-400 mb-1">{t("myProducts.daysUntilExpiry")}</p>
               <p className="font-semibold text-gray-800">
                 {product.days_until_expiry}
               </p>
@@ -168,13 +178,13 @@ function ProductDetailsPage() {
                 to={`/edit-product/${product.id}`}
                 className="flex-1 text-center bg-orange-100 hover:bg-orange-200 transition-colors text-gray-800 font-medium py-2 rounded-lg"
               >
-                Uredi
+                {t("myProducts.editButton")}
               </Link>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 className="flex-1 bg-red-100 hover:bg-red-200 transition-colors text-red-700 font-medium py-2 rounded-lg cursor-pointer"
               >
-                Obriši
+                {t("myProducts.deleteButton")}
               </button>
             </div>
           )}
@@ -187,7 +197,7 @@ function ProductDetailsPage() {
                 }}
                 className="flex-1 bg-orange-100 cursor-pointer hover:bg-orange-200 transition-colors text-gray-800 font-medium py-2 rounded-lg"
               >
-                Rezerviši
+                {t("myProducts.reserveButton")}
               </button>
             </div>
           )}
@@ -198,20 +208,20 @@ function ProductDetailsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-bold mb-4">
-              Da li ste sigurni da želite obrisati ovaj proizvod?
+              {t("myProducts.deleteConfirmation")}
             </h3>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 rounded-lg"
               >
-                Otkaži
+                {t("myProducts.cancelButton")}
               </button>
               <button
                 onClick={handleDelete}
                 className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 rounded-lg"
               >
-                Izbriši
+                {t("myProducts.confirmDeleteButton")}
               </button>
             </div>
           </div>
@@ -221,22 +231,22 @@ function ProductDetailsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-bold mb-4">
-              Rezerviši: {selectedProduct.name}
+              {t("myReservations.reservePopupTitle")}: {selectedProduct.name}
             </h3>
 
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Količina ({selectedProduct.unit})
+              {t("dashboard.quantity")} ({selectedProduct.unit})
             </label>
             <input
               type="number"
-              placeholder={`Maksimalno: ${selectedProduct.available_quantity}`}
+              placeholder={`${t("myReservations.placeholderMax")}: ${selectedProduct.available_quantity}`}
               value={reservationQuantity}
               onChange={(e) => setReservationQuantity(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4"
             />
 
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Datum preuzimanja
+              {t("myReservations.pickupDate")}
             </label>
             <input
               type="datetime-local"
@@ -250,13 +260,13 @@ function ProductDetailsPage() {
                 onClick={() => setSelectedProduct(null)}
                 className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 rounded-lg"
               >
-                Otkaži
+                {t("myReservations.cancelButton")}
               </button>
               <button
                 onClick={handleReservation}
                 className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 rounded-lg"
               >
-                Potvrdi
+                {t("myReservations.confirmButton")}
               </button>
             </div>
           </div>

@@ -1,27 +1,29 @@
 import { useAuth } from "../context/AuthContext.jsx";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
-function Sidebar({ isSidebarOpen }: { isSidebarOpen: boolean}) {
+function Sidebar({ isSidebarOpen }: { isSidebarOpen: boolean }) {
   const { user } = useAuth();
+  const { t } = useTranslation();
 
   const storeLinks = [
-    { to: "/dashboard", label: "Dashboard" },
-    { to: "/my-profile", label: "Moj Profil" },
-    { to: "/add-product", label: "Dodaj Proizvod" },
-    { to: "/my-products", label: "Moji Proizvodi" },
-    { to: "/reservations", label: "Moje Reservacije" },
-    { to: "/donate-food", label: "Doniraj obrok" },
-    { to: "/sponsor", label: "Budi sponzor" },
+    { to: "/dashboard", label: t("sidebar.dashboard") },
+    { to: "/my-profile", label: t("sidebar.myProfile") },
+    { to: "/add-product", label: t("sidebar.addProduct") },
+    { to: "/my-products", label: t("sidebar.myProducts") },
+    { to: "/reservations", label: t("sidebar.reservations") },
+    { to: "/donate-food", label: t("sidebar.donateFood") },
+    { to: "/sponsor", label: t("sidebar.sponsor") },
   ];
 
   const restaurantLinks = [
-    { to: "/dashboard", label: "Dashboard" },
-    { to: "/my-profile", label: "Moj Profil" },
-    { to: "/stores", label: "Prodavnice"},
-    { to: "/browse-products", label: "Pretraži Proizvode" },
-    { to: "/my-reservations", label: "Moje Rezervacije" },
-    { to: "/donate-food", label: "Doniraj obrok" },
-    { to: "/sponsor", label: "Budi sponzor" },
+    { to: "/dashboard", label: t("sidebar.dashboard") },
+    { to: "/my-profile", label: t("sidebar.myProfile") },
+    { to: "/stores", label: t("sidebar.stores") },
+    { to: "/browse-products", label: t("sidebar.browseProducts") },
+    { to: "/my-reservations", label: t("sidebar.myReservations") },
+    { to: "/donate-food", label: t("sidebar.donateFood") },
+    { to: "/sponsor", label: t("sidebar.sponsor") },
   ];
 
   const links = user?.role === "STORE" ? storeLinks : restaurantLinks;

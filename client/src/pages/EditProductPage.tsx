@@ -2,11 +2,10 @@ import { useState, useEffect } from "react";
 import api from "../api/axios.js";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { CATEGORY_LABELS } from "../utils/categories.js";
-import { UNIT_LABELS } from "../utils/units.js";
 import { useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import type { Product } from "../types/index.js";
+import { useTranslation } from "react-i18next";
 
 function EditProductPage() {
   const { id } = useParams();
@@ -20,6 +19,12 @@ function EditProductPage() {
   const [unit, setUnit] = useState("");
   const [expiry_date, setExpiryDate] = useState("");
   const [error, setError] = useState("");
+  const { t } = useTranslation();
+  const categories = t("categories", { returnObjects: true }) as Record<
+    string,
+    string
+  >;
+  const units = t("units", { returnObjects: true }) as Record<string, string>;
 
   const fetchProducts = async () => {
     try {
@@ -54,11 +59,11 @@ function EditProductPage() {
       !unit ||
       !expiry_date
     ) {
-      setError("Molimo popunite sva polja.");
+      setError(t("product.fillAllFields"));
       return;
     }
     try {
-       const response = await api.put("/products/" + id, {
+      const response = await api.put("/products/" + id, {
         name,
         description,
         category,
@@ -68,12 +73,14 @@ function EditProductPage() {
         unit,
         expiry_date,
       });
-      toast.success(response.data.message)
+      toast.success(response.data.message);
       navigate("/my-products");
     } catch (err) {
-      setError("Greška prilikom dodavanja proizvoda. Molimo pokušajte ponovo.");
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null
-      toast.error(message || "Greška prilikom akcije.")
+      setError(t("product.editError"));
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error
+        : null;
+      toast.error(message || t("product.editError"));
     }
   };
 
@@ -82,7 +89,7 @@ function EditProductPage() {
 
   return (
     <div className="max-w-md mx-auto bg-white rounded-xl shadow p-6">
-      <h1 className="text-2xl font-bold mb-6">Uredi proizvod</h1>
+      <h1 className="text-2xl font-bold mb-6">{t("product.editTitle")}</h1>
 
       {error && (
         <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
@@ -93,7 +100,7 @@ function EditProductPage() {
       <form onSubmit={handleSubmit}>
         <div className="mb-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Naziv proizvoda
+            {t("product.name")}
           </label>
           <input
             type="text"
@@ -104,7 +111,7 @@ function EditProductPage() {
         </div>
         <div className="mb-0">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Opis
+            {t("product.description")}
           </label>
           <input
             type="text"
@@ -115,15 +122,15 @@ function EditProductPage() {
         </div>
         <div className="mb-0">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Kategorija
+            {t("product.category")}
           </label>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className={inputStyle}
           >
-            <option value="">-- Odaberite kategoriju --</option>
-            {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+            <option value="">{t("product.selectCategory")}</option>
+             {Object.entries(categories).map(([key, label]) => (
               <option key={key} value={key}>
                 {label}
               </option>
@@ -132,11 +139,11 @@ function EditProductPage() {
         </div>
         <div className="mb-0">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Originalna cijena
+            {t("product.originalPrice")}
           </label>
           <input
             type="number"
-            placeholder="Originalna cijena"
+            placeholder={t("product.originalPrice")}
             value={original_price}
             onChange={(e) => setOriginalPrice(e.target.value)}
             className={inputStyle}
@@ -144,11 +151,11 @@ function EditProductPage() {
         </div>
         <div className="mb-0">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Snižena cijena
+            {t("product.discountedPrice")}
           </label>
           <input
             type="number"
-            placeholder="Snižena cijena"
+            placeholder={t("product.discountedPrice")}
             value={discounted_price}
             onChange={(e) => setDiscountedPrice(e.target.value)}
             className={inputStyle}
@@ -156,11 +163,11 @@ function EditProductPage() {
         </div>
         <div className="mb-0">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Količina
+            {t("product.quantity")}
           </label>
           <input
             type="number"
-            placeholder="Količina"
+            placeholder={t("product.quantity")}
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             className={inputStyle}
@@ -168,15 +175,15 @@ function EditProductPage() {
         </div>
         <div className="mb-0">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Jedinica mjere
+            {t("product.unit")}
           </label>
           <select
             value={unit}
             onChange={(e) => setUnit(e.target.value)}
             className={inputStyle}
           >
-            <option value="">-- Odaberite jedinicu --</option>
-            {Object.entries(UNIT_LABELS).map(([key, label]) => (
+            <option value="">{t("product.selectUnit")}</option>
+            {Object.entries(units).map(([key, label]) => (
               <option key={key} value={key}>
                 {label}
               </option>
@@ -185,7 +192,7 @@ function EditProductPage() {
         </div>
         <div className="mb-0">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Datum isteka
+            {t("product.expiryDate")}
           </label>
           <input
             type="date"
@@ -198,7 +205,7 @@ function EditProductPage() {
           type="submit"
           className="w-full bg-orange-500 hover:bg-orange-600 transition-colors text-white font-medium py-2 rounded-lg"
         >
-          Uredi proizvod
+          {t("product.editButton")}
         </button>
       </form>
     </div>
