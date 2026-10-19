@@ -112,23 +112,27 @@ export const updateUser = async (req: Request, res: Response) => {
 export const getStores = async (req: Request, res: Response) => {
   try {
     const { city, business_name } = req.query;
-    let query = `SELECT id, business_name, city, address, logo_url, 
-     description, opening_hours, pickup_hours, phone 
-     FROM users WHERE role = 'STORE'`;
+    let query = `SELECT users.id, users.business_name, users.city, users.address, users.logo_url,
+     users.description, users.opening_hours, users.pickup_hours, users.phone,
+     (SELECT COUNT(*) FROM products
+      WHERE products.store_id = users.id
+        AND products.status = 'Available'
+        AND products.expiry_date >= CURRENT_DATE) AS active_products
+     FROM users WHERE users.role = 'STORE'`;
 
     let values = [];
 
     if (city) {
       values.push(`%${city}%` as string);
-      query += ` AND city ILIKE $${values.length}`;
+      query += ` AND users.city ILIKE $${values.length}`;
     }
 
     if (business_name) {
       values.push(`%${business_name}%` as string);
-      query += ` AND business_name ILIKE $${values.length}`;
+      query += ` AND users.business_name ILIKE $${values.length}`;
     }
 
-    query += " ORDER BY business_name ASC";
+    query += " ORDER BY users.business_name ASC";
     const result = await pool.query(query, values);
 
     return res

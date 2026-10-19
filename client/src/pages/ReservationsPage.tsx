@@ -1,23 +1,37 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
+import axios from "axios";
+import { useTranslation } from "react-i18next";
+import {
+  ArrowRight,
+  CalendarCheck,
+  Check,
+  CircleDot,
+  MapPin,
+  Search,
+  SearchX,
+  X,
+  XCircle,
+} from "lucide-react";
 import api from "../api/axios.js";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
-import toast from "react-hot-toast";
+import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.jsx";
+import ProductPageHeader from "../components/product/ProductPageHeader.jsx";
+import FilterBar, { FilterField } from "../components/product/FilterBar.jsx";
+import EmptyState from "../components/product/EmptyState.jsx";
+import Modal from "../components/product/Modal.jsx";
+import { inputStyle } from "../components/form/FormField.jsx";
 import { useFetch } from "../hooks/useFetch.js";
-import { useNavigate } from "react-router-dom";
 import type { Reservation } from "../types/index.js";
-import axios from "axios";
-import { RESERVATION_DEFAULT_IMAGE } from "../utils/categoryImages.js";
-import { useTranslation } from "react-i18next";
 
 function ReservationsPage() {
-  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [status, setStatus] = useState("");
   const [city, setCity] = useState("");
+  const [rejectingReservation, setRejectingReservation] =
+    useState<Reservation | null>(null);
   const { t } = useTranslation();
-  const reservationStatuses = t("reservationStatus", {
-    returnObjects: true,
-  }) as Record<string, string>;
   const {
     data: reservationsList,
     loading,
@@ -46,6 +60,7 @@ function ReservationsPage() {
     try {
       const response = await api.patch(`/reservations/${reservationId}/reject`);
       toast.success(response.data.message);
+      setRejectingReservation(null);
       refetch();
     } catch (err) {
       console.error(err);
@@ -56,153 +71,150 @@ function ReservationsPage() {
     }
   };
 
+  const clearFilters = () => {
+    setName("");
+    setStatus("");
+    setCity("");
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
-  const hasActiveFilters = name || status || city;
-  return (
-    <div className="max-w-5xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-6">{t("reservations.title")}</h2>
 
-      <div className="flex gap-4 mb-6">
-        <input
-          type="text"
-          placeholder={t("filters.searchByName")}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2"
-        />
-        <input
-          type="text"
-          placeholder={t("filters.searchByCity")}
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2"
-        />
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2"
-        >
-          <option value="">{t("filters.selectResStatus")}</option>
-          <option value="Pending">{t("reservationStatus.Pending")}</option>
-          <option value="Confirmed">{t("reservationStatus.Confirmed")}</option>
-          <option value="Completed">{t("reservationStatus.Completed")}</option>
-          <option value="Cancelled">{t("reservationStatus.Cancelled")}</option>
-        </select>
-      </div>
+  const hasActiveFilters = Boolean(name || status || city);
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6 pb-10">
+      <ProductPageHeader
+        title={t("reservations.title")}
+        subtitle={t("reservations.storeSubtitle")}
+        icon={CalendarCheck}
+        count={t("reservations.count", { count: reservationsList.length })}
+      />
+
+      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={3}>
+        <FilterField icon={Search}>
+          <input
+            type="text"
+            placeholder={t("filters.searchByName")}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className={inputStyle}
+          />
+        </FilterField>
+        <FilterField icon={MapPin}>
+          <input
+            type="text"
+            placeholder={t("filters.searchByCity")}
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            className={inputStyle}
+          />
+        </FilterField>
+        <FilterField icon={CircleDot}>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className={inputStyle}
+          >
+            <option value="">{t("filters.selectResStatus")}</option>
+            <option value="Pending">{t("reservationStatus.Pending")}</option>
+            <option value="Confirmed">{t("reservationStatus.Confirmed")}</option>
+            <option value="Completed">{t("reservationStatus.Completed")}</option>
+            <option value="Cancelled">{t("reservationStatus.Cancelled")}</option>
+          </select>
+        </FilterField>
+      </FilterBar>
 
       {reservationsList.length === 0 ? (
-        <div className="flex flex-col items-center text-center py-20">
-          <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center text-3xl mb-4">
-            📋
-          </div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">
-            {hasActiveFilters
-              ? t("reservations.noResultsTitle")
-              : t("reservations.noReservationsTitle")}
-          </h3>
-          <p className="text-gray-500 mb-6">
-            {hasActiveFilters
-              ? t("reservations.noResultsSubtitle")
-              : t("reservations.noReservationsSubtitle")}
-          </p>
-        </div>
+        hasActiveFilters ? (
+          <EmptyState
+            icon={SearchX}
+            title={t("reservations.noResultsTitle")}
+            subtitle={t("reservations.noResultsSubtitle")}
+          />
+        ) : (
+          <EmptyState
+            icon={CalendarCheck}
+            title={t("reservations.noReservationsTitle")}
+            subtitle={t("reservations.noReservationsSubtitle")}
+          />
+        )
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {reservationsList.map((reservation) => (
-            <div
+            <DashboardReservationCard
               key={reservation.id}
-              onClick={() => navigate(`/reservation/${reservation.id}`)}
-              className="bg-white rounded-xl cursor-pointer shadow overflow-hidden flex flex-col"
-            >
-              <div className="relative h-32">
-                <img
-                  src={RESERVATION_DEFAULT_IMAGE}
-                  alt={reservation.product_name}
-                  className="w-1/4 h-full object-cover mx-auto"
-                />
-                <span className="absolute top-3 right-3 bg-white/90 text-xs font-semibold px-2 py-1 rounded-full">
-                  {reservationStatuses[reservation.status] ||
-                    reservation.status}
-                </span>
-              </div>
-
-              <div className="p-4 flex flex-col gap-3 flex-1">
-                <div>
-                  <p className="text-xs text-gray-400">
-                    {reservation.business_name}
-                  </p>
-                  <h3 className="text-lg font-bold text-gray-800">
-                    {reservation.product_name}
-                  </h3>
-                </div>
-                <p className="text-sm text-gray-500 line-clamp-2">
-                  {reservation.description}
-                </p>
-
-                <div className="border-t border-gray-100 pt-3 flex flex-col gap-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-blue-500">
-                      {t("dashboard.quantity")}
-                    </span>
-                    <span className="font-medium text-gray-700">
-                      {reservation.quantity}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-blue-500">
-                      {t("reservations.buyer")}
-                    </span>
-                    <span className="font-medium text-gray-700">
-                      {reservation.business_name}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-blue-500">{t("dashboard.city")}</span>
-                    <span className="font-medium text-gray-700">
-                      {reservation.city}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-blue-500">
-                      {t("dashboard.pickupDate")}
-                    </span>
-                    <span className="font-medium text-gray-700">
-                      {new Date(reservation.pickup_date).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-
-                {reservation.status === "Pending" && (
-                  <div className="mt-auto flex gap-2">
+              reservation={reservation}
+              partyLabel={t("reservations.buyer")}
+              actions={
+                reservation.status === "Pending" ? (
+                  <>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAccept(reservation.id);
-                      }}
-                      className="flex-1 bg-green-100 cursor-pointer hover:bg-green-200 transition-colors text-green-700 font-medium py-2 rounded-lg"
+                      type="button"
+                      onClick={() => handleAccept(reservation.id)}
+                      className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-green-600/20 transition-colors hover:bg-green-700"
                     >
+                      <Check className="h-4 w-4" />
                       {t("reservations.acceptButton")}
                     </button>
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleReject(reservation.id);
-                      }}
-                      className="flex-1 bg-red-100 cursor-pointer hover:bg-red-200 transition-colors text-red-700 font-medium py-2 rounded-lg"
+                      type="button"
+                      onClick={() => setRejectingReservation(reservation)}
+                      className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                     >
+                      <X className="h-4 w-4" />
                       {t("reservations.rejectButton")}
                     </button>
-                  </div>
-                )}
-              </div>
-            </div>
+                    <Link
+                      to={`/reservation/${reservation.id}`}
+                      title={t("dashboard.detailsButton")}
+                      aria-label={t("dashboard.detailsButton")}
+                      className="inline-flex items-center justify-center rounded-xl bg-orange-50 px-3 text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </>
+                ) : undefined
+              }
+            />
           ))}
         </div>
+      )}
+
+      {rejectingReservation && (
+        <Modal onClose={() => setRejectingReservation(null)}>
+          <div className="flex flex-col items-center text-center">
+            <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+              <XCircle className="h-6 w-6" strokeWidth={1.8} />
+            </span>
+            <h3 className="text-lg font-bold text-gray-900">
+              {t("reservations.rejectConfirmation")}
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              {t("reservations.rejectConfirmationText", {
+                product: rejectingReservation.product_name,
+                business: rejectingReservation.business_name,
+              })}
+            </p>
+          </div>
+          <div className="mt-6 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setRejectingReservation(null)}
+              className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+            >
+              {t("reservations.keepButton")}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleReject(rejectingReservation.id)}
+              className="flex-1 cursor-pointer rounded-xl bg-red-600 py-2.5 font-semibold text-white transition-colors hover:bg-red-700"
+            >
+              {t("reservations.rejectButton")}
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   );

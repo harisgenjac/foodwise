@@ -17,28 +17,34 @@ Do not load all three by default. A feature that spans both sides (for example a
 ```
 food-saver-app/
 ├── CLAUDE.md
+├── README.md        setup and run instructions for humans (keep in sync with scripts and env vars)
+├── package.json     root scripts only (dev/build/install:all for both sides)
 ├── docs/            backend.md, frontend.md, product.md
 ├── server/          Express 5 + TypeScript + PostgreSQL (src/, migrations/, tests/, uploads/)
 └── client/          React 19 + Vite + TypeScript + Tailwind + react-i18next (src/)
 ```
 
-There is no root `package.json`. Run npm commands inside `server/` or `client/`.
+The root `package.json` only holds convenience scripts (it has `concurrently` as its only dependency). The app's dependencies and all other commands (tests, migrations, seed, lint) live in `server/` and `client/`.
 
-## Quick start (two terminals)
+Root scripts:
+- `npm run install:all`: installs dependencies in the root, `server/` and `client/`.
+- `npm run dev`: builds the server once (`predev`), then runs the server and client dev servers together, with output prefixed `[server]` / `[client]`.
+- `npm run build`: builds the server and then the client.
+
+## Quick start
 
 1. PostgreSQL is running, and `server/.env` and `server/.env.test` exist (`DATABASE_URL`, `JWT_SECRET`).
-2. Backend (http://localhost:3000, API under `/api`):
-   `cd server && npm run migrate up && npm run build && npm run dev`
-   `dev` runs the compiled `dist/` output, so `build` must have run at least once.
-3. Frontend (http://localhost:5173):
-   `cd client && npm run dev`
+2. First time: `npm run install:all`, then `cd server && npm run migrate up`.
+3. From the root: `npm run dev`. Backend at http://localhost:3000 (API under `/api`), frontend at http://localhost:5173.
+
+Each side can still be run on its own with `npm run dev` inside `server/` or `client/` (the server's `dev` runs the compiled `dist/`, so `npm run build` must have run at least once).
 
 More commands (tests, seed, lint, type-check) are in the two technical docs.
 
 ## Rules that apply everywhere
 
 - **API responses:** `{ error: "..." }` for failures, `{ message, <entity> }` for successes.
-- **Server messages are in Bosnian** (errors, success messages, notification text) and the tests assert on them. Keep new ones in Bosnian and consistent with existing wording.
+- **Server messages are in Bosnian** (errors, success messages) and the tests assert on them. Keep new ones in Bosnian and consistent with existing wording. Exception: notification text is translated on the client from the notification `type`; the stored `message` is an English fallback.
 - **Authorization checks ownership, not only role.**
 - **SQL:** parameterized queries only. With a JOIN, always use explicit `table.column` prefixes and never a bare `*`.
 - **Migrations:** never edit one that has already been run. Every schema change is a new migration.

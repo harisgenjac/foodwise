@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "dev": "concurrently \"tsc --watch\" \"node --watch dist/server.js\"",
     "test": "dotenv -e .env.test -- node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
-    "seed": "node src/seed.js"
+    "seed": "node src/seed.js",
+    "seed:fake": "npm run build && node dist/scripts/seedFakeData.js"
   },
   "keywords": [],
   "author": "",

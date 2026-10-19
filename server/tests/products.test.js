@@ -365,5 +365,37 @@ describe("Products routes", () => {
       const response = await agent.get('/api/products/9999')
       expect(response.status).toBe(404);
   });
+
+  it('returns the store contact details', async () => {
+      const profileResponse = await agent.put("/api/users/me").send({
+        first_name: "Test",
+        last_name: "Korisnik",
+        business_name: "Prodavnica Test",
+        city: "Sarajevo",
+        phone: "033123456",
+        address: "Titova 1",
+        pickup_hours: "08-16",
+      });
+      expect(profileResponse.status).toBe(200);
+
+      const productResponse = await agent.post("/api/products").send({
+        name: "Test Product",
+        description: "Test description",
+        category: "Meat",
+        original_price: 10,
+        discounted_price: 5,
+        quantity: 5,
+        unit: "kg",
+        expiry_date: "2026-12-31",
+      });
+      expect(productResponse.status).toBe(201);
+
+      const response = await agent.get(`/api/products/${productResponse.body.product.id}`)
+      expect(response.status).toBe(200);
+      expect(response.body.product.business_name).toBe("Prodavnica Test");
+      expect(response.body.product.store_phone).toBe("033123456");
+      expect(response.body.product.store_address).toBe("Titova 1");
+      expect(response.body.product.store_pickup_hours).toBe("08-16");
+  });
 });
 });

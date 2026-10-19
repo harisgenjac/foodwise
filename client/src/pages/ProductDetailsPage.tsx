@@ -1,25 +1,46 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext.jsx";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import api from "../api/axios.js";
-import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import toast from "react-hot-toast";
-import type { Product } from "../types/index.js";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
-
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  CalendarClock,
+  CalendarPlus,
+  Clock,
+  Hourglass,
+  Info,
+  MapPin,
+  Package,
+  PackagePlus,
+  Pencil,
+  Phone,
+  Scale,
+  SearchX,
+  Store,
+  Trash2,
+} from "lucide-react";
+import api from "../api/axios.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import LoadingSpinner from "../components/LoadingSpinner.jsx";
+import EmptyState from "../components/product/EmptyState.jsx";
+import Modal from "../components/product/Modal.jsx";
+import DetailItem from "../components/product/DetailItem.jsx";
+import ReserveProductModal from "../components/product/ReserveProductModal.jsx";
+import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
+import { PRODUCT_STATUS_STYLES } from "../utils/productStatus.js";
+import { getDaysUntilExpiry } from "../utils/expiry.js";
+import type { Product } from "../types/index.js";
 
 function ProductDetailsPage() {
   const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
-  const [expiryWithinDays, setExpiryWithinDays] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [reservationQuantity, setReservationQuantity] = useState("");
-  const [pickupDate, setPickupDate] = useState("");
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reserving, setReserving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { t } = useTranslation();
   const productStatuses = t("productStatus", { returnObjects: true }) as Record<
@@ -54,28 +75,7 @@ function ProductDetailsPage() {
       const message = axios.isAxiosError(err)
         ? err.response?.data?.error
         : null;
-      toast.error(message || t("reservations.actionError"));
-    }
-  };
-
-  const handleReservation = async () => {
-    try {
-      await api.post("/reservations", {
-        product_id: selectedProduct!.id,
-        quantity: reservationQuantity,
-        pickup_date: pickupDate,
-      });
-      toast.success(t("myProducts.reservationCreated"));
-      setSelectedProduct(null);
-      setReservationQuantity("");
-      setPickupDate("");
-      fetchProduct();
-    } catch (err) {
-      console.error(err);
-      const message = axios.isAxiosError(err)
-        ? err.response?.data?.error
-        : null;
-      toast.error(message || t("reservations.actionError"));
+      toast.error(message || t("myProducts.deleteError"));
     }
   };
 
@@ -87,190 +87,288 @@ function ProductDetailsPage() {
     return <LoadingSpinner />;
   }
 
+  const isStore = user?.role === "STORE";
+
   if (!product) {
     return (
-      <div className="max-w-3xl mx-auto text-center py-20">
-        <p className="text-gray-500">{t("myProducts.productNotFoundTitle")}</p>
+      <div className="max-w-5xl mx-auto pb-10">
+        <EmptyState
+          icon={SearchX}
+          title={t("myProducts.productNotFoundTitle")}
+          subtitle={t("myProducts.notFoundSubtitle")}
+          action={{
+            to: isStore ? "/my-products" : "/browse-products",
+            label: t("myProducts.backToList"),
+          }}
+        />
       </div>
     );
   }
 
+  const unit = units[product.unit] || product.unit;
+  const isOwner = isStore && product.store_id === user?.id;
+  const quantity = parseFloat(product.quantity);
+  const available = parseFloat(product.available_quantity ?? product.quantity);
+  const reserved = Math.max(quantity - available, 0);
+  const availablePercent = quantity > 0 ? Math.round((available / quantity) * 100) : 0;
+  const originalPrice = Number(product.original_price);
+  const discountedPrice = Number(product.discounted_price);
+  const discountPercent =
+    originalPrice > 0
+      ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100)
+      : 0;
+  const daysUntilExpiry = getDaysUntilExpiry(product);
+  const expiryLabel =
+    daysUntilExpiry <= 0
+      ? t("product.expiresToday")
+      : daysUntilExpiry === 1
+        ? t("product.expiresTomorrow")
+        : t("product.expiresInDays", { count: daysUntilExpiry });
+  const isUrgent = daysUntilExpiry <= 3;
+  const canReserve =
+    user?.role === "RESTAURANT" && product.status === "Available" && available > 0;
+  // The server refuses to delete Sold, Expired or Removed products.
+  const canDelete = product.status === "Available" || product.status === "Reserved";
+
   return (
-    <div className="max-w-4xl mx-auto pb-16">
+    <div className="max-w-5xl mx-auto space-y-6 pb-10">
       <button
+        type="button"
         onClick={() => navigate(-1)}
-        className="mb-6 text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+        className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-orange-50 hover:text-orange-700"
       >
-        ← {t("myProducts.backButton")}
+        <ArrowLeft className="h-4 w-4" />
+        {t("myProducts.backButton")}
       </button>
 
-      <div className="bg-white rounded-2xl shadow overflow-hidden md:flex">
-        <img
-          src={CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES.Other}
-          alt={product.name}
-          className="w-full md:w-2/5 h-64 md:h-auto object-cover shrink-0"
-        />
-
-        <div className="flex-1 p-6 md:p-8">
-          <div className="flex items-start justify-between gap-4 mb-2">
-            <h1 className="text-2xl font-bold text-gray-800">{product.name}</h1>
-            <span className="shrink-0 text-xs font-medium px-3 py-1 rounded-full bg-orange-50 text-orange-600">
-              {productStatuses[product.status] || product.status}
-            </span>
-          </div>
-
-          <span className="inline-block text-xs font-semibold px-2 py-1 rounded-full bg-gray-100 text-gray-600 mb-4">
+      <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm md:flex">
+        <div className="relative h-56 shrink-0 md:h-auto md:w-2/5">
+          <img
+            src={CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES.Other}
+            alt={product.name}
+            className="h-full w-full object-cover"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/25 via-transparent to-transparent" />
+          <span className="absolute top-3 left-3 rounded-full bg-white/90 px-2 py-1 text-xs font-semibold">
             {categories[product.category] || product.category}
           </span>
+        </div>
 
-          <p className="text-gray-600 mb-6">{product.description}</p>
+        <div className="flex flex-1 flex-col gap-5 p-6 md:p-8">
+          <div>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span
+                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${PRODUCT_STATUS_STYLES[product.status]}`}
+              >
+                {productStatuses[product.status] || product.status}
+              </span>
+              {product.status === "Available" && (
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                    isUrgent ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  <Hourglass className="h-3 w-3" />
+                  {expiryLabel}
+                </span>
+              )}
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
+              {product.name}
+            </h1>
+            {!isOwner && product.business_name && (
+              <p className="mt-1 text-sm text-gray-500">
+                {[product.business_name, product.city].filter(Boolean).join(" · ")}
+              </p>
+            )}
+            {product.description && (
+              <p className="mt-2 text-gray-600">{product.description}</p>
+            )}
+          </div>
 
-          <div className="flex items-baseline gap-3 mb-6">
-            <span className="text-lg line-through text-gray-400">
-              {product.original_price} KM
-            </span>
+          <div className="flex flex-wrap items-baseline gap-3">
             <span className="text-3xl font-bold text-green-600">
               {product.discounted_price} KM
             </span>
+            <span className="text-lg text-gray-400 line-through">
+              {product.original_price} KM
+            </span>
+            {discountPercent > 0 && (
+              <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">
+                {t("product.discountBadge", { percent: discountPercent })}
+              </span>
+            )}
+            <span className="text-sm text-gray-500">/ {unit}</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-6">
-            <div>
-              <p className="text-xs text-gray-400 mb-1">{t("myProducts.store")}</p>
-              <p className="font-semibold text-gray-800">
-                {product.business_name}
-              </p>
+          <dl className="grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2">
+            <DetailItem
+              icon={Scale}
+              label={t("myProducts.availableQuantity")}
+              value={`${available} ${unit}`}
+            />
+            <DetailItem
+              icon={Package}
+              label={t("myProducts.totalQuantity")}
+              value={`${product.quantity} ${unit}`}
+            />
+            <DetailItem
+              icon={CalendarClock}
+              label={t("dashboard.expiryDate")}
+              value={new Date(product.expiry_date).toLocaleDateString()}
+              valueClassName={isUrgent && product.status === "Available" ? "text-red-600" : "text-gray-900"}
+            />
+            <DetailItem
+              icon={PackagePlus}
+              label={t("myProducts.createdAt")}
+              value={new Date(product.created_at).toLocaleDateString()}
+            />
+          </dl>
+
+          <div>
+            <div className="mb-1.5 flex items-center justify-between text-sm">
+              <span className="font-medium text-gray-700">{t("myProducts.stockTitle")}</span>
+              <span className="text-gray-500">
+                {t("myProducts.reservedQuantity")}: {reserved} {unit}
+              </span>
             </div>
-            <div>
-              <p className="text-xs text-gray-400 mb-1">{t("dashboard.city")}</p>
-              <p className="font-semibold text-gray-800">{product.city}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 mb-1">{t("myProducts.availableQuantity")}</p>
-              <p className="font-semibold text-gray-800">
-                {product.available_quantity}{" "}
-                {units[product.unit] || product.unit}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 mb-1">{t("myProducts.totalQuantity")}</p>
-              <p className="font-semibold text-gray-800">
-                {product.quantity} {units[product.unit] || product.unit}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 mb-1">{t("dashboard.expiryDate")}</p>
-              <p className="font-semibold text-gray-800">
-                {new Date(product.expiry_date).toLocaleDateString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-400 mb-1">{t("myProducts.daysUntilExpiry")}</p>
-              <p className="font-semibold text-gray-800">
-                {product.days_until_expiry}
-              </p>
+            <div className="h-2.5 overflow-hidden rounded-full bg-gray-100">
+              <div
+                className="h-full rounded-full bg-green-500 transition-all"
+                style={{ width: `${availablePercent}%` }}
+              />
             </div>
           </div>
 
-          {user?.role === "STORE" && (
-            <div className="mt-6 pt-6 border-t border-gray-100 flex gap-2">
+          {isOwner && (
+            <div className="mt-auto flex flex-col gap-2 sm:flex-row">
               <Link
                 to={`/edit-product/${product.id}`}
-                className="flex-1 text-center bg-orange-100 hover:bg-orange-200 transition-colors text-gray-800 font-medium py-2 rounded-lg"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
               >
+                <Pencil className="h-4 w-4" />
                 {t("myProducts.editButton")}
               </Link>
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="flex-1 bg-red-100 hover:bg-red-200 transition-colors text-red-700 font-medium py-2 rounded-lg cursor-pointer"
-              >
-                {t("myProducts.deleteButton")}
-              </button>
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 font-semibold text-gray-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {t("myProducts.deleteButton")}
+                </button>
+              )}
             </div>
           )}
-          {user?.role === "RESTAURANT" && (
-            <div className="mt-6 pt-6 border-t border-gray-100 flex gap-2">
+
+          {user?.role === "RESTAURANT" &&
+            (canReserve ? (
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedProduct(product);
-                }}
-                className="flex-1 bg-orange-100 cursor-pointer hover:bg-orange-200 transition-colors text-gray-800 font-medium py-2 rounded-lg"
+                type="button"
+                onClick={() => setReserving(true)}
+                className="mt-auto inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
               >
+                <CalendarPlus className="h-4 w-4" />
                 {t("myProducts.reserveButton")}
               </button>
-            </div>
-          )}
+            ) : (
+              <p className="mt-auto flex items-center gap-2 rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                <Info className="h-4 w-4 shrink-0 text-gray-400" />
+                {t("myProducts.notAvailable")}
+              </p>
+            ))}
         </div>
-      </div>
+      </section>
+
+      {!isOwner && (
+        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+              <Store className="h-4 w-4" strokeWidth={2} />
+            </span>
+            {t("myProducts.store")}
+          </h2>
+
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-2">
+              <p className="text-lg font-bold text-gray-900">
+                {product.business_name || "-"}
+              </p>
+              {(product.store_address || product.city) && (
+                <p className="flex items-center gap-2 text-sm text-gray-600">
+                  <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
+                  {[product.store_address, product.city].filter(Boolean).join(", ")}
+                </p>
+              )}
+              {product.store_phone && (
+                <a
+                  href={`tel:${product.store_phone}`}
+                  className="flex w-fit items-center gap-2 text-sm font-medium text-orange-700 hover:underline"
+                >
+                  <Phone className="h-4 w-4 shrink-0 text-gray-400" />
+                  {product.store_phone}
+                </a>
+              )}
+              {product.store_pickup_hours && (
+                <p className="flex items-center gap-2 text-sm text-gray-600">
+                  <Clock className="h-4 w-4 shrink-0 text-gray-400" />
+                  {t("reservations.pickupHours")}: {product.store_pickup_hours}
+                </p>
+              )}
+            </div>
+
+            {user?.role === "RESTAURANT" && (
+              <Link
+                to={`/stores/${product.store_id}`}
+                className="group inline-flex w-fit shrink-0 items-center gap-1.5 rounded-xl bg-orange-50 px-4 py-2.5 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
+              >
+                {t("reservations.viewStore")}
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            )}
+          </div>
+        </section>
+      )}
 
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-bold mb-4">
+        <Modal onClose={() => setShowDeleteConfirm(false)}>
+          <div className="flex flex-col items-center text-center">
+            <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+              <AlertTriangle className="h-6 w-6" strokeWidth={1.8} />
+            </span>
+            <h3 className="text-lg font-bold text-gray-900">
               {t("myProducts.deleteConfirmation")}
             </h3>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 rounded-lg"
-              >
-                {t("myProducts.cancelButton")}
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 rounded-lg"
-              >
-                {t("myProducts.confirmDeleteButton")}
-              </button>
-            </div>
+            <p className="mt-1 text-sm text-gray-500">
+              {t("myProducts.deleteConfirmationText", { name: product.name })}
+            </p>
           </div>
-        </div>
+          <div className="mt-6 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+            >
+              {t("myProducts.cancelButton")}
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="flex-1 cursor-pointer rounded-xl bg-red-600 py-2.5 font-semibold text-white transition-colors hover:bg-red-700"
+            >
+              {t("myProducts.confirmDeleteButton")}
+            </button>
+          </div>
+        </Modal>
       )}
-      {selectedProduct && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-bold mb-4">
-              {t("myReservations.reservePopupTitle")}: {selectedProduct.name}
-            </h3>
 
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t("dashboard.quantity")} ({selectedProduct.unit})
-            </label>
-            <input
-              type="number"
-              placeholder={`${t("myReservations.placeholderMax")}: ${selectedProduct.available_quantity}`}
-              value={reservationQuantity}
-              onChange={(e) => setReservationQuantity(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4"
-            />
-
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t("myReservations.pickupDate")}
-            </label>
-            <input
-              type="datetime-local"
-              value={pickupDate}
-              onChange={(e) => setPickupDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-6"
-            />
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => setSelectedProduct(null)}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 rounded-lg"
-              >
-                {t("myReservations.cancelButton")}
-              </button>
-              <button
-                onClick={handleReservation}
-                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 rounded-lg"
-              >
-                {t("myReservations.confirmButton")}
-              </button>
-            </div>
-          </div>
-        </div>
+      {reserving && (
+        <ReserveProductModal
+          product={product}
+          onClose={() => setReserving(false)}
+          onReserved={fetchProduct}
+        />
       )}
     </div>
   );
