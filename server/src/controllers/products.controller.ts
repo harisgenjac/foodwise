@@ -108,9 +108,12 @@ export const getProductById = async (req: Request, res: Response) => {
     products.*, 
     users.business_name,
     users.city,
+    users.address AS store_address,
+    users.phone AS store_phone,
+    users.pickup_hours AS store_pickup_hours,
     products.quantity - COALESCE(
-      (SELECT SUM(quantity) FROM reservations 
-       WHERE reservations.product_id = products.id 
+      (SELECT SUM(quantity) FROM reservations
+       WHERE reservations.product_id = products.id
        AND reservations.status IN ('Pending', 'Confirmed')),
       0
     ) AS available_quantity,

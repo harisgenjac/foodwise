@@ -1,78 +1,76 @@
 import { useState, useEffect } from "react";
 import api from "../api/axios.js";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import { useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import type { Product } from "../types/index.js";
 import { useTranslation } from "react-i18next";
+import { AlertCircle, Pencil, Save, SearchX } from "lucide-react";
+import { useAuth } from "../context/AuthContext.jsx";
+import LoadingSpinner from "../components/LoadingSpinner.jsx";
+import EmptyState from "../components/product/EmptyState.jsx";
+import ProductFormFields, { EMPTY_PRODUCT_FORM } from "../components/product/ProductFormFields.jsx";
+import ProductPreview from "../components/product/ProductPreview.jsx";
+import { toDateInput } from "../utils/expiry.js";
+import type { Product, ProductFormValues } from "../types/index.js";
 
 function EditProductPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
-  const [original_price, setOriginalPrice] = useState("");
-  const [discounted_price, setDiscountedPrice] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [unit, setUnit] = useState("");
-  const [expiry_date, setExpiryDate] = useState("");
+  const { user } = useAuth();
+  const [form, setForm] = useState<ProductFormValues>(EMPTY_PRODUCT_FORM);
+  const [originalExpiry, setOriginalExpiry] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   const { t } = useTranslation();
-  const categories = t("categories", { returnObjects: true }) as Record<
-    string,
-    string
-  >;
-  const units = t("units", { returnObjects: true }) as Record<string, string>;
 
-  const fetchProducts = async () => {
+  const fetchProduct = async () => {
     try {
       const response = await api.get("/products/" + id);
       const data: Product = response.data.product;
-      setName(data.name);
-      setDescription(data.description);
-      setCategory(data.category);
-      setOriginalPrice(data.original_price);
-      setDiscountedPrice(data.discounted_price);
-      setQuantity(data.quantity);
-      setUnit(data.unit);
-      setExpiryDate(data.expiry_date.slice(0, 10));
+      // Only the owner may edit; the server would refuse the PUT anyway.
+      if (data.store_id !== user?.id) {
+        setNotFound(true);
+        return;
+      }
+      const expiry = data.expiry_date.slice(0, 10);
+      setForm({
+        name: data.name,
+        description: data.description,
+        category: data.category,
+        original_price: data.original_price,
+        discounted_price: data.discounted_price,
+        quantity: data.quantity,
+        unit: data.unit,
+        expiry_date: expiry,
+      });
+      setOriginalExpiry(expiry);
     } catch (err) {
-      console.error("Error fetching products:", err);
+      console.error("Error fetching product:", err);
+      setNotFound(true);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchProducts();
+    fetchProduct();
   }, [id]);
+
+  const updateField = (field: keyof ProductFormValues, value: string) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (
-      !name ||
-      !description ||
-      !category ||
-      !original_price ||
-      !discounted_price ||
-      !quantity ||
-      !unit ||
-      !expiry_date
-    ) {
+    if (Object.values(form).some((value) => !value)) {
       setError(t("product.fillAllFields"));
       return;
     }
+    setSaving(true);
     try {
-      const response = await api.put("/products/" + id, {
-        name,
-        description,
-        category,
-        original_price,
-        discounted_price,
-        quantity,
-        unit,
-        expiry_date,
-      });
+      const response = await api.put("/products/" + id, form);
       toast.success(response.data.message);
       navigate("/my-products");
     } catch (err) {
@@ -81,132 +79,74 @@ function EditProductPage() {
         ? err.response?.data?.error
         : null;
       toast.error(message || t("product.editError"));
+    } finally {
+      setSaving(false);
     }
   };
 
-  const inputStyle =
-    "w-full border border-gray-300 rounded-lg px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-orange-300";
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (notFound) {
+    return (
+      <div className="max-w-5xl mx-auto pb-10">
+        <EmptyState
+          icon={SearchX}
+          title={t("myProducts.productNotFoundTitle")}
+          subtitle={t("myProducts.notFoundSubtitle")}
+          action={{ to: "/my-products", label: t("myProducts.backToList") }}
+        />
+      </div>
+    );
+  }
+
+  const today = toDateInput(new Date());
+  // An already expired product keeps its past date valid, otherwise the browser would block saving.
+  const minExpiryDate = originalExpiry && originalExpiry < today ? undefined : today;
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-xl shadow p-6">
-      <h1 className="text-2xl font-bold mb-6">{t("product.editTitle")}</h1>
+    <div className="max-w-6xl mx-auto pb-16">
+      <div className="mb-6">
+        <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-gray-900">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+            <Pencil className="h-5 w-5" strokeWidth={1.8} />
+          </span>
+          {t("product.editTitle")}
+        </h1>
+        <p className="mt-2 text-sm text-gray-500">{t("product.editSubtitle")}</p>
+      </div>
 
       {error && (
-        <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+        <p className="mb-6 flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </p>
       )}
 
-      <form onSubmit={handleSubmit}>
-        <div className="mb-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("product.name")}
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300"
-          />
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <ProductFormFields values={form} onChange={updateField} minExpiryDate={minExpiryDate} />
         </div>
-        <div className="mb-0">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("product.description")}
-          </label>
-          <input
-            type="text"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className={inputStyle}
-          />
-        </div>
-        <div className="mb-0">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("product.category")}
-          </label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className={inputStyle}
+
+        <aside className="lg:sticky lg:top-0 lg:self-start space-y-4">
+          <ProductPreview values={form} />
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-3 font-semibold text-white shadow-sm shadow-orange-500/20 transition-all hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-md disabled:translate-y-0 disabled:opacity-60 cursor-pointer"
           >
-            <option value="">{t("product.selectCategory")}</option>
-             {Object.entries(categories).map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="mb-0">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("product.originalPrice")}
-          </label>
-          <input
-            type="number"
-            placeholder={t("product.originalPrice")}
-            value={original_price}
-            onChange={(e) => setOriginalPrice(e.target.value)}
-            className={inputStyle}
-          />
-        </div>
-        <div className="mb-0">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("product.discountedPrice")}
-          </label>
-          <input
-            type="number"
-            placeholder={t("product.discountedPrice")}
-            value={discounted_price}
-            onChange={(e) => setDiscountedPrice(e.target.value)}
-            className={inputStyle}
-          />
-        </div>
-        <div className="mb-0">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("product.quantity")}
-          </label>
-          <input
-            type="number"
-            placeholder={t("product.quantity")}
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            className={inputStyle}
-          />
-        </div>
-        <div className="mb-0">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("product.unit")}
-          </label>
-          <select
-            value={unit}
-            onChange={(e) => setUnit(e.target.value)}
-            className={inputStyle}
+            <Save className="h-5 w-5" strokeWidth={1.8} />
+            {t("product.saveChanges")}
+          </button>
+          <Link
+            to={`/products/${id}`}
+            className="block w-full rounded-xl border border-gray-200 bg-white py-2.5 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
           >
-            <option value="">{t("product.selectUnit")}</option>
-            {Object.entries(units).map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="mb-0">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("product.expiryDate")}
-          </label>
-          <input
-            type="date"
-            value={expiry_date}
-            onChange={(e) => setExpiryDate(e.target.value)}
-            className={inputStyle}
-          />
-        </div>
-        <button
-          type="submit"
-          className="w-full bg-orange-500 hover:bg-orange-600 transition-colors text-white font-medium py-2 rounded-lg"
-        >
-          {t("product.editButton")}
-        </button>
+            {t("product.cancel")}
+          </Link>
+        </aside>
       </form>
     </div>
   );

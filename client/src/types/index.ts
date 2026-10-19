@@ -16,6 +16,10 @@ export interface Product {
   days_until_expiry?: number;
   business_name?: string;
   city?: string;
+  // Only on GET /products/:id.
+  store_address?: string | null;
+  store_phone?: string | null;
+  store_pickup_hours?: string | null;
 }
 
 export interface Reservation {
@@ -32,8 +36,18 @@ export interface Reservation {
   discounted_price?: string;
   original_price?: string;
   category?: string;
+  unit?: string;
   business_name?: string;
   city?: string;
+  // Only on GET /reservations/:id, which returns both parties.
+  store_id?: number;
+  store_address?: string | null;
+  store_phone?: string | null;
+  store_pickup_hours?: string | null;
+  restaurant_name?: string | null;
+  restaurant_city?: string | null;
+  restaurant_address?: string | null;
+  restaurant_phone?: string | null;
 }
 
 export interface User {
@@ -51,6 +65,8 @@ export interface User {
   description?: string;
   phone?: string;
   created_at?: string;
+  // Only on GET /users/stores (COUNT, so a string).
+  active_products?: string;
 }
 
 export interface Favorites {
@@ -58,4 +74,31 @@ export interface Favorites {
   restaurant_id: number;
   store_id: number;
   created_at: string;
+}
+
+// Add/edit product form state; every field is the raw input string.
+export interface ProductFormValues {
+  name: string;
+  description: string;
+  category: string;
+  original_price: string;
+  discounted_price: string;
+  quantity: string;
+  unit: string;
+  expiry_date: string;
+}
+
+export interface ProductTemplate {
+  id: number;
+  store_id: number;
+  name: string;
+  description: string | null;
+  category: string;
+  unit: string;
+  original_price: string | null;
+  discounted_price: string | null;
+  quantity: string | null;
+  shelf_life_days: number | null;
+  created_at: string;
+  updated_at: string;
 }

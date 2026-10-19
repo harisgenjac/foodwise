@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,9 +31,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     checkAuth();
   }, []);
 
+  // The login response carries only the basic fields; /users/me returns the full profile
+  // (business_name, city, logo...), so load it right away instead of waiting for a reload.
+  const refreshUser = async () => {
+    const response = await api.get("/users/me");
+    setUser(response.data.user);
+  };
+
   const login = async (email: string, password: string) => {
     const response = await api.post("/auth/login", { email, password });
     setUser(response.data.user);
+    try {
+      await refreshUser();
+    } catch (error) {
+      console.error("Error loading user profile:", error);
+    }
   };
 
   const logout = async () => {
@@ -41,7 +54,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

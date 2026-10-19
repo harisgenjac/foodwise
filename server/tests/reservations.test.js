@@ -146,6 +146,49 @@ describe("Reservations routes", () => {
       expect(reservationResponse.body.error).toBe("Proizvod nije pronađen.");
     });
 
+    it.each([
+      ["has expired", "UPDATE products SET expiry_date = CURRENT_DATE - 1 WHERE id = $1"],
+      ["is sold", "UPDATE products SET status = 'Sold' WHERE id = $1"],
+    ])("returns 400 when the product %s", async (_case, updateSql) => {
+      const productResponse = await agent.post("/api/products").send({
+        name: "Test Product",
+        description: "Test description",
+        category: "Meat",
+        original_price: 10,
+        discounted_price: 5,
+        quantity: 10,
+        unit: "kg",
+        expiry_date: "2026-12-31",
+      });
+      expect(productResponse.status).toBe(201);
+      const id = productResponse.body.product.id;
+      await pool.query(updateSql, [id]);
+
+      await request(app).post("/api/auth/register").send({
+        first_name: "Restaurant",
+        last_name: "A",
+        email: "restaurant-a@test.com",
+        password: "test12345",
+        role: "RESTAURANT",
+      });
+
+      const agentR = request.agent(app);
+      await agentR.post("/api/auth/login").send({
+        email: "restaurant-a@test.com",
+        password: "test12345",
+      });
+
+      const reservationResponse = await agentR.post("/api/reservations").send({
+        product_id: id,
+        quantity: 2,
+        pickup_date: "2026-12-31T10:00:00.000Z",
+      });
+      expect(reservationResponse.status).toBe(400);
+      expect(reservationResponse.body.error).toBe(
+        "Proizvod više nije dostupan za rezervaciju.",
+      );
+    });
+
     it("returns 403 when a STORE user tries to create a reservation", async () => {
       const reservationResponse = await agent.post("/api/reservations").send({
         product_id: 999999,
@@ -287,6 +330,97 @@ describe("Reservations routes", () => {
         const statuses = [responseA.status, responseB.status].sort();
         expect(statuses).toEqual([201, 400]);
       });
+    });
+  });
+
+  describe("GET /api/reservations/:id", () => {
+    const registerAndLogin = async (email) => {
+      await request(app).post("/api/auth/register").send({
+        first_name: "Restaurant",
+        last_name: "Test",
+        email,
+        password: "test12345",
+        role: "RESTAURANT",
+      });
+      const restaurantAgent = request.agent(app);
+      await restaurantAgent.post("/api/auth/login").send({
+        email,
+        password: "test12345",
+      });
+      return restaurantAgent;
+    };
+
+    it("returns both the store and the restaurant details to the store", async () => {
+      const productResponse = await agent.post("/api/products").send({
+        name: "Test Product",
+        description: "Test description",
+        category: "Meat",
+        original_price: 10,
+        discounted_price: 5,
+        quantity: 10,
+        unit: "kg",
+        expiry_date: "2026-12-31",
+      });
+      expect(productResponse.status).toBe(201);
+
+      const agentR = await registerAndLogin("restaurant-a@test.com");
+      const profileResponse = await agentR.put("/api/users/me").send({
+        first_name: "Restaurant",
+        last_name: "A",
+        business_name: "Restoran Test",
+        city: "Sarajevo",
+        phone: "061111222",
+        address: "Ulica 1",
+      });
+      expect(profileResponse.status).toBe(200);
+
+      const reservationResponse = await agentR.post("/api/reservations").send({
+        product_id: productResponse.body.product.id,
+        quantity: 2,
+        pickup_date: "2026-12-31T10:00:00.000Z",
+      });
+      expect(reservationResponse.status).toBe(201);
+      const reservationId = reservationResponse.body.reservation.id;
+
+      const response = await agent.get(`/api/reservations/${reservationId}`);
+      expect(response.status).toBe(200);
+      expect(response.body.reservation.product_id).toBe(
+        productResponse.body.product.id,
+      );
+      expect(response.body.reservation.restaurant_name).toBe("Restoran Test");
+      expect(response.body.reservation.restaurant_city).toBe("Sarajevo");
+      expect(response.body.reservation.restaurant_phone).toBe("061111222");
+      expect(response.body.reservation.restaurant_address).toBe("Ulica 1");
+      expect(response.body.reservation.store_id).toBe(
+        productResponse.body.product.store_id,
+      );
+    });
+
+    it("returns 404 to a restaurant that did not make the reservation", async () => {
+      const productResponse = await agent.post("/api/products").send({
+        name: "Test Product",
+        description: "Test description",
+        category: "Meat",
+        original_price: 10,
+        discounted_price: 5,
+        quantity: 10,
+        unit: "kg",
+        expiry_date: "2026-12-31",
+      });
+      const agentA = await registerAndLogin("restaurant-a@test.com");
+      const reservationResponse = await agentA.post("/api/reservations").send({
+        product_id: productResponse.body.product.id,
+        quantity: 2,
+        pickup_date: "2026-12-31T10:00:00.000Z",
+      });
+      expect(reservationResponse.status).toBe(201);
+
+      const agentB = await registerAndLogin("restaurant-b@test.com");
+      const response = await agentB.get(
+        `/api/reservations/${reservationResponse.body.reservation.id}`,
+      );
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe("Ne postoji rezervacija sa tim ID");
     });
   });
 });

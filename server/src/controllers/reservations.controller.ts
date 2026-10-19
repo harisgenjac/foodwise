@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
+import { createNotification } from "../utils/notifications.js";
 
 export const createReservation = async (req: Request, res: Response) => {
   const { product_id, quantity, pickup_date } = req.body;
@@ -13,12 +14,18 @@ export const createReservation = async (req: Request, res: Response) => {
     client = await pool.connect();
     await client.query("BEGIN");
     const products = await client.query(
-      "SELECT * FROM products WHERE id = $1 FOR UPDATE",
+      "SELECT *, expiry_date < CURRENT_DATE AS is_expired FROM products WHERE id = $1 FOR UPDATE",
       [product_id],
     );
     if (products.rows.length === 0) {
       await client.query("ROLLBACK");
       return res.status(404).json({ error: "Proizvod nije pronađen." });
+    }
+    if (products.rows[0].status !== "Available" || products.rows[0].is_expired) {
+      await client.query("ROLLBACK");
+      return res
+        .status(400)
+        .json({ error: "Proizvod više nije dostupan za rezervaciju." });
     }
     const reserved = await client.query(
       "SELECT COALESCE(SUM(quantity), 0) AS total_reserved FROM reservations WHERE product_id = $1 AND status IN ('Pending', 'Confirmed')",
@@ -39,13 +46,13 @@ export const createReservation = async (req: Request, res: Response) => {
       "INSERT INTO reservations (product_id, restaurant_id, quantity, status, pickup_date) VALUES ($1, $2, $3, 'Pending', $4) RETURNING *",
       [product_id, restaurant_id, quantity, pickup_date],
     );
-    await client.query(
-      `INSERT INTO notifications (user_id, message) VALUES ($1, $2)`,
-      [
-        products.rows[0].store_id,
-        `Novi zahtjev za rezervaciju: ${quantity}${products.rows[0].unit} ${products.rows[0].name}`,
-      ],
-    );
+    await createNotification(client, {
+      userId: products.rows[0].store_id,
+      type: "RESERVATION_CREATED",
+      message: `New reservation request: ${quantity}${products.rows[0].unit} ${products.rows[0].name}`,
+      reservationId: result.rows[0].id,
+      productId: products.rows[0].id,
+    });
     await client.query("COMMIT");
     return res.status(201).json({
       message: "Rezervacija uspješno kreirana.",
@@ -69,24 +76,35 @@ export const getReservationById = async (req: Request, res: Response) => {
 
     const result = await pool.query(
       `SELECT 
-    reservations.id, 
-    reservations.restaurant_id, 
-    reservations.quantity, 
-    reservations.status, 
-    reservations.pickup_date, 
-    reservations.created_at, 
-    reservations.updated_at, 
-    products.name AS product_name, 
-    products.description, 
-    products.discounted_price, 
-    products.original_price, 
-    products.category, 
-    users.business_name, 
-    users.city
-    FROM reservations 
+    reservations.id,
+    reservations.product_id,
+    reservations.restaurant_id,
+    reservations.quantity,
+    reservations.status,
+    reservations.pickup_date,
+    reservations.created_at,
+    reservations.updated_at,
+    products.name AS product_name,
+    products.description,
+    products.discounted_price,
+    products.original_price,
+    products.category,
+    products.unit,
+    products.store_id,
+    stores.business_name,
+    stores.city,
+    stores.address AS store_address,
+    stores.phone AS store_phone,
+    stores.pickup_hours AS store_pickup_hours,
+    restaurants.business_name AS restaurant_name,
+    restaurants.city AS restaurant_city,
+    restaurants.address AS restaurant_address,
+    restaurants.phone AS restaurant_phone
+    FROM reservations
     JOIN products ON reservations.product_id = products.id
-    JOIN users ON products.store_id = users.id
-    WHERE reservations.id = $1 
+    JOIN users AS stores ON products.store_id = stores.id
+    JOIN users AS restaurants ON reservations.restaurant_id = restaurants.id
+    WHERE reservations.id = $1
     AND (reservations.restaurant_id = $2 OR products.store_id = $2)`,
       [reservationId, restorantId],
     );
@@ -123,7 +141,8 @@ export const getMineReservations = async (req: Request, res: Response) => {
     products.description, 
     products.discounted_price, 
     products.original_price, 
-    products.category, 
+    products.category,
+    products.unit,
     users.business_name, 
     users.city
   FROM reservations 
@@ -187,7 +206,8 @@ export const getStoreReservations = async (req: Request, res: Response) => {
         products.description, 
         products.discounted_price, 
         products.original_price, 
-        products.category, 
+        products.category,
+        products.unit,
         users.business_name, 
         users.city
       FROM reservations 
@@ -251,7 +271,7 @@ export const acceptReservation = async (req: Request, res: Response) => {
     }
 
     const productResult = await client.query(
-      "SELECT * FROM products WHERE id = $1 FOR UPDATE",
+      "SELECT *, expiry_date < CURRENT_DATE AS is_expired FROM products WHERE id = $1 FOR UPDATE",
       [result.rows[0].product_id],
     );
 
@@ -269,14 +289,25 @@ export const acceptReservation = async (req: Request, res: Response) => {
         .json({ error: "Rezervacija nije u statusu 'Pending'." });
     }
 
+    if (productResult.rows[0].is_expired) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        error:
+          "Rezervaciju nije moguće prihvatiti jer je proizvodu istekao rok trajanja.",
+      });
+    }
+
     await client.query(
       "UPDATE reservations SET status = 'Confirmed' WHERE id = $1",
       [reservationId],
     );
-    await client.query(
-      `INSERT INTO notifications (user_id, message) VALUES ($1, $2)`,
-      [result.rows[0].restaurant_id, `Vaša rezervacija je prihvaćena.`],
-    );
+    await createNotification(client, {
+      userId: result.rows[0].restaurant_id,
+      type: "RESERVATION_ACCEPTED",
+      message: `Your reservation for ${productResult.rows[0].name} was accepted.`,
+      reservationId: result.rows[0].id,
+      productId: result.rows[0].product_id,
+    });
 
     const confirmedSum = await client.query(
       "SELECT COALESCE(SUM(quantity), 0) AS total_confirmed FROM reservations WHERE product_id = $1 AND status = 'Confirmed'",
@@ -290,6 +321,12 @@ export const acceptReservation = async (req: Request, res: Response) => {
       await client.query("UPDATE products SET status = 'Sold' WHERE id = $1", [
         result.rows[0].product_id,
       ]);
+      await createNotification(client, {
+        userId: store_id,
+        type: "PRODUCT_SOLD_OUT",
+        message: `${productResult.rows[0].name} is sold out.`,
+        productId: result.rows[0].product_id,
+      });
     }
 
     await client.query("COMMIT");
@@ -343,10 +380,13 @@ export const rejectReservation = async (req: Request, res: Response) => {
       "UPDATE reservations SET status = 'Cancelled' WHERE id = $1",
       [reservationId],
     );
-    await pool.query(
-      `INSERT INTO notifications (user_id, message) VALUES ($1, $2)`,
-      [result.rows[0].restaurant_id, `Vaša rezervacija je odbijena.`],
-    );
+    await createNotification(pool, {
+      userId: result.rows[0].restaurant_id,
+      type: "RESERVATION_REJECTED",
+      message: `Your reservation for ${productResult.rows[0].name} was rejected.`,
+      reservationId: result.rows[0].id,
+      productId: result.rows[0].product_id,
+    });
     return res
       .status(200)
       .json({ message: "Rezervacija je uspješno odbijena." });
@@ -370,8 +410,10 @@ export const cancelReservation = async (req: Request, res: Response) => {
     reservations.id, 
     reservations.status, 
     reservations.restaurant_id,
-    products.store_id 
-   FROM reservations 
+    reservations.product_id,
+    products.name AS product_name,
+    products.store_id
+   FROM reservations
    JOIN products ON reservations.product_id = products.id 
    WHERE reservations.id = $1`,
       [reservationId],
@@ -397,10 +439,13 @@ export const cancelReservation = async (req: Request, res: Response) => {
       "UPDATE reservations SET status = 'Cancelled' WHERE id = $1",
       [reservationId],
     );
-    await pool.query(
-      "INSERT INTO notifications (user_id, message) VALUES ($1, $2)",
-      [result.rows[0].store_id, "Rezervacija vašeg proizvoda je otkazana"],
-    );
+    await createNotification(pool, {
+      userId: result.rows[0].store_id,
+      type: "RESERVATION_CANCELLED",
+      message: `A reservation for ${result.rows[0].product_name} was cancelled.`,
+      reservationId: result.rows[0].id,
+      productId: result.rows[0].product_id,
+    });
     return res
       .status(200)
       .json({ message: "Rezervacija je uspješno otkazana." });

@@ -28,20 +28,22 @@ Both are registered businesses with a profile (business name, city, address, pho
 3. The restaurant reserves a quantity (partial reservations are allowed) and picks a pickup time. The reservation starts as `Pending` and the store is notified.
 4. The store accepts or rejects. The restaurant is notified either way. A restaurant can cancel only while the reservation is still `Pending`.
 5. When accepted reservations cover the full quantity, the product is marked `Sold`.
-6. When a product passes its expiry date it disappears from the marketplace, becomes `Expired`, and its open reservations are cancelled automatically with a notification to the restaurants.
+6. When a product passes its expiry date it disappears from the marketplace, becomes `Expired`, and its open reservations are cancelled automatically, and both the store and the affected restaurants are notified.
 
 ## Business rules (as implemented)
 
 - Available quantity is the total minus pending and confirmed reservations, so two restaurants can never reserve more than exists, even at the same instant.
+- Product templates are private to the store that saved them. Saving a template under a name that already exists updates that template. A template remembers the shelf life as a number of days, so applying it sets the expiry date relative to today.
+- Only available, unexpired products can be reserved, and a store cannot accept a reservation for a product whose expiry date has passed. Expiry is applied when the server starts and every midnight.
 - Deleting a product is a soft delete and is blocked while it has active reservations. Reservation history is never erased.
 - A reservation is visible only to the restaurant that made it and the store that owns the product.
 - Stores do not get a directory of restaurants: stores sell to whoever reserves, so only restaurants browse stores.
-- Store profiles show public statistics to restaurants: active products, products sold, successful (confirmed) deliveries, and how many reservations the viewing restaurant has made there.
-- Notifications are in-app and refreshed by polling (no push channel yet).
+- The store list shows how many active offers each store has. Store profiles show public statistics to restaurants: active products, products sold, successful (confirmed) deliveries, and how many reservations the viewing restaurant has made there.
+- Notifications are in-app and refreshed by polling (every 50s and when the tab regains focus; no push channel yet). Each one links to the reservation or product it is about and is shown in the user's language. Stores are notified of new requests, cancellations by restaurants, a product selling out, a product expiring, and (reminder) a product that expires tomorrow while requests are still pending. Restaurants are notified when a reservation is accepted, rejected or cancelled by expiry, and (reminder) on the morning of a confirmed pickup. Each reminder is sent once. Users can mark notifications read (one or all) and delete them (one, or all read ones); the list keeps the 50 newest.
 
 ## Features available now
 
-Registration and login with two roles; product management; marketplace search and filters; reservations with concurrency protection; notifications; automatic expiry handling; store list and store profiles with statistics and favorites ("favorites only" filter); reservation and product detail pages; logo upload; Bosnian and English interface; responsive layout; demo data for presentations.
+Registration and login with two roles; product management; marketplace search and filters; reservations with concurrency protection; notifications with links to details, reminders and deletion; automatic expiry handling; store list and store profiles with statistics and favorites ("favorites only" filter); reservation and product detail pages; product templates for stores (save a product's details once, then fill the add-product form from it and change only the date, quantity or price); logo upload; Bosnian and English interface; responsive layout; demo data for presentations.
 
 ## Planned: humanitarian module
 
