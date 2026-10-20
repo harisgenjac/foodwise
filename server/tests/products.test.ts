@@ -1,0 +1,268 @@
+import pool from "../src/config/db.js";
+import {
+  cleanupUsers,
+  createProduct,
+  futureDate,
+  productPayload,
+  registerAndLogin,
+  reserve,
+  type Agent,
+  type Product,
+} from "./helpers.js";
+
+const STORE_A = "products-store-a@test.com";
+const STORE_B = "products-store-b@test.com";
+const RESTAURANT = "products-restaurant@test.com";
+
+let store: Agent;
+
+describe("Products routes", () => {
+  beforeEach(async () => {
+    store = await registerAndLogin(STORE_A, "STORE");
+  });
+
+  afterEach(async () => {
+    await cleanupUsers([STORE_A, STORE_B, RESTAURANT]);
+  });
+
+  describe("POST /api/products", () => {
+    it("creates a product owned by the store with status Available", async () => {
+      const response = await store.post("/api/products").send(productPayload());
+      expect(response.status).toBe(201);
+      expect(response.body.message).toBe("Proizvod uspješno dodan.");
+      expect(response.body.product).toMatchObject({ name: "Test Product", status: "Available" });
+    });
+
+    it("returns 400 when a required field is missing", async () => {
+      const response = await store.post("/api/products").send(productPayload({ category: undefined }));
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Sva polja su obavezna.");
+    });
+
+    it("returns 400 for a negative price", async () => {
+      const response = await store.post("/api/products").send(productPayload({ original_price: -10 }));
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Cijene i količina moraju biti pozitivni brojevi.");
+    });
+
+    it("returns 400 when the discounted price is above the original", async () => {
+      const response = await store
+        .post("/api/products")
+        .send(productPayload({ original_price: 5, discounted_price: 8 }));
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Snižena cijena ne može biti veća od originalne.");
+    });
+  });
+
+  describe("PUT /api/products/:id", () => {
+    it("updates an own product", async () => {
+      const product = await createProduct(store);
+      const response = await store
+        .put(`/api/products/${product.id}`)
+        .send(productPayload({ name: "Edited", discounted_price: 4, quantity: 20 }));
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe("Proizvod uspješno ažuriran.");
+      expect(response.body.product.name).toBe("Edited");
+      expect(parseFloat(response.body.product.quantity)).toBe(20);
+    });
+
+    it("returns 400 for invalid fields", async () => {
+      const product = await createProduct(store);
+      const response = await store.put(`/api/products/${product.id}`).send(productPayload({ name: "" }));
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Sva polja su obavezna.");
+    });
+
+    it("returns 403 for another store's product", async () => {
+      const product = await createProduct(store);
+      const storeB = await registerAndLogin(STORE_B, "STORE");
+      const response = await storeB.put(`/api/products/${product.id}`).send(productPayload({ name: "Hacked" }));
+      expect(response.status).toBe(403);
+      expect(response.body.error).toBe("Nemate dozvolu za izmjenu ovog proizvoda.");
+    });
+
+    it("returns 404 for a product that does not exist", async () => {
+      const response = await store.put("/api/products/999999").send(productPayload());
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe("Proizvod nije pronađen.");
+    });
+  });
+
+  describe("DELETE /api/products/:id", () => {
+    it("soft-deletes an own product by setting status Removed", async () => {
+      const product = await createProduct(store);
+      const response = await store.delete(`/api/products/${product.id}`);
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe("Proizvod uspješno obrisan.");
+      expect(response.body.product.status).toBe("Removed");
+    });
+
+    it("returns 403 for another store's product", async () => {
+      const product = await createProduct(store);
+      const storeB = await registerAndLogin(STORE_B, "STORE");
+      const response = await storeB.delete(`/api/products/${product.id}`);
+      expect(response.status).toBe(403);
+      expect(response.body.error).toBe("Nemate dozvolu za brisanje ovog proizvoda.");
+    });
+
+    it("returns 404 for a product that does not exist", async () => {
+      const response = await store.delete("/api/products/999999");
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe("Proizvod nije pronađen.");
+    });
+
+    it("returns 400 when the product has an active reservation", async () => {
+      const product = await createProduct(store);
+      const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
+      await reserve(restaurant, product.id, 1);
+
+      const response = await store.delete(`/api/products/${product.id}`);
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Proizvod ima aktivne rezervacije i ne može biti obrisan.");
+    });
+
+    it.each(["Sold", "Expired", "Removed"])("returns 400 for a %s product", async (status) => {
+      const product = await createProduct(store);
+      await pool.query("UPDATE products SET status = $1 WHERE id = $2", [status, product.id]);
+
+      const response = await store.delete(`/api/products/${product.id}`);
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Proizvod ne može biti obrisan jer je prodat ili istekao.");
+    });
+  });
+
+  describe("GET /api/products", () => {
+    const listIds = async (query: Record<string, string | number> = {}) => {
+      const response = await store.get("/api/products").query(query);
+      expect(response.status).toBe(200);
+      return (response.body.products as Product[]).map((p) => p.id);
+    };
+
+    it("lists available products with store details and available_quantity", async () => {
+      const product = await createProduct(store);
+      const response = await store.get("/api/products");
+      const listed = response.body.products.find((p: Product) => p.id === product.id);
+      expect(listed).toBeDefined();
+      expect(listed.business_name).toBeDefined();
+      expect(parseFloat(listed.available_quantity)).toBe(10);
+    });
+
+    it("hides products that are not Available or already expired", async () => {
+      const removed = await createProduct(store);
+      await store.delete(`/api/products/${removed.id}`);
+      const expired = await createProduct(store);
+      await pool.query("UPDATE products SET expiry_date = CURRENT_DATE - 1 WHERE id = $1", [expired.id]);
+
+      const ids = await listIds();
+      expect(ids).not.toContain(removed.id);
+      expect(ids).not.toContain(expired.id);
+    });
+
+    it("filters by category", async () => {
+      const meat = await createProduct(store, { category: "Meat" });
+      const dairy = await createProduct(store, { category: "Dairy" });
+      const ids = await listIds({ category: "Dairy" });
+      expect(ids).toContain(dairy.id);
+      expect(ids).not.toContain(meat.id);
+    });
+
+    it("filters by maxPrice on the discounted price", async () => {
+      const cheap = await createProduct(store, { discounted_price: 2 });
+      const pricey = await createProduct(store, { discounted_price: 9 });
+      const ids = await listIds({ maxPrice: 5 });
+      expect(ids).toContain(cheap.id);
+      expect(ids).not.toContain(pricey.id);
+    });
+
+    it("filters by expiryWithinDays", async () => {
+      const soon = await createProduct(store, { expiry_date: futureDate(1) });
+      const later = await createProduct(store, { expiry_date: futureDate(20) });
+      const ids = await listIds({ expiryWithinDays: 3 });
+      expect(ids).toContain(soon.id);
+      expect(ids).not.toContain(later.id);
+    });
+
+    it("filters by name, case-insensitively", async () => {
+      const milk = await createProduct(store, { name: "Svježe Mlijeko XYZ" });
+      const bread = await createProduct(store, { name: "Hljeb" });
+      const ids = await listIds({ name: "mlijeko xyz" });
+      expect(ids).toContain(milk.id);
+      expect(ids).not.toContain(bread.id);
+    });
+  });
+
+  describe("GET /api/products/mine", () => {
+    const mineIds = async (query: Record<string, string | number> = {}) => {
+      const response = await store.get("/api/products/mine").query(query);
+      expect(response.status).toBe(200);
+      return (response.body.products as Product[]).map((p) => p.id);
+    };
+
+    it("returns only the calling store's products and hides Removed ones", async () => {
+      const own = await createProduct(store);
+      const removed = await createProduct(store);
+      await store.delete(`/api/products/${removed.id}`);
+      const storeB = await registerAndLogin(STORE_B, "STORE");
+      const foreign = await createProduct(storeB);
+
+      expect(await mineIds()).toEqual([own.id]);
+      expect(await mineIds()).not.toContain(foreign.id);
+    });
+
+    it("filters by status, category, name and expiryWithinDays", async () => {
+      const sold = await createProduct(store, { name: "Sir", category: "Dairy", expiry_date: futureDate(2) });
+      await pool.query("UPDATE products SET status = 'Sold' WHERE id = $1", [sold.id]);
+      const meat = await createProduct(store, { name: "Piletina", category: "Meat", expiry_date: futureDate(15) });
+
+      expect(await mineIds({ status: "Sold" })).toEqual([sold.id]);
+      expect(await mineIds({ category: "Meat" })).toEqual([meat.id]);
+      expect(await mineIds({ name: "pile" })).toEqual([meat.id]);
+      expect(await mineIds({ expiryWithinDays: 5 })).toEqual([sold.id]);
+    });
+
+    it("returns 403 for a RESTAURANT", async () => {
+      const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
+      const response = await restaurant.get("/api/products/mine");
+      expect(response.status).toBe(403);
+    });
+  });
+
+  describe("GET /api/products/:id", () => {
+    it("returns details including available_quantity", async () => {
+      const product = await createProduct(store);
+      const response = await store.get(`/api/products/${product.id}`);
+      expect(response.status).toBe(200);
+      expect(parseFloat(response.body.product.available_quantity)).toBe(parseFloat(product.quantity));
+      expect(response.body.product.days_until_expiry).toBe(30);
+    });
+
+    it("returns 404 for a product that does not exist", async () => {
+      const response = await store.get("/api/products/999999");
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe("Proizvod nije pronađen.");
+    });
+
+    it("returns the store contact details", async () => {
+      const profile = await store.put("/api/users/me").send({
+        first_name: "Test",
+        last_name: "Korisnik",
+        business_name: "Prodavnica Test",
+        city: "Sarajevo",
+        phone: "033123456",
+        address: "Titova 1",
+        pickup_hours: "08-16",
+      });
+      expect(profile.status).toBe(200);
+
+      const product = await createProduct(store);
+      const response = await store.get(`/api/products/${product.id}`);
+      expect(response.status).toBe(200);
+      expect(response.body.product).toMatchObject({
+        business_name: "Prodavnica Test",
+        store_phone: "033123456",
+        store_address: "Titova 1",
+        store_pickup_hours: "08-16",
+      });
+    });
+  });
+});

@@ -1,8 +1,8 @@
-import request from "supertest";
-import app from "../src/app.js";
-import pool from "../src/config/db.js";
+import { cleanupUsers, registerAndLogin, type Agent } from "./helpers.js";
 
-const EMAILS = ["store-a@test.com", "store-b@test.com", "restaurant-a@test.com"];
+const STORE_A = "templates-store-a@test.com";
+const STORE_B = "templates-store-b@test.com";
+const RESTAURANT = "templates-restaurant@test.com";
 
 const TEMPLATE = {
   name: "Pileći file",
@@ -15,33 +15,15 @@ const TEMPLATE = {
   shelf_life_days: 3,
 };
 
-const loginAs = async (email, role) => {
-  await request(app).post("/api/auth/register").send({
-    first_name: "Test",
-    last_name: "User",
-    email,
-    password: "test12345",
-    role,
-  });
-  const agent = request.agent(app);
-  await agent.post("/api/auth/login").send({ email, password: "test12345" });
-  return agent;
-};
-
 describe("Product templates routes", () => {
-  let storeA;
+  let storeA: Agent;
 
   beforeEach(async () => {
-    storeA = await loginAs("store-a@test.com", "STORE");
+    storeA = await registerAndLogin(STORE_A, "STORE");
   });
 
   afterEach(async () => {
-    // product_templates rows are removed by ON DELETE CASCADE.
-    await pool.query("DELETE FROM users WHERE email = ANY($1)", [EMAILS]);
-  });
-
-  afterAll(async () => {
-    await pool.end();
+    await cleanupUsers([STORE_A, STORE_B, RESTAURANT]);
   });
 
   it("creates a template", async () => {
@@ -50,6 +32,25 @@ describe("Product templates routes", () => {
     expect(response.body.message).toBe("Predložak uspješno sačuvan.");
     expect(response.body.template.name).toBe(TEMPLATE.name);
     expect(response.body.template.shelf_life_days).toBe(3);
+  });
+
+  it("stores only the required fields when the optional ones are empty", async () => {
+    const response = await storeA.post("/api/product-templates").send({
+      name: "Minimalni",
+      category: "Dairy",
+      unit: "kom",
+      description: "",
+      original_price: "",
+      shelf_life_days: "",
+    });
+    expect(response.status).toBe(201);
+    expect(response.body.template).toMatchObject({
+      description: null,
+      original_price: null,
+      discounted_price: null,
+      quantity: null,
+      shelf_life_days: null,
+    });
   });
 
   it("updates the existing template when the same name is saved again", async () => {
@@ -65,41 +66,43 @@ describe("Product templates routes", () => {
     expect(list.body.templates).toHaveLength(1);
   });
 
+  it("lets two stores use the same template name", async () => {
+    const storeB = await registerAndLogin(STORE_B, "STORE");
+    expect((await storeA.post("/api/product-templates").send(TEMPLATE)).status).toBe(201);
+    expect((await storeB.post("/api/product-templates").send(TEMPLATE)).status).toBe(201);
+    expect((await storeA.get("/api/product-templates")).body.templates).toHaveLength(1);
+  });
+
   it("returns only the calling store's templates", async () => {
     await storeA.post("/api/product-templates").send(TEMPLATE);
-    const storeB = await loginAs("store-b@test.com", "STORE");
+    const storeB = await registerAndLogin(STORE_B, "STORE");
     await storeB.post("/api/product-templates").send({ ...TEMPLATE, name: "Jogurt" });
 
     const response = await storeA.get("/api/product-templates");
     expect(response.status).toBe(200);
-    expect(response.body.templates.map((t) => t.name)).toEqual([TEMPLATE.name]);
+    expect(response.body.templates.map((t: { name: string }) => t.name)).toEqual([TEMPLATE.name]);
   });
 
-  it("returns 400 when required fields are missing", async () => {
-    const response = await storeA
-      .post("/api/product-templates")
-      .send({ name: "Bez kategorije" });
+  it.each(["name", "category", "unit"])("returns 400 without %s", async (field) => {
+    const response = await storeA.post("/api/product-templates").send({ ...TEMPLATE, [field]: "" });
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe(
-      "Naziv, kategorija i jedinica mjere su obavezni.",
-    );
+    expect(response.body.error).toBe("Naziv, kategorija i jedinica mjere su obavezni.");
   });
 
-  it("returns 403 for a RESTAURANT user", async () => {
-    const restaurant = await loginAs("restaurant-a@test.com", "RESTAURANT");
-    const response = await restaurant.get("/api/product-templates");
-    expect(response.status).toBe(403);
+  it("returns 403 for a RESTAURANT", async () => {
+    const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
+    expect((await restaurant.get("/api/product-templates")).status).toBe(403);
+    expect((await restaurant.post("/api/product-templates").send(TEMPLATE)).status).toBe(403);
   });
 
   it("returns 403 when deleting another store's template", async () => {
     const created = await storeA.post("/api/product-templates").send(TEMPLATE);
-    const storeB = await loginAs("store-b@test.com", "STORE");
+    const storeB = await registerAndLogin(STORE_B, "STORE");
 
-    const response = await storeB.delete(
-      `/api/product-templates/${created.body.template.id}`,
-    );
+    const response = await storeB.delete(`/api/product-templates/${created.body.template.id}`);
     expect(response.status).toBe(403);
     expect(response.body.error).toBe("Nemate ovlasti za brisanje ovog predloška.");
+    expect((await storeA.get("/api/product-templates")).body.templates).toHaveLength(1);
   });
 
   it("deletes an own template and returns 404 afterwards", async () => {
