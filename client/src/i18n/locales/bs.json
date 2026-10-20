@@ -437,13 +437,6 @@
   },
   "comingSoon": {
     "badge": "Uskoro dostupno",
-    "donateTitle": "Doniraj hranu",
-    "donateDescription": "Uskoro ćete moći donirati viškove hrane humanitarnim organizacijama i javnim kuhinjama direktno kroz platformu.",
-    "donateHighlights": [
-      "Ponude za donaciju",
-      "Verifikovane organizacije",
-      "Praćenje predaje"
-    ],
     "sponsorTitle": "Budi sponzor",
     "sponsorDescription": "Uskoro ćete moći sponzorisati humanitarne akcije i lokalne događaje hranom i drugim resursima.",
     "sponsorHighlights": [
@@ -569,6 +562,143 @@
       "columns": "Kolone",
       "format": "Format",
       "action": "Preuzimanje"
+    }
+  },
+  "donations": {
+    "title": "Doniraj hranu",
+    "subtitle": "Poklonite hranu ili je ponudite po donacijskoj cijeni koju plaća donator.",
+    "count_one": "{{count}} donacija",
+    "count_few": "{{count}} donacije",
+    "count_other": "{{count}} donacija",
+    "newButton": "Nova donacija",
+    "editButton": "Uredi",
+    "types": {
+      "FREE": "Besplatna donacija",
+      "SPONSORED": "Donacija uz plaćanje"
+    },
+    "typeBadges": {
+      "FREE": "Besplatno",
+      "SPONSORED": "Uz plaćanje"
+    },
+    "typeDescriptions": {
+      "FREE": "Hranu poklanjate humanitarnim organizacijama i javnim kuhinjama.",
+      "SPONSORED": "Hranu dajete po nižoj cijeni, a plaća je donator (osoba ili firma)."
+    },
+    "statuses": {
+      "Available": "Aktivna",
+      "Expired": "Istekla",
+      "Removed": "Obrisana"
+    },
+    "categories": {
+      "Meals": "Gotova jela"
+    },
+    "units": {
+      "portion": "porcija"
+    },
+    "allergens": {
+      "gluten": "Gluten",
+      "crustaceans": "Rakovi",
+      "eggs": "Jaja",
+      "fish": "Riba",
+      "peanuts": "Kikiriki",
+      "soy": "Soja",
+      "milk": "Mlijeko",
+      "nuts": "Orašasti plodovi",
+      "celery": "Celer",
+      "mustard": "Senf",
+      "sesame": "Susam",
+      "sulphites": "Sulfiti",
+      "lupin": "Lupina",
+      "molluscs": "Mekušci"
+    },
+    "temperatures": {
+      "HOT": "Toplo",
+      "COLD": "Hladno",
+      "FROZEN": "Smrznuto"
+    },
+    "filters": {
+      "type": "Vrsta donacije",
+      "status": "Status",
+      "allTypes": "Sve vrste",
+      "allStatuses": "Svi statusi"
+    },
+    "info": {
+      "title": "Ko vidi donacije?",
+      "text": "Za sada samo vi. Uskoro će ih preuzimati humanitarne organizacije i javne kuhinje, a donatori će plaćati donacije uz plaćanje."
+    },
+    "emptyTitle": "Još nemate donacija",
+    "emptySubtitle": "Objavite prvu donaciju ili prebacite proizvod koji ističe u donacije.",
+    "noResultsTitle": "Nema donacija za ove filtere",
+    "noResultsSubtitle": "Promijenite ili očistite filtere.",
+    "card": {
+      "donorPays": "Donator plaća",
+      "free": "Besplatno",
+      "expiry": "Najkasnije do",
+      "pickup": "Preuzimanje",
+      "fromProduct": "Iz ponude"
+    },
+    "form": {
+      "addTitle": "Nova donacija",
+      "addSubtitle": "Opišite hranu koju donirate i kada se može preuzeti.",
+      "editTitle": "Uredi donaciju",
+      "editSubtitle": "Izmijenite podatke aktivne donacije.",
+      "typeSection": "Vrsta donacije",
+      "basicsSection": "Osnovni podaci",
+      "name": "Naziv",
+      "namePlaceholder": "npr. Grah s kobasicom",
+      "description": "Opis",
+      "descriptionPlaceholder": "Sastojci, pakovanje, napomene za preuzimanje...",
+      "category": "Kategorija",
+      "mealSection": "Detalji obroka",
+      "mealHint": "Alergeni i način serviranja pomažu organizacijama da sigurno podijele obroke.",
+      "allergens": "Alergeni",
+      "temperature": "Serviranje",
+      "noTemperature": "Nije navedeno",
+      "priceSection": "Vrijednost",
+      "priceHint": "Vrijednost hrane se koristi u izvještajima o doniranoj hrani.",
+      "originalPrice": "Vrijednost po jedinici",
+      "donationPrice": "Donacijska cijena po jedinici",
+      "donorPays": "Donator plaća {{price}} KM, vi poklanjate {{percent}}% vrijednosti.",
+      "priceInvalid": "Donacijska cijena mora biti manja od vrijednosti.",
+      "stockSection": "Količina i preuzimanje",
+      "quantity": "Količina",
+      "unit": "Jedinica mjere",
+      "expiryDate": "Može se preuzeti najkasnije do",
+      "pickupFrom": "Preuzimanje od",
+      "pickupUntil": "Preuzimanje do",
+      "pickupHint": "Neobavezno: vrijeme u danu kada se donacija može preuzeti.",
+      "preview": "Pregled",
+      "fillAllFields": "Popunite sva obavezna polja.",
+      "invalidPickup": "Početak preuzimanja mora biti prije kraja.",
+      "submitAdd": "Objavi donaciju",
+      "submitEdit": "Sačuvaj izmjene",
+      "cancel": "Odustani",
+      "addedSuccess": "Donacija je objavljena.",
+      "updatedSuccess": "Donacija je ažurirana.",
+      "saveError": "Donacija nije sačuvana.",
+      "notFoundTitle": "Donacija nije pronađena",
+      "notFoundSubtitle": "Moguće je da je obrisana, da je istekla ili da nije vaša.",
+      "backToList": "Nazad na donacije"
+    },
+    "delete": {
+      "button": "Obriši",
+      "title": "Obrisati donaciju?",
+      "text": "Donacija \"{{name}}\" više neće biti prikazana.",
+      "confirm": "Obriši",
+      "cancel": "Odustani",
+      "success": "Donacija je obrisana.",
+      "error": "Brisanje donacije nije uspjelo."
+    },
+    "fromProduct": {
+      "button": "Prebaci u donaciju",
+      "title": "Prebaci u donaciju",
+      "text": "Slobodna količina ide u donacije. Rezervisana količina ostaje u ponudi za restorane.",
+      "value": "vrijednost {{price}} KM",
+      "quantity": "Količina za donaciju",
+      "confirm": "Prebaci",
+      "success": "Proizvod je prebačen u donacije.",
+      "error": "Prebacivanje u donacije nije uspjelo.",
+      "nothingAvailable": "Nema slobodne količine: sve je već rezervisano."
     }
   }
 }

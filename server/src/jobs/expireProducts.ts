@@ -6,6 +6,7 @@ import { createNotification } from "../utils/notifications.js";
 // Marks Available products past their expiry date as Expired, cancels their
 // Pending reservations and notifies the stores and restaurants, all in one transaction.
 // Confirmed reservations are left alone: the store already agreed to hand that food over.
+// Donation offers past their expiry date become Expired in the same run.
 export const expireProducts = async (): Promise<number> => {
   const client = await pool.connect();
   try {
@@ -53,6 +54,13 @@ export const expireProducts = async (): Promise<number> => {
         `Expired ${expiredIds.length} products and cancelled their active reservations.`,
       );
     }
+
+    // Donation offers have no recipients yet, so expiring them needs no notification.
+    await client.query(
+      `UPDATE donation_offers
+       SET status = 'Expired'
+       WHERE status = 'Available' AND expiry_date < CURRENT_DATE`,
+    );
 
     await client.query("COMMIT");
     return expiredProducts.rows.length;

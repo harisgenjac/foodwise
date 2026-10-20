@@ -426,13 +426,6 @@
   },
   "comingSoon": {
     "badge": "Coming soon",
-    "donateTitle": "Donate food",
-    "donateDescription": "Soon you will be able to donate surplus food to humanitarian organizations and public kitchens directly through the platform.",
-    "donateHighlights": [
-      "Donation offers",
-      "Verified organizations",
-      "Handover tracking"
-    ],
     "sponsorTitle": "Become a sponsor",
     "sponsorDescription": "Soon you will be able to sponsor humanitarian campaigns and local events with food and other resources.",
     "sponsorHighlights": [
@@ -556,6 +549,142 @@
       "columns": "Columns",
       "format": "Format",
       "action": "Download"
+    }
+  },
+  "donations": {
+    "title": "Donate food",
+    "subtitle": "Give food away, or offer it at a donation price that a donor pays.",
+    "count_one": "{{count}} donation",
+    "count_other": "{{count}} donations",
+    "newButton": "New donation",
+    "editButton": "Edit",
+    "types": {
+      "FREE": "Free donation",
+      "SPONSORED": "Paid donation"
+    },
+    "typeBadges": {
+      "FREE": "Free",
+      "SPONSORED": "Paid by donor"
+    },
+    "typeDescriptions": {
+      "FREE": "You give the food to humanitarian organizations and public kitchens.",
+      "SPONSORED": "You give the food at a lower price, paid by a donor (a person or a company)."
+    },
+    "statuses": {
+      "Available": "Active",
+      "Expired": "Expired",
+      "Removed": "Deleted"
+    },
+    "categories": {
+      "Meals": "Ready meals"
+    },
+    "units": {
+      "portion": "portion"
+    },
+    "allergens": {
+      "gluten": "Gluten",
+      "crustaceans": "Crustaceans",
+      "eggs": "Eggs",
+      "fish": "Fish",
+      "peanuts": "Peanuts",
+      "soy": "Soy",
+      "milk": "Milk",
+      "nuts": "Tree nuts",
+      "celery": "Celery",
+      "mustard": "Mustard",
+      "sesame": "Sesame",
+      "sulphites": "Sulphites",
+      "lupin": "Lupin",
+      "molluscs": "Molluscs"
+    },
+    "temperatures": {
+      "HOT": "Hot",
+      "COLD": "Cold",
+      "FROZEN": "Frozen"
+    },
+    "filters": {
+      "type": "Donation type",
+      "status": "Status",
+      "allTypes": "All types",
+      "allStatuses": "All statuses"
+    },
+    "info": {
+      "title": "Who sees donations?",
+      "text": "Only you, for now. Soon humanitarian organizations and public kitchens will collect them, and donors will pay for paid donations."
+    },
+    "emptyTitle": "No donations yet",
+    "emptySubtitle": "Publish your first donation or move an expiring product to donations.",
+    "noResultsTitle": "No donations match these filters",
+    "noResultsSubtitle": "Change or clear the filters.",
+    "card": {
+      "donorPays": "Donor pays",
+      "free": "Free",
+      "expiry": "Available until",
+      "pickup": "Pickup",
+      "fromProduct": "From an offer"
+    },
+    "form": {
+      "addTitle": "New donation",
+      "addSubtitle": "Describe the food you are donating and when it can be collected.",
+      "editTitle": "Edit donation",
+      "editSubtitle": "Change the details of an active donation.",
+      "typeSection": "Donation type",
+      "basicsSection": "Basic details",
+      "name": "Name",
+      "namePlaceholder": "e.g. Bean stew with sausage",
+      "description": "Description",
+      "descriptionPlaceholder": "Ingredients, packaging, pickup notes...",
+      "category": "Category",
+      "mealSection": "Meal details",
+      "mealHint": "Allergens and serving temperature help organizations share meals safely.",
+      "allergens": "Allergens",
+      "temperature": "Serving",
+      "noTemperature": "Not specified",
+      "priceSection": "Value",
+      "priceHint": "The food's value is used in reports on donated food.",
+      "originalPrice": "Value per unit",
+      "donationPrice": "Donation price per unit",
+      "donorPays": "The donor pays {{price}} KM, you give away {{percent}}% of the value.",
+      "priceInvalid": "The donation price must be lower than the value.",
+      "stockSection": "Quantity and pickup",
+      "quantity": "Quantity",
+      "unit": "Unit",
+      "expiryDate": "Can be collected until",
+      "pickupFrom": "Pickup from",
+      "pickupUntil": "Pickup until",
+      "pickupHint": "Optional: the time of day when the donation can be collected.",
+      "preview": "Preview",
+      "fillAllFields": "Fill in all required fields.",
+      "invalidPickup": "The pickup start must be before its end.",
+      "submitAdd": "Publish donation",
+      "submitEdit": "Save changes",
+      "cancel": "Cancel",
+      "addedSuccess": "The donation was published.",
+      "updatedSuccess": "The donation was updated.",
+      "saveError": "The donation could not be saved.",
+      "notFoundTitle": "Donation not found",
+      "notFoundSubtitle": "It may have been deleted, it may have expired, or it is not yours.",
+      "backToList": "Back to donations"
+    },
+    "delete": {
+      "button": "Delete",
+      "title": "Delete this donation?",
+      "text": "The donation \"{{name}}\" will no longer be shown.",
+      "confirm": "Delete",
+      "cancel": "Cancel",
+      "success": "The donation was deleted.",
+      "error": "The donation could not be deleted."
+    },
+    "fromProduct": {
+      "button": "Move to donations",
+      "title": "Move to donations",
+      "text": "The free quantity goes to donations. The reserved quantity stays on offer for restaurants.",
+      "value": "value {{price}} KM",
+      "quantity": "Quantity to donate",
+      "confirm": "Move",
+      "success": "The product was moved to donations.",
+      "error": "The product could not be moved to donations.",
+      "nothingAvailable": "No free quantity: everything is already reserved."
     }
   }
 }

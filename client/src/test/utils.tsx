@@ -6,7 +6,7 @@ import api from "../api/axios.js";
 import i18n from "../i18n/config.js";
 import { AuthProvider } from "../context/AuthContext.jsx";
 import type { Notification } from "../context/NotificationsContext.js";
-import type { Product, Reservation, User } from "../types/index.js";
+import type { DonationOffer, Product, Reservation, User } from "../types/index.js";
 
 export const apiMock = vi.mocked(api);
 export const t = i18n.t.bind(i18n);
@@ -126,5 +126,28 @@ export const makeNotification = (overrides: Partial<Notification> = {}): Notific
   product_name: "Piletina",
   unit: "kg",
   quantity: "2",
+  ...overrides,
+});
+
+export const makeDonation = (overrides: Partial<DonationOffer> = {}): DonationOffer => ({
+  id: 30,
+  donor_id: 2,
+  source_product_id: null,
+  donation_type: "FREE",
+  name: "Hljeb",
+  description: "Jučerašnji hljeb",
+  category: "Bakery",
+  quantity: "20",
+  unit: "kom",
+  original_price: "2",
+  donation_price: null,
+  expiry_date: "2030-01-01",
+  pickup_from: null,
+  pickup_until: null,
+  allergens: [],
+  serving_temperature: null,
+  status: "Available",
+  created_at: "2030-01-01T00:00:00.000Z",
+  updated_at: "2030-01-01T00:00:00.000Z",
   ...overrides,
 });

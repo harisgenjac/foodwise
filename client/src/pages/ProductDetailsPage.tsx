@@ -10,6 +10,7 @@ import {
   CalendarClock,
   CalendarPlus,
   Clock,
+  HandHeart,
   Hourglass,
   Info,
   MapPin,
@@ -29,6 +30,7 @@ import EmptyState from "../components/product/EmptyState.js";
 import Modal from "../components/product/Modal.js";
 import DetailItem from "../components/product/DetailItem.js";
 import ReserveProductModal from "../components/product/ReserveProductModal.js";
+import DonateProductModal from "../components/donation/DonateProductModal.js";
 import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
 import { PRODUCT_STATUS_STYLES } from "../utils/productStatus.js";
 import { getDaysUntilExpiry } from "../utils/expiry.js";
@@ -42,6 +44,7 @@ function ProductDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [reserving, setReserving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [donating, setDonating] = useState(false);
   const { t } = useTranslation();
   const productStatuses = t("productStatus", { returnObjects: true }) as Record<
     string,
@@ -249,6 +252,16 @@ function ProductDetailsPage() {
                 <Pencil className="h-4 w-4" />
                 {t("myProducts.editButton")}
               </Link>
+              {product.status === "Available" && available > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setDonating(true)}
+                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 font-semibold text-gray-700 transition-colors hover:border-green-200 hover:bg-green-50 hover:text-green-700"
+                >
+                  <HandHeart className="h-4 w-4" />
+                  {t("donations.fromProduct.button")}
+                </button>
+              )}
               {canDelete && (
                 <button
                   type="button"
@@ -329,6 +342,14 @@ function ProductDetailsPage() {
             )}
           </div>
         </section>
+      )}
+
+      {donating && (
+        <DonateProductModal
+          product={product}
+          onClose={() => setDonating(false)}
+          onDonated={() => navigate("/donate-food")}
+        />
       )}
 
       {showDeleteConfirm && (

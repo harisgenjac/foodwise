@@ -117,3 +117,49 @@ export interface ProductTemplate {
   created_at: string;
   updated_at: string;
 }
+
+export type DonationType = "FREE" | "SPONSORED";
+
+// A donation offer from a store or restaurant (GET /donations/mine, /donations/:id).
+export interface DonationOffer {
+  id: number;
+  donor_id: number;
+  // Set when the donation was moved from a marketplace product.
+  source_product_id: number | null;
+  donation_type: DonationType;
+  name: string;
+  description: string | null;
+  category: string;
+  quantity: string;
+  unit: string;
+  // Value of one unit; a SPONSORED donation's donor pays donation_price instead (null for FREE).
+  original_price: string;
+  donation_price: string | null;
+  expiry_date: string;
+  // "HH:MM:SS" or null.
+  pickup_from: string | null;
+  pickup_until: string | null;
+  allergens: string[];
+  serving_temperature: "HOT" | "COLD" | "FROZEN" | null;
+  status: "Available" | "Expired" | "Removed";
+  created_at: string;
+  updated_at: string;
+  days_until_expiry?: number;
+}
+
+// Add/edit donation form state; inputs are raw strings, allergens a list of codes.
+export interface DonationFormValues {
+  donation_type: DonationType;
+  name: string;
+  description: string;
+  category: string;
+  quantity: string;
+  unit: string;
+  original_price: string;
+  donation_price: string;
+  expiry_date: string;
+  pickup_from: string;
+  pickup_until: string;
+  allergens: string[];
+  serving_temperature: string;
+}

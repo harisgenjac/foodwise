@@ -20,12 +20,12 @@ server/
 │   ├── server.ts            loads dotenv, starts the cron jobs, listens on PORT (default 3000)
 │   ├── app.ts               builds and exports the Express app (no listen, so supertest can import it)
 │   ├── config/db.ts         exports the shared pg Pool (DATABASE_URL)
-│   ├── controllers/         auth, products, reservations, notifications, favorites, users, productTemplates, reports
+│   ├── controllers/         auth, products, reservations, notifications, favorites, users, productTemplates, reports, donations
 │   ├── middleware/          auth.middleware.ts (authenticate, authorize), upload.middleware.ts (multer, `uploadLogoFile`, `uploadCsvFile`)
 │   ├── routes/              one router per resource, mounted in app.ts
 │   ├── jobs/                expireProducts.ts, notificationReminders.ts
 │   ├── types/               auth.ts (AuthUser, Role), express.d.ts (req.user, req.file)
-│   ├── utils/               validateProduct.ts, productCsv.ts (`parseProductCsv`), notifications.ts (createNotification, NotificationType), csv.ts (`toCsv`), reportLabels.ts, params.ts, dates.ts, httpError.ts
+│   ├── utils/               validateProduct.ts, validateDonation.ts, productCsv.ts (`parseProductCsv`), notifications.ts (createNotification, NotificationType), csv.ts (`toCsv`), reportLabels.ts, params.ts, dates.ts, httpError.ts
 │   └── scripts/             seed.ts (demo reset), seedFakeData.ts (adds data), fakeData.ts (shared generator)
 ├── migrations/              node-pg-migrate files (plain JS)
 ├── tests/                   Vitest + supertest, TypeScript (setup.ts, helpers.ts, *.test.ts)
@@ -52,9 +52,9 @@ server/
 
 Order: `cors({ origin: CLIENT_ORIGIN, credentials: true })` → `express.json()` → `req.body ??= {}` (Express 5 leaves it undefined for requests without a body; controllers destructure it) → `cookieParser()` → routers → `/uploads` static (with `X-Content-Type-Options: nosniff`) → JSON 404 for any unknown path (`"Ruta nije pronađena."`) → error handler (see Business logic).
 
-Routers: `/api/auth`, `/api/products`, `/api/reservations`, `/api/users`, `/api/notifications`, `/api/favorites`, `/api/product-templates`, `/api/reports`
+Routers: `/api/auth`, `/api/products`, `/api/reservations`, `/api/users`, `/api/notifications`, `/api/favorites`, `/api/product-templates`, `/api/reports`, `/api/donations`
 
-Routes chain `authenticate` → `authorize('<ROLE>')` (single role) → controller.
+Routes chain `authenticate` → `authorize('<ROLE>', ...)` (one or more allowed roles) → controller.
 
 ## Auth
 
@@ -62,12 +62,12 @@ Routes chain `authenticate` → `authorize('<ROLE>')` (single role) → controll
 - `login`: bcrypt compare, `jwt.sign({ id, role }, JWT_SECRET, { expiresIn: "7d" })`, sets cookie `token` (`httpOnly`, `secure` only when `NODE_ENV === "production"`, `sameSite: "strict"`, 7-day `maxAge`). Returns `{ message, user: { id, first_name, last_name, email, role } }`. Wrong email and wrong password return the same message.
 - `logout`: `clearCookie` with the same options. `GET /auth/me` returns only the token payload (`{ id, role }`); the client uses `GET /users/me` for full data.
 - `authenticate`: reads `req.cookies.token`, `jwt.verify`, rejects non-object payloads, sets `req.user` (`AuthUser = JwtPayload & { id: number; role: Role }`). Failures are 401.
-- `authorize(role)`: 403 with "Nemate odgovarajuću rolu za ovu akciju." when the role differs.
+- `authorize(...roles)`: 403 with "Nemate odgovarajuću rolu za ovu akciju." when the caller's role is not one of them (`authorize('STORE')`, `authorize('STORE', 'RESTAURANT')`).
 - Controllers read `req.user!.id` (non-null assertion is safe because `authenticate` runs first).
 
 ## Database
 
-Enum types: user role (`STORE`, `RESTAURANT`), product status (`Available`, `Sold`, `Expired`, `Removed`), reservation status (`Pending`, `Confirmed`, `Completed`, `Rejected`, `Cancelled`). `Rejected` = refused by the store; `Completed` = picked up (set by the store); `Cancelled` = withdrawn by the restaurant, cancelled by the expiry job, or cancelled by the store after a missed pickup. Category and unit are stored as codes in VARCHAR columns (validated against fixed lists, see Validation); labels are a frontend concern.
+Enum types: user role (`STORE`, `RESTAURANT`), product status (`Available`, `Sold`, `Expired`, `Removed`), reservation status (`Pending`, `Confirmed`, `Completed`, `Rejected`, `Cancelled`). `Rejected` = refused by the store; `Completed` = picked up (set by the store); `Cancelled` = withdrawn by the restaurant, cancelled by the expiry job, or cancelled by the store after a missed pickup. Donation type (`FREE`, `SPONSORED`) and donation status (`Available`, `Expired`, `Removed`; claim and funding statuses come with the recipient roles). Category and unit are stored as codes in VARCHAR columns (validated against fixed lists, see Validation); labels are a frontend concern.
 
 `DATE` columns (`expiry_date`) come back from `pg` as plain `YYYY-MM-DD` strings: `config/db.ts` overrides the default parser, which would turn them into a JS `Date` at local midnight and serialize the previous day in UTC+ time zones. Every pool session also runs with `timezone = APP_TIMEZONE`, so `CURRENT_DATE` is the local business day.
 
@@ -79,11 +79,12 @@ Enum types: user role (`STORE`, `RESTAURANT`), product status (`Available`, `Sol
 | `notifications` | id, user_id → users (CASCADE), type (varchar, nullable), message (not null), is_read (default false), created_at, reservation_id → reservations (SET NULL), product_id → products (SET NULL) | Index on (user_id, created_at). Rows from before `type` existed have `type`, `reservation_id` and `product_id` null and a Bosnian `message`. |
 | `favorites` | id, restaurant_id → users (CASCADE), store_id → users (CASCADE), created_at | Unique constraint `unique_restaurant_store`. |
 | `product_templates` | id, store_id → users (CASCADE), name, description, category, unit, original_price, discounted_price, quantity (decimals nullable), shelf_life_days (integer, nullable), created_at, updated_at | Unique constraint `unique_store_template_name` on (store_id, name). `updated_at` set by the shared `set_updated_at` trigger. |
+| `donation_offers` | id, donor_id → users (CASCADE; a store or a restaurant), source_product_id → products (SET NULL, set when moved from a product), donation_type, name, description, category, quantity, unit, original_price (value per unit), donation_price (nullable), expiry_date, pickup_from / pickup_until (`time`, nullable), allergens (`text[]`, default `{}`), serving_temperature (nullable), status, created_at, updated_at | Humanitarian module. CHECK `donation_price_matches_type`: `FREE` has no price, `SPONSORED` a price above 0. `updated_at` by `set_updated_at`. Soft delete via `status = 'Removed'`. |
 
 - Categories in use: Meat, Fish, Dairy, Vegetables, Fruits, Bakery, Drinks, Frozen Food, Other. Units: kg, g, l, ml, kom, pak.
 - `set_updated_at()` trigger function is created in the products migration and reused for reservations. Attach it to any new table that needs `updated_at`.
-- Indexes beyond primary keys and unique constraints: `notifications(user_id, created_at)`, `products(store_id)`, `products(status, expiry_date)`, `reservations(product_id, status)`, `reservations(restaurant_id)`, `reservations(status, pickup_date)`, `users(LOWER(email))`.
-- Migrations: initial (users), products, reservations, notifications, favorites, product templates, notification links (`type`, `reservation_id`, `product_id`), reservation `unit_price` (backfilled from the product's current price), `Rejected` reservation status (runs outside a transaction because `ALTER TYPE ... ADD VALUE` must commit before use; backfills past rejections from their `RESERVATION_REJECTED` notifications), removal of the unused `Reserved` product status (rebuilds the enum), lowercase unique email (fails if two accounts differ only in case), foreign key indexes, reservation `picked_up_at` (backfilled from `updated_at` for existing Completed rows, plus the `(status, pickup_date)` index). Never edit an executed migration. Serial sequences are never reset, so ids keep growing after deletes (normal).
+- Indexes beyond primary keys and unique constraints: `notifications(user_id, created_at)`, `products(store_id)`, `products(status, expiry_date)`, `reservations(product_id, status)`, `reservations(restaurant_id)`, `reservations(status, pickup_date)`, `users(LOWER(email))`, `donation_offers(donor_id)`, `donation_offers(status, expiry_date)`.
+- Migrations: initial (users), products, reservations, notifications, favorites, product templates, notification links (`type`, `reservation_id`, `product_id`), reservation `unit_price` (backfilled from the product's current price), `Rejected` reservation status (runs outside a transaction because `ALTER TYPE ... ADD VALUE` must commit before use; backfills past rejections from their `RESERVATION_REJECTED` notifications), removal of the unused `Reserved` product status (rebuilds the enum), lowercase unique email (fails if two accounts differ only in case), foreign key indexes, reservation `picked_up_at` (backfilled from `updated_at` for existing Completed rows, plus the `(status, pickup_date)` index), donation offers (table, both enums, check constraint, indexes). Never edit an executed migration. Serial sequences are never reset, so ids keep growing after deletes (normal).
 
 ## API reference
 
@@ -181,6 +182,22 @@ Downloadable CSV reports. Both cover only **Completed** reservations whose `pick
 - `utils/csv.ts` → `toCsv(headers, rows)`: UTF-8 BOM, `;` delimiter, CRLF, integers as they are and other numbers with two decimals and a decimal comma (`2,50`), so Bosnian Excel splits the columns and reads the numbers; cells with `;`, `"` or a line break are quoted; text starting with `=`, `+`, `-`, `@`, tab or CR gets a leading `'` (CSV formula injection: product and business names are user input). `utils/reportLabels.ts` holds the headers and category labels per language.
 - Adding a report: a controller function (query + rows), its headers in `reportLabels.ts`, a route, and an entry in the client's `REPORTS` list.
 
+### Donations `/api/donations` (STORE and RESTAURANT)
+Donation offers of the humanitarian module. `FREE` = given away; `SPONSORED` = given at `donation_price`, which a third party will pay. Until the recipient roles exist, a donation is visible only to its donor (`donor_id = req.user.id`).
+- `POST /`: create; `donor_id` from `req.user`. 201 `{ message: "Donacija uspješno objavljena.", donation }`.
+- `GET /mine`: own donations except `Removed`, `Available` first, then newest. Filters `type`, `status` (`Available`/`Expired`), `name` (ILIKE); anything else → 400 `"Neispravan filter."`. `{ donations }`, each with `days_until_expiry`.
+- `GET /:id`: own and not removed, else 404 `"Donacija nije pronađena."`.
+- `PUT /:id`: same body as create. 404, 403 `"Nemate ovlasti za izmjenu ove donacije."`, 400 `"Samo aktivne donacije se mogu mijenjati."` unless `Available`. 200 `{ message: "Donacija uspješno ažurirana.", donation }`.
+- `DELETE /:id`: soft delete (`Removed`), any status. 404, 403 `"Nemate ovlasti za brisanje ove donacije."`, 200 `{ message: "Donacija je obrisana." }`.
+- `POST /from-product/:productId` (STORE only, "Prebaci u donaciju"): body `donation_type`, optional `quantity` (default: everything available), `donation_price` (SPONSORED). Stock-safe transaction with `FOR UPDATE` on the product. 404 `"Proizvod nije pronađen."` (also for `Removed`), 403 `"Nemate ovlasti za doniranje ovog proizvoda."`, 400 `"Samo dostupni proizvodi se mogu prebaciti u donacije."` (not `Available` or expired), 400 `"Količina mora biti veća od nule."`, 400 `"Nema dovoljno proizvoda na raspolaganju."` when it exceeds `quantity − Pending − Confirmed − Completed`. The donation copies name, description, category, unit, `original_price` and `expiry_date` and stores `source_product_id`. Then: nothing reserved and everything donated → product `Removed`; otherwise `products.quantity` drops by the donated amount (reservations keep theirs) and `markSoldIfFullyConfirmed` may mark it `Sold`. 201 `{ message: "Proizvod je prebačen u donacije.", donation }`.
+
+Validation (`utils/validateDonation.ts`, `validateDonationFields` + `normalizeDonationFields`):
+- Required: donation_type, name, category, quantity, unit, original_price, expiry_date → `"Sva polja su obavezna."`. Category in `DONATION_CATEGORIES` (product categories + `Meals`), unit in `DONATION_UNITS` (product units + `portion`) → the product messages. Quantity and value above 0 → `"Količina i vrijednost moraju biti pozitivni brojevi."`.
+- `validateDonationPrice` (also used by from-product): unknown type → `"Vrsta donacije nije ispravna."`; SPONSORED needs a price above 0 → `"Donacijska cijena je obavezna i mora biti veća od nule."` and below the value → `"Donacijska cijena mora biti manja od vrijednosti proizvoda."`. A FREE donation's price is stored as NULL.
+- Expiry date as for products. Pickup times `HH:MM[:SS]` → `"Vrijeme preuzimanja nije ispravno."`, start before end → `"Početak preuzimanja mora biti prije kraja."`.
+- `allergens` must be codes from `ALLERGENS` (the 14 EU allergens) → `"Alergeni nisu ispravni."`; `serving_temperature` one of `HOT`, `COLD`, `FROZEN` → `"Način serviranja nije ispravan."`. Both are stored only for `Meals` and cleared otherwise.
+- Keep the lists in sync with `client/src/utils/donations.ts`.
+
 ## Business logic worth knowing
 
 - **Available quantity** is computed, never stored: `products.quantity` minus the sum of `Pending` + `Confirmed` + `Completed` reservation quantities (picked-up food is gone, so completing a reservation must not free its quantity). Partial reservations are allowed and the product stays `Available` until accepted reservations cover the full quantity.
@@ -202,7 +219,7 @@ Downloadable CSV reports. Both cover only **Completed** reservations whose `pick
   | `PICKUP_MISSED` | restaurant | cancel-overdue by the store (in the transaction) | reservation, product |
 
   Adding a type means updating `NotificationType` on both sides, the `notifications.types` keys in both locale files and `NOTIFICATION_META` on the client.
-- **Expiry job** (`jobs/expireProducts.ts`, started from `server.ts` only): `expireProducts()` marks `Available` products past `expiry_date` as `Expired`, cancels their **Pending** reservations and notifies the stores and those restaurants, all in one transaction. Confirmed reservations are left as they are: the store already agreed to hand that food over, and it closes them itself (complete, or cancel-overdue after a missed pickup). `startExpirationJob()` runs it once at startup (to catch up on midnights missed while the server was down) and then on cron `0 0 * * *` in `APP_TIMEZONE`. Expiry checks in SQL use `expiry_date < CURRENT_DATE`, so a product is still valid on its expiry day.
+- **Expiry job** (`jobs/expireProducts.ts`, started from `server.ts` only): `expireProducts()` marks `Available` products past `expiry_date` as `Expired`, cancels their **Pending** reservations and notifies the stores and those restaurants, all in one transaction. Confirmed reservations are left as they are: the store already agreed to hand that food over, and it closes them itself (complete, or cancel-overdue after a missed pickup). In the same transaction `Available` donation offers past `expiry_date` become `Expired` (no notification yet, nobody but the donor sees them). `startExpirationJob()` runs it once at startup (to catch up on midnights missed while the server was down) and then on cron `0 0 * * *` in `APP_TIMEZONE`. Expiry checks in SQL use `expiry_date < CURRENT_DATE`, so a product is still valid on its expiry day.
 - **Reminder job** (`jobs/notificationReminders.ts`, started from `server.ts` only): `sendReminders()` inserts `PRODUCT_EXPIRING_SOON` and `PICKUP_TODAY` with `INSERT ... SELECT ... WHERE NOT EXISTS` (same type for the same product or reservation), so each reminder is sent once no matter how often it runs; it returns `{ expiringSoon, pickupToday }` counts. `startReminderJob()` runs it at startup and on cron `0 7 * * *` in `APP_TIMEZONE`.
 - **Soft delete and history:** reservations are never deleted, products are marked `Removed`.
 - **Pickups:** only the store moves a reservation to `Completed` (`PATCH /:id/complete`) or cancels a missed one (`PATCH /:id/cancel-overdue`). Statistics count Confirmed + Completed as successful.
@@ -232,7 +249,7 @@ Downloadable CSV reports. Both cover only **Completed** reservations whose `pick
 - `vitest.config.ts`: `globals: true` (`describe`/`it`/`expect`/`vi` without imports), `fileParallelism: false` because every file shares the one test database, `setupFiles: ["tests/setup.ts"]`. Each file runs in its own module graph with its own pool; `setup.ts` closes it in `afterAll`.
 - `tests/helpers.ts`:
   - `registerAndLogin(email, role)` returns a `request.agent(app)` holding the login cookie (one agent per user when testing ownership).
-  - `createProduct(agent, overrides)` and `reserve(agent, productId, quantity)` throw if the API refuses, so setup failures are obvious. Also `productPayload()` and `userId(email)`.
+  - `createProduct(agent, overrides)`, `createDonation(agent, overrides)` and `reserve(agent, productId, quantity)` throw if the API refuses, so setup failures are obvious. Also `productPayload()`, `donationPayload()` and `userId(email)`.
   - `futureDate(days)` / `futurePickup(days)` build dates from the local date, so tests never go stale and agree with `CURRENT_DATE` around midnight.
   - `cleanupUsers(emails)` deletes the users' reservations (RESTRICT; both their own and those on their products), then the users, which cascades to products, notifications, favorites and templates.
 - Each file uses its own email prefix (`products-store-a@test.com`, ...) and calls `cleanupUsers` in `afterEach`.
@@ -248,6 +265,7 @@ Downloadable CSV reports. Both cover only **Completed** reservations whose `pick
   - `users` (profile, store list and details, logo upload incl. wrong type and size), `uploads` (file named by type, nosniff, old logo removed), `favorites`, `productTemplates`
   - `notifications`: every type and link, the routes, and the expiry and reminder jobs called directly, including what they must skip (the expiry job keeps Confirmed reservations)
   - `jobs`: cron expressions and error logging, with `node-cron` and the db mocked
+  - `donations`: create for both roles with every validation message, FREE without a price, meal details kept only for meals, list filters and order, donor-only visibility, update/delete ownership and states, soft delete, moving a product (whole → `Removed`, part → quantity reduced and still on offer, pending reservations kept, confirmed ones → `Sold`, too much, expired, other store, restaurant), and the expiry job expiring donations
   - `reports`: period validation (missing, invalid, reversed, longer than 366 days; a full leap year and a single day pass), CSV headers and file names, rows and totals for both roles (only Completed, in the period, own data), English headers, the formula guard, empty periods, impact per month with unit conversion; `csv` (unit tests for `toCsv`)
 - Rows the API cannot create (past expiry dates, chosen statuses) are inserted with `pool.query`; reservations inserted that way need a `unit_price`. Use obviously nonexistent ids (`999999`) for 404 cases.
 - Race condition test: two restaurants reserve 8 of 10 at the same time with `Promise.all`; the sorted statuses must equal `[201, 400]`.
@@ -256,9 +274,9 @@ Downloadable CSV reports. Both cover only **Completed** reservations whose `pick
 
 Both scripts share the generator in `src/scripts/fakeData.ts` (`insertFakeData(client, { productsPerStore, reservationsPerRestaurant })`, which runs inside the caller's transaction, and `printSummary`).
 
-`npm run seed` (`src/scripts/seed.ts`) deletes all rows (notifications, reservations, products, users; favorites and templates go with the users), then inserts 3 stores and 2 restaurants with full business data and fills them through `insertFakeData` (5 products per store, 4 reservations per restaurant), all in one transaction. All demo accounts use password `demo12345`: stores `market.centar@demo.com`, `pekara.dobra@demo.com`, `zeleni.market@demo.com`; restaurants `restoran.ukus@demo.com`, `pizzeria.roma@demo.com`.
+`npm run seed` (`src/scripts/seed.ts`) deletes all rows (notifications, reservations, donation offers, products, users; favorites and templates go with the users), then inserts 3 stores and 2 restaurants with full business data and fills them through `insertFakeData` (5 products per store, 4 reservations per restaurant, 2 donation offers per store and per restaurant), all in one transaction. All demo accounts use password `demo12345`: stores `market.centar@demo.com`, `pekara.dobra@demo.com`, `zeleni.market@demo.com`; restaurants `restoran.ukus@demo.com`, `pizzeria.roma@demo.com`.
 
-`npm run seed:fake` (`src/scripts/seedFakeData.ts`) adds data on top of what exists and never creates, changes or deletes users. For every existing STORE it inserts random products from a template list (all categories, prices with a 30-60% discount, expiry today to 14 days out). For every existing RESTAURANT it inserts reservations on those new products with weighted statuses (Pending, Confirmed, Completed, Rejected, Cancelled) and the product's price as `unit_price`; Pending + Confirmed + Completed quantities never exceed a product's quantity, Confirmed pickups are from today up to 4 days out (so the pickups page has data for today), Completed pickups are in the past with `picked_up_at` set, and it writes the same notifications the app sends for new, accepted and rejected reservations (`RESERVATION_CREATED`, `RESERVATION_ACCEPTED`, `RESERVATION_REJECTED`, with links). Everything runs in one transaction. Options: `npm run seed:fake -- --products <per store, default 6> --reservations <per restaurant, default 4>`.
+`npm run seed:fake` (`src/scripts/seedFakeData.ts`) adds data on top of what exists and never creates, changes or deletes users. For every existing STORE it inserts random products from a template list (all categories, prices with a 30-60% discount, expiry today to 14 days out). For every existing RESTAURANT it inserts reservations on those new products with weighted statuses (Pending, Confirmed, Completed, Rejected, Cancelled) and the product's price as `unit_price`; Pending + Confirmed + Completed quantities never exceed a product's quantity, Confirmed pickups are from today up to 4 days out (so the pickups page has data for today), Completed pickups are in the past with `picked_up_at` set, and it writes the same notifications the app sends for new, accepted and rejected reservations (`RESERVATION_CREATED`, `RESERVATION_ACCEPTED`, `RESERVATION_REJECTED`, with links). It also adds 2 donation offers per store (product lines, randomly FREE or SPONSORED at 40% of the value) and 2 per restaurant (meals in portions from `MEAL_TEMPLATES`, with allergens, serving temperature and a 19:00–21:00 pickup window). Everything runs in one transaction. Options: `npm run seed:fake -- --products <per store, default 6> --reservations <per restaurant, default 4>`.
 
 ## Pending and known limitations
 
