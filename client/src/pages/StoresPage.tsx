@@ -5,12 +5,13 @@ import { useTranslation } from "react-i18next";
 import { Heart, HeartOff, MapPin, Search, SearchX, Store } from "lucide-react";
 import api from "../api/axios.js";
 import { useFetch } from "../hooks/useFetch.js";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
-import ProductPageHeader from "../components/product/ProductPageHeader.jsx";
-import FilterBar, { FilterField } from "../components/product/FilterBar.jsx";
-import EmptyState from "../components/product/EmptyState.jsx";
-import StoreCard from "../components/store/StoreCard.jsx";
-import { inputStyle } from "../components/form/FormField.jsx";
+import LoadingSpinner from "../components/LoadingSpinner.js";
+import ProductPageHeader from "../components/product/ProductPageHeader.js";
+import FilterBar, { FilterField } from "../components/product/FilterBar.js";
+import EmptyState from "../components/product/EmptyState.js";
+import LoadErrorState from "../components/product/LoadErrorState.js";
+import StoreCard from "../components/store/StoreCard.js";
+import { inputStyle } from "../components/form/FormField.js";
 import type { Favorites, User } from "../types/index.js";
 
 function StoresPage() {
@@ -19,7 +20,7 @@ function StoresPage() {
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const { t } = useTranslation();
-  const { data: storesList, loading } = useFetch<User>("/users/stores", "stores", {
+  const { data: storesList, loading, error } = useFetch<User>("/users/stores", "stores", {
     city,
     business_name: businessName,
   });
@@ -148,7 +149,9 @@ function StoresPage() {
         </button>
       </FilterBar>
 
-      {displayedStores.length === 0 ? (
+      {error && storesList.length === 0 ? (
+        <LoadErrorState />
+      ) : displayedStores.length === 0 ? (
         renderEmptyState()
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">

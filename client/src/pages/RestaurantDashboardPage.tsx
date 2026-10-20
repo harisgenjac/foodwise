@@ -8,18 +8,19 @@ import {
   ShoppingBasket,
 } from "lucide-react";
 import api from "../api/axios.js";
-import { useAuth } from "../context/AuthContext.jsx";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
-import DashboardHero from "../components/dashboard/DashboardHero.jsx";
-import StatCard from "../components/dashboard/StatCard.jsx";
-import SectionCard from "../components/dashboard/SectionCard.jsx";
-import DashboardProductCard from "../components/dashboard/DashboardProductCard.jsx";
-import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.jsx";
-import { getDaysUntilExpiry } from "../utils/expiry.js";
+import { useAuth } from "../context/AuthContext.js";
+import LoadingSpinner from "../components/LoadingSpinner.js";
+import DashboardHero from "../components/dashboard/DashboardHero.js";
+import StatCard from "../components/dashboard/StatCard.js";
+import SectionCard from "../components/dashboard/SectionCard.js";
+import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
+import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.js";
 import type { Reservation, Product } from "../types/index.js";
 
 const RestaurantDashboardPage = () => {
-  const [productsList, setProductsList] = useState<Product[]>([]);
+  // The three offers closest to expiry, and how many offers the marketplace has in total.
+  const [bestOffers, setBestOffers] = useState<Product[]>([]);
+  const [offersCount, setOffersCount] = useState(0);
   const [reservationsList, setReservationsList] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -27,9 +28,9 @@ const RestaurantDashboardPage = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await api.get("/products");
-      const data: Product[] = response.data.products;
-      setProductsList(data);
+      const response = await api.get("/products", { params: { sort: "expiry", limit: 3 } });
+      setBestOffers(response.data.products);
+      setOffersCount(response.data.total);
     } catch (err) {
       console.error("Error fetching products:", err);
     }
@@ -55,14 +56,6 @@ const RestaurantDashboardPage = () => {
     loadData();
   }, []);
 
-  const bestOffers = useMemo(
-    () =>
-      [...productsList]
-        .sort((a, b) => getDaysUntilExpiry(a) - getDaysUntilExpiry(b))
-        .slice(0, 3),
-    [productsList],
-  );
-
   const stats = useMemo(() => {
     const confirmed = reservationsList.filter(
       (r) => r.status === "Confirmed" || r.status === "Completed",
@@ -76,12 +69,12 @@ const RestaurantDashboardPage = () => {
     );
 
     return {
-      offers: productsList.length,
+      offers: offersCount,
       pending: reservationsList.filter((r) => r.status === "Pending").length,
       confirmed: confirmed.length,
       savings: `${savings.toFixed(2)} KM`,
     };
-  }, [productsList, reservationsList]);
+  }, [offersCount, reservationsList]);
 
   if (loading) {
     return <LoadingSpinner />;

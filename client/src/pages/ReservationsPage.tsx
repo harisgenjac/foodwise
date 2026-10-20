@@ -15,13 +15,14 @@ import {
   XCircle,
 } from "lucide-react";
 import api from "../api/axios.js";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
-import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.jsx";
-import ProductPageHeader from "../components/product/ProductPageHeader.jsx";
-import FilterBar, { FilterField } from "../components/product/FilterBar.jsx";
-import EmptyState from "../components/product/EmptyState.jsx";
-import Modal from "../components/product/Modal.jsx";
-import { inputStyle } from "../components/form/FormField.jsx";
+import LoadingSpinner from "../components/LoadingSpinner.js";
+import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.js";
+import ProductPageHeader from "../components/product/ProductPageHeader.js";
+import FilterBar, { FilterField } from "../components/product/FilterBar.js";
+import EmptyState from "../components/product/EmptyState.js";
+import LoadErrorState from "../components/product/LoadErrorState.js";
+import Modal from "../components/product/Modal.js";
+import { inputStyle } from "../components/form/FormField.js";
 import { useFetch } from "../hooks/useFetch.js";
 import type { Reservation } from "../types/index.js";
 
@@ -31,9 +32,12 @@ function ReservationsPage() {
   const [city, setCity] = useState("");
   const [rejectingReservation, setRejectingReservation] =
     useState<Reservation | null>(null);
+  // The reservation whose accept or reject request is in flight; blocks double clicks.
+  const [busyId, setBusyId] = useState<number | null>(null);
   const { t } = useTranslation();
   const {
     data: reservationsList,
+    error,
     loading,
     refetch,
   } = useFetch<Reservation>("/reservations/store", "reservations", {
@@ -43,6 +47,8 @@ function ReservationsPage() {
   });
 
   const handleAccept = async (reservationId: number) => {
+    if (busyId !== null) return;
+    setBusyId(reservationId);
     try {
       const response = await api.patch(`/reservations/${reservationId}/accept`);
       toast.success(response.data.message);
@@ -53,10 +59,14 @@ function ReservationsPage() {
         ? err.response?.data?.error
         : null;
       toast.error(message || t("reservations.actionError"));
+    } finally {
+      setBusyId(null);
     }
   };
 
   const handleReject = async (reservationId: number) => {
+    if (busyId !== null) return;
+    setBusyId(reservationId);
     try {
       const response = await api.patch(`/reservations/${reservationId}/reject`);
       toast.success(response.data.message);
@@ -68,6 +78,8 @@ function ReservationsPage() {
         ? err.response?.data?.error
         : null;
       toast.error(message || t("reservations.actionError"));
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -121,12 +133,15 @@ function ReservationsPage() {
             <option value="Pending">{t("reservationStatus.Pending")}</option>
             <option value="Confirmed">{t("reservationStatus.Confirmed")}</option>
             <option value="Completed">{t("reservationStatus.Completed")}</option>
+            <option value="Rejected">{t("reservationStatus.Rejected")}</option>
             <option value="Cancelled">{t("reservationStatus.Cancelled")}</option>
           </select>
         </FilterField>
       </FilterBar>
 
-      {reservationsList.length === 0 ? (
+      {error && reservationsList.length === 0 ? (
+        <LoadErrorState />
+      ) : reservationsList.length === 0 ? (
         hasActiveFilters ? (
           <EmptyState
             icon={SearchX}
@@ -153,7 +168,8 @@ function ReservationsPage() {
                     <button
                       type="button"
                       onClick={() => handleAccept(reservation.id)}
-                      className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-green-600/20 transition-colors hover:bg-green-700"
+                      disabled={busyId === reservation.id}
+                      className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-green-600/20 transition-colors hover:bg-green-700 disabled:cursor-wait disabled:opacity-60"
                     >
                       <Check className="h-4 w-4" />
                       {t("reservations.acceptButton")}
@@ -209,7 +225,8 @@ function ReservationsPage() {
             <button
               type="button"
               onClick={() => handleReject(rejectingReservation.id)}
-              className="flex-1 cursor-pointer rounded-xl bg-red-600 py-2.5 font-semibold text-white transition-colors hover:bg-red-700"
+              disabled={busyId === rejectingReservation.id}
+              className="flex-1 cursor-pointer rounded-xl bg-red-600 py-2.5 font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-wait disabled:opacity-60"
             >
               {t("reservations.rejectButton")}
             </button>

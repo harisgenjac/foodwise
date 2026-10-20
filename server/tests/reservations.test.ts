@@ -267,14 +267,14 @@ describe("Reservations routes", () => {
   });
 
   describe("PATCH /api/reservations/:id/reject", () => {
-    it("cancels a Pending reservation and frees the quantity", async () => {
+    it("rejects a Pending reservation and frees the quantity", async () => {
       const product = await createProduct(store, { quantity: 10 });
       const id = await reserve(restaurant, product.id, 4);
 
       const response = await store.patch(`/api/reservations/${id}/reject`);
       expect(response.status).toBe(200);
       expect(response.body.message).toBe("Rezervacija je uspješno odbijena.");
-      expect(await reservationStatus(id)).toBe("Cancelled");
+      expect(await reservationStatus(id)).toBe("Rejected");
       expect(await availableQuantity(product.id)).toBe(10);
     });
 

@@ -1,5 +1,6 @@
 import cron from "node-cron";
 import pool from "../config/db.js";
+import { APP_TIMEZONE } from "../utils/dates.js";
 
 // Sends the daily reminders. Each one is sent at most once per product or
 // reservation (NOT EXISTS), so running the job again the same day is safe.
@@ -53,5 +54,5 @@ const runReminders = async () => {
 export const startReminderJob = () => {
   // Catch up on a morning run missed while the server was down.
   runReminders();
-  cron.schedule("0 7 * * *", runReminders);
+  cron.schedule("0 7 * * *", runReminders, { timezone: APP_TIMEZONE });
 };

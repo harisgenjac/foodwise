@@ -1,5 +1,7 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
+import { parseId } from "../utils/params.js";
+import { validateTemplateFields } from "../utils/validateProduct.js";
 
 // Optional numeric fields arrive as "" from empty form inputs; store those as NULL.
 const toNullable = (value: unknown) =>
@@ -32,12 +34,11 @@ export const saveTemplate = async (req: Request, res: Response) => {
     discounted_price,
     quantity,
     shelf_life_days,
-  } = req.body;
+  } = req.body ?? {};
 
-  if (!name || !category || !unit) {
-    return res
-      .status(400)
-      .json({ error: "Naziv, kategorija i jedinica mjere su obavezni." });
+  const validationError = validateTemplateFields(req.body);
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
   }
 
   try {
@@ -81,7 +82,10 @@ export const saveTemplate = async (req: Request, res: Response) => {
 
 export const deleteTemplate = async (req: Request, res: Response) => {
   const store_id = req.user!.id;
-  const templateId = req.params.id;
+  const templateId = parseId(req.params.id);
+  if (templateId === null) {
+    return res.status(404).json({ error: "Predložak nije pronađen." });
+  }
 
   try {
     const existing = await pool.query(

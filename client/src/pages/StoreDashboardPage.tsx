@@ -9,13 +9,13 @@ import {
   PackagePlus,
 } from "lucide-react";
 import api from "../api/axios.js";
-import { useAuth } from "../context/AuthContext.jsx";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
-import DashboardHero from "../components/dashboard/DashboardHero.jsx";
-import StatCard from "../components/dashboard/StatCard.jsx";
-import SectionCard from "../components/dashboard/SectionCard.jsx";
-import DashboardProductCard from "../components/dashboard/DashboardProductCard.jsx";
-import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.jsx";
+import { useAuth } from "../context/AuthContext.js";
+import LoadingSpinner from "../components/LoadingSpinner.js";
+import DashboardHero from "../components/dashboard/DashboardHero.js";
+import StatCard from "../components/dashboard/StatCard.js";
+import SectionCard from "../components/dashboard/SectionCard.js";
+import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
+import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.js";
 import { formatSavedFood, getSavedFoodTotals } from "../utils/savedFood.js";
 import type { Product, Reservation } from "../types/index.js";
 

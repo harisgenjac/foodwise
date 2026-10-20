@@ -4,26 +4,53 @@ import BrowseProductsPage from "./BrowseProductsPage.js";
 import { apiMock, makeProduct, makeUser, renderWithProviders, t } from "../test/utils.js";
 import type { Product } from "../types/index.js";
 
-const renderPage = (products: (params: unknown) => Product[]) =>
+// The server filters out sold-out products and pages the rest; `total` counts every match.
+const renderPage = (products: (params: unknown) => Product[], total?: number) =>
   renderWithProviders(<BrowseProductsPage />, {
     route: "/browse-products",
     path: "/browse-products",
     user: makeUser(),
-    get: { "/products": (params: unknown) => ({ products: products(params) }) },
+    get: {
+      "/products": (params: unknown) => {
+        const list = products(params);
+        return { products: list, total: total ?? list.length };
+      },
+    },
   });
 
 const productCalls = () => apiMock.get.mock.calls.filter(([url]) => url === "/products");
 
 describe("BrowseProductsPage", () => {
-  it("lists products that still have quantity available", async () => {
-    renderPage(() => [
-      makeProduct({ id: 1, name: "Piletina" }),
-      makeProduct({ id: 2, name: "Rasprodano", available_quantity: "0" }),
-    ]);
+  it("lists the products and shows the server total", async () => {
+    renderPage(() => [makeProduct({ id: 1, name: "Piletina" })], 30);
 
     expect(await screen.findByText("Piletina")).toBeInTheDocument();
-    expect(screen.queryByText("Rasprodano")).not.toBeInTheDocument();
-    expect(screen.getByText(t("product.offersCount", { count: 1 }))).toBeInTheDocument();
+    expect(screen.getByText(t("product.offersCount", { count: 30 }))).toBeInTheDocument();
+  });
+
+  it("loads more when the server has more matches than shown", async () => {
+    renderPage((params) => {
+      const { limit } = params as { limit: number };
+      return Array.from({ length: Math.min(limit, 30) }, (_, i) => makeProduct({ id: i + 1, name: `Proizvod ${i + 1}` }));
+    }, 30);
+    await screen.findByText("Proizvod 24");
+    expect(screen.queryByText("Proizvod 25")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: t("product.loadMore") }));
+    expect(await screen.findByText("Proizvod 30")).toBeInTheDocument();
+    expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ limit: 48 });
+    expect(screen.queryByRole("button", { name: t("product.loadMore") })).not.toBeInTheDocument();
+  });
+
+  it("shows a load error instead of an empty list when the request fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    renderWithProviders(<BrowseProductsPage />, {
+      route: "/browse-products",
+      path: "/browse-products",
+      user: makeUser(),
+      get: { "/products": new Error("network") },
+    });
+    expect(await screen.findByText(t("common.loadErrorTitle"))).toBeInTheDocument();
   });
 
   it("shows an empty state when nothing is offered", async () => {
@@ -42,8 +69,12 @@ describe("BrowseProductsPage", () => {
     await userEvent.selectOptions(screen.getByDisplayValue(t("filters.allCategories")), categories.Dairy!);
 
     await waitFor(() =>
-      expect(productCalls().at(-1)?.[1]).toEqual({
-        params: { category: "Dairy", maxPrice: "", name: "mlijeko", expiryWithinDays: "" },
+      expect(productCalls().at(-1)?.[1]?.params).toEqual({
+        category: "Dairy",
+        maxPrice: "",
+        name: "mlijeko",
+        expiryWithinDays: "",
+        limit: 24,
       }),
     );
     expect(await screen.findByText(t("myProducts.noResultsTitle"))).toBeInTheDocument();

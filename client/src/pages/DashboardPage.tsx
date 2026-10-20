@@ -1,6 +1,6 @@
-import { useAuth } from '../context/AuthContext.jsx';
-import StoreDashboardPage from './StoreDashboardPage.jsx';
-import RestaurantDashboardPage from './RestaurantDashboardPage.jsx';
+import { useAuth } from '../context/AuthContext.js';
+import StoreDashboardPage from './StoreDashboardPage.js';
+import RestaurantDashboardPage from './RestaurantDashboardPage.js';
 
 function DashboardPage() {
   const { user } = useAuth();

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import Header from './Header.jsx';
-import Sidebar from './Sidebar.jsx';
+import Header from './Header.js';
+import Sidebar from './Sidebar.js';
 import { NotificationsProvider } from '../context/NotificationsContext.js';
 
 const SIDEBAR_STORAGE_KEY = 'sidebarOpen';

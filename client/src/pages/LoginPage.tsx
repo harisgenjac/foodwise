@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
+import { useAuth } from "../context/AuthContext.js";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../components/LanguageSwitcher.js";
 import { Lock, Mail } from "lucide-react";
 import logo from "../assets/logoApp.png";
-import FormField, { inputStyle } from "../components/form/FormField.jsx";
+import FormField, { inputStyle } from "../components/form/FormField.js";
 
 function LoginPage() {
   const [email, setEmail] = useState("");

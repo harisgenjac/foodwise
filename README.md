@@ -63,6 +63,10 @@ Create `server/.env.test` with the same variables, pointing `DATABASE_URL` at `f
 | `JWT_SECRET` | yes | Secret used to sign auth tokens |
 | `PORT` | no | API port, default `3000` |
 | `NODE_ENV` | no | `production` makes the auth cookie `secure` |
+| `CLIENT_ORIGIN` | no | Frontend origin allowed by CORS, default `http://localhost:5173` |
+| `APP_TIMEZONE` | no | Business time zone for expiry dates and the scheduled jobs, default `Europe/Sarajevo` |
+
+The client reads an optional `VITE_API_URL` (backend origin without `/api`, default `http://localhost:3000`), for example from `client/.env.local`.
 
 Never commit `.env` files.
 
@@ -152,4 +156,4 @@ foodwise/
 ## Known limitations
 
 - Notifications use polling, not push.
-- The app is configured for local development only (the CORS origin and the client's API URL are hard-coded to localhost).
+- Deployment is not set up yet: the auth cookie uses `sameSite: "strict"` (frontend and backend need a shared domain) and logos are stored on local disk.

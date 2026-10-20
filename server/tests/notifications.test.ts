@@ -42,8 +42,8 @@ const insertProduct = async (name: string, expiry: string, status = "Available")
 
 const insertReservation = async (productId: number, status: string, pickup: string) => {
   const result = await pool.query<{ id: number }>(
-    `INSERT INTO reservations (product_id, restaurant_id, quantity, status, pickup_date)
-     VALUES ($1, $2, 2, $3, ${pickup}) RETURNING id`,
+    `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date)
+     VALUES ($1, $2, 2, 1, $3, ${pickup}) RETURNING id`,
     [productId, await userId(RESTAURANT_A), status],
   );
   return result.rows[0]!.id;
@@ -201,7 +201,7 @@ describe("Notifications", () => {
   });
 
   describe("expiry job", () => {
-    it("expires the product, cancels active reservations and notifies both sides", async () => {
+    it("expires the product, cancels Pending reservations, keeps Confirmed ones and notifies", async () => {
       const productId = await insertProduct("Jogurt", "CURRENT_DATE - 1");
       const pending = await insertReservation(productId, "Pending", "NOW()");
       const confirmed = await insertReservation(productId, "Confirmed", "NOW()");
@@ -211,11 +211,13 @@ describe("Notifications", () => {
       const product = await pool.query("SELECT status FROM products WHERE id = $1", [productId]);
       expect(product.rows[0].status).toBe("Expired");
       const statuses = await pool.query("SELECT id, status FROM reservations WHERE product_id = $1", [productId]);
-      expect(statuses.rows.every((r) => r.status === "Cancelled")).toBe(true);
+      const byId = Object.fromEntries(statuses.rows.map((r) => [r.id, r.status]));
+      expect(byId[pending]).toBe("Cancelled");
+      expect(byId[confirmed]).toBe("Confirmed");
 
       expect((await notificationsOf(store))[0]).toMatchObject({ type: "PRODUCT_EXPIRED", product_id: productId });
       const restaurantNotes = (await notificationsOf(restaurant)).filter((n) => n.type === "RESERVATION_EXPIRED");
-      expect(restaurantNotes.map((n) => n.reservation_id).sort()).toEqual([pending, confirmed].sort());
+      expect(restaurantNotes.map((n) => n.reservation_id)).toEqual([pending]);
     });
 
     it("leaves unexpired products, non-Available products and finished reservations alone", async () => {

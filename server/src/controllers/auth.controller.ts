@@ -15,7 +15,19 @@ function validateRegFields(fields: RegisterBody) {
   if (!first_name || !last_name || !email || !password || !role) {
     return "Sva polja su obavezna.";
   }
+  if (typeof email !== "string" || !EMAIL_PATTERN.test(normalizeEmail(email))) {
+    return "Email nije ispravan.";
+  }
+  if (typeof password !== "string" || password.length < MIN_PASSWORD_LENGTH) {
+    return `Lozinka mora imati najmanje ${MIN_PASSWORD_LENGTH} znakova.`;
+  }
 }
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
+
+// Emails are compared case-insensitively, so they are stored and looked up in lowercase.
+const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
 interface LoginBody {
   email: string;
@@ -23,16 +35,16 @@ interface LoginBody {
 }
 function validateLoginFields(fields: LoginBody) {
   const { email, password } = fields;
-  if (!email || !password) {
+  if (!email || !password || typeof email !== "string" || typeof password !== "string") {
     return "Sva polja su obavezna.";
   }
 }
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { first_name, last_name, email, password, role }: RegisterBody =
-      req.body;
-    const validationError = validateRegFields(req.body);
+    const { first_name, last_name, password, role }: RegisterBody =
+      req.body ?? {};
+    const validationError = validateRegFields(req.body ?? {});
 
     if (validationError) {
       return res.status(400).json({ error: validationError });
@@ -43,8 +55,9 @@ export const register = async (req: Request, res: Response) => {
         .json({ error: "Rola mora biti STORE ili RESTAURANT." });
     }
 
+    const email = normalizeEmail(req.body.email);
     const result = await pool.query(
-      "SELECT email FROM users WHERE email = $1",
+      "SELECT email FROM users WHERE LOWER(email) = $1",
       [email],
     );
     if (result.rows.length > 0) {
@@ -61,6 +74,12 @@ export const register = async (req: Request, res: Response) => {
     );
     return res.status(201).json({ message: "Registracija uspješna." });
   } catch (error) {
+    // Two registrations with the same email at the same moment: the unique index rejects the second.
+    if (error instanceof Error && "code" in error && error.code === "23505") {
+      return res
+        .status(400)
+        .json({ error: "Korisnik s tim emailom već postoji." });
+    }
     console.error("Greška prilikom registracije:", error);
     return res
       .status(500)
@@ -70,15 +89,15 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { email, password }: LoginBody = req.body;
-    const validationError = validateLoginFields(req.body);
+    const { email, password }: LoginBody = req.body ?? {};
+    const validationError = validateLoginFields(req.body ?? {});
 
     if (validationError) {
       return res.status(400).json({ error: validationError });
     }
 
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [
-      email,
+    const result = await pool.query("SELECT * FROM users WHERE LOWER(email) = $1", [
+      normalizeEmail(email),
     ]);
     if (result.rows.length === 0) {
       return res.status(400).json({ error: "Pogrešan email ili lozinka." });

@@ -2,8 +2,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Clock, MapPin, Phone } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import StoreAvatar from "./StoreAvatar.jsx";
-import FavoriteButton from "./FavoriteButton.jsx";
+import StoreAvatar from "./StoreAvatar.js";
+import FavoriteButton from "./FavoriteButton.js";
 import type { User } from "../../types/index.js";
 
 interface StoreCardProps {

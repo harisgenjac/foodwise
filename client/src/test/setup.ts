@@ -11,7 +11,11 @@ vi.mock("../api/axios.js", () => ({
     put: vi.fn(),
     patch: vi.fn(),
     delete: vi.fn(),
+    // AuthContext registers a 401 handler; tests that need it read the handler from use.mock.calls.
+    interceptors: { response: { use: vi.fn(), eject: vi.fn() } },
   },
+  API_ORIGIN: "http://localhost:3000",
+  assetUrl: (path: string) => `http://localhost:3000${path}`,
 }));
 
 // Pages debounce their requests by 500ms (useFetch), so allow more than the 1s default.

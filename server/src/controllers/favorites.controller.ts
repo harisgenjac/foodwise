@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
+import { parseId } from "../utils/params.js";
 
 export const addFavorite = async (req: Request, res: Response) => {
   try {
@@ -10,9 +11,14 @@ export const addFavorite = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "ID prodavnice je obavezan." });
     }
 
+    const storeId = parseId(store_id);
+    if (storeId === null) {
+      return res.status(404).json({ error: "Prodavnica nije pronađena." });
+    }
+
     const store = await pool.query(
       `SELECT id FROM users WHERE id = $1 AND role = 'STORE'`,
-      [store_id],
+      [storeId],
     );
     if (store.rows.length === 0) {
       return res.status(404).json({ error: "Prodavnica nije pronađena." });
@@ -20,7 +26,7 @@ export const addFavorite = async (req: Request, res: Response) => {
 
     await pool.query(
       `INSERT INTO favorites (restaurant_id, store_id) VALUES ($1, $2)`,
-      [restaurant_id, store_id],
+      [restaurant_id, storeId],
     );
     return res.status(201).json({ message: "Prodavnica dodana u omiljene" });
   } catch (error) {
@@ -42,7 +48,12 @@ export const addFavorite = async (req: Request, res: Response) => {
 export const removeFavorite = async (req: Request, res: Response) => {
   try {
     const restaurant_id = req.user!.id;
-    const storeId = req.params.storeId;
+    const storeId = parseId(req.params.storeId);
+    if (storeId === null) {
+      return res
+        .status(404)
+        .json({ error: "Prodavnica nije bila u omiljenim." });
+    }
 
     const result = await pool.query(
       `DELETE FROM favorites WHERE restaurant_id = $1 AND store_id = $2`,

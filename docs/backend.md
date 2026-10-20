@@ -25,8 +25,8 @@ server/
 │   ├── routes/              one router per resource, mounted in app.ts
 │   ├── jobs/                expireProducts.ts, notificationReminders.ts
 │   ├── types/               auth.ts (AuthUser, Role), express.d.ts (req.user, req.file)
-│   ├── utils/               validateProduct.ts, notifications.ts (createNotification, NotificationType)
-│   └── scripts/             seed.ts (demo reset), seedFakeData.ts (adds data)
+│   ├── utils/               validateProduct.ts, notifications.ts (createNotification, NotificationType), params.ts, dates.ts, httpError.ts
+│   └── scripts/             seed.ts (demo reset), seedFakeData.ts (adds data), fakeData.ts (shared generator)
 ├── migrations/              node-pg-migrate files (plain JS)
 ├── tests/                   Vitest + supertest, TypeScript (setup.ts, helpers.ts, *.test.ts)
 ├── uploads/logos/           uploaded logos (gitignored, `.gitkeep` tracked)
@@ -43,14 +43,14 @@ server/
 - `npm run migrate up|down`, `npm run migrate create <name>` (uses `.env` through dotenv-cli)
 - `npm test` (Vitest + supertest, `.env.test`, files run one at a time). Single file: `npm test -- tests/products.test.ts`. Single test: `npm test -- -t "name"`. Watch mode: `npm run test:watch`.
 - `npm run typecheck`: `tsc --noEmit -p tsconfig.test.json` (source and tests).
-- `npm run seed` (destructive reset, built then run from `dist/`, see Seed), `npm run seed:fake` (adds data, never touches users)
-- Env: `DATABASE_URL`, `JWT_SECRET`, optional `PORT`, `NODE_ENV`. `.env.test` points at the separate database `food_saver_test_db`.
+- `npm run seed` (destructive reset, see Seed), `npm run seed:fake` (adds data, never touches users); both build first and run from `dist/`.
+- Env: `DATABASE_URL`, `JWT_SECRET`, optional `PORT`, `NODE_ENV`, `CLIENT_ORIGIN` (CORS origin, default `http://localhost:5173`), `APP_TIMEZONE` (business time zone for `CURRENT_DATE` and cron, default `Europe/Sarajevo`). `.env.test` points at the separate database `food_saver_test_db`.
 
 `tsconfig.json`: `strict`, `module/moduleResolution nodenext`, `target esnext`, `rootDir ./src`, `outDir ./dist`, `types: ["node"]`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, `isolatedModules`, `declaration`, `sourceMap`, `include: ["src"]`. Migrations and tests live outside `src/`, so the build never emits them. `tsconfig.test.json` extends it with `rootDir: "."`, `noEmit`, `types: ["node", "vitest/globals"]` and includes `tests/`, so the tests are type-checked with the same strict options.
 
 ## Request pipeline (`app.ts`)
 
-Order: `cors({ origin: "http://localhost:5173", credentials: true })` → `express.json()` → `req.body ??= {}` (Express 5 leaves it undefined for requests without a body; controllers destructure it) → `cookieParser()` → routers → `/uploads` static → JSON 404 for unknown `/api/*` paths (`"Ruta nije pronađena."`) → error handler (malformed JSON body: 400 `"Neispravan format zahtjeva."`; anything else is logged and answers 500 `"Došlo je do greške na serveru."`).
+Order: `cors({ origin: CLIENT_ORIGIN, credentials: true })` → `express.json()` → `req.body ??= {}` (Express 5 leaves it undefined for requests without a body; controllers destructure it) → `cookieParser()` → routers → `/uploads` static (with `X-Content-Type-Options: nosniff`) → JSON 404 for any unknown path (`"Ruta nije pronađena."`) → error handler (see Business logic).
 
 Routers: `/api/auth`, `/api/products`, `/api/reservations`, `/api/users`, `/api/notifications`, `/api/favorites`, `/api/product-templates`
 
@@ -67,20 +67,23 @@ Routes chain `authenticate` → `authorize('<ROLE>')` (single role) → controll
 
 ## Database
 
-Enum types: user role (`STORE`, `RESTAURANT`), product status (`Available`, `Reserved`, `Sold`, `Expired`, `Removed`), reservation status (`Pending`, `Confirmed`, `Completed`, `Cancelled`). Category and unit are stored as codes in VARCHAR columns; labels are a frontend concern.
+Enum types: user role (`STORE`, `RESTAURANT`), product status (`Available`, `Sold`, `Expired`, `Removed`), reservation status (`Pending`, `Confirmed`, `Completed`, `Rejected`, `Cancelled`). `Rejected` = refused by the store; `Cancelled` = withdrawn by the restaurant or cancelled by the expiry job. Category and unit are stored as codes in VARCHAR columns (validated against fixed lists, see Validation); labels are a frontend concern.
+
+`DATE` columns (`expiry_date`) come back from `pg` as plain `YYYY-MM-DD` strings: `config/db.ts` overrides the default parser, which would turn them into a JS `Date` at local midnight and serialize the previous day in UTC+ time zones. Every pool session also runs with `timezone = APP_TIMEZONE`, so `CURRENT_DATE` is the local business day.
 
 | Table | Columns | Notes |
 |---|---|---|
-| `users` | id, first_name, last_name, email (unique), password_hash, role, business_name, logo_url, address, city, opening_hours, pickup_hours, description, phone, created_at | One table for both roles. `business_name`, `city`, `phone` are required on profile update. |
+| `users` | id, first_name, last_name, email (stored lowercase; unique index `users_email_lower_unique` on `LOWER(email)`), password_hash, role, business_name, logo_url, address, city, opening_hours, pickup_hours, description, phone, created_at | One table for both roles. `business_name`, `city`, `phone` are required on profile update. |
 | `products` | id, store_id → users (CASCADE), name, description, category, original_price, discounted_price, quantity, unit, expiry_date, status, created_at, updated_at | Soft delete via `status = 'Removed'`. `updated_at` set by trigger. |
-| `reservations` | id, product_id → products (RESTRICT), restaurant_id → users (RESTRICT), quantity, status, pickup_date, created_at, updated_at | RESTRICT keeps history, so a user with reservations cannot be deleted. |
+| `reservations` | id, product_id → products (RESTRICT), restaurant_id → users (RESTRICT), quantity, unit_price (not null), status, pickup_date, created_at, updated_at | RESTRICT keeps history, so a user with reservations cannot be deleted. `unit_price` is the product's `discounted_price` at reservation time; later product edits do not change it. |
 | `notifications` | id, user_id → users (CASCADE), type (varchar, nullable), message (not null), is_read (default false), created_at, reservation_id → reservations (SET NULL), product_id → products (SET NULL) | Index on (user_id, created_at). Rows from before `type` existed have `type`, `reservation_id` and `product_id` null and a Bosnian `message`. |
 | `favorites` | id, restaurant_id → users (CASCADE), store_id → users (CASCADE), created_at | Unique constraint `unique_restaurant_store`. |
 | `product_templates` | id, store_id → users (CASCADE), name, description, category, unit, original_price, discounted_price, quantity (decimals nullable), shelf_life_days (integer, nullable), created_at, updated_at | Unique constraint `unique_store_template_name` on (store_id, name). `updated_at` set by the shared `set_updated_at` trigger. |
 
 - Categories in use: Meat, Fish, Dairy, Vegetables, Fruits, Bakery, Drinks, Frozen Food, Other. Units: kg, g, l, ml, kom, pak.
 - `set_updated_at()` trigger function is created in the products migration and reused for reservations. Attach it to any new table that needs `updated_at`.
-- Migrations: initial (users), products, reservations, notifications, favorites, product templates, notification links (`type`, `reservation_id`, `product_id`). Never edit an executed migration. Serial sequences are never reset, so ids keep growing after deletes (normal).
+- Indexes beyond primary keys and unique constraints: `notifications(user_id, created_at)`, `products(store_id)`, `products(status, expiry_date)`, `reservations(product_id, status)`, `reservations(restaurant_id)`, `users(LOWER(email))`.
+- Migrations: initial (users), products, reservations, notifications, favorites, product templates, notification links (`type`, `reservation_id`, `product_id`), reservation `unit_price` (backfilled from the product's current price), `Rejected` reservation status (runs outside a transaction because `ALTER TYPE ... ADD VALUE` must commit before use; backfills past rejections from their `RESERVATION_REJECTED` notifications), removal of the unused `Reserved` product status (rebuilds the enum), lowercase unique email (fails if two accounts differ only in case), foreign key indexes. Never edit an executed migration. Serial sequences are never reset, so ids keep growing after deletes (normal).
 
 ## API reference
 
@@ -89,42 +92,54 @@ Roles shown are the intent; confirm exact middleware in `src/routes/`.
 ### Auth `/api/auth`
 `POST /register`, `POST /login`, `POST /logout`, `GET /me` (authenticated)
 
+Emails are trimmed and lowercased on register and login (login matches `LOWER(email)`, so accounts created before this rule still log in). Register also requires a valid email format (`"Email nije ispravan."`) and a password of at least 8 characters (`"Lozinka mora imati najmanje 8 znakova."`); a duplicate, including one that only differs in case, is 400 `"Korisnik s tim emailom već postoji."`. Login without email or password is 400 `"Email i lozinka su obavezni."`.
+
 ### Products `/api/products`
 | Endpoint | Who | Behavior |
 |---|---|---|
 | `POST /` | STORE | Create. `store_id` always comes from `req.user`, never from the body. |
-| `GET /` | authenticated (marketplace for restaurants) | Only `Available` and not expired. Filters: `category`, `maxPrice`, `expiryWithinDays`, `name` (ILIKE). Joins `users` and returns `business_name`, `city`, computed `available_quantity` and `days_until_expiry`. Newest first. |
-| `GET /mine` | STORE | Own products except `Removed`. Filters: `category`, `status`, `name`, `expiryWithinDays`. Ordered Available, Sold, Expired, then newest. |
+| `GET /` | authenticated (marketplace for restaurants) | Only `Available`, not expired and with `available_quantity > 0` (filtered in SQL). Filters: `category`, `maxPrice`, `expiryWithinDays` (0 = expires today, 1 = by tomorrow, ...), `name` (ILIKE). Paging: `limit` (default 24, max 100), `offset`. `sort`: `newest` (default) or `expiry` (closest expiry first). Joins `users` and returns `business_name`, `city`, computed `available_quantity` and `days_until_expiry`. Response `{ products, total }` where `total` counts all matches, not just the page. Invalid numbers or sort → 400 `"Neispravan filter."`. |
+| `GET /mine` | STORE | Own products except `Removed`. Filters: `category`, `status` (must be a known status), `name`, `expiryWithinDays`. Ordered Available, Sold, Expired, then newest. |
 | `GET /:id` | authenticated | Includes `business_name`, `city`, `store_address`, `store_phone`, `store_pickup_hours`, `available_quantity`, `days_until_expiry`. Not filtered by expiry. |
-| `PUT /:id` | STORE (owner) | 404 if missing, 403 if not owner. |
+| `PUT /:id` | STORE (owner) | Transaction with `FOR UPDATE` on the product. 404 if missing, 403 if not owner, 400 `"Samo dostupni proizvodi se mogu mijenjati."` unless `Available`, 400 `"Količina ne može biti manja od već rezervisane količine."` when the new quantity is below Pending + Confirmed. If Confirmed then covers the new quantity, the product becomes `Sold` (with `PRODUCT_SOLD_OUT`). |
 | `DELETE /:id` | STORE (owner) | Soft delete. 400 if status is Sold/Expired/Removed or active (Pending/Confirmed) reservations exist. |
 
-Register `/mine` before `/:id`. Validation lives in `utils/validateProduct.ts` (`validateProductFields` returns an error string or `null`) and is used by create and update:
-- required: name, category, original_price, discounted_price, quantity, unit, expiry_date (description optional) → `"Sva polja su obavezna."`
-- prices and quantity must be numbers above 0 → `"Cijene i količina moraju biti pozitivni brojevi."`
-- discounted_price may not exceed original_price → `"Snižena cijena ne može biti veća od originalne."`
-- expiry_date must parse as a date → `"Datum isteka nije ispravan."`
+Register `/mine` before `/:id`.
+
+### Validation
+
+- `utils/validateProduct.ts`: `validateProductFields` (create and update) returns a Bosnian error string or `null`:
+  - required: name, category, original_price, discounted_price, quantity, unit, expiry_date (description optional) → `"Sva polja su obavezna."`
+  - category and unit must be in `CATEGORIES` / `UNITS` (keep in sync with `client/src/utils/categories.ts` and `units.ts`) → `"Kategorija nije ispravna."`, `"Jedinica mjere nije ispravna."`
+  - prices and quantity must be numbers above 0 → `"Cijene i količina moraju biti pozitivni brojevi."`
+  - discounted_price may not exceed original_price → `"Snižena cijena ne može biti veća od originalne."`
+  - expiry_date must be a real `YYYY-MM-DD` date → `"Datum isteka nije ispravan."`, and not before today in `APP_TIMEZONE` → `"Datum isteka ne može biti u prošlosti."`
+- `validateTemplateFields` applies the category/unit lists and checks optional numbers when they are given.
+- `utils/params.ts`: `parseId` (positive integer or `null`), `parseNumber`, `parseNonNegativeInt`. A non-numeric `:id` returns the resource's normal 404 instead of a Postgres cast error.
+- `utils/dates.ts`: `APP_TIMEZONE`, `todayInAppTimezone()`, `isValidDate`, `isValidDateTime`.
 
 ### Reservations `/api/reservations`
 
-The list and detail responses join the product and include `product_name`, `description`, `original_price`, `discounted_price`, `category` and `unit`.
+The list and detail responses join the product and include `product_name`, `description`, `original_price`, `category` and `unit`; `discounted_price` is the reservation's own `unit_price` (the price agreed when it was made), not the product's current price.
 
 | Endpoint | Who | Behavior |
 |---|---|---|
-| `POST /` | RESTAURANT | Body: product_id, quantity, pickup_date (400 `"Sva polja su obavezna."`; quantity must be a number above 0, `"Količina mora biti veća od nule."`; pickup_date must parse, `"Datum preuzimanja nije ispravan."`). Transactional (see below). 400 `"Proizvod više nije dostupan za rezervaciju."` if the product is not `Available` or is past `expiry_date`. Notifies the store. |
-| `GET /mine` | RESTAURANT | Filters: `status`, `name`, `business_name` (ILIKE), `store_id`. `business_name`/`city` are the **store's**. Ordered Pending, Confirmed, Completed, Cancelled, then newest. |
+| `POST /` | RESTAURANT | Body: product_id, quantity, pickup_date (400 `"Sva polja su obavezna."`). Transactional (see below). `quantity` must be a number above 0 (400 `"Količina mora biti veća od nule."`); `pickup_date` must be a date or date-time (400 `"Datum preuzimanja nije ispravan."`) whose day is between today and the product's `expiry_date` (400 `"Datum preuzimanja mora biti između danas i roka trajanja proizvoda."`). 400 `"Proizvod više nije dostupan za rezervaciju."` if the product is not `Available` or is past `expiry_date`. Stores `unit_price`. Notifies the store. |
+| `GET /mine` | RESTAURANT | Filters: `status`, `name`, `business_name` (ILIKE), `store_id`. `business_name`/`city` are the **store's**. Ordered Pending, Confirmed, Completed, Rejected, Cancelled, then newest. |
 | `GET /store` | STORE | Filters: `status`, `name`, `city`. `business_name`/`city` here are the **restaurant's** (same field names, different meaning). Pending first. |
 | `GET /:id` | authenticated | Visible only to the restaurant that made it or the store that owns the product; anyone else gets 404 (existence is not revealed). `business_name`/`city` are the store's; it also returns both parties: `product_id`, `store_id`, `store_address`, `store_phone`, `store_pickup_hours`, `restaurant_name`, `restaurant_city`, `restaurant_address`, `restaurant_phone` (`users` joined twice, aliased `stores` and `restaurants`). |
 | `PATCH /:id/accept` | STORE (owner) | Pending only. Transaction with `FOR UPDATE`. 400 if the product is past `expiry_date`. Sets Confirmed; if confirmed quantity reaches the product quantity, the product becomes `Sold`. Notifies the restaurant. |
-| `PATCH /:id/reject` | STORE (owner) | Pending only. Notifies the restaurant. |
-| `PATCH /:id/cancel` | RESTAURANT (owner) | Pending only. Notifies the store. |
+| `PATCH /:id/reject` | STORE (owner) | Pending only. Transaction that locks the reservation row (`FOR UPDATE OF reservations`), so it cannot interleave with an accept. Sets `Rejected`. Notifies the restaurant. |
+| `PATCH /:id/cancel` | RESTAURANT (owner) | Pending only. Same locking as reject. Sets `Cancelled`. Notifies the store. |
+
+Unknown `status` filter values or a non-numeric `store_id` are 400 `"Neispravan filter."`.
 
 ### Users `/api/users`
 - `GET /me`: full profile (explicit column list, never `password_hash`).
 - `PUT /me`: updates profile. Optional fields use `COALESCE`, so a field cannot be cleared back to null.
-- `POST /me/logo`: `uploadLogoFile` (multer, single file field `logo`, JPEG/PNG/WEBP, max 5MB) stores `/uploads/logos/<userId>-<timestamp>.<ext>` in `logo_url`. Rejected uploads answer 400 JSON: `"Dozvoljene su samo JPEG, PNG i WEBP slike."`, `"Slika može imati najviše 5MB."`; no file: `"Slika nije poslana."`.
+- `POST /me/logo`: `uploadLogoFile` (multer, single file field `logo`, JPEG/PNG/WEBP, max 5MB) stores `/uploads/logos/<userId>-<timestamp>.<ext>` in `logo_url`. The extension comes from the checked MIME type, never from the uploaded file name, and `/uploads` is served with `nosniff`, so an uploaded file can only ever be an image. The previous logo file is deleted. Rejected uploads answer 400 JSON: `"Dozvoljene su samo JPEG, PNG i WEBP slike."`, `"Slika može imati najviše 5MB."`; no file: `"Slika nije poslana."`.
 - `GET /stores` (RESTAURANT): store list, filters `city`, `business_name`, ordered by name. Each store has `active_products` (COUNT, a string): its `Available` products with `expiry_date >= CURRENT_DATE`.
-- `GET /stores/:id` (restaurants only; the controller returns 403 for STORE): returns `{ store, products, stats, myReservations }`. `products` are that store's available, unexpired products with computed fields. `stats` = `sold_articles` (count of products with status Sold) and `successful_reservations` (count of Confirmed reservations). `myReservations` = `{ my_reservations_count }` for the calling restaurant (Confirmed + Completed).
+- `GET /stores/:id` (restaurants only; the controller returns 403 for STORE): returns `{ store, products, stats, myReservations }`. `products` are that store's available, unexpired products that still have available quantity, with computed fields. `stats` = `sold_articles` (count of products with status Sold) and `successful_reservations` (count of Confirmed + Completed reservations). `myReservations` = `{ my_reservations_count }` for the calling restaurant (Confirmed + Completed).
 
 ### Notifications `/api/notifications`
 All routes are scoped to the caller (`user_id`); another user's notification is a 404, never a 403.
@@ -142,32 +157,33 @@ The static paths (`/read-all`, `/read`) are registered before the `/:id` ones.
 ### Product templates `/api/product-templates` (STORE)
 Saved product presets a store reuses on the add-product form. Private to the store.
 - `GET /`: the caller's templates, newest `updated_at` first → `{ templates }`.
-- `POST /`: body `name`, `category`, `unit` (required, else 400 `"Naziv, kategorija i jedinica mjere su obavezni."`), optional `description`, `original_price`, `discounted_price`, `quantity`, `shelf_life_days` (empty strings become NULL). Upsert on `(store_id, name)`: saving an existing name replaces that template's other fields. 201 `{ message: "Predložak uspješno sačuvan.", template }`.
+- `POST /`: body `name`, `category`, `unit` (required, else 400 `"Naziv, kategorija i jedinica mjere su obavezni."`; category and unit must be known codes), optional `description`, `original_price`, `discounted_price`, `quantity`, `shelf_life_days` (empty strings become NULL). Upsert on `(store_id, name)`: saving an existing name replaces that template's other fields. 201 `{ message: "Predložak uspješno sačuvan.", template }`.
 - `DELETE /:id`: 404 `"Predložak nije pronađen."`, 403 `"Nemate ovlasti za brisanje ovog predloška."` for another store's template, 200 `{ message: "Predložak uspješno obrisan." }`.
 
 ## Business logic worth knowing
 
 - **Available quantity** is computed, never stored: `products.quantity` minus the sum of `Pending` + `Confirmed` reservation quantities. Partial reservations are allowed and the product stays `Available` until accepted reservations cover the full quantity.
-- **Stock-safe pattern** (`createReservation`, `acceptReservation`): `pool.connect()`, `BEGIN`, `SELECT ... FOR UPDATE` on the product row, compute, write, `COMMIT`; `ROLLBACK` on any early return or error; `client.release()` in `finally`. Use the same pattern for anything that touches stock.
+- **Stock-safe pattern** (`createReservation`, `acceptReservation`, `updateProduct`; reject and cancel lock the reservation row instead): `pool.connect()`, `BEGIN`, `SELECT ... FOR UPDATE` on the product row, compute, write, `COMMIT`; `ROLLBACK` on any early return or error; `client.release()` in `finally`. Use the same pattern for anything that touches stock or a reservation's status. `markSoldIfFullyConfirmed(client, product)` (in `reservations.controller.ts`) marks a locked product `Sold` once Confirmed covers its quantity.
 - **Notifications** are written with `createNotification(db, { userId, type, message, reservationId?, productId? })` from `utils/notifications.ts` as part of the action; `db` is the pool or the transaction client, so inserts inside a transaction commit or roll back with it. The client translates each one from `type` plus the joined product data; `message` is an **English fallback** (the one exception to "server messages are Bosnian"), for example `"New reservation request: 4kg Chicken"`. Types:
 
   | type | Recipient | Trigger | Links |
   |---|---|---|---|
   | `RESERVATION_CREATED` | store | `POST /reservations` (in the transaction) | reservation, product |
   | `RESERVATION_ACCEPTED` | restaurant | accept (in the transaction) | reservation, product |
-  | `RESERVATION_REJECTED` | restaurant | reject | reservation, product |
-  | `RESERVATION_CANCELLED` | store | cancel by the restaurant | reservation, product |
-  | `PRODUCT_SOLD_OUT` | store | accept that makes the product `Sold` (in the transaction) | product |
+  | `RESERVATION_REJECTED` | restaurant | reject (in the transaction) | reservation, product |
+  | `RESERVATION_CANCELLED` | store | cancel by the restaurant (in the transaction) | reservation, product |
+  | `PRODUCT_SOLD_OUT` | store | accept or product edit that makes the product `Sold` (in the transaction) | product |
   | `PRODUCT_EXPIRED` | store | expiry job, per expired product | product |
   | `RESERVATION_EXPIRED` | restaurant | expiry job, per cancelled reservation | reservation, product |
   | `PRODUCT_EXPIRING_SOON` | store | reminder job: `Available` product with `expiry_date = CURRENT_DATE + 1` and at least one Pending reservation | product |
   | `PICKUP_TODAY` | restaurant | reminder job: `Confirmed` reservation with `pickup_date::date = CURRENT_DATE` | reservation, product |
 
   Adding a type means updating `NotificationType` on both sides, the `notifications.types` keys in both locale files and `NOTIFICATION_META` on the client.
-- **Expiry job** (`jobs/expireProducts.ts`, started from `server.ts` only): `expireProducts()` marks `Available` products past `expiry_date` as `Expired`, cancels their Pending/Confirmed reservations and notifies the stores and the restaurants, all in one transaction. `startExpirationJob()` runs it once at startup (to catch up on midnights missed while the server was down) and then on cron `0 0 * * *`. Expiry checks in SQL use `expiry_date < CURRENT_DATE`, so a product is still valid on its expiry day.
-- **Reminder job** (`jobs/notificationReminders.ts`, started from `server.ts` only): `sendReminders()` inserts `PRODUCT_EXPIRING_SOON` and `PICKUP_TODAY` with `INSERT ... SELECT ... WHERE NOT EXISTS` (same type for the same product or reservation), so each reminder is sent once no matter how often it runs; it returns `{ expiringSoon, pickupToday }` counts. `startReminderJob()` runs it at startup and on cron `0 7 * * *`.
+- **Expiry job** (`jobs/expireProducts.ts`, started from `server.ts` only): `expireProducts()` marks `Available` products past `expiry_date` as `Expired`, cancels their **Pending** reservations and notifies the stores and those restaurants, all in one transaction. Confirmed reservations are left as they are: the store already agreed to hand that food over (closing them as `Completed` is a planned feature). `startExpirationJob()` runs it once at startup (to catch up on midnights missed while the server was down) and then on cron `0 0 * * *` in `APP_TIMEZONE`. Expiry checks in SQL use `expiry_date < CURRENT_DATE`, so a product is still valid on its expiry day.
+- **Reminder job** (`jobs/notificationReminders.ts`, started from `server.ts` only): `sendReminders()` inserts `PRODUCT_EXPIRING_SOON` and `PICKUP_TODAY` with `INSERT ... SELECT ... WHERE NOT EXISTS` (same type for the same product or reservation), so each reminder is sent once no matter how often it runs; it returns `{ expiringSoon, pickupToday }` counts. `startReminderJob()` runs it at startup and on cron `0 7 * * *` in `APP_TIMEZONE`.
 - **Soft delete and history:** reservations are never deleted, products are marked `Removed`.
-- `Completed` (reservation) and `Reserved` (product) exist in the enums but the current flows only use `Confirmed` and `Sold`. Verify before building on them.
+- `Completed` exists in the reservation enum, but no endpoint sets it yet (a "picked up" flow is planned). Statistics already count Confirmed + Completed as successful.
+- **Global error handling** (`app.ts`, after the routers): unknown routes → 404 `"Ruta nije pronađena."`; `HttpError` (`utils/httpError.ts`, carries a status) → that status and message; multer errors → 400 (`"Slika je prevelika. Maksimalna veličina je 5MB."`); malformed JSON → 400 `"Neispravan format zahtjeva."`; anything else → 500 `"Došlo je do greške na serveru."`. Controllers still handle their own errors; this covers middleware and body parsing.
 
 ## Conventions
 
@@ -202,24 +218,27 @@ Saved product presets a store reuses on the add-product form. Private to the sto
   - `auth`, `middleware` (missing, malformed, foreign-secret and expired tokens; both roles)
   - `validateProduct` (unit), `products` (all filters, validation, ownership, delete states)
   - `reservations`: create validation, race condition, `/mine` and `/store` with filters, accept/reject/cancel ownership, state and expiry rules, quantity freed again
-  - `users` (profile, store list and details, logo upload incl. wrong type and size), `favorites`, `productTemplates`
-  - `notifications`: every type and link, the routes, and the expiry and reminder jobs called directly, including what they must skip
+  - `reservationRules`: quantity and pickup-date validation, simultaneous accept + cancel, price snapshot, product edit rules
+  - `validation`: category/unit/date rules, date round trip, invalid ids and filters, pagination and sort, favorite must be a store, case-insensitive email and password length
+  - `users` (profile, store list and details, logo upload incl. wrong type and size), `uploads` (file named by type, nosniff, old logo removed), `favorites`, `productTemplates`
+  - `notifications`: every type and link, the routes, and the expiry and reminder jobs called directly, including what they must skip (the expiry job keeps Confirmed reservations)
   - `jobs`: cron expressions and error logging, with `node-cron` and the db mocked
-- Rows the API cannot create (past expiry dates, chosen statuses) are inserted with `pool.query`. Use obviously nonexistent ids (`999999`) for 404 cases.
+- Rows the API cannot create (past expiry dates, chosen statuses) are inserted with `pool.query`; reservations inserted that way need a `unit_price`. Use obviously nonexistent ids (`999999`) for 404 cases.
 - Race condition test: two restaurants reserve 8 of 10 at the same time with `Promise.all`; the sorted statuses must equal `[201, 400]`.
 
 ## Seed
 
-`npm run seed` (`src/scripts/seed.ts`, built then run from `dist/`) runs in one transaction: it deletes all reservations and users (which cascades to products, notifications, favorites and templates), then inserts 3 stores, 2 restaurants, 5 random products per store with future expiry dates, and a few reservations in different statuses. All demo accounts use password `demo12345`: stores `market.centar@demo.com`, `pekara.dobra@demo.com`, `zeleni.market@demo.com`; restaurants `restoran.ukus@demo.com`, `pizzeria.roma@demo.com`.
+Both scripts share the generator in `src/scripts/fakeData.ts` (`insertFakeData(client, { productsPerStore, reservationsPerRestaurant })`, which runs inside the caller's transaction, and `printSummary`).
 
-`npm run seed:fake` (`src/scripts/seedFakeData.ts`, built then run from `dist/`) adds data on top of what exists and never creates, changes or deletes users. For every existing STORE it inserts random products from a template list (all categories, prices with a 30-60% discount, expiry today to 14 days out). For every existing RESTAURANT it inserts reservations on those new products with weighted statuses (Pending, Confirmed, Completed, Cancelled); Pending + Confirmed quantities never exceed a product's quantity, Completed pickups are in the past, and it writes the same notifications the app sends for new and accepted reservations (`RESERVATION_CREATED`, `RESERVATION_ACCEPTED`, with links). Everything runs in one transaction. Options: `npm run seed:fake -- --products <per store, default 6> --reservations <per restaurant, default 4>`.
+`npm run seed` (`src/scripts/seed.ts`) deletes all rows (notifications, reservations, products, users; favorites and templates go with the users), then inserts 3 stores and 2 restaurants with full business data and fills them through `insertFakeData` (5 products per store, 4 reservations per restaurant), all in one transaction. All demo accounts use password `demo12345`: stores `market.centar@demo.com`, `pekara.dobra@demo.com`, `zeleni.market@demo.com`; restaurants `restoran.ukus@demo.com`, `pizzeria.roma@demo.com`.
+
+`npm run seed:fake` (`src/scripts/seedFakeData.ts`) adds data on top of what exists and never creates, changes or deletes users. For every existing STORE it inserts random products from a template list (all categories, prices with a 30-60% discount, expiry today to 14 days out). For every existing RESTAURANT it inserts reservations on those new products with weighted statuses (Pending, Confirmed, Completed, Rejected, Cancelled) and the product's price as `unit_price`; Pending + Confirmed quantities never exceed a product's quantity, Completed pickups are in the past, and it writes the same notifications the app sends for new, accepted and rejected reservations (`RESERVATION_CREATED`, `RESERVATION_ACCEPTED`, `RESERVATION_REJECTED`, with links). Everything runs in one transaction. Options: `npm run seed:fake -- --products <per store, default 6> --reservations <per restaurant, default 4>`.
 
 ## Pending and known limitations
 
-- **Deployment:** `sameSite: "strict"` breaks cookie auth when the frontend and backend are on different domains (needs `none` + `secure`, or a shared domain); CORS origin is hard-coded to localhost; logo uploads on local disk are lost on Render restarts (needs cloud storage; Cloudinary is not available in the owner's country, so evaluate alternatives).
+- **Deployment:** `sameSite: "strict"` breaks cookie auth when the frontend and backend are on different domains (needs `none` + `secure`, or a shared domain); set `CLIENT_ORIGIN` to the deployed frontend; logo uploads on local disk are lost on Render restarts (needs cloud storage; Cloudinary is not available in the owner's country, so evaluate alternatives). With more than one server instance the cron jobs would run once per instance (they are idempotent, but a lock or a separate worker is cleaner).
 - Server messages should become error keys translated on the client.
-- `GET /products`: filter `available_quantity > 0` in SQL (`HAVING`) instead of on the client.
 - `PUT /users/me`: replace `COALESCE` with a real PATCH that can clear optional fields.
+- No endpoint moves a reservation to `Completed` yet (planned "picked up" flow).
 - Migrations are still JavaScript. They have already run, so they stay as they are; a new migration can be written in TypeScript once `node-pg-migrate` runs with a TS loader (for example `tsx`).
-- Non-numeric ids in the path (`/api/products/abc`) reach Postgres and come back as 500; validate route params if this matters.
 - The server has no ESLint setup.

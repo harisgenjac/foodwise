@@ -21,15 +21,15 @@ import {
 } from "lucide-react";
 import api from "../api/axios.js";
 import { useFetch } from "../hooks/useFetch.js";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
-import EmptyState from "../components/product/EmptyState.jsx";
-import DetailItem from "../components/product/DetailItem.jsx";
-import ReserveProductModal from "../components/product/ReserveProductModal.jsx";
-import StatCard from "../components/dashboard/StatCard.jsx";
-import DashboardProductCard from "../components/dashboard/DashboardProductCard.jsx";
-import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.jsx";
-import StoreAvatar from "../components/store/StoreAvatar.jsx";
-import FavoriteButton from "../components/store/FavoriteButton.jsx";
+import LoadingSpinner from "../components/LoadingSpinner.js";
+import EmptyState from "../components/product/EmptyState.js";
+import DetailItem from "../components/product/DetailItem.js";
+import ReserveProductModal from "../components/product/ReserveProductModal.js";
+import StatCard from "../components/dashboard/StatCard.js";
+import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
+import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.js";
+import StoreAvatar from "../components/store/StoreAvatar.js";
+import FavoriteButton from "../components/store/FavoriteButton.js";
 import type { Product, Reservation, User, Favorites } from "../types/index.js";
 
 interface StoreStats {
@@ -42,7 +42,7 @@ interface MyReservationsCount {
 
 type Tab = "products" | "reservations";
 
-const RESERVATION_STATUSES: Reservation["status"][] = ["Pending", "Confirmed", "Completed", "Cancelled"];
+const RESERVATION_STATUSES: Reservation["status"][] = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
 
 function StoreDetailsPage() {
   const { id } = useParams();

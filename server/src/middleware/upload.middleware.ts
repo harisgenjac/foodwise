@@ -1,10 +1,17 @@
 import multer from 'multer';
-import path from 'path';
 import fs from 'fs';
 import type { Request, Response, NextFunction } from 'express';
+import { HttpError } from '../utils/httpError.js';
 
 const uploadDir = 'uploads/logos';
 const MAX_LOGO_SIZE_MB = 5;
+
+// The stored extension comes from the checked MIME type, never from the client's file name.
+const EXTENSIONS: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+};
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -15,22 +22,19 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req: Request, file, cb) => {
-    const uniqueName = `${req.user!.id}-${Date.now()}${path.extname(file.originalname)}`;
+    const uniqueName = `${req.user!.id}-${Date.now()}${EXTENSIONS[file.mimetype]}`;
     cb(null, uniqueName);
   },
 });
-
-class InvalidFileTypeError extends Error {}
 
 const upload = multer({
   storage,
   limits: { fileSize: MAX_LOGO_SIZE_MB * 1024 * 1024 },
   fileFilter: (req: Request, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (allowedTypes.includes(file.mimetype)) {
+    if (file.mimetype in EXTENSIONS) {
       cb(null, true);
     } else {
-      cb(new InvalidFileTypeError('Dozvoljene su samo JPEG, PNG i WEBP slike.'));
+      cb(new HttpError(400, 'Dozvoljene su samo JPEG, PNG i WEBP slike.'));
     }
   },
 });
@@ -45,8 +49,8 @@ export const uploadLogoFile = (req: Request, res: Response, next: NextFunction) 
           : 'Slika nije ispravno poslana.';
       return res.status(400).json({ error: message });
     }
-    if (error instanceof InvalidFileTypeError) {
-      return res.status(400).json({ error: error.message });
+    if (error instanceof HttpError) {
+      return res.status(error.status).json({ error: error.message });
     }
     if (error) {
       return next(error);

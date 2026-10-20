@@ -38,8 +38,8 @@ describe("unit lookups", () => {
 
 describe("status styles", () => {
   it("styles every product and reservation status", () => {
-    expect(Object.keys(PRODUCT_STATUS_STYLES).sort()).toEqual(["Available", "Expired", "Removed", "Reserved", "Sold"]);
-    expect(Object.keys(RESERVATION_STATUS_STYLES).sort()).toEqual(["Cancelled", "Completed", "Confirmed", "Pending"]);
+    expect(Object.keys(PRODUCT_STATUS_STYLES).sort()).toEqual(["Available", "Expired", "Removed", "Sold"]);
+    expect(Object.keys(RESERVATION_STATUS_STYLES).sort()).toEqual(["Cancelled", "Completed", "Confirmed", "Pending", "Rejected"]);
   });
 
   it("translates every reservation status", () => {

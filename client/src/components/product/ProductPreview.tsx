@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Eye } from "lucide-react";
-import { useAuth } from "../../context/AuthContext.jsx";
-import DashboardProductCard from "../dashboard/DashboardProductCard.jsx";
+import { useAuth } from "../../context/AuthContext.js";
+import DashboardProductCard from "../dashboard/DashboardProductCard.js";
 import { toDateInput } from "../../utils/expiry.js";
 import type { Product, ProductFormValues } from "../../types/index.js";
 

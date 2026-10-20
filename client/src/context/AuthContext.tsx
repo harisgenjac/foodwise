@@ -31,6 +31,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     checkAuth();
   }, []);
 
+  // An expired or invalid session cookie makes every request fail with 401: drop the user so
+  // ProtectedRoute sends them to the login page instead of leaving a broken, "logged in" UI.
+  // A failed login also answers 400/401 but must not clear anything, so /auth/login is skipped.
+  useEffect(() => {
+    const interceptorId = api.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error?.response?.status === 401 && error.config?.url !== "/auth/login") {
+          setUser(null);
+        }
+        return Promise.reject(error);
+      },
+    );
+    return () => api.interceptors.response.eject(interceptorId);
+  }, []);
+
   // The login response carries only the basic fields; /users/me returns the full profile
   // (business_name, city, logo...), so load it right away instead of waiting for a reload.
   const refreshUser = async () => {

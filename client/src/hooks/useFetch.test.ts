@@ -13,33 +13,59 @@ describe("useFetch", () => {
 
   const flush = () => act(() => vi.advanceTimersByTimeAsync(500));
 
-  it("loads data from the response key after the debounce", async () => {
-    apiMock.get.mockResolvedValue({ data: { products: [{ id: 1 }] } });
+  const requestFor = (params: unknown) => ["/products", { params, signal: expect.any(AbortSignal) }];
+
+  it("loads the first page right away from the response key", async () => {
+    apiMock.get.mockResolvedValue({ data: { products: [{ id: 1 }], total: 7 } });
     const { result } = renderHook(() => useFetch<{ id: number }>("/products", "products", { category: "Meat" }));
 
     expect(result.current.loading).toBe(true);
-    expect(apiMock.get).not.toHaveBeenCalled();
+    await act(() => vi.advanceTimersByTimeAsync(0));
 
-    await flush();
-    expect(apiMock.get).toHaveBeenCalledWith("/products", { params: { category: "Meat" } });
+    expect(apiMock.get).toHaveBeenCalledWith(...requestFor({ category: "Meat" }));
     expect(result.current.data).toEqual([{ id: 1 }]);
+    expect(result.current.total).toBe(7);
     expect(result.current.loading).toBe(false);
   });
 
-  it("sends one request when params change quickly", async () => {
+  it("debounces later changes into one request", async () => {
     apiMock.get.mockResolvedValue({ data: { products: [] } });
     const { rerender } = renderHook(({ name }) => useFetch("/products", "products", { name }), {
-      initialProps: { name: "m" },
+      initialProps: { name: "" },
     });
+    await act(() => vi.advanceTimersByTimeAsync(0));
 
+    rerender({ name: "m" });
     await act(() => vi.advanceTimersByTimeAsync(200));
     rerender({ name: "mli" });
     await act(() => vi.advanceTimersByTimeAsync(200));
     rerender({ name: "mlijeko" });
     await flush();
 
-    expect(apiMock.get).toHaveBeenCalledTimes(1);
-    expect(apiMock.get).toHaveBeenCalledWith("/products", { params: { name: "mlijeko" } });
+    expect(apiMock.get).toHaveBeenCalledTimes(2);
+    expect(apiMock.get).toHaveBeenLastCalledWith(...requestFor({ name: "mlijeko" }));
+  });
+
+  it("aborts the previous request when a new one starts", async () => {
+    let firstSignal: { aborted?: boolean } | undefined;
+    apiMock.get.mockImplementationOnce(async (_url, config) => {
+      firstSignal = config?.signal;
+      return new Promise(() => {});
+    });
+    apiMock.get.mockResolvedValue({ data: { products: [] } });
+    const { result } = renderHook(() => useFetch("/products", "products", {}));
+    await act(() => vi.advanceTimersByTimeAsync(0));
+
+    await act(() => result.current.refetch());
+    expect(firstSignal?.aborted).toBe(true);
+  });
+
+  it("reports a failed load through error", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    apiMock.get.mockRejectedValue(new Error("network"));
+    const { result } = renderHook(() => useFetch("/products", "products", {}));
+    await flush();
+    expect(result.current.error).toBe(true);
   });
 
   it("does not refetch when the same params are passed as a new object", async () => {

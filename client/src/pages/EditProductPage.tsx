@@ -5,11 +5,11 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { AlertCircle, Pencil, Save, SearchX } from "lucide-react";
-import { useAuth } from "../context/AuthContext.jsx";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
-import EmptyState from "../components/product/EmptyState.jsx";
-import ProductFormFields, { EMPTY_PRODUCT_FORM } from "../components/product/ProductFormFields.jsx";
-import ProductPreview from "../components/product/ProductPreview.jsx";
+import { useAuth } from "../context/AuthContext.js";
+import LoadingSpinner from "../components/LoadingSpinner.js";
+import EmptyState from "../components/product/EmptyState.js";
+import ProductFormFields, { EMPTY_PRODUCT_FORM } from "../components/product/ProductFormFields.js";
+import ProductPreview from "../components/product/ProductPreview.js";
 import { toDateInput } from "../utils/expiry.js";
 import type { Product, ProductFormValues } from "../types/index.js";
 
@@ -74,10 +74,11 @@ function EditProductPage() {
       toast.success(response.data.message);
       navigate("/my-products");
     } catch (err) {
-      setError(t("product.editError"));
+      // The server explains why (sold product, quantity below what is reserved, invalid field).
       const message = axios.isAxiosError(err)
         ? err.response?.data?.error
         : null;
+      setError(message || t("product.editError"));
       toast.error(message || t("product.editError"));
     } finally {
       setSaving(false);

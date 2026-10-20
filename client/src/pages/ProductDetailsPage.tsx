@@ -23,12 +23,12 @@ import {
   Trash2,
 } from "lucide-react";
 import api from "../api/axios.js";
-import { useAuth } from "../context/AuthContext.jsx";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
-import EmptyState from "../components/product/EmptyState.jsx";
-import Modal from "../components/product/Modal.jsx";
-import DetailItem from "../components/product/DetailItem.jsx";
-import ReserveProductModal from "../components/product/ReserveProductModal.jsx";
+import { useAuth } from "../context/AuthContext.js";
+import LoadingSpinner from "../components/LoadingSpinner.js";
+import EmptyState from "../components/product/EmptyState.js";
+import Modal from "../components/product/Modal.js";
+import DetailItem from "../components/product/DetailItem.js";
+import ReserveProductModal from "../components/product/ReserveProductModal.js";
 import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
 import { PRODUCT_STATUS_STYLES } from "../utils/productStatus.js";
 import { getDaysUntilExpiry } from "../utils/expiry.js";
@@ -128,7 +128,7 @@ function ProductDetailsPage() {
   const canReserve =
     user?.role === "RESTAURANT" && product.status === "Available" && available > 0;
   // The server refuses to delete Sold, Expired or Removed products.
-  const canDelete = product.status === "Available" || product.status === "Reserved";
+  const canDelete = product.status === "Available";
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-10">

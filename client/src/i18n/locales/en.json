@@ -40,7 +40,8 @@
     "registerButton": "Register",
     "alreadyHaveAccount": "Already have an account?",
     "loginLink": "Log in",
-    "registrationError": "Registration failed. Please try again."
+    "registrationError": "Registration failed. Please try again.",
+    "passwordHint": "At least 8 characters."
   },
   "product": {
     "addTitle": "Add Product",
@@ -86,7 +87,8 @@
     "previewHint": "This is how restaurants will see your offer.",
     "previewName": "Product name",
     "previewDescription": "Product description",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "loadMore": "Load more"
   },
   "myProducts": {
     "deleteSuccess": "Product deleted successfully.",
@@ -366,7 +368,6 @@
   },
   "productStatus": {
     "Available": "Available",
-    "Reserved": "Reserved",
     "Sold": "Sold",
     "Expired": "Expired",
     "Removed": "Removed"
@@ -375,6 +376,7 @@
     "Pending": "Pending",
     "Confirmed": "Confirmed",
     "Completed": "Completed",
+    "Rejected": "Rejected",
     "Cancelled": "Cancelled"
   },
   "templates": {
@@ -409,5 +411,10 @@
       "Local events",
       "Long-term partnerships"
     ]
+  },
+  "common": {
+    "loading": "Loading...",
+    "loadErrorTitle": "Could not load the data",
+    "loadErrorSubtitle": "Check your internet connection and refresh the page."
   }
 }

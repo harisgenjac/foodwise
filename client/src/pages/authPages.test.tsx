@@ -64,8 +64,16 @@ describe("RegisterPage", () => {
     expect(await screen.findByTestId("location")).toHaveTextContent("/login");
   });
 
-  it("shows an error when registration fails", async () => {
+  it("shows the server's reason when registration fails", async () => {
     apiMock.post.mockRejectedValue(axiosError(400, "Korisnik s tim emailom već postoji."));
+    renderRegister();
+
+    await fill();
+    await waitFor(() => expect(screen.getByText("Korisnik s tim emailom već postoji.")).toBeInTheDocument());
+  });
+
+  it("falls back to a generic error when the server gives no reason", async () => {
+    apiMock.post.mockRejectedValue(new Error("network"));
     renderRegister();
 
     await fill();

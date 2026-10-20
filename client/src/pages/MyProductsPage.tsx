@@ -17,13 +17,14 @@ import {
   Trash2,
 } from "lucide-react";
 import api from "../api/axios.js";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
-import DashboardProductCard from "../components/dashboard/DashboardProductCard.jsx";
-import ProductPageHeader from "../components/product/ProductPageHeader.jsx";
-import FilterBar, { FilterField } from "../components/product/FilterBar.jsx";
-import EmptyState from "../components/product/EmptyState.jsx";
-import Modal from "../components/product/Modal.jsx";
-import { inputStyle } from "../components/form/FormField.jsx";
+import LoadingSpinner from "../components/LoadingSpinner.js";
+import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
+import ProductPageHeader from "../components/product/ProductPageHeader.js";
+import FilterBar, { FilterField } from "../components/product/FilterBar.js";
+import EmptyState from "../components/product/EmptyState.js";
+import LoadErrorState from "../components/product/LoadErrorState.js";
+import Modal from "../components/product/Modal.js";
+import { inputStyle } from "../components/form/FormField.js";
 import { useFetch } from "../hooks/useFetch.js";
 import type { Product } from "../types/index.js";
 
@@ -44,6 +45,7 @@ function MyProductsPage() {
   >;
   const {
     data: productsList,
+    error,
     loading,
     refetch,
   } = useFetch<Product>("/products/mine", "products", {
@@ -136,15 +138,17 @@ function MyProductsPage() {
             className={inputStyle}
           >
             <option value="">{t("filters.expiryDate")}</option>
-            <option value="1">{t("filters.today")}</option>
-            <option value="2">{t("filters.tomorrow")}</option>
+            <option value="0">{t("filters.today")}</option>
+            <option value="1">{t("filters.tomorrow")}</option>
             <option value="3">{t("filters.within3Days")}</option>
             <option value="7">{t("filters.within7Days")}</option>
           </select>
         </FilterField>
       </FilterBar>
 
-      {productsList.length === 0 ? (
+      {error && productsList.length === 0 ? (
+        <LoadErrorState />
+      ) : productsList.length === 0 ? (
         hasActiveFilters ? (
           <EmptyState
             icon={SearchX}
