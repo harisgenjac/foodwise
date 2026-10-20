@@ -88,6 +88,12 @@ export interface ProductFormValues {
   expiry_date: string;
 }
 
+// One rejected row of a CSV product import; `row` is the line number in the file (the header is line 1).
+export interface CsvRowError {
+  row: number;
+  error: string;
+}
+
 export interface ProductTemplate {
   id: number;
   store_id: number;

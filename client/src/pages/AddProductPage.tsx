@@ -4,7 +4,7 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { AlertCircle, Bookmark, PackagePlus } from "lucide-react";
+import { AlertCircle, Bookmark, FileUp, PackagePlus } from "lucide-react";
 import ProductFormFields, { EMPTY_PRODUCT_FORM } from "../components/product/ProductFormFields.js";
 import ProductPreview from "../components/product/ProductPreview.js";
 import ProductTemplatesPanel from "../components/product/ProductTemplatesPanel.js";
@@ -128,14 +128,23 @@ function AddProductPage() {
 
   return (
     <div className="max-w-6xl mx-auto pb-16">
-      <div className="mb-6">
-        <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-gray-900">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
-            <PackagePlus className="h-5 w-5" strokeWidth={1.8} />
-          </span>
-          {t("product.addTitle")}
-        </h1>
-        <p className="mt-2 text-sm text-gray-500">{t("product.addSubtitle")}</p>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-gray-900">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+              <PackagePlus className="h-5 w-5" strokeWidth={1.8} />
+            </span>
+            {t("product.addTitle")}
+          </h1>
+          <p className="mt-2 text-sm text-gray-500">{t("product.addSubtitle")}</p>
+        </div>
+        <Link
+          to="/import-products"
+          className="inline-flex w-fit items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+        >
+          <FileUp className="h-4 w-4" />
+          {t("importProducts.link")}
+        </Link>
       </div>
 
       {error && (

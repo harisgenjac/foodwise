@@ -7,6 +7,7 @@ import Layout from './components/Layout.js';
 import DashboardPage from './pages/DashboardPage.js';
 import AddProductPage from './pages/AddProductPage.js';
 import MyProductsPage from './pages/MyProductsPage.js';
+import ImportProductsPage from './pages/ImportProductsPage.js';
 import EditProductPage from './pages/EditProductPage.js';
 import ReservationsPage from './pages/ReservationsPage.js'
 import BrowseProductsPage from './pages/BrowseProductsPage.js';
@@ -29,6 +30,7 @@ function App() {
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/add-product" element={<ProtectedRoute role="STORE"><AddProductPage /></ProtectedRoute>} />
+        <Route path="/import-products" element={<ProtectedRoute role="STORE"><ImportProductsPage /></ProtectedRoute>} />
         <Route path="/my-products" element={<ProtectedRoute role="STORE"><MyProductsPage /></ProtectedRoute>} />
         <Route path="/edit-product/:id" element={<ProtectedRoute role="STORE"><EditProductPage /></ProtectedRoute>} />
         <Route path="/reservations" element={<ProtectedRoute role="STORE"><ReservationsPage /></ProtectedRoute>} />
