@@ -37,6 +37,7 @@ Both are registered businesses with a profile (business name, city, address, pho
 - Product input is validated on the server: known category and unit, prices and quantity above zero, discounted price not above the original, expiry date not in the past. Reservation quantity must be above zero.
 - Emails are not case-sensitive (one account per address) and passwords need at least 8 characters.
 - Business dates (expiry, "today", the midnight expiry run and the 07:00 reminders) follow Bosnia and Herzegovina time (`Europe/Sarajevo`), whatever the server's own time zone.
+- CSV import is all or nothing: if any row is invalid, no product is created and the store sees every faulty row, so sending the corrected file again never creates duplicates. Up to 500 products and 1MB per file; Excel files saved with `;` and a decimal comma are accepted, and so are the date formats Excel writes on its own (day first, as in Bosnia, unless the file is clearly in US month-first order).
 - Product templates are private to the store that saved them. Saving a template under a name that already exists updates that template. A template remembers the shelf life as a number of days, so applying it sets the expiry date relative to today.
 - Only available, unexpired products can be reserved, and a store cannot accept a reservation for a product whose expiry date has passed. Expiry is applied when the server starts and every midnight.
 - Deleting a product is a soft delete and is blocked while it has active reservations. Reservation history is never erased.
@@ -47,7 +48,7 @@ Both are registered businesses with a profile (business name, city, address, pho
 
 ## Features available now
 
-Registration and login with two roles; product management; marketplace search and filters; reservations with concurrency protection; notifications with links to details, reminders and deletion; automatic expiry handling; store list and store profiles with statistics and favorites ("favorites only" filter); reservation and product detail pages; product templates for stores (save a product's details once, then fill the add-product form from it and change only the date, quantity or price); logo upload; Bosnian and English interface; responsive layout; demo data for presentations.
+Registration and login with two roles; product management; marketplace search and filters; reservations with concurrency protection; notifications with links to details, reminders and deletion; automatic expiry handling; store list and store profiles with statistics and favorites ("favorites only" filter); reservation and product detail pages; product templates for stores (save a product's details once, then fill the add-product form from it and change only the date, quantity or price); CSV import of many products at once for stores; logo upload; Bosnian and English interface; responsive layout; demo data for presentations.
 
 ## Planned: humanitarian module
 

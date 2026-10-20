@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { validateProductFields, type ProductFields } from '../utils/validateProduct.js';
 import { parseId, parseNonNegativeInt, parseNumber } from '../utils/params.js';
 import { markSoldIfFullyConfirmed } from './reservations.controller.js';
+import { parseProductCsv } from '../utils/productCsv.js';
 
 export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
 
@@ -53,6 +54,54 @@ export const createProduct = async (req: Request, res: Response) => {
     return res
       .status(500)
       .json({ error: "Došlo je do greške prilikom kreiranja proizvoda." });
+  }
+};
+
+// All or nothing: one invalid row rejects the whole file, so re-sending a fixed file never duplicates products.
+export const importProducts = async (req: Request, res: Response) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "CSV fajl je obavezan." });
+  }
+  const parsed = parseProductCsv(req.file.buffer);
+  if (parsed.error !== undefined) {
+    return res.status(400).json({ error: parsed.error, rowErrors: parsed.rowErrors });
+  }
+
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const products = [];
+    for (const product of parsed.products) {
+      const result = await client.query(
+        "INSERT INTO products (store_id, name, description, category, original_price, discounted_price, quantity, unit, expiry_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
+        [
+          req.user!.id,
+          product.name.trim(),
+          product.description ?? null,
+          product.category,
+          product.original_price,
+          product.discounted_price,
+          product.quantity,
+          product.unit,
+          product.expiry_date,
+        ],
+      );
+      products.push(result.rows[0]);
+    }
+    await client.query("COMMIT");
+    return res.status(201).json({
+      message: `Uvezeno proizvoda: ${products.length}.`,
+      products,
+    });
+  } catch (error) {
+    if (client) await client.query("ROLLBACK");
+    console.error("Greška prilikom uvoza proizvoda:", error);
+    return res
+      .status(500)
+      .json({ error: "Došlo je do greške prilikom uvoza proizvoda." });
+  } finally {
+    if (client) client.release();
   }
 };
 

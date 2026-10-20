@@ -7,7 +7,7 @@ Reference for working on the API. The source of truth is the code; routes and mi
 - Node.js 24, Express 5 (`express@5.2.1`, `@types/express@5`), TypeScript, ESM (`"type": "module"`, `module: nodenext`)
 - PostgreSQL through raw `pg` queries (no ORM), migrations with `node-pg-migrate`
 - Auth: `jsonwebtoken` + `bcrypt` (10 salt rounds), JWT in an httpOnly cookie, `cookie-parser`, `cors`
-- Uploads: `multer` (disk storage). Scheduled work: `node-cron`
+- Uploads: `multer` (disk storage for logos, memory storage for CSV imports), CSV parsing with `csv-parse`. Scheduled work: `node-cron`
 - Tests: Vitest + supertest (see Testing)
 
 Express 5 notes: `req.query` is a read-only getter (read it, never assign to it), and wildcard routes must be named (`/*splat`). Neither is used today.
@@ -21,11 +21,11 @@ server/
 │   ├── app.ts               builds and exports the Express app (no listen, so supertest can import it)
 │   ├── config/db.ts         exports the shared pg Pool (DATABASE_URL)
 │   ├── controllers/         auth, products, reservations, notifications, favorites, users, productTemplates
-│   ├── middleware/          auth.middleware.ts (authenticate, authorize), upload.middleware.ts (multer, `uploadLogoFile`)
+│   ├── middleware/          auth.middleware.ts (authenticate, authorize), upload.middleware.ts (multer, `uploadLogoFile`, `uploadCsvFile`)
 │   ├── routes/              one router per resource, mounted in app.ts
 │   ├── jobs/                expireProducts.ts, notificationReminders.ts
 │   ├── types/               auth.ts (AuthUser, Role), express.d.ts (req.user, req.file)
-│   ├── utils/               validateProduct.ts, notifications.ts (createNotification, NotificationType), params.ts, dates.ts, httpError.ts
+│   ├── utils/               validateProduct.ts, productCsv.ts (`parseProductCsv`), notifications.ts (createNotification, NotificationType), params.ts, dates.ts, httpError.ts
 │   └── scripts/             seed.ts (demo reset), seedFakeData.ts (adds data), fakeData.ts (shared generator)
 ├── migrations/              node-pg-migrate files (plain JS)
 ├── tests/                   Vitest + supertest, TypeScript (setup.ts, helpers.ts, *.test.ts)
@@ -98,6 +98,7 @@ Emails are trimmed and lowercased on register and login (login matches `LOWER(em
 | Endpoint | Who | Behavior |
 |---|---|---|
 | `POST /` | STORE | Create. `store_id` always comes from `req.user`, never from the body. |
+| `POST /import` | STORE | Bulk create from a CSV file (multipart field `file`, see CSV import below). 201 `{ message: "Uvezeno proizvoda: N.", products }`. |
 | `GET /` | authenticated (marketplace for restaurants) | Only `Available`, not expired and with `available_quantity > 0` (filtered in SQL). Filters: `category`, `maxPrice`, `expiryWithinDays` (0 = expires today, 1 = by tomorrow, ...), `name` (ILIKE). Paging: `limit` (default 24, max 100), `offset`. `sort`: `newest` (default) or `expiry` (closest expiry first). Joins `users` and returns `business_name`, `city`, computed `available_quantity` and `days_until_expiry`. Response `{ products, total }` where `total` counts all matches, not just the page. Invalid numbers or sort → 400 `"Neispravan filter."`. |
 | `GET /mine` | STORE | Own products except `Removed`. Filters: `category`, `status` (must be a known status), `name`, `expiryWithinDays`. Ordered Available, Sold, Expired, then newest. |
 | `GET /:id` | authenticated | Includes `business_name`, `city`, `store_address`, `store_phone`, `store_pickup_hours`, `available_quantity`, `days_until_expiry`. Not filtered by expiry. |
@@ -105,6 +106,13 @@ Emails are trimmed and lowercased on register and login (login matches `LOWER(em
 | `DELETE /:id` | STORE (owner) | Soft delete. 400 if status is Sold/Expired/Removed or active (Pending/Confirmed) reservations exist. |
 
 Register `/mine` before `/:id`.
+
+#### CSV import
+
+- `uploadCsvFile` (multer memory storage, nothing is written to disk) accepts one file in field `file`, at most 1MB (`MAX_CSV_SIZE_MB`), with a `.csv` extension and a MIME type of `text/csv`, `application/csv`, `application/vnd.ms-excel`, `text/plain` or `application/octet-stream` (browsers disagree on the type of a .csv). Otherwise 400 `"Dozvoljeni su samo CSV fajlovi."` / `"Fajl može imati najviše 1MB."`; no file → 400 `"CSV fajl je obavezan."`. Logo and CSV uploads share the `handleUpload` wrapper, which turns multer errors into 400 JSON.
+- `utils/productCsv.ts` → `parseProductCsv(buffer)`: columns `name, description, category, original_price, discounted_price, quantity, unit, expiry_date` (`CSV_COLUMNS`; header names are trimmed and lowercased, order does not matter, `description` is optional). The delimiter (`,` or `;`) is read from the header line, so a `;` file can use an unquoted decimal comma. A UTF-8 BOM is skipped and empty lines are ignored. Values are normalized before `validateProductFields`: `2,50` → `2.50`, and the expiry date → `YYYY-MM-DD` from any form Excel writes when it saves a CSV: a time part (`T...`, ` 00:00:00`, ` 12:00 AM`), spaces and a trailing dot are dropped, then `YYYY-M-D` / `YYYY.M.D` / `YYYY/M/D` (year first), `D.M.YYYY` / `D-M-YYYY` (day first, also with a 2-digit year → `20YY`), `A/B/YYYY` (day first, unless some slashed date in the same file only works month first, like `12/25/2026`; then the whole file is read as US `M/D/YYYY`), and a 5-digit Excel serial (days since 1899-12-30). Anything else is left as is, so the validator rejects it. Category and unit are the server codes (`Meat`, `kg`).
+- File-level errors (400): `"CSV fajl nije moguće pročitati."` (e.g. an unclosed quote), `"CSV fajl ne sadrži nijedan proizvod."`, `"CSV fajlu nedostaju kolone: ..."`, `"CSV fajl može imati najviše 500 proizvoda."` (`MAX_CSV_ROWS`).
+- All or nothing: every row is validated first. If any fails, the response is 400 `{ error: "CSV sadrži neispravne redove.", rowErrors: [{ row, error }] }` (`row` is the line number in the file, header = 1) and nothing is inserted. For an invalid date the row error quotes the raw value: `Datum isteka nije ispravan: "<value>". Koristite format 31.12.2026.` (the plain `POST /` message is unchanged). Otherwise all rows are inserted in one transaction.
 
 ### Validation
 
@@ -217,6 +225,7 @@ Saved product presets a store reuses on the add-product form. Private to the sto
   - `app`: 401, JSON 404, malformed JSON, missing body, `/uploads` static
   - `auth`, `middleware` (missing, malformed, foreign-secret and expired tokens; both roles)
   - `validateProduct` (unit), `products` (all filters, validation, ownership, delete states)
+  - `productImport`: CSV import (comma and Excel-style `;` files, a bad row rejects the whole file, missing columns, empty file, too many rows, no file, wrong type, too large, unparseable, restaurant 403)
   - `reservations`: create validation, race condition, `/mine` and `/store` with filters, accept/reject/cancel ownership, state and expiry rules, quantity freed again
   - `reservationRules`: quantity and pickup-date validation, simultaneous accept + cancel, price snapshot, product edit rules
   - `validation`: category/unit/date rules, date round trip, invalid ids and filters, pagination and sort, favorite must be a store, case-insensitive email and password length
