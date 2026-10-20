@@ -1,9 +1,11 @@
 import cron from "node-cron";
 import pool from "../config/db.js";
+import { APP_TIMEZONE } from "../utils/dates.js";
 import { createNotification } from "../utils/notifications.js";
 
 // Marks Available products past their expiry date as Expired, cancels their
-// active reservations and notifies the stores and restaurants, all in one transaction.
+// Pending reservations and notifies the stores and restaurants, all in one transaction.
+// Confirmed reservations are left alone: the store already agreed to hand that food over.
 export const expireProducts = async (): Promise<number> => {
   const client = await pool.connect();
   try {
@@ -31,7 +33,7 @@ export const expireProducts = async (): Promise<number> => {
       const cancelledReservations = await client.query(
         `UPDATE reservations
          SET status = 'Cancelled'
-         WHERE product_id = ANY($1) AND status IN ('Pending', 'Confirmed')
+         WHERE product_id = ANY($1) AND status = 'Pending'
          RETURNING id, restaurant_id, product_id`,
         [expiredIds],
       );
@@ -73,5 +75,5 @@ const runExpiration = async () => {
 export const startExpirationJob = () => {
   // Catch up on any midnight runs missed while the server was down.
   runExpiration();
-  cron.schedule("0 0 * * *", runExpiration);
+  cron.schedule("0 0 * * *", runExpiration, { timezone: APP_TIMEZONE });
 };

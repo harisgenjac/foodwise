@@ -1,5 +1,23 @@
+import fs from "fs";
+import path from "path";
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
+import { parseId } from "../utils/params.js";
+
+const LOGO_URL_PREFIX = "/uploads/logos/";
+
+// Deletes a replaced logo. Only plain file names under uploads/logos are touched.
+const removeLogoFile = async (logoUrl: string | null | undefined) => {
+  if (!logoUrl || !logoUrl.startsWith(LOGO_URL_PREFIX)) return;
+  const fileName = logoUrl.slice(LOGO_URL_PREFIX.length);
+  if (fileName !== path.basename(fileName)) return;
+  try {
+    await fs.promises.unlink(path.join("uploads", "logos", fileName));
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") return;
+    console.error("Greška prilikom brisanja starog logoa:", error);
+  }
+};
 
 export const getUser = async (req: Request, res: Response) => {
   try {
@@ -148,11 +166,14 @@ export const getStores = async (req: Request, res: Response) => {
 
 export const getStoreDetails = async (req: Request, res: Response) => {
   try {
-    const storeId = req.params.id;
+    const storeId = parseId(req.params.id);
     const userRole = req.user!.role;
 
     if (userRole === "STORE") {
       return res.status(403).json({ error: "Nemate permisiju za ovu akciju." });
+    }
+    if (storeId === null) {
+      return res.status(404).json({ error: "Prodavnica nije pronađena." });
     }
 
     const result = await pool.query(
@@ -168,18 +189,22 @@ export const getStoreDetails = async (req: Request, res: Response) => {
 
     const products = await pool.query(
       `
-      SELECT 
-        products.*, 
-        products.quantity - COALESCE(
-          (SELECT SUM(quantity) FROM reservations 
-           WHERE reservations.product_id = products.id 
-           AND reservations.status IN ('Pending', 'Confirmed')),
-          0
-        ) AS available_quantity,
-        products.expiry_date - CURRENT_DATE AS days_until_expiry
-      FROM products 
-      WHERE store_id = $1 AND status = 'Available'
-      AND expiry_date >= CURRENT_DATE
+      SELECT listed.* FROM (
+        SELECT
+          products.*,
+          products.quantity - COALESCE(
+            (SELECT SUM(quantity) FROM reservations
+             WHERE reservations.product_id = products.id
+             AND reservations.status IN ('Pending', 'Confirmed')),
+            0
+          ) AS available_quantity,
+          products.expiry_date - CURRENT_DATE AS days_until_expiry
+        FROM products
+        WHERE store_id = $1 AND status = 'Available'
+        AND expiry_date >= CURRENT_DATE
+      ) AS listed
+      WHERE listed.available_quantity > 0
+      ORDER BY listed.created_at DESC
     `,
       [storeId],
     );
@@ -187,7 +212,7 @@ export const getStoreDetails = async (req: Request, res: Response) => {
     const stats = await pool.query(
       `SELECT 
      COUNT(DISTINCT id) FILTER (WHERE status = 'Sold') AS sold_articles,
-     (SELECT COUNT(*) FROM reservations r JOIN products p ON r.product_id = p.id WHERE p.store_id = $1 AND r.status = 'Confirmed') AS successful_reservations
+     (SELECT COUNT(*) FROM reservations r JOIN products p ON r.product_id = p.id WHERE p.store_id = $1 AND r.status IN ('Confirmed', 'Completed')) AS successful_reservations
    FROM products WHERE store_id = $1`,
       [storeId],
     );
@@ -223,10 +248,12 @@ export const uploadLogo = async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const logoUrl = `/uploads/logos/${req.file.filename}`;
 
+    const previous = await pool.query(`SELECT logo_url FROM users WHERE id = $1`, [userId]);
     const result = await pool.query(
       `UPDATE users SET logo_url = $1 WHERE id = $2 RETURNING id, logo_url`,
       [logoUrl, userId],
     );
+    await removeLogoFile(previous.rows[0]?.logo_url);
 
     return res.status(200).json({
       message: "Slika uspješno postavljena.",

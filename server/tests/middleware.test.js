@@ -1,3 +1,4 @@
+import { EXPIRY_DATE, PICKUP_DATE } from "./helpers.js";
 import request from "supertest";
 import app from "../src/app.js";
 import pool from "../src/config/db.js";
@@ -94,7 +95,7 @@ describe("authorize middleware", () => {
       discounted_price: 5,
       quantity: 5,
       unit: "kg",
-      expiry_date: "2026-12-31",
+      expiry_date: EXPIRY_DATE,
     });
     expect(storeResponse.status).toBe(201);
     expect(storeResponse.body.product).toBeDefined();
@@ -119,7 +120,7 @@ describe("authorize middleware", () => {
     const restaurantResponse = await agent.post("/api/reservations").send({
       product_id: 1,
       quantity: 1,
-      pickup_date: "2026-12-31T10:00:00.000Z",
+      pickup_date: PICKUP_DATE,
     });
     expect(restaurantResponse.status).not.toBe(403);
   });
@@ -143,7 +144,7 @@ describe("authorize middleware", () => {
     const storeResponse = await agent.post("/api/reservations").send({
       product_id: 1,
       quantity: 1,
-      pickup_date: "2026-12-31T10:00:00.000Z",
+      pickup_date: PICKUP_DATE,
     });
 
     expect(storeResponse.status).toBe(403);

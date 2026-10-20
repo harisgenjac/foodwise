@@ -1,5 +1,6 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
+import { parseId } from "../utils/params.js";
 
 const NOTIFICATIONS_LIMIT = 50;
 
@@ -41,7 +42,10 @@ export const getNotifications = async (req: Request, res: Response) => {
 
 export const markAsRead = async (req: Request, res: Response) => {
   try {
-    const notificationId = req.params.id;
+    const notificationId = parseId(req.params.id);
+    if (notificationId === null) {
+      return res.status(404).json({ error: "Notifikacija nije pronađena." });
+    }
     const userId = req.user!.id;
     const result = await pool.query(
       `UPDATE notifications SET is_read = true WHERE id = $1 AND user_id = $2`,
@@ -77,7 +81,10 @@ export const markAllAsRead = async (req: Request, res: Response) => {
 
 export const deleteNotification = async (req: Request, res: Response) => {
   try {
-    const notificationId = req.params.id;
+    const notificationId = parseId(req.params.id);
+    if (notificationId === null) {
+      return res.status(404).json({ error: "Notifikacija nije pronađena." });
+    }
     const userId = req.user!.id;
     const result = await pool.query(
       `DELETE FROM notifications WHERE id = $1 AND user_id = $2`,

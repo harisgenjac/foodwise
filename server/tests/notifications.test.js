@@ -175,8 +175,8 @@ describe("Notifications routes", () => {
     );
     const productId = product.rows[0].id;
     const reservation = await pool.query(
-      `INSERT INTO reservations (product_id, restaurant_id, quantity, status, pickup_date)
-       VALUES ($1, $2, 2, 'Pending', NOW()) RETURNING id`,
+      `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date)
+       VALUES ($1, $2, 2, 1, 'Pending', NOW()) RETURNING id`,
       [productId, restaurantId],
     );
 
@@ -201,8 +201,8 @@ describe("Notifications routes", () => {
       [storeId],
     );
     await pool.query(
-      `INSERT INTO reservations (product_id, restaurant_id, quantity, status, pickup_date)
-       VALUES ($1, $2, 2, 'Pending', NOW() + interval '1 day')`,
+      `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date)
+       VALUES ($1, $2, 2, 1, 'Pending', NOW() + interval '1 day')`,
       [expiring.rows[0].id, restaurantId],
     );
     const pickup = await pool.query(
@@ -211,8 +211,8 @@ describe("Notifications routes", () => {
       [storeId],
     );
     const confirmed = await pool.query(
-      `INSERT INTO reservations (product_id, restaurant_id, quantity, status, pickup_date)
-       VALUES ($1, $2, 2, 'Confirmed', CURRENT_DATE + interval '12 hours') RETURNING id`,
+      `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date)
+       VALUES ($1, $2, 2, 1, 'Confirmed', CURRENT_DATE + interval '12 hours') RETURNING id`,
       [pickup.rows[0].id, restaurantId],
     );
 

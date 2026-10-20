@@ -1,3 +1,4 @@
+import { EXPIRY_DATE, PICKUP_DATE } from "./helpers.js";
 import request from "supertest";
 import app from "../src/app.js";
 import pool from "../src/config/db.js";
@@ -49,7 +50,7 @@ describe("Reservations routes", () => {
         discounted_price: 5,
         quantity: quantity,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(productResponse.status).toBe(201);
       const id = productResponse.body.product.id;
@@ -71,7 +72,7 @@ describe("Reservations routes", () => {
       const reservationResponse = await agentR.post("/api/reservations").send({
         product_id: id,
         quantity: reservationQuantity,
-        pickup_date: "2026-12-31T10:00:00.000Z",
+        pickup_date: PICKUP_DATE,
       });
       expect(reservationResponse.status).toBe(201);
 
@@ -92,7 +93,7 @@ describe("Reservations routes", () => {
         discounted_price: 5,
         quantity: quantity,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(productResponse.status).toBe(201);
       const id = productResponse.body.product.id;
@@ -114,7 +115,7 @@ describe("Reservations routes", () => {
       const reservationResponse = await agentR.post("/api/reservations").send({
         product_id: id,
         quantity: reservationQuantity,
-        pickup_date: "2026-12-31T10:00:00.000Z",
+        pickup_date: PICKUP_DATE,
       });
       expect(reservationResponse.status).toBe(400);
       expect(reservationResponse.body.error).toBe(
@@ -140,7 +141,7 @@ describe("Reservations routes", () => {
       const reservationResponse = await agentR.post("/api/reservations").send({
         product_id: 999999,
         quantity: 5,
-        pickup_date: "2026-12-31T10:00:00.000Z",
+        pickup_date: PICKUP_DATE,
       });
       expect(reservationResponse.status).toBe(404);
       expect(reservationResponse.body.error).toBe("Proizvod nije pronađen.");
@@ -158,7 +159,7 @@ describe("Reservations routes", () => {
         discounted_price: 5,
         quantity: 10,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(productResponse.status).toBe(201);
       const id = productResponse.body.product.id;
@@ -181,7 +182,7 @@ describe("Reservations routes", () => {
       const reservationResponse = await agentR.post("/api/reservations").send({
         product_id: id,
         quantity: 2,
-        pickup_date: "2026-12-31T10:00:00.000Z",
+        pickup_date: PICKUP_DATE,
       });
       expect(reservationResponse.status).toBe(400);
       expect(reservationResponse.body.error).toBe(
@@ -193,7 +194,7 @@ describe("Reservations routes", () => {
       const reservationResponse = await agent.post("/api/reservations").send({
         product_id: 999999,
         quantity: 5,
-        pickup_date: "2026-12-31T10:00:00.000Z",
+        pickup_date: PICKUP_DATE,
       });
       expect(reservationResponse.status).toBe(403);
       expect(reservationResponse.body.error).toBe(
@@ -213,7 +214,7 @@ describe("Reservations routes", () => {
         discounted_price: 5,
         quantity: quantity,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(productResponse.status).toBe(201);
       const id = productResponse.body.product.id;
@@ -237,7 +238,7 @@ describe("Reservations routes", () => {
         .send({
           product_id: id,
           quantity: firstReservationQuantity,
-          pickup_date: "2026-12-31T10:00:00.000Z",
+          pickup_date: PICKUP_DATE,
         });
       expect(firstReservationResponse.status).toBe(201);
 
@@ -260,7 +261,7 @@ describe("Reservations routes", () => {
         .send({
           product_id: id,
           quantity: secondReservationQuantity,
-          pickup_date: "2026-12-31T10:00:00.000Z",
+          pickup_date: PICKUP_DATE,
         });
       expect(secondReservationResponse.status).toBe(201);
 
@@ -281,7 +282,7 @@ describe("Reservations routes", () => {
           discounted_price: 5,
           quantity: 10,
           unit: "kg",
-          expiry_date: "2026-12-31",
+          expiry_date: EXPIRY_DATE,
         });
         expect(productResponse.status).toBe(201);
         const id = productResponse.body.product.id;
@@ -318,12 +319,12 @@ describe("Reservations routes", () => {
           agentA.post("/api/reservations").send({
             product_id: id,
             quantity: 8,
-            pickup_date: "2026-12-31T10:00:00.000Z",
+            pickup_date: PICKUP_DATE,
           }),
           agentB.post("/api/reservations").send({
             product_id: id,
             quantity: 8,
-            pickup_date: "2026-12-31T10:00:00.000Z",
+            pickup_date: PICKUP_DATE,
           }),
         ]);
 
@@ -359,7 +360,7 @@ describe("Reservations routes", () => {
         discounted_price: 5,
         quantity: 10,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(productResponse.status).toBe(201);
 
@@ -377,7 +378,7 @@ describe("Reservations routes", () => {
       const reservationResponse = await agentR.post("/api/reservations").send({
         product_id: productResponse.body.product.id,
         quantity: 2,
-        pickup_date: "2026-12-31T10:00:00.000Z",
+        pickup_date: PICKUP_DATE,
       });
       expect(reservationResponse.status).toBe(201);
       const reservationId = reservationResponse.body.reservation.id;
@@ -405,13 +406,13 @@ describe("Reservations routes", () => {
         discounted_price: 5,
         quantity: 10,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       const agentA = await registerAndLogin("restaurant-a@test.com");
       const reservationResponse = await agentA.post("/api/reservations").send({
         product_id: productResponse.body.product.id,
         quantity: 2,
-        pickup_date: "2026-12-31T10:00:00.000Z",
+        pickup_date: PICKUP_DATE,
       });
       expect(reservationResponse.status).toBe(201);
 

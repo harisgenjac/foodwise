@@ -1,3 +1,4 @@
+import { EXPIRY_DATE, PICKUP_DATE } from "./helpers.js";
 import request from "supertest";
 import app from "../src/app.js";
 import pool from "../src/config/db.js";
@@ -47,7 +48,7 @@ describe("Products routes", () => {
         discounted_price: 5,
         quantity: 5,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(storeResponse.status).toBe(201);
       expect(storeResponse.body.message).toBe("Proizvod uspješno dodan.");
@@ -61,7 +62,7 @@ describe("Products routes", () => {
         discounted_price: 5,
         quantity: 5,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(storeResponse.status).toBe(400);
       expect(storeResponse.body.error).toBe("Sva polja su obavezna.");
@@ -78,7 +79,7 @@ describe("Products routes", () => {
         discounted_price: 5,
         quantity: 5,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(productResponse.status).toBe(201);
       const id = productResponse.body.product.id;
@@ -91,7 +92,7 @@ describe("Products routes", () => {
         discounted_price: 10,
         quantity: 10,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(response.status).toBe(200);
       expect(response.body.message).toBe("Proizvod uspješno ažuriran.");
@@ -106,7 +107,7 @@ describe("Products routes", () => {
         discounted_price: 5,
         quantity: 5,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(productResponse.status).toBe(201);
       const id = productResponse.body.product.id;
@@ -131,7 +132,7 @@ describe("Products routes", () => {
         discounted_price: 10,
         quantity: 10,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(response.status).toBe(403);
       expect(response.body.error).toBe(
@@ -147,7 +148,7 @@ describe("Products routes", () => {
         discounted_price: 10,
         quantity: 10,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(response.status).toBe(404);
       expect(response.body.error).toBe("Proizvod nije pronađen.");
@@ -164,7 +165,7 @@ describe("Products routes", () => {
         discounted_price: 5,
         quantity: 5,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(productResponse.status).toBe(201);
       const id = productResponse.body.product.id;
@@ -184,7 +185,7 @@ describe("Products routes", () => {
         discounted_price: 5,
         quantity: 5,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(productResponse.status).toBe(201);
       const id = productResponse.body.product.id;
@@ -222,7 +223,7 @@ describe("Products routes", () => {
         discounted_price: 5,
         quantity: 5,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       const id = productResponse.body.product.id;
       expect(productResponse.status).toBe(201);
@@ -244,7 +245,7 @@ describe("Products routes", () => {
       const restaurantResponse = await agentR.post("/api/reservations").send({
         product_id: id,
         quantity: 1,
-        pickup_date: "2026-12-31T10:00:00.000Z",
+        pickup_date: PICKUP_DATE,
       });
       expect(restaurantResponse.status).toBe(201);
 
@@ -265,7 +266,7 @@ describe("Products routes", () => {
         discounted_price: 5,
         quantity: 5,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(productResponse.status).toBe(201);
 
@@ -283,7 +284,7 @@ describe("Products routes", () => {
         discounted_price: 5,
         quantity: 5,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(firstProductResponse.status).toBe(201);
 
@@ -304,7 +305,7 @@ describe("Products routes", () => {
         discounted_price: 5,
         quantity: 5,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(firstProductResponse.status).toBe(201);
       const store_id = firstProductResponse.body.product.store_id;
@@ -330,7 +331,7 @@ describe("Products routes", () => {
         discounted_price: 5,
         quantity: 5,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(secondProductResponse.status).toBe(201);
 
@@ -350,7 +351,7 @@ describe("Products routes", () => {
         discounted_price: 5,
         quantity: 5,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(productResponse.status).toBe(201);
       const id = productResponse.body.product.id;
@@ -386,7 +387,7 @@ describe("Products routes", () => {
         discounted_price: 5,
         quantity: 5,
         unit: "kg",
-        expiry_date: "2026-12-31",
+        expiry_date: EXPIRY_DATE,
       });
       expect(productResponse.status).toBe(201);
 
