@@ -20,7 +20,7 @@ export const createReservation = async (req: Request, res: Response) => {
   }
   const requestedQuantity = parseNumber(quantity);
   if (requestedQuantity === null || requestedQuantity <= 0) {
-    return res.status(400).json({ error: "Količina mora biti broj veći od nule." });
+    return res.status(400).json({ error: "Količina mora biti veća od nule." });
   }
   if (!isValidDateTime(pickup_date)) {
     return res.status(400).json({ error: "Datum preuzimanja nije ispravan." });

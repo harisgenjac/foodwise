@@ -36,7 +36,7 @@ interface LoginBody {
 function validateLoginFields(fields: LoginBody) {
   const { email, password } = fields;
   if (!email || !password || typeof email !== "string" || typeof password !== "string") {
-    return "Email i lozinka su obavezni.";
+    return "Sva polja su obavezna.";
   }
 }
 

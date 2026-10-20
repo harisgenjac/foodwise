@@ -8,7 +8,7 @@ Reference for working on the API. The source of truth is the code; routes and mi
 - PostgreSQL through raw `pg` queries (no ORM), migrations with `node-pg-migrate`
 - Auth: `jsonwebtoken` + `bcrypt` (10 salt rounds), JWT in an httpOnly cookie, `cookie-parser`, `cors`
 - Uploads: `multer` (disk storage). Scheduled work: `node-cron`
-- Tests: Jest + supertest (see Testing)
+- Tests: Vitest + supertest (see Testing)
 
 Express 5 notes: `req.query` is a read-only getter (read it, never assign to it), and wildcard routes must be named (`/*splat`). Neither is used today.
 
@@ -20,18 +20,20 @@ server/
 │   ├── server.ts            loads dotenv, starts the cron jobs, listens on PORT (default 3000)
 │   ├── app.ts               builds and exports the Express app (no listen, so supertest can import it)
 │   ├── config/db.ts         exports the shared pg Pool (DATABASE_URL)
-│   ├── controllers/         auth, products, reservations, notifications, favorites, users
-│   ├── middleware/          auth.middleware.ts (authenticate, authorize), upload.middleware.ts (multer)
+│   ├── controllers/         auth, products, reservations, notifications, favorites, users, productTemplates
+│   ├── middleware/          auth.middleware.ts (authenticate, authorize), upload.middleware.ts (multer, `uploadLogoFile`)
 │   ├── routes/              one router per resource, mounted in app.ts
 │   ├── jobs/                expireProducts.ts, notificationReminders.ts
 │   ├── types/               auth.ts (AuthUser, Role), express.d.ts (req.user, req.file)
 │   ├── utils/               validateProduct.ts, notifications.ts (createNotification, NotificationType), params.ts, dates.ts, httpError.ts
 │   └── scripts/             seed.ts (demo reset), seedFakeData.ts (adds data), fakeData.ts (shared generator)
 ├── migrations/              node-pg-migrate files (plain JS)
-├── tests/                   Jest + supertest (plain JS, run against dist/ via jest.config.js)
+├── tests/                   Vitest + supertest, TypeScript (setup.ts, helpers.ts, *.test.ts)
 ├── uploads/logos/           uploaded logos (gitignored, `.gitkeep` tracked)
 ├── dist/                    compiled output (gitignored)
-└── tsconfig.json
+├── tsconfig.json            build config (src only)
+├── tsconfig.test.json       type-check config for src + tests (npm run typecheck)
+└── vitest.config.ts
 ```
 
 ## Scripts and environment
@@ -39,17 +41,18 @@ server/
 - `npm run dev`: `concurrently "tsc --watch" "node --watch dist/server.js"`. The server runs the compiled `dist/`, so run `npm run build` once on a fresh clone.
 - `npm run build` (`tsc`), `npm start` (`node dist/server.js`)
 - `npm run migrate up|down`, `npm run migrate create <name>` (uses `.env` through dotenv-cli)
-- `npm test` (builds first, then Jest + supertest against `dist/`, `.env.test`, `--runInBand`). Single file: `npm test -- tests/products.test.js`. Single test: `npm test -- -t "name"`.
-- `npm run seed` (destructive reset, see Seed), `npm run seed:fake` (adds data, never touches users); both build first.
+- `npm test` (Vitest + supertest, `.env.test`, files run one at a time). Single file: `npm test -- tests/products.test.ts`. Single test: `npm test -- -t "name"`. Watch mode: `npm run test:watch`.
+- `npm run typecheck`: `tsc --noEmit -p tsconfig.test.json` (source and tests).
+- `npm run seed` (destructive reset, see Seed), `npm run seed:fake` (adds data, never touches users); both build first and run from `dist/`.
 - Env: `DATABASE_URL`, `JWT_SECRET`, optional `PORT`, `NODE_ENV`, `CLIENT_ORIGIN` (CORS origin, default `http://localhost:5173`), `APP_TIMEZONE` (business time zone for `CURRENT_DATE` and cron, default `Europe/Sarajevo`). `.env.test` points at the separate database `food_saver_test_db`.
 
-`tsconfig.json`: `strict`, `module/moduleResolution nodenext`, `target esnext`, `rootDir ./src`, `outDir ./dist`, `types: ["node"]`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, `isolatedModules`, `declaration`, `sourceMap`. Migrations and tests live outside `src/`, so they are not compiled.
+`tsconfig.json`: `strict`, `module/moduleResolution nodenext`, `target esnext`, `rootDir ./src`, `outDir ./dist`, `types: ["node"]`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, `isolatedModules`, `declaration`, `sourceMap`, `include: ["src"]`. Migrations and tests live outside `src/`, so the build never emits them. `tsconfig.test.json` extends it with `rootDir: "."`, `noEmit`, `types: ["node", "vitest/globals"]` and includes `tests/`, so the tests are type-checked with the same strict options.
 
 ## Request pipeline (`app.ts`)
 
-Order: `cors({ origin: CLIENT_ORIGIN, credentials: true })` → `express.json()` → `cookieParser()` → routers → `/uploads` static (with `nosniff`) → JSON 404 → global error handler:
+Order: `cors({ origin: CLIENT_ORIGIN, credentials: true })` → `express.json()` → `req.body ??= {}` (Express 5 leaves it undefined for requests without a body; controllers destructure it) → `cookieParser()` → routers → `/uploads` static (with `X-Content-Type-Options: nosniff`) → JSON 404 for any unknown path (`"Ruta nije pronađena."`) → error handler (see Business logic).
 
-`/api/auth`, `/api/products`, `/api/reservations`, `/api/users`, `/api/notifications`, `/api/favorites`, `/api/product-templates`
+Routers: `/api/auth`, `/api/products`, `/api/reservations`, `/api/users`, `/api/notifications`, `/api/favorites`, `/api/product-templates`
 
 Routes chain `authenticate` → `authorize('<ROLE>')` (single role) → controller.
 
@@ -105,10 +108,15 @@ Register `/mine` before `/:id`.
 
 ### Validation
 
-- `utils/validateProduct.ts`: `validateProductFields` (create and update) returns a Bosnian error string or `null`. Required: name, category, original_price, discounted_price, quantity, unit, expiry_date (description optional). Category and unit must be in `CATEGORIES` / `UNITS` (keep in sync with `client/src/utils/categories.ts` and `units.ts`); prices and quantity must be numbers > 0; `discounted_price <= original_price`; `expiry_date` must be a real `YYYY-MM-DD` date, not before today in `APP_TIMEZONE`. `validateTemplateFields` applies the category/unit lists and checks optional numbers when they are given.
+- `utils/validateProduct.ts`: `validateProductFields` (create and update) returns a Bosnian error string or `null`:
+  - required: name, category, original_price, discounted_price, quantity, unit, expiry_date (description optional) → `"Sva polja su obavezna."`
+  - category and unit must be in `CATEGORIES` / `UNITS` (keep in sync with `client/src/utils/categories.ts` and `units.ts`) → `"Kategorija nije ispravna."`, `"Jedinica mjere nije ispravna."`
+  - prices and quantity must be numbers above 0 → `"Cijene i količina moraju biti pozitivni brojevi."`
+  - discounted_price may not exceed original_price → `"Snižena cijena ne može biti veća od originalne."`
+  - expiry_date must be a real `YYYY-MM-DD` date → `"Datum isteka nije ispravan."`, and not before today in `APP_TIMEZONE` → `"Datum isteka ne može biti u prošlosti."`
+- `validateTemplateFields` applies the category/unit lists and checks optional numbers when they are given.
 - `utils/params.ts`: `parseId` (positive integer or `null`), `parseNumber`, `parseNonNegativeInt`. A non-numeric `:id` returns the resource's normal 404 instead of a Postgres cast error.
 - `utils/dates.ts`: `APP_TIMEZONE`, `todayInAppTimezone()`, `isValidDate`, `isValidDateTime`.
-- `req.body` can be `undefined` in Express 5 when no body is sent; controllers destructure `req.body ?? {}`.
 
 ### Reservations `/api/reservations`
 
@@ -116,7 +124,7 @@ The list and detail responses join the product and include `product_name`, `desc
 
 | Endpoint | Who | Behavior |
 |---|---|---|
-| `POST /` | RESTAURANT | Body: product_id, quantity, pickup_date. Transactional (see below). `quantity` must be a number > 0 (400 `"Količina mora biti broj veći od nule."`); `pickup_date` must be a date or date-time (400 `"Datum preuzimanja nije ispravan."`) whose day is between today and the product's `expiry_date` (400 `"Datum preuzimanja mora biti između danas i roka trajanja proizvoda."`). 400 `"Proizvod više nije dostupan za rezervaciju."` if the product is not `Available` or is past `expiry_date`. Stores `unit_price`. Notifies the store. |
+| `POST /` | RESTAURANT | Body: product_id, quantity, pickup_date (400 `"Sva polja su obavezna."`). Transactional (see below). `quantity` must be a number above 0 (400 `"Količina mora biti veća od nule."`); `pickup_date` must be a date or date-time (400 `"Datum preuzimanja nije ispravan."`) whose day is between today and the product's `expiry_date` (400 `"Datum preuzimanja mora biti između danas i roka trajanja proizvoda."`). 400 `"Proizvod više nije dostupan za rezervaciju."` if the product is not `Available` or is past `expiry_date`. Stores `unit_price`. Notifies the store. |
 | `GET /mine` | RESTAURANT | Filters: `status`, `name`, `business_name` (ILIKE), `store_id`. `business_name`/`city` are the **store's**. Ordered Pending, Confirmed, Completed, Rejected, Cancelled, then newest. |
 | `GET /store` | STORE | Filters: `status`, `name`, `city`. `business_name`/`city` here are the **restaurant's** (same field names, different meaning). Pending first. |
 | `GET /:id` | authenticated | Visible only to the restaurant that made it or the store that owns the product; anyone else gets 404 (existence is not revealed). `business_name`/`city` are the store's; it also returns both parties: `product_id`, `store_id`, `store_address`, `store_phone`, `store_pickup_hours`, `restaurant_name`, `restaurant_city`, `restaurant_address`, `restaurant_phone` (`users` joined twice, aliased `stores` and `restaurants`). |
@@ -129,7 +137,7 @@ Unknown `status` filter values or a non-numeric `store_id` are 400 `"Neispravan 
 ### Users `/api/users`
 - `GET /me`: full profile (explicit column list, never `password_hash`).
 - `PUT /me`: updates profile. Optional fields use `COALESCE`, so a field cannot be cleared back to null.
-- `POST /me/logo`: `multer` single file field `logo` (JPEG, PNG or WEBP, max 5MB), stores `/uploads/logos/<userId>-<timestamp>.<ext>` in `logo_url`. The extension comes from the checked MIME type, never from the uploaded file name, and `/uploads` is served with `X-Content-Type-Options: nosniff`, so an uploaded file can only ever be an image. The previous logo file is deleted. A wrong type or a too large file is a 400 `{ error }` through the global error handler.
+- `POST /me/logo`: `uploadLogoFile` (multer, single file field `logo`, JPEG/PNG/WEBP, max 5MB) stores `/uploads/logos/<userId>-<timestamp>.<ext>` in `logo_url`. The extension comes from the checked MIME type, never from the uploaded file name, and `/uploads` is served with `nosniff`, so an uploaded file can only ever be an image. The previous logo file is deleted. Rejected uploads answer 400 JSON: `"Dozvoljene su samo JPEG, PNG i WEBP slike."`, `"Slika može imati najviše 5MB."`; no file: `"Slika nije poslana."`.
 - `GET /stores` (RESTAURANT): store list, filters `city`, `business_name`, ordered by name. Each store has `active_products` (COUNT, a string): its `Available` products with `expiry_date >= CURRENT_DATE`.
 - `GET /stores/:id` (restaurants only; the controller returns 403 for STORE): returns `{ store, products, stats, myReservations }`. `products` are that store's available, unexpired products that still have available quantity, with computed fields. `stats` = `sold_articles` (count of products with status Sold) and `successful_reservations` (count of Confirmed + Completed reservations). `myReservations` = `{ my_reservations_count }` for the calling restaurant (Confirmed + Completed).
 
@@ -144,7 +152,7 @@ All routes are scoped to the caller (`user_id`); another user's notification is 
 The static paths (`/read-all`, `/read`) are registered before the `/:id` ones.
 
 ### Favorites `/api/favorites` (RESTAURANT)
-`POST /` body `{ store_id }` (must be an existing STORE user, else 404 `"Prodavnica nije pronađena."`; duplicate returns 409 via Postgres error code `23505`), `DELETE /:storeId` (404 if it was not a favorite), `GET /` (store profiles).
+`POST /` body `{ store_id }`: 400 `"ID prodavnice je obavezan."` without it, 404 `"Prodavnica nije pronađena."` unless it is an existing STORE user, 409 `"Prodavnica je već dodana u omiljene."` for a duplicate (Postgres error code `23505`). `DELETE /:storeId` (404 if it was not a favorite), `GET /` (store profiles, no email).
 
 ### Product templates `/api/product-templates` (STORE)
 Saved product presets a store reuses on the add-product form. Private to the store.
@@ -197,12 +205,25 @@ Saved product presets a store reuses on the add-product form. Private to the sto
 
 ## Testing
 
-- Jest + supertest against a real PostgreSQL database (`food_saver_test_db`, schema applied with `npx dotenv -e .env.test -- node-pg-migrate up`). Tests run serially.
-- Tests are plain JS and import `../src/*.js`; `jest.config.js` maps those imports to the compiled `dist/`, and `npm test` builds first (`pretest`).
-- Files: `smoke`, `auth`, `middleware`, `products`, `reservations`, `productTemplates`, `users` (`active_products` in the store list), `notifications` (types and links per action, read/read-all, delete/delete-read, 404 for another user's notification, and the expiry and reminder jobs called directly; the reminder test runs `sendReminders()` twice to check there are no duplicates), `reservationRules` (quantity and pickup validation, Rejected status, simultaneous accept + cancel, price snapshot, product edit rules, expiry keeps Confirmed), `validation` (product/template fields, invalid ids and filters, pagination and sort, favorites, case-insensitive email, error handler, date round trip), `uploads` (file naming, nosniff, old logo removal, wrong type). Patterns: `request.agent(app)` keeps the cookie between calls; a fresh agent per test; one agent per user when testing ownership.
-- `tests/helpers.js`: `futureDate(days)`, `EXPIRY_DATE` / `PICKUP_DATE` (relative to today, so tests never go stale), `registerAndLogin(request, app, email, role)`, `productBody(overrides)`.
-- Cleanup in `afterEach`: delete `reservations` first (RESTRICT), then `users` by test emails (`store-a@test.com`, `store-b@test.com`, `restaurant-a@test.com`, `restaurant-b@test.com`, `middleware@test.com`, `test@example.com`, `ana.case@test.com`); products go with their store through CASCADE. `afterAll` calls `pool.end()`.
-- Use obviously nonexistent ids (for example `999999`) for 404 cases.
+- Vitest + supertest against a real PostgreSQL database (`food_saver_test_db`, schema applied with `npx dotenv -e .env.test -- node-pg-migrate up`). Tests are TypeScript and import the `.ts` sources directly (Vitest resolves the `.js` import paths), so no build is needed.
+- `vitest.config.ts`: `globals: true` (`describe`/`it`/`expect`/`vi` without imports), `fileParallelism: false` because every file shares the one test database, `setupFiles: ["tests/setup.ts"]`. Each file runs in its own module graph with its own pool; `setup.ts` closes it in `afterAll`.
+- `tests/helpers.ts`:
+  - `registerAndLogin(email, role)` returns a `request.agent(app)` holding the login cookie (one agent per user when testing ownership).
+  - `createProduct(agent, overrides)` and `reserve(agent, productId, quantity)` throw if the API refuses, so setup failures are obvious. Also `productPayload()` and `userId(email)`.
+  - `futureDate(days)` / `futurePickup(days)` build dates from the local date, so tests never go stale and agree with `CURRENT_DATE` around midnight.
+  - `cleanupUsers(emails)` deletes the users' reservations (RESTRICT; both their own and those on their products), then the users, which cascades to products, notifications, favorites and templates.
+- Each file uses its own email prefix (`products-store-a@test.com`, ...) and calls `cleanupUsers` in `afterEach`.
+- Files:
+  - `app`: 401, JSON 404, malformed JSON, missing body, `/uploads` static
+  - `auth`, `middleware` (missing, malformed, foreign-secret and expired tokens; both roles)
+  - `validateProduct` (unit), `products` (all filters, validation, ownership, delete states)
+  - `reservations`: create validation, race condition, `/mine` and `/store` with filters, accept/reject/cancel ownership, state and expiry rules, quantity freed again
+  - `reservationRules`: quantity and pickup-date validation, simultaneous accept + cancel, price snapshot, product edit rules
+  - `validation`: category/unit/date rules, date round trip, invalid ids and filters, pagination and sort, favorite must be a store, case-insensitive email and password length
+  - `users` (profile, store list and details, logo upload incl. wrong type and size), `uploads` (file named by type, nosniff, old logo removed), `favorites`, `productTemplates`
+  - `notifications`: every type and link, the routes, and the expiry and reminder jobs called directly, including what they must skip (the expiry job keeps Confirmed reservations)
+  - `jobs`: cron expressions and error logging, with `node-cron` and the db mocked
+- Rows the API cannot create (past expiry dates, chosen statuses) are inserted with `pool.query`; reservations inserted that way need a `unit_price`. Use obviously nonexistent ids (`999999`) for 404 cases.
 - Race condition test: two restaurants reserve 8 of 10 at the same time with `Promise.all`; the sorted statuses must equal `[201, 400]`.
 
 ## Seed
@@ -219,3 +240,5 @@ Both scripts share the generator in `src/scripts/fakeData.ts` (`insertFakeData(c
 - Server messages should become error keys translated on the client.
 - `PUT /users/me`: replace `COALESCE` with a real PATCH that can clear optional fields.
 - No endpoint moves a reservation to `Completed` yet (planned "picked up" flow).
+- Migrations are still JavaScript. They have already run, so they stay as they are; a new migration can be written in TypeScript once `node-pg-migrate` runs with a TS loader (for example `tsx`).
+- The server has no ESLint setup.

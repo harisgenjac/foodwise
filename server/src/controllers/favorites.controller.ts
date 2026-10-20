@@ -5,7 +5,13 @@ import { parseId } from "../utils/params.js";
 export const addFavorite = async (req: Request, res: Response) => {
   try {
     const restaurant_id = req.user!.id;
-    const storeId = parseId(req.body?.store_id);
+    const { store_id } = req.body;
+
+    if (!store_id) {
+      return res.status(400).json({ error: "ID prodavnice je obavezan." });
+    }
+
+    const storeId = parseId(store_id);
     if (storeId === null) {
       return res.status(404).json({ error: "Prodavnica nije pronađena." });
     }
@@ -27,7 +33,7 @@ export const addFavorite = async (req: Request, res: Response) => {
     if (error instanceof Error && 'code' in error && error.code === "23505") {
       return res
         .status(409)
-        .json({ error: "Prodavnica je vec dodana u omiljene." });
+        .json({ error: "Prodavnica je već dodana u omiljene." });
     }
 
     console.error("Greška prilikom dodavanja prodavnice u omiljene:", error);

@@ -1,0 +1,103 @@
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import BrowseProductsPage from "./BrowseProductsPage.js";
+import { apiMock, makeProduct, makeUser, renderWithProviders, t } from "../test/utils.js";
+import type { Product } from "../types/index.js";
+
+// The server filters out sold-out products and pages the rest; `total` counts every match.
+const renderPage = (products: (params: unknown) => Product[], total?: number) =>
+  renderWithProviders(<BrowseProductsPage />, {
+    route: "/browse-products",
+    path: "/browse-products",
+    user: makeUser(),
+    get: {
+      "/products": (params: unknown) => {
+        const list = products(params);
+        return { products: list, total: total ?? list.length };
+      },
+    },
+  });
+
+const productCalls = () => apiMock.get.mock.calls.filter(([url]) => url === "/products");
+
+describe("BrowseProductsPage", () => {
+  it("lists the products and shows the server total", async () => {
+    renderPage(() => [makeProduct({ id: 1, name: "Piletina" })], 30);
+
+    expect(await screen.findByText("Piletina")).toBeInTheDocument();
+    expect(screen.getByText(t("product.offersCount", { count: 30 }))).toBeInTheDocument();
+  });
+
+  it("loads more when the server has more matches than shown", async () => {
+    renderPage((params) => {
+      const { limit } = params as { limit: number };
+      return Array.from({ length: Math.min(limit, 30) }, (_, i) => makeProduct({ id: i + 1, name: `Proizvod ${i + 1}` }));
+    }, 30);
+    await screen.findByText("Proizvod 24");
+    expect(screen.queryByText("Proizvod 25")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: t("product.loadMore") }));
+    expect(await screen.findByText("Proizvod 30")).toBeInTheDocument();
+    expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ limit: 48 });
+    expect(screen.queryByRole("button", { name: t("product.loadMore") })).not.toBeInTheDocument();
+  });
+
+  it("shows a load error instead of an empty list when the request fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    renderWithProviders(<BrowseProductsPage />, {
+      route: "/browse-products",
+      path: "/browse-products",
+      user: makeUser(),
+      get: { "/products": new Error("network") },
+    });
+    expect(await screen.findByText(t("common.loadErrorTitle"))).toBeInTheDocument();
+  });
+
+  it("shows an empty state when nothing is offered", async () => {
+    renderPage(() => []);
+    expect(await screen.findByText(t("product.noAvailableProductsTitle"))).toBeInTheDocument();
+  });
+
+  it("sends the filters to the server and can clear them", async () => {
+    renderPage((params) =>
+      (params as { name?: string }).name ? [] : [makeProduct({ id: 1, name: "Piletina" })],
+    );
+    await screen.findByText("Piletina");
+
+    await userEvent.type(screen.getByPlaceholderText(t("filters.searchByName")), "mlijeko");
+    const categories = t("categories", { returnObjects: true }) as Record<string, string>;
+    await userEvent.selectOptions(screen.getByDisplayValue(t("filters.allCategories")), categories.Dairy!);
+
+    await waitFor(() =>
+      expect(productCalls().at(-1)?.[1]?.params).toEqual({
+        category: "Dairy",
+        maxPrice: "",
+        name: "mlijeko",
+        expiryWithinDays: "",
+        limit: 24,
+      }),
+    );
+    expect(await screen.findByText(t("myProducts.noResultsTitle"))).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: t("filters.clear") }));
+    expect(await screen.findByText("Piletina")).toBeInTheDocument();
+  });
+
+  it("opens the reservation modal for a product", async () => {
+    renderPage(() => [makeProduct({ id: 1, name: "Piletina" })]);
+    await userEvent.click(await screen.findByRole("button", { name: t("myProducts.reserveButton") }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByRole("heading", { name: t("myReservations.reservePopupTitle") })).toBeInTheDocument();
+    expect(within(dialog).getByText("Piletina")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: t("myReservations.cancelButton") }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("links to the product details", async () => {
+    renderPage(() => [makeProduct({ id: 42 })]);
+    const link = await screen.findByRole("link", { name: new RegExp(t("dashboard.detailsButton")) });
+    expect(link).toHaveAttribute("href", "/products/42");
+  });
+});

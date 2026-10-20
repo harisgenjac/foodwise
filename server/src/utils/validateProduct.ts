@@ -26,7 +26,7 @@ export interface ProductFields {
   expiry_date: string;
 }
 
-export function validateProductFields(fields: ProductFields | undefined) {
+export function validateProductFields(fields: Partial<ProductFields> | undefined) {
   const { name, category, original_price, discounted_price, quantity, unit, expiry_date } =
     fields ?? ({} as Partial<ProductFields>);
 
@@ -46,7 +46,7 @@ export function validateProductFields(fields: ProductFields | undefined) {
   const original = parseNumber(original_price);
   const discounted = parseNumber(discounted_price);
   if (original === null || discounted === null || original <= 0 || discounted <= 0) {
-    return "Cijene moraju biti brojevi veći od nule.";
+    return "Cijene i količina moraju biti pozitivni brojevi.";
   }
   if (discounted > original) {
     return "Snižena cijena ne može biti veća od originalne.";
@@ -54,15 +54,15 @@ export function validateProductFields(fields: ProductFields | undefined) {
 
   const amount = parseNumber(quantity);
   if (amount === null || amount <= 0) {
-    return "Količina mora biti broj veći od nule.";
+    return "Cijene i količina moraju biti pozitivni brojevi.";
   }
 
   if (!isValidDate(expiry_date)) {
-    return "Rok trajanja nije ispravan datum.";
+    return "Datum isteka nije ispravan.";
   }
   // Both are YYYY-MM-DD, so string order is date order.
   if (expiry_date < todayInAppTimezone()) {
-    return "Rok trajanja ne može biti u prošlosti.";
+    return "Datum isteka ne može biti u prošlosti.";
   }
 
   return null;

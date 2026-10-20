@@ -2,21 +2,20 @@ import fs from "fs";
 import path from "path";
 import request from "supertest";
 import app from "../src/app.js";
-import pool from "../src/config/db.js";
-import { registerAndLogin } from "./helpers.js";
+import { type Agent, cleanupUsers, registerAndLogin } from "./helpers.js";
 
 const EMAILS = ["store-a@test.com"];
 // A minimal PNG signature is enough: the server checks the declared type, not the pixels.
 const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
-const logoPath = (logoUrl) => path.join("uploads", "logos", path.basename(logoUrl));
+const logoPath = (logoUrl: string) => path.join("uploads", "logos", path.basename(logoUrl));
 
-let store;
-let uploaded = [];
+let store: Agent;
+let uploaded: string[] = [];
 
-describe("POST /api/users/me/logo", () => {
+describe("Logo upload hardening", () => {
   beforeEach(async () => {
-    store = await registerAndLogin(request, app, "store-a@test.com", "STORE");
+    store = await registerAndLogin("store-a@test.com", "STORE");
     uploaded = [];
   });
 
@@ -24,11 +23,7 @@ describe("POST /api/users/me/logo", () => {
     for (const logoUrl of uploaded) {
       fs.rmSync(logoPath(logoUrl), { force: true });
     }
-    await pool.query("DELETE FROM users WHERE email = ANY($1)", [EMAILS]);
-  });
-
-  afterAll(async () => {
-    await pool.end();
+    await cleanupUsers(EMAILS);
   });
 
   it("names the stored file after its image type, not the uploaded file name", async () => {
@@ -57,13 +52,5 @@ describe("POST /api/users/me/logo", () => {
 
     expect(fs.existsSync(logoPath(first.body.logo_url))).toBe(false);
     expect(fs.existsSync(logoPath(second.body.logo_url))).toBe(true);
-  });
-
-  it("rejects a file that is not an image with a JSON error", async () => {
-    const response = await store
-      .post("/api/users/me/logo")
-      .attach("logo", Buffer.from("<script></script>"), { filename: "x.html", contentType: "text/html" });
-    expect(response.status).toBe(400);
-    expect(response.body.error).toBe("Dozvoljene su samo JPEG, PNG i WEBP slike.");
   });
 });

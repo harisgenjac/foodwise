@@ -17,7 +17,7 @@ A B2B marketplace where **stores** sell food that is close to its expiry date at
 |---|---|
 | Backend (`server/`) | Node.js 24, Express 5, TypeScript, PostgreSQL (raw `pg`, `node-pg-migrate`), JWT in an httpOnly cookie, `multer`, `node-cron` |
 | Frontend (`client/`) | React 19, Vite, TypeScript, Tailwind CSS, React Router 7, axios, react-i18next, lucide-react |
-| Tests | Jest + supertest against a real PostgreSQL database |
+| Tests | Server: Vitest + supertest against a real PostgreSQL database. Client: Vitest + Testing Library (jsdom) |
 
 ## Requirements
 
@@ -109,8 +109,10 @@ This builds the server once, then runs the backend and frontend together:
 | `npm start` | Runs the compiled server |
 | `npm run migrate up` / `down` | Applies or rolls back migrations |
 | `npm run migrate create <name>` | Creates a new migration |
-| `npm test` | Builds, then runs the tests against the test database (apply its schema first with `npx dotenv -e .env.test -- node-pg-migrate up`) |
-| `npm run seed` | Replaces all data with demo data |
+| `npm test` | Runs the tests against the test database (apply its schema first with `npx dotenv -e .env.test -- node-pg-migrate up`) |
+| `npm run test:watch` | Runs the tests in watch mode |
+| `npm run typecheck` | Type-checks the source and the tests |
+| `npm run seed` | Builds, then replaces all data with demo data |
 | `npm run seed:fake` | Adds fake products and reservations for the existing stores and restaurants, without touching users (`-- --products 6 --reservations 4`) |
 
 ### Client (`cd client`)
@@ -120,7 +122,9 @@ This builds the server once, then runs the backend and frontend together:
 | `npm run dev` | Starts the Vite dev server |
 | `npm run build` | Builds for production |
 | `npm run lint` | Runs ESLint |
-| `npx tsc` | Type-checks |
+| `npm test` | Runs the component and unit tests (no server needed) |
+| `npm run test:watch` | Runs the tests in watch mode |
+| `npm run typecheck` | Type-checks |
 
 ## Demo accounts
 

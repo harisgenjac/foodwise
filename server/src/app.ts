@@ -2,7 +2,6 @@ import express from "express";
 import type { NextFunction, Request, Response } from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import multer from "multer";
 import authRoutes from "./routes/auth.routes.js";
 import productsRoutes from "./routes/products.routes.js";
 import reservationsRoutes from "./routes/reservations.routes.js";
@@ -21,6 +20,11 @@ app.use(
   }),
 );
 app.use(express.json());
+// Express 5 leaves req.body undefined when a request has no body; controllers destructure it.
+app.use((req: Request, res: Response, next: NextFunction) => {
+  req.body ??= {};
+  next();
+});
 app.use(cookieParser());
 
 // Rute
@@ -31,7 +35,7 @@ app.use("/api/users", usersRoute)
 app.use('/api/notifications', notificationsRoutes)
 app.use('/api/favorites', favoritesRoute)
 app.use('/api/product-templates', productTemplatesRoutes)
-// nosniff: browsers must not treat an uploaded file as anything but its declared image type.
+// nosniff: browsers must not treat an uploaded file as anything but its declared type.
 app.use('/uploads', express.static('uploads', {
   setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
 }));
@@ -40,25 +44,19 @@ app.use((req: Request, res: Response) => {
   res.status(404).json({ error: "Ruta nije pronađena." });
 });
 
-// Errors thrown outside the controllers' own try/catch (body parsing, uploads) still answer with { error }.
-app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {
+// Express recognises an error handler by its four parameters. Errors thrown outside the
+// controllers' own try/catch (body parsing, middleware) still answer with { error }.
+app.use((error: unknown, req: Request, res: Response, next: NextFunction) => {
   if (res.headersSent) {
-    return next(err);
+    return next(error);
   }
-  if (err instanceof HttpError) {
-    return res.status(err.status).json({ error: err.message });
+  if (error instanceof HttpError) {
+    return res.status(error.status).json({ error: error.message });
   }
-  if (err instanceof multer.MulterError) {
-    const message =
-      err.code === "LIMIT_FILE_SIZE"
-        ? "Slika je prevelika. Maksimalna veličina je 5MB."
-        : "Slika nije ispravno poslana.";
-    return res.status(400).json({ error: message });
-  }
-  if (err instanceof Error && "type" in err && err.type === "entity.parse.failed") {
+  if (error instanceof SyntaxError && "type" in error && error.type === "entity.parse.failed") {
     return res.status(400).json({ error: "Neispravan format zahtjeva." });
   }
-  console.error("Neobrađena greška:", err);
+  console.error("Neobrađena greška:", error);
   return res.status(500).json({ error: "Došlo je do greške na serveru." });
 });
 
