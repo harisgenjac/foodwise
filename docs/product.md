@@ -25,14 +25,18 @@ Both are registered businesses with a profile (business name, city, address, pho
 
 1. A store adds a product: name, description, category, original and discounted price, quantity and unit, expiry date.
 2. A restaurant finds it in the marketplace (filters: category, max price, expiry window, name) or through a store profile.
-3. The restaurant reserves a quantity (partial reservations are allowed) and picks a pickup time. The reservation starts as `Pending` and the store is notified.
-4. The store accepts or rejects. The restaurant is notified either way. A restaurant can cancel only while the reservation is still `Pending`.
+3. The restaurant reserves a quantity (partial reservations are allowed) and picks a pickup time between today and the product's expiry day. The reservation starts as `Pending` and the store is notified.
+4. The store accepts (`Confirmed`) or rejects (`Rejected`). The restaurant is notified either way. A restaurant can cancel (`Cancelled`) only while the reservation is still `Pending`; an accept and a cancel can never both succeed.
 5. When accepted reservations cover the full quantity, the product is marked `Sold`.
-6. When a product passes its expiry date it disappears from the marketplace, becomes `Expired`, and its open reservations are cancelled automatically, and both the store and the affected restaurants are notified.
+6. When a product passes its expiry date it disappears from the marketplace and becomes `Expired`. Its `Pending` requests are cancelled automatically and the store and those restaurants are notified. `Confirmed` reservations stay `Confirmed`: the store already agreed to hand that food over. Marking a reservation as picked up (`Completed`) is a planned feature.
 
 ## Business rules (as implemented)
 
-- Available quantity is the total minus pending and confirmed reservations, so two restaurants can never reserve more than exists, even at the same instant.
+- Available quantity is the total minus pending and confirmed reservations, so two restaurants can never reserve more than exists, even at the same instant. Fully reserved products are not shown in the marketplace; the marketplace loads 24 offers at a time with "Load more".
+- A reservation keeps the price that applied when it was made. A store can edit only products that are still `Available`, and never below the quantity already reserved; lowering it to exactly the confirmed quantity marks the product `Sold`.
+- Product input is validated on the server: known category and unit, prices and quantity above zero, discounted price not above the original, expiry date not in the past. Reservation quantity must be above zero.
+- Emails are not case-sensitive (one account per address) and passwords need at least 8 characters.
+- Business dates (expiry, "today", the midnight expiry run and the 07:00 reminders) follow Bosnia and Herzegovina time (`Europe/Sarajevo`), whatever the server's own time zone.
 - Product templates are private to the store that saved them. Saving a template under a name that already exists updates that template. A template remembers the shelf life as a number of days, so applying it sets the expiry date relative to today.
 - Only available, unexpired products can be reserved, and a store cannot accept a reservation for a product whose expiry date has passed. Expiry is applied when the server starts and every midnight.
 - Deleting a product is a soft delete and is blocked while it has active reservations. Reservation history is never erased.
@@ -67,9 +71,9 @@ The sidebar already has "Donate food" and "Become a sponsor" entries that curren
 
 - Public launch (deploy) with proper image storage.
 - Real product photos instead of category images.
-- Product templates ("save as template") so stores can repost common items quickly.
+- Pickup confirmation: the store marks a `Confirmed` reservation as picked up (`Completed`), so successful handovers can be measured.
 - Backend messages translated through keys instead of fixed Bosnian text.
-- Instant dropdown filtering and server-side stock filtering in the marketplace.
+- Instant dropdown filtering in the marketplace (text and dropdown filters are both debounced today).
 
 A store reliability score (accept versus reject ratio) was considered and declined for now.
 

@@ -5,9 +5,9 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { AlertCircle, Bookmark, PackagePlus } from "lucide-react";
-import ProductFormFields, { EMPTY_PRODUCT_FORM } from "../components/product/ProductFormFields.jsx";
-import ProductPreview from "../components/product/ProductPreview.jsx";
-import ProductTemplatesPanel from "../components/product/ProductTemplatesPanel.jsx";
+import ProductFormFields, { EMPTY_PRODUCT_FORM } from "../components/product/ProductFormFields.js";
+import ProductPreview from "../components/product/ProductPreview.js";
+import ProductTemplatesPanel from "../components/product/ProductTemplatesPanel.js";
 import { dateInDays, daysFromToday, toDateInput } from "../utils/expiry.js";
 import type { ProductFormValues, ProductTemplate } from "../types/index.js";
 

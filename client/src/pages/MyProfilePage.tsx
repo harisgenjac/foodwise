@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api from "../api/axios.js";
+import api, { assetUrl } from "../api/axios.js";
 import type { User } from "../types/index.js";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
@@ -18,9 +18,9 @@ import {
   UserRound,
   UtensilsCrossed,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext.jsx";
-import FormSection from "../components/form/FormSection.jsx";
-import FormField, { inputStyle } from "../components/form/FormField.jsx";
+import { useAuth } from "../context/AuthContext.js";
+import FormSection from "../components/form/FormSection.js";
+import FormField, { inputStyle } from "../components/form/FormField.js";
 
 function MyProfilePage() {
   const { refreshUser } = useAuth();
@@ -141,7 +141,7 @@ function MyProfilePage() {
 
   const isStore = role === "STORE";
   const RoleIcon = isStore ? Store : UtensilsCrossed;
-  const avatarSrc = logoPreview || (logoUrl ? `http://localhost:3000${logoUrl}` : null);
+  const avatarSrc = logoPreview || (logoUrl ? assetUrl(logoUrl) : null);
   const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`;
   const location = [address, city].filter(Boolean).join(", ");
 

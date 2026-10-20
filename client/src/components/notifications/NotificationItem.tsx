@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronRight, X } from "lucide-react";
-import { useAuth } from "../../context/AuthContext.jsx";
+import { useAuth } from "../../context/AuthContext.js";
 import { useNotifications } from "../../context/NotificationsContext.js";
 import type { Notification } from "../../context/NotificationsContext.js";
 import {

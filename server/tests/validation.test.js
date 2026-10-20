@@ -46,6 +46,15 @@ describe("Input validation and error handling", () => {
       expect(response.body.error).toBe(message);
     });
 
+    it("returns the expiry date exactly as it was saved", async () => {
+      const expiry = futureDate(5);
+      const created = await store.post("/api/products").send(productBody({ expiry_date: expiry }));
+      expect(created.body.product.expiry_date).toBe(expiry);
+
+      const fetched = await store.get(`/api/products/${created.body.product.id}`);
+      expect(fetched.body.product.expiry_date).toBe(expiry);
+    });
+
     it("rejects a template with an unknown category", async () => {
       const response = await store
         .post("/api/product-templates")
@@ -105,6 +114,17 @@ describe("Input validation and error handling", () => {
 
       const listed = [...firstPage.body.products, ...secondPage.body.products].map((p) => p.id);
       expect(listed).not.toContain(ids[0]);
+    });
+
+    it("sorts by the closest expiry date when asked", async () => {
+      await store.post("/api/products").send(productBody({ name: "Sortiranje kasno", expiry_date: futureDate(20) }));
+      await store.post("/api/products").send(productBody({ name: "Sortiranje rano", expiry_date: futureDate(2) }));
+
+      const response = await restaurant.get("/api/products?name=Sortiranje&sort=expiry");
+      expect(response.body.products.map((p) => p.name)).toEqual(["Sortiranje rano", "Sortiranje kasno"]);
+
+      const invalid = await restaurant.get("/api/products?sort=price");
+      expect(invalid.status).toBe(400);
     });
   });
 

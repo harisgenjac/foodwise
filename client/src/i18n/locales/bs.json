@@ -40,7 +40,8 @@
     "registerButton": "Registruj se",
     "alreadyHaveAccount": "Već imate nalog?",
     "loginLink": "Prijavite se",
-    "registrationError": "Neuspješna registracija. Molimo pokušajte ponovo."
+    "registrationError": "Neuspješna registracija. Molimo pokušajte ponovo.",
+    "passwordHint": "Najmanje 8 znakova."
   },
   "product": {
     "addTitle": "Dodaj proizvod",
@@ -88,7 +89,8 @@
     "previewHint": "Ovako će restorani vidjeti vašu ponudu.",
     "previewName": "Naziv proizvoda",
     "previewDescription": "Opis proizvoda",
-    "cancel": "Odustani"
+    "cancel": "Odustani",
+    "loadMore": "Učitaj još"
   },
   "myProducts": {
     "deleteSuccess": "Proizvod uspješno obrisan.",
@@ -376,7 +378,6 @@
   },
   "productStatus": {
     "Available": "Dostupno",
-    "Reserved": "Rezervisano",
     "Sold": "Prodano",
     "Expired": "Isteklo",
     "Removed": "Uklonjeno"
@@ -385,6 +386,7 @@
     "Pending": "Na čekanju",
     "Confirmed": "Potvrđeno",
     "Completed": "Završeno",
+    "Rejected": "Odbijeno",
     "Cancelled": "Otkazano"
   },
   "templates": {
@@ -419,5 +421,10 @@
       "Lokalni događaji",
       "Dugoročna partnerstva"
     ]
+  },
+  "common": {
+    "loading": "Učitavanje...",
+    "loadErrorTitle": "Podaci se nisu mogli učitati",
+    "loadErrorSubtitle": "Provjerite internet vezu i osvježite stranicu."
   }
 }

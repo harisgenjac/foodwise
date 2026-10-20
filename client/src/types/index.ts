@@ -9,7 +9,7 @@ export interface Product {
   quantity: string;
   unit: string;
   expiry_date: string;
-  status: "Available" | "Reserved" | "Sold" | "Expired" | "Removed";
+  status: "Available" | "Sold" | "Expired" | "Removed";
   created_at: string;
   updated_at: string;
   available_quantity?: string;
@@ -27,7 +27,7 @@ export interface Reservation {
   product_id: number;
   restaurant_id: number;
   quantity: string;
-  status: "Pending" | "Confirmed" | "Completed" | "Cancelled";
+  status: "Pending" | "Confirmed" | "Completed" | "Rejected" | "Cancelled";
   pickup_date: string;
   created_at: string;
   updated_at: string;

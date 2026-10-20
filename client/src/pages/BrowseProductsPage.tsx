@@ -11,14 +11,17 @@ import {
   ShoppingBasket,
   Tag,
 } from "lucide-react";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
-import DashboardProductCard from "../components/dashboard/DashboardProductCard.jsx";
-import ProductPageHeader from "../components/product/ProductPageHeader.jsx";
-import FilterBar, { FilterField } from "../components/product/FilterBar.jsx";
-import EmptyState from "../components/product/EmptyState.jsx";
-import ReserveProductModal from "../components/product/ReserveProductModal.jsx";
-import { inputStyle } from "../components/form/FormField.jsx";
+import LoadingSpinner from "../components/LoadingSpinner.js";
+import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
+import ProductPageHeader from "../components/product/ProductPageHeader.js";
+import FilterBar, { FilterField } from "../components/product/FilterBar.js";
+import EmptyState from "../components/product/EmptyState.js";
+import LoadErrorState from "../components/product/LoadErrorState.js";
+import ReserveProductModal from "../components/product/ReserveProductModal.js";
+import { inputStyle } from "../components/form/FormField.js";
 import { useFetch } from "../hooks/useFetch.js";
+
+const PAGE_SIZE = 24;
 import type { Product } from "../types/index.js";
 
 function BrowseProductsPage() {
@@ -26,37 +29,49 @@ function BrowseProductsPage() {
   const [maxPrice, setMaxPrice] = useState("");
   const [name, setName] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
+  const [limit, setLimit] = useState(PAGE_SIZE);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { t } = useTranslation();
   const categories = t("categories", { returnObjects: true }) as Record<
     string,
     string
   >;
+  // The server leaves out fully reserved products and pages the rest; "Load more" raises the limit.
   const {
-    data: productsList,
+    data: visibleProducts,
+    total,
     loading,
+    fetching,
+    error,
     refetch,
   } = useFetch<Product>("/products", "products", {
     category,
     maxPrice,
     name,
     expiryWithinDays,
+    limit,
   });
+
+  // A filter change starts again from the first page.
+  const changeFilter = (setter: (value: string) => void) => (value: string) => {
+    setter(value);
+    setLimit(PAGE_SIZE);
+  };
 
   const clearFilters = () => {
     setName("");
     setCategory("");
     setMaxPrice("");
     setExpiryWithinDays("");
+    setLimit(PAGE_SIZE);
   };
 
   if (loading) {
     return <LoadingSpinner />;
   }
 
-  const visibleProducts = productsList.filter(
-    (p) => parseFloat(p.available_quantity || "0") > 0,
-  );
+  const totalCount = total ?? visibleProducts.length;
+  const hasMore = visibleProducts.length < totalCount;
   const hasActiveFilters = Boolean(name || category || maxPrice || expiryWithinDays);
 
   return (
@@ -65,7 +80,7 @@ function BrowseProductsPage() {
         title={t("product.browseTitle")}
         subtitle={t("product.browseSubtitle")}
         icon={ShoppingBasket}
-        count={t("product.offersCount", { count: visibleProducts.length })}
+        count={t("product.offersCount", { count: totalCount })}
       />
 
       <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters}>
@@ -74,14 +89,14 @@ function BrowseProductsPage() {
             type="text"
             placeholder={t("filters.searchByName")}
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => changeFilter(setName)(e.target.value)}
             className={inputStyle}
           />
         </FilterField>
         <FilterField icon={Tag}>
           <select
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => changeFilter(setCategory)(e.target.value)}
             className={inputStyle}
           >
             <option value="">{t("filters.allCategories")}</option>
@@ -98,26 +113,28 @@ function BrowseProductsPage() {
             min="0"
             placeholder={t("filters.maxPrice")}
             value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
+            onChange={(e) => changeFilter(setMaxPrice)(e.target.value)}
             className={inputStyle}
           />
         </FilterField>
         <FilterField icon={CalendarClock}>
           <select
             value={expiryWithinDays}
-            onChange={(e) => setExpiryWithinDays(e.target.value)}
+            onChange={(e) => changeFilter(setExpiryWithinDays)(e.target.value)}
             className={inputStyle}
           >
             <option value="">{t("filters.expiryDate")}</option>
-            <option value="1">{t("filters.today")}</option>
-            <option value="2">{t("filters.tomorrow")}</option>
+            <option value="0">{t("filters.today")}</option>
+            <option value="1">{t("filters.tomorrow")}</option>
             <option value="3">{t("filters.within3Days")}</option>
             <option value="7">{t("filters.within7Days")}</option>
           </select>
         </FilterField>
       </FilterBar>
 
-      {visibleProducts.length === 0 ? (
+      {error && visibleProducts.length === 0 ? (
+        <LoadErrorState />
+      ) : visibleProducts.length === 0 ? (
         hasActiveFilters ? (
           <EmptyState
             icon={SearchX}
@@ -159,6 +176,19 @@ function BrowseProductsPage() {
               }
             />
           ))}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => setLimit((current) => current + PAGE_SIZE)}
+            disabled={fetching}
+            className="cursor-pointer rounded-xl border border-orange-200 bg-white px-6 py-2.5 text-sm font-semibold text-orange-600 transition-colors hover:bg-orange-50 disabled:cursor-wait disabled:opacity-60"
+          >
+            {fetching ? t("common.loading") : t("product.loadMore")}
+          </button>
         </div>
       )}
 

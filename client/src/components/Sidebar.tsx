@@ -1,4 +1,4 @@
-import { useAuth } from "../context/AuthContext.jsx";
+import { useAuth } from "../context/AuthContext.js";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {

@@ -1,8 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import App from "./App.jsx";
-import { AuthProvider } from "./context/AuthContext.jsx";
+import App from "./App.js";
+import { AuthProvider } from "./context/AuthContext.js";
 import { Toaster } from "react-hot-toast";
 import './i18n/config.js';
 

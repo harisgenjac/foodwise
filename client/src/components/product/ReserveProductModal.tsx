@@ -4,9 +4,10 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { CalendarClock, Scale } from "lucide-react";
 import api from "../../api/axios.js";
-import Modal from "./Modal.jsx";
-import FormField, { inputStyle } from "../form/FormField.jsx";
+import Modal from "./Modal.js";
+import FormField, { inputStyle } from "../form/FormField.js";
 import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
+import { toDateInput } from "../../utils/expiry.js";
 import type { Product } from "../../types/index.js";
 
 interface ReserveProductModalProps {
@@ -23,12 +24,18 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
   const { t } = useTranslation();
   const [quantity, setQuantity] = useState("");
   const [pickupDate, setPickupDate] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const units = t("units", { returnObjects: true }) as Record<string, string>;
   const unit = units[product.unit] || product.unit;
   const available = product.available_quantity ?? product.quantity;
   const subtitle = storeLine ?? [product.business_name, product.city].filter(Boolean).join(" · ");
+  // The server accepts a pickup from today up to the end of the expiry day.
+  const minPickup = `${toDateInput(new Date())}T00:00`;
+  const maxPickup = `${product.expiry_date.slice(0, 10)}T23:59`;
 
   const handleReservation = async () => {
+    if (submitting) return;
+    setSubmitting(true);
     try {
       await api.post("/reservations", {
         product_id: product.id,
@@ -42,6 +49,8 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
       console.error(err);
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
       toast.error(message || t("reservations.actionError"));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -74,7 +83,8 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
         <FormField label={t("dashboard.quantity")} icon={Scale} suffix={unit}>
           <input
             type="number"
-            min="0"
+            min="0.01"
+            step="any"
             max={available}
             placeholder={`${t("myReservations.placeholderMax")}: ${parseFloat(available)}`}
             value={quantity}
@@ -85,6 +95,8 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
         <FormField label={t("myReservations.pickupDate")} icon={CalendarClock}>
           <input
             type="datetime-local"
+            min={minPickup}
+            max={maxPickup}
             value={pickupDate}
             onChange={(e) => setPickupDate(e.target.value)}
             className={inputStyle}
@@ -103,7 +115,8 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
         <button
           type="button"
           onClick={handleReservation}
-          className="flex-1 cursor-pointer rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600"
+          disabled={submitting}
+          className="flex-1 cursor-pointer rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-wait disabled:opacity-60"
         >
           {t("myReservations.confirmButton")}
         </button>

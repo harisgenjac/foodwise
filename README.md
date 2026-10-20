@@ -63,6 +63,10 @@ Create `server/.env.test` with the same variables, pointing `DATABASE_URL` at `f
 | `JWT_SECRET` | yes | Secret used to sign auth tokens |
 | `PORT` | no | API port, default `3000` |
 | `NODE_ENV` | no | `production` makes the auth cookie `secure` |
+| `CLIENT_ORIGIN` | no | Frontend origin allowed by CORS, default `http://localhost:5173` |
+| `APP_TIMEZONE` | no | Business time zone for expiry dates and the scheduled jobs, default `Europe/Sarajevo` |
+
+The client reads an optional `VITE_API_URL` (backend origin without `/api`, default `http://localhost:3000`), for example from `client/.env.local`.
 
 Never commit `.env` files.
 
@@ -105,7 +109,7 @@ This builds the server once, then runs the backend and frontend together:
 | `npm start` | Runs the compiled server |
 | `npm run migrate up` / `down` | Applies or rolls back migrations |
 | `npm run migrate create <name>` | Creates a new migration |
-| `npm test` | Runs the tests against the test database (apply its schema first with `npx dotenv -e .env.test -- node-pg-migrate up`) |
+| `npm test` | Builds, then runs the tests against the test database (apply its schema first with `npx dotenv -e .env.test -- node-pg-migrate up`) |
 | `npm run seed` | Replaces all data with demo data |
 | `npm run seed:fake` | Adds fake products and reservations for the existing stores and restaurants, without touching users (`-- --products 6 --reservations 4`) |
 
@@ -147,6 +151,5 @@ foodwise/
 
 ## Known limitations
 
-- The seed script and the backend tests have not been moved to the TypeScript layout yet. They import files that now exist only as `.ts`, so `npm run seed` and `npm test` need that migration before they run. See "Pending and known limitations" in [`docs/backend.md`](docs/backend.md).
 - Notifications use polling, not push.
-- The app is configured for local development only (the CORS origin and the client's API URL are hard-coded to localhost).
+- Deployment is not set up yet: the auth cookie uses `sameSite: "strict"` (frontend and backend need a shared domain) and logos are stored on local disk.

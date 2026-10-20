@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Bell, BellOff, CheckCheck, Trash2 } from "lucide-react";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
+import LoadingSpinner from "../components/LoadingSpinner.js";
 import ProductPageHeader from "../components/product/ProductPageHeader.js";
 import EmptyState from "../components/product/EmptyState.js";
 import NotificationItem from "../components/notifications/NotificationItem.js";

@@ -1,24 +1,24 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import LoginPage from './pages/LoginPage.jsx';
-import RegisterPage from './pages/RegisterPage.jsx';
-import ProtectedRoute from './components/ProtectedRoute.jsx';
-import PublicRoute from './components/PublicRoute.jsx';
-import Layout from './components/Layout.jsx';
-import DashboardPage from './pages/DashboardPage.jsx';
-import AddProductPage from './pages/AddProductPage.jsx';
-import MyProductsPage from './pages/MyProductsPage.jsx';
-import EditProductPage from './pages/EditProductPage.jsx';
-import ReservationsPage from './pages/ReservationsPage.jsx'
-import BrowseProductsPage from './pages/BrowseProductsPage.jsx';
-import StoresPage from './pages/StoresPage.jsx'
-import StoreDetailsPage from './pages/StoreDetailsPage.jsx';
-import MyReservationsPage from './pages/MyReservationsPage.jsx';
-import MyProfilePage from './pages/MyProfilePage.jsx'
-import DonateFoodPage from './pages/DonateFoodPage.jsx';
-import SponsorPage from './pages/SponsorPage.jsx';
-import NotificationsPage from './pages/NotificationsPage.jsx'
-import ProductDetailsPage from "./pages/ProductDetailsPage.jsx"
-import ReservationDetailsPage from "./pages/ReservationDetailsPage.jsx"
+import LoginPage from './pages/LoginPage.js';
+import RegisterPage from './pages/RegisterPage.js';
+import ProtectedRoute from './components/ProtectedRoute.js';
+import PublicRoute from './components/PublicRoute.js';
+import Layout from './components/Layout.js';
+import DashboardPage from './pages/DashboardPage.js';
+import AddProductPage from './pages/AddProductPage.js';
+import MyProductsPage from './pages/MyProductsPage.js';
+import EditProductPage from './pages/EditProductPage.js';
+import ReservationsPage from './pages/ReservationsPage.js'
+import BrowseProductsPage from './pages/BrowseProductsPage.js';
+import StoresPage from './pages/StoresPage.js'
+import StoreDetailsPage from './pages/StoreDetailsPage.js';
+import MyReservationsPage from './pages/MyReservationsPage.js';
+import MyProfilePage from './pages/MyProfilePage.js'
+import DonateFoodPage from './pages/DonateFoodPage.js';
+import SponsorPage from './pages/SponsorPage.js';
+import NotificationsPage from './pages/NotificationsPage.js'
+import ProductDetailsPage from "./pages/ProductDetailsPage.js"
+import ReservationDetailsPage from "./pages/ReservationDetailsPage.js"
 
 function App() {
   return (
@@ -28,14 +28,14 @@ function App() {
         <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/add-product" element={<AddProductPage />} />
-        <Route path="/my-products" element={<MyProductsPage />} />
-        <Route path="/edit-product/:id" element={<EditProductPage />} />
-        <Route path="/reservations" element={<ReservationsPage />} />
-        <Route path="/browse-products" element={<BrowseProductsPage />} />
-        <Route path="/stores" element={<StoresPage />} />
-        <Route path="/stores/:id" element={<StoreDetailsPage />} />
-        <Route path="/my-reservations" element={<MyReservationsPage />} />
+        <Route path="/add-product" element={<ProtectedRoute role="STORE"><AddProductPage /></ProtectedRoute>} />
+        <Route path="/my-products" element={<ProtectedRoute role="STORE"><MyProductsPage /></ProtectedRoute>} />
+        <Route path="/edit-product/:id" element={<ProtectedRoute role="STORE"><EditProductPage /></ProtectedRoute>} />
+        <Route path="/reservations" element={<ProtectedRoute role="STORE"><ReservationsPage /></ProtectedRoute>} />
+        <Route path="/browse-products" element={<ProtectedRoute role="RESTAURANT"><BrowseProductsPage /></ProtectedRoute>} />
+        <Route path="/stores" element={<ProtectedRoute role="RESTAURANT"><StoresPage /></ProtectedRoute>} />
+        <Route path="/stores/:id" element={<ProtectedRoute role="RESTAURANT"><StoreDetailsPage /></ProtectedRoute>} />
+        <Route path="/my-reservations" element={<ProtectedRoute role="RESTAURANT"><MyReservationsPage /></ProtectedRoute>} />
         <Route path="/my-profile" element={<MyProfilePage />} />
         <Route path="/donate-food" element={<DonateFoodPage />} />
         <Route path="/sponsor" element={<SponsorPage />} />

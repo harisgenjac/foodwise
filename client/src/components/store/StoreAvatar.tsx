@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { assetUrl } from "../../api/axios.js";
 import type { User } from "../../types/index.js";
 
 interface StoreAvatarProps {
@@ -26,7 +27,7 @@ function StoreAvatar({ store, className }: StoreAvatarProps) {
     >
       {showLogo ? (
         <img
-          src={`http://localhost:3000${store.logo_url}`}
+          src={assetUrl(store.logo_url ?? "")}
           alt={store.business_name}
           onError={() => setFailedLogo(store.logo_url ?? null)}
           className="h-full w-full object-cover"

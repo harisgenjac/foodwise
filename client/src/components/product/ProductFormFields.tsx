@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { AlertCircle, CalendarDays, FileText, Package, Scale, Tag } from "lucide-react";
-import FormSection from "../form/FormSection.jsx";
-import FormField, { inputStyle } from "../form/FormField.jsx";
+import FormSection from "../form/FormSection.js";
+import FormField, { inputStyle } from "../form/FormField.js";
 import { getCategoryIcon } from "../../utils/categoryIcons.js";
 import { dateInDays } from "../../utils/expiry.js";
 import type { ProductFormValues } from "../../types/index.js";

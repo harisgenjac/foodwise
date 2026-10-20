@@ -21,11 +21,11 @@ import {
   XCircle,
 } from "lucide-react";
 import api from "../api/axios.js";
-import { useAuth } from "../context/AuthContext.jsx";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
-import EmptyState from "../components/product/EmptyState.jsx";
-import Modal from "../components/product/Modal.jsx";
-import DetailItem from "../components/product/DetailItem.jsx";
+import { useAuth } from "../context/AuthContext.js";
+import LoadingSpinner from "../components/LoadingSpinner.js";
+import EmptyState from "../components/product/EmptyState.js";
+import Modal from "../components/product/Modal.js";
+import DetailItem from "../components/product/DetailItem.js";
 import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
 import { RESERVATION_STATUS_STYLES } from "../utils/reservationStatus.js";
 import type { Reservation } from "../types/index.js";

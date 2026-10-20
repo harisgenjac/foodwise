@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "../context/AuthContext.jsx";
+import { assetUrl } from "../api/axios.js";
+import { useAuth } from "../context/AuthContext.js";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -164,7 +165,7 @@ function Header({ isSidebarOpen, onToggleSidebar }: HeaderProps) {
           >
             {user?.logo_url && failedLogo !== user.logo_url ? (
               <img
-                src={`http://localhost:3000${user.logo_url}`}
+                src={assetUrl(user.logo_url)}
                 alt={`${user.first_name} ${user.last_name}`}
                 onError={() => setFailedLogo(user.logo_url ?? null)}
                 className="w-9 h-9 rounded-full object-cover ring-1 ring-gray-200"

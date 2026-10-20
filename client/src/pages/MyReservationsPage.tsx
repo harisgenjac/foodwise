@@ -15,13 +15,14 @@ import {
   XCircle,
 } from "lucide-react";
 import api from "../api/axios.js";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
-import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.jsx";
-import ProductPageHeader from "../components/product/ProductPageHeader.jsx";
-import FilterBar, { FilterField } from "../components/product/FilterBar.jsx";
-import EmptyState from "../components/product/EmptyState.jsx";
-import Modal from "../components/product/Modal.jsx";
-import { inputStyle } from "../components/form/FormField.jsx";
+import LoadingSpinner from "../components/LoadingSpinner.js";
+import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.js";
+import ProductPageHeader from "../components/product/ProductPageHeader.js";
+import FilterBar, { FilterField } from "../components/product/FilterBar.js";
+import EmptyState from "../components/product/EmptyState.js";
+import LoadErrorState from "../components/product/LoadErrorState.js";
+import Modal from "../components/product/Modal.js";
+import { inputStyle } from "../components/form/FormField.js";
 import { useFetch } from "../hooks/useFetch.js";
 import type { Reservation } from "../types/index.js";
 
@@ -31,9 +32,11 @@ function MyReservationsPage() {
   const [businessName, setBusinessName] = useState("");
   const [cancellingReservation, setCancellingReservation] =
     useState<Reservation | null>(null);
+  const [cancelling, setCancelling] = useState(false);
   const { t } = useTranslation();
   const {
     data: reservationsList,
+    error,
     loading,
     refetch,
   } = useFetch<Reservation>("/reservations/mine", "reservations", {
@@ -43,6 +46,8 @@ function MyReservationsPage() {
   });
 
   const handleCancellation = async (reservationId: number) => {
+    if (cancelling) return;
+    setCancelling(true);
     try {
       const response = await api.patch(`/reservations/${reservationId}/cancel`);
       toast.success(response.data.message);
@@ -54,6 +59,8 @@ function MyReservationsPage() {
         ? err.response?.data?.error
         : null;
       toast.error(message || t("reservations.actionError"));
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -108,12 +115,15 @@ function MyReservationsPage() {
             <option value="Pending">{t("reservationStatus.Pending")}</option>
             <option value="Confirmed">{t("reservationStatus.Confirmed")}</option>
             <option value="Completed">{t("reservationStatus.Completed")}</option>
+            <option value="Rejected">{t("reservationStatus.Rejected")}</option>
             <option value="Cancelled">{t("reservationStatus.Cancelled")}</option>
           </select>
         </FilterField>
       </FilterBar>
 
-      {reservationsList.length === 0 ? (
+      {error && reservationsList.length === 0 ? (
+        <LoadErrorState />
+      ) : reservationsList.length === 0 ? (
         hasActiveFilters ? (
           <EmptyState
             icon={SearchX}
@@ -188,7 +198,8 @@ function MyReservationsPage() {
             <button
               type="button"
               onClick={() => handleCancellation(cancellingReservation.id)}
-              className="flex-1 cursor-pointer rounded-xl bg-red-600 py-2.5 font-semibold text-white transition-colors hover:bg-red-700"
+              disabled={cancelling}
+              className="flex-1 cursor-pointer rounded-xl bg-red-600 py-2.5 font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-wait disabled:opacity-60"
             >
               {t("reservations.cancelButton")}
             </button>

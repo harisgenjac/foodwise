@@ -8,6 +8,11 @@ export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
 
 const DEFAULT_PAGE_SIZE = 24;
 const MAX_PAGE_SIZE = 100;
+// Fixed SQL per allowed `sort` value; the query string never reaches the SQL text.
+const SORT_ORDERS: Record<string, string> = {
+  newest: "listed.created_at DESC, listed.id DESC",
+  expiry: "listed.expiry_date ASC, listed.id DESC",
+};
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
@@ -53,7 +58,7 @@ export const createProduct = async (req: Request, res: Response) => {
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const { category, maxPrice, expiryWithinDays, name, limit, offset } = req.query;
+    const { category, maxPrice, expiryWithinDays, name, limit, offset, sort } = req.query;
 
     // Inner query: marketplace products with their remaining quantity; the outer queries
     // drop fully reserved ones, count the rest and return one page.
@@ -109,12 +114,17 @@ export const getProducts = async (req: Request, res: Response) => {
     if (pageSize === null || pageSize === 0 || pageSize > MAX_PAGE_SIZE || skip === null) {
       return res.status(400).json({ error: "Neispravan filter." });
     }
+    const sortKey = sort ?? "newest";
+    if (typeof sortKey !== "string" || !Object.hasOwn(SORT_ORDERS, sortKey)) {
+      return res.status(400).json({ error: "Neispravan filter." });
+    }
+    const orderBy = SORT_ORDERS[sortKey];
 
     const filtered = `FROM (${query}) AS listed WHERE listed.available_quantity > 0`;
     const total = await pool.query(`SELECT COUNT(*) AS total ${filtered}`, values);
     const result = await pool.query(
       `SELECT listed.* ${filtered}
-       ORDER BY listed.created_at DESC, listed.id DESC
+       ORDER BY ${orderBy}
        LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
       [...values, pageSize, skip],
     );

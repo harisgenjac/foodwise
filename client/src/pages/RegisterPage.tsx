@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
 import api from "../api/axios.js";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../components/LanguageSwitcher.js";
 import { Lock, Mail, Store, UserRound, UtensilsCrossed } from "lucide-react";
 import logo from "../assets/logoApp.png";
-import FormField, { inputStyle } from "../components/form/FormField.jsx";
+import FormField, { inputStyle } from "../components/form/FormField.js";
 
 function RegisterPage() {
   const [firstName, setFirstName] = useState("");
@@ -29,7 +30,9 @@ function RegisterPage() {
       });
       navigate("/login");
     } catch (err) {
-      setError(t("auth.registrationError"));
+      // Validation messages from the server (taken email, short password) are more useful than a generic one.
+      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      setError(message || t("auth.registrationError"));
     }
   };
 
@@ -154,11 +157,14 @@ function RegisterPage() {
                   name="password"
                   autoComplete="new-password"
                   placeholder="••••••••"
+                  minLength={8}
+                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className={inputStyle}
                 />
               </FormField>
+              <p className="-mt-2 text-xs text-gray-500">{t("auth.passwordHint")}</p>
               <button
                 type="submit"
                 className="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
