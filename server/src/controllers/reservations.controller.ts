@@ -54,7 +54,7 @@ export const createReservation = async (req: Request, res: Response) => {
       });
     }
     const reserved = await client.query(
-      "SELECT COALESCE(SUM(quantity), 0) AS total_reserved FROM reservations WHERE product_id = $1 AND status IN ('Pending', 'Confirmed')",
+      "SELECT COALESCE(SUM(quantity), 0) AS total_reserved FROM reservations WHERE product_id = $1 AND status IN ('Pending', 'Confirmed', 'Completed')",
       [productId],
     );
     const availableQuantity =
@@ -114,8 +114,10 @@ export const getReservationById = async (req: Request, res: Response) => {
     reservations.quantity,
     reservations.status,
     reservations.pickup_date,
+    reservations.picked_up_at,
     reservations.created_at,
     reservations.updated_at,
+    reservations.status = 'Confirmed' AND reservations.pickup_date::date < CURRENT_DATE AS is_overdue,
     products.name AS product_name,
     products.description,
     reservations.unit_price AS discounted_price,
@@ -240,8 +242,10 @@ export const getStoreReservations = async (req: Request, res: Response) => {
         reservations.quantity,
         reservations.status,
         reservations.pickup_date,
+        reservations.picked_up_at,
         reservations.created_at,
         reservations.updated_at,
+        reservations.status = 'Confirmed' AND reservations.pickup_date::date < CURRENT_DATE AS is_overdue,
         products.name AS product_name,
         products.description,
         reservations.unit_price AS discounted_price,
@@ -290,14 +294,14 @@ export const getStoreReservations = async (req: Request, res: Response) => {
   }
 };
 
-// Marks the product Sold once confirmed reservations cover its whole quantity.
+// Marks the product Sold once confirmed (or already picked up) reservations cover its whole quantity.
 // The caller's transaction must hold the lock on the product row.
 export const markSoldIfFullyConfirmed = async (
   client: PoolClient,
   product: { id: number; store_id: number; name: string; quantity: string },
 ) => {
   const confirmedSum = await client.query(
-    "SELECT COALESCE(SUM(quantity), 0) AS total_confirmed FROM reservations WHERE product_id = $1 AND status = 'Confirmed'",
+    "SELECT COALESCE(SUM(quantity), 0) AS total_confirmed FROM reservations WHERE product_id = $1 AND status IN ('Confirmed', 'Completed')",
     [product.id],
   );
   if (parseFloat(confirmedSum.rows[0].total_confirmed) < parseFloat(product.quantity)) {
@@ -392,7 +396,8 @@ export const acceptReservation = async (req: Request, res: Response) => {
   }
 };
 
-// Locks the reservation row, so a reject or cancel cannot interleave with an accept.
+// Locks the reservation row, so a reject, cancel or pickup cannot interleave with another status change.
+// A pickup is overdue once its whole day has passed (the pickup time on the same day does not count).
 const lockReservation = (client: PoolClient, reservationId: number) =>
   client.query(
     `SELECT
@@ -400,6 +405,7 @@ const lockReservation = (client: PoolClient, reservationId: number) =>
        reservations.status,
        reservations.restaurant_id,
        reservations.product_id,
+       reservations.pickup_date::date < CURRENT_DATE AS is_overdue,
        products.name AS product_name,
        products.store_id
      FROM reservations
@@ -516,6 +522,256 @@ export const cancelReservation = async (req: Request, res: Response) => {
   } catch (error) {
     if (client) await client.query("ROLLBACK");
     console.error("Greška prilikom otkazivanja rezervacije:", error);
+    return res
+      .status(500)
+      .json({ error: "Došlo je do greške prilikom otkazivanja rezervacije." });
+  } finally {
+    if (client) client.release();
+  }
+};
+
+export const PICKUP_SCOPES = ["today", "upcoming", "completed"];
+
+// Rows of the pickups page belong to the caller through the product (store) or the reservation (restaurant);
+// `parties` is the other side of the handover.
+const pickupOwnership = (role: string) =>
+  role === "STORE"
+    ? { owner: "products.store_id = $1", partyJoin: "reservations.restaurant_id = parties.id" }
+    : { owner: "reservations.restaurant_id = $1", partyJoin: "products.store_id = parties.id" };
+
+export const getPickups = async (req: Request, res: Response) => {
+  const { id: userId, role } = req.user!;
+  const { scope, name } = req.query;
+
+  if (!PICKUP_SCOPES.includes(scope as string)) {
+    return res.status(400).json({ error: "Neispravan filter." });
+  }
+
+  try {
+    const { owner, partyJoin } = pickupOwnership(role);
+    let query = `SELECT
+        reservations.id,
+        reservations.product_id,
+        reservations.restaurant_id,
+        reservations.quantity,
+        reservations.status,
+        reservations.pickup_date,
+        reservations.picked_up_at,
+        reservations.created_at,
+        reservations.updated_at,
+        reservations.status = 'Confirmed' AND reservations.pickup_date::date < CURRENT_DATE AS is_overdue,
+        GREATEST(CURRENT_DATE - reservations.pickup_date::date, 0) AS days_overdue,
+        products.name AS product_name,
+        products.description,
+        reservations.unit_price AS discounted_price,
+        products.original_price,
+        products.category,
+        products.unit,
+        products.store_id,
+        parties.business_name,
+        parties.city,
+        parties.phone AS party_phone,
+        parties.address AS party_address,
+        parties.pickup_hours AS party_pickup_hours
+      FROM reservations
+      JOIN products ON reservations.product_id = products.id
+      JOIN users AS parties ON ${partyJoin}
+      WHERE ${owner}`;
+    const values: (string | number)[] = [userId];
+
+    if (scope === "today") {
+      query += ` AND reservations.status = 'Confirmed' AND reservations.pickup_date::date <= CURRENT_DATE`;
+    } else if (scope === "upcoming") {
+      query += ` AND reservations.status = 'Confirmed' AND reservations.pickup_date::date > CURRENT_DATE`;
+    } else {
+      query += ` AND reservations.status = 'Completed'`;
+    }
+    if (name) {
+      values.push(`%${name}%` as string);
+      query += ` AND products.name ILIKE $${values.length}`;
+    }
+
+    // Open pickups by time (missed ones from earlier days come first), handed-over ones newest first.
+    query +=
+      scope === "completed"
+        ? ` ORDER BY reservations.picked_up_at DESC NULLS LAST, reservations.pickup_date DESC`
+        : ` ORDER BY reservations.pickup_date ASC, reservations.id ASC`;
+
+    const result = await pool.query(query, values);
+    return res.status(200).json({
+      message: "Preuzimanja uspješno dohvaćena.",
+      reservations: result.rows,
+    });
+  } catch (error) {
+    console.error("Greška prilikom dohvatanja preuzimanja:", error);
+    return res
+      .status(500)
+      .json({ error: "Došlo je do greške prilikom dohvatanja preuzimanja." });
+  }
+};
+
+export const getPickupCounts = async (req: Request, res: Response) => {
+  const { id: userId, role } = req.user!;
+  try {
+    const { owner } = pickupOwnership(role);
+    const result = await pool.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE reservations.status = 'Confirmed' AND reservations.pickup_date::date <= CURRENT_DATE) AS today,
+         COUNT(*) FILTER (WHERE reservations.status = 'Confirmed' AND reservations.pickup_date::date < CURRENT_DATE) AS overdue,
+         COUNT(*) FILTER (WHERE reservations.status = 'Confirmed' AND reservations.pickup_date::date > CURRENT_DATE) AS upcoming,
+         COUNT(*) FILTER (WHERE reservations.status = 'Completed') AS completed
+       FROM reservations
+       JOIN products ON reservations.product_id = products.id
+       WHERE ${owner}`,
+      [userId],
+    );
+    const row = result.rows[0];
+    return res.status(200).json({
+      message: "Preuzimanja uspješno dohvaćena.",
+      counts: {
+        today: parseInt(row.today, 10),
+        overdue: parseInt(row.overdue, 10),
+        upcoming: parseInt(row.upcoming, 10),
+        completed: parseInt(row.completed, 10),
+      },
+    });
+  } catch (error) {
+    console.error("Greška prilikom dohvatanja preuzimanja:", error);
+    return res
+      .status(500)
+      .json({ error: "Došlo je do greške prilikom dohvatanja preuzimanja." });
+  }
+};
+
+// The store hands the food over. Allowed after the pickup time or the product's expiry too:
+// the food was already promised to this restaurant.
+export const completeReservation = async (req: Request, res: Response) => {
+  const reservationId = parseId(req.params.id);
+  const store_id = req.user!.id;
+  if (reservationId === null) {
+    return res.status(404).json({ error: "Rezervacija nije pronađena." });
+  }
+
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const result = await lockReservation(client, reservationId);
+
+    if (result.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Rezervacija nije pronađena." });
+    }
+
+    if (result.rows[0].store_id !== store_id) {
+      await client.query("ROLLBACK");
+      return res
+        .status(403)
+        .json({ error: "Nemate ovlasti za potvrdu preuzimanja ove rezervacije." });
+    }
+
+    if (result.rows[0].status !== "Confirmed") {
+      await client.query("ROLLBACK");
+      return res.status(400).json({
+        error: "Samo prihvaćene rezervacije mogu biti označene kao preuzete.",
+      });
+    }
+
+    await client.query(
+      "UPDATE reservations SET status = 'Completed', picked_up_at = NOW() WHERE id = $1 AND status = 'Confirmed'",
+      [reservationId],
+    );
+    await createNotification(client, {
+      userId: result.rows[0].restaurant_id,
+      type: "RESERVATION_COMPLETED",
+      message: `Pickup of ${result.rows[0].product_name} confirmed.`,
+      reservationId: result.rows[0].id,
+      productId: result.rows[0].product_id,
+    });
+    await client.query("COMMIT");
+    return res
+      .status(200)
+      .json({ message: "Rezervacija je označena kao preuzeta." });
+  } catch (error) {
+    if (client) await client.query("ROLLBACK");
+    console.error("Greška prilikom potvrde preuzimanja:", error);
+    return res
+      .status(500)
+      .json({ error: "Došlo je do greške prilikom potvrde preuzimanja." });
+  } finally {
+    if (client) client.release();
+  }
+};
+
+// The restaurant did not come: the store cancels a Confirmed reservation whose pickup day has passed.
+// The quantity goes back on offer, and a product sold out by it becomes Available again while it has not expired.
+export const cancelOverdueReservation = async (req: Request, res: Response) => {
+  const reservationId = parseId(req.params.id);
+  const store_id = req.user!.id;
+  if (reservationId === null) {
+    return res.status(404).json({ error: "Rezervacija nije pronađena." });
+  }
+
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const result = await lockReservation(client, reservationId);
+
+    if (result.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Rezervacija nije pronađena." });
+    }
+
+    if (result.rows[0].store_id !== store_id) {
+      await client.query("ROLLBACK");
+      return res
+        .status(403)
+        .json({ error: "Nemate ovlasti za otkazivanje ove rezervacije." });
+    }
+
+    if (result.rows[0].status !== "Confirmed" || !result.rows[0].is_overdue) {
+      await client.query("ROLLBACK");
+      return res
+        .status(400)
+        .json({ error: "Samo zakašnjela preuzimanja mogu biti otkazana." });
+    }
+
+    const productResult = await client.query(
+      "SELECT id, status, quantity, expiry_date < CURRENT_DATE AS is_expired FROM products WHERE id = $1 FOR UPDATE",
+      [result.rows[0].product_id],
+    );
+
+    await client.query(
+      "UPDATE reservations SET status = 'Cancelled' WHERE id = $1 AND status = 'Confirmed'",
+      [reservationId],
+    );
+
+    const product = productResult.rows[0];
+    if (product && product.status === "Sold" && !product.is_expired) {
+      const held = await client.query(
+        "SELECT COALESCE(SUM(quantity), 0) AS total_held FROM reservations WHERE product_id = $1 AND status IN ('Confirmed', 'Completed')",
+        [product.id],
+      );
+      if (parseFloat(held.rows[0].total_held) < parseFloat(product.quantity)) {
+        await client.query("UPDATE products SET status = 'Available' WHERE id = $1", [product.id]);
+      }
+    }
+
+    await createNotification(client, {
+      userId: result.rows[0].restaurant_id,
+      type: "PICKUP_MISSED",
+      message: `Your reservation for ${result.rows[0].product_name} was cancelled because it was not picked up.`,
+      reservationId: result.rows[0].id,
+      productId: result.rows[0].product_id,
+    });
+    await client.query("COMMIT");
+    return res
+      .status(200)
+      .json({ message: "Zakašnjela rezervacija je otkazana." });
+  } catch (error) {
+    if (client) await client.query("ROLLBACK");
+    console.error("Greška prilikom otkazivanja zakašnjele rezervacije:", error);
     return res
       .status(500)
       .json({ error: "Došlo je do greške prilikom otkazivanja rezervacije." });

@@ -10,7 +10,8 @@
     "reservations": "Moje Rezervacije",
     "donateFood": "Doniraj obrok",
     "sponsor": "Budi sponzor",
-    "humanitarian": "Humanitarno"
+    "humanitarian": "Humanitarno",
+    "pickups": "Preuzimanja"
   },
   "header": {
     "notificationsLabel": "Notifikacije",
@@ -226,7 +227,9 @@
       "PRODUCT_EXPIRED": "Proizvodu {{product}} je istekao rok trajanja i uklonjen je iz ponude.",
       "PRODUCT_SOLD_OUT": "Proizvod {{product}} je rasprodan.",
       "PRODUCT_EXPIRING_SOON": "Podsjetnik: {{product}} ističe sutra, a ima zahtjeva na čekanju.",
-      "PICKUP_TODAY": "Podsjetnik: danas preuzimate {{product}}."
+      "PICKUP_TODAY": "Podsjetnik: danas preuzimate {{product}}.",
+      "RESERVATION_COMPLETED": "Preuzimanje potvrđeno: {{quantity}}{{unit}} {{product}}.",
+      "PICKUP_MISSED": "Rezervacija za {{product}} je otkazana jer nije preuzeta na vrijeme."
     }
   },
   "store": {
@@ -385,7 +388,7 @@
   "reservationStatus": {
     "Pending": "Na čekanju",
     "Confirmed": "Potvrđeno",
-    "Completed": "Završeno",
+    "Completed": "Preuzeto",
     "Rejected": "Odbijeno",
     "Cancelled": "Otkazano"
   },
@@ -452,5 +455,55 @@
     "loading": "Učitavanje...",
     "loadErrorTitle": "Podaci se nisu mogli učitati",
     "loadErrorSubtitle": "Provjerite internet vezu i osvježite stranicu."
+  },
+  "pickups": {
+    "title": "Preuzimanja",
+    "storeSubtitle": "Predajte robu restoranima i pratite današnja i buduća preuzimanja.",
+    "restaurantSubtitle": "Vaša prihvaćena preuzimanja za danas i naredne dane.",
+    "tabs": {
+      "today": "Danas",
+      "upcoming": "Nadolazeće",
+      "completed": "Preuzeto"
+    },
+    "searchPlaceholder": "Pretraži po proizvodu",
+    "sections": {
+      "overdue": "Zakašnjelo",
+      "today": "Danas",
+      "tomorrow": "Sutra"
+    },
+    "overdueToday": "Kasni",
+    "overdueDays_one": "Kasni {{count}} dan",
+    "overdueDays_few": "Kasni {{count}} dana",
+    "overdueDays_other": "Kasni {{count}} dana",
+    "todayCount_one": "{{count}} preuzimanje danas",
+    "todayCount_few": "{{count}} preuzimanja danas",
+    "todayCount_other": "{{count}} preuzimanja danas",
+    "readyForPickup": "Spremno za preuzimanje",
+    "pickedUpAt": "Preuzeto {{date}}",
+    "total": "Ukupno",
+    "buyer": "Kupac",
+    "seller": "Prodavač",
+    "pickupHours": "Preuzimanje",
+    "completeButton": "Označi kao preuzeto",
+    "cancelOverdueButton": "Otkaži",
+    "details": "Detalji",
+    "completeConfirmation": "Potvrditi preuzimanje?",
+    "completeConfirmationText": "{{business}} je preuzeo {{quantity}} {{unit}} \"{{product}}\". Rezervacija će biti označena kao preuzeta.",
+    "cancelOverdueConfirmation": "Otkazati zakašnjelo preuzimanje?",
+    "cancelOverdueConfirmationText": "{{business}} nije preuzeo \"{{product}}\" na vrijeme. Rezervacija će biti otkazana, a količina vraćena u ponudu.",
+    "keepButton": "Odustani",
+    "confirmCompleteButton": "Potvrdi preuzimanje",
+    "confirmCancelButton": "Otkaži rezervaciju",
+    "empty": {
+      "todayTitle": "Danas nema preuzimanja",
+      "todayStoreSubtitle": "Prihvaćene rezervacije s preuzimanjem danas pojavit će se ovdje.",
+      "todayRestaurantSubtitle": "Kada prodavnica prihvati rezervaciju s preuzimanjem danas, vidjet ćete je ovdje.",
+      "upcomingTitle": "Nema nadolazećih preuzimanja",
+      "upcomingSubtitle": "Prihvaćene rezervacije s budućim datumom preuzimanja pojavit će se ovdje.",
+      "completedTitle": "Još nema preuzete robe",
+      "completedSubtitle": "Kada rezervacija bude preuzeta, ovdje ćete vidjeti historiju.",
+      "noResultsTitle": "Nema rezultata",
+      "noResultsSubtitle": "Nijedno preuzimanje ne odgovara pretrazi."
+    }
   }
 }

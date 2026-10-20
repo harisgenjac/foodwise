@@ -7,6 +7,7 @@ import {
   HeartHandshake,
   LayoutDashboard,
   Package,
+  PackageCheck,
   PackagePlus,
   ShoppingBasket,
   Store,
@@ -30,6 +31,7 @@ function Sidebar({ isSidebarOpen }: { isSidebarOpen: boolean }) {
     { to: "/add-product", label: t("sidebar.addProduct"), icon: PackagePlus },
     { to: "/my-products", label: t("sidebar.myProducts"), icon: Package },
     { to: "/reservations", label: t("sidebar.reservations"), icon: CalendarCheck },
+    { to: "/pickups", label: t("sidebar.pickups"), icon: PackageCheck },
   ];
 
   const restaurantLinks: SidebarLink[] = [
@@ -38,6 +40,7 @@ function Sidebar({ isSidebarOpen }: { isSidebarOpen: boolean }) {
     { to: "/stores", label: t("sidebar.stores"), icon: Store },
     { to: "/browse-products", label: t("sidebar.browseProducts"), icon: ShoppingBasket },
     { to: "/my-reservations", label: t("sidebar.myReservations"), icon: CalendarCheck },
+    { to: "/pickups", label: t("sidebar.pickups"), icon: PackageCheck },
   ];
 
   const humanitarianLinks: SidebarLink[] = [

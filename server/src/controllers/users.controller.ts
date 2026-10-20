@@ -195,7 +195,7 @@ export const getStoreDetails = async (req: Request, res: Response) => {
           products.quantity - COALESCE(
             (SELECT SUM(quantity) FROM reservations
              WHERE reservations.product_id = products.id
-             AND reservations.status IN ('Pending', 'Confirmed')),
+             AND reservations.status IN ('Pending', 'Confirmed', 'Completed')),
             0
           ) AS available_quantity,
           products.expiry_date - CURRENT_DATE AS days_until_expiry

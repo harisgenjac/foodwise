@@ -156,19 +156,24 @@ export async function insertFakeData(
       const available = product.quantity - product.reserved;
       const quantity = Math.max(1, Math.min(available, Math.ceil(product.quantity * (0.1 + Math.random() * 0.2))));
       const status = pickStatus();
-      const pickupDate = status === "Completed" ? daysFromNow(-randomInt(1, 5), 14) : daysFromNow(randomInt(1, 4), randomInt(8, 18));
+      // Confirmed pickups start today, so the pickups page has something to show for today.
+      const pickupDate =
+        status === "Completed"
+          ? daysFromNow(-randomInt(1, 5), 14)
+          : daysFromNow(randomInt(status === "Confirmed" ? 0 : 1, 4), randomInt(8, 18));
+      const pickedUpAt = status === "Completed" ? pickupDate.toISOString() : null;
 
       const reservation = await client.query(
-        `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date, picked_up_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING id`,
-        [product.id, restaurant.id, quantity, product.price, status, pickupDate.toISOString()],
+        [product.id, restaurant.id, quantity, product.price, status, pickupDate.toISOString(), pickedUpAt],
       );
       const reservationId = reservation.rows[0].id;
       counts[status]++;
 
-      // Pending and Confirmed reservations hold stock, matching the app's available-quantity rule.
-      if (status === "Pending" || status === "Confirmed") {
+      // Pending, Confirmed and Completed reservations hold stock, matching the app's available-quantity rule.
+      if (status === "Pending" || status === "Confirmed" || status === "Completed") {
         product.reserved += quantity;
       }
 
