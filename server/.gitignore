@@ -5,3 +5,12 @@ node_modules/
 dist/
 uploads/*
 !uploads/logos/.gitkeep
+# Output a running `tsc --watch` can leave next to the TypeScript tests and config
+# (for example while switching to an older branch); the sources are the .ts files.
+tests/**/*.js
+tests/**/*.d.ts
+tests/**/*.map
+vitest.config.js
+vitest.config.js.map
+vitest.config.d.ts
+vitest.config.d.ts.map
