@@ -1,4 +1,11 @@
-import { dateInDays, daysFromToday, getDaysUntilExpiry, toDateInput } from "./expiry.js";
+import {
+  dateInDays,
+  daysFromToday,
+  formatDisplayDate,
+  getDaysUntilExpiry,
+  parseDisplayDate,
+  toDateInput,
+} from "./expiry.js";
 import { makeProduct } from "../test/utils.js";
 
 describe("expiry utils", () => {
@@ -19,6 +26,25 @@ describe("expiry utils", () => {
   it("returns dates relative to today, across month ends", () => {
     expect(dateInDays(0)).toBe("2026-10-20");
     expect(dateInDays(12)).toBe("2026-11-01");
+  });
+
+  it("shows a date as dd/mm/yyyy", () => {
+    expect(formatDisplayDate("2026-03-05")).toBe("05/03/2026");
+    expect(formatDisplayDate("")).toBe("");
+  });
+
+  it("reads dd/mm/yyyy, also with single digits and other separators", () => {
+    expect(parseDisplayDate("05/03/2026")).toBe("2026-03-05");
+    expect(parseDisplayDate(" 5/3/2026 ")).toBe("2026-03-05");
+    expect(parseDisplayDate("5.3.2026")).toBe("2026-03-05");
+    expect(parseDisplayDate("29-02-2028")).toBe("2028-02-29");
+    expect(parseDisplayDate(formatDisplayDate("2026-12-31"))).toBe("2026-12-31");
+  });
+
+  it("rejects impossible dates and other text", () => {
+    for (const text of ["31/02/2026", "29/02/2027", "13/13/2026", "00/01/2026", "2026-03-05", "05/03/26", "abc", ""]) {
+      expect(parseDisplayDate(text)).toBeNull();
+    }
   });
 
   it("counts whole days from today", () => {

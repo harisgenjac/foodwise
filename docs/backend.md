@@ -20,12 +20,12 @@ server/
 │   ├── server.ts            loads dotenv, starts the cron jobs, listens on PORT (default 3000)
 │   ├── app.ts               builds and exports the Express app (no listen, so supertest can import it)
 │   ├── config/db.ts         exports the shared pg Pool (DATABASE_URL)
-│   ├── controllers/         auth, products, reservations, notifications, favorites, users, productTemplates
+│   ├── controllers/         auth, products, reservations, notifications, favorites, users, productTemplates, reports
 │   ├── middleware/          auth.middleware.ts (authenticate, authorize), upload.middleware.ts (multer, `uploadLogoFile`, `uploadCsvFile`)
 │   ├── routes/              one router per resource, mounted in app.ts
 │   ├── jobs/                expireProducts.ts, notificationReminders.ts
 │   ├── types/               auth.ts (AuthUser, Role), express.d.ts (req.user, req.file)
-│   ├── utils/               validateProduct.ts, productCsv.ts (`parseProductCsv`), notifications.ts (createNotification, NotificationType), params.ts, dates.ts, httpError.ts
+│   ├── utils/               validateProduct.ts, productCsv.ts (`parseProductCsv`), notifications.ts (createNotification, NotificationType), csv.ts (`toCsv`), reportLabels.ts, params.ts, dates.ts, httpError.ts
 │   └── scripts/             seed.ts (demo reset), seedFakeData.ts (adds data), fakeData.ts (shared generator)
 ├── migrations/              node-pg-migrate files (plain JS)
 ├── tests/                   Vitest + supertest, TypeScript (setup.ts, helpers.ts, *.test.ts)
@@ -52,7 +52,7 @@ server/
 
 Order: `cors({ origin: CLIENT_ORIGIN, credentials: true })` → `express.json()` → `req.body ??= {}` (Express 5 leaves it undefined for requests without a body; controllers destructure it) → `cookieParser()` → routers → `/uploads` static (with `X-Content-Type-Options: nosniff`) → JSON 404 for any unknown path (`"Ruta nije pronađena."`) → error handler (see Business logic).
 
-Routers: `/api/auth`, `/api/products`, `/api/reservations`, `/api/users`, `/api/notifications`, `/api/favorites`, `/api/product-templates`
+Routers: `/api/auth`, `/api/products`, `/api/reservations`, `/api/users`, `/api/notifications`, `/api/favorites`, `/api/product-templates`, `/api/reports`
 
 Routes chain `authenticate` → `authorize('<ROLE>')` (single role) → controller.
 
@@ -172,6 +172,15 @@ Saved product presets a store reuses on the add-product form. Private to the sto
 - `POST /`: body `name`, `category`, `unit` (required, else 400 `"Naziv, kategorija i jedinica mjere su obavezni."`; category and unit must be known codes), optional `description`, `original_price`, `discounted_price`, `quantity`, `shelf_life_days` (empty strings become NULL). Upsert on `(store_id, name)`: saving an existing name replaces that template's other fields. 201 `{ message: "Predložak uspješno sačuvan.", template }`.
 - `DELETE /:id`: 404 `"Predložak nije pronađen."`, 403 `"Nemate ovlasti za brisanje ovog predloška."` for another store's template, 200 `{ message: "Predložak uspješno obrisan." }`.
 
+### Reports `/api/reports` (both roles)
+Downloadable CSV reports. Both cover only **Completed** reservations whose `picked_up_at::date` is between `from` and `to` (local day, the session runs in `APP_TIMEZONE`), with the same ownership as the pickups page (`pickupOwnership`, exported from `reservations.controller.ts`: a store gets reservations on its products, a restaurant its own; `parties` is the other side).
+- Query: `from`, `to` (`YYYY-MM-DD`, required, `from <= to`, at most 366 days including both ends; otherwise 400 `{ error: "Neispravan period." }`) and optional `lang` (`en`; anything else means `bs`) for the column headers, category labels, the total label and the file name. Reports are files read outside the app, so they follow the UI language rather than the Bosnian-only rule.
+- Success: 200 with `Content-Type: text/csv; charset=utf-8` and `Content-Disposition: attachment; filename="<name>-<from>-<to>.csv"` (not the usual JSON). Errors stay JSON; 500 `"Došlo je do greške prilikom izrade izvještaja."`.
+- `GET /sales`: one row per reservation, ordered by `picked_up_at`: pickup date, reservation id, product, category label, other party (`business_name`, else first + last name), its city, quantity, unit, `unit_price`, the product's **current** `original_price` (there is no snapshot of it), total (`unit_price × quantity`), savings (`(original_price − unit_price) × quantity`, never negative). Last row: totals of the two money columns (quantities have mixed units). File name `prodaja`/`sales` for a store, `kupovine`/`purchases` for a restaurant.
+- `GET /impact`: one row per month (`YYYY-MM`) plus a total row (`GROUPING SETS`, so partners are counted once over the whole period): pickups, distinct partners (restaurants for a store, stores for a restaurant), food in kg (g/1000), l (ml/1000) and pieces (kom + pak) like the dashboard's food-saved card, value and savings in KM. An empty period still has the total row with zeros. File name `uticaj`/`impact`.
+- `utils/csv.ts` → `toCsv(headers, rows)`: UTF-8 BOM, `;` delimiter, CRLF, integers as they are and other numbers with two decimals and a decimal comma (`2,50`), so Bosnian Excel splits the columns and reads the numbers; cells with `;`, `"` or a line break are quoted; text starting with `=`, `+`, `-`, `@`, tab or CR gets a leading `'` (CSV formula injection: product and business names are user input). `utils/reportLabels.ts` holds the headers and category labels per language.
+- Adding a report: a controller function (query + rows), its headers in `reportLabels.ts`, a route, and an entry in the client's `REPORTS` list.
+
 ## Business logic worth knowing
 
 - **Available quantity** is computed, never stored: `products.quantity` minus the sum of `Pending` + `Confirmed` + `Completed` reservation quantities (picked-up food is gone, so completing a reservation must not free its quantity). Partial reservations are allowed and the product stays `Available` until accepted reservations cover the full quantity.
@@ -239,6 +248,7 @@ Saved product presets a store reuses on the add-product form. Private to the sto
   - `users` (profile, store list and details, logo upload incl. wrong type and size), `uploads` (file named by type, nosniff, old logo removed), `favorites`, `productTemplates`
   - `notifications`: every type and link, the routes, and the expiry and reminder jobs called directly, including what they must skip (the expiry job keeps Confirmed reservations)
   - `jobs`: cron expressions and error logging, with `node-cron` and the db mocked
+  - `reports`: period validation (missing, invalid, reversed, longer than 366 days; a full leap year and a single day pass), CSV headers and file names, rows and totals for both roles (only Completed, in the period, own data), English headers, the formula guard, empty periods, impact per month with unit conversion; `csv` (unit tests for `toCsv`)
 - Rows the API cannot create (past expiry dates, chosen statuses) are inserted with `pool.query`; reservations inserted that way need a `unit_price`. Use obviously nonexistent ids (`999999`) for 404 cases.
 - Race condition test: two restaurants reserve 8 of 10 at the same time with `Promise.all`; the sorted statuses must equal `[201, 400]`.
 

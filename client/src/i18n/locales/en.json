@@ -11,7 +11,8 @@
     "donateFood": "Donate Food",
     "sponsor": "Become a Sponsor",
     "humanitarian": "Humanitarian",
-    "pickups": "Pickups"
+    "pickups": "Pickups",
+    "reports": "Reports"
   },
   "header": {
     "notificationsLabel": "Notifications",
@@ -443,7 +444,9 @@
   "common": {
     "loading": "Loading...",
     "loadErrorTitle": "Could not load the data",
-    "loadErrorSubtitle": "Check your internet connection and refresh the page."
+    "loadErrorSubtitle": "Check your internet connection and refresh the page.",
+    "datePlaceholder": "dd/mm/yyyy",
+    "pickDate": "Pick a date"
   },
   "pickups": {
     "title": "Pickups",
@@ -491,6 +494,68 @@
       "completedSubtitle": "Once a reservation is picked up, its history shows up here.",
       "noResultsTitle": "No results",
       "noResultsSubtitle": "No pickup matches your search."
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "subtitle": "Download reports for the selected period as a CSV file for Excel.",
+    "periodTitle": "Period",
+    "periodDescription": "Reports cover picked-up reservations, at most one year at a time.",
+    "presets": {
+      "thisMonth": "This month",
+      "lastMonth": "Last month",
+      "last3Months": "Last 3 months",
+      "thisYear": "This year",
+      "custom": "Custom"
+    },
+    "from": "From",
+    "to": "To",
+    "download": "Download",
+    "downloading": "Downloading...",
+    "invalidPeriod": "The \"from\" date must be before the \"to\" date.",
+    "downloadError": "The report could not be downloaded.",
+    "note": "More reports are coming. Need a specific report? Let us know.",
+    "fileNames": {
+      "sales": {
+        "store": "sales",
+        "restaurant": "purchases"
+      },
+      "impact": {
+        "store": "impact",
+        "restaurant": "impact"
+      }
+    },
+    "items": {
+      "sales": {
+        "store": {
+          "title": "Sales report",
+          "description": "Every picked-up reservation in the period, with the restaurant it was sold to, and your total revenue.",
+          "columns": "pickup date, reservation no., product, category, restaurant, city, quantity, unit, price, original price, total, buyer savings"
+        },
+        "restaurant": {
+          "title": "Purchases report",
+          "description": "Every picked-up reservation in the period, with the store, the cost and the savings against the full price.",
+          "columns": "pickup date, reservation no., product, category, store, city, quantity, unit, price, original price, total, savings"
+        }
+      },
+      "impact": {
+        "store": {
+          "title": "Impact report",
+          "description": "How much food you saved from waste, per month: quantity, value and number of restaurants.",
+          "columns": "month, pickups, restaurants, food saved (kg, l, pcs), value, buyer savings"
+        },
+        "restaurant": {
+          "title": "Impact report",
+          "description": "How much food you saved and how much money you saved, per month.",
+          "columns": "month, pickups, stores, food saved (kg, l, pcs), value, savings"
+        }
+      }
+    },
+    "table": {
+      "report": "Report",
+      "columns": "Columns",
+      "format": "Format",
+      "action": "Download"
     }
   }
 }
