@@ -10,7 +10,9 @@ export type NotificationType =
   | "PRODUCT_EXPIRED"
   | "PRODUCT_SOLD_OUT"
   | "PRODUCT_EXPIRING_SOON"
-  | "PICKUP_TODAY";
+  | "PICKUP_TODAY"
+  | "RESERVATION_COMPLETED"
+  | "PICKUP_MISSED";
 
 export interface Notification {
   id: number;

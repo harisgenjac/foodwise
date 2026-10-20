@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowRight } from "lucide-react";
+import { AlertTriangle, ArrowRight } from "lucide-react";
 import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
 import { RESERVATION_STATUS_STYLES } from "../../utils/reservationStatus.js";
 import type { Reservation } from "../../types/index.js";
@@ -31,6 +31,12 @@ function DashboardReservationCard({ reservation, partyLabel, actions }: Dashboar
         >
           {reservationStatuses[reservation.status] || reservation.status}
         </span>
+        {reservation.is_overdue && (
+          <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-1 text-xs font-semibold text-white">
+            <AlertTriangle className="h-3 w-3" />
+            {t("pickups.overdueToday")}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-4">

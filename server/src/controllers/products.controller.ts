@@ -119,7 +119,7 @@ export const getProducts = async (req: Request, res: Response) => {
         products.quantity - COALESCE(
           (SELECT SUM(quantity) FROM reservations
            WHERE reservations.product_id = products.id
-           AND reservations.status IN ('Pending', 'Confirmed')),
+           AND reservations.status IN ('Pending', 'Confirmed', 'Completed')),
           0
         ) AS available_quantity,
         products.expiry_date - CURRENT_DATE AS days_until_expiry
@@ -207,7 +207,7 @@ export const getProductById = async (req: Request, res: Response) => {
     products.quantity - COALESCE(
       (SELECT SUM(quantity) FROM reservations
        WHERE reservations.product_id = products.id
-       AND reservations.status IN ('Pending', 'Confirmed')),
+       AND reservations.status IN ('Pending', 'Confirmed', 'Completed')),
       0
     ) AS available_quantity,
      products.expiry_date - CURRENT_DATE AS days_until_expiry
@@ -334,7 +334,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     }
 
     const reserved = await client.query(
-      "SELECT COALESCE(SUM(quantity), 0) AS total_reserved FROM reservations WHERE product_id = $1 AND status IN ('Pending', 'Confirmed')",
+      "SELECT COALESCE(SUM(quantity), 0) AS total_reserved FROM reservations WHERE product_id = $1 AND status IN ('Pending', 'Confirmed', 'Completed')",
       [productId],
     );
     if (parseFloat(quantity) < parseFloat(reserved.rows[0].total_reserved)) {

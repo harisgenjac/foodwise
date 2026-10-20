@@ -7,6 +7,10 @@ import {
   acceptReservation,
   rejectReservation,
   cancelReservation,
+  getPickups,
+  getPickupCounts,
+  completeReservation,
+  cancelOverdueReservation,
 } from "../controllers/reservations.controller.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
 
@@ -14,6 +18,8 @@ const router = express.Router();
 router.post("/", authenticate, authorize("RESTAURANT"), createReservation);
 router.get("/mine", authenticate, authorize("RESTAURANT"), getMineReservations);
 router.get("/store", authenticate, authorize("STORE"), getStoreReservations);
+router.get("/pickups", authenticate, getPickups);
+router.get("/pickups/counts", authenticate, getPickupCounts);
 router.patch(
   "/:id/accept",
   authenticate,
@@ -31,6 +37,18 @@ router.patch(
   authenticate,
   authorize("RESTAURANT"),
   cancelReservation,
+);
+router.patch(
+  "/:id/complete",
+  authenticate,
+  authorize("STORE"),
+  completeReservation,
+);
+router.patch(
+  "/:id/cancel-overdue",
+  authenticate,
+  authorize("STORE"),
+  cancelOverdueReservation,
 );
 router.get("/:id", authenticate, getReservationById);
 

@@ -10,7 +10,8 @@
     "reservations": "My Reservations",
     "donateFood": "Donate Food",
     "sponsor": "Become a Sponsor",
-    "humanitarian": "Humanitarian"
+    "humanitarian": "Humanitarian",
+    "pickups": "Pickups"
   },
   "header": {
     "notificationsLabel": "Notifications",
@@ -218,7 +219,9 @@
       "PRODUCT_EXPIRED": "{{product}} has expired and was removed from the marketplace.",
       "PRODUCT_SOLD_OUT": "{{product}} is sold out.",
       "PRODUCT_EXPIRING_SOON": "Reminder: {{product}} expires tomorrow and has pending requests.",
-      "PICKUP_TODAY": "Reminder: pick up {{product}} today."
+      "PICKUP_TODAY": "Reminder: pick up {{product}} today.",
+      "RESERVATION_COMPLETED": "Pickup confirmed: {{quantity}}{{unit}} {{product}}.",
+      "PICKUP_MISSED": "Your reservation for {{product}} was cancelled because it was not picked up in time."
     }
   },
   "store": {
@@ -375,7 +378,7 @@
   "reservationStatus": {
     "Pending": "Pending",
     "Confirmed": "Confirmed",
-    "Completed": "Completed",
+    "Completed": "Picked up",
     "Rejected": "Rejected",
     "Cancelled": "Cancelled"
   },
@@ -441,5 +444,53 @@
     "loading": "Loading...",
     "loadErrorTitle": "Could not load the data",
     "loadErrorSubtitle": "Check your internet connection and refresh the page."
+  },
+  "pickups": {
+    "title": "Pickups",
+    "storeSubtitle": "Hand food over to restaurants and keep track of today's and upcoming pickups.",
+    "restaurantSubtitle": "Your accepted pickups for today and the days ahead.",
+    "tabs": {
+      "today": "Today",
+      "upcoming": "Upcoming",
+      "completed": "Picked up"
+    },
+    "searchPlaceholder": "Search by product",
+    "sections": {
+      "overdue": "Overdue",
+      "today": "Today",
+      "tomorrow": "Tomorrow"
+    },
+    "overdueToday": "Late",
+    "overdueDays_one": "{{count}} day late",
+    "overdueDays_other": "{{count}} days late",
+    "todayCount_one": "{{count}} pickup today",
+    "todayCount_other": "{{count}} pickups today",
+    "readyForPickup": "Ready for pickup",
+    "pickedUpAt": "Picked up {{date}}",
+    "total": "Total",
+    "buyer": "Buyer",
+    "seller": "Seller",
+    "pickupHours": "Pickup",
+    "completeButton": "Mark as picked up",
+    "cancelOverdueButton": "Cancel",
+    "details": "Details",
+    "completeConfirmation": "Confirm pickup?",
+    "completeConfirmationText": "{{business}} picked up {{quantity}} {{unit}} of \"{{product}}\". The reservation will be marked as picked up.",
+    "cancelOverdueConfirmation": "Cancel the overdue pickup?",
+    "cancelOverdueConfirmationText": "{{business}} did not pick up \"{{product}}\" in time. The reservation will be cancelled and the quantity put back on offer.",
+    "keepButton": "Go back",
+    "confirmCompleteButton": "Confirm pickup",
+    "confirmCancelButton": "Cancel reservation",
+    "empty": {
+      "todayTitle": "No pickups today",
+      "todayStoreSubtitle": "Accepted reservations to be picked up today will show up here.",
+      "todayRestaurantSubtitle": "When a store accepts a reservation for today, you will see it here.",
+      "upcomingTitle": "No upcoming pickups",
+      "upcomingSubtitle": "Accepted reservations with a later pickup date will show up here.",
+      "completedTitle": "Nothing picked up yet",
+      "completedSubtitle": "Once a reservation is picked up, its history shows up here.",
+      "noResultsTitle": "No results",
+      "noResultsSubtitle": "No pickup matches your search."
+    }
   }
 }

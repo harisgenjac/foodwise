@@ -6,9 +6,11 @@ import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
   CalendarCheck,
+  CalendarX,
   Check,
   CircleDot,
   MapPin,
+  PackageCheck,
   Search,
   SearchX,
   X,
@@ -23,7 +25,9 @@ import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
 import Modal from "../components/product/Modal.js";
 import { inputStyle } from "../components/form/FormField.js";
+import PickupConfirmModal from "../components/pickup/PickupConfirmModal.js";
 import { useFetch } from "../hooks/useFetch.js";
+import { usePickupActions } from "../hooks/usePickupActions.js";
 import type { Reservation } from "../types/index.js";
 
 function ReservationsPage() {
@@ -45,6 +49,8 @@ function ReservationsPage() {
     status,
     city,
   });
+
+  const pickupActions = usePickupActions(refetch);
 
   const handleAccept = async (reservationId: number) => {
     if (busyId !== null) return;
@@ -191,11 +197,49 @@ function ReservationsPage() {
                       <ArrowRight className="h-4 w-4" />
                     </Link>
                   </>
+                ) : reservation.status === "Confirmed" ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => pickupActions.request("complete", reservation)}
+                      className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-green-600/20 transition-colors hover:bg-green-700"
+                    >
+                      <PackageCheck className="h-4 w-4" />
+                      {t("pickups.completeButton")}
+                    </button>
+                    {reservation.is_overdue && (
+                      <button
+                        type="button"
+                        onClick={() => pickupActions.request("cancel-overdue", reservation)}
+                        className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 px-3 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+                      >
+                        <CalendarX className="h-4 w-4" />
+                        {t("pickups.cancelOverdueButton")}
+                      </button>
+                    )}
+                    <Link
+                      to={`/reservation/${reservation.id}`}
+                      title={t("dashboard.detailsButton")}
+                      aria-label={t("dashboard.detailsButton")}
+                      className="inline-flex items-center justify-center rounded-xl bg-orange-50 px-3 text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </>
                 ) : undefined
               }
             />
           ))}
         </div>
+      )}
+
+      {pickupActions.pending && (
+        <PickupConfirmModal
+          {...pickupActions.pending}
+          busy={pickupActions.busy}
+          onClose={pickupActions.close}
+          onConfirm={pickupActions.confirm}
+        />
       )}
 
       {rejectingReservation && (

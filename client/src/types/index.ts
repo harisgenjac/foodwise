@@ -31,6 +31,10 @@ export interface Reservation {
   pickup_date: string;
   created_at: string;
   updated_at: string;
+  // Set when the store marks the reservation as picked up (Completed).
+  picked_up_at?: string | null;
+  // Confirmed and the pickup day is before today (a passed time on the same day is not late); on GET /reservations/store, /reservations/:id and the pickups list.
+  is_overdue?: boolean;
   product_name?: string;
   description?: string;
   discounted_price?: string;
@@ -48,6 +52,11 @@ export interface Reservation {
   restaurant_city?: string | null;
   restaurant_address?: string | null;
   restaurant_phone?: string | null;
+  // Only on GET /reservations/pickups: whole days since a missed pickup date, and the other party's contact.
+  days_overdue?: number;
+  party_phone?: string | null;
+  party_address?: string | null;
+  party_pickup_hours?: string | null;
 }
 
 export interface User {

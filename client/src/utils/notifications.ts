@@ -24,6 +24,8 @@ export const NOTIFICATION_META: Record<NotificationType, { icon: LucideIcon; sty
   PRODUCT_SOLD_OUT: { icon: PackageCheck, style: "bg-green-50 text-green-600" },
   PRODUCT_EXPIRING_SOON: { icon: Hourglass, style: "bg-amber-50 text-amber-600" },
   PICKUP_TODAY: { icon: Clock, style: "bg-blue-50 text-blue-600" },
+  RESERVATION_COMPLETED: { icon: PackageCheck, style: "bg-green-50 text-green-600" },
+  PICKUP_MISSED: { icon: CalendarX, style: "bg-red-50 text-red-600" },
 };
 
 const DEFAULT_META = { icon: Bell, style: "bg-orange-50 text-orange-600" };

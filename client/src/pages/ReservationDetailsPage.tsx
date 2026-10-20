@@ -4,14 +4,17 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   CalendarClock,
   CalendarPlus,
+  CalendarX,
   Check,
   Clock,
   Hash,
   MapPin,
+  PackageCheck,
   Phone,
   Scale,
   SearchX,
@@ -26,6 +29,8 @@ import LoadingSpinner from "../components/LoadingSpinner.js";
 import EmptyState from "../components/product/EmptyState.js";
 import Modal from "../components/product/Modal.js";
 import DetailItem from "../components/product/DetailItem.js";
+import PickupConfirmModal from "../components/pickup/PickupConfirmModal.js";
+import { usePickupActions } from "../hooks/usePickupActions.js";
 import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
 import { RESERVATION_STATUS_STYLES } from "../utils/reservationStatus.js";
 import type { Reservation } from "../types/index.js";
@@ -81,6 +86,9 @@ function ReservationDetailsPage() {
     }
   };
 
+  // Picked up / missed pickup: only the store, only while Confirmed.
+  const pickupActions = usePickupActions(fetchReservation);
+
   useEffect(() => {
     fetchReservation();
   }, [id]);
@@ -116,6 +124,9 @@ function ReservationDetailsPage() {
     (reservation.category && CATEGORY_IMAGES[reservation.category]) ||
     CATEGORY_IMAGES.Other;
   const isPending = reservation.status === "Pending";
+  const canHandOver = isStore && reservation.status === "Confirmed";
+  // business_name here is the store's own; the pickup confirmation names the restaurant.
+  const handOver = { ...reservation, business_name: reservation.restaurant_name || undefined };
 
   // The store sees who reserved; the restaurant sees where to pick up.
   const party = isStore
@@ -167,11 +178,19 @@ function ReservationDetailsPage() {
 
         <div className="flex flex-1 flex-col gap-5 p-6 md:p-8">
           <div>
-            <span
-              className={`mb-2 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${RESERVATION_STATUS_STYLES[reservation.status]}`}
-            >
-              {reservationStatuses[reservation.status] || reservation.status}
-            </span>
+            <div className="mb-2 flex flex-wrap gap-2">
+              <span
+                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${RESERVATION_STATUS_STYLES[reservation.status]}`}
+              >
+                {reservationStatuses[reservation.status] || reservation.status}
+              </span>
+              {reservation.is_overdue && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
+                  <AlertTriangle className="h-3 w-3" />
+                  {t("pickups.overdueToday")}
+                </span>
+              )}
+            </div>
             <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
               {reservation.product_name}
             </h1>
@@ -221,7 +240,37 @@ function ReservationDetailsPage() {
               label={t("reservations.reservationId")}
               value={`#${reservation.id}`}
             />
+            {reservation.picked_up_at && (
+              <DetailItem
+                icon={PackageCheck}
+                label={t("pickups.tabs.completed")}
+                value={new Date(reservation.picked_up_at).toLocaleString(undefined, dateTimeFormat)}
+              />
+            )}
           </dl>
+
+          {canHandOver && (
+            <div className="mt-auto flex flex-col gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => pickupActions.request("complete", handOver)}
+                className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2.5 font-semibold text-white shadow-sm shadow-green-600/20 transition-colors hover:bg-green-700"
+              >
+                <PackageCheck className="h-4 w-4" />
+                {t("pickups.completeButton")}
+              </button>
+              {reservation.is_overdue && (
+                <button
+                  type="button"
+                  onClick={() => pickupActions.request("cancel-overdue", handOver)}
+                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 py-2.5 font-semibold text-red-600 transition-colors hover:bg-red-50"
+                >
+                  <CalendarX className="h-4 w-4" />
+                  {t("pickups.cancelOverdueButton")}
+                </button>
+              )}
+            </div>
+          )}
 
           {isPending && (
             <div className="mt-auto flex flex-col gap-2 sm:flex-row">
@@ -306,6 +355,15 @@ function ReservationDetailsPage() {
           )}
         </div>
       </section>
+
+      {pickupActions.pending && (
+        <PickupConfirmModal
+          {...pickupActions.pending}
+          busy={pickupActions.busy}
+          onClose={pickupActions.close}
+          onConfirm={pickupActions.confirm}
+        />
+      )}
 
       {confirming && (
         <Modal onClose={() => setConfirming(false)}>
