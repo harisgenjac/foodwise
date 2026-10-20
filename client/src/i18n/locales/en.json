@@ -673,7 +673,13 @@
       "confirm": "Delete",
       "cancel": "Cancel",
       "success": "The donation was deleted.",
-      "error": "The donation could not be deleted."
+      "error": "The donation could not be deleted.",
+      "returnTitle": "Remove this donation?",
+      "returnText": "You can return \"{{name}}\" to your offer so restaurants can reserve it again, or delete the donation for good.",
+      "returnButton": "Return to offer",
+      "deleteForGood": "Delete for good",
+      "returnSuccess": "The product is back on offer.",
+      "returnError": "The product could not be returned to the offer."
     },
     "fromProduct": {
       "button": "Move to donations",

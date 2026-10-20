@@ -687,7 +687,13 @@
       "confirm": "Obriši",
       "cancel": "Odustani",
       "success": "Donacija je obrisana.",
-      "error": "Brisanje donacije nije uspjelo."
+      "error": "Brisanje donacije nije uspjelo.",
+      "returnTitle": "Ukloniti donaciju?",
+      "returnText": "\"{{name}}\" možete vratiti u ponudu, pa će ga restorani opet moći rezervisati, ili donaciju obrisati skroz.",
+      "returnButton": "Vrati u ponudu",
+      "deleteForGood": "Obriši skroz",
+      "returnSuccess": "Proizvod je vraćen u ponudu.",
+      "returnError": "Vraćanje u ponudu nije uspjelo."
     },
     "fromProduct": {
       "button": "Prebaci u donaciju",

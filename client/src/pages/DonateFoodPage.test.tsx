@@ -94,6 +94,43 @@ describe("DonateFoodPage", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("offers returning a moved product to the offer instead of deleting it", async () => {
+    const success = vi.spyOn(toast, "success");
+    apiMock.post.mockResolvedValue({ data: { message: "Donacija je vraćena u ponudu." } });
+    renderPage([makeDonation({ id: 7, name: "Jogurt", source_product_id: 3 })]);
+
+    await userEvent.click(await screen.findByRole("button", { name: t("donations.delete.button") }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText(t("donations.delete.returnTitle"))).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: t("donations.delete.deleteForGood") })).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: t("donations.delete.returnButton") }));
+
+    expect(apiMock.post).toHaveBeenCalledWith("/donations/7/return-to-product");
+    expect(apiMock.delete).not.toHaveBeenCalled();
+    expect(success).toHaveBeenCalledWith(t("donations.delete.returnSuccess"));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("deletes a moved product's donation for good when chosen", async () => {
+    apiMock.delete.mockResolvedValue({ data: {} });
+    renderPage([makeDonation({ id: 7, source_product_id: 3 })]);
+
+    await userEvent.click(await screen.findByRole("button", { name: t("donations.delete.button") }));
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: t("donations.delete.deleteForGood") }));
+
+    expect(apiMock.delete).toHaveBeenCalledWith("/donations/7");
+    expect(apiMock.post).not.toHaveBeenCalled();
+  });
+
+  it("offers only deleting for a donation that did not come from a product", async () => {
+    renderPage([makeDonation({ id: 7 })]);
+
+    await userEvent.click(await screen.findByRole("button", { name: t("donations.delete.button") }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).queryByRole("button", { name: t("donations.delete.returnButton") })).not.toBeInTheDocument();
+    expect(within(dialog).getByText(t("donations.delete.title"))).toBeInTheDocument();
+  });
+
   it("shows the server error when deleting fails", async () => {
     const error = vi.spyOn(toast, "error");
     apiMock.delete.mockRejectedValue(axiosError(403, "Nemate ovlasti za brisanje ove donacije."));

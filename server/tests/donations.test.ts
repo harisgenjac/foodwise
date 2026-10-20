@@ -356,6 +356,87 @@ describe("Donations routes", () => {
     });
   });
 
+  describe("return a donation to the offer", () => {
+    const moveToDonations = async (productId: number, body: Record<string, unknown> = {}) => {
+      const response = await storeA
+        .post(`/api/donations/from-product/${productId}`)
+        .send({ donation_type: "FREE", ...body });
+      return response.body.donation.id as number;
+    };
+    const productRow = async (productId: number) =>
+      (await pool.query("SELECT status, quantity FROM products WHERE id = $1", [productId])).rows[0];
+
+    it("puts a fully moved product back on the marketplace", async () => {
+      const product = await createProduct(storeA, { quantity: 10 });
+      const donationId = await moveToDonations(product.id);
+      expect((await productRow(product.id)).status).toBe("Removed");
+
+      const response = await storeA.post(`/api/donations/${donationId}/return-to-product`);
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe("Donacija je vraćena u ponudu.");
+      expect(response.body.product).toMatchObject({ id: product.id, status: "Available", quantity: "10" });
+
+      const donation = await pool.query("SELECT status FROM donation_offers WHERE id = $1", [donationId]);
+      expect(donation.rows[0].status).toBe("Removed");
+      const offer = await restaurant.get(`/api/products/${product.id}`);
+      expect(parseFloat(offer.body.product.available_quantity)).toBe(10);
+    });
+
+    it("returns a merged donation's whole quantity", async () => {
+      const product = await createProduct(storeA, { quantity: 10 });
+      await moveToDonations(product.id, { quantity: 4 });
+      const donationId = await moveToDonations(product.id, { quantity: 3 });
+
+      await storeA.post(`/api/donations/${donationId}/return-to-product`);
+      expect(await productRow(product.id)).toMatchObject({ status: "Available", quantity: "10" });
+    });
+
+    it("makes a sold-out product available again", async () => {
+      const product = await createProduct(storeA, { quantity: 10 });
+      const reservationId = await reserve(restaurant, product.id, 4);
+      await storeA.patch(`/api/reservations/${reservationId}/accept`);
+      const donationId = await moveToDonations(product.id);
+      expect((await productRow(product.id)).status).toBe("Sold");
+
+      await storeA.post(`/api/donations/${donationId}/return-to-product`);
+      expect(await productRow(product.id)).toMatchObject({ status: "Available", quantity: "10" });
+    });
+
+    it("refuses donations that can't go back", async () => {
+      const manual = await createDonation(storeA);
+      const noSource = await storeA.post(`/api/donations/${manual.id}/return-to-product`);
+      expect(noSource.status).toBe(400);
+      expect(noSource.body.error).toBe("Samo aktivne donacije iz ponude se mogu vratiti.");
+
+      const product = await createProduct(storeA, { quantity: 10 });
+      const donationId = await moveToDonations(product.id, { quantity: 2 });
+      await pool.query("UPDATE products SET expiry_date = CURRENT_DATE - 1 WHERE id = $1", [product.id]);
+      const expiredProduct = await storeA.post(`/api/donations/${donationId}/return-to-product`);
+      expect(expiredProduct.status).toBe(400);
+      expect(expiredProduct.body.error).toBe("Proizvod je istekao i ne može se vratiti u ponudu.");
+
+      await pool.query("UPDATE donation_offers SET status = 'Expired' WHERE id = $1", [donationId]);
+      const expiredDonation = await storeA.post(`/api/donations/${donationId}/return-to-product`);
+      expect(expiredDonation.body.error).toBe("Samo aktivne donacije iz ponude se mogu vratiti.");
+    });
+
+    it("allows only the donating store", async () => {
+      const product = await createProduct(storeA, { quantity: 10 });
+      const donationId = await moveToDonations(product.id);
+
+      const storeB = await registerAndLogin(STORE_B, "STORE");
+      const other = await storeB.post(`/api/donations/${donationId}/return-to-product`);
+      expect(other.status).toBe(403);
+      expect(other.body.error).toBe("Nemate ovlasti za izmjenu ove donacije.");
+
+      const asRestaurant = await restaurant.post(`/api/donations/${donationId}/return-to-product`);
+      expect(asRestaurant.status).toBe(403);
+
+      expect((await storeA.post("/api/donations/999999/return-to-product")).status).toBe(404);
+      expect((await productRow(product.id)).status).toBe("Removed");
+    });
+  });
+
   it("expires donations past their expiry date", async () => {
     const old = await createDonation(storeA);
     const fresh = await createDonation(storeA, { expiry_date: futureDate(0) });

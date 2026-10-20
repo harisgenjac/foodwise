@@ -15,6 +15,7 @@ import {
   Search,
   SearchX,
   Trash2,
+  Undo2,
 } from "lucide-react";
 import api from "../api/axios.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
@@ -59,6 +60,23 @@ function DonateFoodPage() {
     }
   };
 
+  // Undoes "move to donations": the quantity goes back to the product on the marketplace.
+  const handleReturn = async (donation: DonationOffer) => {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      await api.post(`/donations/${donation.id}/return-to-product`);
+      setSelectedDonation(null);
+      refetch();
+      toast.success(t("donations.delete.returnSuccess"));
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      toast.error(message || t("donations.delete.returnError"));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const clearFilters = () => {
     setName("");
     setType("");
@@ -70,6 +88,10 @@ function DonateFoodPage() {
   }
 
   const hasActiveFilters = Boolean(name || type || status);
+  // Only an active donation moved from a product can go back to the marketplace.
+  const canReturn = Boolean(
+    selectedDonation?.source_product_id && selectedDonation.status === "Available",
+  );
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
@@ -200,12 +222,27 @@ function DonateFoodPage() {
             <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
               <AlertTriangle className="h-6 w-6" strokeWidth={1.8} />
             </span>
-            <h3 className="text-lg font-bold text-gray-900">{t("donations.delete.title")}</h3>
+            <h3 className="text-lg font-bold text-gray-900">
+              {canReturn ? t("donations.delete.returnTitle") : t("donations.delete.title")}
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
-              {t("donations.delete.text", { name: selectedDonation.name })}
+              {canReturn
+                ? t("donations.delete.returnText", { name: selectedDonation.name })
+                : t("donations.delete.text", { name: selectedDonation.name })}
             </p>
           </div>
-          <div className="mt-6 flex gap-2">
+          {canReturn && (
+            <button
+              type="button"
+              onClick={() => handleReturn(selectedDonation)}
+              disabled={deleting}
+              className="mt-6 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-wait disabled:opacity-60"
+            >
+              <Undo2 className="h-4 w-4" />
+              {t("donations.delete.returnButton")}
+            </button>
+          )}
+          <div className={`${canReturn ? "mt-2" : "mt-6"} flex gap-2`}>
             <button
               type="button"
               onClick={() => setSelectedDonation(null)}
@@ -219,7 +256,7 @@ function DonateFoodPage() {
               disabled={deleting}
               className="flex-1 cursor-pointer rounded-xl bg-red-600 py-2.5 font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-wait disabled:opacity-60"
             >
-              {t("donations.delete.confirm")}
+              {canReturn ? t("donations.delete.deleteForGood") : t("donations.delete.confirm")}
             </button>
           </div>
         </Modal>

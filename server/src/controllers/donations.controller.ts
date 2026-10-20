@@ -360,3 +360,91 @@ export const donateProduct = async (req: Request, res: Response) => {
     if (client) client.release();
   }
 };
+
+// Undoes "move to donations": the donation's quantity goes back to its source product,
+// which is on offer again even if it had been removed or sold out by the move.
+export const returnDonationToProduct = async (req: Request, res: Response) => {
+  const donationId = parseId(req.params.id);
+  if (donationId === null) {
+    return res.status(404).json({ error: "Donacija nije pronađena." });
+  }
+
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+
+    const donations = await client.query(
+      `SELECT donation_offers.donor_id, donation_offers.source_product_id, donation_offers.quantity,
+         donation_offers.status
+       FROM donation_offers WHERE donation_offers.id = $1 FOR UPDATE`,
+      [donationId],
+    );
+    const donation = donations.rows[0];
+    if (!donation || donation.status === "Removed") {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Donacija nije pronađena." });
+    }
+    if (donation.donor_id !== req.user!.id) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({ error: "Nemate ovlasti za izmjenu ove donacije." });
+    }
+
+    // Lock the product so reservations can't change its stock while the quantity comes back.
+    const products = donation.source_product_id
+      ? await client.query(
+          "SELECT id, status, expiry_date < CURRENT_DATE AS is_expired FROM products WHERE id = $1 FOR UPDATE",
+          [donation.source_product_id],
+        )
+      : null;
+    const product = products?.rows[0];
+    if (donation.status !== "Available" || !product) {
+      await client.query("ROLLBACK");
+      return res
+        .status(400)
+        .json({ error: "Samo aktivne donacije iz ponude se mogu vratiti." });
+    }
+    if (product.is_expired) {
+      await client.query("ROLLBACK");
+      return res
+        .status(400)
+        .json({ error: "Proizvod je istekao i ne može se vratiti u ponudu." });
+    }
+
+    // A Removed product kept its old quantity when everything was moved, so it is rebuilt from
+    // what reservations still hold; otherwise the donated amount is simply added back.
+    const updated =
+      product.status === "Removed"
+        ? await client.query(
+            `UPDATE products
+             SET status = 'Available',
+                 quantity = $1::decimal + COALESCE(
+                   (SELECT SUM(reservations.quantity) FROM reservations
+                    WHERE reservations.product_id = $2
+                      AND reservations.status IN ('Pending', 'Confirmed', 'Completed')),
+                   0)
+             WHERE id = $2 RETURNING *`,
+            [donation.quantity, product.id],
+          )
+        : await client.query(
+            "UPDATE products SET quantity = quantity + $1, status = 'Available' WHERE id = $2 RETURNING *",
+            [donation.quantity, product.id],
+          );
+    await client.query("UPDATE donation_offers SET status = 'Removed' WHERE donation_offers.id = $1", [
+      donationId,
+    ]);
+
+    await client.query("COMMIT");
+    return res
+      .status(200)
+      .json({ message: "Donacija je vraćena u ponudu.", product: updated.rows[0] });
+  } catch (error) {
+    if (client) await client.query("ROLLBACK");
+    console.error("Greška prilikom vraćanja donacije u ponudu:", error);
+    return res
+      .status(500)
+      .json({ error: "Došlo je do greške prilikom vraćanja donacije u ponudu." });
+  } finally {
+    if (client) client.release();
+  }
+};
