@@ -286,25 +286,49 @@ export const donateProduct = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Nema dovoljno proizvoda na raspolaganju." });
     }
 
-    const result = await client.query(
-      `INSERT INTO donation_offers (donor_id, source_product_id, donation_type, name, description,
-         category, quantity, unit, original_price, donation_price, expiry_date)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-       RETURNING ${DONATION_COLUMNS}`,
-      [
-        product.store_id,
-        product.id,
-        donation_type,
-        product.name,
-        product.description,
-        product.category,
-        donatedQuantity,
-        product.unit,
-        product.original_price,
-        donation_type === "SPONSORED" ? parseNumber(donation_price) : null,
-        product.expiry_date,
-      ],
+    const price = donation_type === "SPONSORED" ? parseNumber(donation_price) : null;
+
+    // Moving more of the same product adds to its active donation of the same type and price,
+    // so the donor sees one offer instead of one card per move.
+    const existing = await client.query(
+      `SELECT donation_offers.id FROM donation_offers
+       WHERE donation_offers.source_product_id = $1
+         AND donation_offers.status = 'Available'
+         AND donation_offers.donation_type = $2
+         AND donation_offers.donation_price IS NOT DISTINCT FROM $3::decimal
+       ORDER BY donation_offers.id
+       LIMIT 1
+       FOR UPDATE`,
+      [product.id, donation_type, price],
     );
+    const mergeInto = existing.rows[0]?.id as number | undefined;
+
+    const result = mergeInto
+      ? await client.query(
+          `UPDATE donation_offers SET quantity = quantity + $1
+           WHERE donation_offers.id = $2
+           RETURNING ${DONATION_COLUMNS}`,
+          [donatedQuantity, mergeInto],
+        )
+      : await client.query(
+          `INSERT INTO donation_offers (donor_id, source_product_id, donation_type, name, description,
+             category, quantity, unit, original_price, donation_price, expiry_date)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           RETURNING ${DONATION_COLUMNS}`,
+          [
+            product.store_id,
+            product.id,
+            donation_type,
+            product.name,
+            product.description,
+            product.category,
+            donatedQuantity,
+            product.unit,
+            product.original_price,
+            price,
+            product.expiry_date,
+          ],
+        );
 
     if (totalReserved === 0 && donatedQuantity === available) {
       // Everything went to donations: the product leaves the marketplace.
@@ -318,6 +342,11 @@ export const donateProduct = async (req: Request, res: Response) => {
     }
 
     await client.query("COMMIT");
+    if (mergeInto) {
+      return res
+        .status(200)
+        .json({ message: "Količina je dodana postojećoj donaciji.", donation: result.rows[0] });
+    }
     return res
       .status(201)
       .json({ message: "Proizvod je prebačen u donacije.", donation: result.rows[0] });

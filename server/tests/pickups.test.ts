@@ -2,6 +2,7 @@ import pool from "../src/config/db.js";
 import {
   cleanupUsers,
   createProduct,
+  futureDate,
   registerAndLogin,
   reserve,
   userId,
@@ -186,7 +187,7 @@ describe("Pickups", () => {
 
       const tooMuch = await restaurant
         .post("/api/reservations")
-        .send({ product_id: product.id, quantity: 5, pickup_date: `${new Date().toISOString().slice(0, 10)}T23:00` });
+        .send({ product_id: product.id, quantity: 5, pickup_date: `${futureDate(0)}T23:00` });
       expect(tooMuch.status).toBe(400);
       expect(tooMuch.body.error).toBe("Nema dovoljno proizvoda na raspolaganju.");
     });

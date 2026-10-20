@@ -253,6 +253,57 @@ describe("Donations routes", () => {
       expect(row.rows[0]).toMatchObject({ status: "Sold", quantity: "4" });
     });
 
+    it("adds a repeated move to the same donation", async () => {
+      const product = await createProduct(storeA, { quantity: 10 });
+      const first = await storeA
+        .post(`/api/donations/from-product/${product.id}`)
+        .send({ donation_type: "FREE", quantity: 4 });
+      const second = await storeA
+        .post(`/api/donations/from-product/${product.id}`)
+        .send({ donation_type: "FREE", quantity: 3 });
+
+      expect(second.status).toBe(200);
+      expect(second.body.message).toBe("Količina je dodana postojećoj donaciji.");
+      expect(second.body.donation).toMatchObject({ id: first.body.donation.id, quantity: "7" });
+      const mine = await storeA.get("/api/donations/mine");
+      expect(mine.body.donations).toHaveLength(1);
+      const row = await pool.query("SELECT quantity FROM products WHERE id = $1", [product.id]);
+      expect(row.rows[0].quantity).toBe("3");
+    });
+
+    it("merges paid moves only at the same donation price", async () => {
+      const product = await createProduct(storeA, { quantity: 10, original_price: 10 });
+      const move = (body: Record<string, unknown>) =>
+        storeA.post(`/api/donations/from-product/${product.id}`).send({ quantity: 1, ...body });
+
+      expect((await move({ donation_type: "FREE" })).status).toBe(201);
+      expect((await move({ donation_type: "SPONSORED", donation_price: 2 })).status).toBe(201);
+      expect((await move({ donation_type: "SPONSORED", donation_price: "2.00" })).status).toBe(200);
+      expect((await move({ donation_type: "SPONSORED", donation_price: 3 })).status).toBe(201);
+
+      const mine = await storeA.get("/api/donations/mine");
+      const quantities = mine.body.donations
+        .map((d: { donation_type: string; donation_price: string | null; quantity: string }) =>
+          `${d.donation_type}:${d.donation_price}:${d.quantity}`)
+        .sort();
+      expect(quantities).toEqual(["FREE:null:1", "SPONSORED:2:2", "SPONSORED:3:1"]);
+    });
+
+    it("starts a new donation when the earlier one is no longer active", async () => {
+      const product = await createProduct(storeA, { quantity: 10 });
+      const first = await storeA
+        .post(`/api/donations/from-product/${product.id}`)
+        .send({ donation_type: "FREE", quantity: 2 });
+      await storeA.delete(`/api/donations/${first.body.donation.id}`);
+
+      const second = await storeA
+        .post(`/api/donations/from-product/${product.id}`)
+        .send({ donation_type: "FREE", quantity: 2 });
+      expect(second.status).toBe(201);
+      expect(second.body.donation.id).not.toBe(first.body.donation.id);
+      expect(second.body.donation.quantity).toBe("2");
+    });
+
     it("rejects more than is available and invalid input", async () => {
       const product = await createProduct(storeA, { quantity: 5, original_price: 10 });
       const tooMuch = await storeA
