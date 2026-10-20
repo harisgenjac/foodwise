@@ -33,3 +33,20 @@ export function daysFromToday(dateInput: string): number {
   const target = new Date(`${dateInput}T00:00:00`);
   return Math.round((target.getTime() - today.getTime()) / DAY_MS);
 }
+
+// YYYY-MM-DD as dd/mm/yyyy, the format dates are shown in on the reports page.
+export function formatDisplayDate(iso: string): string {
+  const [year, month, day] = iso.split('-');
+  return year && month && day ? `${day}/${month}/${year}` : '';
+}
+
+// dd/mm/yyyy (also d/m/yyyy, with "/", "." or "-") as YYYY-MM-DD, or null for anything
+// that is not a real date (31/02/2026).
+export function parseDisplayDate(text: string): string | null {
+  const match = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(text.trim());
+  if (!match) return null;
+  const [, day, month, year] = match.map(Number) as [number, number, number, number];
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  return toDateInput(date);
+}

@@ -11,7 +11,8 @@
     "donateFood": "Doniraj obrok",
     "sponsor": "Budi sponzor",
     "humanitarian": "Humanitarno",
-    "pickups": "Preuzimanja"
+    "pickups": "Preuzimanja",
+    "reports": "Izvještaji"
   },
   "header": {
     "notificationsLabel": "Notifikacije",
@@ -454,7 +455,9 @@
   "common": {
     "loading": "Učitavanje...",
     "loadErrorTitle": "Podaci se nisu mogli učitati",
-    "loadErrorSubtitle": "Provjerite internet vezu i osvježite stranicu."
+    "loadErrorSubtitle": "Provjerite internet vezu i osvježite stranicu.",
+    "datePlaceholder": "dd/mm/yyyy",
+    "pickDate": "Odaberi datum"
   },
   "pickups": {
     "title": "Preuzimanja",
@@ -504,6 +507,68 @@
       "completedSubtitle": "Kada rezervacija bude preuzeta, ovdje ćete vidjeti historiju.",
       "noResultsTitle": "Nema rezultata",
       "noResultsSubtitle": "Nijedno preuzimanje ne odgovara pretrazi."
+    }
+  },
+  "reports": {
+    "title": "Izvještaji",
+    "subtitle": "Preuzmite izvještaje za odabrani period kao CSV fajl za Excel.",
+    "periodTitle": "Period",
+    "periodDescription": "Izvještaji obuhvataju preuzete rezervacije, najviše godinu dana odjednom.",
+    "presets": {
+      "thisMonth": "Ovaj mjesec",
+      "lastMonth": "Prošli mjesec",
+      "last3Months": "Zadnja 3 mjeseca",
+      "thisYear": "Ova godina",
+      "custom": "Prilagođeno"
+    },
+    "from": "Od",
+    "to": "Do",
+    "download": "Preuzmi",
+    "downloading": "Preuzimam...",
+    "invalidPeriod": "Datum \"od\" mora biti prije datuma \"do\".",
+    "downloadError": "Izvještaj nije moguće preuzeti.",
+    "note": "Uskoro još izvještaja. Trebate određeni izvještaj? Javite nam.",
+    "fileNames": {
+      "sales": {
+        "store": "prodaja",
+        "restaurant": "kupovine"
+      },
+      "impact": {
+        "store": "uticaj",
+        "restaurant": "uticaj"
+      }
+    },
+    "items": {
+      "sales": {
+        "store": {
+          "title": "Izvještaj o prodaji",
+          "description": "Svaka preuzeta rezervacija u periodu, s restoranom kojem je prodana, i ukupna zarada.",
+          "columns": "datum preuzimanja, broj rezervacije, proizvod, kategorija, restoran, grad, količina, jedinica, cijena, originalna cijena, ukupno, ušteda kupca"
+        },
+        "restaurant": {
+          "title": "Izvještaj o kupovinama",
+          "description": "Svaka preuzeta rezervacija u periodu, s prodavnicom, troškom i uštedom u odnosu na punu cijenu.",
+          "columns": "datum preuzimanja, broj rezervacije, proizvod, kategorija, prodavnica, grad, količina, jedinica, cijena, originalna cijena, ukupno, ušteda"
+        }
+      },
+      "impact": {
+        "store": {
+          "title": "Izvještaj o uticaju",
+          "description": "Koliko hrane ste spasili od bacanja, po mjesecima: količina, vrijednost i broj restorana.",
+          "columns": "mjesec, broj preuzimanja, broj restorana, spašena hrana (kg, l, kom), vrijednost, ušteda kupaca"
+        },
+        "restaurant": {
+          "title": "Izvještaj o uticaju",
+          "description": "Koliko hrane ste spasili i koliko ste uštedjeli, po mjesecima.",
+          "columns": "mjesec, broj preuzimanja, broj prodavnica, spašena hrana (kg, l, kom), vrijednost, ušteda"
+        }
+      }
+    },
+    "table": {
+      "report": "Izvještaj",
+      "columns": "Kolone",
+      "format": "Format",
+      "action": "Preuzimanje"
     }
   }
 }

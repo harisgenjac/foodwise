@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   CalendarCheck,
+  FileChartColumn,
   Handshake,
   HeartHandshake,
   LayoutDashboard,
@@ -32,6 +33,7 @@ function Sidebar({ isSidebarOpen }: { isSidebarOpen: boolean }) {
     { to: "/my-products", label: t("sidebar.myProducts"), icon: Package },
     { to: "/reservations", label: t("sidebar.reservations"), icon: CalendarCheck },
     { to: "/pickups", label: t("sidebar.pickups"), icon: PackageCheck },
+    { to: "/reports", label: t("sidebar.reports"), icon: FileChartColumn },
   ];
 
   const restaurantLinks: SidebarLink[] = [
@@ -41,6 +43,7 @@ function Sidebar({ isSidebarOpen }: { isSidebarOpen: boolean }) {
     { to: "/browse-products", label: t("sidebar.browseProducts"), icon: ShoppingBasket },
     { to: "/my-reservations", label: t("sidebar.myReservations"), icon: CalendarCheck },
     { to: "/pickups", label: t("sidebar.pickups"), icon: PackageCheck },
+    { to: "/reports", label: t("sidebar.reports"), icon: FileChartColumn },
   ];
 
   const humanitarianLinks: SidebarLink[] = [

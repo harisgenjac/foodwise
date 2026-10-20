@@ -21,6 +21,7 @@ import NotificationsPage from './pages/NotificationsPage.js'
 import ProductDetailsPage from "./pages/ProductDetailsPage.js"
 import ReservationDetailsPage from "./pages/ReservationDetailsPage.js"
 import PickupsPage from './pages/PickupsPage.js';
+import ReportsPage from './pages/ReportsPage.js';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
         <Route path="/stores/:id" element={<ProtectedRoute role="RESTAURANT"><StoreDetailsPage /></ProtectedRoute>} />
         <Route path="/my-reservations" element={<ProtectedRoute role="RESTAURANT"><MyReservationsPage /></ProtectedRoute>} />
         <Route path="/pickups" element={<PickupsPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
         <Route path="/my-profile" element={<MyProfilePage />} />
         <Route path="/donate-food" element={<DonateFoodPage />} />
         <Route path="/sponsor" element={<SponsorPage />} />

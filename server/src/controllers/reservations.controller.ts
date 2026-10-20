@@ -534,7 +534,7 @@ export const PICKUP_SCOPES = ["today", "upcoming", "completed"];
 
 // Rows of the pickups page belong to the caller through the product (store) or the reservation (restaurant);
 // `parties` is the other side of the handover.
-const pickupOwnership = (role: string) =>
+export const pickupOwnership = (role: string) =>
   role === "STORE"
     ? { owner: "products.store_id = $1", partyJoin: "reservations.restaurant_id = parties.id" }
     : { owner: "reservations.restaurant_id = $1", partyJoin: "products.store_id = parties.id" };
