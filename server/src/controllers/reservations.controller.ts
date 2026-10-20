@@ -9,6 +9,13 @@ export const createReservation = async (req: Request, res: Response) => {
   if (!product_id || !quantity || !pickup_date) {
     return res.status(400).json({ error: "Sva polja su obavezna." });
   }
+  const requestedQuantity = Number(quantity);
+  if (!Number.isFinite(requestedQuantity) || requestedQuantity <= 0) {
+    return res.status(400).json({ error: "Količina mora biti veća od nule." });
+  }
+  if (Number.isNaN(Date.parse(pickup_date))) {
+    return res.status(400).json({ error: "Datum preuzimanja nije ispravan." });
+  }
   let client;
   try {
     client = await pool.connect();
@@ -34,7 +41,6 @@ export const createReservation = async (req: Request, res: Response) => {
     const availableQuantity =
       parseFloat(products.rows[0].quantity) -
       parseFloat(reserved.rows[0].total_reserved);
-    const requestedQuantity = parseFloat(quantity);
     if (availableQuantity < requestedQuantity) {
       await client.query("ROLLBACK");
       return res

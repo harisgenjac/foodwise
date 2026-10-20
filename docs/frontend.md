@@ -6,9 +6,9 @@ Reference for working on the UI. The source of truth is the code; exact route pa
 
 - React 19, Vite, TypeScript, Tailwind CSS (core utility classes only), `react-router-dom` 7
 - `axios` (one configured instance), `react-hot-toast`, `react-i18next` + `i18next`, `lucide-react` (icons)
-- Scripts: `npm run dev` (http://localhost:5173), `npm run build`, `npm run lint`, `npm run preview`. Type-check with `npx tsc` (the config sets `noEmit`; Vite does the bundling).
-- `tsconfig`: `strict`, `module esnext`, `moduleResolution bundler`, `jsx react-jsx`, `lib` with `dom`, `types: ["vite/client"]`, `verbatimModuleSyntax`, `noEmit`, `allowJs`, `include: ["src"]`.
-- No client tests exist.
+- Scripts: `npm run dev` (http://localhost:5173), `npm run build`, `npm run lint`, `npm run preview`, `npm test` (Vitest, once), `npm run test:watch`, `npm run typecheck` (`tsc --noEmit`; Vite does the bundling).
+- `tsconfig`: `strict`, `module esnext`, `moduleResolution bundler`, `jsx react-jsx`, `lib` with `dom`, `types: ["vite/client", "vitest/globals"]`, `verbatimModuleSyntax`, `noEmit`, `include: ["src", "vite.config.ts"]`. Everything is TypeScript (no `allowJs`); the only JS file left is `eslint.config.js` (see Pending).
+- `vite.config.ts` holds both the Vite and the Vitest config (`test` block).
 
 ## Layout
 
@@ -28,6 +28,7 @@ client/src/
 ├── i18n/                 config.ts, locales/bs.json, locales/en.json
 ├── pages/                one file per screen (see below)
 ├── types/index.ts        shared interfaces
+├── test/                 setup.ts (jest-dom, mocked axios, cleanup), utils.tsx (render helper, mocks, fixtures)
 └── utils/                categories.ts, units.ts, categoryImages.ts, expiry.ts (getDaysUntilExpiry, toDateInput, dateInDays, daysFromToday), reservationStatus.ts (status pill colors), savedFood.ts (food saved totals), productStatus.ts (product status pill colors), categoryIcons.ts (CATEGORY_ICONS, getCategoryIcon), notifications.ts (NOTIFICATION_META, getNotificationMeta, getNotificationLink, getNotificationText, formatRelativeTime, getNotificationGroup)
 ```
 
@@ -108,9 +109,37 @@ client/src/
 - Prices are shown in KM.
 - Tailwind classes must be written in full (no string-built class names). A modifier such as `hover:` must be attached to the class with no space.
 
+## Testing
+
+- Vitest + Testing Library (`@testing-library/react`, `user-event`, `jest-dom`) in `jsdom`. Test files sit next to the code as `*.test.ts(x)`; `globals: true`, so `describe`/`it`/`expect`/`vi` need no import.
+- `src/test/setup.ts` runs before every file:
+  - It mocks `api/axios.js` for all tests (`get`, `post`, `put`, `patch`, `delete` are `vi.fn()`), so no test reaches the server.
+  - It raises the async timeout to 3s, because `useFetch` waits 500ms.
+  - After each test it resets mocks, restores spies and switches the language back to `bs`.
+- `src/test/utils.tsx`:
+  - `apiMock`: the typed mocked instance.
+  - `mockGet({ url: response })` answers `api.get` by URL; a value becomes `data`, an `Error` is thrown, and a function receives the query params.
+  - `axiosError(status, error)` builds a rejection shaped like the server's `{ error }`.
+  - `renderWithProviders(ui, { route, path, user, get })` renders inside the real `AuthProvider` and a `MemoryRouter`. `user` is what `/users/me` returns (null means 401). Any other path renders `LocationDisplay` (`data-testid="location"`), so redirects and navigation can be asserted.
+  - `t`: the real i18n `t`. Build expected texts from keys instead of copying strings.
+  - `makeUser`, `makeProduct`, `makeReservation`, `makeNotification`: fixtures that take overrides.
+- Conventions:
+  - Query by role and label (`FormField` wraps its input in a `<label>`; labels with a suffix such as "KM" need `{ exact: false }`).
+  - Spy on `toast.success`/`toast.error` to check feedback.
+  - Faking `setInterval` blocks `waitFor`, so for intervals spy on `window.setInterval` instead.
+- Coverage today:
+  - every util
+  - `useFetch` (debounce, refetch, errors, unmount)
+  - both contexts
+  - the route guards
+  - `LanguageSwitcher`, `FavoriteButton`, `Modal`, `EmptyState`, `FilterBar`, `ReserveProductModal`, `ProductFormFields`, `NotificationItem`
+  - the Login, Register, AddProduct, BrowseProducts and MyReservations pages
+- `src/i18n/locales.test.ts` fails when `bs.json` and `en.json` have different keys, a language is missing a plural form it needs (`Intl.PluralRules`), or a value is empty. `utils/categories.test.ts` checks that every category and unit has its icon, image and labels.
+
 ## Pending and known limitations
 
 - API base URL and image URLs are hard-coded to `http://localhost:3000`; move to a Vite env variable before deployment.
 - `useFetch` debounce should apply to text inputs only; dropdowns should fetch instantly.
 - Translate `DonateFoodPage` and `SponsorPage` when they get real content, and switch server messages to translated keys once the backend returns them.
-- Frontend has no automated tests.
+- Pages without tests yet: Dashboard (both roles), MyProducts, EditProduct, ProductDetails, Reservations, ReservationDetails, Stores, StoreDetails, Notifications, MyProfile, and the Header/Sidebar.
+- ESLint covers only `.js` files (in practice just its own config), because `typescript-eslint` does not support TypeScript 7 yet (peer range `<6.1.0`). Add it, or a TS-aware linter such as oxlint, when that changes; the config can then become `eslint.config.ts`.

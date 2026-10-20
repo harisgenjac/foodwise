@@ -6,6 +6,18 @@ export const addFavorite = async (req: Request, res: Response) => {
     const restaurant_id = req.user!.id;
     const { store_id } = req.body;
 
+    if (!store_id) {
+      return res.status(400).json({ error: "ID prodavnice je obavezan." });
+    }
+
+    const store = await pool.query(
+      `SELECT id FROM users WHERE id = $1 AND role = 'STORE'`,
+      [store_id],
+    );
+    if (store.rows.length === 0) {
+      return res.status(404).json({ error: "Prodavnica nije pronađena." });
+    }
+
     await pool.query(
       `INSERT INTO favorites (restaurant_id, store_id) VALUES ($1, $2)`,
       [restaurant_id, store_id],
@@ -15,7 +27,7 @@ export const addFavorite = async (req: Request, res: Response) => {
     if (error instanceof Error && 'code' in error && error.code === "23505") {
       return res
         .status(409)
-        .json({ error: "Prodavnica je vec dodana u omiljene." });
+        .json({ error: "Prodavnica je već dodana u omiljene." });
     }
 
     console.error("Greška prilikom dodavanja prodavnice u omiljene:", error);

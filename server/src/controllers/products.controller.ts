@@ -196,7 +196,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       quantity,
       unit,
       expiry_date,
-    }: ProductFields = req.body || {};
+    }: ProductFields = req.body;
     const validationError = validateProductFields(req.body);
     if (validationError) {
       return res.status(400).json({ error: validationError });
