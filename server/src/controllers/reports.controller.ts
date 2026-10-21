@@ -69,7 +69,7 @@ export const getSalesReport = async (req: Request, res: Response) => {
          reservations.id,
          products.name AS product_name,
          products.category,
-         COALESCE(parties.business_name, parties.first_name || ' ' || parties.last_name) AS party_name,
+         COALESCE(parties.business_name, parties.first_name || ' ' || parties.last_name, parties.email) AS party_name,
          parties.city,
          reservations.quantity,
          products.unit,

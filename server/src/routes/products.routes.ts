@@ -8,11 +8,11 @@ const router = express.Router();
 
 router.post('/', authenticate, authorize('STORE'), createProduct);
 router.post('/import', authenticate, authorize('STORE'), uploadCsvFile, importProducts);
-router.get('/', authenticate, getProducts);
+router.get('/', authenticate, authorize('STORE', 'RESTAURANT'), getProducts);
 router.get('/mine', authenticate, authorize('STORE'), getMineProducts);
 router.put('/:id', authenticate, authorize('STORE'), updateProduct);
 router.delete('/:id', authenticate, authorize('STORE'), deleteProduct);
-router.get('/:id', authenticate, getProductById);
+router.get('/:id', authenticate, authorize('STORE', 'RESTAURANT'), getProductById);
 
 
 export default router;

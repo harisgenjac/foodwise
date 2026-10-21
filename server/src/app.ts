@@ -11,6 +11,7 @@ import favoritesRoute from './routes/favorites.routes.js'
 import productTemplatesRoutes from './routes/productTemplates.routes.js'
 import reportsRoutes from './routes/reports.routes.js'
 import donationsRoutes from './routes/donations.routes.js'
+import adminRoutes from './routes/admin.routes.js'
 import { HttpError } from "./utils/httpError.js";
 
 const app = express();
@@ -39,6 +40,7 @@ app.use('/api/favorites', favoritesRoute)
 app.use('/api/product-templates', productTemplatesRoutes)
 app.use('/api/reports', reportsRoutes)
 app.use('/api/donations', donationsRoutes)
+app.use('/api/admin', adminRoutes)
 // nosniff: browsers must not treat an uploaded file as anything but its declared type.
 app.use('/uploads', express.static('uploads', {
   setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),

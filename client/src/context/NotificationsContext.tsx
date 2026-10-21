@@ -12,7 +12,10 @@ export type NotificationType =
   | "PRODUCT_EXPIRING_SOON"
   | "PICKUP_TODAY"
   | "RESERVATION_COMPLETED"
-  | "PICKUP_MISSED";
+  | "PICKUP_MISSED"
+  | "PRODUCT_REMOVED_BY_ADMIN"
+  | "DONATION_REMOVED_BY_ADMIN"
+  | "RESERVATION_CANCELLED_BY_ADMIN";
 
 export interface Notification {
   id: number;
@@ -25,6 +28,10 @@ export interface Notification {
   created_at: string;
   reservation_id: number | null;
   product_id: number | null;
+  donation_id?: number | null;
+  // Free text from the server, shown after the translated text (an admin's reason).
+  details?: string | null;
+  // The product's name, or the donation's for donation notifications.
   product_name: string | null;
   unit: string | null;
   quantity: string | null;

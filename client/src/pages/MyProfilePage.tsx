@@ -13,6 +13,7 @@ import {
   Mail,
   MapPin,
   Phone,
+  ShieldCheck,
   Store,
   Truck,
   UserRound,
@@ -49,8 +50,8 @@ function MyProfilePage() {
       const data: User = response.data.user;
       setEmail(data.email);
       setRole(data.role);
-      setFirstName(data.first_name);
-      setLastName(data.last_name);
+      setFirstName(data.first_name || "");
+      setLastName(data.last_name || "");
       setBusinessName(data.business_name || "");
       setCity(data.city || "");
       setPhone(data.phone || "");
@@ -111,7 +112,7 @@ function MyProfilePage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.put("/users/me", {
+      await api.put("/users/me", isAdmin ? { first_name: firstName, last_name: lastName } : {
         first_name: firstName,
         last_name: lastName,
         business_name: businessName,
@@ -140,7 +141,10 @@ function MyProfilePage() {
   };
 
   const isStore = role === "STORE";
-  const RoleIcon = isStore ? Store : UtensilsCrossed;
+  // An admin has no business profile or logo, only a name.
+  const isAdmin = role === "ADMIN";
+  const RoleIcon = isAdmin ? ShieldCheck : isStore ? Store : UtensilsCrossed;
+  const roleLabel = isAdmin ? t("user.adminRole") : isStore ? t("user.storeRole") : t("user.restaurantRole");
   const avatarSrc = logoPreview || (logoUrl ? assetUrl(logoUrl) : null);
   const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`;
   const location = [address, city].filter(Boolean).join(", ");
@@ -175,23 +179,23 @@ function MyProfilePage() {
                   {initials}
                 </span>
               )}
-              <span className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/45 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <span className={`absolute inset-0 ${isAdmin ? "hidden" : "flex"} flex-col items-center justify-center gap-1 bg-black/45 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100`}>
                 <Camera className="h-5 w-5" />
                 {logoUrl ? t("user.changeLogo") : t("user.addLogoTitle")}
               </span>
-              <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
+              <input type="file" accept="image/*" onChange={handleLogoChange} disabled={isAdmin} className="hidden" />
             </label>
           </div>
 
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-2xl font-bold tracking-tight text-gray-900">
-              {businessName || `${firstName} ${lastName}`}
+              {businessName || `${firstName} ${lastName}`.trim() || email}
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500">
               {role && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700">
                   <RoleIcon className="h-3.5 w-3.5" />
-                  {isStore ? t("user.storeRole") : t("user.restaurantRole")}
+                  {roleLabel}
                 </span>
               )}
               <span className="inline-flex items-center gap-1.5">
@@ -226,7 +230,9 @@ function MyProfilePage() {
             </div>
           )}
         </div>
-        <p className="border-t border-gray-100 px-6 py-3 text-xs text-gray-400">{t("user.tooltipLogoText")}</p>
+        {!isAdmin && (
+          <p className="border-t border-gray-100 px-6 py-3 text-xs text-gray-400">{t("user.tooltipLogoText")}</p>
+        )}
       </section>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -247,6 +253,8 @@ function MyProfilePage() {
             </div>
           </FormSection>
 
+          {!isAdmin && (
+          <>
           <FormSection title={t("user.businessSection")} icon={Building2}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
@@ -289,6 +297,8 @@ function MyProfilePage() {
               />
             </FormField>
           </FormSection>
+          </>
+          )}
         </div>
 
         <div className="flex justify-end">

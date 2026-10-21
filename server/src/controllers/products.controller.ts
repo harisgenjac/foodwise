@@ -127,6 +127,8 @@ export const getProducts = async (req: Request, res: Response) => {
       JOIN users ON products.store_id = users.id
       WHERE products.status = 'Available'
       AND products.expiry_date >= CURRENT_DATE
+      AND users.is_blocked = false
+      AND users.business_name IS NOT NULL
     `;
     let values: (string | number)[] = [];
 
@@ -213,7 +215,7 @@ export const getProductById = async (req: Request, res: Response) => {
      products.expiry_date - CURRENT_DATE AS days_until_expiry
    FROM products
    JOIN users ON products.store_id = users.id
-   WHERE products.id = $1`,
+   WHERE products.id = $1 AND users.is_blocked = false`,
       [productId],
     );
 

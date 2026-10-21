@@ -19,6 +19,26 @@ describe("ProtectedRoute", () => {
     renderWithProviders(<ProtectedRoute>Secret</ProtectedRoute>, { user: makeUser() });
     expect(await screen.findByText("Secret")).toBeInTheDocument();
   });
+
+  it("sends a user with another role to the dashboard", async () => {
+    renderWithProviders(<ProtectedRoute role="ADMIN">Secret</ProtectedRoute>, { route: "/admin", path: "/admin", user: makeUser() });
+    expect(await screen.findByTestId("location")).toHaveTextContent("/dashboard");
+  });
+
+  it("accepts any of several roles", async () => {
+    const guarded = <ProtectedRoute role={["STORE", "RESTAURANT"]}>Secret</ProtectedRoute>;
+    renderWithProviders(guarded, { user: makeUser({ role: "STORE" }) });
+    expect(await screen.findByText("Secret")).toBeInTheDocument();
+  });
+
+  it("keeps an admin out of pages for stores and restaurants", async () => {
+    renderWithProviders(<ProtectedRoute role={["STORE", "RESTAURANT"]}>Secret</ProtectedRoute>, {
+      route: "/pickups",
+      path: "/pickups",
+      user: makeUser({ role: "ADMIN" }),
+    });
+    expect(await screen.findByTestId("location")).toHaveTextContent("/dashboard");
+  });
 });
 
 describe("PublicRoute", () => {

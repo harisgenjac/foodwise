@@ -65,8 +65,28 @@ function validateUserFields(fields: UserFields) {
   }
 }
 
+// An admin has no business profile; only the name can be changed.
+const updateAdminName = async (req: Request, res: Response) => {
+  const { first_name, last_name } = req.body;
+  if (!first_name || !last_name) {
+    return res.status(400).json({ error: "Ime i prezime su obavezni." });
+  }
+  const result = await pool.query(
+    `UPDATE users SET first_name = $1, last_name = $2
+     WHERE id = $3
+     RETURNING id, first_name, last_name, email, role`,
+    [first_name, last_name, req.user!.id],
+  );
+  return res
+    .status(200)
+    .json({ message: "Profil uspješno ažuriran.", user: result.rows[0] });
+};
+
 export const updateUser = async (req: Request, res: Response) => {
   try {
+    if (req.user!.role === "ADMIN") {
+      return await updateAdminName(req, res);
+    }
     const userId = req.user!.id;
     const {
       first_name,
@@ -136,7 +156,8 @@ export const getStores = async (req: Request, res: Response) => {
       WHERE products.store_id = users.id
         AND products.status = 'Available'
         AND products.expiry_date >= CURRENT_DATE) AS active_products
-     FROM users WHERE users.role = 'STORE'`;
+     FROM users
+     WHERE users.role = 'STORE' AND users.is_blocked = false AND users.business_name IS NOT NULL`;
 
     let values = [];
 
@@ -179,7 +200,7 @@ export const getStoreDetails = async (req: Request, res: Response) => {
     const result = await pool.query(
       `SELECT id, business_name, city, address, logo_url, 
        description, opening_hours, pickup_hours, phone 
-       FROM users WHERE id = $1 AND role = 'STORE'`,
+       FROM users WHERE id = $1 AND role = 'STORE' AND is_blocked = false`,
       [storeId],
     );
 

@@ -34,7 +34,10 @@ export const createReservation = async (req: Request, res: Response) => {
       `SELECT *,
          expiry_date < CURRENT_DATE AS is_expired,
          $2::timestamp::date < CURRENT_DATE OR $2::timestamp::date > expiry_date AS pickup_out_of_range
-       FROM products WHERE id = $1 FOR UPDATE`,
+       FROM products
+       WHERE id = $1
+         AND store_id NOT IN (SELECT users.id FROM users WHERE users.is_blocked)
+       FOR UPDATE`,
       [productId, pickup_date],
     );
     if (products.rows.length === 0) {
@@ -398,7 +401,7 @@ export const acceptReservation = async (req: Request, res: Response) => {
 
 // Locks the reservation row, so a reject, cancel or pickup cannot interleave with another status change.
 // A pickup is overdue once its whole day has passed (the pickup time on the same day does not count).
-const lockReservation = (client: PoolClient, reservationId: number) =>
+export const lockReservation = (client: PoolClient, reservationId: number) =>
   client.query(
     `SELECT
        reservations.id,
@@ -703,6 +706,24 @@ export const completeReservation = async (req: Request, res: Response) => {
   }
 };
 
+// After a Confirmed reservation was cancelled: a product it had sold out becomes Available again,
+// unless it has expired or Confirmed + Completed still cover its quantity. Locks the product row.
+export const releaseSoldProduct = async (client: PoolClient, productId: number) => {
+  const productResult = await client.query(
+    "SELECT id, status, quantity, expiry_date < CURRENT_DATE AS is_expired FROM products WHERE id = $1 FOR UPDATE",
+    [productId],
+  );
+  const product = productResult.rows[0];
+  if (!product || product.status !== "Sold" || product.is_expired) return;
+  const held = await client.query(
+    "SELECT COALESCE(SUM(quantity), 0) AS total_held FROM reservations WHERE product_id = $1 AND status IN ('Confirmed', 'Completed')",
+    [product.id],
+  );
+  if (parseFloat(held.rows[0].total_held) < parseFloat(product.quantity)) {
+    await client.query("UPDATE products SET status = 'Available' WHERE id = $1", [product.id]);
+  }
+};
+
 // The restaurant did not come: the store cancels a Confirmed reservation whose pickup day has passed.
 // The quantity goes back on offer, and a product sold out by it becomes Available again while it has not expired.
 export const cancelOverdueReservation = async (req: Request, res: Response) => {
@@ -737,26 +758,11 @@ export const cancelOverdueReservation = async (req: Request, res: Response) => {
         .json({ error: "Samo zakašnjela preuzimanja mogu biti otkazana." });
     }
 
-    const productResult = await client.query(
-      "SELECT id, status, quantity, expiry_date < CURRENT_DATE AS is_expired FROM products WHERE id = $1 FOR UPDATE",
-      [result.rows[0].product_id],
-    );
-
     await client.query(
       "UPDATE reservations SET status = 'Cancelled' WHERE id = $1 AND status = 'Confirmed'",
       [reservationId],
     );
-
-    const product = productResult.rows[0];
-    if (product && product.status === "Sold" && !product.is_expired) {
-      const held = await client.query(
-        "SELECT COALESCE(SUM(quantity), 0) AS total_held FROM reservations WHERE product_id = $1 AND status IN ('Confirmed', 'Completed')",
-        [product.id],
-      );
-      if (parseFloat(held.rows[0].total_held) < parseFloat(product.quantity)) {
-        await client.query("UPDATE products SET status = 'Available' WHERE id = $1", [product.id]);
-      }
-    }
+    await releaseSoldProduct(client, result.rows[0].product_id);
 
     await createNotification(client, {
       userId: result.rows[0].restaurant_id,

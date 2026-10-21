@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/me', authenticate, getUser);
 router.put('/me', authenticate, updateUser);
 router.get('/stores', authenticate, authorize('RESTAURANT'), getStores);
-router.get('/stores/:id', authenticate, getStoreDetails);
-router.post('/me/logo', authenticate, uploadLogoFile, uploadLogo);
+router.get('/stores/:id', authenticate, authorize('STORE', 'RESTAURANT'), getStoreDetails);
+router.post('/me/logo', authenticate, authorize('STORE', 'RESTAURANT'), uploadLogoFile, uploadLogo);
 
 export default router;

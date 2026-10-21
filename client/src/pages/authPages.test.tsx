@@ -31,9 +31,24 @@ describe("LoginPage", () => {
     expect(screen.queryByTestId("location")).not.toBeInTheDocument();
   });
 
-  it("links to registration", () => {
+  it("shows the server's reason for a blocked account", async () => {
+    apiMock.post.mockRejectedValue(axiosError(403, "Vaš nalog je blokiran. Razlog: Kršenje pravila"));
     renderLogin();
-    expect(screen.getByRole("link", { name: t("auth.registerLink") })).toHaveAttribute("href", "/register");
+
+    await submit("amir@test.com", "test12345");
+    expect(await screen.findByText("Vaš nalog je blokiran. Razlog: Kršenje pravila")).toBeInTheDocument();
+  });
+
+  it("does not offer registration, since an admin creates business accounts", () => {
+    renderLogin();
+    expect(screen.queryByRole("link", { name: t("auth.registerLink") })).not.toBeInTheDocument();
+    expect(screen.getByText(t("auth.accountByAdmin"))).toBeInTheDocument();
+    expect(screen.queryByText(t("auth.registrationClosed"))).not.toBeInTheDocument();
+  });
+
+  it("explains why /register sent the visitor here", () => {
+    renderWithProviders(<LoginPage />, { route: "/login", path: "/login", state: { registrationClosed: true } });
+    expect(screen.getByText(t("auth.registrationClosed"))).toBeInTheDocument();
   });
 });
 

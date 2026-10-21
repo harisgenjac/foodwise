@@ -17,11 +17,14 @@ export const getNotifications = async (req: Request, res: Response) => {
         notifications.created_at,
         notifications.reservation_id,
         notifications.product_id,
-        products.name AS product_name,
-        products.unit,
+        notifications.donation_id,
+        notifications.details,
+        COALESCE(products.name, donation_offers.name) AS product_name,
+        COALESCE(products.unit, donation_offers.unit) AS unit,
         reservations.quantity
       FROM notifications
       LEFT JOIN products ON notifications.product_id = products.id
+      LEFT JOIN donation_offers ON notifications.donation_id = donation_offers.id
       LEFT JOIN reservations ON notifications.reservation_id = reservations.id
       WHERE notifications.user_id = $1
       ORDER BY notifications.created_at DESC, notifications.id DESC

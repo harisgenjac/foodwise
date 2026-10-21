@@ -1,6 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage.js';
-import RegisterPage from './pages/RegisterPage.js';
 import ProtectedRoute from './components/ProtectedRoute.js';
 import PublicRoute from './components/PublicRoute.js';
 import Layout from './components/Layout.js';
@@ -24,13 +23,22 @@ import ProductDetailsPage from "./pages/ProductDetailsPage.js"
 import ReservationDetailsPage from "./pages/ReservationDetailsPage.js"
 import PickupsPage from './pages/PickupsPage.js';
 import ReportsPage from './pages/ReportsPage.js';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage.js';
+import AdminUsersPage from './pages/admin/AdminUsersPage.js';
+import AdminUserDetailsPage from './pages/admin/AdminUserDetailsPage.js';
+import AdminCreateUserPage from './pages/admin/AdminCreateUserPage.js';
+import AdminProductsPage from './pages/admin/AdminProductsPage.js';
+import AdminDonationsPage from './pages/admin/AdminDonationsPage.js';
+import AdminReservationsPage from './pages/admin/AdminReservationsPage.js';
+import AdminActionsPage from './pages/admin/AdminActionsPage.js';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-        <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+        {/* Store and restaurant accounts are created by an admin. RegisterPage stays for the planned public roles. */}
+        <Route path="/register" element={<Navigate to="/login" replace state={{ registrationClosed: true }} />} />
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/add-product" element={<ProtectedRoute role="STORE"><AddProductPage /></ProtectedRoute>} />
@@ -42,16 +50,24 @@ function App() {
         <Route path="/stores" element={<ProtectedRoute role="RESTAURANT"><StoresPage /></ProtectedRoute>} />
         <Route path="/stores/:id" element={<ProtectedRoute role="RESTAURANT"><StoreDetailsPage /></ProtectedRoute>} />
         <Route path="/my-reservations" element={<ProtectedRoute role="RESTAURANT"><MyReservationsPage /></ProtectedRoute>} />
-        <Route path="/pickups" element={<PickupsPage />} />
-        <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/pickups" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><PickupsPage /></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><ReportsPage /></ProtectedRoute>} />
         <Route path="/my-profile" element={<MyProfilePage />} />
-        <Route path="/donate-food" element={<DonateFoodPage />} />
-        <Route path="/donate-food/new" element={<AddDonationPage />} />
-        <Route path="/donate-food/:id/edit" element={<EditDonationPage />} />
-        <Route path="/sponsor" element={<SponsorPage />} />
+        <Route path="/donate-food" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><DonateFoodPage /></ProtectedRoute>} />
+        <Route path="/donate-food/new" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><AddDonationPage /></ProtectedRoute>} />
+        <Route path="/donate-food/:id/edit" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><EditDonationPage /></ProtectedRoute>} />
+        <Route path="/sponsor" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><SponsorPage /></ProtectedRoute>} />
         <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/products/:id" element={<ProductDetailsPage />} />
-        <Route path="/reservation/:id" element={<ReservationDetailsPage />} />
+        <Route path="/products/:id" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><ProductDetailsPage /></ProtectedRoute>} />
+        <Route path="/reservation/:id" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><ReservationDetailsPage /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute role="ADMIN"><AdminDashboardPage /></ProtectedRoute>} />
+        <Route path="/admin/users" element={<ProtectedRoute role="ADMIN"><AdminUsersPage /></ProtectedRoute>} />
+        <Route path="/admin/users/new" element={<ProtectedRoute role="ADMIN"><AdminCreateUserPage /></ProtectedRoute>} />
+        <Route path="/admin/users/:id" element={<ProtectedRoute role="ADMIN"><AdminUserDetailsPage /></ProtectedRoute>} />
+        <Route path="/admin/products" element={<ProtectedRoute role="ADMIN"><AdminProductsPage /></ProtectedRoute>} />
+        <Route path="/admin/donations" element={<ProtectedRoute role="ADMIN"><AdminDonationsPage /></ProtectedRoute>} />
+        <Route path="/admin/reservations" element={<ProtectedRoute role="ADMIN"><AdminReservationsPage /></ProtectedRoute>} />
+        <Route path="/admin/actions" element={<ProtectedRoute role="ADMIN"><AdminActionsPage /></ProtectedRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

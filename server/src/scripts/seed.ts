@@ -30,6 +30,8 @@ const RESTAURANTS: DemoUser[] = [
   { first_name: "Adnan", last_name: "Mešić", email: "pizzeria.roma@demo.com", business_name: "Pizzeria Roma", city: "Tuzla", phone: "062222222", address: "Trg 7" },
 ];
 
+const ADMIN = { first_name: "Admin", last_name: "FoodWise", email: "admin@demo.com" };
+
 async function seed() {
   const client = await pool.connect();
   try {
@@ -37,6 +39,7 @@ async function seed() {
 
     console.log("Brisanje postojećih podataka...");
     // Reservations reference users and products with RESTRICT; everything else cascades from users.
+    await client.query("DELETE FROM admin_actions");
     await client.query("DELETE FROM notifications");
     await client.query("DELETE FROM reservations");
     await client.query("DELETE FROM donation_offers");
@@ -57,6 +60,12 @@ async function seed() {
       );
     }
 
+    await client.query(
+      `INSERT INTO users (first_name, last_name, email, password_hash, role)
+       VALUES ($1, $2, $3, $4, 'ADMIN')`,
+      [ADMIN.first_name, ADMIN.last_name, ADMIN.email, passwordHash],
+    );
+
     console.log("Kreiranje proizvoda i rezervacija...");
     const summary = await insertFakeData(client, { productsPerStore: 5, reservationsPerRestaurant: 4 });
 
@@ -68,6 +77,7 @@ async function seed() {
     STORES.forEach((store) => console.log(`  - ${store.email} (${store.business_name})`));
     console.log("Restorani:");
     RESTAURANTS.forEach((restaurant) => console.log(`  - ${restaurant.email} (${restaurant.business_name})`));
+    console.log(`Administrator:\n  - ${ADMIN.email}`);
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Greška prilikom seed-ovanja:", error);

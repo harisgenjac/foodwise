@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
 import { useAuth } from "../context/AuthContext.js";
-import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../components/LanguageSwitcher.js";
-import { Lock, Mail } from "lucide-react";
+import { Info, Lock, Mail } from "lucide-react";
 import logo from "../assets/logoApp.png";
 import FormField, { inputStyle } from "../components/form/FormField.js";
 
@@ -14,7 +14,12 @@ function LoginPage() {
   const [error, setError] = useState("");
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
+  // Set when someone opened /register, which is closed for store and restaurant accounts.
+  const registrationClosed = Boolean(
+    (location.state as { registrationClosed?: boolean } | null)?.registrationClosed,
+  );
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -22,7 +27,9 @@ function LoginPage() {
       await login(email, password);
       navigate("/dashboard");
     } catch (err) {
-      setError(t("auth.loginError"));
+      // A blocked account gets the server's message with the admin's reason.
+      const blocked = axios.isAxiosError(err) && err.response?.status === 403;
+      setError(blocked ? err.response?.data?.error || t("auth.accountBlocked") : t("auth.loginError"));
     }
   };
 
@@ -69,6 +76,13 @@ function LoginPage() {
               {t("auth.loginSubtitle")}
             </p>
 
+            {registrationClosed && (
+              <p className="mb-4 flex items-start gap-2 rounded-xl border border-orange-100 bg-orange-50 px-3 py-2 text-sm text-orange-800">
+                <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                {t("auth.registrationClosed")}
+              </p>
+            )}
+
             {error && (
               <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
                 {error}
@@ -107,15 +121,7 @@ function LoginPage() {
               </button>
             </form>
 
-            <p className="text-sm text-gray-500 text-center mt-6">
-              {t("auth.noAccount")}{" "}
-              <Link
-                to="/register"
-                className="text-orange-600 font-medium hover:underline"
-              >
-                {t("auth.registerLink")}
-              </Link>
-            </p>
+            <p className="text-sm text-gray-500 text-center mt-6">{t("auth.accountByAdmin")}</p>
           </div>
         </div>
       </div>

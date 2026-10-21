@@ -1,30 +1,39 @@
 import request from "supertest";
 import app from "../src/app.js";
+import bcrypt from "bcrypt";
 import pool from "../src/config/db.js";
 
 export type Agent = ReturnType<typeof request.agent>;
-export type Role = "STORE" | "RESTAURANT";
+export type Role = "STORE" | "RESTAURANT" | "ADMIN";
 
 export const PASSWORD = "test12345";
 
-export const registerUser = (email: string, role: Role, firstName = "Test", lastName = "User") =>
-  request(app).post("/api/auth/register").send({
-    first_name: firstName,
-    last_name: lastName,
-    email,
-    password: PASSWORD,
-    role,
-  });
+// Public registration no longer creates these roles (an admin does), so tests insert the
+// account directly. Stores and restaurants get a business name, because the marketplace
+// hides stores whose profile is not filled in. Hashed once: bcrypt is slow.
+let passwordHash: Promise<string> | undefined;
+export const insertUser = async (email: string, role: Role, businessName: string | null = "Test Business") => {
+  passwordHash ??= bcrypt.hash(PASSWORD, 10);
+  await pool.query(
+    `INSERT INTO users (first_name, last_name, email, password_hash, role, business_name)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    ["Test", "User", email, await passwordHash, role, role === "ADMIN" ? null : businessName],
+  );
+};
 
-// Registers a user and returns an agent that keeps the login cookie.
-export const registerAndLogin = async (email: string, role: Role): Promise<Agent> => {
-  await registerUser(email, role);
+export const login = async (email: string, password = PASSWORD): Promise<Agent> => {
   const agent = request.agent(app);
-  const login = await agent.post("/api/auth/login").send({ email, password: PASSWORD });
-  if (login.status !== 200) {
-    throw new Error(`Login for ${email} failed with ${login.status}`);
+  const response = await agent.post("/api/auth/login").send({ email, password });
+  if (response.status !== 200) {
+    throw new Error(`Login for ${email} failed with ${response.status}`);
   }
   return agent;
+};
+
+// Creates a user and returns an agent that keeps the login cookie.
+export const registerAndLogin = async (email: string, role: Role): Promise<Agent> => {
+  await insertUser(email, role);
+  return login(email);
 };
 
 export const userId = async (email: string): Promise<number> => {
@@ -103,9 +112,14 @@ export const reserve = async (restaurant: Agent, productId: number, quantity: nu
   return response.body.reservation.id as number;
 };
 
-// Reservations go first because their foreign keys are ON DELETE RESTRICT;
-// deleting the users then cascades to products, notifications, favorites and templates.
+// The audit log goes first because it keeps an admin from being deleted (RESTRICT), then the
+// reservations (also RESTRICT); deleting the users cascades to products, notifications,
+// favorites and templates.
 export const cleanupUsers = async (emails: string[]) => {
+  await pool.query(
+    "DELETE FROM admin_actions WHERE admin_id IN (SELECT id FROM users WHERE email = ANY($1))",
+    [emails],
+  );
   await pool.query(
     `DELETE FROM reservations
      WHERE restaurant_id IN (SELECT id FROM users WHERE email = ANY($1))

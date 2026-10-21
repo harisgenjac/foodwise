@@ -18,8 +18,8 @@ const router = express.Router();
 router.post("/", authenticate, authorize("RESTAURANT"), createReservation);
 router.get("/mine", authenticate, authorize("RESTAURANT"), getMineReservations);
 router.get("/store", authenticate, authorize("STORE"), getStoreReservations);
-router.get("/pickups", authenticate, getPickups);
-router.get("/pickups/counts", authenticate, getPickupCounts);
+router.get("/pickups", authenticate, authorize("STORE", "RESTAURANT"), getPickups);
+router.get("/pickups/counts", authenticate, authorize("STORE", "RESTAURANT"), getPickupCounts);
 router.patch(
   "/:id/accept",
   authenticate,
@@ -50,6 +50,6 @@ router.patch(
   authorize("STORE"),
   cancelOverdueReservation,
 );
-router.get("/:id", authenticate, getReservationById);
+router.get("/:id", authenticate, authorize("STORE", "RESTAURANT"), getReservationById);
 
 export default router;

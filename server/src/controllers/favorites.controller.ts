@@ -17,7 +17,7 @@ export const addFavorite = async (req: Request, res: Response) => {
     }
 
     const store = await pool.query(
-      `SELECT id FROM users WHERE id = $1 AND role = 'STORE'`,
+      `SELECT id FROM users WHERE id = $1 AND role = 'STORE' AND is_blocked = false`,
       [storeId],
     );
     if (store.rows.length === 0) {
@@ -85,7 +85,7 @@ export const getFavorites = async (req: Request, res: Response) => {
       `SELECT users.id, users.business_name, users.city, users.address, 
         users.logo_url, users.description, users.opening_hours, users.pickup_hours, users.phone FROM favorites 
         JOIN users ON favorites.store_id = users.id
-        WHERE favorites.restaurant_id = $1`,
+        WHERE favorites.restaurant_id = $1 AND users.is_blocked = false`,
       [restaurant_id],
     );
     return res

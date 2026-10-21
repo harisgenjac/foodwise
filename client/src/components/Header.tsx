@@ -62,7 +62,17 @@ function Header({ isSidebarOpen, onToggleSidebar }: HeaderProps) {
     : t("header.expandSidebar");
   const ToggleIcon = isSidebarOpen ? PanelLeftClose : PanelLeftOpen;
   const roleLabel =
-    user?.role === "STORE" ? t("auth.storeRole") : t("auth.restaurantRole");
+    user?.role === "ADMIN"
+      ? t("auth.adminRole")
+      : user?.role === "STORE"
+        ? t("auth.storeRole")
+        : t("auth.restaurantRole");
+  // Accounts created by an admin have no name until the profile is filled in.
+  const fullName = `${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim();
+  const displayName = fullName || user?.business_name || user?.email || "";
+  const initials = fullName
+    ? `${user?.first_name?.[0] ?? ""}${user?.last_name?.[0] ?? ""}`
+    : displayName.slice(0, 1).toUpperCase();
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between h-16 px-4 bg-white/90 backdrop-blur border-b border-gray-200">
@@ -166,20 +176,17 @@ function Header({ isSidebarOpen, onToggleSidebar }: HeaderProps) {
             {user?.logo_url && failedLogo !== user.logo_url ? (
               <img
                 src={assetUrl(user.logo_url)}
-                alt={`${user.first_name} ${user.last_name}`}
+                alt={displayName}
                 onError={() => setFailedLogo(user.logo_url ?? null)}
                 className="w-9 h-9 rounded-full object-cover ring-1 ring-gray-200"
               />
             ) : (
               <span className="w-9 h-9 rounded-full bg-orange-100 text-orange-700 text-sm font-semibold flex items-center justify-center">
-                {user?.first_name?.[0]}
-                {user?.last_name?.[0]}
+                {initials}
               </span>
             )}
             <span className="hidden md:flex flex-col items-start leading-tight">
-              <span className="text-sm font-medium text-gray-800">
-                {user?.first_name} {user?.last_name}
-              </span>
+              <span className="text-sm font-medium text-gray-800">{displayName}</span>
               <span className="text-xs text-gray-500">{roleLabel}</span>
             </span>
             <ChevronDown
@@ -192,9 +199,7 @@ function Header({ isSidebarOpen, onToggleSidebar }: HeaderProps) {
           {isDropdownOpen && (
             <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden">
               <div className="px-4 py-3 border-b border-gray-100">
-                <p className="font-semibold text-gray-800">
-                  {user?.first_name} {user?.last_name}
-                </p>
+                <p className="font-semibold text-gray-800 truncate">{displayName}</p>
                 <p className="text-sm text-gray-500 truncate">{user?.email}</p>
               </div>
               <Link
