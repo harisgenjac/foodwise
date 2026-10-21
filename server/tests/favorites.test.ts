@@ -16,6 +16,7 @@ describe("Favorites routes", () => {
       last_name: "A",
       business_name: "Omiljena Prodavnica",
       city: "Sarajevo",
+      address: "Titova 1",
       phone: "061000000",
     });
     storeId = await userId(STORE_A);

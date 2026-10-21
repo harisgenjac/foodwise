@@ -341,7 +341,17 @@
     "businessSection": "Podaci o biznisu",
     "hoursSection": "Radno vrijeme i preuzimanje",
     "aboutSection": "O nama",
-    "adminRole": "Administrator"
+    "adminRole": "Administrator",
+    "requiredHint": "Polja označena sa * su obavezna.",
+    "passwordSection": "Promjena lozinke",
+    "passwordSectionRequired": "Administrator vam je postavio privremenu lozinku. Postavite svoju.",
+    "currentPassword": "Trenutna lozinka",
+    "newPassword": "Nova lozinka",
+    "repeatPassword": "Ponovite novu lozinku",
+    "passwordMismatch": "Nove lozinke se ne podudaraju.",
+    "changePassword": "Promijeni lozinku",
+    "passwordChanged": "Lozinka je promijenjena.",
+    "passwordError": "Lozinka nije promijenjena. Pokušajte ponovo."
   },
   "dashboard": {
     "appTitle": "Dobrodošli na FoodWise",
@@ -725,11 +735,6 @@
       "nothingAvailable": "Nema slobodne količine: sve je već rezervisano."
     }
   },
-  "profileBanner": {
-    "title": "Dovršite svoj profil",
-    "text": "Unesite naziv, grad i telefon kako bi vas drugi korisnici mogli pronaći. Dok profil nije popunjen, vaša prodavnica i ponude nisu vidljive restoranima.",
-    "action": "Uredi profil"
-  },
   "admin": {
     "roles": {
       "STORE": "Prodavnica",
@@ -761,7 +766,8 @@
       "active": "Aktivan",
       "incompleteProfile": "Profil nije popunjen",
       "actionError": "Akcija nije uspjela. Pokušajte ponovo.",
-      "remove": "Ukloni"
+      "remove": "Ukloni",
+      "pendingPassword": "Čeka promjenu lozinke"
     },
     "dashboard": {
       "title": "Pregled platforme",
@@ -842,7 +848,7 @@
       "unblockText": "Korisnik {{name}} će se ponovo moći prijaviti, a njegove ponude će opet biti vidljive.",
       "confirmUnblock": "Deblokiraj",
       "passwordTitle": "Nova lozinka",
-      "passwordText": "Postavite novu lozinku za {{name}} i proslijedite je korisniku.",
+      "passwordText": "Postavite privremenu lozinku za {{name}} i proslijedite je korisniku. Korisnik će je pri sljedećoj prijavi morati promijeniti.",
       "newPassword": "Nova lozinka",
       "confirmPassword": "Ponovite lozinku",
       "passwordMismatch": "Lozinke se ne podudaraju.",
@@ -870,9 +876,9 @@
       "credentialsSection": "Pristupni podaci",
       "email": "Email",
       "password": "Lozinka",
-      "passwordHint": "Najmanje 8 znakova. Proslijedite lozinku korisniku.",
+      "passwordHint": "Najmanje 8 znakova. Ovo je privremena lozinka: korisnik će je pri prvoj prijavi morati promijeniti.",
       "infoTitle": "Šta dalje?",
-      "infoText": "Korisnik se prijavljuje ovim podacima i sam popunjava ime, naziv, grad i ostale podatke na svom profilu. Prodavnica postaje vidljiva restoranima tek kada popuni profil.",
+      "infoText": "Korisnik se prijavljuje ovim podacima, a zatim mora postaviti svoju lozinku i popuniti obavezne podatke profila (ime, prezime, naziv, grad, telefon, adresa). Do tada ne može koristiti ostatak aplikacije.",
       "submit": "Kreiraj nalog",
       "success": "Nalog je kreiran.",
       "error": "Nalog nije kreiran. Pokušajte ponovo."
@@ -1020,5 +1026,13 @@
   "announcements": {
     "label": "Obavještenje platforme",
     "dismiss": "Zatvori obavještenje"
+  },
+  "accountSetup": {
+    "title": "Dovršite podešavanje naloga",
+    "text": "Prije korištenja aplikacije uradite sljedeće na stranici Moj profil:",
+    "needsPassword": "Postavite svoju lozinku umjesto privremene koju vam je dao administrator.",
+    "missingFields": "Popunite obavezne podatke: {{fields}}.",
+    "goToProfile": "Idi na Moj profil",
+    "profileHint": "Aplikacija se otključava kada sačuvate obavezne podatke (*) i postavite svoju lozinku."
   }
 }

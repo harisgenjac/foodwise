@@ -5,6 +5,8 @@ import type { Request, Response } from "express";
 import type { Pool, PoolClient } from "pg";
 import { parseId } from "../utils/params.js";
 import type { Role } from "../types/auth.js";
+import bcrypt from "bcrypt";
+import { hashPassword, validatePassword } from "../utils/accounts.js";
 
 const LOGO_URL_PREFIX = "/uploads/logos/";
 
@@ -25,7 +27,7 @@ export const getUser = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const result = await pool.query(
-      "SELECT id, first_name, last_name, email, role, business_name, logo_url, address, city, opening_hours, pickup_hours, description, phone, created_at FROM users WHERE id = $1",
+      "SELECT id, first_name, last_name, email, role, business_name, logo_url, address, city, opening_hours, pickup_hours, description, phone, must_change_password, created_at FROM users WHERE id = $1",
       [userId],
     );
     return res.status(200).json({ user: result.rows[0] });
@@ -62,8 +64,8 @@ function validateUserFields(fields: UserFields) {
     description,
     phone,
   } = fields;
-  if (!first_name || !last_name || !business_name || !city || !phone) {
-    return "Ime, prezime, naziv biznisa, grad i telefon su obavezni.";
+  if (!first_name || !last_name || !business_name || !city || !address || !phone) {
+    return "Ime, prezime, naziv biznisa, grad, adresa i telefon su obavezni.";
   }
 }
 
@@ -115,7 +117,7 @@ export const updateProfile = async (
        last_name = $2,
        business_name = $3,
        logo_url = COALESCE($4, logo_url),
-       address = COALESCE($5, address),
+       address = $5,
        city = $6,
        opening_hours = COALESCE($7, opening_hours),
        pickup_hours = COALESCE($8, pickup_hours),
@@ -154,6 +156,39 @@ export const updateUser = async (req: Request, res: Response) => {
     return res
       .status(500)
       .json({ error: "Došlo je do greške prilikom uređivanja korisnika." });
+  }
+};
+
+// Any role. Also clears must_change_password, which an admin sets with a temporary password.
+export const changePassword = async (req: Request, res: Response) => {
+  const { current_password, new_password } = req.body;
+  if (!current_password || !new_password || typeof current_password !== "string") {
+    return res.status(400).json({ error: "Sva polja su obavezna." });
+  }
+  try {
+    const result = await pool.query<{ password_hash: string }>(
+      "SELECT users.password_hash FROM users WHERE users.id = $1",
+      [req.user!.id],
+    );
+    const user = result.rows[0];
+    if (!user || !(await bcrypt.compare(current_password, user.password_hash))) {
+      return res.status(400).json({ error: "Trenutna lozinka nije ispravna." });
+    }
+    const passwordError = validatePassword(new_password);
+    if (passwordError) {
+      return res.status(400).json({ error: passwordError });
+    }
+    if (new_password === current_password) {
+      return res.status(400).json({ error: "Nova lozinka mora biti različita od trenutne." });
+    }
+    await pool.query(
+      "UPDATE users SET password_hash = $1, must_change_password = false WHERE users.id = $2",
+      [await hashPassword(new_password), req.user!.id],
+    );
+    return res.status(200).json({ message: "Lozinka je promijenjena." });
+  } catch (error) {
+    console.error("Greška prilikom promjene lozinke:", error);
+    return res.status(500).json({ error: "Došlo je do greške prilikom promjene lozinke." });
   }
 };
 

@@ -11,6 +11,7 @@ import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
 import { ADMIN_PAGE_SIZE, ROLES, ROLE_STYLES, accountName, formatDateTime } from "../../utils/admin.js";
+import { getAccountSetup } from "../../utils/accountSetup.js";
 import type { User } from "../../types/index.js";
 
 function AdminUsersPage() {
@@ -156,13 +157,18 @@ function AdminUsersPage() {
                         <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
                           {t("admin.common.blocked")}
                         </span>
-                      ) : user.role !== "ADMIN" && !user.business_name ? (
+                      ) : getAccountSetup(user).missingFields.length > 0 ? (
                         <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
                           {t("admin.common.incompleteProfile")}
                         </span>
                       ) : (
                         <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
                           {t("admin.common.active")}
+                        </span>
+                      )}
+                      {user.must_change_password && (
+                        <span className="mt-1 block w-fit rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                          {t("admin.common.pendingPassword")}
                         </span>
                       )}
                     </td>

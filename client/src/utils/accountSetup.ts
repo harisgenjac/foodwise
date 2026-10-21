@@ -1,0 +1,31 @@
+import type { User } from "../types/index.js";
+
+// Profile fields a store or restaurant must fill in before using the app (the server requires
+// the same ones when the profile is saved). An admin only needs a name, set on the profile page.
+export const REQUIRED_PROFILE_FIELDS = [
+  "first_name",
+  "last_name",
+  "business_name",
+  "city",
+  "phone",
+  "address",
+] as const;
+
+export type RequiredProfileField = (typeof REQUIRED_PROFILE_FIELDS)[number];
+
+export interface AccountSetup {
+  // The admin set a temporary password that the user has not replaced yet.
+  needsPassword: boolean;
+  missingFields: RequiredProfileField[];
+  locked: boolean;
+}
+
+export const getAccountSetup = (user: User | null): AccountSetup => {
+  if (!user) return { needsPassword: false, missingFields: [], locked: false };
+  const needsPassword = Boolean(user.must_change_password);
+  const missingFields =
+    user.role === "ADMIN"
+      ? []
+      : REQUIRED_PROFILE_FIELDS.filter((field) => !String(user[field] ?? "").trim());
+  return { needsPassword, missingFields, locked: needsPassword || missingFields.length > 0 };
+};

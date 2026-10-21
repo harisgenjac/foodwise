@@ -6,7 +6,6 @@ import AdminUserDetailsPage from "./AdminUserDetailsPage.js";
 import AdminCreateUserPage from "./AdminCreateUserPage.js";
 import AdminProductsPage from "./AdminProductsPage.js";
 import AdminReservationsPage from "./AdminReservationsPage.js";
-import CompleteProfileBanner from "../../components/CompleteProfileBanner.js";
 import { apiMock, axiosError, makeUser, renderWithProviders, t } from "../../test/utils.js";
 import type { AdminProduct, AdminReservation, User } from "../../types/index.js";
 
@@ -274,30 +273,5 @@ describe("AdminReservationsPage", () => {
     await userEvent.click(within(dialog).getByRole("button", { name: t("admin.reservations.cancel") }));
     expect(apiMock.post).toHaveBeenCalledWith("/admin/reservations/20/cancel", { reason: "Spor oko cijene" });
     await waitFor(() => expect(respond).toHaveBeenCalledTimes(2));
-  });
-});
-
-describe("CompleteProfileBanner", () => {
-  const renderBanner = (user: User, route = "/dashboard") =>
-    renderWithProviders(<CompleteProfileBanner />, { route, path: route, user });
-
-  it("asks a store without a business name to complete the profile", async () => {
-    renderBanner(makeUser({ role: "STORE", business_name: undefined }));
-    expect(await screen.findByText(t("profileBanner.title"))).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: t("profileBanner.action") })).toHaveAttribute("href", "/my-profile");
-  });
-
-  it("stays hidden once the profile is complete, for admins and on the profile page", async () => {
-    const { unmount } = renderBanner(store);
-    await waitFor(() => expect(apiMock.get).toHaveBeenCalled());
-    expect(screen.queryByText(t("profileBanner.title"))).not.toBeInTheDocument();
-    unmount();
-
-    renderBanner(admin);
-    await waitFor(() => expect(screen.queryByText(t("profileBanner.title"))).not.toBeInTheDocument());
-
-    renderBanner(makeUser({ role: "RESTAURANT", business_name: undefined }), "/my-profile");
-    await waitFor(() => expect(apiMock.get).toHaveBeenCalledTimes(3));
-    expect(screen.queryByText(t("profileBanner.title"))).not.toBeInTheDocument();
   });
 });

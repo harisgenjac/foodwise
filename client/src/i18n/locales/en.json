@@ -331,7 +331,17 @@
     "businessSection": "Business details",
     "hoursSection": "Opening and pickup hours",
     "aboutSection": "About",
-    "adminRole": "Administrator"
+    "adminRole": "Administrator",
+    "requiredHint": "Fields marked with * are required.",
+    "passwordSection": "Change password",
+    "passwordSectionRequired": "The administrator set a temporary password for you. Set your own.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "repeatPassword": "Repeat the new password",
+    "passwordMismatch": "The new passwords do not match.",
+    "changePassword": "Change password",
+    "passwordChanged": "Your password was changed.",
+    "passwordError": "The password was not changed. Please try again."
   },
   "dashboard": {
     "appTitle": "Welcome to FoodWise",
@@ -711,11 +721,6 @@
       "nothingAvailable": "No free quantity: everything is already reserved."
     }
   },
-  "profileBanner": {
-    "title": "Complete your profile",
-    "text": "Add your name, city and phone so others can find you. Until your profile is complete, your store and offers are hidden from restaurants.",
-    "action": "Edit profile"
-  },
   "admin": {
     "roles": {
       "STORE": "Store",
@@ -747,7 +752,8 @@
       "active": "Active",
       "incompleteProfile": "Profile not completed",
       "actionError": "The action failed. Please try again.",
-      "remove": "Remove"
+      "remove": "Remove",
+      "pendingPassword": "Password change pending"
     },
     "dashboard": {
       "title": "Platform overview",
@@ -827,7 +833,7 @@
       "unblockText": "{{name}} will be able to log in again and their offers will be visible again.",
       "confirmUnblock": "Unblock",
       "passwordTitle": "New password",
-      "passwordText": "Set a new password for {{name}} and pass it on to the user.",
+      "passwordText": "Set a temporary password for {{name}} and pass it on to the user. They must change it at the next login.",
       "newPassword": "New password",
       "confirmPassword": "Repeat the password",
       "passwordMismatch": "The passwords do not match.",
@@ -855,9 +861,9 @@
       "credentialsSection": "Login details",
       "email": "Email",
       "password": "Password",
-      "passwordHint": "At least 8 characters. Pass the password on to the user.",
+      "passwordHint": "At least 8 characters. This is a temporary password: the user must change it at the first login.",
       "infoTitle": "What happens next?",
-      "infoText": "The user logs in with these details and fills in their name, business name, city and the rest on their profile. A store becomes visible to restaurants once its profile is complete.",
+      "infoText": "The user logs in with these details, then must set their own password and fill in the required profile details (first and last name, business name, city, phone, address). Until then they cannot use the rest of the app.",
       "submit": "Create account",
       "success": "The account was created.",
       "error": "The account was not created. Please try again."
@@ -1000,5 +1006,13 @@
   "announcements": {
     "label": "Platform announcement",
     "dismiss": "Dismiss announcement"
+  },
+  "accountSetup": {
+    "title": "Finish setting up your account",
+    "text": "Before using the app, do the following on the My profile page:",
+    "needsPassword": "Set your own password instead of the temporary one the administrator gave you.",
+    "missingFields": "Fill in the required details: {{fields}}.",
+    "goToProfile": "Go to My profile",
+    "profileHint": "The app unlocks once you save the required details (*) and set your own password."
   }
 }

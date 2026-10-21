@@ -55,20 +55,20 @@ describe("Users routes", () => {
     it("keeps optional fields that are left out", async () => {
       const store = await registerAndLogin(STORE, "STORE");
       await store.put("/api/users/me").send(PROFILE);
-      const { address, description, ...required } = PROFILE;
+      const { description, ...required } = PROFILE;
 
       const response = await store.put("/api/users/me").send({ ...required, city: "Mostar" });
       expect(response.status).toBe(200);
-      expect(response.body.user).toMatchObject({ city: "Mostar", address, description });
+      expect(response.body.user).toMatchObject({ city: "Mostar", description });
     });
 
-    it.each(["first_name", "last_name", "business_name", "city", "phone"])(
+    it.each(["first_name", "last_name", "business_name", "city", "address", "phone"])(
       "returns 400 without %s",
       async (field) => {
         const store = await registerAndLogin(STORE, "STORE");
         const response = await store.put("/api/users/me").send({ ...PROFILE, [field]: "" });
         expect(response.status).toBe(400);
-        expect(response.body.error).toBe("Ime, prezime, naziv biznisa, grad i telefon su obavezni.");
+        expect(response.body.error).toBe("Ime, prezime, naziv biznisa, grad, adresa i telefon su obavezni.");
       },
     );
   });

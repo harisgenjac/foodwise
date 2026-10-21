@@ -9,13 +9,22 @@ interface FormFieldProps {
   label: string;
   icon: LucideIcon;
   suffix?: string;
+  // Marks the label with a red asterisk; the field itself is validated by the form.
+  required?: boolean;
   children: ReactNode;
 }
 
-function FormField({ label, icon: Icon, suffix, children }: FormFieldProps) {
+function FormField({ label, icon: Icon, suffix, required = false, children }: FormFieldProps) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-gray-700">{label}</span>
+      {/* The asterisk is CSS content, so it is not part of the label's accessible name. */}
+      <span
+        className={`mb-1.5 block text-sm font-medium text-gray-700 ${
+          required ? "after:ml-0.5 after:text-red-500 after:content-['*']" : ""
+        }`}
+      >
+        {label}
+      </span>
       <span className="relative block">
         <Icon className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-gray-400" strokeWidth={1.8} />
         {children}
