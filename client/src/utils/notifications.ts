@@ -8,6 +8,7 @@ import {
   Clock,
   Hourglass,
   PackageCheck,
+  ShieldAlert,
   ShoppingBag,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -26,6 +27,9 @@ export const NOTIFICATION_META: Record<NotificationType, { icon: LucideIcon; sty
   PICKUP_TODAY: { icon: Clock, style: "bg-blue-50 text-blue-600" },
   RESERVATION_COMPLETED: { icon: PackageCheck, style: "bg-green-50 text-green-600" },
   PICKUP_MISSED: { icon: CalendarX, style: "bg-red-50 text-red-600" },
+  PRODUCT_REMOVED_BY_ADMIN: { icon: ShieldAlert, style: "bg-red-50 text-red-600" },
+  DONATION_REMOVED_BY_ADMIN: { icon: ShieldAlert, style: "bg-red-50 text-red-600" },
+  RESERVATION_CANCELLED_BY_ADMIN: { icon: ShieldAlert, style: "bg-gray-100 text-gray-600" },
 };
 
 const DEFAULT_META = { icon: Bell, style: "bg-orange-50 text-orange-600" };
@@ -33,21 +37,28 @@ const DEFAULT_META = { icon: Bell, style: "bg-orange-50 text-orange-600" };
 export const getNotificationMeta = (notification: Notification) =>
   (notification.type && NOTIFICATION_META[notification.type]) || DEFAULT_META;
 
-// Reservation details first, then product details; untyped (older) notifications go to the role's list.
+// Reservation details first, then product details, then the donations page; untyped (older)
+// notifications go to the role's list.
 export const getNotificationLink = (notification: Notification, role: User["role"] | undefined) => {
   if (notification.reservation_id) return `/reservation/${notification.reservation_id}`;
   if (notification.product_id) return `/products/${notification.product_id}`;
+  if (notification.donation_id) return "/donate-food";
   return role === "STORE" ? "/reservations" : "/my-reservations";
 };
 
 export const getNotificationText = (notification: Notification, t: TFunction) => {
-  if (!notification.type || !notification.product_name) return notification.message;
-  return t(`notifications.types.${notification.type}`, {
-    product: notification.product_name,
-    quantity: notification.quantity ? parseFloat(notification.quantity) : "",
-    unit: notification.unit ?? "",
-    defaultValue: notification.message,
-  });
+  const text =
+    !notification.type || !notification.product_name
+      ? notification.message
+      : t(`notifications.types.${notification.type}`, {
+          product: notification.product_name,
+          quantity: notification.quantity ? parseFloat(notification.quantity) : "",
+          unit: notification.unit ?? "",
+          defaultValue: notification.message,
+        });
+  return notification.details
+    ? `${text} ${t("notifications.reason", { reason: notification.details })}`
+    : text;
 };
 
 // "5 min ago", "yesterday"...; older than a week falls back to the date. Uses i18n keys

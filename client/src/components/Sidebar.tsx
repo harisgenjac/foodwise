@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   CalendarCheck,
+  ClipboardList,
   FileChartColumn,
   Handshake,
   HeartHandshake,
@@ -10,9 +11,12 @@ import {
   Package,
   PackageCheck,
   PackagePlus,
+  ShieldCheck,
   ShoppingBasket,
   Store,
+  UserPlus,
   UserRound,
+  Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -51,12 +55,26 @@ function Sidebar({ isSidebarOpen }: { isSidebarOpen: boolean }) {
     { to: "/sponsor", label: t("sidebar.sponsor"), icon: Handshake },
   ];
 
-  const links = user?.role === "STORE" ? storeLinks : restaurantLinks;
+  const adminLinks: SidebarLink[] = [
+    { to: "/admin", label: t("sidebar.adminDashboard"), icon: ShieldCheck },
+    { to: "/admin/users", label: t("sidebar.adminUsers"), icon: Users },
+    { to: "/admin/users/new", label: t("sidebar.adminNewUser"), icon: UserPlus },
+    { to: "/admin/products", label: t("sidebar.adminProducts"), icon: Package },
+    { to: "/admin/reservations", label: t("sidebar.adminReservations"), icon: CalendarCheck },
+    { to: "/admin/donations", label: t("sidebar.adminDonations"), icon: HeartHandshake },
+    { to: "/admin/actions", label: t("sidebar.adminActions"), icon: ClipboardList },
+    { to: "/my-profile", label: t("sidebar.myProfile"), icon: UserRound },
+  ];
+
+  const isAdmin = user?.role === "ADMIN";
+  const links = isAdmin ? adminLinks : user?.role === "STORE" ? storeLinks : restaurantLinks;
 
   const renderLink = ({ to, label, icon: Icon }: SidebarLink) => (
     <li key={to}>
       <NavLink
         to={to}
+        // /admin and /admin/users would otherwise also be active on their sub-pages.
+        end={to === "/admin" || to === "/admin/users"}
         title={isSidebarOpen ? undefined : label}
         aria-label={label}
         className={({ isActive }) =>
@@ -91,13 +109,17 @@ function Sidebar({ isSidebarOpen }: { isSidebarOpen: boolean }) {
       <nav className="px-3 py-4">
         <ul className="space-y-1">{links.map(renderLink)}</ul>
 
-        <div className="my-4 border-t border-gray-100" />
-        {isSidebarOpen && (
-          <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-            {t("sidebar.humanitarian")}
-          </p>
+        {!isAdmin && (
+          <>
+            <div className="my-4 border-t border-gray-100" />
+            {isSidebarOpen && (
+              <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                {t("sidebar.humanitarian")}
+              </p>
+            )}
+            <ul className="space-y-1">{humanitarianLinks.map(renderLink)}</ul>
+          </>
         )}
-        <ul className="space-y-1">{humanitarianLinks.map(renderLink)}</ul>
       </nav>
     </aside>
   );

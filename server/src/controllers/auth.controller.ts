@@ -2,6 +2,13 @@ import pool from "../config/db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import type { Request, Response } from "express";
+import {
+  hashPassword,
+  isUniqueViolation,
+  normalizeEmail,
+  validateEmail,
+  validatePassword,
+} from "../utils/accounts.js";
 
 interface RegisterBody {
   first_name: string;
@@ -15,19 +22,14 @@ function validateRegFields(fields: RegisterBody) {
   if (!first_name || !last_name || !email || !password || !role) {
     return "Sva polja su obavezna.";
   }
-  if (typeof email !== "string" || !EMAIL_PATTERN.test(normalizeEmail(email))) {
-    return "Email nije ispravan.";
-  }
-  if (typeof password !== "string" || password.length < MIN_PASSWORD_LENGTH) {
-    return `Lozinka mora imati najmanje ${MIN_PASSWORD_LENGTH} znakova.`;
-  }
+  return validateEmail(email) ?? validatePassword(password);
 }
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD_LENGTH = 8;
-
-// Emails are compared case-insensitively, so they are stored and looked up in lowercase.
-const normalizeEmail = (email: string) => email.trim().toLowerCase();
+// Store, restaurant and admin accounts are created by an admin (POST /api/admin/users).
+// Public registration is kept for the planned recipient roles (individuals, public kitchens,
+// humanitarian organizations); none of them exists yet, so the list is empty.
+const ADMIN_CREATED_ROLES = ["STORE", "RESTAURANT", "ADMIN"];
+const PUBLIC_ROLES: string[] = [];
 
 interface LoginBody {
   email: string;
@@ -49,10 +51,13 @@ export const register = async (req: Request, res: Response) => {
     if (validationError) {
       return res.status(400).json({ error: validationError });
     }
-    if (!["STORE", "RESTAURANT"].includes(role)) {
+    if (ADMIN_CREATED_ROLES.includes(role)) {
       return res
-        .status(400)
-        .json({ error: "Rola mora biti STORE ili RESTAURANT." });
+        .status(403)
+        .json({ error: "Naloge za prodavnice i restorane kreira administrator." });
+    }
+    if (!PUBLIC_ROLES.includes(role)) {
+      return res.status(400).json({ error: "Rola nije ispravna." });
     }
 
     const email = normalizeEmail(req.body.email);
@@ -66,7 +71,7 @@ export const register = async (req: Request, res: Response) => {
         .json({ error: "Korisnik s tim emailom već postoji." });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await hashPassword(password);
 
     await pool.query(
       "INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES ($1, $2, $3, $4, $5)",
@@ -75,7 +80,7 @@ export const register = async (req: Request, res: Response) => {
     return res.status(201).json({ message: "Registracija uspješna." });
   } catch (error) {
     // Two registrations with the same email at the same moment: the unique index rejects the second.
-    if (error instanceof Error && "code" in error && error.code === "23505") {
+    if (isUniqueViolation(error)) {
       return res
         .status(400)
         .json({ error: "Korisnik s tim emailom već postoji." });
@@ -106,6 +111,10 @@ export const login = async (req: Request, res: Response) => {
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       return res.status(400).json({ error: "Pogrešan email ili lozinka." });
+    }
+    if (user.is_blocked) {
+      const reason = user.blocked_reason ? ` Razlog: ${user.blocked_reason}` : "";
+      return res.status(403).json({ error: `Vaš nalog je blokiran.${reason}` });
     }
     const token = jwt.sign(
       { id: user.id, role: user.role },

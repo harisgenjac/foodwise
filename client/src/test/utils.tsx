@@ -46,16 +46,18 @@ interface RenderOptions {
   // The logged-in user, or null for a visitor (/users/me then answers 401).
   user?: User | null;
   get?: Record<string, MockResponse>;
+  // Router location state for the first entry (what navigate(..., { state }) would pass).
+  state?: unknown;
 }
 
 export function renderWithProviders(
   ui: ReactElement,
-  { route = "/", path = "/", user = null, get = {} }: RenderOptions = {},
+  { route = "/", path = "/", user = null, get = {}, state }: RenderOptions = {},
 ) {
   mockGet({ "/users/me": user ? { user } : axiosError(401, "Niste prijavljeni."), ...get });
   return render(
     <AuthProvider>
-      <MemoryRouter initialEntries={[route]}>
+      <MemoryRouter initialEntries={[state === undefined ? route : { pathname: route, state }]}>
         <Routes>
           <Route path={path} element={ui} />
           <Route path="*" element={<LocationDisplay />} />

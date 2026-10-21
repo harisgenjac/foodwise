@@ -6,6 +6,7 @@ A B2B marketplace where **stores** sell food that is close to its expiry date at
 
 - **Stores** list near-expiry products (price, discounted price, quantity, expiry date), accept or reject reservations, and see their statistics.
 - **Restaurants** browse and filter offers, view store profiles, save favorite stores, reserve a quantity with a pickup time, and track reservation status.
+- **Admins** create store, restaurant and admin accounts, block and unblock accounts, remove offers that break the rules, and see platform statistics and an audit log. There is no public registration for stores and restaurants.
 - Partial reservations, with available quantity calculated so two restaurants can never reserve more than exists.
 - In-app notifications for every reservation change.
 - A daily job marks expired products and cancels their open reservations.
@@ -77,7 +78,16 @@ cd server
 npm run migrate up
 ```
 
-### 5. Start the app
+### 5. Create the first admin
+
+```bash
+cd server
+npm run create-admin -- <email> <password> [first name] [last name]
+```
+
+Stores, restaurants and further admins are then created by an admin in the app (**Novi korisnik** / **New user**), with only an email and a password. The user fills in the rest of the profile after the first login.
+
+### 6. Start the app
 
 From the root:
 
@@ -113,6 +123,7 @@ This builds the server once, then runs the backend and frontend together:
 | `npm run test:watch` | Runs the tests in watch mode |
 | `npm run typecheck` | Type-checks the source and the tests |
 | `npm run seed` | Builds, then replaces all data with demo data |
+| `npm run create-admin -- <email> <password> [first] [last]` | Builds, then creates an admin account |
 | `npm run seed:fake` | Adds fake products and reservations for the existing stores and restaurants, without touching users (`-- --products 6 --reservations 4`) |
 
 ### Client (`cd client`)
@@ -134,6 +145,7 @@ After `npm run seed`, every demo account uses the password `demo12345`:
 |---|---|
 | Store | `market.centar@demo.com`, `pekara.dobra@demo.com`, `zeleni.market@demo.com` |
 | Restaurant | `restoran.ukus@demo.com`, `pizzeria.roma@demo.com` |
+| Admin | `admin@demo.com` |
 
 The seed deletes all existing data before inserting the demo data.
 

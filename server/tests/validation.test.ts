@@ -10,7 +10,7 @@ import {
   userId,
 } from "./helpers.js";
 
-const EMAILS = ["store-a@test.com", "restaurant-a@test.com", "ana.case@test.com"];
+const EMAILS = ["store-a@test.com", "restaurant-a@test.com", "ana.case@test.com", "validation-admin@test.com"];
 
 let store: Agent;
 let restaurant: Agent;
@@ -129,15 +129,13 @@ describe("Input validation", () => {
 
   describe("auth", () => {
     it("treats emails case-insensitively", async () => {
-      const account = { first_name: "Ana", last_name: "Case", password: "test12345", role: "RESTAURANT" };
-      const register = await request(app)
-        .post("/api/auth/register")
-        .send({ ...account, email: " Ana.Case@Test.com " });
-      expect(register.status).toBe(201);
+      const admin = await registerAndLogin("validation-admin@test.com", "ADMIN");
+      const account = { password: "test12345", role: "RESTAURANT" };
+      const created = await admin.post("/api/admin/users").send({ ...account, email: " Ana.Case@Test.com " });
+      expect(created.status).toBe(201);
+      expect(created.body.user.email).toBe("ana.case@test.com");
 
-      const duplicate = await request(app)
-        .post("/api/auth/register")
-        .send({ ...account, email: "ANA.CASE@test.com" });
+      const duplicate = await admin.post("/api/admin/users").send({ ...account, email: "ANA.CASE@test.com" });
       expect(duplicate.status).toBe(400);
       expect(duplicate.body.error).toBe("Korisnik s tim emailom već postoji.");
 

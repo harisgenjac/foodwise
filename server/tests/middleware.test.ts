@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import request from "supertest";
 import app from "../src/app.js";
-import { cleanupUsers, createProduct, futurePickup, registerAndLogin } from "./helpers.js";
+import { cleanupUsers, createProduct, futurePickup, registerAndLogin, userId } from "./helpers.js";
 
 const STORE = "middleware-store@test.com";
 const RESTAURANT = "middleware-restaurant@test.com";
@@ -38,6 +38,20 @@ describe("authenticate middleware", () => {
     const response = await request(app).get("/api/auth/me").set("Cookie", [`token=${token}`]);
     expect(response.status).toBe(401);
     expect(response.body.error).toBe("Token je nevažeći ili je istekao.");
+  });
+
+  it("returns 401 for a valid token of a deleted user", async () => {
+    const token = jwt.sign({ id: 999999, role: "STORE" }, process.env.JWT_SECRET!);
+    const response = await request(app).get("/api/auth/me").set("Cookie", [`token=${token}`]);
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe("Token je nevažeći ili je istekao.");
+  });
+
+  it("takes the role from the database, not from the token", async () => {
+    await registerAndLogin(STORE, "STORE");
+    const token = jwt.sign({ id: await userId(STORE), role: "ADMIN" }, process.env.JWT_SECRET!);
+    const response = await request(app).get("/api/admin/stats").set("Cookie", [`token=${token}`]);
+    expect(response.status).toBe(403);
   });
 
   it("returns 401 for an expired token", async () => {

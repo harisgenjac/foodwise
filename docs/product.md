@@ -19,7 +19,20 @@ FoodWise connects the two sides directly, without intermediaries, phone calls or
 - **Store (`STORE`):** lists near-expiry products, receives reservation requests, accepts or rejects them, hands the food over and marks it picked up (or cancels a pickup the restaurant missed), sees notifications and its own statistics.
 - **Restaurant (`RESTAURANT`):** browses and filters offers, opens store profiles, favorites stores, reserves a quantity and a pickup time, tracks reservation status and its pickups.
 
-Both are registered businesses with a profile (business name, city, address, phone, opening and pickup hours, description, logo).
+- **Admin (`ADMIN`):** runs the platform. Creates accounts, blocks and unblocks them, removes products and donations that break the rules, and sees platform-wide statistics and the audit log. An admin only has the admin panel: no marketplace, reservations, reports or donations.
+
+Stores and restaurants are registered businesses with a profile (business name, city, address, phone, opening and pickup hours, description, logo).
+
+### Accounts and the admin role
+
+- **No public registration for stores and restaurants.** An admin creates every store, restaurant and admin account and enters only the account type, the email and a password, which the admin passes on to the user. The user then fills in the name and business data on the profile page. Until a store or restaurant has a business name it sees a "Complete your profile" banner, and a store without one is hidden from restaurants (store list and marketplace). The public register page is kept for a planned fourth kind of user (individuals, public kitchens, humanitarian organizations); today `/register` sends visitors to the login page with an explanation.
+- The first admin is created with a command-line script; after that admins create each other in the app. All admins are equal. An admin can block another admin but never their own account, so at least one active admin always remains.
+- **Blocking** needs a reason. A blocked user is signed out at once and cannot log in; the login page shows the reason. A blocked store's products and profile disappear for restaurants, and its favorites entry is hidden. The blocked user's **pending** reservations (as a store and as a restaurant) are cancelled and the other side is notified (without the reason); **accepted** reservations stay so the food can still be handed over. Unblocking restores everything that was hidden.
+- **Moderation:** an admin can remove any product or donation, with a required reason. The owner is notified and sees the reason in the notification. Removing a product cancels its pending reservations (the restaurants are notified); accepted ones stay.
+- **Reservations:** an admin sees every reservation (filtered by status, by a user on either side, or by a search) and can cancel a **pending** or **accepted** one to settle a dispute, with a required reason that both the store and the restaurant see in their notification. Cancelling an accepted reservation puts its quantity back on offer, and a product it had sold out becomes available again unless it has expired. Picked-up, rejected and cancelled reservations cannot be changed.
+- An admin can set a new password for any account.
+- **Audit log:** every admin action (account created, password set, blocked, unblocked, product removed, donation removed, reservation cancelled) is recorded with the admin, the target, the reason and the time, and can be filtered by action.
+- **Platform overview:** counts of stores, restaurants, blocked accounts and incomplete profiles; products by status; reservations by status; food saved through picked-up reservations (kg, l, pieces) and the restaurants' savings; donations by status.
 
 ## Core flows
 
@@ -51,7 +64,7 @@ Both are registered businesses with a profile (business name, city, address, pho
 
 ## Features available now
 
-Registration and login with two roles; product management; marketplace search and filters; reservations with concurrency protection; pickups page for both roles (today, upcoming, picked up) with pickup confirmation and cancelling missed pickups; notifications with links to details, reminders and deletion; automatic expiry handling; store list and store profiles with statistics and favorites ("favorites only" filter); reservation and product detail pages; product templates for stores (save a product's details once, then fill the add-product form from it and change only the date, quantity or price); CSV import of many products at once for stores; logo upload; downloadable CSV reports (sales or purchases, and monthly impact); donation offers for stores and restaurants (free or paid by a donor, meal details, moving a product to donations); Bosnian and English interface; responsive layout; demo data for presentations.
+Admin panel (accounts created by admins, blocking, moderation of products and donations, cancelling disputed reservations, platform overview, audit log); login for stores, restaurants and admins; product management; marketplace search and filters; reservations with concurrency protection; pickups page for both roles (today, upcoming, picked up) with pickup confirmation and cancelling missed pickups; notifications with links to details, reminders and deletion; automatic expiry handling; store list and store profiles with statistics and favorites ("favorites only" filter); reservation and product detail pages; product templates for stores (save a product's details once, then fill the add-product form from it and change only the date, quantity or price); CSV import of many products at once for stores; logo upload; downloadable CSV reports (sales or purchases, and monthly impact); donation offers for stores and restaurants (free or paid by a donor, meal details, moving a product to donations); Bosnian and English interface; responsive layout; demo data for presentations.
 
 ## Humanitarian module
 
@@ -90,7 +103,7 @@ How it should work:
 Ideas for the next phases (agreed as good directions, not yet scheduled):
 
 1. **Suspended meal ("obrok na čekanju"):** a person pays for a restaurant's paid meal donation, and the person in need or an organization redeems it at the restaurant with a code or QR.
-2. **Organization verification:** registration with an ID/JIB number and an uploaded registration document, admin approval and a "Verified" badge. Only verified organizations can claim donations.
+2. **Organization verification:** registration with an ID/JIB number and an uploaded registration document, admin approval and a "Verified" badge. Only verified organizations can claim donations. This is the planned fourth kind of user that registers publicly; the admin role it relies on exists now.
 3. **Needs board:** organizations and public kitchens post what they need (category, amount, days, city) and get matching donations suggested. **Standing donations** (for example "leftover bread every evening") give public kitchens a steady supply.
 4. **Automatic donation:** an opt-in rule that turns a product still unsold X hours before expiry into a free donation. Build it after the manual "Move to donations" proves itself.
 5. **Food safety rules:** meat, dairy and fish only go to organizations that declare a fridge. Hot meals must be picked up within N hours. Allergens become mandatory for meals. Donors accept a liability disclaimer.
@@ -106,6 +119,7 @@ Ideas for the next phases (agreed as good directions, not yet scheduled):
 ## Other roadmap and ideas
 
 - Public launch (deploy) with proper image storage.
+- Admin role, next steps: send the login details to a new user by email instead of the admin passing the password on; manage categories and allergens from the admin panel instead of fixed lists.
 - Real product photos instead of category images.
 - Pickup follow-ups: a QR or PIN code shown by the restaurant and checked by the store at handover; a restaurant reliability score from missed pickups (temporary limits after repeated no-shows); optional automatic cancelling of missed pickups after a few hours; a reminder an hour before the pickup; pickup time slots set by the store; a daily packing list per product for the store; a rating after pickup.
 - Business ideas tied to pickups: charge the platform commission when a reservation is picked up (`Completed` is the moment the sale is real); a monthly impact report (kg of food saved, KM saved, CO₂ avoided) for stores and restaurants to use in ESG reporting and marketing (the CSV impact report covers kg and KM; CO₂ and a presentable PDF are still open).

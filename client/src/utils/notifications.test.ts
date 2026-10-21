@@ -40,6 +40,11 @@ describe("getNotificationLink", () => {
     expect(getNotificationLink(bare, "RESTAURANT")).toBe("/my-reservations");
     expect(getNotificationLink(bare, undefined)).toBe("/my-reservations");
   });
+
+  it("sends a donation notification to the donations page", () => {
+    const removed = makeNotification({ type: "DONATION_REMOVED_BY_ADMIN", reservation_id: null, product_id: null, donation_id: 7 });
+    expect(getNotificationLink(removed, "RESTAURANT")).toBe("/donate-food");
+  });
 });
 
 describe("getNotificationText", () => {
@@ -49,6 +54,13 @@ describe("getNotificationText", () => {
     expect(text).toContain("Piletina");
     expect(text).toContain("2.5");
     expect(text).not.toBe(makeNotification().message);
+  });
+
+  it("adds the admin's reason after the translated text", () => {
+    const removed = makeNotification({ type: "PRODUCT_REMOVED_BY_ADMIN", reservation_id: null, details: "Neispravan opis" });
+    expect(getNotificationText(removed, t)).toBe(
+      `${t("notifications.types.PRODUCT_REMOVED_BY_ADMIN", { product: "Piletina" })} ${t("notifications.reason", { reason: "Neispravan opis" })}`,
+    );
   });
 
   it("returns the stored message for untyped notifications or without a product", () => {

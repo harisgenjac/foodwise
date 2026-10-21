@@ -59,12 +59,15 @@ export interface Reservation {
   party_pickup_hours?: string | null;
 }
 
+export type Role = "STORE" | "RESTAURANT" | "ADMIN";
+
 export interface User {
   id: number;
-  first_name: string;
-  last_name: string;
+  // Null until the user fills in the profile (an admin creates accounts with only an email).
+  first_name: string | null;
+  last_name: string | null;
   email: string;
-  role: "STORE" | "RESTAURANT";
+  role: Role;
   business_name?: string;
   logo_url?: string;
   address?: string;
@@ -76,6 +79,10 @@ export interface User {
   created_at?: string;
   // Only on GET /users/stores (COUNT, so a string).
   active_products?: string;
+  // Only on the admin endpoints.
+  is_blocked?: boolean;
+  blocked_at?: string | null;
+  blocked_reason?: string | null;
 }
 
 export interface Favorites {
@@ -162,4 +169,103 @@ export interface DonationFormValues {
   pickup_until: string;
   allergens: string[];
   serving_temperature: string;
+}
+
+// Admin panel (GET /admin/*). Counts arrive as numbers.
+export interface AdminStats {
+  users: { stores: number; restaurants: number; admins: number; blocked: number; incomplete_profiles: number };
+  products: { active: number; sold: number; expired: number; removed: number };
+  reservations: Record<Reservation["status"], number>;
+  saved: { kg: number; l: number; pieces: number; value: number; savings: number };
+  donations: { available: number; expired: number; removed: number };
+}
+
+export type AdminActionType =
+  | "CREATE_USER"
+  | "RESET_PASSWORD"
+  | "BLOCK_USER"
+  | "UNBLOCK_USER"
+  | "REMOVE_PRODUCT"
+  | "REMOVE_DONATION"
+  | "CANCEL_RESERVATION";
+
+export interface AdminAction {
+  id: number;
+  action: AdminActionType;
+  reason: string | null;
+  created_at: string;
+  admin_id?: number;
+  admin_email: string;
+  target_user_id?: number | null;
+  target_email?: string | null;
+  target_business_name?: string | null;
+  target_product_id: number | null;
+  product_name: string | null;
+  target_donation_id: number | null;
+  donation_name: string | null;
+  target_reservation_id?: number | null;
+}
+
+export interface AdminUserCounts {
+  products: number;
+  active_products: number;
+  reservations: number;
+  pending_reservations: number;
+  completed_reservations: number;
+  donations: number;
+}
+
+export interface AdminProduct {
+  id: number;
+  store_id: number;
+  name: string;
+  category: string;
+  quantity: string;
+  unit: string;
+  original_price: string;
+  discounted_price: string;
+  expiry_date: string;
+  status: Product["status"];
+  created_at: string;
+  business_name: string | null;
+  store_email: string;
+  store_is_blocked: boolean;
+}
+
+export interface AdminDonation {
+  id: number;
+  donor_id: number;
+  donation_type: DonationType;
+  name: string;
+  category: string;
+  quantity: string;
+  unit: string;
+  original_price: string;
+  donation_price: string | null;
+  expiry_date: string;
+  status: DonationOffer["status"];
+  created_at: string;
+  business_name: string | null;
+  donor_email: string;
+  donor_role: Role;
+}
+
+export interface AdminReservation {
+  id: number;
+  status: Reservation["status"];
+  quantity: string;
+  unit_price: string;
+  pickup_date: string;
+  picked_up_at: string | null;
+  created_at: string;
+  is_overdue: boolean;
+  product_id: number;
+  product_name: string;
+  unit: string;
+  store_id: number;
+  store_name: string | null;
+  store_email: string;
+  restaurant_id: number;
+  restaurant_name: string | null;
+  restaurant_email: string;
 }
