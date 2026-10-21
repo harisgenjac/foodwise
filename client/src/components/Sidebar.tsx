@@ -8,6 +8,7 @@ import {
   Handshake,
   HeartHandshake,
   LayoutDashboard,
+  Megaphone,
   Package,
   PackageCheck,
   PackagePlus,
@@ -62,6 +63,7 @@ function Sidebar({ isSidebarOpen }: { isSidebarOpen: boolean }) {
     { to: "/admin/products", label: t("sidebar.adminProducts"), icon: Package },
     { to: "/admin/reservations", label: t("sidebar.adminReservations"), icon: CalendarCheck },
     { to: "/admin/donations", label: t("sidebar.adminDonations"), icon: HeartHandshake },
+    { to: "/admin/announcements", label: t("sidebar.adminAnnouncements"), icon: Megaphone },
     { to: "/admin/actions", label: t("sidebar.adminActions"), icon: ClipboardList },
     { to: "/my-profile", label: t("sidebar.myProfile"), icon: UserRound },
   ];

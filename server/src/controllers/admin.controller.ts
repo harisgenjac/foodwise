@@ -13,6 +13,9 @@ import {
 import { PRODUCT_STATUSES } from "./products.controller.js";
 import { DONATION_STATUSES, DONATION_TYPES } from "../utils/validateDonation.js";
 import { RESERVATION_STATUSES, lockReservation, releaseSoldProduct } from "./reservations.controller.js";
+import { updateProfile } from "./users.controller.js";
+import { isValidDateTime } from "../utils/dates.js";
+import type { Role } from "../types/auth.js";
 
 export const ROLES = ["STORE", "RESTAURANT", "ADMIN"];
 export const ADMIN_ACTIONS = [
@@ -23,7 +26,11 @@ export const ADMIN_ACTIONS = [
   "REMOVE_PRODUCT",
   "REMOVE_DONATION",
   "CANCEL_RESERVATION",
+  "UPDATE_PROFILE",
+  "CREATE_ANNOUNCEMENT",
+  "END_ANNOUNCEMENT",
 ];
+export const ANNOUNCEMENT_AUDIENCES = ["ALL", "STORE", "RESTAURANT"];
 
 const DEFAULT_PAGE_SIZE = 25;
 const MAX_PAGE_SIZE = 100;
@@ -32,6 +39,7 @@ const RECENT_ACTIONS_LIMIT = 20;
 
 const USER_COLUMNS = `users.id, users.email, users.role, users.first_name, users.last_name,
   users.business_name, users.city, users.address, users.phone, users.logo_url,
+  users.opening_hours, users.pickup_hours, users.description,
   users.is_blocked, users.blocked_at, users.blocked_reason, users.created_at`;
 
 interface AdminAction {
@@ -41,6 +49,7 @@ interface AdminAction {
   targetProductId?: number | null;
   targetDonationId?: number | null;
   targetReservationId?: number | null;
+  targetAnnouncementId?: number | null;
   reason?: string | null;
 }
 
@@ -54,14 +63,25 @@ const logAdminAction = async (
     targetProductId = null,
     targetDonationId = null,
     targetReservationId = null,
+    targetAnnouncementId = null,
     reason = null,
   }: AdminAction,
 ) => {
   await db.query(
     `INSERT INTO admin_actions
-       (admin_id, action, target_user_id, target_product_id, target_donation_id, target_reservation_id, reason)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-    [adminId, action, targetUserId, targetProductId, targetDonationId, targetReservationId, reason],
+       (admin_id, action, target_user_id, target_product_id, target_donation_id, target_reservation_id,
+        target_announcement_id, reason)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [
+      adminId,
+      action,
+      targetUserId,
+      targetProductId,
+      targetDonationId,
+      targetReservationId,
+      targetAnnouncementId,
+      reason,
+    ],
   );
 };
 
@@ -719,6 +739,7 @@ export const getAdminActions = async (req: Request, res: Response) => {
     LEFT JOIN users AS targets ON admin_actions.target_user_id = targets.id
     LEFT JOIN products ON admin_actions.target_product_id = products.id
     LEFT JOIN donation_offers ON admin_actions.target_donation_id = donation_offers.id
+    LEFT JOIN announcements ON admin_actions.target_announcement_id = announcements.id
     WHERE true`;
   const values: (string | number | boolean)[] = [];
   if (action) {
@@ -748,7 +769,8 @@ export const getAdminActions = async (req: Request, res: Response) => {
        admin_actions.target_user_id, targets.email AS target_email, targets.business_name AS target_business_name,
        admin_actions.target_product_id, products.name AS product_name,
        admin_actions.target_donation_id, donation_offers.name AS donation_name,
-       admin_actions.target_reservation_id`,
+       admin_actions.target_reservation_id,
+       admin_actions.target_announcement_id, announcements.title_bs AS announcement_title`,
       from,
       "admin_actions.created_at DESC, admin_actions.id DESC",
       values,
@@ -874,6 +896,212 @@ export const cancelReservation = async (req: Request, res: Response) => {
     if (client) await client.query("ROLLBACK");
     console.error("Greška prilikom otkazivanja rezervacije:", error);
     return res.status(500).json({ error: "Došlo je do greške prilikom otkazivanja rezervacije." });
+  } finally {
+    if (client) client.release();
+  }
+};
+
+// The admin corrects a user's name and business data (the logo stays the user's own).
+export const updateUserProfile = async (req: Request, res: Response) => {
+  const targetId = parseId(req.params.id);
+  if (targetId === null) {
+    return res.status(404).json({ error: "Korisnik nije pronađen." });
+  }
+
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const existing = await client.query<{ role: Role }>(
+      "SELECT users.role FROM users WHERE users.id = $1 FOR UPDATE",
+      [targetId],
+    );
+    const target = existing.rows[0];
+    if (!target) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Korisnik nije pronađen." });
+    }
+    const { logo_url: _logo, ...fields } = req.body;
+    const result = await updateProfile(client, targetId, target.role, fields);
+    if (result.error) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: result.error });
+    }
+    await logAdminAction(client, { adminId: req.user!.id, action: "UPDATE_PROFILE", targetUserId: targetId });
+    const user = await client.query(`SELECT ${USER_COLUMNS} FROM users WHERE users.id = $1`, [targetId]);
+    await client.query("COMMIT");
+    return res.status(200).json({ message: "Profil korisnika je ažuriran.", user: user.rows[0] });
+  } catch (error) {
+    if (client) await client.query("ROLLBACK");
+    console.error("Greška prilikom uređivanja profila korisnika:", error);
+    return res.status(500).json({ error: "Došlo je do greške prilikom uređivanja profila." });
+  } finally {
+    if (client) client.release();
+  }
+};
+
+const MAX_ANNOUNCEMENT_TITLE = 120;
+const MAX_ANNOUNCEMENT_BODY = 1000;
+
+const ANNOUNCEMENT_COLUMNS = `announcements.id, announcements.audience, announcements.title_bs,
+  announcements.body_bs, announcements.title_en, announcements.body_en, announcements.expires_at,
+  announcements.ended_at, announcements.created_at`;
+
+// Validates and trims an announcement; English is optional but needs both a title and a body.
+const parseAnnouncement = (body: Record<string, unknown>) => {
+  const text = (value: unknown) => (typeof value === "string" ? value.trim() : "");
+  const audience = body.audience;
+  const fields = {
+    title_bs: text(body.title_bs),
+    body_bs: text(body.body_bs),
+    title_en: text(body.title_en),
+    body_en: text(body.body_en),
+  };
+  if (typeof audience !== "string" || !ANNOUNCEMENT_AUDIENCES.includes(audience)) {
+    return { error: "Publika nije ispravna." };
+  }
+  if (!fields.title_bs || !fields.body_bs) {
+    return { error: "Naslov i tekst su obavezni." };
+  }
+  if (Boolean(fields.title_en) !== Boolean(fields.body_en)) {
+    return { error: "Za engleski prevod unesite i naslov i tekst." };
+  }
+  if (fields.title_bs.length > MAX_ANNOUNCEMENT_TITLE || fields.title_en.length > MAX_ANNOUNCEMENT_TITLE) {
+    return { error: `Naslov može imati najviše ${MAX_ANNOUNCEMENT_TITLE} znakova.` };
+  }
+  if (fields.body_bs.length > MAX_ANNOUNCEMENT_BODY || fields.body_en.length > MAX_ANNOUNCEMENT_BODY) {
+    return { error: `Tekst može imati najviše ${MAX_ANNOUNCEMENT_BODY} znakova.` };
+  }
+  let expiresAt: string | null = null;
+  if (body.expires_at !== undefined && body.expires_at !== null && body.expires_at !== "") {
+    if (!isValidDateTime(body.expires_at) || new Date(body.expires_at as string).getTime() <= Date.now()) {
+      return { error: "Datum isteka mora biti u budućnosti." };
+    }
+    expiresAt = body.expires_at as string;
+  }
+  return { announcement: { ...fields, audience, expires_at: expiresAt } };
+};
+
+// Sends the announcement to every unblocked store and/or restaurant as a notification, in one
+// statement; admins never receive it.
+export const createAnnouncement = async (req: Request, res: Response) => {
+  const parsed = parseAnnouncement(req.body);
+  if (!parsed.announcement) {
+    return res.status(400).json({ error: parsed.error });
+  }
+  const fields = parsed.announcement;
+  const roles = fields.audience === "ALL" ? ["STORE", "RESTAURANT"] : [fields.audience];
+
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const result = await client.query(
+      `INSERT INTO announcements (admin_id, audience, title_bs, body_bs, title_en, body_en, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING ${ANNOUNCEMENT_COLUMNS}`,
+      [
+        req.user!.id,
+        fields.audience,
+        fields.title_bs,
+        fields.body_bs,
+        fields.title_en || null,
+        fields.body_en || null,
+        fields.expires_at,
+      ],
+    );
+    const announcement = result.rows[0];
+    const sent = await client.query(
+      `INSERT INTO notifications (user_id, type, message, announcement_id)
+       SELECT users.id, $1, $2, $3
+       FROM users
+       WHERE users.is_blocked = false AND users.role::text = ANY($4)`,
+      [
+        "PLATFORM_ANNOUNCEMENT",
+        `Platform announcement: ${fields.title_en || fields.title_bs}`,
+        announcement.id,
+        roles,
+      ],
+    );
+    await logAdminAction(client, {
+      adminId: req.user!.id,
+      action: "CREATE_ANNOUNCEMENT",
+      targetAnnouncementId: announcement.id,
+    });
+    await client.query("COMMIT");
+    return res
+      .status(201)
+      .json({ message: "Obavještenje je poslano.", announcement, recipients: sent.rowCount ?? 0 });
+  } catch (error) {
+    if (client) await client.query("ROLLBACK");
+    console.error("Greška prilikom slanja obavještenja:", error);
+    return res.status(500).json({ error: "Došlo je do greške prilikom slanja obavještenja." });
+  } finally {
+    if (client) client.release();
+  }
+};
+
+export const getAnnouncements = async (req: Request, res: Response) => {
+  const page = parsePage(req.query);
+  if (!page) {
+    return res.status(400).json({ error: "Neispravan filter." });
+  }
+  try {
+    const { rows, total } = await listPage(
+      `${ANNOUNCEMENT_COLUMNS}, admins.email AS admin_email,
+       announcements.ended_at IS NULL
+         AND (announcements.expires_at IS NULL OR announcements.expires_at > NOW()) AS is_active,
+       (SELECT COUNT(*) FROM notifications
+        WHERE notifications.announcement_id = announcements.id)::int AS recipients,
+       (SELECT COUNT(*) FROM announcement_dismissals
+        WHERE announcement_dismissals.announcement_id = announcements.id)::int AS dismissed`,
+      "FROM announcements JOIN users AS admins ON announcements.admin_id = admins.id",
+      "announcements.created_at DESC, announcements.id DESC",
+      [],
+      page,
+    );
+    return res.status(200).json({ announcements: rows, total });
+  } catch (error) {
+    console.error("Greška prilikom dohvatanja obavještenja:", error);
+    return res.status(500).json({ error: "Došlo je do greške prilikom dohvatanja obavještenja." });
+  }
+};
+
+export const endAnnouncement = async (req: Request, res: Response) => {
+  const announcementId = parseId(req.params.id);
+  if (announcementId === null) {
+    return res.status(404).json({ error: "Obavještenje nije pronađeno." });
+  }
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const existing = await client.query(
+      `SELECT announcements.ended_at IS NULL
+         AND (announcements.expires_at IS NULL OR announcements.expires_at > NOW()) AS is_active
+       FROM announcements WHERE announcements.id = $1 FOR UPDATE`,
+      [announcementId],
+    );
+    if (existing.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Obavještenje nije pronađeno." });
+    }
+    if (!existing.rows[0].is_active) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Obavještenje je već završeno." });
+    }
+    await client.query("UPDATE announcements SET ended_at = NOW() WHERE announcements.id = $1", [announcementId]);
+    await logAdminAction(client, {
+      adminId: req.user!.id,
+      action: "END_ANNOUNCEMENT",
+      targetAnnouncementId: announcementId,
+    });
+    await client.query("COMMIT");
+    return res.status(200).json({ message: "Obavještenje je završeno." });
+  } catch (error) {
+    if (client) await client.query("ROLLBACK");
+    console.error("Greška prilikom završavanja obavještenja:", error);
+    return res.status(500).json({ error: "Došlo je do greške prilikom završavanja obavještenja." });
   } finally {
     if (client) client.release();
   }

@@ -5,6 +5,7 @@ import {
   CalendarX,
   CircleCheck,
   CircleX,
+  Megaphone,
   Clock,
   Hourglass,
   PackageCheck,
@@ -30,6 +31,7 @@ export const NOTIFICATION_META: Record<NotificationType, { icon: LucideIcon; sty
   PRODUCT_REMOVED_BY_ADMIN: { icon: ShieldAlert, style: "bg-red-50 text-red-600" },
   DONATION_REMOVED_BY_ADMIN: { icon: ShieldAlert, style: "bg-red-50 text-red-600" },
   RESERVATION_CANCELLED_BY_ADMIN: { icon: ShieldAlert, style: "bg-gray-100 text-gray-600" },
+  PLATFORM_ANNOUNCEMENT: { icon: Megaphone, style: "bg-blue-50 text-blue-600" },
 };
 
 const DEFAULT_META = { icon: Bell, style: "bg-orange-50 text-orange-600" };
@@ -43,10 +45,17 @@ export const getNotificationLink = (notification: Notification, role: User["role
   if (notification.reservation_id) return `/reservation/${notification.reservation_id}`;
   if (notification.product_id) return `/products/${notification.product_id}`;
   if (notification.donation_id) return "/donate-food";
+  // The full announcement text is in the banner on every page.
+  if (notification.announcement_id) return "/dashboard";
   return role === "STORE" ? "/reservations" : "/my-reservations";
 };
 
-export const getNotificationText = (notification: Notification, t: TFunction) => {
+export const getNotificationText = (notification: Notification, t: TFunction, language = "bs") => {
+  if (notification.type === "PLATFORM_ANNOUNCEMENT" && notification.announcement_title_bs) {
+    const title =
+      (language === "en" && notification.announcement_title_en) || notification.announcement_title_bs;
+    return t("notifications.types.PLATFORM_ANNOUNCEMENT", { title });
+  }
   const text =
     !notification.type || !notification.product_name
       ? notification.message

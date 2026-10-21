@@ -112,12 +112,16 @@ export const reserve = async (restaurant: Agent, productId: number, quantity: nu
   return response.body.reservation.id as number;
 };
 
-// The audit log goes first because it keeps an admin from being deleted (RESTRICT), then the
-// reservations (also RESTRICT); deleting the users cascades to products, notifications,
-// favorites and templates.
+// The audit log and announcements go first because they keep an admin from being deleted
+// (RESTRICT), then the reservations (also RESTRICT); deleting the users cascades to products,
+// notifications, favorites and templates.
 export const cleanupUsers = async (emails: string[]) => {
   await pool.query(
     "DELETE FROM admin_actions WHERE admin_id IN (SELECT id FROM users WHERE email = ANY($1))",
+    [emails],
+  );
+  await pool.query(
+    "DELETE FROM announcements WHERE admin_id IN (SELECT id FROM users WHERE email = ANY($1))",
     [emails],
   );
   await pool.query(

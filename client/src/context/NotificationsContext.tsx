@@ -15,7 +15,8 @@ export type NotificationType =
   | "PICKUP_MISSED"
   | "PRODUCT_REMOVED_BY_ADMIN"
   | "DONATION_REMOVED_BY_ADMIN"
-  | "RESERVATION_CANCELLED_BY_ADMIN";
+  | "RESERVATION_CANCELLED_BY_ADMIN"
+  | "PLATFORM_ANNOUNCEMENT";
 
 export interface Notification {
   id: number;
@@ -31,6 +32,10 @@ export interface Notification {
   donation_id?: number | null;
   // Free text from the server, shown after the translated text (an admin's reason).
   details?: string | null;
+  // Platform announcements: the title in both languages (English may be missing).
+  announcement_id?: number | null;
+  announcement_title_bs?: string | null;
+  announcement_title_en?: string | null;
   // The product's name, or the donation's for donation notifications.
   product_name: string | null;
   unit: string | null;

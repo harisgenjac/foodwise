@@ -19,7 +19,8 @@
     "adminProducts": "Proizvodi",
     "adminDonations": "Donacije",
     "adminActions": "Dnevnik aktivnosti",
-    "adminReservations": "Rezervacije"
+    "adminReservations": "Rezervacije",
+    "adminAnnouncements": "Obavještenja"
   },
   "header": {
     "notificationsLabel": "Notifikacije",
@@ -244,7 +245,8 @@
       "PICKUP_MISSED": "Rezervacija za {{product}} je otkazana jer nije preuzeta na vrijeme.",
       "PRODUCT_REMOVED_BY_ADMIN": "Administrator je uklonio proizvod {{product}} iz ponude.",
       "DONATION_REMOVED_BY_ADMIN": "Administrator je uklonio donaciju {{product}}.",
-      "RESERVATION_CANCELLED_BY_ADMIN": "Rezervaciju za {{product}} je otkazao administrator platforme."
+      "RESERVATION_CANCELLED_BY_ADMIN": "Rezervaciju za {{product}} je otkazao administrator platforme.",
+      "PLATFORM_ANNOUNCEMENT": "Obavještenje platforme: {{title}}"
     },
     "reason": "Razlog: {{reason}}"
   },
@@ -741,7 +743,10 @@
       "UNBLOCK_USER": "Deblokiran nalog",
       "REMOVE_PRODUCT": "Uklonjen proizvod",
       "REMOVE_DONATION": "Uklonjena donacija",
-      "CANCEL_RESERVATION": "Otkazana rezervacija"
+      "CANCEL_RESERVATION": "Otkazana rezervacija",
+      "UPDATE_PROFILE": "Uređen profil",
+      "CREATE_ANNOUNCEMENT": "Poslano obavještenje",
+      "END_ANNOUNCEMENT": "Završeno obavještenje"
     },
     "common": {
       "cancel": "Odustani",
@@ -842,7 +847,16 @@
       "confirmPassword": "Ponovite lozinku",
       "passwordMismatch": "Lozinke se ne podudaraju.",
       "savePassword": "Sačuvaj lozinku",
-      "viewReservations": "Rezervacije korisnika"
+      "viewReservations": "Rezervacije korisnika",
+      "editProfile": "Uredi profil",
+      "editProfileTitle": "Uredi profil korisnika",
+      "editProfileText": "Ispravite podatke korisnika {{name}}. Logo mijenja samo korisnik.",
+      "saveProfile": "Sačuvaj profil",
+      "openingHours": "Radno vrijeme",
+      "pickupHours": "Vrijeme preuzimanja",
+      "description": "Opis",
+      "firstName": "Ime",
+      "lastName": "Prezime"
     },
     "createUser": {
       "title": "Novi korisnik",
@@ -953,6 +967,58 @@
       "count_one": "{{count}} rezervacija",
       "count_few": "{{count}} rezervacije",
       "count_other": "{{count}} rezervacija"
+    },
+    "announcements": {
+      "title": "Obavještenja",
+      "subtitle": "Pošaljite poruku prodavnicama, restoranima ili svima. Primaoci je dobijaju kao notifikaciju i kao baner dok obavještenje traje.",
+      "formSection": "Novo obavještenje",
+      "audienceSection": "Kome se šalje",
+      "audiences": {
+        "ALL": "Svima",
+        "STORE": "Prodavnicama",
+        "RESTAURANT": "Restoranima"
+      },
+      "audienceDescriptions": {
+        "ALL": "Sve prodavnice i svi restorani.",
+        "STORE": "Samo prodavnice.",
+        "RESTAURANT": "Samo restorani."
+      },
+      "bosnianSection": "Na bosanskom",
+      "englishSection": "Na engleskom (opcionalno)",
+      "englishHint": "Ako ostavite prazno, korisnici s engleskim jezikom vide bosanski tekst.",
+      "titleLabel": "Naslov",
+      "bodyLabel": "Tekst",
+      "expiresLabel": "Traje do (opcionalno)",
+      "expiresHint": "Bez datuma traje dok ga ne završite.",
+      "preview": "Pregled banera",
+      "previewEmpty": "Ovdje će se pojaviti naslov i tekst.",
+      "send": "Pošalji obavještenje",
+      "confirmTitle": "Poslati obavještenje?",
+      "confirmText": "Obavještenje \"{{title}}\" dobijaju: {{audience}}. Poslano obavještenje se ne može izmijeniti, samo završiti.",
+      "confirmSend": "Pošalji",
+      "sent_one": "Obavještenje je poslano {{count}} korisniku.",
+      "sent_few": "Obavještenje je poslano {{count}} korisnika.",
+      "sent_other": "Obavještenje je poslano {{count}} korisnika.",
+      "sendError": "Obavještenje nije poslano. Pokušajte ponovo.",
+      "listSection": "Poslana obavještenja",
+      "columnAnnouncement": "Obavještenje",
+      "columnAudience": "Publika",
+      "columnSent": "Poslano",
+      "columnReach": "Primaoci / zatvorili",
+      "columnStatus": "Status",
+      "statusActive": "Aktivno",
+      "statusEnded": "Završeno",
+      "until": "do {{date}}",
+      "end": "Završi",
+      "endTitle": "Završiti obavještenje?",
+      "endText": "Baner \"{{title}}\" nestaje za sve korisnike. Notifikacije ostaju.",
+      "ended": "Obavještenje je završeno.",
+      "emptyTitle": "Još nema obavještenja",
+      "emptySubtitle": "Poslana obavještenja pojavit će se ovdje."
     }
+  },
+  "announcements": {
+    "label": "Obavještenje platforme",
+    "dismiss": "Zatvori obavještenje"
   }
 }

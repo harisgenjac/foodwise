@@ -38,9 +38,10 @@ async function seed() {
     await client.query("BEGIN");
 
     console.log("Brisanje postojećih podataka...");
-    // Reservations reference users and products with RESTRICT; everything else cascades from users.
+    // Reservations, admin actions and announcements reference users with RESTRICT; everything else cascades from users.
     await client.query("DELETE FROM admin_actions");
     await client.query("DELETE FROM notifications");
+    await client.query("DELETE FROM announcements");
     await client.query("DELETE FROM reservations");
     await client.query("DELETE FROM donation_offers");
     await client.query("DELETE FROM products");

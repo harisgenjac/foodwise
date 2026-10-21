@@ -15,7 +15,9 @@ export type NotificationType =
   | "PICKUP_MISSED"
   | "PRODUCT_REMOVED_BY_ADMIN"
   | "DONATION_REMOVED_BY_ADMIN"
-  | "RESERVATION_CANCELLED_BY_ADMIN";
+  | "RESERVATION_CANCELLED_BY_ADMIN"
+  // Inserted in bulk by createAnnouncement (admin.controller.ts), linked by announcement_id.
+  | "PLATFORM_ANNOUNCEMENT";
 
 interface NewNotification {
   userId: number;

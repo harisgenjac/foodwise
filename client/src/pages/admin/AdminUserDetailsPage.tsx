@@ -13,6 +13,7 @@ import {
   HeartHandshake,
   History,
   KeyRound,
+  PencilLine,
   Lock,
   Mail,
   MapPin,
@@ -31,11 +32,12 @@ import DetailItem from "../../components/product/DetailItem.js";
 import StatCard from "../../components/dashboard/StatCard.js";
 import Modal from "../../components/product/Modal.js";
 import ReasonModal from "../../components/admin/ReasonModal.js";
+import EditProfileModal from "../../components/admin/EditProfileModal.js";
 import FormField, { inputStyle } from "../../components/form/FormField.js";
 import { ROLE_STYLES, accountName, formatDateTime } from "../../utils/admin.js";
 import type { AdminAction, AdminUserCounts, User } from "../../types/index.js";
 
-type Dialog = "block" | "unblock" | "password" | null;
+type Dialog = "block" | "unblock" | "password" | "profile" | null;
 
 const errorMessage = (err: unknown) => (axios.isAxiosError(err) ? err.response?.data?.error : null);
 
@@ -161,6 +163,10 @@ function AdminUserDetailsPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => setDialog("profile")} className={secondaryButton}>
+              <PencilLine className="h-4 w-4" />
+              {t("admin.userDetails.editProfile")}
+            </button>
             <button type="button" onClick={() => setDialog("password")} className={secondaryButton}>
               <KeyRound className="h-4 w-4" />
               {t("admin.userDetails.setPassword")}
@@ -294,6 +300,18 @@ function AdminUserDetailsPage() {
           </ul>
         )}
       </section>
+
+      {dialog === "profile" && (
+        <EditProfileModal
+          user={user}
+          name={name}
+          onClose={closeDialog}
+          onSaved={() => {
+            closeDialog();
+            load();
+          }}
+        />
+      )}
 
       {dialog === "block" && (
         <ReasonModal
