@@ -1,4 +1,4 @@
-// Fake products and reservations for the users already in the database, shared by
+// Fake products, reservations and donation offers for the users already in the database, shared by
 // `npm run seed` (after it creates the demo accounts) and `npm run seed:fake`.
 // Never creates, changes or deletes users.
 import type { PoolClient } from "pg";
@@ -32,6 +32,7 @@ export interface FakeDataOptions {
 
 export interface FakeDataSummary {
   products: number;
+  donations: number;
   stores: number;
   restaurants: number;
   reservations: Record<ReservationStatus, number>;
@@ -62,6 +63,23 @@ const PRODUCT_TEMPLATES: ProductTemplate[] = [
   { name: "Smrznuto povrće mix", description: "Mješavina povrća za variva.", category: "Frozen Food", unit: "kg", price: [4, 6], quantity: [8, 20] },
   { name: "Smrznuti pomfrit", description: "Pomfrit za prženje, vreća 2.5kg.", category: "Frozen Food", unit: "pak", price: [7, 10], quantity: [6, 20] },
   { name: "Maslinovo ulje", description: "Ekstra djevičansko, 1L.", category: "Other", unit: "l", price: [15, 22], quantity: [5, 15] },
+];
+
+interface MealTemplate {
+  name: string;
+  description: string;
+  price: [number, number];
+  allergens: string[];
+  temperature: "HOT" | "COLD";
+}
+
+const MEAL_TEMPLATES: MealTemplate[] = [
+  { name: "Grah s kobasicom", description: "Domaći grah, porcija 400g.", price: [6, 9], allergens: ["celery"], temperature: "HOT" },
+  { name: "Pileći rižoto", description: "Rižoto s piletinom i povrćem.", price: [8, 12], allergens: ["milk", "celery"], temperature: "HOT" },
+  { name: "Musaka", description: "Musaka od krompira i mljevenog mesa.", price: [8, 11], allergens: ["eggs", "milk"], temperature: "HOT" },
+  { name: "Pita krompiruša", description: "Domaća pita, četvrtina tepsije.", price: [4, 6], allergens: ["gluten"], temperature: "COLD" },
+  { name: "Tjestenina bolonjez", description: "Špagete s bolonjez umakom.", price: [9, 13], allergens: ["gluten", "celery"], temperature: "HOT" },
+  { name: "Sezonska salata", description: "Miješana salata s jogurt dresingom.", price: [5, 7], allergens: ["milk"], temperature: "COLD" },
 ];
 
 const STATUS_WEIGHTS: [ReservationStatus, number][] = [
@@ -206,8 +224,58 @@ export async function insertFakeData(
     }
   }
 
+  // Donation offers: stores donate some of their product lines, restaurants donate meals.
+  let donations = 0;
+  for (const store of stores.rows) {
+    for (const template of [...PRODUCT_TEMPLATES].sort(() => 0.5 - Math.random()).slice(0, 2)) {
+      const originalPrice = roundPrice(template.price[0] + Math.random() * (template.price[1] - template.price[0]));
+      const sponsored = Math.random() < 0.5;
+      await client.query(
+        `INSERT INTO donation_offers (donor_id, donation_type, name, description, category, quantity, unit, original_price, donation_price, expiry_date)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [
+          store.id,
+          sponsored ? "SPONSORED" : "FREE",
+          template.name,
+          template.description,
+          template.category,
+          randomInt(template.quantity[0], template.quantity[1]),
+          template.unit,
+          originalPrice,
+          sponsored ? roundPrice(originalPrice * 0.4) : null,
+          daysFromNow(randomInt(1, 5)).toISOString().slice(0, 10),
+        ],
+      );
+      donations++;
+    }
+  }
+  for (const restaurant of restaurants.rows) {
+    for (const meal of [...MEAL_TEMPLATES].sort(() => 0.5 - Math.random()).slice(0, 2)) {
+      const originalPrice = roundPrice(meal.price[0] + Math.random() * (meal.price[1] - meal.price[0]));
+      const sponsored = Math.random() < 0.5;
+      await client.query(
+        `INSERT INTO donation_offers (donor_id, donation_type, name, description, category, quantity, unit, original_price, donation_price, expiry_date, pickup_from, pickup_until, allergens, serving_temperature)
+         VALUES ($1, $2, $3, $4, 'Meals', $5, 'portion', $6, $7, $8, '19:00', '21:00', $9, $10)`,
+        [
+          restaurant.id,
+          sponsored ? "SPONSORED" : "FREE",
+          meal.name,
+          meal.description,
+          randomInt(5, 20),
+          originalPrice,
+          sponsored ? roundPrice(originalPrice * 0.5) : null,
+          daysFromNow(randomInt(0, 1)).toISOString().slice(0, 10),
+          meal.allergens,
+          meal.temperature,
+        ],
+      );
+      donations++;
+    }
+  }
+
   return {
     products: products.length,
+    donations,
     stores: stores.rows.length,
     restaurants: restaurants.rows.length,
     reservations: counts,
@@ -218,6 +286,7 @@ export const printSummary = (summary: FakeDataSummary) => {
   const { Pending, Confirmed, Completed, Rejected, Cancelled } = summary.reservations;
   const total = Pending + Confirmed + Completed + Rejected + Cancelled;
   console.log(`Proizvodi: dodano ${summary.products} (prodavnice: ${summary.stores}).`);
+  console.log(`Donacije: dodano ${summary.donations}.`);
   console.log(
     `Rezervacije: dodano ${total} (restorani: ${summary.restaurants}; ` +
       `Pending ${Pending}, Confirmed ${Confirmed}, Completed ${Completed}, Rejected ${Rejected}, Cancelled ${Cancelled}).`,

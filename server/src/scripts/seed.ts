@@ -1,5 +1,5 @@
 // Replaces ALL data with demo data: the demo stores and restaurants below, then random
-// products and reservations from fakeData.ts. Every demo account uses the password demo12345.
+// products, reservations and donation offers from fakeData.ts. Every demo account uses the password demo12345.
 //
 // Usage: npm run seed
 import "dotenv/config";
@@ -39,6 +39,7 @@ async function seed() {
     // Reservations reference users and products with RESTRICT; everything else cascades from users.
     await client.query("DELETE FROM notifications");
     await client.query("DELETE FROM reservations");
+    await client.query("DELETE FROM donation_offers");
     await client.query("DELETE FROM products");
     await client.query("DELETE FROM users");
 

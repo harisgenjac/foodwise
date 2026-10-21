@@ -8,6 +8,7 @@ import {
   ArrowRight,
   CalendarClock,
   CircleDot,
+  HandHeart,
   Package,
   PackagePlus,
   Pencil,
@@ -24,6 +25,7 @@ import FilterBar, { FilterField } from "../components/product/FilterBar.js";
 import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
 import Modal from "../components/product/Modal.js";
+import DonateProductModal from "../components/donation/DonateProductModal.js";
 import { inputStyle } from "../components/form/FormField.js";
 import { useFetch } from "../hooks/useFetch.js";
 import type { Product } from "../types/index.js";
@@ -34,6 +36,7 @@ function MyProductsPage() {
   const [category, setCategory] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [donatingProduct, setDonatingProduct] = useState<Product | null>(null);
   const { t } = useTranslation();
   const categories = t("categories", { returnObjects: true }) as Record<
     string,
@@ -186,6 +189,17 @@ function MyProductsPage() {
                   >
                     <Pencil className="h-4 w-4" />
                   </Link>
+                  {product.status === "Available" && (
+                    <button
+                      type="button"
+                      onClick={() => setDonatingProduct(product)}
+                      title={t("donations.fromProduct.button")}
+                      aria-label={t("donations.fromProduct.button")}
+                      className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-gray-200 px-3 text-gray-600 transition-colors hover:border-green-200 hover:bg-green-50 hover:text-green-700"
+                    >
+                      <HandHeart className="h-4 w-4" />
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setSelectedProduct(product)}
@@ -200,6 +214,14 @@ function MyProductsPage() {
             />
           ))}
         </div>
+      )}
+
+      {donatingProduct && (
+        <DonateProductModal
+          product={donatingProduct}
+          onClose={() => setDonatingProduct(null)}
+          onDonated={refetch}
+        />
       )}
 
       {selectedProduct && (

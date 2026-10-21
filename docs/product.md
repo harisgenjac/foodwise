@@ -4,7 +4,7 @@ What the app is for, who uses it, how it behaves, and where it is going. No code
 
 ## What it is
 
-FoodWise is a B2B marketplace that connects **stores** and **restaurants** to sell food that is close to its expiry date at a reduced price. The goal is to cut food waste while giving stores some recovered revenue and restaurants cheaper ingredients. A humanitarian layer is planned on top of it.
+FoodWise is a B2B marketplace that connects **stores** and **restaurants** to sell food that is close to its expiry date at a reduced price. The goal is to cut food waste while giving stores some recovered revenue and restaurants cheaper ingredients. A humanitarian layer is being built on top of it (phase 1, donation offers, is live).
 
 ## Problem
 
@@ -51,9 +51,25 @@ Both are registered businesses with a profile (business name, city, address, pho
 
 ## Features available now
 
-Registration and login with two roles; product management; marketplace search and filters; reservations with concurrency protection; pickups page for both roles (today, upcoming, picked up) with pickup confirmation and cancelling missed pickups; notifications with links to details, reminders and deletion; automatic expiry handling; store list and store profiles with statistics and favorites ("favorites only" filter); reservation and product detail pages; product templates for stores (save a product's details once, then fill the add-product form from it and change only the date, quantity or price); CSV import of many products at once for stores; logo upload; downloadable CSV reports (sales or purchases, and monthly impact); Bosnian and English interface; responsive layout; demo data for presentations.
+Registration and login with two roles; product management; marketplace search and filters; reservations with concurrency protection; pickups page for both roles (today, upcoming, picked up) with pickup confirmation and cancelling missed pickups; notifications with links to details, reminders and deletion; automatic expiry handling; store list and store profiles with statistics and favorites ("favorites only" filter); reservation and product detail pages; product templates for stores (save a product's details once, then fill the add-product form from it and change only the date, quantity or price); CSV import of many products at once for stores; logo upload; downloadable CSV reports (sales or purchases, and monthly impact); donation offers for stores and restaurants (free or paid by a donor, meal details, moving a product to donations); Bosnian and English interface; responsive layout; demo data for presentations.
 
-## Planned: humanitarian module
+## Humanitarian module
+
+### Phase 1 (live): donation offers
+
+"Donate food" in the sidebar, for stores and restaurants alike:
+
+- A business publishes a **donation offer** of one of two kinds:
+  - **Free donation:** the food is given away.
+  - **Paid donation:** the food is given at a lower **donation price** per unit, which a third party (a person or a company) will pay. The donation price must be below the food's value.
+- Every donation records the food's **value per unit** (for later impact reports and donation certificates), the quantity and unit, and the last day it can be collected. An optional daily pickup window (from–until) can be added.
+- Stores usually donate products. Restaurants usually donate **ready meals** counted in **portions**, and their form starts on that. Meals can list the 14 EU **allergens** and how they are served (hot, cold, frozen). Other categories never carry meal details.
+- **Move to donations:** from My products or a product's page, a store moves the free quantity of an available, unexpired product into a donation. The donation copies the product's details and value. Reserved quantity stays with the restaurants' reservations. If nothing was reserved and everything was moved, the product leaves the marketplace. Otherwise its quantity drops by the donated amount, and if confirmed reservations then cover the rest it is sold out. Moving more of the same product later adds to its active donation (5 kg + 5 kg = one donation of 10 kg), as long as the donation type and donation price are the same; a different type or price is a separate donation.
+- Donations past their last day become expired at midnight, like products (a donation moved from a product has the product's expiry date, so both expire together). Expired donations stay in the list marked as expired; they can no longer be edited, only deleted. Deleting hides a donation but keeps it in the database.
+- When a store removes an active donation that came from one of its products, it chooses between **returning it to the offer** (the quantity goes back to the product, which is available for reservations again, even if it had been removed or sold out by the move) and **deleting it for good**. A product that has already expired cannot be returned.
+- For now **only the donor sees its donations**: no one can claim or pay for them yet, so there are no donation notifications.
+
+### Next phases
 
 The platform grows from commercial surplus sales into one with a social purpose. It adds **three more kinds of users**:
 
@@ -69,7 +85,23 @@ How it should work:
 - **Restaurants** can also publish food (meals or ingredients) that others can pay for as a donation.
 - **Event sponsorship:** stores and restaurants can sponsor humanitarian events or campaigns by donating food and other resources, outside of single everyday offers.
 
-The sidebar already has "Donate food" and "Become a sponsor" entries that currently show a "coming soon" page. Open design questions to settle before building: how organizations are verified, how payments for donations are handled and reported, how donation offers differ from commercial offers in the data model and in the UI, and which notifications each party gets.
+"Become a sponsor" in the sidebar still shows a "coming soon" page. Donation offers are a separate kind of record from marketplace products, so claims and payments will attach only to donations. Open design questions to settle before building the next phase: how organizations are verified, how claims (partial or whole) and payments for donations are handled and reported, and which notifications each party gets.
+
+Ideas for the next phases (agreed as good directions, not yet scheduled):
+
+1. **Suspended meal ("obrok na čekanju"):** a person pays for a restaurant's paid meal donation, and the person in need or an organization redeems it at the restaurant with a code or QR.
+2. **Organization verification:** registration with an ID/JIB number and an uploaded registration document, admin approval and a "Verified" badge. Only verified organizations can claim donations.
+3. **Needs board:** organizations and public kitchens post what they need (category, amount, days, city) and get matching donations suggested. **Standing donations** (for example "leftover bread every evening") give public kitchens a steady supply.
+4. **Automatic donation:** an opt-in rule that turns a product still unsold X hours before expiry into a free donation. Build it after the manual "Move to donations" proves itself.
+5. **Food safety rules:** meat, dairy and fish only go to organizations that declare a fridge. Hot meals must be picked up within N hours. Allergens become mandatory for meals. Donors accept a liability disclaimer.
+6. **Donation certificates:** a PDF "potvrda o donaciji" with the value in KM for accounting. Donations to registered humanitarian organizations can reduce tax up to a legal limit; check the FBiH, RS and Brčko District rules with an accountant before promising it.
+7. **Corporate CSR budgets:** companies pre-fund a budget that pays for paid donations in their city, and get a monthly ESG/impact report (kg, meals, KM, CO₂).
+8. **Revenue model:** no fee on free donations, a small transparent fee on paid ones (covering payment costs), paid impact reports and badges for brands, sponsorship packages for campaigns.
+9. **Public impact and badges:** a "Humanitarian partner" badge on store profiles, public counters ("1,240 meals donated") and shareable social posts, so donating also has marketing value.
+10. **Campaigns and events:** Ramadan iftars, Christmas, the start of the school year, natural disasters. Each is time-limited with a goal and a progress bar (fits the "Become a sponsor" page).
+11. **Round-up:** restaurants round B2B purchases up to the next KM, and the difference goes into a donation fund.
+12. **Thank-you loop:** after a pickup the organization sends a photo or thank-you that the donor sees.
+13. **Volunteer drivers:** a later role that collects food from donors that organizations can't reach.
 
 ## Other roadmap and ideas
 
@@ -92,4 +124,4 @@ A store reliability score (accept versus reject ratio) was considered and declin
 
 ## Status
 
-The commercial B2B platform is complete and tested. The humanitarian module is in planning. Deployment is deferred until the product is ready for public use.
+The commercial B2B platform is complete and tested. The humanitarian module's first phase (donation offers from stores and restaurants) is built; recipients, claims and payments are next. Deployment is deferred until the product is ready for public use.

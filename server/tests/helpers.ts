@@ -73,6 +73,26 @@ export const createProduct = async (store: Agent, overrides: Record<string, unkn
   return response.body.product;
 };
 
+export const donationPayload = (overrides: Record<string, unknown> = {}) => ({
+  donation_type: "FREE",
+  name: "Test Donation",
+  description: "Test description",
+  category: "Bakery",
+  quantity: 10,
+  unit: "kom",
+  original_price: 2,
+  expiry_date: futureDate(3),
+  ...overrides,
+});
+
+export const createDonation = async (donor: Agent, overrides: Record<string, unknown> = {}) => {
+  const response = await donor.post("/api/donations").send(donationPayload(overrides));
+  if (response.status !== 201) {
+    throw new Error(`Creating a donation failed with ${response.status}: ${JSON.stringify(response.body)}`);
+  }
+  return response.body.donation as { id: number; status: string; donation_type: string };
+};
+
 export const reserve = async (restaurant: Agent, productId: number, quantity: number) => {
   const response = await restaurant
     .post("/api/reservations")

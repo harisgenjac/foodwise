@@ -25,11 +25,11 @@ export const authenticate = (
   }
 };
 
-export const authorize = (allowedRole: Role) => {
+export const authorize = (...allowedRoles: Role[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const role = req.user!.role;
 
-    if (role !== allowedRole) {
+    if (!allowedRoles.includes(role)) {
       return res
         .status(403)
         .json({ error: "Nemate odgovarajuću rolu za ovu akciju." });

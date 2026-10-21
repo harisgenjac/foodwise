@@ -16,6 +16,8 @@ import StoreDetailsPage from './pages/StoreDetailsPage.js';
 import MyReservationsPage from './pages/MyReservationsPage.js';
 import MyProfilePage from './pages/MyProfilePage.js'
 import DonateFoodPage from './pages/DonateFoodPage.js';
+import AddDonationPage from './pages/AddDonationPage.js';
+import EditDonationPage from './pages/EditDonationPage.js';
 import SponsorPage from './pages/SponsorPage.js';
 import NotificationsPage from './pages/NotificationsPage.js'
 import ProductDetailsPage from "./pages/ProductDetailsPage.js"
@@ -44,6 +46,8 @@ function App() {
         <Route path="/reports" element={<ReportsPage />} />
         <Route path="/my-profile" element={<MyProfilePage />} />
         <Route path="/donate-food" element={<DonateFoodPage />} />
+        <Route path="/donate-food/new" element={<AddDonationPage />} />
+        <Route path="/donate-food/:id/edit" element={<EditDonationPage />} />
         <Route path="/sponsor" element={<SponsorPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/products/:id" element={<ProductDetailsPage />} />
