@@ -27,7 +27,8 @@ interface SidebarLink {
   icon: LucideIcon;
 }
 
-function Sidebar({ isSidebarOpen }: { isSidebarOpen: boolean }) {
+// `locked`: the account setup is unfinished, so no page but My profile (from the header) is reachable.
+function Sidebar({ isSidebarOpen, locked = false }: { isSidebarOpen: boolean; locked?: boolean }) {
   const { user } = useAuth();
   const { t } = useTranslation();
 
@@ -106,7 +107,9 @@ function Sidebar({ isSidebarOpen }: { isSidebarOpen: boolean }) {
     <aside
       className={`shrink-0 overflow-y-auto overflow-x-hidden bg-white border-r border-gray-200 transition-all duration-300 ${
         isSidebarOpen ? "w-64" : "w-20"
-      }`}
+      } ${locked ? "pointer-events-none select-none opacity-50" : ""}`}
+      aria-disabled={locked}
+      inert={locked}
     >
       <nav className="px-3 py-4">
         <ul className="space-y-1">{links.map(renderLink)}</ul>

@@ -35,6 +35,7 @@ import ReasonModal from "../../components/admin/ReasonModal.js";
 import EditProfileModal from "../../components/admin/EditProfileModal.js";
 import FormField, { inputStyle } from "../../components/form/FormField.js";
 import { ROLE_STYLES, accountName, formatDateTime } from "../../utils/admin.js";
+import { getAccountSetup } from "../../utils/accountSetup.js";
 import type { AdminAction, AdminUserCounts, User } from "../../types/index.js";
 
 type Dialog = "block" | "unblock" | "password" | "profile" | null;
@@ -150,11 +151,16 @@ function AdminUserDetailsPage() {
                 <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
                   {t("admin.common.blocked")}
                 </span>
-              ) : isBusiness && !user.business_name ? (
+              ) : getAccountSetup(user).missingFields.length > 0 ? (
                 <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
                   {t("admin.common.incompleteProfile")}
                 </span>
               ) : null}
+              {user.must_change_password && (
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                  {t("admin.common.pendingPassword")}
+                </span>
+              )}
               <span className="inline-flex items-center gap-1.5">
                 <Mail className="h-4 w-4" />
                 {user.email}

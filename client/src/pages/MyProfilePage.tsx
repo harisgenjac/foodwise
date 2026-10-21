@@ -22,9 +22,10 @@ import {
 import { useAuth } from "../context/AuthContext.js";
 import FormSection from "../components/form/FormSection.js";
 import FormField, { inputStyle } from "../components/form/FormField.js";
+import ChangePasswordForm from "../components/profile/ChangePasswordForm.js";
 
 function MyProfilePage() {
-  const { refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -239,10 +240,10 @@ function MyProfilePage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <FormSection title={t("user.personalSection")} icon={UserRound}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField label={t("user.firstName")} icon={UserRound}>
+              <FormField label={t("user.firstName")} icon={UserRound} required>
                 <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputStyle} />
               </FormField>
-              <FormField label={t("user.lastName")} icon={UserRound}>
+              <FormField label={t("user.lastName")} icon={UserRound} required>
                 <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputStyle} />
               </FormField>
               <div className="sm:col-span-2">
@@ -258,18 +259,18 @@ function MyProfilePage() {
           <FormSection title={t("user.businessSection")} icon={Building2}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <FormField label={t("user.businessName")} icon={Building2}>
+                <FormField label={t("user.businessName")} icon={Building2} required>
                   <input type="text" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className={inputStyle} />
                 </FormField>
               </div>
-              <FormField label={t("user.city")} icon={MapPin}>
+              <FormField label={t("user.city")} icon={MapPin} required>
                 <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className={inputStyle} />
               </FormField>
-              <FormField label={t("user.phone")} icon={Phone}>
+              <FormField label={t("user.phone")} icon={Phone} required>
                 <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputStyle} />
               </FormField>
               <div className="sm:col-span-2">
-                <FormField label={t("user.address")} icon={MapPin}>
+                <FormField label={t("user.address")} icon={MapPin} required>
                   <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className={inputStyle} />
                 </FormField>
               </div>
@@ -301,7 +302,8 @@ function MyProfilePage() {
           )}
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-gray-500">{t("user.requiredHint")}</p>
           <button
             type="submit"
             disabled={saving}
@@ -311,6 +313,8 @@ function MyProfilePage() {
           </button>
         </div>
       </form>
+
+      <ChangePasswordForm required={Boolean(user?.must_change_password)} />
     </div>
   );
 }

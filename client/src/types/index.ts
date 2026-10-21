@@ -79,6 +79,8 @@ export interface User {
   created_at?: string;
   // Only on GET /users/stores (COUNT, so a string).
   active_products?: string;
+  // Set while the user still has a temporary password from an admin.
+  must_change_password?: boolean;
   // Only on the admin endpoints.
   is_blocked?: boolean;
   blocked_at?: string | null;

@@ -40,7 +40,7 @@ const RECENT_ACTIONS_LIMIT = 20;
 const USER_COLUMNS = `users.id, users.email, users.role, users.first_name, users.last_name,
   users.business_name, users.city, users.address, users.phone, users.logo_url,
   users.opening_hours, users.pickup_hours, users.description,
-  users.is_blocked, users.blocked_at, users.blocked_reason, users.created_at`;
+  users.is_blocked, users.blocked_at, users.blocked_reason, users.must_change_password, users.created_at`;
 
 interface AdminAction {
   adminId: number;
@@ -320,7 +320,8 @@ export const createUser = async (req: Request, res: Response) => {
     client = await pool.connect();
     await client.query("BEGIN");
     const result = await client.query(
-      `INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3)
+      // The admin chose this password, so the user must replace it at the first login.
+      `INSERT INTO users (email, password_hash, role, must_change_password) VALUES ($1, $2, $3, true)
        RETURNING ${USER_COLUMNS}`,
       [normalized, passwordHash, role],
     );
@@ -356,7 +357,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     client = await pool.connect();
     await client.query("BEGIN");
     const result = await client.query(
-      "UPDATE users SET password_hash = $1 WHERE users.id = $2 RETURNING users.id",
+      "UPDATE users SET password_hash = $1, must_change_password = true WHERE users.id = $2 RETURNING users.id",
       [passwordHash, targetId],
     );
     if (result.rows.length === 0) {

@@ -151,6 +151,8 @@ describe("Admin", () => {
     it("hides a new store from restaurants until it fills in its profile", async () => {
       await admin.post("/api/admin/users").send({ role: "STORE", email: NEW_USER, password: PASSWORD });
       const newStore = await login(NEW_USER);
+      // The admin's temporary password must be replaced before anything else works.
+      await newStore.put("/api/users/me/password").send({ current_password: PASSWORD, new_password: "vlastita-lozinka" });
       const product = await createProduct(newStore, { name: "Hidden until profile" });
 
       const listed = async () => {
@@ -165,7 +167,14 @@ describe("Admin", () => {
 
       const profile = await newStore
         .put("/api/users/me")
-        .send({ first_name: "Nova", last_name: "Prodavnica", business_name: "Nova", city: "Sarajevo", phone: "061000000" });
+        .send({
+          first_name: "Nova",
+          last_name: "Prodavnica",
+          business_name: "Nova",
+          city: "Sarajevo",
+          address: "Titova 2",
+          phone: "061000000",
+        });
       expect(profile.status).toBe(200);
       expect(await listed()).toEqual({ product: true, store: true });
     });
@@ -220,7 +229,7 @@ describe("Admin", () => {
         .put(`/api/admin/users/${await userId(STORE)}/profile`)
         .send({ ...profile, phone: "" });
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Ime, prezime, naziv biznisa, grad i telefon su obavezni.");
+      expect(response.body.error).toBe("Ime, prezime, naziv biznisa, grad, adresa i telefon su obavezni.");
       expect(await actions()).toEqual([]);
     });
 

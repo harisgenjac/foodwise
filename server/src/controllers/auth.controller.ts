@@ -136,6 +136,7 @@ export const login = async (req: Request, res: Response) => {
         last_name: user.last_name,
         email: user.email,
         role: user.role,
+        must_change_password: user.must_change_password,
       },
     });
   } catch (error) {

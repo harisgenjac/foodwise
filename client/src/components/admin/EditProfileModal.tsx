@@ -45,15 +45,16 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const fields: { field: ProfileField; label: string; icon: LucideIcon; wide?: boolean }[] = [
-    { field: "first_name", label: t("admin.userDetails.firstName"), icon: UserRound },
-    { field: "last_name", label: t("admin.userDetails.lastName"), icon: UserRound },
+  // Same required fields as the user's own profile form (marked with *).
+  const fields: { field: ProfileField; label: string; icon: LucideIcon; wide?: boolean; required?: boolean }[] = [
+    { field: "first_name", label: t("admin.userDetails.firstName"), icon: UserRound, required: true },
+    { field: "last_name", label: t("admin.userDetails.lastName"), icon: UserRound, required: true },
     ...(isBusiness
       ? [
-          { field: "business_name" as const, label: t("admin.userDetails.businessName"), icon: Building2, wide: true },
-          { field: "city" as const, label: t("admin.userDetails.city"), icon: MapPin },
-          { field: "phone" as const, label: t("admin.userDetails.phone"), icon: Phone },
-          { field: "address" as const, label: t("admin.userDetails.address"), icon: MapPin, wide: true },
+          { field: "business_name" as const, label: t("admin.userDetails.businessName"), icon: Building2, wide: true, required: true },
+          { field: "city" as const, label: t("admin.userDetails.city"), icon: MapPin, required: true },
+          { field: "phone" as const, label: t("admin.userDetails.phone"), icon: Phone, required: true },
+          { field: "address" as const, label: t("admin.userDetails.address"), icon: MapPin, wide: true, required: true },
           { field: "opening_hours" as const, label: t("admin.userDetails.openingHours"), icon: Clock },
           { field: "pickup_hours" as const, label: t("admin.userDetails.pickupHours"), icon: Truck },
         ]
@@ -92,9 +93,9 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
         )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {fields.map(({ field, label, icon, wide }) => (
+          {fields.map(({ field, label, icon, wide, required }) => (
             <div key={field} className={wide ? "sm:col-span-2" : undefined}>
-              <FormField label={label} icon={icon}>
+              <FormField label={label} icon={icon} required={required ?? false}>
                 <input
                   type="text"
                   value={values[field]}

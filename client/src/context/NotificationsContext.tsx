@@ -57,7 +57,14 @@ const POLL_INTERVAL_MS = 50000;
 const NotificationsContext = createContext<NotificationsContextType | undefined>(undefined);
 
 // One shared notification state for the header bell and the notifications page.
-export const NotificationsProvider = ({ children }: { children: React.ReactNode }) => {
+// `enabled` false skips loading (a user who must first replace a temporary password).
+export const NotificationsProvider = ({
+  children,
+  enabled = true,
+}: {
+  children: React.ReactNode;
+  enabled?: boolean;
+}) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -75,6 +82,7 @@ export const NotificationsProvider = ({ children }: { children: React.ReactNode 
   }, []);
 
   useEffect(() => {
+    if (!enabled) return;
     fetchNotifications();
     const intervalId = setInterval(fetchNotifications, POLL_INTERVAL_MS);
     window.addEventListener("focus", fetchNotifications);
@@ -82,7 +90,7 @@ export const NotificationsProvider = ({ children }: { children: React.ReactNode 
       clearInterval(intervalId);
       window.removeEventListener("focus", fetchNotifications);
     };
-  }, [fetchNotifications]);
+  }, [fetchNotifications, enabled]);
 
   // The updates below are applied optimistically; on failure the list is reloaded from the server.
   const markAsRead = async (notification: Notification) => {

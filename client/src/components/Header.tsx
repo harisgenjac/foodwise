@@ -24,9 +24,11 @@ const DROPDOWN_LIMIT = 8;
 interface HeaderProps {
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
+  // While the account setup is unfinished only the profile menu (and the language) can be used.
+  locked?: boolean;
 }
 
-function Header({ isSidebarOpen, onToggleSidebar }: HeaderProps) {
+function Header({ isSidebarOpen, onToggleSidebar, locked = false }: HeaderProps) {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -79,13 +81,19 @@ function Header({ isSidebarOpen, onToggleSidebar }: HeaderProps) {
       <div className="flex items-center gap-3">
         <button
           onClick={onToggleSidebar}
+          disabled={locked}
           aria-label={toggleLabel}
           title={toggleLabel}
-          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer"
+          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
         >
           <ToggleIcon className="h-5 w-5" strokeWidth={1.8} />
         </button>
-        <Link to="/dashboard" className="flex items-center gap-2">
+        <Link
+          to="/dashboard"
+          aria-disabled={locked}
+          tabIndex={locked ? -1 : undefined}
+          className={`flex items-center gap-2 ${locked ? "pointer-events-none" : ""}`}
+        >
           <img src={logo} alt="FoodWise" className="h-10 w-10 object-contain" />
           <span className="text-xl font-bold tracking-tight text-gray-900">
             Food<span className="text-orange-600">Wise</span>
@@ -99,8 +107,9 @@ function Header({ isSidebarOpen, onToggleSidebar }: HeaderProps) {
         <div className="relative" ref={notifRef}>
           <button
             onClick={() => setIsNotifOpen(!isNotifOpen)}
+            disabled={locked}
             aria-label={t("header.notificationsLabel")}
-            className="relative p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+            className="relative p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
           >
             <Bell className="h-5 w-5" strokeWidth={1.8} />
             {unreadCount > 0 && (
