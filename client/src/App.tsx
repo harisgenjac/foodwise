@@ -30,6 +30,7 @@ import AdminCreateUserPage from './pages/admin/AdminCreateUserPage.js';
 import AdminProductsPage from './pages/admin/AdminProductsPage.js';
 import AdminDonationsPage from './pages/admin/AdminDonationsPage.js';
 import AdminReservationsPage from './pages/admin/AdminReservationsPage.js';
+import AdminAnnouncementsPage from './pages/admin/AdminAnnouncementsPage.js';
 import AdminActionsPage from './pages/admin/AdminActionsPage.js';
 
 function App() {
@@ -67,6 +68,7 @@ function App() {
         <Route path="/admin/products" element={<ProtectedRoute role="ADMIN"><AdminProductsPage /></ProtectedRoute>} />
         <Route path="/admin/donations" element={<ProtectedRoute role="ADMIN"><AdminDonationsPage /></ProtectedRoute>} />
         <Route path="/admin/reservations" element={<ProtectedRoute role="ADMIN"><AdminReservationsPage /></ProtectedRoute>} />
+        <Route path="/admin/announcements" element={<ProtectedRoute role="ADMIN"><AdminAnnouncementsPage /></ProtectedRoute>} />
         <Route path="/admin/actions" element={<ProtectedRoute role="ADMIN"><AdminActionsPage /></ProtectedRoute>} />
         </Route>
       </Routes>

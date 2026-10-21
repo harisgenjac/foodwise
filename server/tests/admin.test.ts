@@ -191,6 +191,66 @@ describe("Admin", () => {
     });
   });
 
+  describe("editing a profile", () => {
+    const profile = {
+      first_name: "Nova",
+      last_name: "Vlasnica",
+      business_name: "Market Ispravljen",
+      city: "Zenica",
+      phone: "061999999",
+      address: "Glavna 1",
+      opening_hours: "08-20",
+    };
+
+    it("lets the admin fix a store's profile and logs it", async () => {
+      const storeId = await userId(STORE);
+      await pool.query("UPDATE users SET logo_url = '/uploads/logos/keep.png' WHERE id = $1", [storeId]);
+
+      const response = await admin
+        .put(`/api/admin/users/${storeId}/profile`)
+        .send({ ...profile, logo_url: "/uploads/logos/other.png" });
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe("Profil korisnika je ažuriran.");
+      expect(response.body.user).toMatchObject({ ...profile, email: STORE, logo_url: "/uploads/logos/keep.png" });
+      expect(await actions()).toEqual([expect.objectContaining({ action: "UPDATE_PROFILE", target_user_id: storeId })]);
+    });
+
+    it("validates like the user's own profile form", async () => {
+      const response = await admin
+        .put(`/api/admin/users/${await userId(STORE)}/profile`)
+        .send({ ...profile, phone: "" });
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Ime, prezime, naziv biznisa, grad i telefon su obavezni.");
+      expect(await actions()).toEqual([]);
+    });
+
+    it("changes only the name of an admin", async () => {
+      const other = await registerAndLogin(OTHER_ADMIN, "ADMIN");
+      const response = await admin
+        .put(`/api/admin/users/${await userId(OTHER_ADMIN)}/profile`)
+        .send({ first_name: "Druga", last_name: "Adminka", business_name: "Ignored" });
+      expect(response.status).toBe(200);
+      expect(response.body.user).toMatchObject({ first_name: "Druga", last_name: "Adminka", business_name: null });
+      expect((await other.get("/api/users/me")).body.user.first_name).toBe("Druga");
+    });
+
+    it("makes a new store visible once the admin fills in its business name", async () => {
+      await admin.post("/api/admin/users").send({ role: "STORE", email: NEW_USER, password: PASSWORD });
+      const newStoreId = await userId(NEW_USER);
+      const listed = async () =>
+        (await restaurant.get("/api/users/stores")).body.stores.some((row: { id: number }) => row.id === newStoreId);
+      expect(await listed()).toBe(false);
+
+      await admin.put(`/api/admin/users/${newStoreId}/profile`).send(profile);
+      expect(await listed()).toBe(true);
+    });
+
+    it("answers 404 for a missing user and 403 for other roles", async () => {
+      expect((await admin.put("/api/admin/users/999999/profile").send(profile)).status).toBe(404);
+      expect((await store.put(`/api/admin/users/${await userId(RESTAURANT)}/profile`).send(profile)).status).toBe(403);
+    });
+  });
+
   describe("users", () => {
     it("lists users with filters and paging", async () => {
       const all = await admin.get("/api/admin/users?q=admin-");

@@ -2,7 +2,9 @@ import fs from "fs";
 import path from "path";
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
+import type { Pool, PoolClient } from "pg";
 import { parseId } from "../utils/params.js";
+import type { Role } from "../types/auth.js";
 
 const LOGO_URL_PREFIX = "/uploads/logos/";
 
@@ -35,7 +37,7 @@ export const getUser = async (req: Request, res: Response) => {
   }
 };
 
-interface UserFields {
+export interface UserFields {
   first_name: string;
   last_name: string;
   business_name: string;
@@ -65,30 +67,63 @@ function validateUserFields(fields: UserFields) {
   }
 }
 
-// An admin has no business profile; only the name can be changed.
-const updateAdminName = async (req: Request, res: Response) => {
-  const { first_name, last_name } = req.body;
-  if (!first_name || !last_name) {
-    return res.status(400).json({ error: "Ime i prezime su obavezni." });
-  }
-  const result = await pool.query(
-    `UPDATE users SET first_name = $1, last_name = $2
-     WHERE id = $3
-     RETURNING id, first_name, last_name, email, role`,
-    [first_name, last_name, req.user!.id],
-  );
-  return res
-    .status(200)
-    .json({ message: "Profil uspješno ažuriran.", user: result.rows[0] });
-};
+const PROFILE_COLUMNS =
+  "id, first_name, last_name, email, role, business_name, logo_url, address, city, opening_hours, pickup_hours, description, phone";
 
-export const updateUser = async (req: Request, res: Response) => {
-  try {
-    if (req.user!.role === "ADMIN") {
-      return await updateAdminName(req, res);
+type ProfileResult = { error: string; user?: never } | { user: Record<string, unknown> | undefined; error?: never };
+
+// Shared by PUT /users/me and the admin's PUT /admin/users/:id/profile. An admin has no business
+// profile, so only the name changes. Optional fields use COALESCE, so they cannot be cleared.
+export const updateProfile = async (
+  db: Pool | PoolClient,
+  userId: number,
+  role: Role,
+  body: UserFields,
+): Promise<ProfileResult> => {
+  if (role === "ADMIN") {
+    if (!body.first_name || !body.last_name) {
+      return { error: "Ime i prezime su obavezni." };
     }
-    const userId = req.user!.id;
-    const {
+    const result = await db.query(
+      `UPDATE users SET first_name = $1, last_name = $2
+       WHERE id = $3
+       RETURNING id, first_name, last_name, email, role`,
+      [body.first_name, body.last_name, userId],
+    );
+    return { user: result.rows[0] };
+  }
+
+  const validationError = validateUserFields(body);
+  if (validationError) {
+    return { error: validationError };
+  }
+  const {
+    first_name,
+    last_name,
+    business_name,
+    logo_url,
+    address,
+    city,
+    opening_hours,
+    pickup_hours,
+    description,
+    phone,
+  } = body;
+  const result = await db.query(
+    `UPDATE users SET
+       first_name = $1,
+       last_name = $2,
+       business_name = $3,
+       logo_url = COALESCE($4, logo_url),
+       address = COALESCE($5, address),
+       city = $6,
+       opening_hours = COALESCE($7, opening_hours),
+       pickup_hours = COALESCE($8, pickup_hours),
+       description = COALESCE($9, description),
+       phone = $10
+     WHERE id = $11
+     RETURNING ${PROFILE_COLUMNS}`,
+    [
       first_name,
       last_name,
       business_name,
@@ -99,46 +134,21 @@ export const updateUser = async (req: Request, res: Response) => {
       pickup_hours,
       description,
       phone,
-    }: UserFields = req.body;
-    const validationError = validateUserFields(req.body);
+      userId,
+    ],
+  );
+  return { user: result.rows[0] };
+};
 
-    if (validationError) {
-      return res.status(400).json({
-        error: validationError,
-      });
+export const updateUser = async (req: Request, res: Response) => {
+  try {
+    const result = await updateProfile(pool, req.user!.id, req.user!.role, req.body);
+    if (result.error) {
+      return res.status(400).json({ error: result.error });
     }
-
-    const result = await pool.query(
-      `UPDATE users SET 
-  first_name = $1, 
-  last_name = $2, 
-  business_name = $3, 
-  logo_url = COALESCE($4, logo_url), 
-  address = COALESCE($5, address), 
-  city = $6, 
-  opening_hours = COALESCE($7, opening_hours), 
-  pickup_hours = COALESCE($8, pickup_hours), 
-  description = COALESCE($9, description), 
-  phone = $10
-       WHERE id = $11
-       RETURNING id, first_name, last_name, email, role, business_name, logo_url, address, city, opening_hours, pickup_hours, description, phone`,
-      [
-        first_name,
-        last_name,
-        business_name,
-        logo_url,
-        address,
-        city,
-        opening_hours,
-        pickup_hours,
-        description,
-        phone,
-        userId,
-      ],
-    );
     return res
       .status(200)
-      .json({ message: "Profil uspješno ažuriran.", user: result.rows[0] });
+      .json({ message: "Profil uspješno ažuriran.", user: result.user });
   } catch (error) {
     console.error("Greška prilikom uređivanja korisnika:", error);
     return res

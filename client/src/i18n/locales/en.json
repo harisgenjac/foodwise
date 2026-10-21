@@ -19,7 +19,8 @@
     "adminProducts": "Products",
     "adminDonations": "Donations",
     "adminActions": "Activity log",
-    "adminReservations": "Reservations"
+    "adminReservations": "Reservations",
+    "adminAnnouncements": "Announcements"
   },
   "header": {
     "notificationsLabel": "Notifications",
@@ -236,7 +237,8 @@
       "PICKUP_MISSED": "Your reservation for {{product}} was cancelled because it was not picked up in time.",
       "PRODUCT_REMOVED_BY_ADMIN": "An administrator removed {{product}} from your offer.",
       "DONATION_REMOVED_BY_ADMIN": "An administrator removed your donation {{product}}.",
-      "RESERVATION_CANCELLED_BY_ADMIN": "The platform administrator cancelled the reservation for {{product}}."
+      "RESERVATION_CANCELLED_BY_ADMIN": "The platform administrator cancelled the reservation for {{product}}.",
+      "PLATFORM_ANNOUNCEMENT": "Platform announcement: {{title}}"
     },
     "reason": "Reason: {{reason}}"
   },
@@ -727,7 +729,10 @@
       "UNBLOCK_USER": "Account unblocked",
       "REMOVE_PRODUCT": "Product removed",
       "REMOVE_DONATION": "Donation removed",
-      "CANCEL_RESERVATION": "Reservation cancelled"
+      "CANCEL_RESERVATION": "Reservation cancelled",
+      "UPDATE_PROFILE": "Profile edited",
+      "CREATE_ANNOUNCEMENT": "Announcement sent",
+      "END_ANNOUNCEMENT": "Announcement ended"
     },
     "common": {
       "cancel": "Cancel",
@@ -827,7 +832,16 @@
       "confirmPassword": "Repeat the password",
       "passwordMismatch": "The passwords do not match.",
       "savePassword": "Save password",
-      "viewReservations": "User's reservations"
+      "viewReservations": "User's reservations",
+      "editProfile": "Edit profile",
+      "editProfileTitle": "Edit the user's profile",
+      "editProfileText": "Correct the details of {{name}}. Only the user changes the logo.",
+      "saveProfile": "Save profile",
+      "openingHours": "Opening hours",
+      "pickupHours": "Pickup hours",
+      "description": "Description",
+      "firstName": "First name",
+      "lastName": "Last name"
     },
     "createUser": {
       "title": "New user",
@@ -934,6 +948,57 @@
       "showAll": "Show all",
       "count_one": "{{count}} reservation",
       "count_other": "{{count}} reservations"
+    },
+    "announcements": {
+      "title": "Announcements",
+      "subtitle": "Send a message to stores, restaurants or everyone. Recipients get it as a notification and as a banner while it lasts.",
+      "formSection": "New announcement",
+      "audienceSection": "Send to",
+      "audiences": {
+        "ALL": "Everyone",
+        "STORE": "Stores",
+        "RESTAURANT": "Restaurants"
+      },
+      "audienceDescriptions": {
+        "ALL": "All stores and all restaurants.",
+        "STORE": "Stores only.",
+        "RESTAURANT": "Restaurants only."
+      },
+      "bosnianSection": "In Bosnian",
+      "englishSection": "In English (optional)",
+      "englishHint": "If left empty, users with the English interface see the Bosnian text.",
+      "titleLabel": "Title",
+      "bodyLabel": "Text",
+      "expiresLabel": "Lasts until (optional)",
+      "expiresHint": "Without a date it lasts until you end it.",
+      "preview": "Banner preview",
+      "previewEmpty": "The title and text will appear here.",
+      "send": "Send announcement",
+      "confirmTitle": "Send this announcement?",
+      "confirmText": "\"{{title}}\" goes to: {{audience}}. A sent announcement cannot be edited, only ended.",
+      "confirmSend": "Send",
+      "sent_one": "The announcement was sent to {{count}} user.",
+      "sent_other": "The announcement was sent to {{count}} users.",
+      "sendError": "The announcement was not sent. Please try again.",
+      "listSection": "Sent announcements",
+      "columnAnnouncement": "Announcement",
+      "columnAudience": "Audience",
+      "columnSent": "Sent",
+      "columnReach": "Recipients / dismissed",
+      "columnStatus": "Status",
+      "statusActive": "Active",
+      "statusEnded": "Ended",
+      "until": "until {{date}}",
+      "end": "End",
+      "endTitle": "End this announcement?",
+      "endText": "The banner \"{{title}}\" disappears for every user. The notifications stay.",
+      "ended": "The announcement was ended.",
+      "emptyTitle": "No announcements yet",
+      "emptySubtitle": "Sent announcements will appear here."
     }
+  },
+  "announcements": {
+    "label": "Platform announcement",
+    "dismiss": "Dismiss announcement"
   }
 }

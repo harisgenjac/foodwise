@@ -187,7 +187,10 @@ export type AdminActionType =
   | "UNBLOCK_USER"
   | "REMOVE_PRODUCT"
   | "REMOVE_DONATION"
-  | "CANCEL_RESERVATION";
+  | "CANCEL_RESERVATION"
+  | "UPDATE_PROFILE"
+  | "CREATE_ANNOUNCEMENT"
+  | "END_ANNOUNCEMENT";
 
 export interface AdminAction {
   id: number;
@@ -204,6 +207,30 @@ export interface AdminAction {
   target_donation_id: number | null;
   donation_name: string | null;
   target_reservation_id?: number | null;
+  target_announcement_id?: number | null;
+  announcement_title?: string | null;
+}
+
+export type AnnouncementAudience = "ALL" | "STORE" | "RESTAURANT";
+
+// GET /announcements/active; the English texts are optional and fall back to Bosnian.
+export interface Announcement {
+  id: number;
+  title_bs: string;
+  body_bs: string;
+  title_en: string | null;
+  body_en: string | null;
+  created_at: string;
+}
+
+export interface AdminAnnouncement extends Announcement {
+  audience: AnnouncementAudience;
+  expires_at: string | null;
+  ended_at: string | null;
+  admin_email: string;
+  is_active: boolean;
+  recipients: number;
+  dismissed: number;
 }
 
 export interface AdminUserCounts {

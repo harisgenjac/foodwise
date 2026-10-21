@@ -59,7 +59,7 @@ function NotificationItem({ notification, compact = false, onNavigate }: Notific
               unread ? "font-semibold text-gray-900" : "text-gray-600"
             }`}
           >
-            {getNotificationText(notification, t)}
+            {getNotificationText(notification, t, i18n.language)}
           </span>
           <span className={`mt-1 block text-xs ${unread ? "text-orange-600" : "text-gray-400"}`}>
             {formatRelativeTime(notification.created_at, t, i18n.language)}

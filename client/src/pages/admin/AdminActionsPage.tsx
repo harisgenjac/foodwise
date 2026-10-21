@@ -21,6 +21,9 @@ const ACTION_STYLES: Record<AdminAction["action"], string> = {
   REMOVE_PRODUCT: "bg-red-50 text-red-600",
   REMOVE_DONATION: "bg-red-50 text-red-600",
   CANCEL_RESERVATION: "bg-amber-50 text-amber-700",
+  UPDATE_PROFILE: "bg-blue-50 text-blue-700",
+  CREATE_ANNOUNCEMENT: "bg-blue-50 text-blue-700",
+  END_ANNOUNCEMENT: "bg-gray-100 text-gray-700",
 };
 
 function AdminActionsPage() {
@@ -105,6 +108,7 @@ function AdminActionsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
+                      {row.announcement_title && <p className="font-medium text-gray-900">{row.announcement_title}</p>}
                       {(row.product_name || row.donation_name) && (
                         <p className="font-medium text-gray-900">
                           {row.product_name || row.donation_name}
@@ -118,7 +122,7 @@ function AdminActionsPage() {
                           {row.target_business_name || row.target_email}
                         </Link>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        !row.announcement_title && <span className="text-gray-400">—</span>
                       )}
                     </td>
                     <td className="hidden max-w-xs px-4 py-3 text-gray-600 lg:table-cell">{row.reason || "—"}</td>
