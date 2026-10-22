@@ -48,19 +48,19 @@ export const createProduct = async (req: Request, res: Response) => {
     );
     return res
       .status(201)
-      .json({ message: "Proizvod uspješno dodan.", product: result.rows[0] });
+      .json({ message: "Product created successfully.", product: result.rows[0] });
   } catch (error) {
-    console.error("Greška prilikom kreiranja proizvoda:", error);
+    console.error("Error while creating product:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom kreiranja proizvoda." });
+      .json({ error: "An error occurred while creating the product." });
   }
 };
 
 // All or nothing: one invalid row rejects the whole file, so re-sending a fixed file never duplicates products.
 export const importProducts = async (req: Request, res: Response) => {
   if (!req.file) {
-    return res.status(400).json({ error: "CSV fajl je obavezan." });
+    return res.status(400).json({ error: "A CSV file is required." });
   }
   const parsed = parseProductCsv(req.file.buffer);
   if (parsed.error !== undefined) {
@@ -91,15 +91,15 @@ export const importProducts = async (req: Request, res: Response) => {
     }
     await client.query("COMMIT");
     return res.status(201).json({
-      message: `Uvezeno proizvoda: ${products.length}.`,
+      message: `Products imported: ${products.length}.`,
       products,
     });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom uvoza proizvoda:", error);
+    console.error("Error while importing products:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom uvoza proizvoda." });
+      .json({ error: "An error occurred while importing products." });
   } finally {
     if (client) client.release();
   }
@@ -140,7 +140,7 @@ export const getProducts = async (req: Request, res: Response) => {
     if (maxPrice) {
       const price = parseNumber(maxPrice);
       if (price === null || price < 0) {
-        return res.status(400).json({ error: "Neispravan filter." });
+        return res.status(400).json({ error: "Invalid filter." });
       }
       values.push(price);
       query += ` AND products.discounted_price <= $${values.length}`;
@@ -149,7 +149,7 @@ export const getProducts = async (req: Request, res: Response) => {
     if (expiryWithinDays) {
       const days = parseNonNegativeInt(expiryWithinDays);
       if (days === null) {
-        return res.status(400).json({ error: "Neispravan filter." });
+        return res.status(400).json({ error: "Invalid filter." });
       }
       values.push(days);
       query += ` AND products.expiry_date <= CURRENT_DATE + ($${values.length} * INTERVAL '1 day')`;
@@ -163,11 +163,11 @@ export const getProducts = async (req: Request, res: Response) => {
     const pageSize = limit === undefined ? DEFAULT_PAGE_SIZE : parseNonNegativeInt(limit);
     const skip = offset === undefined ? 0 : parseNonNegativeInt(offset);
     if (pageSize === null || pageSize === 0 || pageSize > MAX_PAGE_SIZE || skip === null) {
-      return res.status(400).json({ error: "Neispravan filter." });
+      return res.status(400).json({ error: "Invalid filter." });
     }
     const sortKey = sort ?? "newest";
     if (typeof sortKey !== "string" || !Object.hasOwn(SORT_ORDERS, sortKey)) {
-      return res.status(400).json({ error: "Neispravan filter." });
+      return res.status(400).json({ error: "Invalid filter." });
     }
     const orderBy = SORT_ORDERS[sortKey];
 
@@ -184,10 +184,10 @@ export const getProducts = async (req: Request, res: Response) => {
       .status(200)
       .json({ products: result.rows, total: parseInt(total.rows[0].total, 10) });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja proizvoda:", error);
+    console.error("Error while fetching products:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom dohvatanja proizvoda." });
+      .json({ error: "An error occurred while fetching products." });
   }
 };
 
@@ -195,7 +195,7 @@ export const getProductById = async (req: Request, res: Response) => {
   try {
     const productId = parseId(req.params.id);
     if (productId === null) {
-      return res.status(404).json({ error: "Proizvod nije pronađen." });
+      return res.status(404).json({ error: "Product not found." });
     }
 
     const result = await pool.query(
@@ -220,14 +220,14 @@ export const getProductById = async (req: Request, res: Response) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Proizvod nije pronađen." });
+      return res.status(404).json({ error: "Product not found." });
     }
     return res.status(200).json({ product: result.rows[0] });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja proizvoda:", error);
+    console.error("Error while fetching products:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom dohvatanja proizvoda." });
+      .json({ error: "An error occurred while fetching products." });
   }
 };
 
@@ -247,7 +247,7 @@ export const getMineProducts = async (req: Request, res: Response) => {
 
     if (status) {
       if (!PRODUCT_STATUSES.includes(status as string)) {
-        return res.status(400).json({ error: "Neispravan filter." });
+        return res.status(400).json({ error: "Invalid filter." });
       }
       values.push(status as string);
       query += ` AND status = $${values.length}`;
@@ -256,7 +256,7 @@ export const getMineProducts = async (req: Request, res: Response) => {
     if (expiryWithinDays) {
       const days = parseNonNegativeInt(expiryWithinDays);
       if (days === null) {
-        return res.status(400).json({ error: "Neispravan filter." });
+        return res.status(400).json({ error: "Invalid filter." });
       }
       values.push(days);
       query += ` AND expiry_date <= CURRENT_DATE + ($${values.length} * INTERVAL '1 day')`;
@@ -279,17 +279,17 @@ export const getMineProducts = async (req: Request, res: Response) => {
     const result = await pool.query(query, values);
     return res.status(200).json({ products: result.rows });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja proizvoda:", error);
+    console.error("Error while fetching products:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom dohvatanja proizvoda." });
+      .json({ error: "An error occurred while fetching products." });
   }
 };
 
 export const updateProduct = async (req: Request, res: Response) => {
   const productId = parseId(req.params.id);
   if (productId === null) {
-    return res.status(404).json({ error: "Proizvod nije pronađen." });
+    return res.status(404).json({ error: "Product not found." });
   }
   const {
     name,
@@ -318,21 +318,21 @@ export const updateProduct = async (req: Request, res: Response) => {
     );
     if (existing.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Proizvod nije pronađen." });
+      return res.status(404).json({ error: "Product not found." });
     }
 
     if (existing.rows[0].store_id !== req.user!.id) {
       await client.query("ROLLBACK");
       return res
         .status(403)
-        .json({ error: "Nemate dozvolu za izmjenu ovog proizvoda." });
+        .json({ error: "You are not allowed to edit this product." });
     }
 
     if (existing.rows[0].status !== "Available") {
       await client.query("ROLLBACK");
       return res
         .status(400)
-        .json({ error: "Samo dostupni proizvodi se mogu mijenjati." });
+        .json({ error: "Only available products can be edited." });
     }
 
     const reserved = await client.query(
@@ -342,7 +342,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     if (parseFloat(quantity) < parseFloat(reserved.rows[0].total_reserved)) {
       await client.query("ROLLBACK");
       return res.status(400).json({
-        error: "Količina ne može biti manja od već rezervisane količine.",
+        error: "Quantity cannot be lower than the already reserved quantity.",
       });
     }
 
@@ -373,15 +373,15 @@ export const updateProduct = async (req: Request, res: Response) => {
 
     await client.query("COMMIT");
     return res.status(200).json({
-      message: "Proizvod uspješno ažuriran.",
+      message: "Product updated successfully.",
       product,
     });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom ažuriranja proizvoda:", error);
+    console.error("Error while updating product:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom ažuriranja proizvoda." });
+      .json({ error: "An error occurred while updating the product." });
   } finally {
     if (client) client.release();
   }
@@ -391,20 +391,20 @@ export const deleteProduct = async (req: Request, res: Response) => {
   try {
     const productId = parseId(req.params.id);
     if (productId === null) {
-      return res.status(404).json({ error: "Proizvod nije pronađen." });
+      return res.status(404).json({ error: "Product not found." });
     }
 
     const existing = await pool.query("SELECT * FROM products WHERE id = $1", [
       productId,
     ]);
     if (existing.rows.length === 0) {
-      return res.status(404).json({ error: "Proizvod nije pronađen." });
+      return res.status(404).json({ error: "Product not found." });
     }
 
     if (existing.rows[0].store_id !== req.user!.id) {
       return res
         .status(403)
-        .json({ error: "Nemate dozvolu za brisanje ovog proizvoda." });
+        .json({ error: "You are not allowed to delete this product." });
     }
     const activeReservations = await pool.query(
       "SELECT id FROM reservations WHERE product_id = $1 AND status IN ('Pending', 'Confirmed')",
@@ -413,12 +413,12 @@ export const deleteProduct = async (req: Request, res: Response) => {
 
     if (activeReservations.rows.length > 0) {
       return res.status(400).json({
-        error: "Proizvod ima aktivne rezervacije i ne može biti obrisan.",
+        error: "Product has active reservations and cannot be deleted.",
       });
     }
     if (["Sold", "Expired", "Removed"].includes(existing.rows[0].status)) {
       return res.status(400).json({
-        error: "Proizvod ne može biti obrisan jer je prodat ili istekao.",
+        error: "Product cannot be deleted because it is sold or expired.",
       });
     }
     const result = await pool.query(
@@ -426,13 +426,13 @@ export const deleteProduct = async (req: Request, res: Response) => {
       [productId],
     );
     return res.status(200).json({
-      message: "Proizvod uspješno obrisan.",
+      message: "Product deleted successfully.",
       product: result.rows[0],
     });
   } catch (error) {
-    console.error("Greška prilikom brisanja proizvoda:", error);
+    console.error("Error while deleting product:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom brisanja proizvoda." });
+      .json({ error: "An error occurred while deleting the product." });
   }
 };

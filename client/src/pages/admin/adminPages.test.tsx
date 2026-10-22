@@ -82,7 +82,7 @@ describe("AdminUserDetailsPage", () => {
     });
 
   it("blocks an account only with a reason", async () => {
-    apiMock.post.mockResolvedValue({ data: { message: "Nalog je blokiran." } });
+    apiMock.post.mockResolvedValue({ data: { message: "Account blocked." } });
     const success = vi.spyOn(toast, "success");
     renderPage();
 
@@ -95,11 +95,11 @@ describe("AdminUserDetailsPage", () => {
     await userEvent.type(within(dialog).getByLabelText(t("admin.common.reasonLabel")), "Lažni proizvodi");
     await userEvent.click(within(dialog).getByRole("button", { name: t("admin.userDetails.confirmBlock") }));
     expect(apiMock.post).toHaveBeenCalledWith("/admin/users/5/block", { reason: "Lažni proizvodi" });
-    await waitFor(() => expect(success).toHaveBeenCalledWith("Nalog je blokiran."));
+    await waitFor(() => expect(success).toHaveBeenCalledWith("Account blocked."));
   });
 
   it("shows the block reason and offers unblocking", async () => {
-    apiMock.post.mockResolvedValue({ data: { message: "Nalog je deblokiran." } });
+    apiMock.post.mockResolvedValue({ data: { message: "Account unblocked." } });
     renderPage({ ...store, is_blocked: true, blocked_reason: "Kršenje pravila", blocked_at: "2026-10-20T08:00:00.000Z" });
 
     expect(await screen.findByText(`${t("admin.common.reasonLabel")}: Kršenje pravila`)).toBeInTheDocument();
@@ -115,7 +115,7 @@ describe("AdminUserDetailsPage", () => {
   });
 
   it("sets a new password once both fields match", async () => {
-    apiMock.patch.mockResolvedValue({ data: { message: "Lozinka je uspješno promijenjena." } });
+    apiMock.patch.mockResolvedValue({ data: { message: "Password changed successfully." } });
     renderPage();
 
     await userEvent.click(await screen.findByRole("button", { name: t("admin.userDetails.setPassword") }));
@@ -133,7 +133,7 @@ describe("AdminUserDetailsPage", () => {
   });
 
   it("shows the server's reason when an action fails", async () => {
-    apiMock.post.mockRejectedValue(axiosError(400, "Nalog je već blokiran."));
+    apiMock.post.mockRejectedValue(axiosError(400, "Account is already blocked."));
     const error = vi.spyOn(toast, "error");
     renderPage();
 
@@ -141,7 +141,7 @@ describe("AdminUserDetailsPage", () => {
     const dialog = screen.getByRole("dialog");
     await userEvent.type(within(dialog).getByLabelText(t("admin.common.reasonLabel")), "Test");
     await userEvent.click(within(dialog).getByRole("button", { name: t("admin.userDetails.confirmBlock") }));
-    await waitFor(() => expect(error).toHaveBeenCalledWith("Nalog je već blokiran."));
+    await waitFor(() => expect(error).toHaveBeenCalledWith("Account is already blocked."));
   });
 });
 
@@ -157,7 +157,7 @@ describe("AdminCreateUserPage", () => {
   };
 
   it("creates an account with only the role, email and password", async () => {
-    apiMock.post.mockResolvedValue({ data: { message: "Korisnik uspješno kreiran.", user: { id: 9 } } });
+    apiMock.post.mockResolvedValue({ data: { message: "User created successfully.", user: { id: 9 } } });
     renderPage();
 
     await fill();
@@ -170,11 +170,11 @@ describe("AdminCreateUserPage", () => {
   });
 
   it("shows the server's reason when the account is not created", async () => {
-    apiMock.post.mockRejectedValue(axiosError(400, "Korisnik s tim emailom već postoji."));
+    apiMock.post.mockRejectedValue(axiosError(400, "A user with this email already exists."));
     renderPage();
 
     await fill();
-    expect(await screen.findByText("Korisnik s tim emailom već postoji.")).toBeInTheDocument();
+    expect(await screen.findByText("A user with this email already exists.")).toBeInTheDocument();
   });
 });
 
@@ -198,7 +198,7 @@ describe("AdminProductsPage", () => {
 
   it("filters by the store from the link and removes a product with a reason", async () => {
     const respond = vi.fn(() => ({ products: [product], total: 1 }));
-    apiMock.delete.mockResolvedValue({ data: { message: "Proizvod je uklonjen." } });
+    apiMock.delete.mockResolvedValue({ data: { message: "Product removed." } });
     renderWithProviders(<AdminProductsPage />, {
       route: "/admin/products?store_id=5",
       path: "/admin/products",
@@ -249,7 +249,7 @@ describe("AdminReservationsPage", () => {
       ],
       total: 2,
     }));
-    apiMock.post.mockResolvedValue({ data: { message: "Rezervacija je otkazana." } });
+    apiMock.post.mockResolvedValue({ data: { message: "Reservation cancelled." } });
     renderWithProviders(<AdminReservationsPage />, {
       route: "/admin/reservations?user_id=5",
       path: "/admin/reservations",

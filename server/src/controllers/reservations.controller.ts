@@ -12,18 +12,18 @@ export const createReservation = async (req: Request, res: Response) => {
   const restaurant_id = req.user!.id;
 
   if (!product_id || quantity === undefined || quantity === null || quantity === "" || !pickup_date) {
-    return res.status(400).json({ error: "Sva polja su obavezna." });
+    return res.status(400).json({ error: "All fields are required." });
   }
   const productId = parseId(product_id);
   if (productId === null) {
-    return res.status(404).json({ error: "Proizvod nije pronađen." });
+    return res.status(404).json({ error: "Product not found." });
   }
   const requestedQuantity = parseNumber(quantity);
   if (requestedQuantity === null || requestedQuantity <= 0) {
-    return res.status(400).json({ error: "Količina mora biti veća od nule." });
+    return res.status(400).json({ error: "Quantity must be greater than zero." });
   }
   if (!isValidDateTime(pickup_date)) {
-    return res.status(400).json({ error: "Datum preuzimanja nije ispravan." });
+    return res.status(400).json({ error: "Pickup date is not valid." });
   }
 
   let client;
@@ -42,18 +42,18 @@ export const createReservation = async (req: Request, res: Response) => {
     );
     if (products.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Proizvod nije pronađen." });
+      return res.status(404).json({ error: "Product not found." });
     }
     if (products.rows[0].status !== "Available" || products.rows[0].is_expired) {
       await client.query("ROLLBACK");
       return res
         .status(400)
-        .json({ error: "Proizvod više nije dostupan za rezervaciju." });
+        .json({ error: "Product is no longer available for reservation." });
     }
     if (products.rows[0].pickup_out_of_range) {
       await client.query("ROLLBACK");
       return res.status(400).json({
-        error: "Datum preuzimanja mora biti između danas i roka trajanja proizvoda.",
+        error: "Pickup date must be between today and the product's expiry date.",
       });
     }
     const reserved = await client.query(
@@ -67,7 +67,7 @@ export const createReservation = async (req: Request, res: Response) => {
       await client.query("ROLLBACK");
       return res
         .status(400)
-        .json({ error: "Nema dovoljno proizvoda na raspolaganju." });
+        .json({ error: "Not enough product available." });
     }
 
     // unit_price keeps the price agreed at reservation time, even if the store edits the product later.
@@ -84,15 +84,15 @@ export const createReservation = async (req: Request, res: Response) => {
     });
     await client.query("COMMIT");
     return res.status(201).json({
-      message: "Rezervacija uspješno kreirana.",
+      message: "Reservation created successfully.",
       reservation: result.rows[0],
     });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom kreiranja rezervacije:", error);
+    console.error("Error while creating reservation:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom kreiranja rezervacije." });
+      .json({ error: "An error occurred while creating the reservation." });
   } finally {
     if (client) client.release();
   }
@@ -106,7 +106,7 @@ export const getReservationById = async (req: Request, res: Response) => {
     if (reservationId === null) {
       return res
         .status(404)
-        .json({ error: "Ne postoji rezervacija sa tim ID" });
+        .json({ error: "No reservation exists with that ID" });
     }
 
     const result = await pool.query(
@@ -148,17 +148,17 @@ export const getReservationById = async (req: Request, res: Response) => {
     if (result.rows.length === 0) {
       return res
         .status(404)
-        .json({ error: "Ne postoji rezervacija sa tim ID" });
+        .json({ error: "No reservation exists with that ID" });
     }
     return res.status(200).json({
-      message: "Uspješno dohvačena rezervacija",
+      message: "Reservation fetched successfully",
       reservation: result.rows[0],
     });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja rezervacije:", error);
+    console.error("Error while fetching reservation:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom dohvatanja rezervacija." });
+      .json({ error: "An error occurred while fetching reservations." });
   }
 };
 
@@ -190,7 +190,7 @@ export const getMineReservations = async (req: Request, res: Response) => {
 
     if (status) {
       if (!RESERVATION_STATUSES.includes(status as string)) {
-        return res.status(400).json({ error: "Neispravan filter." });
+        return res.status(400).json({ error: "Invalid filter." });
       }
       values.push(status as string);
       query += ` AND reservations.status = $${values.length}`;
@@ -206,7 +206,7 @@ export const getMineReservations = async (req: Request, res: Response) => {
     if (store_id) {
       const storeId = parseId(store_id);
       if (storeId === null) {
-        return res.status(400).json({ error: "Neispravan filter." });
+        return res.status(400).json({ error: "Invalid filter." });
       }
       values.push(storeId);
       query += ` AND products.store_id = $${values.length}`;
@@ -224,14 +224,14 @@ export const getMineReservations = async (req: Request, res: Response) => {
 
     const result = await pool.query(query, values);
     return res.status(200).json({
-      message: "Rezervacije uspješno dohvaćene.",
+      message: "Reservations fetched successfully.",
       reservations: result.rows,
     });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja rezervacija:", error);
+    console.error("Error while fetching reservations:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom dohvatanja rezervacija." });
+      .json({ error: "An error occurred while fetching reservations." });
   }
 };
 
@@ -265,7 +265,7 @@ export const getStoreReservations = async (req: Request, res: Response) => {
 
     if (status) {
       if (!RESERVATION_STATUSES.includes(status as string)) {
-        return res.status(400).json({ error: "Neispravan filter." });
+        return res.status(400).json({ error: "Invalid filter." });
       }
       values.push(status as string);
       query += ` AND reservations.status = $${values.length}`;
@@ -286,14 +286,14 @@ export const getStoreReservations = async (req: Request, res: Response) => {
     const result = await pool.query(query, values);
 
     return res.status(200).json({
-      message: "Rezervacije uspješno dohvaćene.",
+      message: "Reservations fetched successfully.",
       reservations: result.rows,
     });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja rezervacija:", error);
+    console.error("Error while fetching reservations:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom dohvatanja rezervacija." });
+      .json({ error: "An error occurred while fetching reservations." });
   }
 };
 
@@ -325,7 +325,7 @@ export const acceptReservation = async (req: Request, res: Response) => {
   const store_id = req.user!.id;
 
   if (reservationId === null) {
-    return res.status(404).json({ error: "Rezervacija nije pronađena." });
+    return res.status(404).json({ error: "Reservation not found." });
   }
 
   let client;
@@ -340,7 +340,7 @@ export const acceptReservation = async (req: Request, res: Response) => {
 
     if (result.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Rezervacija nije pronađena." });
+      return res.status(404).json({ error: "Reservation not found." });
     }
 
     const productResult = await client.query(
@@ -352,21 +352,21 @@ export const acceptReservation = async (req: Request, res: Response) => {
       await client.query("ROLLBACK");
       return res
         .status(403)
-        .json({ error: "Nemate ovlasti za prihvatanje ove rezervacije." });
+        .json({ error: "You are not allowed to accept this reservation." });
     }
 
     if (result.rows[0].status !== "Pending") {
       await client.query("ROLLBACK");
       return res
         .status(400)
-        .json({ error: "Rezervacija nije u statusu 'Pending'." });
+        .json({ error: "Reservation is not in 'Pending' status." });
     }
 
     if (productResult.rows[0].is_expired) {
       await client.query("ROLLBACK");
       return res.status(400).json({
         error:
-          "Rezervaciju nije moguće prihvatiti jer je proizvodu istekao rok trajanja.",
+          "The reservation cannot be accepted because the product has expired.",
       });
     }
 
@@ -387,13 +387,13 @@ export const acceptReservation = async (req: Request, res: Response) => {
     await client.query("COMMIT");
     return res
       .status(200)
-      .json({ message: "Rezervacija je uspješno prihvaćena." });
+      .json({ message: "Reservation accepted successfully." });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom prihvatanja rezervacije:", error);
+    console.error("Error while accepting reservation:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom prihvatanja rezervacije." });
+      .json({ error: "An error occurred while accepting the reservation." });
   } finally {
     if (client) client.release();
   }
@@ -422,7 +422,7 @@ export const rejectReservation = async (req: Request, res: Response) => {
   const reservationId = parseId(req.params.id);
   const store_id = req.user!.id;
   if (reservationId === null) {
-    return res.status(404).json({ error: "Rezervacija nije pronađena." });
+    return res.status(404).json({ error: "Reservation not found." });
   }
 
   let client;
@@ -433,21 +433,21 @@ export const rejectReservation = async (req: Request, res: Response) => {
 
     if (result.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Rezervacija nije pronađena." });
+      return res.status(404).json({ error: "Reservation not found." });
     }
 
     if (result.rows[0].store_id !== store_id) {
       await client.query("ROLLBACK");
       return res
         .status(403)
-        .json({ error: "Nemate ovlasti za odbijanje ove rezervacije." });
+        .json({ error: "You are not allowed to reject this reservation." });
     }
 
     if (result.rows[0].status !== "Pending") {
       await client.query("ROLLBACK");
       return res
         .status(400)
-        .json({ error: "Rezervacija nije u statusu 'Pending'." });
+        .json({ error: "Reservation is not in 'Pending' status." });
     }
     await client.query(
       "UPDATE reservations SET status = 'Rejected' WHERE id = $1 AND status = 'Pending'",
@@ -463,13 +463,13 @@ export const rejectReservation = async (req: Request, res: Response) => {
     await client.query("COMMIT");
     return res
       .status(200)
-      .json({ message: "Rezervacija je uspješno odbijena." });
+      .json({ message: "Reservation rejected successfully." });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom odbijanje rezervacije:", error);
+    console.error("Error while rejecting reservation:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom odbijanja rezervacije." });
+      .json({ error: "An error occurred while rejecting the reservation." });
   } finally {
     if (client) client.release();
   }
@@ -479,7 +479,7 @@ export const cancelReservation = async (req: Request, res: Response) => {
   const reservationId = parseId(req.params.id);
   const restaurant_id = req.user!.id;
   if (reservationId === null) {
-    return res.status(404).json({ error: "Rezervacija nije pronađena." });
+    return res.status(404).json({ error: "Reservation not found." });
   }
 
   let client;
@@ -490,21 +490,21 @@ export const cancelReservation = async (req: Request, res: Response) => {
 
     if (result.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Rezervacija nije pronađena." });
+      return res.status(404).json({ error: "Reservation not found." });
     }
 
     if (result.rows[0].restaurant_id !== restaurant_id) {
       await client.query("ROLLBACK");
       return res
         .status(403)
-        .json({ error: "Nemate ovlasti za otkazivanje ove rezervacije." });
+        .json({ error: "You are not allowed to cancel this reservation." });
     }
 
     if (result.rows[0].status !== "Pending") {
       await client.query("ROLLBACK");
       return res
         .status(400)
-        .json({ error: "Rezervacija nije u statusu 'Pending'." });
+        .json({ error: "Reservation is not in 'Pending' status." });
     }
 
     await client.query(
@@ -521,13 +521,13 @@ export const cancelReservation = async (req: Request, res: Response) => {
     await client.query("COMMIT");
     return res
       .status(200)
-      .json({ message: "Rezervacija je uspješno otkazana." });
+      .json({ message: "Reservation cancelled successfully." });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom otkazivanja rezervacije:", error);
+    console.error("Error while cancelling reservation:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom otkazivanja rezervacije." });
+      .json({ error: "An error occurred while cancelling the reservation." });
   } finally {
     if (client) client.release();
   }
@@ -547,7 +547,7 @@ export const getPickups = async (req: Request, res: Response) => {
   const { scope, name } = req.query;
 
   if (!PICKUP_SCOPES.includes(scope as string)) {
-    return res.status(400).json({ error: "Neispravan filter." });
+    return res.status(400).json({ error: "Invalid filter." });
   }
 
   try {
@@ -602,14 +602,14 @@ export const getPickups = async (req: Request, res: Response) => {
 
     const result = await pool.query(query, values);
     return res.status(200).json({
-      message: "Preuzimanja uspješno dohvaćena.",
+      message: "Pickups fetched successfully.",
       reservations: result.rows,
     });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja preuzimanja:", error);
+    console.error("Error while fetching pickups:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom dohvatanja preuzimanja." });
+      .json({ error: "An error occurred while fetching pickups." });
   }
 };
 
@@ -630,7 +630,7 @@ export const getPickupCounts = async (req: Request, res: Response) => {
     );
     const row = result.rows[0];
     return res.status(200).json({
-      message: "Preuzimanja uspješno dohvaćena.",
+      message: "Pickups fetched successfully.",
       counts: {
         today: parseInt(row.today, 10),
         overdue: parseInt(row.overdue, 10),
@@ -639,10 +639,10 @@ export const getPickupCounts = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja preuzimanja:", error);
+    console.error("Error while fetching pickups:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom dohvatanja preuzimanja." });
+      .json({ error: "An error occurred while fetching pickups." });
   }
 };
 
@@ -652,7 +652,7 @@ export const completeReservation = async (req: Request, res: Response) => {
   const reservationId = parseId(req.params.id);
   const store_id = req.user!.id;
   if (reservationId === null) {
-    return res.status(404).json({ error: "Rezervacija nije pronađena." });
+    return res.status(404).json({ error: "Reservation not found." });
   }
 
   let client;
@@ -663,20 +663,20 @@ export const completeReservation = async (req: Request, res: Response) => {
 
     if (result.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Rezervacija nije pronađena." });
+      return res.status(404).json({ error: "Reservation not found." });
     }
 
     if (result.rows[0].store_id !== store_id) {
       await client.query("ROLLBACK");
       return res
         .status(403)
-        .json({ error: "Nemate ovlasti za potvrdu preuzimanja ove rezervacije." });
+        .json({ error: "You are not allowed to confirm the pickup of this reservation." });
     }
 
     if (result.rows[0].status !== "Confirmed") {
       await client.query("ROLLBACK");
       return res.status(400).json({
-        error: "Samo prihvaćene rezervacije mogu biti označene kao preuzete.",
+        error: "Only accepted reservations can be marked as picked up.",
       });
     }
 
@@ -694,13 +694,13 @@ export const completeReservation = async (req: Request, res: Response) => {
     await client.query("COMMIT");
     return res
       .status(200)
-      .json({ message: "Rezervacija je označena kao preuzeta." });
+      .json({ message: "Reservation marked as picked up." });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom potvrde preuzimanja:", error);
+    console.error("Error while confirming pickup:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom potvrde preuzimanja." });
+      .json({ error: "An error occurred while confirming the pickup." });
   } finally {
     if (client) client.release();
   }
@@ -730,7 +730,7 @@ export const cancelOverdueReservation = async (req: Request, res: Response) => {
   const reservationId = parseId(req.params.id);
   const store_id = req.user!.id;
   if (reservationId === null) {
-    return res.status(404).json({ error: "Rezervacija nije pronađena." });
+    return res.status(404).json({ error: "Reservation not found." });
   }
 
   let client;
@@ -741,21 +741,21 @@ export const cancelOverdueReservation = async (req: Request, res: Response) => {
 
     if (result.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Rezervacija nije pronađena." });
+      return res.status(404).json({ error: "Reservation not found." });
     }
 
     if (result.rows[0].store_id !== store_id) {
       await client.query("ROLLBACK");
       return res
         .status(403)
-        .json({ error: "Nemate ovlasti za otkazivanje ove rezervacije." });
+        .json({ error: "You are not allowed to cancel this reservation." });
     }
 
     if (result.rows[0].status !== "Confirmed" || !result.rows[0].is_overdue) {
       await client.query("ROLLBACK");
       return res
         .status(400)
-        .json({ error: "Samo zakašnjela preuzimanja mogu biti otkazana." });
+        .json({ error: "Only overdue pickups can be cancelled." });
     }
 
     await client.query(
@@ -774,13 +774,13 @@ export const cancelOverdueReservation = async (req: Request, res: Response) => {
     await client.query("COMMIT");
     return res
       .status(200)
-      .json({ message: "Zakašnjela rezervacija je otkazana." });
+      .json({ message: "Overdue reservation cancelled." });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom otkazivanja zakašnjele rezervacije:", error);
+    console.error("Error while cancelling overdue reservation:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom otkazivanja rezervacije." });
+      .json({ error: "An error occurred while cancelling the reservation." });
   } finally {
     if (client) client.release();
   }

@@ -138,7 +138,7 @@ describe("Pickups", () => {
     it.each(["", "scope=all"])("returns 400 for an invalid scope (%s)", async (query) => {
       const response = await store.get(`/api/reservations/pickups?${query}`);
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Neispravan filter.");
+      expect(response.body.error).toBe("Invalid filter.");
     });
   });
 
@@ -165,7 +165,7 @@ describe("Pickups", () => {
 
       const response = await store.patch(`/api/reservations/${id}/complete`);
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Rezervacija je označena kao preuzeta.");
+      expect(response.body.message).toBe("Reservation marked as picked up.");
       const row = await reservationRow(id);
       expect(row.status).toBe("Completed");
       expect(row.picked_up_at).not.toBeNull();
@@ -173,7 +173,7 @@ describe("Pickups", () => {
 
       const again = await store.patch(`/api/reservations/${id}/complete`);
       expect(again.status).toBe(400);
-      expect(again.body.error).toBe("Samo prihvaćene rezervacije mogu biti označene kao preuzete.");
+      expect(again.body.error).toBe("Only accepted reservations can be marked as picked up.");
     });
 
     it("keeps the picked-up quantity out of stock", async () => {
@@ -189,7 +189,7 @@ describe("Pickups", () => {
         .post("/api/reservations")
         .send({ product_id: product.id, quantity: 5, pickup_date: `${futureDate(0)}T23:00` });
       expect(tooMuch.status).toBe(400);
-      expect(tooMuch.body.error).toBe("Nema dovoljno proizvoda na raspolaganju.");
+      expect(tooMuch.body.error).toBe("Not enough product available.");
     });
 
     it("still counts a Completed reservation as successful in the store statistics", async () => {
@@ -216,7 +216,7 @@ describe("Pickups", () => {
 
       const foreign = await otherStore.patch(`/api/reservations/${id}/complete`);
       expect(foreign.status).toBe(403);
-      expect(foreign.body.error).toBe("Nemate ovlasti za potvrdu preuzimanja ove rezervacije.");
+      expect(foreign.body.error).toBe("You are not allowed to confirm the pickup of this reservation.");
       expect((await restaurant.patch(`/api/reservations/${id}/complete`)).status).toBe(403);
       expect((await reservationRow(id)).status).toBe("Confirmed");
     });
@@ -224,7 +224,7 @@ describe("Pickups", () => {
     it("returns 404 for a missing reservation", async () => {
       const response = await store.patch("/api/reservations/999999/complete");
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe("Rezervacija nije pronađena.");
+      expect(response.body.error).toBe("Reservation not found.");
     });
   });
 
@@ -236,7 +236,7 @@ describe("Pickups", () => {
 
       const response = await store.patch(`/api/reservations/${id}/cancel-overdue`);
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Zakašnjela rezervacija je otkazana.");
+      expect(response.body.message).toBe("Overdue reservation cancelled.");
       expect((await reservationRow(id)).status).toBe("Cancelled");
       expect(await availableQuantity(product.id)).toBe(10);
       expect(await notificationTypes(RESTAURANT_A)).toContain("PICKUP_MISSED");
@@ -270,7 +270,7 @@ describe("Pickups", () => {
       const id = await insertReservation(product.id, RESTAURANT_A, when);
       const response = await store.patch(`/api/reservations/${id}/cancel-overdue`);
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Samo zakašnjela preuzimanja mogu biti otkazana.");
+      expect(response.body.error).toBe("Only overdue pickups can be cancelled.");
       expect((await reservationRow(id)).status).toBe("Confirmed");
     });
 
@@ -289,7 +289,7 @@ describe("Pickups", () => {
 
       const foreign = await otherStore.patch(`/api/reservations/${id}/cancel-overdue`);
       expect(foreign.status).toBe(403);
-      expect(foreign.body.error).toBe("Nemate ovlasti za otkazivanje ove rezervacije.");
+      expect(foreign.body.error).toBe("You are not allowed to cancel this reservation.");
       expect((await restaurant.patch(`/api/reservations/${id}/cancel-overdue`)).status).toBe(403);
       expect((await store.patch("/api/reservations/999999/cancel-overdue")).status).toBe(404);
       expect((await reservationRow(id)).status).toBe("Confirmed");

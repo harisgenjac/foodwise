@@ -23,7 +23,7 @@ describe("LoginPage", () => {
   });
 
   it("shows an error for wrong credentials", async () => {
-    apiMock.post.mockRejectedValue(axiosError(400, "Pogrešan email ili lozinka."));
+    apiMock.post.mockRejectedValue(axiosError(400, "Incorrect email or password."));
     renderLogin();
 
     await submit("amir@test.com", "wrong");
@@ -32,11 +32,11 @@ describe("LoginPage", () => {
   });
 
   it("shows the server's reason for a blocked account", async () => {
-    apiMock.post.mockRejectedValue(axiosError(403, "Vaš nalog je blokiran. Razlog: Kršenje pravila"));
+    apiMock.post.mockRejectedValue(axiosError(403, "Your account is blocked. Reason: Kršenje pravila"));
     renderLogin();
 
     await submit("amir@test.com", "test12345");
-    expect(await screen.findByText("Vaš nalog je blokiran. Razlog: Kršenje pravila")).toBeInTheDocument();
+    expect(await screen.findByText("Your account is blocked. Reason: Kršenje pravila")).toBeInTheDocument();
   });
 
   it("does not offer registration, since an admin creates business accounts", () => {
@@ -65,7 +65,7 @@ describe("RegisterPage", () => {
   };
 
   it("registers with the chosen role and goes to login", async () => {
-    apiMock.post.mockResolvedValue({ data: { message: "Registracija uspješna." } });
+    apiMock.post.mockResolvedValue({ data: { message: "Registration successful." } });
     renderRegister();
 
     await fill();
@@ -80,11 +80,11 @@ describe("RegisterPage", () => {
   });
 
   it("shows the server's reason when registration fails", async () => {
-    apiMock.post.mockRejectedValue(axiosError(400, "Korisnik s tim emailom već postoji."));
+    apiMock.post.mockRejectedValue(axiosError(400, "A user with this email already exists."));
     renderRegister();
 
     await fill();
-    await waitFor(() => expect(screen.getByText("Korisnik s tim emailom već postoji.")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("A user with this email already exists.")).toBeInTheDocument());
   });
 
   it("falls back to a generic error when the server gives no reason", async () => {

@@ -69,7 +69,7 @@ describe("PickupsPage", () => {
 
   it("lets the store confirm a pickup and reloads the list and the counts", async () => {
     const success = vi.spyOn(toast, "success");
-    apiMock.patch.mockResolvedValue({ data: { message: "Rezervacija je označena kao preuzeta." } });
+    apiMock.patch.mockResolvedValue({ data: { message: "Reservation marked as picked up." } });
     renderPage({ today: [onTime] });
 
     await userEvent.click(await screen.findByRole("button", { name: t("pickups.completeButton") }));
@@ -77,13 +77,13 @@ describe("PickupsPage", () => {
     await userEvent.click(within(dialog).getByRole("button", { name: t("pickups.confirmCompleteButton") }));
 
     expect(apiMock.patch).toHaveBeenCalledWith("/reservations/2/complete");
-    expect(success).toHaveBeenCalledWith("Rezervacija je označena kao preuzeta.");
+    expect(success).toHaveBeenCalledWith("Reservation marked as picked up.");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(apiMock.get.mock.calls.filter(([url]) => url === "/reservations/pickups/counts")).toHaveLength(2);
   });
 
   it("offers cancelling only overdue pickups", async () => {
-    apiMock.patch.mockResolvedValue({ data: { message: "Zakašnjela rezervacija je otkazana." } });
+    apiMock.patch.mockResolvedValue({ data: { message: "Overdue reservation cancelled." } });
     renderPage({ today: [overdue, onTime] });
 
     const cancelButtons = await screen.findAllByRole("button", { name: t("pickups.cancelOverdueButton") });
@@ -97,13 +97,13 @@ describe("PickupsPage", () => {
   it("keeps the dialog open and shows the server error when the action fails", async () => {
     const error = vi.spyOn(toast, "error");
     vi.spyOn(console, "error").mockImplementation(() => {});
-    apiMock.patch.mockRejectedValue(axiosError(400, "Samo zakašnjela preuzimanja mogu biti otkazana."));
+    apiMock.patch.mockRejectedValue(axiosError(400, "Only overdue pickups can be cancelled."));
     renderPage({ today: [overdue] });
 
     await userEvent.click(await screen.findByRole("button", { name: t("pickups.cancelOverdueButton") }));
     await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: t("pickups.confirmCancelButton") }));
 
-    expect(error).toHaveBeenCalledWith("Samo zakašnjela preuzimanja mogu biti otkazana.");
+    expect(error).toHaveBeenCalledWith("Only overdue pickups can be cancelled.");
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 

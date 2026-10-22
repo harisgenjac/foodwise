@@ -42,8 +42,8 @@ export const getNotifications = async (req: Request, res: Response) => {
     const unreadCount = parseInt(unread.rows[0].unread_count, 10);
     return res.status(200).json({ notifications: result.rows, unreadCount });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja notifikacija:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom dohvatanja notifikacija." });
+    console.error("Error while fetching notifications:", error);
+    return res.status(500).json({ error: "An error occurred while fetching notifications." });
   }
 };
 
@@ -51,7 +51,7 @@ export const markAsRead = async (req: Request, res: Response) => {
   try {
     const notificationId = parseId(req.params.id);
     if (notificationId === null) {
-      return res.status(404).json({ error: "Notifikacija nije pronađena." });
+      return res.status(404).json({ error: "Notification not found." });
     }
     const userId = req.user!.id;
     const result = await pool.query(
@@ -59,14 +59,14 @@ export const markAsRead = async (req: Request, res: Response) => {
       [notificationId, userId],
     );
     if (result.rowCount === 0) {
-      return res.status(404).json({ error: "Notifikacija nije pronađena." });
+      return res.status(404).json({ error: "Notification not found." });
     }
-    return res.status(200).json({ message: "Notifikacija označena kao pročitana." });
+    return res.status(200).json({ message: "Notification marked as read." });
   } catch (error) {
-    console.error("Greška prilikom ažuriranja notifikacija:", error);
+    console.error("Error while updating notifications:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom ažuriranja notifikacija." });
+      .json({ error: "An error occurred while updating notifications." });
   }
 };
 
@@ -77,12 +77,12 @@ export const markAllAsRead = async (req: Request, res: Response) => {
       `UPDATE notifications SET is_read = true WHERE user_id = $1 AND is_read = false`,
       [userId],
     );
-    return res.status(200).json({ message: "Sve notifikacije su označene kao pročitane." });
+    return res.status(200).json({ message: "All notifications marked as read." });
   } catch (error) {
-    console.error("Greška prilikom ažuriranja notifikacija:", error);
+    console.error("Error while updating notifications:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom ažuriranja notifikacija." });
+      .json({ error: "An error occurred while updating notifications." });
   }
 };
 
@@ -90,7 +90,7 @@ export const deleteNotification = async (req: Request, res: Response) => {
   try {
     const notificationId = parseId(req.params.id);
     if (notificationId === null) {
-      return res.status(404).json({ error: "Notifikacija nije pronađena." });
+      return res.status(404).json({ error: "Notification not found." });
     }
     const userId = req.user!.id;
     const result = await pool.query(
@@ -98,14 +98,14 @@ export const deleteNotification = async (req: Request, res: Response) => {
       [notificationId, userId],
     );
     if (result.rowCount === 0) {
-      return res.status(404).json({ error: "Notifikacija nije pronađena." });
+      return res.status(404).json({ error: "Notification not found." });
     }
-    return res.status(200).json({ message: "Notifikacija je obrisana." });
+    return res.status(200).json({ message: "Notification deleted." });
   } catch (error) {
-    console.error("Greška prilikom brisanja notifikacije:", error);
+    console.error("Error while deleting notification:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom brisanja notifikacije." });
+      .json({ error: "An error occurred while deleting the notification." });
   }
 };
 
@@ -118,11 +118,11 @@ export const deleteReadNotifications = async (req: Request, res: Response) => {
     );
     return res
       .status(200)
-      .json({ message: "Pročitane notifikacije su obrisane.", deleted: result.rowCount ?? 0 });
+      .json({ message: "Read notifications deleted.", deleted: result.rowCount ?? 0 });
   } catch (error) {
-    console.error("Greška prilikom brisanja notifikacija:", error);
+    console.error("Error while deleting notifications:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom brisanja notifikacija." });
+      .json({ error: "An error occurred while deleting notifications." });
   }
 };

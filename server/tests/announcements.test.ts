@@ -90,13 +90,13 @@ describe("Platform announcements", () => {
 
   it("validates the announcement", async () => {
     const cases: [Record<string, unknown>, string][] = [
-      [{ audience: "ADMIN" }, "Publika nije ispravna."],
-      [{ title_bs: "  " }, "Naslov i tekst su obavezni."],
-      [{ body_en: "" }, "Za engleski prevod unesite i naslov i tekst."],
-      [{ title_bs: "x".repeat(121) }, "Naslov može imati najviše 120 znakova."],
-      [{ body_bs: "x".repeat(1001) }, "Tekst može imati najviše 1000 znakova."],
-      [{ expires_at: "2020-01-01T10:00:00.000Z" }, "Datum isteka mora biti u budućnosti."],
-      [{ expires_at: "sutra" }, "Datum isteka mora biti u budućnosti."],
+      [{ audience: "ADMIN" }, "Audience is not valid."],
+      [{ title_bs: "  " }, "Title and text are required."],
+      [{ body_en: "" }, "For the English translation, enter both the title and the text."],
+      [{ title_bs: "x".repeat(121) }, "Title can be at most 120 characters long."],
+      [{ body_bs: "x".repeat(1001) }, "Text can be at most 1000 characters long."],
+      [{ expires_at: "2020-01-01T10:00:00.000Z" }, "Expiry date must be in the future."],
+      [{ expires_at: "sutra" }, "Expiry date must be in the future."],
     ];
     for (const [overrides, message] of cases) {
       const response = await admin.post("/api/admin/announcements").send(payload(overrides));
@@ -114,7 +114,7 @@ describe("Platform announcements", () => {
     await pool.query("UPDATE announcements SET expires_at = NOW() - INTERVAL '1 minute' WHERE id = $1", [expiring.id]);
     const end = await admin.post(`/api/admin/announcements/${ended.id}/end`);
     expect(end.status).toBe(200);
-    expect(end.body.message).toBe("Obavještenje je završeno.");
+    expect(end.body.message).toBe("Announcement ended.");
 
     const active = await activeIds(restaurant);
     expect(active).not.toContain(expiring.id);
@@ -123,7 +123,7 @@ describe("Platform announcements", () => {
     for (const id of [expiring.id, ended.id]) {
       const again = await admin.post(`/api/admin/announcements/${id}/end`);
       expect(again.status).toBe(400);
-      expect(again.body.error).toBe("Obavještenje je već završeno.");
+      expect(again.body.error).toBe("Announcement has already ended.");
     }
     expect((await admin.post("/api/admin/announcements/999999/end")).status).toBe(404);
   });
@@ -135,7 +135,7 @@ describe("Platform announcements", () => {
     for (let i = 0; i < 2; i++) {
       const response = await restaurant.post(`/api/announcements/${announcement.id}/dismiss`);
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Obavještenje je zatvoreno.");
+      expect(response.body.message).toBe("Announcement dismissed.");
     }
     expect(await activeIds(restaurant)).not.toContain(announcement.id);
     expect(await activeIds(other)).toContain(announcement.id);

@@ -102,13 +102,13 @@ describe("ReportsPage", () => {
       statusText: "",
       headers: {},
       config: { headers: new AxiosHeaders() },
-      data: new Blob([JSON.stringify({ error: "Neispravan period." })], { type: "application/json" }),
+      data: new Blob([JSON.stringify({ error: "Invalid period." })], { type: "application/json" }),
     });
     renderPage("STORE", error);
 
     await userEvent.click((await screen.findAllByRole("button", { name: t("reports.download") }))[0]!);
 
-    await waitFor(() => expect(errorToast).toHaveBeenCalledWith("Neispravan period."));
+    await waitFor(() => expect(errorToast).toHaveBeenCalledWith("Invalid period."));
     expect(createObjectURL).not.toHaveBeenCalled();
   });
 });

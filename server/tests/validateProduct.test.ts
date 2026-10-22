@@ -27,7 +27,7 @@ describe("validateProductFields", () => {
   it.each(["name", "category", "original_price", "discounted_price", "quantity", "unit", "expiry_date"] as const)(
     "requires %s",
     (field) => {
-      expect(validateProductFields({ ...valid, [field]: "" })).toBe("Sva polja su obavezna.");
+      expect(validateProductFields({ ...valid, [field]: "" })).toBe("All fields are required.");
     },
   );
 
@@ -39,17 +39,17 @@ describe("validateProductFields", () => {
     ["original_price", "0"],
   ] as const)("rejects %s = %s", (field, value) => {
     expect(validateProductFields({ ...valid, [field]: value })).toBe(
-      "Cijene i količina moraju biti pozitivni brojevi.",
+      "Prices and quantity must be positive numbers.",
     );
   });
 
   it("rejects a discounted price above the original price", () => {
     expect(validateProductFields({ ...valid, original_price: "5", discounted_price: "6" })).toBe(
-      "Snižena cijena ne može biti veća od originalne.",
+      "Discounted price cannot be higher than the original price.",
     );
   });
 
   it("rejects an invalid expiry date", () => {
-    expect(validateProductFields({ ...valid, expiry_date: "not-a-date" })).toBe("Datum isteka nije ispravan.");
+    expect(validateProductFields({ ...valid, expiry_date: "not-a-date" })).toBe("Expiry date is not valid.");
   });
 });

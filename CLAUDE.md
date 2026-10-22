@@ -44,7 +44,7 @@ More commands (tests, seed, lint, type-check) are in the two technical docs.
 ## Rules that apply everywhere
 
 - **API responses:** `{ error: "..." }` for failures, `{ message, <entity> }` for successes.
-- **Server messages are in Bosnian** (errors, success messages) and the tests assert on them. Keep new ones in Bosnian and consistent with existing wording. Exception: notification text is translated on the client from the notification `type`; the stored `message` is an English fallback.
+- **Server messages are in English** (errors, success messages, log lines) and the tests assert on them. Keep new ones in English and consistent with existing wording (e.g. `"Product not found."`, `"An error occurred while fetching products."`). UI translation stays on the client: notification text is translated from the notification `type` (the stored `message` is an English fallback), and CSV reports follow the `lang` query param.
 - **Authorization checks ownership, not only role.**
 - **SQL:** parameterized queries only. With a JOIN, always use explicit `table.column` prefixes and never a bare `*`.
 - **Migrations:** never edit one that has already been run. Every schema change is a new migration.

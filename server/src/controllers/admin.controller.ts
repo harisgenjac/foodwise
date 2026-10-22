@@ -91,7 +91,7 @@ const parseReason = (value: unknown): string | null => {
   const reason = value.trim();
   return reason && reason.length <= MAX_REASON_LENGTH ? reason : null;
 };
-const REASON_ERROR = `Razlog je obavezan (najviše ${MAX_REASON_LENGTH} znakova).`;
+const REASON_ERROR = `A reason is required (at most ${MAX_REASON_LENGTH} characters).`;
 
 const parsePage = (query: Request["query"]) => {
   const limit = query.limit === undefined ? DEFAULT_PAGE_SIZE : parseNonNegativeInt(query.limit);
@@ -183,8 +183,8 @@ export const getStats = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja statistike:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom dohvatanja statistike." });
+    console.error("Error while fetching statistics:", error);
+    return res.status(500).json({ error: "An error occurred while fetching statistics." });
   }
 };
 
@@ -192,21 +192,21 @@ export const getUsers = async (req: Request, res: Response) => {
   const { role, q, city, blocked } = req.query;
   const page = parsePage(req.query);
   if (!page) {
-    return res.status(400).json({ error: "Neispravan filter." });
+    return res.status(400).json({ error: "Invalid filter." });
   }
 
   let from = "FROM users WHERE true";
   const values: (string | number | boolean)[] = [];
   if (role) {
     if (typeof role !== "string" || !ROLES.includes(role)) {
-      return res.status(400).json({ error: "Neispravan filter." });
+      return res.status(400).json({ error: "Invalid filter." });
     }
     values.push(role);
     from += ` AND users.role = $${values.length}`;
   }
   if (blocked) {
     if (blocked !== "true" && blocked !== "false") {
-      return res.status(400).json({ error: "Neispravan filter." });
+      return res.status(400).json({ error: "Invalid filter." });
     }
     values.push(blocked === "true");
     from += ` AND users.is_blocked = $${values.length}`;
@@ -231,20 +231,20 @@ export const getUsers = async (req: Request, res: Response) => {
     );
     return res.status(200).json({ users: rows, total });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja korisnika:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom dohvatanja korisnika." });
+    console.error("Error while fetching users:", error);
+    return res.status(500).json({ error: "An error occurred while fetching users." });
   }
 };
 
 export const getUserDetails = async (req: Request, res: Response) => {
   const targetId = parseId(req.params.id);
   if (targetId === null) {
-    return res.status(404).json({ error: "Korisnik nije pronađen." });
+    return res.status(404).json({ error: "User not found." });
   }
   try {
     const user = await pool.query(`SELECT ${USER_COLUMNS} FROM users WHERE users.id = $1`, [targetId]);
     if (user.rows.length === 0) {
-      return res.status(404).json({ error: "Korisnik nije pronađen." });
+      return res.status(404).json({ error: "User not found." });
     }
     const counts = await pool.query(
       `SELECT
@@ -293,8 +293,8 @@ export const getUserDetails = async (req: Request, res: Response) => {
       actions: actions.rows,
     });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja korisnika:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom dohvatanja korisnika." });
+    console.error("Error while fetching users:", error);
+    return res.status(500).json({ error: "An error occurred while fetching users." });
   }
 };
 
@@ -303,10 +303,10 @@ export const getUserDetails = async (req: Request, res: Response) => {
 export const createUser = async (req: Request, res: Response) => {
   const { role, email, password } = req.body;
   if (!role || !email || !password) {
-    return res.status(400).json({ error: "Email, lozinka i rola su obavezni." });
+    return res.status(400).json({ error: "Email, password and role are required." });
   }
   if (typeof role !== "string" || !ROLES.includes(role)) {
-    return res.status(400).json({ error: "Rola mora biti STORE, RESTAURANT ili ADMIN." });
+    return res.status(400).json({ error: "Role must be STORE, RESTAURANT or ADMIN." });
   }
   const credentialsError = validateEmail(email) ?? validatePassword(password);
   if (credentialsError) {
@@ -328,14 +328,14 @@ export const createUser = async (req: Request, res: Response) => {
     const user = result.rows[0];
     await logAdminAction(client, { adminId: req.user!.id, action: "CREATE_USER", targetUserId: user.id });
     await client.query("COMMIT");
-    return res.status(201).json({ message: "Korisnik uspješno kreiran.", user });
+    return res.status(201).json({ message: "User created successfully.", user });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
     if (isUniqueViolation(error)) {
-      return res.status(400).json({ error: "Korisnik s tim emailom već postoji." });
+      return res.status(400).json({ error: "A user with this email already exists." });
     }
-    console.error("Greška prilikom kreiranja korisnika:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom kreiranja korisnika." });
+    console.error("Error while creating user:", error);
+    return res.status(500).json({ error: "An error occurred while creating the user." });
   } finally {
     if (client) client.release();
   }
@@ -344,7 +344,7 @@ export const createUser = async (req: Request, res: Response) => {
 export const resetPassword = async (req: Request, res: Response) => {
   const targetId = parseId(req.params.id);
   if (targetId === null) {
-    return res.status(404).json({ error: "Korisnik nije pronađen." });
+    return res.status(404).json({ error: "User not found." });
   }
   const passwordError = validatePassword(req.body.password);
   if (passwordError) {
@@ -362,15 +362,15 @@ export const resetPassword = async (req: Request, res: Response) => {
     );
     if (result.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Korisnik nije pronađen." });
+      return res.status(404).json({ error: "User not found." });
     }
     await logAdminAction(client, { adminId: req.user!.id, action: "RESET_PASSWORD", targetUserId: targetId });
     await client.query("COMMIT");
-    return res.status(200).json({ message: "Lozinka je uspješno promijenjena." });
+    return res.status(200).json({ message: "Password changed successfully." });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom promjene lozinke:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom promjene lozinke." });
+    console.error("Error while changing password:", error);
+    return res.status(500).json({ error: "An error occurred while changing the password." });
   } finally {
     if (client) client.release();
   }
@@ -412,14 +412,14 @@ const cancelPendingReservations = async (
 export const blockUser = async (req: Request, res: Response) => {
   const targetId = parseId(req.params.id);
   if (targetId === null) {
-    return res.status(404).json({ error: "Korisnik nije pronađen." });
+    return res.status(404).json({ error: "User not found." });
   }
   const reason = parseReason(req.body.reason);
   if (!reason) {
     return res.status(400).json({ error: REASON_ERROR });
   }
   if (targetId === req.user!.id) {
-    return res.status(400).json({ error: "Ne možete blokirati vlastiti nalog." });
+    return res.status(400).json({ error: "You cannot block your own account." });
   }
 
   let client;
@@ -432,11 +432,11 @@ export const blockUser = async (req: Request, res: Response) => {
     );
     if (existing.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Korisnik nije pronađen." });
+      return res.status(404).json({ error: "User not found." });
     }
     if (existing.rows[0].is_blocked) {
       await client.query("ROLLBACK");
-      return res.status(400).json({ error: "Nalog je već blokiran." });
+      return res.status(400).json({ error: "Account is already blocked." });
     }
 
     const result = await client.query(
@@ -455,11 +455,11 @@ export const blockUser = async (req: Request, res: Response) => {
     await client.query("COMMIT");
     return res
       .status(200)
-      .json({ message: "Nalog je blokiran.", user: result.rows[0], cancelledReservations });
+      .json({ message: "Account blocked.", user: result.rows[0], cancelledReservations });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom blokiranja korisnika:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom blokiranja korisnika." });
+    console.error("Error while blocking user:", error);
+    return res.status(500).json({ error: "An error occurred while blocking the user." });
   } finally {
     if (client) client.release();
   }
@@ -468,7 +468,7 @@ export const blockUser = async (req: Request, res: Response) => {
 export const unblockUser = async (req: Request, res: Response) => {
   const targetId = parseId(req.params.id);
   if (targetId === null) {
-    return res.status(404).json({ error: "Korisnik nije pronađen." });
+    return res.status(404).json({ error: "User not found." });
   }
 
   let client;
@@ -481,11 +481,11 @@ export const unblockUser = async (req: Request, res: Response) => {
     );
     if (existing.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Korisnik nije pronađen." });
+      return res.status(404).json({ error: "User not found." });
     }
     if (!existing.rows[0].is_blocked) {
       await client.query("ROLLBACK");
-      return res.status(400).json({ error: "Nalog nije blokiran." });
+      return res.status(400).json({ error: "Account is not blocked." });
     }
     const result = await client.query(
       `UPDATE users SET is_blocked = false, blocked_at = NULL, blocked_reason = NULL
@@ -494,11 +494,11 @@ export const unblockUser = async (req: Request, res: Response) => {
     );
     await logAdminAction(client, { adminId: req.user!.id, action: "UNBLOCK_USER", targetUserId: targetId });
     await client.query("COMMIT");
-    return res.status(200).json({ message: "Nalog je deblokiran.", user: result.rows[0] });
+    return res.status(200).json({ message: "Account unblocked.", user: result.rows[0] });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom deblokiranja korisnika:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom deblokiranja korisnika." });
+    console.error("Error while unblocking user:", error);
+    return res.status(500).json({ error: "An error occurred while unblocking the user." });
   } finally {
     if (client) client.release();
   }
@@ -508,14 +508,14 @@ export const getAdminProducts = async (req: Request, res: Response) => {
   const { q, status, store_id } = req.query;
   const page = parsePage(req.query);
   if (!page) {
-    return res.status(400).json({ error: "Neispravan filter." });
+    return res.status(400).json({ error: "Invalid filter." });
   }
 
   let from = "FROM products JOIN users ON products.store_id = users.id WHERE true";
   const values: (string | number | boolean)[] = [];
   if (status) {
     if (typeof status !== "string" || !PRODUCT_STATUSES.includes(status)) {
-      return res.status(400).json({ error: "Neispravan filter." });
+      return res.status(400).json({ error: "Invalid filter." });
     }
     values.push(status);
     from += ` AND products.status = $${values.length}`;
@@ -523,7 +523,7 @@ export const getAdminProducts = async (req: Request, res: Response) => {
   if (store_id) {
     const storeId = parseId(store_id);
     if (storeId === null) {
-      return res.status(400).json({ error: "Neispravan filter." });
+      return res.status(400).json({ error: "Invalid filter." });
     }
     values.push(storeId);
     from += ` AND products.store_id = $${values.length}`;
@@ -546,8 +546,8 @@ export const getAdminProducts = async (req: Request, res: Response) => {
     );
     return res.status(200).json({ products: rows, total });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja proizvoda:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom dohvatanja proizvoda." });
+    console.error("Error while fetching products:", error);
+    return res.status(500).json({ error: "An error occurred while fetching products." });
   }
 };
 
@@ -556,7 +556,7 @@ export const getAdminProducts = async (req: Request, res: Response) => {
 export const removeProduct = async (req: Request, res: Response) => {
   const productId = parseId(req.params.id);
   if (productId === null) {
-    return res.status(404).json({ error: "Proizvod nije pronađen." });
+    return res.status(404).json({ error: "Product not found." });
   }
   const reason = parseReason(req.body.reason);
   if (!reason) {
@@ -574,11 +574,11 @@ export const removeProduct = async (req: Request, res: Response) => {
     const product = existing.rows[0];
     if (!product) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Proizvod nije pronađen." });
+      return res.status(404).json({ error: "Product not found." });
     }
     if (product.status === "Removed") {
       await client.query("ROLLBACK");
-      return res.status(400).json({ error: "Proizvod je već uklonjen." });
+      return res.status(400).json({ error: "Product is already removed." });
     }
 
     await cancelPendingReservations(
@@ -606,11 +606,11 @@ export const removeProduct = async (req: Request, res: Response) => {
       reason,
     });
     await client.query("COMMIT");
-    return res.status(200).json({ message: "Proizvod je uklonjen.", product: result.rows[0] });
+    return res.status(200).json({ message: "Product removed.", product: result.rows[0] });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom uklanjanja proizvoda:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom uklanjanja proizvoda." });
+    console.error("Error while removing product:", error);
+    return res.status(500).json({ error: "An error occurred while removing the product." });
   } finally {
     if (client) client.release();
   }
@@ -620,21 +620,21 @@ export const getAdminDonations = async (req: Request, res: Response) => {
   const { q, status, type, donor_id } = req.query;
   const page = parsePage(req.query);
   if (!page) {
-    return res.status(400).json({ error: "Neispravan filter." });
+    return res.status(400).json({ error: "Invalid filter." });
   }
 
   let from = "FROM donation_offers JOIN users ON donation_offers.donor_id = users.id WHERE true";
   const values: (string | number | boolean)[] = [];
   if (status) {
     if (typeof status !== "string" || !DONATION_STATUSES.includes(status)) {
-      return res.status(400).json({ error: "Neispravan filter." });
+      return res.status(400).json({ error: "Invalid filter." });
     }
     values.push(status);
     from += ` AND donation_offers.status = $${values.length}`;
   }
   if (type) {
     if (typeof type !== "string" || !DONATION_TYPES.includes(type)) {
-      return res.status(400).json({ error: "Neispravan filter." });
+      return res.status(400).json({ error: "Invalid filter." });
     }
     values.push(type);
     from += ` AND donation_offers.donation_type = $${values.length}`;
@@ -642,7 +642,7 @@ export const getAdminDonations = async (req: Request, res: Response) => {
   if (donor_id) {
     const donorId = parseId(donor_id);
     if (donorId === null) {
-      return res.status(400).json({ error: "Neispravan filter." });
+      return res.status(400).json({ error: "Invalid filter." });
     }
     values.push(donorId);
     from += ` AND donation_offers.donor_id = $${values.length}`;
@@ -666,15 +666,15 @@ export const getAdminDonations = async (req: Request, res: Response) => {
     );
     return res.status(200).json({ donations: rows, total });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja donacija:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom dohvatanja donacija." });
+    console.error("Error while fetching donations:", error);
+    return res.status(500).json({ error: "An error occurred while fetching donations." });
   }
 };
 
 export const removeDonation = async (req: Request, res: Response) => {
   const donationId = parseId(req.params.id);
   if (donationId === null) {
-    return res.status(404).json({ error: "Donacija nije pronađena." });
+    return res.status(404).json({ error: "Donation not found." });
   }
   const reason = parseReason(req.body.reason);
   if (!reason) {
@@ -693,11 +693,11 @@ export const removeDonation = async (req: Request, res: Response) => {
     const donation = existing.rows[0];
     if (!donation) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Donacija nije pronađena." });
+      return res.status(404).json({ error: "Donation not found." });
     }
     if (donation.status === "Removed") {
       await client.query("ROLLBACK");
-      return res.status(400).json({ error: "Donacija je već uklonjena." });
+      return res.status(400).json({ error: "Donation is already removed." });
     }
 
     await client.query("UPDATE donation_offers SET status = 'Removed' WHERE donation_offers.id = $1", [
@@ -718,11 +718,11 @@ export const removeDonation = async (req: Request, res: Response) => {
       reason,
     });
     await client.query("COMMIT");
-    return res.status(200).json({ message: "Donacija je uklonjena." });
+    return res.status(200).json({ message: "Donation removed." });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom uklanjanja donacije:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom uklanjanja donacije." });
+    console.error("Error while removing donation:", error);
+    return res.status(500).json({ error: "An error occurred while removing the donation." });
   } finally {
     if (client) client.release();
   }
@@ -732,7 +732,7 @@ export const getAdminActions = async (req: Request, res: Response) => {
   const { admin_id, action, target_user_id } = req.query;
   const page = parsePage(req.query);
   if (!page) {
-    return res.status(400).json({ error: "Neispravan filter." });
+    return res.status(400).json({ error: "Invalid filter." });
   }
 
   let from = `FROM admin_actions
@@ -745,7 +745,7 @@ export const getAdminActions = async (req: Request, res: Response) => {
   const values: (string | number | boolean)[] = [];
   if (action) {
     if (typeof action !== "string" || !ADMIN_ACTIONS.includes(action)) {
-      return res.status(400).json({ error: "Neispravan filter." });
+      return res.status(400).json({ error: "Invalid filter." });
     }
     values.push(action);
     from += ` AND admin_actions.action = $${values.length}`;
@@ -757,7 +757,7 @@ export const getAdminActions = async (req: Request, res: Response) => {
     if (!param) continue;
     const id = parseId(param);
     if (id === null) {
-      return res.status(400).json({ error: "Neispravan filter." });
+      return res.status(400).json({ error: "Invalid filter." });
     }
     values.push(id);
     from += ` AND ${column} = $${values.length}`;
@@ -779,8 +779,8 @@ export const getAdminActions = async (req: Request, res: Response) => {
     );
     return res.status(200).json({ actions: rows, total });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja admin akcija:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom dohvatanja admin akcija." });
+    console.error("Error while fetching admin actions:", error);
+    return res.status(500).json({ error: "An error occurred while fetching admin actions." });
   }
 };
 
@@ -788,7 +788,7 @@ export const getAdminReservations = async (req: Request, res: Response) => {
   const { q, status, user_id } = req.query;
   const page = parsePage(req.query);
   if (!page) {
-    return res.status(400).json({ error: "Neispravan filter." });
+    return res.status(400).json({ error: "Invalid filter." });
   }
 
   let from = `FROM reservations
@@ -799,7 +799,7 @@ export const getAdminReservations = async (req: Request, res: Response) => {
   const values: (string | number | boolean)[] = [];
   if (status) {
     if (typeof status !== "string" || !RESERVATION_STATUSES.includes(status)) {
-      return res.status(400).json({ error: "Neispravan filter." });
+      return res.status(400).json({ error: "Invalid filter." });
     }
     values.push(status);
     from += ` AND reservations.status = $${values.length}`;
@@ -807,7 +807,7 @@ export const getAdminReservations = async (req: Request, res: Response) => {
   if (user_id) {
     const userId = parseId(user_id);
     if (userId === null) {
-      return res.status(400).json({ error: "Neispravan filter." });
+      return res.status(400).json({ error: "Invalid filter." });
     }
     values.push(userId);
     from += ` AND (products.store_id = $${values.length} OR reservations.restaurant_id = $${values.length})`;
@@ -835,8 +835,8 @@ export const getAdminReservations = async (req: Request, res: Response) => {
     );
     return res.status(200).json({ reservations: rows, total });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja rezervacija:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom dohvatanja rezervacija." });
+    console.error("Error while fetching reservations:", error);
+    return res.status(500).json({ error: "An error occurred while fetching reservations." });
   }
 };
 
@@ -845,7 +845,7 @@ export const getAdminReservations = async (req: Request, res: Response) => {
 export const cancelReservation = async (req: Request, res: Response) => {
   const reservationId = parseId(req.params.id);
   if (reservationId === null) {
-    return res.status(404).json({ error: "Rezervacija nije pronađena." });
+    return res.status(404).json({ error: "Reservation not found." });
   }
   const reason = parseReason(req.body.reason);
   if (!reason) {
@@ -860,13 +860,13 @@ export const cancelReservation = async (req: Request, res: Response) => {
     const reservation = result.rows[0];
     if (!reservation) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Rezervacija nije pronađena." });
+      return res.status(404).json({ error: "Reservation not found." });
     }
     if (!["Pending", "Confirmed"].includes(reservation.status)) {
       await client.query("ROLLBACK");
       return res
         .status(400)
-        .json({ error: "Samo rezervacije na čekanju ili prihvaćene mogu biti otkazane." });
+        .json({ error: "Only pending or accepted reservations can be cancelled." });
     }
 
     await client.query("UPDATE reservations SET status = 'Cancelled' WHERE reservations.id = $1", [reservationId]);
@@ -892,11 +892,11 @@ export const cancelReservation = async (req: Request, res: Response) => {
       reason,
     });
     await client.query("COMMIT");
-    return res.status(200).json({ message: "Rezervacija je otkazana." });
+    return res.status(200).json({ message: "Reservation cancelled." });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom otkazivanja rezervacije:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom otkazivanja rezervacije." });
+    console.error("Error while cancelling reservation:", error);
+    return res.status(500).json({ error: "An error occurred while cancelling the reservation." });
   } finally {
     if (client) client.release();
   }
@@ -906,7 +906,7 @@ export const cancelReservation = async (req: Request, res: Response) => {
 export const updateUserProfile = async (req: Request, res: Response) => {
   const targetId = parseId(req.params.id);
   if (targetId === null) {
-    return res.status(404).json({ error: "Korisnik nije pronađen." });
+    return res.status(404).json({ error: "User not found." });
   }
 
   let client;
@@ -920,7 +920,7 @@ export const updateUserProfile = async (req: Request, res: Response) => {
     const target = existing.rows[0];
     if (!target) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Korisnik nije pronađen." });
+      return res.status(404).json({ error: "User not found." });
     }
     const { logo_url: _logo, ...fields } = req.body;
     const result = await updateProfile(client, targetId, target.role, fields);
@@ -931,11 +931,11 @@ export const updateUserProfile = async (req: Request, res: Response) => {
     await logAdminAction(client, { adminId: req.user!.id, action: "UPDATE_PROFILE", targetUserId: targetId });
     const user = await client.query(`SELECT ${USER_COLUMNS} FROM users WHERE users.id = $1`, [targetId]);
     await client.query("COMMIT");
-    return res.status(200).json({ message: "Profil korisnika je ažuriran.", user: user.rows[0] });
+    return res.status(200).json({ message: "User profile updated.", user: user.rows[0] });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom uređivanja profila korisnika:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom uređivanja profila." });
+    console.error("Error while editing user profile:", error);
+    return res.status(500).json({ error: "An error occurred while editing the profile." });
   } finally {
     if (client) client.release();
   }
@@ -959,24 +959,24 @@ const parseAnnouncement = (body: Record<string, unknown>) => {
     body_en: text(body.body_en),
   };
   if (typeof audience !== "string" || !ANNOUNCEMENT_AUDIENCES.includes(audience)) {
-    return { error: "Publika nije ispravna." };
+    return { error: "Audience is not valid." };
   }
   if (!fields.title_bs || !fields.body_bs) {
-    return { error: "Naslov i tekst su obavezni." };
+    return { error: "Title and text are required." };
   }
   if (Boolean(fields.title_en) !== Boolean(fields.body_en)) {
-    return { error: "Za engleski prevod unesite i naslov i tekst." };
+    return { error: "For the English translation, enter both the title and the text." };
   }
   if (fields.title_bs.length > MAX_ANNOUNCEMENT_TITLE || fields.title_en.length > MAX_ANNOUNCEMENT_TITLE) {
-    return { error: `Naslov može imati najviše ${MAX_ANNOUNCEMENT_TITLE} znakova.` };
+    return { error: `Title can be at most ${MAX_ANNOUNCEMENT_TITLE} characters long.` };
   }
   if (fields.body_bs.length > MAX_ANNOUNCEMENT_BODY || fields.body_en.length > MAX_ANNOUNCEMENT_BODY) {
-    return { error: `Tekst može imati najviše ${MAX_ANNOUNCEMENT_BODY} znakova.` };
+    return { error: `Text can be at most ${MAX_ANNOUNCEMENT_BODY} characters long.` };
   }
   let expiresAt: string | null = null;
   if (body.expires_at !== undefined && body.expires_at !== null && body.expires_at !== "") {
     if (!isValidDateTime(body.expires_at) || new Date(body.expires_at as string).getTime() <= Date.now()) {
-      return { error: "Datum isteka mora biti u budućnosti." };
+      return { error: "Expiry date must be in the future." };
     }
     expiresAt = body.expires_at as string;
   }
@@ -1032,11 +1032,11 @@ export const createAnnouncement = async (req: Request, res: Response) => {
     await client.query("COMMIT");
     return res
       .status(201)
-      .json({ message: "Obavještenje je poslano.", announcement, recipients: sent.rowCount ?? 0 });
+      .json({ message: "Announcement sent.", announcement, recipients: sent.rowCount ?? 0 });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom slanja obavještenja:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom slanja obavještenja." });
+    console.error("Error while sending announcement:", error);
+    return res.status(500).json({ error: "An error occurred while sending the announcement." });
   } finally {
     if (client) client.release();
   }
@@ -1045,7 +1045,7 @@ export const createAnnouncement = async (req: Request, res: Response) => {
 export const getAnnouncements = async (req: Request, res: Response) => {
   const page = parsePage(req.query);
   if (!page) {
-    return res.status(400).json({ error: "Neispravan filter." });
+    return res.status(400).json({ error: "Invalid filter." });
   }
   try {
     const { rows, total } = await listPage(
@@ -1063,15 +1063,15 @@ export const getAnnouncements = async (req: Request, res: Response) => {
     );
     return res.status(200).json({ announcements: rows, total });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja obavještenja:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom dohvatanja obavještenja." });
+    console.error("Error while fetching announcements:", error);
+    return res.status(500).json({ error: "An error occurred while fetching announcements." });
   }
 };
 
 export const endAnnouncement = async (req: Request, res: Response) => {
   const announcementId = parseId(req.params.id);
   if (announcementId === null) {
-    return res.status(404).json({ error: "Obavještenje nije pronađeno." });
+    return res.status(404).json({ error: "Announcement not found." });
   }
   let client;
   try {
@@ -1085,11 +1085,11 @@ export const endAnnouncement = async (req: Request, res: Response) => {
     );
     if (existing.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Obavještenje nije pronađeno." });
+      return res.status(404).json({ error: "Announcement not found." });
     }
     if (!existing.rows[0].is_active) {
       await client.query("ROLLBACK");
-      return res.status(400).json({ error: "Obavještenje je već završeno." });
+      return res.status(400).json({ error: "Announcement has already ended." });
     }
     await client.query("UPDATE announcements SET ended_at = NOW() WHERE announcements.id = $1", [announcementId]);
     await logAdminAction(client, {
@@ -1098,11 +1098,11 @@ export const endAnnouncement = async (req: Request, res: Response) => {
       targetAnnouncementId: announcementId,
     });
     await client.query("COMMIT");
-    return res.status(200).json({ message: "Obavještenje je završeno." });
+    return res.status(200).json({ message: "Announcement ended." });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom završavanja obavještenja:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom završavanja obavještenja." });
+    console.error("Error while ending announcement:", error);
+    return res.status(500).json({ error: "An error occurred while ending the announcement." });
   } finally {
     if (client) client.release();
   }

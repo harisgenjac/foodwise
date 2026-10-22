@@ -69,12 +69,12 @@ describe("DonateProductModal", () => {
 
   it("shows the server error", async () => {
     const error = vi.spyOn(toast, "error");
-    apiMock.post.mockRejectedValue(axiosError(400, "Nema dovoljno proizvoda na raspolaganju."));
+    apiMock.post.mockRejectedValue(axiosError(400, "Not enough product available."));
     const { onClose } = renderModal(makeProduct({ available_quantity: "6" }));
 
     await userEvent.click(confirmButton());
 
-    expect(error).toHaveBeenCalledWith("Nema dovoljno proizvoda na raspolaganju.");
+    expect(error).toHaveBeenCalledWith("Not enough product available.");
     expect(onClose).not.toHaveBeenCalled();
   });
 });

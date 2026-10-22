@@ -31,7 +31,7 @@ const counts = {
 describe("Editing a profile as admin", () => {
   it("sends the corrected fields and reloads the user", async () => {
     const respond = vi.fn(() => ({ user: store, counts, actions: [] }));
-    apiMock.put.mockResolvedValue({ data: { message: "Profil korisnika je ažuriran." } });
+    apiMock.put.mockResolvedValue({ data: { message: "User profile updated." } });
     const success = vi.spyOn(toast, "success");
     renderWithProviders(<AdminUserDetailsPage />, {
       route: "/admin/users/5",
@@ -52,12 +52,12 @@ describe("Editing a profile as admin", () => {
       "/admin/users/5/profile",
       expect.objectContaining({ business_name: "Market Centar", city: "Zenica", phone: "061111111" }),
     );
-    await waitFor(() => expect(success).toHaveBeenCalledWith("Profil korisnika je ažuriran."));
+    await waitFor(() => expect(success).toHaveBeenCalledWith("User profile updated."));
     await waitFor(() => expect(respond).toHaveBeenCalledTimes(2));
   });
 
   it("keeps the dialog open with the server's message on a validation error", async () => {
-    apiMock.put.mockRejectedValue(axiosError(400, "Ime, prezime, naziv biznisa, grad i telefon su obavezni."));
+    apiMock.put.mockRejectedValue(axiosError(400, "First name, last name, business name, city, address and phone are required."));
     renderWithProviders(<AdminUserDetailsPage />, {
       route: "/admin/users/5",
       path: "/admin/users/:id",
@@ -68,7 +68,7 @@ describe("Editing a profile as admin", () => {
     await userEvent.click(await screen.findByRole("button", { name: t("admin.userDetails.editProfile") }));
     const dialog = screen.getByRole("dialog");
     await userEvent.click(within(dialog).getByRole("button", { name: t("admin.userDetails.saveProfile") }));
-    expect(await within(dialog).findByText("Ime, prezime, naziv biznisa, grad i telefon su obavezni.")).toBeInTheDocument();
+    expect(await within(dialog).findByText("First name, last name, business name, city, address and phone are required.")).toBeInTheDocument();
   });
 });
 
@@ -123,7 +123,7 @@ describe("AdminAnnouncementsPage", () => {
   });
 
   it("lists sent announcements and ends an active one", async () => {
-    apiMock.post.mockResolvedValue({ data: { message: "Obavještenje je završeno." } });
+    apiMock.post.mockResolvedValue({ data: { message: "Announcement ended." } });
     renderPage();
 
     expect(await screen.findByText("Novi rok")).toBeInTheDocument();

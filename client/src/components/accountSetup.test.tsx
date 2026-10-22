@@ -81,7 +81,7 @@ describe("ChangePasswordForm", () => {
   };
 
   it("sends the current and the new password, then refreshes the user", async () => {
-    apiMock.put.mockResolvedValue({ data: { message: "Lozinka je promijenjena." } });
+    apiMock.put.mockResolvedValue({ data: { message: "Password changed." } });
     const success = vi.spyOn(toast, "success");
     renderWithProviders(<ChangePasswordForm />, { user: complete });
 
@@ -102,11 +102,11 @@ describe("ChangePasswordForm", () => {
   });
 
   it("shows the server's reason", async () => {
-    apiMock.put.mockRejectedValue(axiosError(400, "Trenutna lozinka nije ispravna."));
+    apiMock.put.mockRejectedValue(axiosError(400, "Current password is incorrect."));
     renderWithProviders(<ChangePasswordForm required />, { user: complete });
     expect(screen.getByText(t("user.passwordSectionRequired"))).toBeInTheDocument();
     await fill("pogresna", "nova-lozinka", "nova-lozinka");
-    expect(await screen.findByText("Trenutna lozinka nije ispravna.")).toBeInTheDocument();
+    expect(await screen.findByText("Current password is incorrect.")).toBeInTheDocument();
   });
 });
 

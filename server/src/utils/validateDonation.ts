@@ -72,16 +72,16 @@ export function validateDonationPrice(
   originalPrice: unknown,
 ) {
   if (typeof donationType !== "string" || !DONATION_TYPES.includes(donationType)) {
-    return "Vrsta donacije nije ispravna.";
+    return "Donation type is not valid.";
   }
   if (donationType !== "SPONSORED") return null;
   const price = parseNumber(donationPrice);
   if (price === null || price <= 0) {
-    return "Donacijska cijena je obavezna i mora biti veća od nule.";
+    return "Donation price is required and must be greater than zero.";
   }
   const original = parseNumber(originalPrice);
   if (original !== null && price >= original) {
-    return "Donacijska cijena mora biti manja od vrijednosti proizvoda.";
+    return "Donation price must be lower than the product's value.";
   }
   return null;
 }
@@ -111,43 +111,43 @@ export function validateDonationFields(fields: Partial<DonationFields> | undefin
     isEmpty(original_price) ||
     !expiry_date
   ) {
-    return "Sva polja su obavezna.";
+    return "All fields are required.";
   }
   if (typeof name !== "string" || name.trim() === "") {
-    return "Sva polja su obavezna.";
+    return "All fields are required.";
   }
   if (!DONATION_CATEGORIES.includes(category)) {
-    return "Kategorija nije ispravna.";
+    return "Category is not valid.";
   }
   if (!DONATION_UNITS.includes(unit)) {
-    return "Jedinica mjere nije ispravna.";
+    return "Unit of measure is not valid.";
   }
 
   const amount = parseNumber(quantity);
   const value = parseNumber(original_price);
   if (amount === null || value === null || amount <= 0 || value <= 0) {
-    return "Količina i vrijednost moraju biti pozitivni brojevi.";
+    return "Quantity and value must be positive numbers.";
   }
 
   const priceError = validateDonationPrice(donation_type, donation_price, original_price);
   if (priceError) return priceError;
 
   if (!isValidDate(expiry_date)) {
-    return "Datum isteka nije ispravan.";
+    return "Expiry date is not valid.";
   }
   if (expiry_date < todayInAppTimezone()) {
-    return "Datum isteka ne može biti u prošlosti.";
+    return "Expiry date cannot be in the past.";
   }
 
   if (
     (!isEmpty(pickup_from) && (typeof pickup_from !== "string" || !TIME_PATTERN.test(pickup_from))) ||
     (!isEmpty(pickup_until) && (typeof pickup_until !== "string" || !TIME_PATTERN.test(pickup_until)))
   ) {
-    return "Vrijeme preuzimanja nije ispravno.";
+    return "Pickup time is not valid.";
   }
   // HH:MM strings compare in time order.
   if (pickup_from && pickup_until && pickup_from.slice(0, 5) >= pickup_until.slice(0, 5)) {
-    return "Početak preuzimanja mora biti prije kraja.";
+    return "Pickup start must be before pickup end.";
   }
 
   if (
@@ -156,10 +156,10 @@ export function validateDonationFields(fields: Partial<DonationFields> | undefin
     (!Array.isArray(allergens) ||
       allergens.some((allergen) => typeof allergen !== "string" || !ALLERGENS.includes(allergen)))
   ) {
-    return "Alergeni nisu ispravni.";
+    return "Allergens are not valid.";
   }
   if (!isEmpty(serving_temperature) && !SERVING_TEMPERATURES.includes(serving_temperature as string)) {
-    return "Način serviranja nije ispravan.";
+    return "Serving temperature is not valid.";
   }
 
   return null;

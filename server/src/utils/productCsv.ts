@@ -82,7 +82,7 @@ const normalizeDate = (value: string | undefined, monthFirst: boolean) => {
   return value;
 };
 
-const INVALID_DATE = "Datum isteka nije ispravan.";
+const INVALID_DATE = "Expiry date is not valid.";
 
 // Parses and validates a whole product CSV. Products are returned only when every row is valid.
 export function parseProductCsv(buffer: Buffer): CsvParseResult {
@@ -100,19 +100,19 @@ export function parseProductCsv(buffer: Buffer): CsvParseResult {
       info: true,
     });
   } catch {
-    return { error: "CSV fajl nije moguće pročitati." };
+    return { error: "The CSV file could not be read." };
   }
 
   if (records.length === 0) {
-    return { error: "CSV fajl ne sadrži nijedan proizvod." };
+    return { error: "The CSV file does not contain any products." };
   }
   const columns = Object.keys(records[0]!.record);
   const missing = REQUIRED_COLUMNS.filter((column) => !columns.includes(column));
   if (missing.length > 0) {
-    return { error: `CSV fajlu nedostaju kolone: ${missing.join(", ")}.` };
+    return { error: `The CSV file is missing columns: ${missing.join(", ")}.` };
   }
   if (records.length > MAX_CSV_ROWS) {
-    return { error: `CSV fajl može imati najviše ${MAX_CSV_ROWS} proizvoda.` };
+    return { error: `The CSV file can contain at most ${MAX_CSV_ROWS} products.` };
   }
 
   const products: ProductFields[] = [];
@@ -134,7 +134,7 @@ export function parseProductCsv(buffer: Buffer): CsvParseResult {
       // Show what arrived, since Excel may have saved something other than what the user typed.
       rowErrors.push({
         row: info.lines,
-        error: `Datum isteka nije ispravan: "${record.expiry_date}". Koristite format 31.12.2026.`,
+        error: `Expiry date is not valid: "${record.expiry_date}". Use the format 31.12.2026.`,
       });
     } else if (error) {
       rowErrors.push({ row: info.lines, error });
@@ -144,7 +144,7 @@ export function parseProductCsv(buffer: Buffer): CsvParseResult {
   }
 
   if (rowErrors.length > 0) {
-    return { error: "CSV sadrži neispravne redove.", rowErrors };
+    return { error: "The CSV contains invalid rows.", rowErrors };
   }
   return { products };
 }

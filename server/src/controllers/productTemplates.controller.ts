@@ -16,10 +16,10 @@ export const getTemplates = async (req: Request, res: Response) => {
     );
     return res.status(200).json({ templates: result.rows });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja predložaka:", error);
+    console.error("Error while fetching templates:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom dohvatanja predložaka." });
+      .json({ error: "An error occurred while fetching templates." });
   }
 };
 
@@ -69,14 +69,14 @@ export const saveTemplate = async (req: Request, res: Response) => {
       ],
     );
     return res.status(201).json({
-      message: "Predložak uspješno sačuvan.",
+      message: "Template saved successfully.",
       template: result.rows[0],
     });
   } catch (error) {
-    console.error("Greška prilikom čuvanja predloška:", error);
+    console.error("Error while saving template:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom čuvanja predloška." });
+      .json({ error: "An error occurred while saving the template." });
   }
 };
 
@@ -84,7 +84,7 @@ export const deleteTemplate = async (req: Request, res: Response) => {
   const store_id = req.user!.id;
   const templateId = parseId(req.params.id);
   if (templateId === null) {
-    return res.status(404).json({ error: "Predložak nije pronađen." });
+    return res.status(404).json({ error: "Template not found." });
   }
 
   try {
@@ -93,20 +93,20 @@ export const deleteTemplate = async (req: Request, res: Response) => {
       [templateId],
     );
     if (existing.rows.length === 0) {
-      return res.status(404).json({ error: "Predložak nije pronađen." });
+      return res.status(404).json({ error: "Template not found." });
     }
     if (existing.rows[0].store_id !== store_id) {
       return res
         .status(403)
-        .json({ error: "Nemate ovlasti za brisanje ovog predloška." });
+        .json({ error: "You are not allowed to delete this template." });
     }
 
     await pool.query(`DELETE FROM product_templates WHERE id = $1`, [templateId]);
-    return res.status(200).json({ message: "Predložak uspješno obrisan." });
+    return res.status(200).json({ message: "Template deleted successfully." });
   } catch (error) {
-    console.error("Greška prilikom brisanja predloška:", error);
+    console.error("Error while deleting template:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom brisanja predloška." });
+      .json({ error: "An error occurred while deleting the template." });
   }
 };

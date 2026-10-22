@@ -28,15 +28,15 @@ export const getActiveAnnouncements = async (req: Request, res: Response) => {
     );
     return res.status(200).json({ announcements: result.rows });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja obavještenja:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom dohvatanja obavještenja." });
+    console.error("Error while fetching announcements:", error);
+    return res.status(500).json({ error: "An error occurred while fetching announcements." });
   }
 };
 
 export const dismissAnnouncement = async (req: Request, res: Response) => {
   const announcementId = parseId(req.params.id);
   if (announcementId === null) {
-    return res.status(404).json({ error: "Obavještenje nije pronađeno." });
+    return res.status(404).json({ error: "Announcement not found." });
   }
   try {
     const visible = await pool.query(
@@ -47,7 +47,7 @@ export const dismissAnnouncement = async (req: Request, res: Response) => {
       [announcementId, req.user!.id],
     );
     if (visible.rows.length === 0) {
-      return res.status(404).json({ error: "Obavještenje nije pronađeno." });
+      return res.status(404).json({ error: "Announcement not found." });
     }
     // Dismissing twice is harmless.
     await pool.query(
@@ -55,9 +55,9 @@ export const dismissAnnouncement = async (req: Request, res: Response) => {
        ON CONFLICT DO NOTHING`,
       [announcementId, req.user!.id],
     );
-    return res.status(200).json({ message: "Obavještenje je zatvoreno." });
+    return res.status(200).json({ message: "Announcement dismissed." });
   } catch (error) {
-    console.error("Greška prilikom zatvaranja obavještenja:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom zatvaranja obavještenja." });
+    console.error("Error while dismissing announcement:", error);
+    return res.status(500).json({ error: "An error occurred while dismissing the announcement." });
   }
 };

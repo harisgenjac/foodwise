@@ -35,7 +35,7 @@ describe("MyReservationsPage", () => {
 
   it("cancels a reservation after confirmation and reloads the list", async () => {
     const success = vi.spyOn(toast, "success");
-    apiMock.patch.mockResolvedValue({ data: { message: "Rezervacija je uspješno otkazana." } });
+    apiMock.patch.mockResolvedValue({ data: { message: "Reservation cancelled successfully." } });
     renderPage([makeReservation({ id: 5, status: "Pending" })]);
 
     await userEvent.click(await screen.findByRole("button", { name: t("reservations.cancelShortButton") }));
@@ -43,7 +43,7 @@ describe("MyReservationsPage", () => {
     await userEvent.click(within(dialog).getByRole("button", { name: t("reservations.cancelButton") }));
 
     expect(apiMock.patch).toHaveBeenCalledWith("/reservations/5/cancel");
-    expect(success).toHaveBeenCalledWith("Rezervacija je uspješno otkazana.");
+    expect(success).toHaveBeenCalledWith("Reservation cancelled successfully.");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(apiMock.get.mock.calls.filter(([url]) => url === "/reservations/mine")).toHaveLength(2);
   });
@@ -62,13 +62,13 @@ describe("MyReservationsPage", () => {
   it("shows the server error when cancelling fails", async () => {
     const error = vi.spyOn(toast, "error");
     vi.spyOn(console, "error").mockImplementation(() => {});
-    apiMock.patch.mockRejectedValue(axiosError(400, "Rezervacija nije u statusu 'Pending'."));
+    apiMock.patch.mockRejectedValue(axiosError(400, "Reservation is not in 'Pending' status."));
     renderPage([makeReservation({ id: 5, status: "Pending" })]);
 
     await userEvent.click(await screen.findByRole("button", { name: t("reservations.cancelShortButton") }));
     await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: t("reservations.cancelButton") }));
 
-    expect(error).toHaveBeenCalledWith("Rezervacija nije u statusu 'Pending'.");
+    expect(error).toHaveBeenCalledWith("Reservation is not in 'Pending' status.");
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

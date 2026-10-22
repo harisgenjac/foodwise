@@ -37,7 +37,7 @@ async function seed() {
   try {
     await client.query("BEGIN");
 
-    console.log("Brisanje postojećih podataka...");
+    console.log("Deleting existing data...");
     // Reservations, admin actions and announcements reference users with RESTRICT; everything else cascades from users.
     await client.query("DELETE FROM admin_actions");
     await client.query("DELETE FROM notifications");
@@ -47,7 +47,7 @@ async function seed() {
     await client.query("DELETE FROM products");
     await client.query("DELETE FROM users");
 
-    console.log("Kreiranje demo naloga...");
+    console.log("Creating demo accounts...");
     const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
     const users: [DemoUser, "STORE" | "RESTAURANT"][] = [
       ...STORES.map((store): [DemoUser, "STORE"] => [store, "STORE"]),
@@ -67,13 +67,13 @@ async function seed() {
       [ADMIN.first_name, ADMIN.last_name, ADMIN.email, passwordHash],
     );
 
-    console.log("Kreiranje proizvoda i rezervacija...");
+    console.log("Creating products and reservations...");
     const summary = await insertFakeData(client, { productsPerStore: 5, reservationsPerRestaurant: 4 });
 
     await client.query("COMMIT");
 
     printSummary(summary);
-    console.log(`\nDemo podaci uspješno kreirani. Lozinka za sve naloge: ${DEMO_PASSWORD}`);
+    console.log(`\nDemo data created successfully. Password for all accounts: ${DEMO_PASSWORD}`);
     console.log("Prodavnice:");
     STORES.forEach((store) => console.log(`  - ${store.email} (${store.business_name})`));
     console.log("Restorani:");
@@ -81,7 +81,7 @@ async function seed() {
     console.log(`Administrator:\n  - ${ADMIN.email}`);
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Greška prilikom seed-ovanja:", error);
+    console.error("Error while seeding:", error);
     process.exitCode = 1;
   } finally {
     client.release();

@@ -25,7 +25,7 @@ const fillBasics = async () => {
 
 describe("AddDonationPage", () => {
   it("publishes a free donation without a price and returns to the list", async () => {
-    apiMock.post.mockResolvedValue({ data: { message: "Donacija uspješno objavljena." } });
+    apiMock.post.mockResolvedValue({ data: { message: "Donation published successfully." } });
     renderPage();
     await screen.findByText(t("donations.form.addTitle"), { selector: "h1" });
 
@@ -98,13 +98,13 @@ describe("AddDonationPage", () => {
 
   it("shows the server error and stays on the form", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    apiMock.post.mockRejectedValue(axiosError(400, "Datum isteka ne može biti u prošlosti."));
+    apiMock.post.mockRejectedValue(axiosError(400, "Expiry date cannot be in the past."));
     renderPage();
     await screen.findByText(t("donations.form.addTitle"), { selector: "h1" });
     await fillBasics();
     await userEvent.click(screen.getByRole("button", { name: t("donations.form.submitAdd") }));
 
-    expect(await screen.findByText("Datum isteka ne može biti u prošlosti.", { selector: "p" })).toBeInTheDocument();
+    expect(await screen.findByText("Expiry date cannot be in the past.", { selector: "p" })).toBeInTheDocument();
     expect(screen.queryByTestId("location")).not.toBeInTheDocument();
   });
 });

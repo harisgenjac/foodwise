@@ -17,7 +17,7 @@ async function seedFakeData() {
   try {
     const stores = await client.query("SELECT id FROM users WHERE role = 'STORE'");
     if (stores.rows.length === 0) {
-      console.log("Nema prodavnica u bazi. Registrujte barem jednu prodavnicu pa pokrenite skriptu ponovo.");
+      console.log("There are no stores in the database. Register at least one store and run the script again.");
       return;
     }
 
@@ -30,11 +30,11 @@ async function seedFakeData() {
 
     printSummary(summary);
     if (summary.restaurants === 0) {
-      console.log("Nema restorana u bazi, pa rezervacije nisu dodane.");
+      console.log("There are no restaurants in the database, so no reservations were added.");
     }
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Greška prilikom dodavanja podataka:", error);
+    console.error("Error while adding data:", error);
     process.exitCode = 1;
   } finally {
     client.release();

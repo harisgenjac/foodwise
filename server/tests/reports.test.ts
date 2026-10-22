@@ -74,7 +74,7 @@ describe("Reports", () => {
       for (const report of ["sales", "impact"]) {
         const response = await store.get(`/api/reports/${report}`).query(query);
         expect(response.status).toBe(400);
-        expect(response.body.error).toBe("Neispravan period.");
+        expect(response.body.error).toBe("Invalid period.");
       }
     });
 

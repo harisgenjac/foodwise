@@ -23,7 +23,7 @@ describe("Auth routes", () => {
     it.each(["STORE", "RESTAURANT", "ADMIN"])("refuses to register a %s account", async (role) => {
       const response = await request(app).post("/api/auth/register").send(registration({ role }));
       expect(response.status).toBe(403);
-      expect(response.body.error).toBe("Naloge za prodavnice i restorane kreira administrator.");
+      expect(response.body.error).toBe("Store and restaurant accounts are created by an administrator.");
 
       const users = await pool.query("SELECT id FROM users WHERE email = $1", [EMAIL]);
       expect(users.rows).toHaveLength(0);
@@ -34,7 +34,7 @@ describe("Auth routes", () => {
         .post("/api/auth/register")
         .send(registration({ first_name: undefined }));
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Sva polja su obavezna.");
+      expect(response.body.error).toBe("All fields are required.");
     });
 
     it("returns 400 for an unknown role", async () => {
@@ -42,7 +42,7 @@ describe("Auth routes", () => {
         .post("/api/auth/register")
         .send(registration({ role: "WRONG_ROLE" }));
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Rola nije ispravna.");
+      expect(response.body.error).toBe("Role is not valid.");
     });
   });
 
@@ -56,7 +56,7 @@ describe("Auth routes", () => {
         .post("/api/auth/login")
         .send({ email: EMAIL, password: PASSWORD });
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Prijava uspješna.");
+      expect(response.body.message).toBe("Login successful.");
       expect(response.body.user).toMatchObject({ email: EMAIL, role: "STORE" });
       expect(response.body.user.password_hash).toBeUndefined();
 
@@ -70,7 +70,7 @@ describe("Auth routes", () => {
         .post("/api/auth/login")
         .send({ email: EMAIL, password: "wrong_pass" });
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Pogrešan email ili lozinka.");
+      expect(response.body.error).toBe("Incorrect email or password.");
     });
 
     it("returns 400 for an unknown email", async () => {
@@ -78,13 +78,13 @@ describe("Auth routes", () => {
         .post("/api/auth/login")
         .send({ email: "nobody@example.com", password: PASSWORD });
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Pogrešan email ili lozinka.");
+      expect(response.body.error).toBe("Incorrect email or password.");
     });
 
     it("returns 400 when a field is missing", async () => {
       const response = await request(app).post("/api/auth/login").send({ email: EMAIL });
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Sva polja su obavezna.");
+      expect(response.body.error).toBe("All fields are required.");
     });
 
     it("refuses a blocked account and shows the reason, without setting a cookie", async () => {
@@ -96,7 +96,7 @@ describe("Auth routes", () => {
         .post("/api/auth/login")
         .send({ email: EMAIL, password: PASSWORD });
       expect(response.status).toBe(403);
-      expect(response.body.error).toBe("Vaš nalog je blokiran. Razlog: Kršenje pravila");
+      expect(response.body.error).toBe("Your account is blocked. Reason: Kršenje pravila");
       expect(response.headers["set-cookie"]).toBeUndefined();
     });
 
@@ -106,7 +106,7 @@ describe("Auth routes", () => {
         .post("/api/auth/login")
         .send({ email: EMAIL, password: "wrong_pass" });
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Pogrešan email ili lozinka.");
+      expect(response.body.error).toBe("Incorrect email or password.");
     });
   });
 
@@ -119,7 +119,7 @@ describe("Auth routes", () => {
 
       const response = await agent.post("/api/auth/logout");
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Uspješno ste se odjavili.");
+      expect(response.body.message).toBe("Logged out successfully.");
       expect(String(response.headers["set-cookie"])).toMatch(/token=;/);
 
       expect((await agent.get("/api/auth/me")).status).toBe(401);

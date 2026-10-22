@@ -23,17 +23,17 @@ export const authenticate = async (
   const token = req.cookies.token;
 
   if (!token) {
-    return res.status(401).json({ error: "Niste prijavljeni." });
+    return res.status(401).json({ error: "You are not logged in." });
   }
 
   let decoded;
   try {
     decoded = jwt.verify(token, process.env.JWT_SECRET!);
   } catch (error) {
-    return res.status(401).json({ error: "Token je nevažeći ili je istekao." });
+    return res.status(401).json({ error: "Token is invalid or has expired." });
   }
   if (typeof decoded === "string") {
-    return res.status(401).json({ error: "Nevažeći token" });
+    return res.status(401).json({ error: "Invalid token" });
   }
 
   try {
@@ -43,20 +43,20 @@ export const authenticate = async (
     );
     const user = result.rows[0];
     if (!user) {
-      return res.status(401).json({ error: "Token je nevažeći ili je istekao." });
+      return res.status(401).json({ error: "Token is invalid or has expired." });
     }
     if (user.is_blocked) {
-      return res.status(401).json({ error: "Vaš nalog je blokiran." });
+      return res.status(401).json({ error: "Your account is blocked." });
     }
     const route = `${req.method} ${req.originalUrl.split("?")[0]}`;
     if (user.must_change_password && !ALLOWED_BEFORE_PASSWORD_CHANGE.has(route)) {
-      return res.status(403).json({ error: "Morate promijeniti lozinku prije nastavka." });
+      return res.status(403).json({ error: "You must change your password before continuing." });
     }
     req.user = { ...decoded, id: decoded.id, role: user.role } as AuthUser;
     next();
   } catch (error) {
-    console.error("Greška prilikom provjere korisnika:", error);
-    return res.status(500).json({ error: "Došlo je do greške na serveru." });
+    console.error("Error while verifying user:", error);
+    return res.status(500).json({ error: "A server error occurred." });
   }
 };
 
@@ -67,7 +67,7 @@ export const authorize = (...allowedRoles: Role[]) => {
     if (!allowedRoles.includes(role)) {
       return res
         .status(403)
-        .json({ error: "Nemate odgovarajuću rolu za ovu akciju." });
+        .json({ error: "You do not have the required role for this action." });
     }
     next();
   };

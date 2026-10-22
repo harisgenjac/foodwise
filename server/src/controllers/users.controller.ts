@@ -19,7 +19,7 @@ const removeLogoFile = async (logoUrl: string | null | undefined) => {
     await fs.promises.unlink(path.join("uploads", "logos", fileName));
   } catch (error) {
     if (error instanceof Error && "code" in error && error.code === "ENOENT") return;
-    console.error("Greška prilikom brisanja starog logoa:", error);
+    console.error("Error while deleting old logo:", error);
   }
 };
 
@@ -32,10 +32,10 @@ export const getUser = async (req: Request, res: Response) => {
     );
     return res.status(200).json({ user: result.rows[0] });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja korisnika:", error);
+    console.error("Error while fetching users:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom dohvatanja korisnika." });
+      .json({ error: "An error occurred while fetching users." });
   }
 };
 
@@ -65,7 +65,7 @@ function validateUserFields(fields: UserFields) {
     phone,
   } = fields;
   if (!first_name || !last_name || !business_name || !city || !address || !phone) {
-    return "Ime, prezime, naziv biznisa, grad, adresa i telefon su obavezni.";
+    return "First name, last name, business name, city, address and phone are required.";
   }
 }
 
@@ -84,7 +84,7 @@ export const updateProfile = async (
 ): Promise<ProfileResult> => {
   if (role === "ADMIN") {
     if (!body.first_name || !body.last_name) {
-      return { error: "Ime i prezime su obavezni." };
+      return { error: "First and last name are required." };
     }
     const result = await db.query(
       `UPDATE users SET first_name = $1, last_name = $2
@@ -150,12 +150,12 @@ export const updateUser = async (req: Request, res: Response) => {
     }
     return res
       .status(200)
-      .json({ message: "Profil uspješno ažuriran.", user: result.user });
+      .json({ message: "Profile updated successfully.", user: result.user });
   } catch (error) {
-    console.error("Greška prilikom uređivanja korisnika:", error);
+    console.error("Error while editing user:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom uređivanja korisnika." });
+      .json({ error: "An error occurred while editing the user." });
   }
 };
 
@@ -163,7 +163,7 @@ export const updateUser = async (req: Request, res: Response) => {
 export const changePassword = async (req: Request, res: Response) => {
   const { current_password, new_password } = req.body;
   if (!current_password || !new_password || typeof current_password !== "string") {
-    return res.status(400).json({ error: "Sva polja su obavezna." });
+    return res.status(400).json({ error: "All fields are required." });
   }
   try {
     const result = await pool.query<{ password_hash: string }>(
@@ -172,23 +172,23 @@ export const changePassword = async (req: Request, res: Response) => {
     );
     const user = result.rows[0];
     if (!user || !(await bcrypt.compare(current_password, user.password_hash))) {
-      return res.status(400).json({ error: "Trenutna lozinka nije ispravna." });
+      return res.status(400).json({ error: "Current password is incorrect." });
     }
     const passwordError = validatePassword(new_password);
     if (passwordError) {
       return res.status(400).json({ error: passwordError });
     }
     if (new_password === current_password) {
-      return res.status(400).json({ error: "Nova lozinka mora biti različita od trenutne." });
+      return res.status(400).json({ error: "The new password must be different from the current one." });
     }
     await pool.query(
       "UPDATE users SET password_hash = $1, must_change_password = false WHERE users.id = $2",
       [await hashPassword(new_password), req.user!.id],
     );
-    return res.status(200).json({ message: "Lozinka je promijenjena." });
+    return res.status(200).json({ message: "Password changed." });
   } catch (error) {
-    console.error("Greška prilikom promjene lozinke:", error);
-    return res.status(500).json({ error: "Došlo je do greške prilikom promjene lozinke." });
+    console.error("Error while changing password:", error);
+    return res.status(500).json({ error: "An error occurred while changing the password." });
   }
 };
 
@@ -221,12 +221,12 @@ export const getStores = async (req: Request, res: Response) => {
 
     return res
       .status(200)
-      .json({ message: "Uspješno dohvaćene prodavnice", stores: result.rows });
+      .json({ message: "Stores fetched successfully", stores: result.rows });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja prodavnica:", error);
+    console.error("Error while fetching stores:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom dohvatanja prodavnica." });
+      .json({ error: "An error occurred while fetching stores." });
   }
 };
 
@@ -236,10 +236,10 @@ export const getStoreDetails = async (req: Request, res: Response) => {
     const userRole = req.user!.role;
 
     if (userRole === "STORE") {
-      return res.status(403).json({ error: "Nemate permisiju za ovu akciju." });
+      return res.status(403).json({ error: "You do not have permission for this action." });
     }
     if (storeId === null) {
-      return res.status(404).json({ error: "Prodavnica nije pronađena." });
+      return res.status(404).json({ error: "Store not found." });
     }
 
     const result = await pool.query(
@@ -250,7 +250,7 @@ export const getStoreDetails = async (req: Request, res: Response) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Prodavnica nije pronađena." });
+      return res.status(404).json({ error: "Store not found." });
     }
 
     const products = await pool.query(
@@ -291,24 +291,24 @@ export const getStoreDetails = async (req: Request, res: Response) => {
       [storeId, req.user!.id],
     );
     return res.status(200).json({
-      message: "Uspješno dohvaćena prodavnica",
+      message: "Store fetched successfully",
       store: result.rows[0],
       products: products.rows,
       stats: stats.rows[0],
       myReservations: myReservations.rows[0],
     });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja prodavnice:", error);
+    console.error("Error while fetching store:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom dohvatanja prodavnice." });
+      .json({ error: "An error occurred while fetching the store." });
   }
 };
 
 export const uploadLogo = async (req: Request, res: Response) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: "Slika nije poslana." });
+      return res.status(400).json({ error: "No image was uploaded." });
     }
 
     const userId = req.user!.id;
@@ -322,13 +322,13 @@ export const uploadLogo = async (req: Request, res: Response) => {
     await removeLogoFile(previous.rows[0]?.logo_url);
 
     return res.status(200).json({
-      message: "Slika uspješno postavljena.",
+      message: "Image uploaded successfully.",
       logo_url: result.rows[0].logo_url,
     });
   } catch (error) {
-    console.error("Greška prilikom uploada slike:", error);
+    console.error("Error while uploading image:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom uploada slike." });
+      .json({ error: "An error occurred while uploading the image." });
   }
 };
