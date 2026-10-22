@@ -59,7 +59,7 @@ app.use((error: unknown, req: Request, res: Response, next: NextFunction) => {
     return next(error);
   }
   if (error instanceof HttpError) {
-    return res.status(error.status).json({ error: error.message });
+    return res.status(error.status).json(error.body());
   }
   if (error instanceof SyntaxError && "type" in error && error.type === "entity.parse.failed") {
     return res.status(400).json({ error: "Invalid request format." });

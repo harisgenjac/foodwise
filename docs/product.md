@@ -118,6 +118,25 @@ Ideas for the next phases (agreed as good directions, not yet scheduled):
 12. **Thank-you loop:** after a pickup the organization sends a photo or thank-you that the donor sees.
 13. **Volunteer drivers:** a later role that collects food from donors that organizations can't reach.
 
+## Credits (in progress)
+
+Monthly credits are being added in four parts (full spec: `docs/credits-spec.md`). Part 1 is done: the database and the credit rules in the backend. Nothing charges credits in the app yet. Parts 2–4 will charge credits in the product and reservation flows, add subscription and top-up requests with admin approval and auto-renew, and add the Credits page, the profile section and banners.
+
+- Plans of 20, 50 or 150 credits per **calendar month**, paid offline: the user sends a request and an admin approves it. Unused credits expire at the end of the month. Any plan can be chosen mid-month, at full price. A plan change applies from the next month.
+- Top-ups of 10, 20 or 50 credits go into the current month and are possible **only with an active subscription for that month**. A user can have at most one pending top-up.
+- A store pays 1 credit per published product (also 1 per product in a CSV import, all or nothing). A restaurant pays 1 credit per reservation. Donations are always free.
+- Days and months change at 00:00 London time (01:00 in Sarajevo).
+- Refunds:
+  - Deleting a product, or moving all of it to donations, is refunded only on the same day and only if nothing was reserved. Rejected or cancelled requests don't count as reserved.
+  - A restaurant cancelling its own pending reservation gets a refund only on the same day.
+  - A store rejection, the expiry job and admin cancellations always refund.
+  - A missed pickup (the store cancels a late reservation) is **not** refunded.
+  - A refund after a month change goes into the new month, and counts only once the user has a subscription for that month.
+  - Each charge is refunded at most once.
+- Returning a fully moved donation to the offer charges 1 credit again.
+- Admins get a notification for every new pending request. Users get a notification when their request is approved or rejected. The admin's note is never shown to the user.
+- Plans, prices and packages are database rows. The prices are placeholders for now: plans 15 / 30 / 75 KM, top-ups 8 / 15 / 35 KM.
+
 ## Other roadmap and ideas
 
 - Public launch (deploy) with proper image storage.

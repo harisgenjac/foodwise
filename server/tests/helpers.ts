@@ -2,6 +2,7 @@ import request from "supertest";
 import app from "../src/app.js";
 import bcrypt from "bcrypt";
 import pool from "../src/config/db.js";
+import { creditMonth } from "../src/utils/creditTime.js";
 
 export type Agent = ReturnType<typeof request.agent>;
 export type Role = "STORE" | "RESTAURANT" | "ADMIN";
@@ -10,15 +11,45 @@ export const PASSWORD = "test12345";
 
 // Public registration no longer creates these roles (an admin does), so tests insert the
 // account directly. Stores and restaurants get a business name, because the marketplace
-// hides stores whose profile is not filled in. Hashed once: bcrypt is slow.
+// hides stores whose profile is not filled in, and a subscription for the current month with
+// `credits` credits (null = none), so creating products and reservations is not limited by
+// credits unless a test wants that. Hashed once: bcrypt is slow.
 let passwordHash: Promise<string> | undefined;
-export const insertUser = async (email: string, role: Role, businessName: string | null = "Test Business") => {
+export const insertUser = async (
+  email: string,
+  role: Role,
+  businessName: string | null = "Test Business",
+  credits: number | null = 1000,
+) => {
   passwordHash ??= bcrypt.hash(PASSWORD, 10);
-  await pool.query(
+  const result = await pool.query<{ id: number }>(
     `INSERT INTO users (first_name, last_name, email, password_hash, role, business_name)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id`,
     ["Test", "User", email, await passwordHash, role, role === "ADMIN" ? null : businessName],
   );
+  if (role !== "ADMIN" && credits !== null) {
+    await giveSubscription(result.rows[0]!.id, credits);
+  }
+};
+
+// A subscription (Pro plan) for the credit month of `now`, whose grant holds `credits` credits.
+export const giveSubscription = async (id: number, credits: number, now = new Date()) => {
+  const periodMonth = creditMonth(now);
+  const subscription = await pool.query<{ id: number }>(
+    `INSERT INTO subscriptions (user_id, plan_id, period_month)
+     VALUES ($1, (SELECT id FROM plans WHERE name = 'Pro'), $2)
+     RETURNING id`,
+    [id, periodMonth],
+  );
+  if (credits > 0) {
+    await pool.query(
+      `INSERT INTO credit_transactions (user_id, subscription_id, period_month, amount, type, actor, created_at)
+       VALUES ($1, $2, $3, $4, 'PLAN_GRANT', 'SYSTEM', $5)`,
+      [id, subscription.rows[0]!.id, periodMonth, credits, now],
+    );
+  }
+  return subscription.rows[0]!.id;
 };
 
 export const login = async (email: string, password = PASSWORD): Promise<Agent> => {
@@ -113,9 +144,27 @@ export const reserve = async (restaurant: Agent, productId: number, quantity: nu
 };
 
 // The audit log and announcements go first because they keep an admin from being deleted
-// (RESTRICT), then the reservations (also RESTRICT); deleting the users cascades to products,
-// notifications, favorites and templates.
+// (RESTRICT), then the credit ledger and the reservations (also RESTRICT); deleting the users
+// cascades to products, notifications, favorites, templates, subscriptions and credit requests.
 export const cleanupUsers = async (emails: string[]) => {
+  // The ledger is append-only; its trigger allows deletes only with app.ledger_maintenance on.
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SET LOCAL app.ledger_maintenance = 'on'");
+    await client.query(
+      `DELETE FROM credit_transactions
+       WHERE user_id IN (SELECT id FROM users WHERE email = ANY($1))
+          OR created_by_user_id IN (SELECT id FROM users WHERE email = ANY($1))`,
+      [emails],
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
   await pool.query(
     "DELETE FROM admin_actions WHERE admin_id IN (SELECT id FROM users WHERE email = ANY($1))",
     [emails],
