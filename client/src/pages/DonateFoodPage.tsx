@@ -29,6 +29,8 @@ import { inputStyle } from "../components/form/FormField.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { useDonationLabels } from "../hooks/useDonationLabels.js";
 import type { DonationOffer } from "../types/index.js";
+import InsufficientCreditsNotice from "../components/credits/InsufficientCreditsNotice.js";
+import { getCreditError, type CreditError } from "../utils/credits.js";
 
 function DonateFoodPage() {
   const { t } = useTranslation();
@@ -38,6 +40,7 @@ function DonateFoodPage() {
   const [status, setStatus] = useState("");
   const [selectedDonation, setSelectedDonation] = useState<DonationOffer | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [creditError, setCreditError] = useState<CreditError | null>(null);
   const { data: donations, error, loading, refetch } = useFetch<DonationOffer>(
     "/donations/mine",
     "donations",
@@ -64,12 +67,20 @@ function DonateFoodPage() {
   const handleReturn = async (donation: DonationOffer) => {
     if (deleting) return;
     setDeleting(true);
+    setCreditError(null);
     try {
       await api.post(`/donations/${donation.id}/return-to-product`);
       setSelectedDonation(null);
       refetch();
       toast.success(t("donations.delete.returnSuccess"));
     } catch (err) {
+      // A product that had left the offer costs a credit to publish again.
+      const credits = getCreditError(err);
+      if (credits) {
+        setSelectedDonation(null);
+        setCreditError(credits);
+        return;
+      }
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
       toast.error(message || t("donations.delete.returnError"));
     } finally {
@@ -102,6 +113,8 @@ function DonateFoodPage() {
         count={t("donations.count", { count: donations.length })}
         action={{ to: "/donate-food/new", label: t("donations.newButton"), icon: HandHeart }}
       />
+
+      {creditError && <InsufficientCreditsNotice error={creditError} />}
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="flex gap-3 rounded-2xl border border-green-100 bg-green-50/60 p-4">

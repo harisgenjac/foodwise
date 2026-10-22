@@ -97,23 +97,13 @@ describe("Reservation rules", () => {
       expect(parseFloat(reservation.discounted_price)).toBe(5);
     });
 
-    it("rejects a quantity below what is already reserved", async () => {
+    it("keeps the quantity locked after publishing, also with reservations", async () => {
       const product = await createProduct(store);
       await reserve(product.id, 6);
 
-      const response = await store.put(`/api/products/${product.id}`).send(productPayload({ quantity: 5 }));
-      expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Quantity cannot be lower than the already reserved quantity.");
-    });
-
-    it("marks the product Sold when the new quantity equals the confirmed quantity", async () => {
-      const product = await createProduct(store);
-      const reservationId = (await reserve(product.id, 6)).body.reservation.id;
-      await store.patch(`/api/reservations/${reservationId}/accept`);
-
       const response = await store.put(`/api/products/${product.id}`).send(productPayload({ quantity: 6 }));
-      expect(response.status).toBe(200);
-      expect(response.body.product.status).toBe("Sold");
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Quantity and expiry date cannot be changed after publishing.");
     });
 
     it("refuses to edit a product that is no longer available", async () => {

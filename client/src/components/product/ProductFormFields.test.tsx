@@ -14,6 +14,21 @@ const renderFields = (values: Partial<ProductFormValues> = {}, minExpiryDate?: s
 };
 
 describe("ProductFormFields", () => {
+  it("locks quantity and expiry date of a published product and says why", () => {
+    render(
+      <ProductFormFields
+        values={{ ...EMPTY_PRODUCT_FORM, quantity: "10", expiry_date: "2030-01-05" }}
+        onChange={vi.fn()}
+        stockLocked
+      />,
+    );
+    expect(screen.getByLabelText(t("product.quantity"))).toBeDisabled();
+    expect(screen.getByLabelText(t("product.expiryDate"))).toBeDisabled();
+    expect(screen.getByText(t("product.stockLocked"))).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t("product.expiresTomorrow") })).not.toBeInTheDocument();
+    expect(screen.getByLabelText(t("product.name"))).toBeEnabled();
+  });
+
   it("reports text, number and select changes by field", async () => {
     const onChange = renderFields();
 

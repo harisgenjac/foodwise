@@ -9,6 +9,8 @@ import FormField, { inputStyle } from "../form/FormField.js";
 import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
 import { toDateInput } from "../../utils/expiry.js";
 import type { Product } from "../../types/index.js";
+import InsufficientCreditsNotice from "../credits/InsufficientCreditsNotice.js";
+import { getCreditError, type CreditError } from "../../utils/credits.js";
 
 interface ReserveProductModalProps {
   product: Product;
@@ -25,6 +27,7 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
   const [quantity, setQuantity] = useState("");
   const [pickupDate, setPickupDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [creditError, setCreditError] = useState<CreditError | null>(null);
   const units = t("units", { returnObjects: true }) as Record<string, string>;
   const unit = units[product.unit] || product.unit;
   const available = product.available_quantity ?? product.quantity;
@@ -46,6 +49,12 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
       onClose();
       onReserved();
     } catch (err) {
+      // No credits: explain it inside the dialog, with the way to get credits.
+      const credits = getCreditError(err);
+      if (credits) {
+        setCreditError(credits);
+        return;
+      }
       console.error(err);
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
       toast.error(message || t("reservations.actionError"));
@@ -103,6 +112,8 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
           />
         </FormField>
       </div>
+
+      {creditError && <InsufficientCreditsNotice error={creditError} className="mt-4" />}
 
       <div className="mt-6 flex gap-2">
         <button

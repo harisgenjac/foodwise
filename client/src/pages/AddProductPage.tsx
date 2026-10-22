@@ -10,11 +10,14 @@ import ProductPreview from "../components/product/ProductPreview.js";
 import ProductTemplatesPanel from "../components/product/ProductTemplatesPanel.js";
 import { dateInDays, daysFromToday, toDateInput } from "../utils/expiry.js";
 import type { ProductFormValues, ProductTemplate } from "../types/index.js";
+import InsufficientCreditsNotice from "../components/credits/InsufficientCreditsNotice.js";
+import { getCreditError, type CreditError } from "../utils/credits.js";
 
 function AddProductPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState<ProductFormValues>(EMPTY_PRODUCT_FORM);
   const [error, setError] = useState("");
+  const [creditError, setCreditError] = useState<CreditError | null>(null);
   const [saving, setSaving] = useState(false);
   const [templates, setTemplates] = useState<ProductTemplate[]>([]);
   const [appliedTemplateId, setAppliedTemplateId] = useState<number | null>(null);
@@ -104,6 +107,7 @@ function AddProductPage() {
       return;
     }
     setSaving(true);
+    setCreditError(null);
     try {
       await api.post("/products", form);
       toast.success(t("product.addedSuccess"));
@@ -112,6 +116,12 @@ function AddProductPage() {
       }
       navigate("/dashboard");
     } catch (err) {
+      const credits = getCreditError(err);
+      if (credits) {
+        setError("");
+        setCreditError(credits);
+        return;
+      }
       setError(t("product.addError"));
       const message = axios.isAxiosError(err)
         ? err.response?.data?.error
@@ -147,6 +157,7 @@ function AddProductPage() {
         </Link>
       </div>
 
+      {creditError && <InsufficientCreditsNotice error={creditError} className="mb-6" />}
       {error && (
         <p className="mb-6 flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
           <AlertCircle className="h-4 w-4 shrink-0" />

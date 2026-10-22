@@ -10,6 +10,8 @@ import {
 } from "../utils/validateDonation.js";
 import { parseId, parseNumber } from "../utils/params.js";
 import { markSoldIfFullyConfirmed } from "./reservations.controller.js";
+import { HttpError } from "../utils/httpError.js";
+import { chargeForProduct, refundForProduct } from "../services/creditService.js";
 
 const DONATION_COLUMNS = `
   donation_offers.id, donation_offers.donor_id, donation_offers.source_product_id,
@@ -330,9 +332,14 @@ export const donateProduct = async (req: Request, res: Response) => {
           ],
         );
 
+    let creditRefunded = false;
     if (totalReserved === 0 && donatedQuantity === available) {
-      // Everything went to donations: the product leaves the marketplace.
+      // Everything went to donations: the product leaves the marketplace. Like a delete, that
+      // gives the credit back on the day it was charged (donations never cost credits). A partial
+      // move keeps the product on offer, so its credit stays spent.
       await client.query("UPDATE products SET status = 'Removed' WHERE id = $1", [productId]);
+      const refund = await refundForProduct(client, productId, { actor: "USER", userId: req.user!.id });
+      creditRefunded = refund.refunded;
     } else {
       const updated = await client.query(
         "UPDATE products SET quantity = quantity - $1 WHERE id = $2 RETURNING *",
@@ -345,11 +352,11 @@ export const donateProduct = async (req: Request, res: Response) => {
     if (mergeInto) {
       return res
         .status(200)
-        .json({ message: "Quantity added to the existing donation.", donation: result.rows[0] });
+        .json({ message: "Quantity added to the existing donation.", donation: result.rows[0], creditRefunded });
     }
     return res
       .status(201)
-      .json({ message: "Product moved to donations.", donation: result.rows[0] });
+      .json({ message: "Product moved to donations.", donation: result.rows[0], creditRefunded });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
     console.error("Error while moving product to donations:", error);
@@ -393,7 +400,7 @@ export const returnDonationToProduct = async (req: Request, res: Response) => {
     // Lock the product so reservations can't change its stock while the quantity comes back.
     const products = donation.source_product_id
       ? await client.query(
-          "SELECT id, status, expiry_date < CURRENT_DATE AS is_expired FROM products WHERE id = $1 FOR UPDATE",
+          "SELECT id, status, category, expiry_date < CURRENT_DATE AS is_expired FROM products WHERE id = $1 FOR UPDATE",
           [donation.source_product_id],
         )
       : null;
@@ -433,6 +440,12 @@ export const returnDonationToProduct = async (req: Request, res: Response) => {
     await client.query("UPDATE donation_offers SET status = 'Removed' WHERE donation_offers.id = $1", [
       donationId,
     ]);
+    // A Removed product had left the marketplace, so putting it back is a new publication and
+    // costs 1 credit (402 rolls the whole return back). A product that stayed on offer (partial
+    // move, or sold out) is still covered by its original credit.
+    if (product.status === "Removed") {
+      await chargeForProduct(client, req.user!.id, { id: product.id, category: product.category });
+    }
 
     await client.query("COMMIT");
     return res
@@ -440,6 +453,9 @@ export const returnDonationToProduct = async (req: Request, res: Response) => {
       .json({ message: "Donation returned to the offer.", product: updated.rows[0] });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
+    if (error instanceof HttpError) {
+      return res.status(error.status).json(error.body());
+    }
     console.error("Error while returning donation to the offer:", error);
     return res
       .status(500)

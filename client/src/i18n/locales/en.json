@@ -102,7 +102,8 @@
     "previewName": "Product name",
     "previewDescription": "Product description",
     "cancel": "Cancel",
-    "loadMore": "Load more"
+    "loadMore": "Load more",
+    "stockLocked": "Quantity and expiry date cannot be changed after publishing. For a different offer, add a new product."
   },
   "myProducts": {
     "deleteSuccess": "Product deleted successfully.",
@@ -1014,5 +1015,14 @@
     "missingFields": "Fill in the required details: {{fields}}.",
     "goToProfile": "Go to My profile",
     "profileHint": "The app unlocks once you save the required details (*) and set your own password."
+  },
+  "credits": {
+    "insufficient": {
+      "title": "Not enough credits",
+      "noSubscription": "A subscription is required to publish products and make reservations.",
+      "noCredits": "You have used up your credits for this month. You can buy extra credits.",
+      "subscribeLink": "Choose a subscription",
+      "topUpLink": "Buy extra credits"
+    }
   }
 }

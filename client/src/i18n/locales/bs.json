@@ -104,7 +104,8 @@
     "previewName": "Naziv proizvoda",
     "previewDescription": "Opis proizvoda",
     "cancel": "Odustani",
-    "loadMore": "Učitaj još"
+    "loadMore": "Učitaj još",
+    "stockLocked": "Količina i rok trajanja se ne mogu mijenjati nakon objave. Za drugačiju ponudu dodajte novi proizvod."
   },
   "myProducts": {
     "deleteSuccess": "Proizvod uspješno obrisan.",
@@ -1034,5 +1035,14 @@
     "missingFields": "Popunite obavezne podatke: {{fields}}.",
     "goToProfile": "Idi na Moj profil",
     "profileHint": "Aplikacija se otključava kada sačuvate obavezne podatke (*) i postavite svoju lozinku."
+  },
+  "credits": {
+    "insufficient": {
+      "title": "Nemate dovoljno kredita",
+      "noSubscription": "Za objavu proizvoda i rezervacije potrebna je pretplata.",
+      "noCredits": "Potrošili ste kredite za ovaj mjesec. Možete kupiti dodatne kredite.",
+      "subscribeLink": "Odaberi pretplatu",
+      "topUpLink": "Kupi dodatne kredite"
+    }
   }
 }
