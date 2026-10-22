@@ -74,7 +74,7 @@ export interface CreditTransaction {
   created_at: Date;
 }
 
-const findActiveSubscription = async (
+export const findActiveSubscription = async (
   db: Db,
   userId: number,
   periodMonth: string,
@@ -105,23 +105,27 @@ const lockActiveSubscription = async (client: PoolClient, userId: number, period
   return result.rows[0]?.id ?? null;
 };
 
+// Total and used over ledger rows (`entry`) grouped by the caller. A refund row joins its charge
+// to tell a same-month refund (less used) from an earlier month's (new credit). SUM is bigint,
+// so the results are cast back to integer.
+const TOTALS_COLUMNS = `
+  (COALESCE(SUM(entry.amount) FILTER (
+     WHERE entry.type IN ('PLAN_GRANT', 'TOPUP_GRANT', 'ADMIN_ADJUSTMENT')), 0)
+   + COALESCE(SUM(entry.amount) FILTER (
+     WHERE entry.refunds_transaction_id IS NOT NULL AND charge.period_month <> entry.period_month), 0)
+  )::int AS total,
+  (COALESCE(-SUM(entry.amount) FILTER (
+     WHERE entry.type IN ('PRODUCT_CHARGE', 'RESERVATION_CHARGE')), 0)
+   - COALESCE(SUM(entry.amount) FILTER (
+     WHERE entry.refunds_transaction_id IS NOT NULL AND charge.period_month = entry.period_month), 0)
+  )::int AS used`;
+const TOTALS_FROM = `
+  FROM credit_transactions entry
+  LEFT JOIN credit_transactions charge ON charge.id = entry.refunds_transaction_id`;
+
 const periodTotals = async (db: Db, userId: number, periodMonth: string) => {
-  // A refund row joins its charge to tell a same-month refund (less used) from an earlier
-  // month's (new credit). SUM is bigint, so the results are cast back to integer.
   const result = await db.query<{ total: number; used: number }>(
-    `SELECT
-       (COALESCE(SUM(entry.amount) FILTER (
-          WHERE entry.type IN ('PLAN_GRANT', 'TOPUP_GRANT', 'ADMIN_ADJUSTMENT')), 0)
-        + COALESCE(SUM(entry.amount) FILTER (
-          WHERE entry.refunds_transaction_id IS NOT NULL AND charge.period_month <> entry.period_month), 0)
-       )::int AS total,
-       (COALESCE(-SUM(entry.amount) FILTER (
-          WHERE entry.type IN ('PRODUCT_CHARGE', 'RESERVATION_CHARGE')), 0)
-        - COALESCE(SUM(entry.amount) FILTER (
-          WHERE entry.refunds_transaction_id IS NOT NULL AND charge.period_month = entry.period_month), 0)
-       )::int AS used
-     FROM credit_transactions entry
-     LEFT JOIN credit_transactions charge ON charge.id = entry.refunds_transaction_id
+    `SELECT ${TOTALS_COLUMNS} ${TOTALS_FROM}
      WHERE entry.user_id = $1 AND entry.period_month = $2`,
     [userId, periodMonth],
   );
@@ -146,6 +150,122 @@ export const getBalance = async (db: Db, userId: number, now = new Date()): Prom
     used,
     available: subscription ? Math.max(total - used, 0) : 0,
   };
+};
+
+export interface UserCreditSummary {
+  userId: number;
+  planName: string | null;
+  hasActiveSubscription: boolean;
+  total: number;
+  used: number;
+  available: number;
+}
+
+// The current month's balance of many users in two queries (the admin overview page).
+export const getBalances = async (db: Db, userIds: number[], now = new Date()): Promise<Map<number, UserCreditSummary>> => {
+  const periodMonth = creditMonth(now);
+  const totals = await db.query<{ user_id: number; total: number; used: number }>(
+    `SELECT entry.user_id, ${TOTALS_COLUMNS} ${TOTALS_FROM}
+     WHERE entry.user_id = ANY($1) AND entry.period_month = $2
+     GROUP BY entry.user_id`,
+    [userIds, periodMonth],
+  );
+  const subscriptions = await db.query<{ user_id: number; plan_name: string }>(
+    `SELECT subscriptions.user_id, plans.name AS plan_name
+     FROM subscriptions
+     JOIN plans ON plans.id = subscriptions.plan_id
+     WHERE subscriptions.user_id = ANY($1) AND subscriptions.period_month = $2
+       AND subscriptions.status = 'ACTIVE'`,
+    [userIds, periodMonth],
+  );
+  const summaries = new Map<number, UserCreditSummary>();
+  for (const userId of userIds) {
+    const row = totals.rows.find((totalsRow) => totalsRow.user_id === userId);
+    const subscription = subscriptions.rows.find((subscriptionRow) => subscriptionRow.user_id === userId);
+    const total = row?.total ?? 0;
+    const used = row?.used ?? 0;
+    summaries.set(userId, {
+      userId,
+      planName: subscription?.plan_name ?? null,
+      hasActiveSubscription: subscription !== undefined,
+      total,
+      used,
+      available: subscription ? Math.max(total - used, 0) : 0,
+    });
+  }
+  return summaries;
+};
+
+export interface MonthUsage {
+  month: string;
+  hasSubscription: boolean;
+  total: number;
+  used: number;
+}
+
+// The Credits page: used and total credits for each month of a year, and the credits used per
+// product category in that year. A charge refunded in its own month never counts; one refunded
+// after a month change stays used in its month (the refund was new credit in the next month),
+// so the categories add up to the months.
+export const getUsageHistory = async (db: Db, userId: number, year: number) => {
+  const from = `${year}-01-01`;
+  const to = `${year + 1}-01-01`;
+  const totals = await db.query<{ period_month: string; total: number; used: number }>(
+    `SELECT entry.period_month, ${TOTALS_COLUMNS} ${TOTALS_FROM}
+     WHERE entry.user_id = $1 AND entry.period_month >= $2 AND entry.period_month < $3
+     GROUP BY entry.period_month`,
+    [userId, from, to],
+  );
+  const subscribed = await db.query<{ period_month: string }>(
+    `SELECT period_month FROM subscriptions
+     WHERE user_id = $1 AND status = 'ACTIVE' AND period_month >= $2 AND period_month < $3`,
+    [userId, from, to],
+  );
+  const categories = await db.query<{ category: string | null; used: number }>(
+    `SELECT charge.category, COUNT(*)::int AS used
+     FROM credit_transactions charge
+     WHERE charge.user_id = $1 AND charge.type IN ('PRODUCT_CHARGE', 'RESERVATION_CHARGE')
+       AND charge.period_month >= $2 AND charge.period_month < $3
+       AND NOT EXISTS (
+         SELECT 1 FROM credit_transactions refund
+         WHERE refund.refunds_transaction_id = charge.id AND refund.period_month = charge.period_month
+       )
+     GROUP BY charge.category
+     ORDER BY used DESC, charge.category`,
+    [userId, from, to],
+  );
+
+  const months: MonthUsage[] = Array.from({ length: 12 }, (_, index) => {
+    const month = `${year}-${String(index + 1).padStart(2, "0")}-01`;
+    const row = totals.rows.find((totalsRow) => totalsRow.period_month === month);
+    return {
+      month,
+      hasSubscription: subscribed.rows.some((subscription) => subscription.period_month === month),
+      total: row?.total ?? 0,
+      used: row?.used ?? 0,
+    };
+  });
+  return { year, months, categories: categories.rows };
+};
+
+// One user's ledger, newest first (the admin's per-user view).
+export const listTransactions = async (db: Db, userId: number, page: { limit: number; offset: number }) => {
+  const total = await db.query<{ total: string }>(
+    "SELECT COUNT(*) AS total FROM credit_transactions WHERE user_id = $1",
+    [userId],
+  );
+  const result = await db.query(
+    `SELECT entry.id, entry.period_month, entry.amount, entry.type, entry.reason, entry.category,
+            entry.related_entity_type, entry.related_entity_id, entry.refunds_transaction_id,
+            entry.actor, entry.created_at, creators.email AS created_by_email
+     FROM credit_transactions entry
+     LEFT JOIN users AS creators ON creators.id = entry.created_by_user_id
+     WHERE entry.user_id = $1
+     ORDER BY entry.created_at DESC, entry.id DESC
+     LIMIT $2 OFFSET $3`,
+    [userId, page.limit, page.offset],
+  );
+  return { transactions: result.rows, total: parseInt(total.rows[0]!.total, 10) };
 };
 
 // Same-day refund rule: a refund is possible only on the credit day (Europe/London) of the charge.

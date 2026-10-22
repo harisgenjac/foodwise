@@ -45,6 +45,15 @@ describe("getNotificationLink", () => {
     const removed = makeNotification({ type: "DONATION_REMOVED_BY_ADMIN", reservation_id: null, product_id: null, donation_id: 7 });
     expect(getNotificationLink(removed, "RESTAURANT")).toBe("/donate-food");
   });
+
+  it("sends credit request notifications to the admin requests page or the Credits page", () => {
+    const base = { reservation_id: null, product_id: null, credit_request_id: 4 };
+    expect(getNotificationLink(makeNotification({ ...base, type: "CREDIT_REQUEST_CREATED" }), "ADMIN")).toBe(
+      "/admin/credit-requests",
+    );
+    expect(getNotificationLink(makeNotification({ ...base, type: "CREDIT_REQUEST_APPROVED" }), "STORE")).toBe("/credits");
+    expect(getNotificationLink(makeNotification({ ...base, type: "CREDIT_REQUEST_REJECTED" }), "STORE")).toBe("/credits");
+  });
 });
 
 describe("getNotificationText", () => {
@@ -61,6 +70,29 @@ describe("getNotificationText", () => {
     expect(getNotificationText(removed, t)).toBe(
       `${t("notifications.types.PRODUCT_REMOVED_BY_ADMIN", { product: "Piletina" })} ${t("notifications.reason", { reason: "Neispravan opis" })}`,
     );
+  });
+
+  it("describes credit requests by request type, credits and requester", () => {
+    const created = makeNotification({
+      type: "CREDIT_REQUEST_CREATED",
+      product_name: null,
+      credit_request_type: "TOPUP",
+      credit_amount: 20,
+      credit_requester: "Market Centar",
+    });
+    expect(getNotificationText(created, t)).toBe(
+      t("notifications.credits.topupCreated", { credits: 20, requester: "Market Centar" }),
+    );
+    const approved = makeNotification({
+      type: "CREDIT_REQUEST_APPROVED",
+      product_name: null,
+      credit_request_type: "SUBSCRIPTION",
+      credit_amount: 50,
+    });
+    expect(getNotificationText(approved, t)).toBe(t("notifications.credits.subscriptionApproved", { credits: 50 }));
+    // The request is gone: the type's generic text.
+    const orphan = makeNotification({ type: "CREDIT_REQUEST_REJECTED", product_name: null, credit_request_type: null });
+    expect(getNotificationText(orphan, t)).toBe(t("notifications.types.CREDIT_REQUEST_REJECTED"));
   });
 
   it("returns the stored message for untyped notifications or without a product", () => {

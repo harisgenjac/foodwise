@@ -239,9 +239,20 @@
       "PRODUCT_REMOVED_BY_ADMIN": "An administrator removed {{product}} from your offer.",
       "DONATION_REMOVED_BY_ADMIN": "An administrator removed your donation {{product}}.",
       "RESERVATION_CANCELLED_BY_ADMIN": "The platform administrator cancelled the reservation for {{product}}.",
-      "PLATFORM_ANNOUNCEMENT": "Platform announcement: {{title}}"
+      "PLATFORM_ANNOUNCEMENT": "Platform announcement: {{title}}",
+      "CREDIT_REQUEST_CREATED": "A new credit request is waiting for approval",
+      "CREDIT_REQUEST_APPROVED": "Your credit request was approved",
+      "CREDIT_REQUEST_REJECTED": "Your credit request was rejected"
     },
-    "reason": "Reason: {{reason}}"
+    "reason": "Reason: {{reason}}",
+    "credits": {
+      "subscriptionCreated": "New subscription request: {{requester}}, {{credits}} credits",
+      "topupCreated": "New request for extra credits: {{requester}}, {{credits}} credits",
+      "subscriptionApproved": "Your subscription ({{credits}} credits) was approved.",
+      "topupApproved": "Your extra credits ({{credits}}) were approved and added to this month.",
+      "subscriptionRejected": "Your subscription request was rejected.",
+      "topupRejected": "Your request for extra credits was rejected."
+    }
   },
   "store": {
     "addFavoriteSucces": "Store added to favorites successfully.",

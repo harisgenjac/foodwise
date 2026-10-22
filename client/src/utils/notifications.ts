@@ -5,6 +5,7 @@ import {
   CalendarX,
   CircleCheck,
   CircleX,
+  Coins,
   Megaphone,
   Clock,
   Hourglass,
@@ -32,6 +33,16 @@ export const NOTIFICATION_META: Record<NotificationType, { icon: LucideIcon; sty
   DONATION_REMOVED_BY_ADMIN: { icon: ShieldAlert, style: "bg-red-50 text-red-600" },
   RESERVATION_CANCELLED_BY_ADMIN: { icon: ShieldAlert, style: "bg-gray-100 text-gray-600" },
   PLATFORM_ANNOUNCEMENT: { icon: Megaphone, style: "bg-blue-50 text-blue-600" },
+  CREDIT_REQUEST_CREATED: { icon: Coins, style: "bg-amber-50 text-amber-600" },
+  CREDIT_REQUEST_APPROVED: { icon: Coins, style: "bg-green-50 text-green-600" },
+  CREDIT_REQUEST_REJECTED: { icon: Coins, style: "bg-red-50 text-red-600" },
+};
+
+// notifications.credits.<key> per credit notification type and request type.
+const CREDIT_TEXT_KEYS: Partial<Record<NotificationType, { SUBSCRIPTION: string; TOPUP: string }>> = {
+  CREDIT_REQUEST_CREATED: { SUBSCRIPTION: "subscriptionCreated", TOPUP: "topupCreated" },
+  CREDIT_REQUEST_APPROVED: { SUBSCRIPTION: "subscriptionApproved", TOPUP: "topupApproved" },
+  CREDIT_REQUEST_REJECTED: { SUBSCRIPTION: "subscriptionRejected", TOPUP: "topupRejected" },
 };
 
 const DEFAULT_META = { icon: Bell, style: "bg-orange-50 text-orange-600" };
@@ -47,6 +58,11 @@ export const getNotificationLink = (notification: Notification, role: User["role
   if (notification.donation_id) return "/donate-food";
   // The full announcement text is in the banner on every page.
   if (notification.announcement_id) return "/dashboard";
+  // Admins decide requests on the requests page; users see the result on the Credits page.
+  if (notification.type === "CREDIT_REQUEST_CREATED") return "/admin/credit-requests";
+  if (notification.type === "CREDIT_REQUEST_APPROVED" || notification.type === "CREDIT_REQUEST_REJECTED") {
+    return "/credits";
+  }
   return role === "STORE" ? "/reservations" : "/my-reservations";
 };
 
@@ -55,6 +71,16 @@ export const getNotificationText = (notification: Notification, t: TFunction, la
     const title =
       (language === "en" && notification.announcement_title_en) || notification.announcement_title_bs;
     return t("notifications.types.PLATFORM_ANNOUNCEMENT", { title });
+  }
+  const creditKeys = notification.type ? CREDIT_TEXT_KEYS[notification.type] : undefined;
+  if (creditKeys) {
+    // Without the joined request (deleted) the generic text of the type is used.
+    return notification.credit_request_type
+      ? t(`notifications.credits.${creditKeys[notification.credit_request_type]}`, {
+          credits: notification.credit_amount ?? "",
+          requester: notification.credit_requester ?? "",
+        })
+      : t(`notifications.types.${notification.type}`);
   }
   const text =
     !notification.type || !notification.product_name

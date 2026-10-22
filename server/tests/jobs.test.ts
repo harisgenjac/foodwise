@@ -1,8 +1,9 @@
 import cron from "node-cron";
 import { startExpirationJob } from "../src/jobs/expireProducts.js";
 import { startReminderJob } from "../src/jobs/notificationReminders.js";
+import { startCreditRenewalJob } from "../src/jobs/creditRenewals.js";
 
-// The real job queries are covered in notifications.test.ts; here the database
+// The real job queries are covered in notifications.test.ts and creditRequests.test.ts; here the database
 // is unavailable on purpose, to check scheduling and that failures are only logged.
 vi.mock("node-cron", () => ({ default: { schedule: vi.fn() } }));
 vi.mock("../src/config/db.js", () => {
@@ -25,6 +26,7 @@ describe("scheduled jobs", () => {
   it.each([
     ["expiration", startExpirationJob, "0 0 * * *", "Error running expiration job:"],
     ["reminder", startReminderJob, "0 7 * * *", "Error running reminder job:"],
+    ["credit renewal", startCreditRenewalJob, "10 0 * * *", "Error running credit renewal job:"],
   ] as const)("schedules the %s job and logs failures instead of throwing", async (_name, start, expression, log) => {
     start();
 
