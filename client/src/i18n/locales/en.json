@@ -796,7 +796,16 @@
       "availableDonations": "Active donations",
       "expiredDonations": "Expired donations",
       "removedDonations": "Removed donations",
-      "newUser": "New user"
+      "newUser": "New user",
+      "creditsSection": "Subscriptions and credits – {{month}}",
+      "viewRequests": "Pending requests",
+      "activeSubscriptions": "Active subscriptions",
+      "planSubscriptions": "{{plan}} plan",
+      "withoutSubscription": "Without subscription",
+      "pendingCreditRequests": "Pending requests",
+      "autoRenew": "With auto-renew",
+      "nextMonthSubscriptions": "Approved for next month",
+      "creditsUsed": "Credits used"
     },
     "users": {
       "title": "Users",

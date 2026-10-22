@@ -196,6 +196,16 @@ export const getBalances = async (db: Db, userIds: number[], now = new Date()): 
   return summaries;
 };
 
+// Credits used by all stores and restaurants in the current month (the admin overview), with
+// the same rules as a single balance: same-month refunds are not used.
+export const getPlatformUsage = async (db: Db, now = new Date()): Promise<number> => {
+  const result = await db.query<{ used: number }>(
+    `SELECT ${TOTALS_COLUMNS} ${TOTALS_FROM} WHERE entry.period_month = $1`,
+    [creditMonth(now)],
+  );
+  return result.rows[0]?.used ?? 0;
+};
+
 export interface MonthUsage {
   month: string;
   hasSubscription: boolean;

@@ -30,7 +30,8 @@ function AdminCreditRequestsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const userId = searchParams.get("user_id") ?? "";
   const [type, setType] = useState("");
-  const [status, setStatus] = useState("");
+  // The overview links here with ?status=PENDING.
+  const [status, setStatus] = useState(searchParams.get("status") ?? "");
   const [offset, setOffset] = useState(0);
   const [decision, setDecision] = useState<Decision | null>(null);
   const [note, setNote] = useState("");

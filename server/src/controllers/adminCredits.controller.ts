@@ -39,7 +39,8 @@ const parseNote = (value: unknown): string | null | undefined => {
 export const getCreditOverview = async (req: Request, res: Response) => {
   const { role, q } = req.query;
   const page = parsePage(req.query);
-  if (!page || (role !== undefined && !BUSINESS_ROLES.includes(role as string))) {
+  // Unused filters arrive as empty strings (?role=), which mean "no filter".
+  if (!page || (role && !BUSINESS_ROLES.includes(role as string))) {
     return res.status(400).json({ error: "Invalid filter." });
   }
   let from = "FROM users WHERE users.role IN ('STORE', 'RESTAURANT')";
@@ -90,8 +91,8 @@ export const getCreditRequests = async (req: Request, res: Response) => {
   const page = parsePage(req.query);
   if (
     !page ||
-    (type !== undefined && !CREDIT_REQUEST_TYPES.includes(type as string)) ||
-    (status !== undefined && !CREDIT_REQUEST_STATUSES.includes(status as string))
+    (type && !CREDIT_REQUEST_TYPES.includes(type as string)) ||
+    (status && !CREDIT_REQUEST_STATUSES.includes(status as string))
   ) {
     return res.status(400).json({ error: "Invalid filter." });
   }

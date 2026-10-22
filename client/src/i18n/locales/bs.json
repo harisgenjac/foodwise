@@ -810,7 +810,16 @@
       "availableDonations": "Aktivne donacije",
       "expiredDonations": "Istekle donacije",
       "removedDonations": "Uklonjene donacije",
-      "newUser": "Novi korisnik"
+      "newUser": "Novi korisnik",
+      "creditsSection": "Pretplate i krediti – {{month}}",
+      "viewRequests": "Zahtjevi na čekanju",
+      "activeSubscriptions": "Aktivne pretplate",
+      "planSubscriptions": "Plan {{plan}}",
+      "withoutSubscription": "Bez pretplate",
+      "pendingCreditRequests": "Zahtjevi na čekanju",
+      "autoRenew": "Sa automatskim obnavljanjem",
+      "nextMonthSubscriptions": "Odobreno za sljedeći mjesec",
+      "creditsUsed": "Potrošeni krediti"
     },
     "users": {
       "title": "Korisnici",

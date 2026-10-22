@@ -4,8 +4,9 @@ import toast from "react-hot-toast";
 import AdminCreditRequestsPage from "./AdminCreditRequestsPage.js";
 import AdminCreditsPage from "./AdminCreditsPage.js";
 import UserCreditsPanel from "../../components/admin/UserCreditsPanel.js";
+import AdminDashboardPage from "./AdminDashboardPage.js";
 import { apiMock, makeUser, renderWithProviders, t } from "../../test/utils.js";
-import type { AdminCreditRequest, AdminCreditUser } from "../../types/index.js";
+import type { AdminCreditRequest, AdminCreditUser, AdminStats } from "../../types/index.js";
 
 const admin = makeUser({ role: "ADMIN" });
 
@@ -69,6 +70,61 @@ describe("AdminCreditRequestsPage", () => {
 
     expect(await screen.findByText("No payment")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: t("admin.creditRequests.approve") })).not.toBeInTheDocument();
+  });
+});
+
+describe("AdminCreditRequestsPage filters", () => {
+  it("starts with the status from the link and sends no other filter", async () => {
+    const params: unknown[] = [];
+    renderWithProviders(<AdminCreditRequestsPage />, {
+      route: "/admin/credit-requests?status=PENDING",
+      path: "/admin/credit-requests",
+      user: admin,
+      get: {
+        "/admin/credits/requests": (query: unknown) => {
+          params.push(query);
+          return { requests: [REQUEST], total: 1 };
+        },
+      },
+    });
+    expect(await screen.findByText("Market Centar")).toBeInTheDocument();
+    expect(params[0]).toMatchObject({ status: "PENDING", type: "", user_id: "" });
+  });
+});
+
+describe("AdminDashboardPage credits", () => {
+  it("shows this month's subscriptions, plans, requests and used credits", async () => {
+    const stats: AdminStats = {
+      users: { stores: 3, restaurants: 2, admins: 1, blocked: 0, incomplete_profiles: 0 },
+      products: { active: 1, sold: 0, expired: 0, removed: 0 },
+      reservations: { Pending: 0, Confirmed: 0, Completed: 0, Rejected: 0, Cancelled: 0 },
+      saved: { kg: 0, l: 0, pieces: 0, value: 0, savings: 0 },
+      donations: { available: 0, expired: 0, removed: 0 },
+      credits: {
+        period_start: "2030-01-01",
+        active_subscriptions: 4,
+        by_plan: [{ plan: "Basic", count: 1 }, { plan: "Standard", count: 3 }],
+        auto_renew: 2,
+        next_month_subscriptions: 1,
+        without_subscription: 1,
+        pending_requests: 2,
+        credits_used: 37,
+      },
+    };
+    renderWithProviders(<AdminDashboardPage />, {
+      route: "/admin",
+      path: "/admin",
+      user: admin,
+      get: { "/admin/stats": { stats } },
+    });
+
+    expect(await screen.findByText(t("admin.dashboard.activeSubscriptions"))).toBeInTheDocument();
+    expect(screen.getByText(t("admin.dashboard.planSubscriptions", { plan: "Standard" }))).toBeInTheDocument();
+    expect(screen.getByText("37")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: t("admin.dashboard.viewRequests") })).toHaveAttribute(
+      "href",
+      "/admin/credit-requests?status=PENDING",
+    );
   });
 });
 

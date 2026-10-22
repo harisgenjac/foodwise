@@ -15,7 +15,8 @@ import { DONATION_STATUSES, DONATION_TYPES } from "../utils/validateDonation.js"
 import { RESERVATION_STATUSES, lockReservation, releaseSoldProduct } from "./reservations.controller.js";
 import { updateProfile } from "./users.controller.js";
 import { isValidDateTime } from "../utils/dates.js";
-import { refundForReservation } from "../services/creditService.js";
+import { getPlatformUsage, refundForReservation } from "../services/creditService.js";
+import { creditMonth, nextMonth } from "../utils/creditTime.js";
 import type { Role } from "../types/auth.js";
 
 export const ROLES = ["STORE", "RESTAURANT", "ADMIN"];
@@ -171,6 +172,40 @@ export const getStats = async (req: Request, res: Response) => {
        FROM donation_offers`,
     );
 
+    // Subscriptions and credits of the current credit month (Europe/London).
+    const periodMonth = creditMonth(new Date());
+    const subscriptions = await pool.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE subscriptions.period_month = $1) AS active_subscriptions,
+         COUNT(*) FILTER (WHERE subscriptions.period_month = $1 AND subscriptions.auto_renew) AS auto_renew,
+         COUNT(*) FILTER (WHERE subscriptions.period_month = $2) AS next_month_subscriptions
+       FROM subscriptions
+       WHERE subscriptions.status = 'ACTIVE'`,
+      [periodMonth, nextMonth(periodMonth)],
+    );
+    const byPlan = await pool.query(
+      `SELECT plans.name AS plan, COUNT(subscriptions.id)::int AS count
+       FROM plans
+       LEFT JOIN subscriptions ON subscriptions.plan_id = plans.id
+         AND subscriptions.period_month = $1 AND subscriptions.status = 'ACTIVE'
+       WHERE plans.is_active
+       GROUP BY plans.id, plans.name, plans.credits_per_period
+       ORDER BY plans.credits_per_period`,
+      [periodMonth],
+    );
+    const creditCounts = await pool.query(
+      `SELECT
+         (SELECT COUNT(*) FROM users
+          WHERE users.role IN ('STORE', 'RESTAURANT') AND users.is_blocked = false
+            AND NOT EXISTS (
+              SELECT 1 FROM subscriptions
+              WHERE subscriptions.user_id = users.id AND subscriptions.period_month = $1
+                AND subscriptions.status = 'ACTIVE'
+            )) AS without_subscription,
+         (SELECT COUNT(*) FROM credit_requests WHERE credit_requests.status = 'PENDING') AS pending_requests`,
+      [periodMonth],
+    );
+
     const toNumbers = (row: Record<string, string>) =>
       Object.fromEntries(Object.entries(row).map(([key, value]) => [key, Number(value)]));
     const reservationCounts = Object.fromEntries(
@@ -187,6 +222,13 @@ export const getStats = async (req: Request, res: Response) => {
         reservations: reservationCounts,
         saved: toNumbers(saved.rows[0]),
         donations: toNumbers(donations.rows[0]),
+        credits: {
+          period_start: periodMonth,
+          ...toNumbers(subscriptions.rows[0]),
+          ...toNumbers(creditCounts.rows[0]),
+          by_plan: byPlan.rows,
+          credits_used: await getPlatformUsage(pool),
+        },
       },
     });
   } catch (error) {
