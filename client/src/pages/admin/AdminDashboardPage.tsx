@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -7,18 +8,23 @@ import {
   CalendarX,
   CircleCheck,
   Clock,
+  Coins,
+  CalendarClock,
   Droplets,
   HeartHandshake,
+  Inbox,
   Leaf,
   Package,
   PackageCheck,
   PackageX,
   PiggyBank,
+  Repeat,
   ShieldCheck,
   Store,
   Trash2,
   UserPlus,
   UserRoundX,
+  WalletCards,
   UtensilsCrossed,
   XCircle,
 } from "lucide-react";
@@ -28,6 +34,7 @@ import StatCard from "../../components/dashboard/StatCard.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import type { AdminStats } from "../../types/index.js";
+import { formatCreditMonth } from "../../utils/credits.js";
 
 type Tone = "orange" | "amber" | "green" | "red" | "gray";
 
@@ -38,10 +45,18 @@ interface Stat {
   tone?: Tone;
 }
 
-function StatSection({ title, stats }: { title: string; stats: Stat[] }) {
+// An optional link next to the title leads to the page behind the numbers.
+function StatSection({ title, stats, link }: { title: string; stats: Stat[]; link?: { to: string; label: string } }) {
   return (
     <section>
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">{title}</h2>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">{title}</h2>
+        {link && (
+          <Link to={link.to} className="text-sm font-semibold text-orange-600 hover:text-orange-700">
+            {link.label}
+          </Link>
+        )}
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <StatCard key={stat.label} icon={stat.icon} label={stat.label} value={stat.value} tone={stat.tone ?? "orange"} />
@@ -75,6 +90,7 @@ function AdminDashboardPage() {
   const money = (value: number) =>
     `${value.toLocaleString(i18n.language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} KM`;
   const statuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
+  const monthNames = t("dashboard.months", { returnObjects: true }) as string[];
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 pb-16">
@@ -96,6 +112,23 @@ function AdminDashboardPage() {
               { icon: UtensilsCrossed, label: t("admin.dashboard.restaurants"), value: stats.users.restaurants },
               { icon: UserRoundX, label: t("admin.dashboard.blocked"), value: stats.users.blocked, tone: "red" },
               { icon: Clock, label: t("admin.dashboard.incompleteProfiles"), value: stats.users.incomplete_profiles, tone: "amber" },
+            ]}
+          />
+          <StatSection
+            title={t("admin.dashboard.creditsSection", { month: formatCreditMonth(stats.credits.period_start, monthNames) })}
+            link={{ to: "/admin/credit-requests?status=PENDING", label: t("admin.dashboard.viewRequests") }}
+            stats={[
+              { icon: WalletCards, label: t("admin.dashboard.activeSubscriptions"), value: stats.credits.active_subscriptions, tone: "green" },
+              ...stats.credits.by_plan.map((row) => ({
+                icon: Coins,
+                label: t("admin.dashboard.planSubscriptions", { plan: row.plan }),
+                value: row.count,
+              })),
+              { icon: UserRoundX, label: t("admin.dashboard.withoutSubscription"), value: stats.credits.without_subscription, tone: "amber" },
+              { icon: Inbox, label: t("admin.dashboard.pendingCreditRequests"), value: stats.credits.pending_requests, tone: "amber" },
+              { icon: Repeat, label: t("admin.dashboard.autoRenew"), value: stats.credits.auto_renew, tone: "gray" },
+              { icon: CalendarClock, label: t("admin.dashboard.nextMonthSubscriptions"), value: stats.credits.next_month_subscriptions, tone: "gray" },
+              { icon: Coins, label: t("admin.dashboard.creditsUsed"), value: number(stats.credits.credits_used) },
             ]}
           />
           <StatSection

@@ -257,6 +257,43 @@ describe("admin decisions", () => {
 });
 
 describe("admin overview, adjustments and ledger", () => {
+  it("treats empty filters as no filter (the client sends unused filters as ?role=)", async () => {
+    await subscribe(store);
+    const overview = await admin.get("/api/admin/credits/overview?role=&q=");
+    expect(overview.status).toBe(200);
+    expect(overview.body.users.map((row: { id: number }) => row.id)).toEqual(expect.arrayContaining([storeId, restaurantId]));
+    const requests = await admin.get("/api/admin/credits/requests?type=&status=&user_id=");
+    expect(requests.status).toBe(200);
+    expect(requests.body.total).toBeGreaterThanOrEqual(1);
+  });
+
+  it("counts subscriptions, requests and used credits in the platform statistics", async () => {
+    const stats = async () => (await admin.get("/api/admin/stats")).body.stats.credits;
+    const before = await stats();
+    expect(before.period_start).toBe(CURRENT);
+
+    // The store gets a Standard subscription with auto-renew, then asks for next month.
+    const request = (await subscribe(store, { auto_renew: true })).body.request;
+    await admin.post(`/api/admin/credits/requests/${request.id}/approve`).send({});
+    await subscribe(store, { period: "next" });
+    const kept = await createProduct(store);
+    const refunded = await createProduct(store);
+    await store.delete(`/api/products/${refunded.id}`);
+    expect(kept.id).toBeGreaterThan(0);
+
+    const after = await stats();
+    expect(after.active_subscriptions - before.active_subscriptions).toBe(1);
+    expect(after.auto_renew - before.auto_renew).toBe(1);
+    expect(after.without_subscription - before.without_subscription).toBe(-1);
+    // The first request was approved; the one for next month is still pending.
+    expect(after.pending_requests - before.pending_requests).toBe(1);
+    // Two charges, one refunded the same day.
+    expect(after.credits_used - before.credits_used).toBe(1);
+    const standard = (rows: { plan: string; count: number }[]) => rows.find((row) => row.plan === "Standard")!.count;
+    expect(standard(after.by_plan) - standard(before.by_plan)).toBe(1);
+    expect(after.by_plan.map((row: { plan: string }) => row.plan)).toEqual(["Basic", "Standard", "Pro"]);
+  });
+
   it("lists businesses with this month's plan and balance", async () => {
     const response = await admin.get("/api/admin/credits/overview?q=Credit");
     expect(response.status).toBe(200);

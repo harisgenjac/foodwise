@@ -215,7 +215,7 @@ All routes go through `authenticate, authorize("ADMIN")` and are in `controllers
 
 | Endpoint | Behavior |
 |---|---|
-| `GET /stats` | `{ stats: { users: { stores, restaurants, admins, blocked, incomplete_profiles }, products: { active, sold, expired, removed }, reservations: { Pending, Confirmed, Completed, Rejected, Cancelled }, saved: { kg, l, pieces, value, savings }, donations: { available, expired, removed } } }`, all numbers. `saved` covers Completed reservations with the impact report's unit rules. |
+| `GET /stats` | `{ stats: { users: { stores, restaurants, admins, blocked, incomplete_profiles }, products: { active, sold, expired, removed }, reservations: { Pending, Confirmed, Completed, Rejected, Cancelled }, saved: { kg, l, pieces, value, savings }, donations: { available, expired, removed }, credits: { period_start, active_subscriptions, by_plan: [{ plan, count }], auto_renew, next_month_subscriptions, without_subscription, pending_requests, credits_used } } }`, all numbers. `credits` covers the current credit month: subscriptions (per active plan, with auto-renew, already approved for next month), unblocked stores and restaurants without one, pending requests, and the credits used on the platform (`getPlatformUsage`, net of same-month refunds). `saved` covers Completed reservations with the impact report's unit rules. |
 | `GET /users` | Filters `role` (`STORE`/`RESTAURANT`/`ADMIN`), `blocked` (`true`/`false`), `q` (ILIKE on email, business name, first and last name), `city`. Newest first. Never `password_hash`. |
 | `GET /users/:id` | `{ user, counts: { products, active_products, reservations, pending_reservations, completed_reservations, donations }, actions }`; reservations count both sides (on the user's products and the user's own). `actions` = the 20 newest admin actions with this user as target, with `admin_email`, `product_name`, `donation_name`. 404 `"User not found."`. |
 | `POST /users` | Body `{ role, email, password }` only; the account gets `must_change_password = true`. 400 `"Email, password and role are required."`, `"Role must be STORE, RESTAURANT or ADMIN."`, the email and password messages from `utils/accounts.ts`, `"A user with this email already exists."` (unique index, `23505`). 201 `{ message: "User created successfully.", user }`; action `CREATE_USER`. |
@@ -247,7 +247,7 @@ Controller `credits.controller.ts`. Payment is offline, so every subscription an
 - `PATCH /subscription/auto-renew` body `{ auto_renew: boolean }`: sets it on the user's current and future ACTIVE subscriptions (404 `"You do not have an active subscription."`); turning it off also cancels a PENDING `AUTO_RENEW` request. 200 `{ message: "Auto-renew turned on." | "Auto-renew turned off.", autoRenew }`.
 
 ### Admin credits `/api/admin/credits` (ADMIN)
-Controller `adminCredits.controller.ts`, with the admin list helpers (`parsePage`, `listPage`, `logAdminAction`, `parseReason`, exported from `admin.controller.ts`).
+Controller `adminCredits.controller.ts`. An empty filter value (`?role=`, as the client sends unused filters) means no filter. It uses the admin list helpers (`parsePage`, `listPage`, `logAdminAction`, `parseReason`, exported from `admin.controller.ts`).
 
 | Endpoint | Behavior |
 |---|---|

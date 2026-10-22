@@ -180,6 +180,17 @@ export interface AdminStats {
   reservations: Record<Reservation["status"], number>;
   saved: { kg: number; l: number; pieces: number; value: number; savings: number };
   donations: { available: number; expired: number; removed: number };
+  // Subscriptions and credits of the current credit month.
+  credits: {
+    period_start: string;
+    active_subscriptions: number;
+    by_plan: { plan: string; count: number }[];
+    auto_renew: number;
+    next_month_subscriptions: number;
+    without_subscription: number;
+    pending_requests: number;
+    credits_used: number;
+  };
 }
 
 export type AdminActionType =

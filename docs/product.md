@@ -34,7 +34,7 @@ Stores and restaurants are registered businesses with a profile (business name, 
 - **Announcements:** an admin sends a message to all stores, all restaurants or everyone, with a Bosnian title and text and an optional English version (users with the English interface see it, or the Bosnian text when there is none). Every recipient gets a notification, and the announcement shows as a banner on every page until its optional last day, until an admin ends it, or until that user closes it. Blocked accounts and admins do not receive it, and accounts created later do not see older announcements. A sent announcement cannot be edited, only ended.
 - An admin can set a new password for any account.
 - **Audit log:** every admin action (account created, profile edited, password set, blocked, unblocked, product removed, donation removed, reservation cancelled, announcement sent or ended) is recorded with the admin, the target, the reason and the time, and can be filtered by action.
-- **Platform overview:** counts of stores, restaurants, blocked accounts and incomplete profiles; products by status; reservations by status; food saved through picked-up reservations (kg, l, pieces) and the restaurants' savings; donations by status.
+- **Platform overview:** counts of stores, restaurants, blocked accounts and incomplete profiles; products by status; reservations by status; food saved through picked-up reservations (kg, l, pieces) and the restaurants' savings; donations by status; this month's subscriptions (per plan, with auto-renew, already approved for next month), businesses without a subscription, pending credit requests and the credits used.
 
 ## Core flows
 
