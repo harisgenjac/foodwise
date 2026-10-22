@@ -1,71 +1,48 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import type { LucideIcon } from "lucide-react";
 import {
+  AlertTriangle,
   Ban,
   CalendarCheck,
-  CalendarX,
-  CircleCheck,
   Clock,
   Coins,
-  CalendarClock,
-  Droplets,
   HeartHandshake,
   Inbox,
   Leaf,
   Package,
-  PackageCheck,
-  PackageX,
-  PiggyBank,
-  Repeat,
   ShieldCheck,
   Store,
-  Trash2,
   UserPlus,
   UserRoundX,
   WalletCards,
-  UtensilsCrossed,
-  XCircle,
 } from "lucide-react";
 import api from "../../api/axios.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
-import StatCard from "../../components/dashboard/StatCard.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
+import OverviewPanel from "../../components/admin/overview/OverviewPanel.js";
+import KpiStrip from "../../components/admin/overview/KpiStrip.js";
+import DistributionBar from "../../components/admin/overview/DistributionBar.js";
+import AttentionList from "../../components/admin/overview/AttentionList.js";
+import { formatCreditMonth, usagePercent } from "../../utils/credits.js";
 import type { AdminStats } from "../../types/index.js";
-import { formatCreditMonth } from "../../utils/credits.js";
 
-type Tone = "orange" | "amber" | "green" | "red" | "gray";
+// Bar colors by meaning, ordered so that easily confused hues (amber/red, amber/green) are not
+// neighbours; gray marks closed or removed items. Every bar has a legend with counts.
+const RESERVATION_COLORS = {
+  Confirmed: "bg-green-600",
+  Completed: "bg-blue-600",
+  Pending: "bg-amber-600",
+  Cancelled: "bg-slate-500",
+  Rejected: "bg-red-600",
+} as const;
+const PRODUCT_COLORS = { active: "bg-green-600", sold: "bg-blue-600", expired: "bg-amber-600", removed: "bg-slate-500" } as const;
+const DONATION_COLORS = { available: "bg-green-600", removed: "bg-slate-500", expired: "bg-amber-600" } as const;
+// Plans from small to large on one orange ramp, light to dark.
+const PLAN_COLORS = ["bg-orange-300", "bg-orange-500", "bg-orange-700", "bg-orange-900"];
 
-interface Stat {
-  icon: LucideIcon;
-  label: string;
-  value: string | number;
-  tone?: Tone;
-}
-
-// An optional link next to the title leads to the page behind the numbers.
-function StatSection({ title, stats, link }: { title: string; stats: Stat[]; link?: { to: string; label: string } }) {
-  return (
-    <section>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">{title}</h2>
-        {link && (
-          <Link to={link.to} className="text-sm font-semibold text-orange-600 hover:text-orange-700">
-            {link.label}
-          </Link>
-        )}
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <StatCard key={stat.label} icon={stat.icon} label={stat.label} value={stat.value} tone={stat.tone ?? "orange"} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
+// Admin landing page: headline numbers, what needs attention, and one panel per area with its
+// distribution, instead of a wall of equal cards.
 function AdminDashboardPage() {
   const { t, i18n } = useTranslation();
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -89,90 +66,211 @@ function AdminDashboardPage() {
     value.toLocaleString(i18n.language, { maximumFractionDigits: digits });
   const money = (value: number) =>
     `${value.toLocaleString(i18n.language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} KM`;
-  const statuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
+  const reservationStatuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
+  const productStatuses = t("productStatus", { returnObjects: true }) as Record<string, string>;
+  const donationStatuses = t("donations.statuses", { returnObjects: true }) as Record<string, string>;
   const monthNames = t("dashboard.months", { returnObjects: true }) as string[];
+  const viewAll = t("admin.dashboard.viewAll");
+
+  const header = (
+    <ProductPageHeader
+      title={t("admin.dashboard.title")}
+      subtitle={t("admin.dashboard.subtitle")}
+      icon={ShieldCheck}
+      action={{ to: "/admin/users/new", label: t("admin.dashboard.newUser"), icon: UserPlus }}
+    />
+  );
+
+  if (error || !stats) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6 pb-16">
+        {header}
+        <LoadErrorState />
+      </div>
+    );
+  }
+
+  const { users, credits } = stats;
+  const businesses = users.stores + users.restaurants;
+  const month = formatCreditMonth(credits.period_start, monthNames);
+  const sum = (values: Record<string, number>) => Object.values(values).reduce((total, value) => total + value, 0);
+  const subscribedPercent = usagePercent(credits.active_subscriptions, businesses);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 pb-16">
-      <ProductPageHeader
-        title={t("admin.dashboard.title")}
-        subtitle={t("admin.dashboard.subtitle")}
-        icon={ShieldCheck}
-        action={{ to: "/admin/users/new", label: t("admin.dashboard.newUser"), icon: UserPlus }}
+    <div className="mx-auto max-w-6xl space-y-6 pb-16">
+      {header}
+
+      <KpiStrip
+        items={[
+          {
+            icon: Store,
+            label: t("admin.dashboard.kpiBusinesses"),
+            value: number(businesses),
+            detail: t("admin.dashboard.kpiBusinessesDetail", { stores: users.stores, restaurants: users.restaurants }),
+          },
+          {
+            icon: WalletCards,
+            label: t("admin.dashboard.kpiSubscriptions", { month }),
+            value: `${credits.active_subscriptions} / ${businesses}`,
+            progress: subscribedPercent,
+            detail: t("admin.dashboard.kpiSubscriptionsDetail", { percent: Math.round(subscribedPercent) }),
+          },
+          {
+            icon: Coins,
+            label: t("admin.dashboard.kpiCreditsUsed"),
+            value: number(credits.credits_used),
+            detail: t("admin.dashboard.kpiCreditsUsedDetail", { month }),
+          },
+          {
+            icon: Leaf,
+            label: t("admin.dashboard.kpiFoodSaved"),
+            value: `${number(stats.saved.kg, 1)} kg`,
+            detail: t("admin.dashboard.kpiFoodSavedDetail", {
+              liters: number(stats.saved.l, 1),
+              pieces: number(stats.saved.pieces),
+            }),
+          },
+        ]}
       />
 
-      {error || !stats ? (
-        <LoadErrorState />
-      ) : (
-        <>
-          <StatSection
-            title={t("admin.dashboard.usersSection")}
-            stats={[
-              { icon: Store, label: t("admin.dashboard.stores"), value: stats.users.stores },
-              { icon: UtensilsCrossed, label: t("admin.dashboard.restaurants"), value: stats.users.restaurants },
-              { icon: UserRoundX, label: t("admin.dashboard.blocked"), value: stats.users.blocked, tone: "red" },
-              { icon: Clock, label: t("admin.dashboard.incompleteProfiles"), value: stats.users.incomplete_profiles, tone: "amber" },
-            ]}
-          />
-          <StatSection
-            title={t("admin.dashboard.creditsSection", { month: formatCreditMonth(stats.credits.period_start, monthNames) })}
-            link={{ to: "/admin/credit-requests?status=PENDING", label: t("admin.dashboard.viewRequests") }}
-            stats={[
-              { icon: WalletCards, label: t("admin.dashboard.activeSubscriptions"), value: stats.credits.active_subscriptions, tone: "green" },
-              ...stats.credits.by_plan.map((row) => ({
-                icon: Coins,
-                label: t("admin.dashboard.planSubscriptions", { plan: row.plan }),
-                value: row.count,
-              })),
-              { icon: UserRoundX, label: t("admin.dashboard.withoutSubscription"), value: stats.credits.without_subscription, tone: "amber" },
-              { icon: Inbox, label: t("admin.dashboard.pendingCreditRequests"), value: stats.credits.pending_requests, tone: "amber" },
-              { icon: Repeat, label: t("admin.dashboard.autoRenew"), value: stats.credits.auto_renew, tone: "gray" },
-              { icon: CalendarClock, label: t("admin.dashboard.nextMonthSubscriptions"), value: stats.credits.next_month_subscriptions, tone: "gray" },
-              { icon: Coins, label: t("admin.dashboard.creditsUsed"), value: number(stats.credits.credits_used) },
-            ]}
-          />
-          <StatSection
-            title={t("admin.dashboard.offersSection")}
-            stats={[
-              { icon: Package, label: t("admin.dashboard.activeProducts"), value: stats.products.active, tone: "green" },
-              { icon: PackageCheck, label: t("admin.dashboard.soldProducts"), value: stats.products.sold },
-              { icon: PackageX, label: t("admin.dashboard.expiredProducts"), value: stats.products.expired, tone: "red" },
-              { icon: Trash2, label: t("admin.dashboard.removedProducts"), value: stats.products.removed, tone: "gray" },
-            ]}
-          />
-          <StatSection
-            title={t("admin.dashboard.reservationsSection")}
-            stats={[
-              { icon: Clock, label: statuses.Pending ?? "Pending", value: stats.reservations.Pending, tone: "amber" },
-              { icon: CalendarCheck, label: statuses.Confirmed ?? "Confirmed", value: stats.reservations.Confirmed, tone: "green" },
-              { icon: CircleCheck, label: statuses.Completed ?? "Completed", value: stats.reservations.Completed, tone: "gray" },
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <OverviewPanel title={t("admin.dashboard.attentionTitle")} icon={AlertTriangle}>
+          <AttentionList
+            items={[
               {
-                icon: XCircle,
-                label: `${statuses.Rejected ?? "Rejected"} / ${statuses.Cancelled ?? "Cancelled"}`,
-                value: stats.reservations.Rejected + stats.reservations.Cancelled,
+                icon: Inbox,
+                text: t("admin.dashboard.attention.pendingRequests", { count: credits.pending_requests }),
+                count: credits.pending_requests,
+                to: "/admin/credit-requests?status=PENDING",
+                tone: "amber",
+              },
+              {
+                icon: Clock,
+                text: t("admin.dashboard.attention.pendingReservations", { count: stats.reservations.Pending }),
+                count: stats.reservations.Pending,
+                to: "/admin/reservations",
+                tone: "amber",
+              },
+              {
+                icon: WalletCards,
+                text: t("admin.dashboard.attention.withoutSubscription", { count: credits.without_subscription }),
+                count: credits.without_subscription,
+                to: "/admin/credits",
+                tone: "amber",
+              },
+              {
+                icon: UserRoundX,
+                text: t("admin.dashboard.attention.incompleteProfiles", { count: users.incomplete_profiles }),
+                count: users.incomplete_profiles,
+                to: "/admin/users",
+                tone: "amber",
+              },
+              {
+                icon: Ban,
+                text: t("admin.dashboard.attention.blocked", { count: users.blocked }),
+                count: users.blocked,
+                to: "/admin/users",
                 tone: "red",
               },
             ]}
           />
-          <StatSection
-            title={t("admin.dashboard.impactSection")}
-            stats={[
-              { icon: Leaf, label: t("admin.dashboard.savedKg"), value: number(stats.saved.kg, 1), tone: "green" },
-              { icon: Droplets, label: t("admin.dashboard.savedL"), value: number(stats.saved.l, 1), tone: "green" },
-              { icon: Package, label: t("admin.dashboard.savedPieces"), value: number(stats.saved.pieces), tone: "green" },
-              { icon: PiggyBank, label: t("admin.dashboard.savings"), value: money(stats.saved.savings), tone: "green" },
+        </OverviewPanel>
+
+        <OverviewPanel
+          title={t("admin.dashboard.creditsTitle")}
+          subtitle={month}
+          icon={WalletCards}
+          link={{ to: "/admin/credits", label: viewAll }}
+          className="lg:col-span-2"
+        >
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <DistributionBar
+              label={t("admin.dashboard.subscriptionsByPlan")}
+              totalLabel={t("admin.dashboard.subscriptionsTotal", { count: credits.active_subscriptions })}
+              items={credits.by_plan.map((row, index) => ({
+                label: row.plan,
+                value: row.count,
+                color: PLAN_COLORS[index] ?? "bg-orange-900",
+              }))}
+            />
+            <dl className="space-y-2 text-sm">
+              {[
+                [t("admin.dashboard.autoRenew"), credits.auto_renew],
+                [t("admin.dashboard.nextMonthSubscriptions"), credits.next_month_subscriptions],
+                [t("admin.dashboard.withoutSubscription"), credits.without_subscription],
+                [t("admin.dashboard.pendingCreditRequests"), credits.pending_requests],
+              ].map(([label, value]) => (
+                <div key={label} className="flex items-center justify-between gap-3 border-b border-gray-100 pb-2 last:border-0">
+                  <dt className="text-gray-600">{label}</dt>
+                  <dd className="font-semibold tabular-nums text-gray-900">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </OverviewPanel>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <OverviewPanel
+          title={t("admin.dashboard.reservationsSection")}
+          icon={CalendarCheck}
+          link={{ to: "/admin/reservations", label: viewAll }}
+        >
+          <DistributionBar
+            label={t("admin.dashboard.reservationsSection")}
+            totalLabel={t("admin.dashboard.total", { count: sum(stats.reservations) })}
+            items={(Object.keys(RESERVATION_COLORS) as (keyof typeof RESERVATION_COLORS)[]).map((status) => ({
+              label: reservationStatuses[status] ?? status,
+              value: stats.reservations[status],
+              color: RESERVATION_COLORS[status],
+            }))}
+          />
+        </OverviewPanel>
+        <OverviewPanel title={t("admin.dashboard.offersSection")} icon={Package} link={{ to: "/admin/products", label: viewAll }}>
+          <DistributionBar
+            label={t("admin.dashboard.offersSection")}
+            totalLabel={t("admin.dashboard.total", { count: sum(stats.products) })}
+            items={[
+              { label: t("admin.dashboard.activeProducts"), value: stats.products.active, color: PRODUCT_COLORS.active },
+              { label: productStatuses.Sold ?? "Sold", value: stats.products.sold, color: PRODUCT_COLORS.sold },
+              { label: productStatuses.Expired ?? "Expired", value: stats.products.expired, color: PRODUCT_COLORS.expired },
+              { label: productStatuses.Removed ?? "Removed", value: stats.products.removed, color: PRODUCT_COLORS.removed },
             ]}
           />
-          <StatSection
-            title={t("admin.dashboard.donationsSection")}
-            stats={[
-              { icon: HeartHandshake, label: t("admin.dashboard.availableDonations"), value: stats.donations.available, tone: "green" },
-              { icon: CalendarX, label: t("admin.dashboard.expiredDonations"), value: stats.donations.expired, tone: "red" },
-              { icon: Ban, label: t("admin.dashboard.removedDonations"), value: stats.donations.removed, tone: "gray" },
+        </OverviewPanel>
+        <OverviewPanel
+          title={t("admin.dashboard.donationsSection")}
+          icon={HeartHandshake}
+          link={{ to: "/admin/donations", label: viewAll }}
+        >
+          <DistributionBar
+            label={t("admin.dashboard.donationsSection")}
+            totalLabel={t("admin.dashboard.total", { count: sum(stats.donations) })}
+            items={[
+              { label: donationStatuses.Available ?? "Active", value: stats.donations.available, color: DONATION_COLORS.available },
+              { label: donationStatuses.Removed ?? "Removed", value: stats.donations.removed, color: DONATION_COLORS.removed },
+              { label: donationStatuses.Expired ?? "Expired", value: stats.donations.expired, color: DONATION_COLORS.expired },
             ]}
           />
-        </>
-      )}
+        </OverviewPanel>
+      </div>
+
+      <OverviewPanel title={t("admin.dashboard.impactSection")} subtitle={t("admin.dashboard.impactSubtitle")} icon={Leaf}>
+        <dl className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+          {[
+            [t("admin.dashboard.savedKg"), number(stats.saved.kg, 1)],
+            [t("admin.dashboard.savedL"), number(stats.saved.l, 1)],
+            [t("admin.dashboard.savedPieces"), number(stats.saved.pieces)],
+            [t("admin.dashboard.value"), money(stats.saved.value)],
+            [t("admin.dashboard.savings"), money(stats.saved.savings)],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <dt className="text-xs text-gray-500">{label}</dt>
+              <dd className="mt-1 text-xl font-bold tracking-tight text-gray-900">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </OverviewPanel>
     </div>
   );
 }
