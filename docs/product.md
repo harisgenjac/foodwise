@@ -66,7 +66,7 @@ Stores and restaurants are registered businesses with a profile (business name, 
 
 ## Features available now
 
-Admin panel (accounts created by admins, blocking, moderation of products and donations, cancelling disputed reservations, editing user profiles, platform announcements, platform overview, audit log); login for stores, restaurants and admins; product management; marketplace search and filters; reservations with concurrency protection; pickups page for both roles (today, upcoming, picked up) with pickup confirmation and cancelling missed pickups; notifications with links to details, reminders and deletion; automatic expiry handling; store list and store profiles with statistics and favorites ("favorites only" filter); reservation and product detail pages; product templates for stores (save a product's details once, then fill the add-product form from it and change only the date, quantity or price); CSV import of many products at once for stores; logo upload; downloadable CSV reports (sales or purchases, and monthly impact); donation offers for stores and restaurants (free or paid by a donor, meal details, moving a product to donations); Bosnian and English interface; responsive layout; demo data for presentations.
+Admin panel (accounts created by admins, blocking, moderation of products and donations, cancelling disputed reservations, editing user profiles, platform announcements, platform overview, audit log); login for stores, restaurants and admins; product management; marketplace search and filters; reservations with concurrency protection; pickups page for both roles (today, upcoming, picked up) with pickup confirmation and cancelling missed pickups; notifications with links to details, reminders and deletion; automatic expiry handling; store list and store profiles with statistics and favorites ("favorites only" filter); reservation and product detail pages; product templates for stores (save a product's details once, then fill the add-product form from it and change only the date, quantity or price); CSV import of many products at once for stores; logo upload; downloadable CSV reports (sales or purchases, and monthly impact); donation offers for stores and restaurants (free or paid by a donor, meal details, moving a product to donations); monthly credits with subscription and top-up requests, admin approval, auto-renew and a Credits page; Bosnian and English interface; responsive layout; demo data for presentations.
 
 ## Humanitarian module
 
@@ -118,17 +118,25 @@ Ideas for the next phases (agreed as good directions, not yet scheduled):
 12. **Thank-you loop:** after a pickup the organization sends a photo or thank-you that the donor sees.
 13. **Volunteer drivers:** a later role that collects food from donors that organizations can't reach.
 
-## Credits (in progress)
+## Credits
 
-Monthly credits are being added in four parts (full spec: `docs/credits-spec.md`). Parts 1–3 are done:
-- The credit rules live in the backend.
-- Credits are charged and refunded in the product, CSV import, donation and reservation flows. Quantity and expiry date are locked after publishing. When credits are missing, the form explains why and links to My profile.
-- The server handles subscription and top-up requests, admin approval or rejection with an internal note, manual adjustments, the per-user ledger and the admin overview.
-- Auto-renew sends next month's request to the admin 2 days before the month starts. It happens once, and is withdrawn when the user turns auto-renew off.
-- Pending requests expire when their month ends.
-- The notifications work: admins hear about new requests, and users about the decision.
+Stores and restaurants pay with monthly credits (full spec: `docs/credits-spec.md`). Payment is offline for now: the user sends a request in the app, and an admin approves it once it is paid. Card payments, automatic approval and invoices come later.
 
-Part 4 is next: the Credits page, the subscription section on My profile, banners, the "uses 1 credit" hints and the admin pages. Until then, requests can only be made through the API. The demo seed gives every demo business the Standard plan.
+- **My profile → Subscription and credits:** the current plan, period and balance, choosing a plan, auto-renew (with a tooltip that explains it), extra credits, and the status of every request. A pending request can be withdrawn.
+- Before a user sends a subscription request, a dialog explains in plain words what costs a credit, when a credit comes back, that credits expire with the month, and where to see the balance. The user picks this month only or auto-renew.
+- **Credits page** (sidebar): this month's used, available, period and total, a usage bar (green up to 70%, orange to 90%, red from 90%) and when it was last refreshed. A yearly view shows usage by month (used vs unused; grey for months without a subscription and future months) and by product category.
+- **Banners:**
+  - No subscription: links to the subscription section.
+  - No credits left: links to buying extra credits.
+  - 80% used: says how many credits are left and links to the Credits page.
+- The add-product form, the CSV import and the reservation dialog say how many credits the action uses and how many are left. A refusal for missing credits links to the right section of My profile.
+- **Admin:**
+  - A Credits overview of every store and restaurant (plan, used, available, total, pending requests).
+  - A requests page to approve or reject requests, with an internal note the user never sees. The sidebar shows how many requests are pending.
+  - On a user's page: the credit history, and a manual +/− adjustment with a required reason.
+  - Every decision and adjustment is in the audit log.
+
+Rules:
 
 - Plans of 20, 50 or 150 credits per **calendar month**, paid offline: the user sends a request and an admin approves it. Unused credits expire at the end of the month. Any plan can be chosen mid-month, at full price. A plan change applies from the next month.
 - Top-ups of 10, 20 or 50 credits go into the current month and are possible **only with an active subscription for that month**. A user can have at most one pending top-up.

@@ -30,6 +30,7 @@ import LoadingSpinner from "../../components/LoadingSpinner.js";
 import EmptyState from "../../components/product/EmptyState.js";
 import DetailItem from "../../components/product/DetailItem.js";
 import StatCard from "../../components/dashboard/StatCard.js";
+import UserCreditsPanel from "../../components/admin/UserCreditsPanel.js";
 import Modal from "../../components/product/Modal.js";
 import ReasonModal from "../../components/admin/ReasonModal.js";
 import EditProfileModal from "../../components/admin/EditProfileModal.js";
@@ -272,6 +273,8 @@ function AdminUserDetailsPage() {
           </div>
         </section>
       )}
+
+      {isBusiness && <UserCreditsPanel userId={user.id} />}
 
       <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
         <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">

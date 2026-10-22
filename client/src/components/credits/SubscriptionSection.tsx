@@ -1,0 +1,335 @@
+import { useCallback, useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
+import { ArrowRight, CalendarRange, Coins, PlusCircle, Wallet } from "lucide-react";
+import api from "../../api/axios.js";
+import { useCredits } from "../../context/CreditsContext.js";
+import SubscribeModal from "./SubscribeModal.js";
+import AutoRenewTooltip from "./AutoRenewTooltip.js";
+import { formatDisplayDate } from "../../utils/expiry.js";
+import {
+  CREDIT_REQUEST_STATUS_STYLES,
+  SUBSCRIPTION_SECTION,
+  TOPUP_SECTION,
+  formatCreditMonth,
+  nextCreditMonth,
+} from "../../utils/credits.js";
+import type { CreditRequest, Plan, Role, TopupPackage } from "../../types/index.js";
+
+const cardStyle = "rounded-2xl border border-gray-100 bg-white p-6 shadow-sm";
+
+// My profile for stores and restaurants: the current plan and balance, choosing a plan (this
+// month while there is none, else the next month), auto-renew, extra credits (only with an active
+// subscription) and the status of the user's requests. Payment is offline: every choice is a
+// request an admin approves. The two sections have ids so banners and errors can link to them.
+function SubscriptionSection({ role }: { role: Role }) {
+  const { t } = useTranslation();
+  const { credits, refresh } = useCredits();
+  const { hash } = useLocation();
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [packages, setPackages] = useState<TopupPackage[]>([]);
+  const [requests, setRequests] = useState<CreditRequest[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [busy, setBusy] = useState(false);
+  const monthNames = t("dashboard.months", { returnObjects: true }) as string[];
+  const requestTypes = t("credits.requestTypes", { returnObjects: true }) as Record<string, string>;
+  const requestStatuses = t("credits.requestStatuses", { returnObjects: true }) as Record<string, string>;
+
+  const loadRequests = useCallback(async () => {
+    try {
+      const response = await api.get("/credits/requests");
+      setRequests(response.data.requests);
+    } catch (err) {
+      console.error("Error loading credit requests:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    Promise.all([api.get("/credits/plans"), api.get("/credits/topup-packages")])
+      .then(([planResponse, packageResponse]) => {
+        setPlans(planResponse.data.plans);
+        setPackages(packageResponse.data.packages);
+      })
+      .catch((err) => console.error("Error loading plans:", err));
+    loadRequests();
+  }, [loadRequests]);
+
+  // Links like /my-profile#topup scroll to their section once it is on the page.
+  useEffect(() => {
+    if (!credits || !hash) return;
+    document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [credits, hash]);
+
+  if (!credits) return null;
+
+  const reload = async () => {
+    await Promise.all([refresh(), loadRequests()]);
+  };
+
+  const subscription = credits.subscription;
+  // Without a subscription the request is for this month; with one, a plan change for the next.
+  const period = subscription ? "next" : "current";
+  const requestMonth = period === "current" ? credits.periodStart : nextCreditMonth(credits.periodStart);
+  const pendingSubscription = credits.pendingRequests.find(
+    (request) => request.request_type === "SUBSCRIPTION" && request.period_month === requestMonth,
+  );
+  const pendingTopup = credits.pendingRequests.find((request) => request.request_type === "TOPUP");
+  const canChoosePlan = !pendingSubscription && !(period === "next" && credits.nextSubscription);
+
+  const requestLabel = (request: CreditRequest) =>
+    request.request_type === "SUBSCRIPTION"
+      ? `${requestTypes.SUBSCRIPTION} ${request.plan_name ?? ""} · ${t("credits.profile.planCredits", { count: request.credits })}`
+      : `${requestTypes.TOPUP} · +${t("credits.profile.creditsCount", { count: request.credits })}`;
+
+  const withdraw = async (request: CreditRequest) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await api.delete(`/credits/requests/${request.id}`);
+      toast.success(t("credits.profile.withdrawn"));
+      await reload();
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      toast.error(message || t("credits.profile.requestError"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleAutoRenew = async () => {
+    if (busy || !subscription) return;
+    setBusy(true);
+    try {
+      const next = !subscription.auto_renew;
+      await api.patch("/credits/subscription/auto-renew", { auto_renew: next });
+      toast.success(t(next ? "credits.profile.autoRenewOn" : "credits.profile.autoRenewOff"));
+      await reload();
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      toast.error(message || t("credits.profile.requestError"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const buyTopup = async (topup: TopupPackage) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await api.post("/credits/requests", { request_type: "TOPUP", topup_package_id: topup.id });
+      toast.success(t("credits.profile.topupSent"));
+      await reload();
+    } catch (err) {
+      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      toast.error(message || t("credits.profile.requestError"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <section id={SUBSCRIPTION_SECTION} className={`${cardStyle} scroll-mt-6`}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+              <Coins className="h-5 w-5" strokeWidth={1.8} />
+            </span>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">{t("credits.profile.title")}</h2>
+              <p className="text-sm text-gray-500">{t("credits.profile.subtitle")}</p>
+            </div>
+          </div>
+          <Link to="/credits" className="inline-flex items-center gap-1 text-sm font-semibold text-orange-600 hover:text-orange-700">
+            {t("credits.profile.viewCredits")}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        <dl className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-xl bg-gray-50 p-4">
+            <dt className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+              <Wallet className="h-3.5 w-3.5" />
+              {t("credits.profile.currentPlan")}
+            </dt>
+            <dd className="mt-1 font-semibold text-gray-900">
+              {subscription ? subscription.plan_name : t("credits.profile.noPlan")}
+            </dd>
+          </div>
+          <div className="rounded-xl bg-gray-50 p-4">
+            <dt className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+              <CalendarRange className="h-3.5 w-3.5" />
+              {t("credits.profile.period")}
+            </dt>
+            <dd className="mt-1 font-semibold text-gray-900">
+              {formatDisplayDate(credits.periodStart)} – {formatDisplayDate(credits.periodEnd)}
+            </dd>
+          </div>
+          <div className="rounded-xl bg-gray-50 p-4">
+            <dt className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+              <Coins className="h-3.5 w-3.5" />
+              {t("credits.profile.balance")}
+            </dt>
+            <dd className="mt-1 font-semibold text-gray-900">
+              {t("credits.profile.balanceValue", { available: credits.available, total: credits.total })}
+            </dd>
+          </div>
+        </dl>
+
+        {subscription && (
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+            <label className="flex cursor-pointer items-center gap-2 font-medium text-gray-800">
+              <input
+                type="checkbox"
+                role="switch"
+                checked={subscription.auto_renew}
+                onChange={toggleAutoRenew}
+                disabled={busy}
+                className="h-4 w-4 accent-orange-500"
+              />
+              {t("credits.profile.autoRenew")}
+            </label>
+            <AutoRenewTooltip />
+          </div>
+        )}
+        {credits.nextSubscription && (
+          <p className="mt-3 text-sm text-gray-600">
+            {t("credits.profile.nextMonth", {
+              month: formatCreditMonth(credits.nextSubscription.period_month, monthNames),
+              plan: credits.nextSubscription.plan_name,
+            })}
+          </p>
+        )}
+
+        {credits.pendingRequests.length > 0 && (
+          <ul className="mt-4 space-y-2">
+            {credits.pendingRequests.map((request) => (
+              <li
+                key={request.id}
+                className="flex flex-col gap-2 rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+              >
+                <span className="text-amber-900">
+                  {t("credits.profile.pendingRequest", {
+                    what: requestLabel(request),
+                    month: formatCreditMonth(request.period_month, monthNames),
+                  })}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => withdraw(request)}
+                  disabled={busy}
+                  className="w-fit cursor-pointer rounded-lg px-3 py-1.5 font-medium text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-60"
+                >
+                  {t("credits.profile.withdraw")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <h3 className="mt-6 text-sm font-semibold text-gray-900">
+          {t(period === "current" ? "credits.profile.choosePlan" : "credits.profile.changePlan", {
+            month: formatCreditMonth(requestMonth, monthNames),
+          })}
+        </h3>
+        {canChoosePlan ? (
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {plans.map((plan) => (
+              <div key={plan.id} className="flex flex-col rounded-xl border border-gray-200 p-4">
+                <p className="font-semibold text-gray-900">{plan.name}</p>
+                <p className="mt-1 text-2xl font-bold text-gray-900">{plan.credits_per_period}</p>
+                <p className="text-xs text-gray-500">{t("credits.profile.creditsPerMonth")}</p>
+                <p className="mt-2 text-sm font-semibold text-green-600">{t("credits.profile.price", { price: plan.price })}</p>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlan(plan)}
+                  className="mt-3 cursor-pointer rounded-lg border border-orange-200 bg-orange-50 py-2 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
+                >
+                  {t("credits.profile.choose")}
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-gray-500">
+            {t(pendingSubscription ? "credits.profile.planPending" : "credits.profile.planDecided")}
+          </p>
+        )}
+      </section>
+
+      <section id={TOPUP_SECTION} className={`${cardStyle} scroll-mt-6`}>
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+            <PlusCircle className="h-5 w-5" strokeWidth={1.8} />
+          </span>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">{t("credits.profile.topupTitle")}</h2>
+            <p className="text-sm text-gray-500">{t("credits.profile.topupSubtitle")}</p>
+          </div>
+        </div>
+        {!credits.hasActiveSubscription ? (
+          <p className="mt-4 text-sm text-gray-600">{t("credits.profile.topupNeedsSubscription")}</p>
+        ) : pendingTopup ? (
+          <p className="mt-4 text-sm text-gray-600">{t("credits.profile.topupPending")}</p>
+        ) : (
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {packages.map((topup) => (
+              <button
+                key={topup.id}
+                type="button"
+                onClick={() => buyTopup(topup)}
+                disabled={busy}
+                className="flex cursor-pointer flex-col items-start rounded-xl border border-gray-200 p-4 text-left transition-colors hover:border-orange-300 hover:bg-orange-50/50 disabled:opacity-60"
+              >
+                <span className="text-lg font-bold text-gray-900">
+                  +{t("credits.profile.creditsCount", { count: topup.credits })}
+                </span>
+                <span className="mt-2 text-sm font-semibold text-green-600">{t("credits.profile.price", { price: topup.price })}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {requests.length > 0 && (
+          <>
+            <h3 className="mt-6 text-sm font-semibold text-gray-900">{t("credits.profile.requestsTitle")}</h3>
+            <ul className="mt-2 divide-y divide-gray-100 text-sm">
+              {requests.map((request) => (
+                <li key={request.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                  <span className="text-gray-700">
+                    {requestLabel(request)} · {formatCreditMonth(request.period_month, monthNames)}
+                    {request.source === "AUTO_RENEW" && (
+                      <span className="ml-1 text-xs text-gray-400">({t("credits.profile.autoRenewSource")})</span>
+                    )}
+                  </span>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${CREDIT_REQUEST_STATUS_STYLES[request.status]}`}>
+                    {requestStatuses[request.status] || request.status}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </section>
+
+      {selectedPlan && (
+        <SubscribeModal
+          plan={selectedPlan}
+          role={role}
+          period={period}
+          month={requestMonth}
+          monthStarted={new Date().getDate() > 1}
+          onClose={() => setSelectedPlan(null)}
+          onSent={async () => {
+            setSelectedPlan(null);
+            await reload();
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+export default SubscriptionSection;

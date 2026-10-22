@@ -11,6 +11,7 @@ import ProductTemplatesPanel from "../components/product/ProductTemplatesPanel.j
 import { dateInDays, daysFromToday, toDateInput } from "../utils/expiry.js";
 import type { ProductFormValues, ProductTemplate } from "../types/index.js";
 import InsufficientCreditsNotice from "../components/credits/InsufficientCreditsNotice.js";
+import CreditHint from "../components/credits/CreditHint.js";
 import { getCreditError, type CreditError } from "../utils/credits.js";
 
 function AddProductPage() {
@@ -220,6 +221,7 @@ function AddProductPage() {
             <PackagePlus className="h-5 w-5" strokeWidth={1.8} />
             {t("product.addButton")}
           </button>
+          <CreditHint className="justify-center" />
           <Link
             to="/my-products"
             className="block w-full rounded-xl border border-gray-200 bg-white py-2.5 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"

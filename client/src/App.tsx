@@ -23,6 +23,7 @@ import ProductDetailsPage from "./pages/ProductDetailsPage.js"
 import ReservationDetailsPage from "./pages/ReservationDetailsPage.js"
 import PickupsPage from './pages/PickupsPage.js';
 import ReportsPage from './pages/ReportsPage.js';
+import CreditsPage from './pages/CreditsPage.js';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.js';
 import AdminUsersPage from './pages/admin/AdminUsersPage.js';
 import AdminUserDetailsPage from './pages/admin/AdminUserDetailsPage.js';
@@ -32,6 +33,8 @@ import AdminDonationsPage from './pages/admin/AdminDonationsPage.js';
 import AdminReservationsPage from './pages/admin/AdminReservationsPage.js';
 import AdminAnnouncementsPage from './pages/admin/AdminAnnouncementsPage.js';
 import AdminActionsPage from './pages/admin/AdminActionsPage.js';
+import AdminCreditsPage from './pages/admin/AdminCreditsPage.js';
+import AdminCreditRequestsPage from './pages/admin/AdminCreditRequestsPage.js';
 
 function App() {
   return (
@@ -53,6 +56,7 @@ function App() {
         <Route path="/my-reservations" element={<ProtectedRoute role="RESTAURANT"><MyReservationsPage /></ProtectedRoute>} />
         <Route path="/pickups" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><PickupsPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><ReportsPage /></ProtectedRoute>} />
+        <Route path="/credits" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><CreditsPage /></ProtectedRoute>} />
         <Route path="/my-profile" element={<MyProfilePage />} />
         <Route path="/donate-food" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><DonateFoodPage /></ProtectedRoute>} />
         <Route path="/donate-food/new" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><AddDonationPage /></ProtectedRoute>} />
@@ -70,6 +74,8 @@ function App() {
         <Route path="/admin/reservations" element={<ProtectedRoute role="ADMIN"><AdminReservationsPage /></ProtectedRoute>} />
         <Route path="/admin/announcements" element={<ProtectedRoute role="ADMIN"><AdminAnnouncementsPage /></ProtectedRoute>} />
         <Route path="/admin/actions" element={<ProtectedRoute role="ADMIN"><AdminActionsPage /></ProtectedRoute>} />
+        <Route path="/admin/credits" element={<ProtectedRoute role="ADMIN"><AdminCreditsPage /></ProtectedRoute>} />
+        <Route path="/admin/credit-requests" element={<ProtectedRoute role="ADMIN"><AdminCreditRequestsPage /></ProtectedRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

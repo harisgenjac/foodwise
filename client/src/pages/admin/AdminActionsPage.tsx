@@ -24,6 +24,9 @@ const ACTION_STYLES: Record<AdminAction["action"], string> = {
   UPDATE_PROFILE: "bg-blue-50 text-blue-700",
   CREATE_ANNOUNCEMENT: "bg-blue-50 text-blue-700",
   END_ANNOUNCEMENT: "bg-gray-100 text-gray-700",
+  APPROVE_CREDIT_REQUEST: "bg-green-50 text-green-700",
+  REJECT_CREDIT_REQUEST: "bg-red-50 text-red-600",
+  ADJUST_CREDITS: "bg-amber-50 text-amber-700",
 };
 
 function AdminActionsPage() {
