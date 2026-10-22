@@ -19,6 +19,15 @@ import {
   unblockUser,
   updateUserProfile,
 } from "../controllers/admin.controller.js";
+import {
+  adjustUserCredits,
+  approveCreditRequest,
+  getCreditOverview,
+  getCreditRequests,
+  getPendingRequestCount,
+  getUserLedger,
+  rejectCreditRequest,
+} from "../controllers/adminCredits.controller.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -42,5 +51,12 @@ router.get("/announcements", getAnnouncements);
 router.post("/announcements", createAnnouncement);
 router.post("/announcements/:id/end", endAnnouncement);
 router.get("/actions", getAdminActions);
+router.get("/credits/overview", getCreditOverview);
+router.get("/credits/requests", getCreditRequests);
+router.get("/credits/requests/pending-count", getPendingRequestCount);
+router.post("/credits/requests/:id/approve", approveCreditRequest);
+router.post("/credits/requests/:id/reject", rejectCreditRequest);
+router.get("/credits/users/:id/ledger", getUserLedger);
+router.post("/credits/users/:id/adjust", adjustUserCredits);
 
 export default router;

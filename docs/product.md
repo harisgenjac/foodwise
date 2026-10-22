@@ -120,7 +120,15 @@ Ideas for the next phases (agreed as good directions, not yet scheduled):
 
 ## Credits (in progress)
 
-Monthly credits are being added in four parts (full spec: `docs/credits-spec.md`). Parts 1 and 2 are done: the credit rules in the backend, and credits are charged and refunded in the product, CSV import, donation and reservation flows, with quantity and expiry date locked after publishing. When credits are missing, the form explains why and links to My profile. Part 3 (subscription and top-up requests, admin approval, auto-renew, notifications) and part 4 (Credits page, profile section, banners, "uses 1 credit" hints) are next. Until part 3, subscriptions can only be given in the database (the demo seed gives every demo business the Standard plan), so new accounts cannot publish or reserve yet.
+Monthly credits are being added in four parts (full spec: `docs/credits-spec.md`). Parts 1–3 are done:
+- The credit rules live in the backend.
+- Credits are charged and refunded in the product, CSV import, donation and reservation flows. Quantity and expiry date are locked after publishing. When credits are missing, the form explains why and links to My profile.
+- The server handles subscription and top-up requests, admin approval or rejection with an internal note, manual adjustments, the per-user ledger and the admin overview.
+- Auto-renew sends next month's request to the admin 2 days before the month starts. It happens once, and is withdrawn when the user turns auto-renew off.
+- Pending requests expire when their month ends.
+- The notifications work: admins hear about new requests, and users about the decision.
+
+Part 4 is next: the Credits page, the subscription section on My profile, banners, the "uses 1 credit" hints and the admin pages. Until then, requests can only be made through the API. The demo seed gives every demo business the Standard plan.
 
 - Plans of 20, 50 or 150 credits per **calendar month**, paid offline: the user sends a request and an admin approves it. Unused credits expire at the end of the month. Any plan can be chosen mid-month, at full price. A plan change applies from the next month.
 - Top-ups of 10, 20 or 50 credits go into the current month and are possible **only with an active subscription for that month**. A user can have at most one pending top-up.

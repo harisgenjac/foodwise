@@ -247,9 +247,20 @@
       "PRODUCT_REMOVED_BY_ADMIN": "Administrator je uklonio proizvod {{product}} iz ponude.",
       "DONATION_REMOVED_BY_ADMIN": "Administrator je uklonio donaciju {{product}}.",
       "RESERVATION_CANCELLED_BY_ADMIN": "Rezervaciju za {{product}} je otkazao administrator platforme.",
-      "PLATFORM_ANNOUNCEMENT": "Obavještenje platforme: {{title}}"
+      "PLATFORM_ANNOUNCEMENT": "Obavještenje platforme: {{title}}",
+      "CREDIT_REQUEST_CREATED": "Novi zahtjev za kredite čeka odobrenje",
+      "CREDIT_REQUEST_APPROVED": "Vaš zahtjev za kredite je odobren",
+      "CREDIT_REQUEST_REJECTED": "Vaš zahtjev za kredite je odbijen"
     },
-    "reason": "Razlog: {{reason}}"
+    "reason": "Razlog: {{reason}}",
+    "credits": {
+      "subscriptionCreated": "Novi zahtjev za pretplatu: {{requester}}, {{credits}} kredita",
+      "topupCreated": "Novi zahtjev za dodatne kredite: {{requester}}, {{credits}} kredita",
+      "subscriptionApproved": "Vaša pretplata ({{credits}} kredita) je odobrena.",
+      "topupApproved": "Dodatni krediti ({{credits}}) su odobreni i dodani ovom mjesecu.",
+      "subscriptionRejected": "Vaš zahtjev za pretplatu je odbijen.",
+      "topupRejected": "Vaš zahtjev za dodatne kredite je odbijen."
+    }
   },
   "store": {
     "addFavoriteSucces": "Prodavnica uspješno dodana u omiljene.",

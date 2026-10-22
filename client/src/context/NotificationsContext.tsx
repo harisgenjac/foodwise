@@ -16,7 +16,10 @@ export type NotificationType =
   | "PRODUCT_REMOVED_BY_ADMIN"
   | "DONATION_REMOVED_BY_ADMIN"
   | "RESERVATION_CANCELLED_BY_ADMIN"
-  | "PLATFORM_ANNOUNCEMENT";
+  | "PLATFORM_ANNOUNCEMENT"
+  | "CREDIT_REQUEST_CREATED"
+  | "CREDIT_REQUEST_APPROVED"
+  | "CREDIT_REQUEST_REJECTED";
 
 export interface Notification {
   id: number;
@@ -36,6 +39,11 @@ export interface Notification {
   announcement_id?: number | null;
   announcement_title_bs?: string | null;
   announcement_title_en?: string | null;
+  // Credit requests: the type, the credits of its plan or package and who asked (admins).
+  credit_request_id?: number | null;
+  credit_request_type?: "SUBSCRIPTION" | "TOPUP" | null;
+  credit_amount?: number | null;
+  credit_requester?: string | null;
   // The product's name, or the donation's for donation notifications.
   product_name: string | null;
   unit: string | null;

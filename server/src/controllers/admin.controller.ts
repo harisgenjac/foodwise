@@ -30,6 +30,9 @@ export const ADMIN_ACTIONS = [
   "UPDATE_PROFILE",
   "CREATE_ANNOUNCEMENT",
   "END_ANNOUNCEMENT",
+  "APPROVE_CREDIT_REQUEST",
+  "REJECT_CREDIT_REQUEST",
+  "ADJUST_CREDITS",
 ];
 export const ANNOUNCEMENT_AUDIENCES = ["ALL", "STORE", "RESTAURANT"];
 
@@ -51,11 +54,12 @@ interface AdminAction {
   targetDonationId?: number | null;
   targetReservationId?: number | null;
   targetAnnouncementId?: number | null;
+  targetCreditRequestId?: number | null;
   reason?: string | null;
 }
 
 // Every admin action is written to the audit log, inside the action's transaction when it has one.
-const logAdminAction = async (
+export const logAdminAction = async (
   db: Pool | PoolClient,
   {
     adminId,
@@ -65,14 +69,15 @@ const logAdminAction = async (
     targetDonationId = null,
     targetReservationId = null,
     targetAnnouncementId = null,
+    targetCreditRequestId = null,
     reason = null,
   }: AdminAction,
 ) => {
   await db.query(
     `INSERT INTO admin_actions
        (admin_id, action, target_user_id, target_product_id, target_donation_id, target_reservation_id,
-        target_announcement_id, reason)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        target_announcement_id, target_credit_request_id, reason)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [
       adminId,
       action,
@@ -81,20 +86,21 @@ const logAdminAction = async (
       targetDonationId,
       targetReservationId,
       targetAnnouncementId,
+      targetCreditRequestId,
       reason,
     ],
   );
 };
 
 // A trimmed reason, or null when it is missing or too long.
-const parseReason = (value: unknown): string | null => {
+export const parseReason = (value: unknown): string | null => {
   if (typeof value !== "string") return null;
   const reason = value.trim();
   return reason && reason.length <= MAX_REASON_LENGTH ? reason : null;
 };
-const REASON_ERROR = `A reason is required (at most ${MAX_REASON_LENGTH} characters).`;
+export const REASON_ERROR = `A reason is required (at most ${MAX_REASON_LENGTH} characters).`;
 
-const parsePage = (query: Request["query"]) => {
+export const parsePage = (query: Request["query"]) => {
   const limit = query.limit === undefined ? DEFAULT_PAGE_SIZE : parseNonNegativeInt(query.limit);
   const offset = query.offset === undefined ? 0 : parseNonNegativeInt(query.offset);
   if (limit === null || limit === 0 || limit > MAX_PAGE_SIZE || offset === null) return null;
@@ -102,7 +108,7 @@ const parsePage = (query: Request["query"]) => {
 };
 
 // Runs a filtered list query and its total count; `from` is everything after SELECT ... .
-const listPage = async (
+export const listPage = async (
   columns: string,
   from: string,
   orderBy: string,
@@ -778,7 +784,8 @@ export const getAdminActions = async (req: Request, res: Response) => {
        admin_actions.target_product_id, products.name AS product_name,
        admin_actions.target_donation_id, donation_offers.name AS donation_name,
        admin_actions.target_reservation_id,
-       admin_actions.target_announcement_id, announcements.title_bs AS announcement_title`,
+       admin_actions.target_announcement_id, announcements.title_bs AS announcement_title,
+       admin_actions.target_credit_request_id`,
       from,
       "admin_actions.created_at DESC, admin_actions.id DESC",
       values,
