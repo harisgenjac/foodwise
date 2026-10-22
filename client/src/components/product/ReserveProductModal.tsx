@@ -10,6 +10,7 @@ import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
 import { toDateInput } from "../../utils/expiry.js";
 import type { Product } from "../../types/index.js";
 import InsufficientCreditsNotice from "../credits/InsufficientCreditsNotice.js";
+import CreditHint from "../credits/CreditHint.js";
 import { getCreditError, type CreditError } from "../../utils/credits.js";
 
 interface ReserveProductModalProps {
@@ -113,7 +114,11 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
         </FormField>
       </div>
 
-      {creditError && <InsufficientCreditsNotice error={creditError} className="mt-4" />}
+      {creditError ? (
+        <InsufficientCreditsNotice error={creditError} className="mt-4" />
+      ) : (
+        <CreditHint className="mt-4" />
+      )}
 
       <div className="mt-6 flex gap-2">
         <button

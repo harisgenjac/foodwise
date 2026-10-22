@@ -192,7 +192,10 @@ export type AdminActionType =
   | "CANCEL_RESERVATION"
   | "UPDATE_PROFILE"
   | "CREATE_ANNOUNCEMENT"
-  | "END_ANNOUNCEMENT";
+  | "END_ANNOUNCEMENT"
+  | "APPROVE_CREDIT_REQUEST"
+  | "REJECT_CREDIT_REQUEST"
+  | "ADJUST_CREDITS";
 
 export interface AdminAction {
   id: number;
@@ -297,4 +300,110 @@ export interface AdminReservation {
   restaurant_id: number;
   restaurant_name: string | null;
   restaurant_email: string;
+}
+
+// Credits (GET /credits/*). Months are YYYY-MM-01; prices are DECIMAL strings.
+export interface Plan {
+  id: number;
+  name: string;
+  credits_per_period: number;
+  price: string;
+}
+
+export interface TopupPackage {
+  id: number;
+  credits: number;
+  price: string;
+}
+
+export interface CreditSubscription {
+  id: number;
+  plan_id: number;
+  plan_name: string;
+  credits_per_period: number;
+  period_month: string;
+  auto_renew: boolean;
+}
+
+export type CreditRequestType = "SUBSCRIPTION" | "TOPUP";
+export type CreditRequestStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | "EXPIRED";
+
+// A request as its user sees it (never with the admin's note).
+export interface CreditRequest {
+  id: number;
+  user_id: number;
+  request_type: CreditRequestType;
+  plan_id: number | null;
+  topup_package_id: number | null;
+  period_month: string;
+  auto_renew: boolean;
+  status: CreditRequestStatus;
+  source: "USER" | "AUTO_RENEW";
+  created_at: string;
+  reviewed_at: string | null;
+  plan_name: string | null;
+  credits: number;
+  price: string;
+}
+
+export interface CreditSummary {
+  periodStart: string;
+  periodEnd: string;
+  subscription: CreditSubscription | null;
+  hasActiveSubscription: boolean;
+  total: number;
+  used: number;
+  available: number;
+  nextSubscription: CreditSubscription | null;
+  pendingRequests: CreditRequest[];
+}
+
+export interface CreditHistory {
+  year: number;
+  months: { month: string; hasSubscription: boolean; total: number; used: number }[];
+  categories: { category: string | null; used: number }[];
+}
+
+export interface AdminCreditUser {
+  id: number;
+  email: string;
+  role: Role;
+  business_name: string | null;
+  is_blocked: boolean;
+  pending_requests: number;
+  plan_name: string | null;
+  has_subscription: boolean;
+  total: number;
+  used: number;
+  available: number;
+}
+
+export interface AdminCreditRequest extends CreditRequest {
+  admin_note: string | null;
+  user_email: string;
+  user_business_name: string | null;
+  user_role: Role;
+  reviewed_by_email: string | null;
+}
+
+export interface CreditTransaction {
+  id: number;
+  period_month: string;
+  amount: number;
+  type:
+    | "PLAN_GRANT"
+    | "TOPUP_GRANT"
+    | "ADMIN_ADJUSTMENT"
+    | "PRODUCT_CHARGE"
+    | "PRODUCT_REFUND"
+    | "RESERVATION_CHARGE"
+    | "RESERVATION_REFUND";
+  reason: string | null;
+  category: string | null;
+  related_entity_type: "product" | "reservation" | "credit_request" | null;
+  related_entity_id: number | null;
+  refunds_transaction_id: number | null;
+  actor: "USER" | "ADMIN" | "SYSTEM";
+  created_at: string;
+  created_by_email: string | null;
 }

@@ -23,6 +23,7 @@ import { useAuth } from "../context/AuthContext.js";
 import FormSection from "../components/form/FormSection.js";
 import FormField, { inputStyle } from "../components/form/FormField.js";
 import ChangePasswordForm from "../components/profile/ChangePasswordForm.js";
+import SubscriptionSection from "../components/credits/SubscriptionSection.js";
 
 function MyProfilePage() {
   const { user, refreshUser } = useAuth();
@@ -313,6 +314,9 @@ function MyProfilePage() {
           </button>
         </div>
       </form>
+
+      {/* Plans, top-ups and requests for stores and restaurants; shown once credits are loaded. */}
+      {(role === "STORE" || role === "RESTAURANT") && <SubscriptionSection role={role} />}
 
       <ChangePasswordForm required={Boolean(user?.must_change_password)} />
     </div>

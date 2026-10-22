@@ -11,6 +11,7 @@ import { UNIT_LABELS } from "../utils/units.js";
 import { dateInDays } from "../utils/expiry.js";
 import type { CsvRowError } from "../types/index.js";
 import InsufficientCreditsNotice from "../components/credits/InsufficientCreditsNotice.js";
+import CreditHint from "../components/credits/CreditHint.js";
 import { getCreditError, type CreditError } from "../utils/credits.js";
 
 // Keep in sync with CSV_COLUMNS in server/src/utils/productCsv.ts.
@@ -178,6 +179,7 @@ function ImportProductsPage() {
                   {t("product.cancel")}
                 </Link>
               </div>
+              <CreditHint perProduct />
             </form>
           </FormSection>
         </div>

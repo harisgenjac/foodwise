@@ -6,7 +6,7 @@ import api from "../api/axios.js";
 import i18n from "../i18n/config.js";
 import { AuthProvider } from "../context/AuthContext.jsx";
 import type { Notification } from "../context/NotificationsContext.js";
-import type { DonationOffer, Product, Reservation, User } from "../types/index.js";
+import type { CreditSummary, DonationOffer, Product, Reservation, User } from "../types/index.js";
 
 export const apiMock = vi.mocked(api);
 export const t = i18n.t.bind(i18n);
@@ -166,5 +166,26 @@ export const makeDonation = (overrides: Partial<DonationOffer> = {}): DonationOf
   status: "Available",
   created_at: "2030-01-01T00:00:00.000Z",
   updated_at: "2030-01-01T00:00:00.000Z",
+  ...overrides,
+});
+
+// GET /credits/me: an active Standard subscription with 50 credits, 10 used.
+export const makeCreditSummary = (overrides: Partial<CreditSummary> = {}): CreditSummary => ({
+  periodStart: "2030-01-01",
+  periodEnd: "2030-01-31",
+  subscription: {
+    id: 1,
+    plan_id: 2,
+    plan_name: "Standard",
+    credits_per_period: 50,
+    period_month: "2030-01-01",
+    auto_renew: false,
+  },
+  hasActiveSubscription: true,
+  total: 50,
+  used: 10,
+  available: 40,
+  nextSubscription: null,
+  pendingRequests: [],
   ...overrides,
 });
