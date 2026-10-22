@@ -15,6 +15,7 @@ import { DONATION_STATUSES, DONATION_TYPES } from "../utils/validateDonation.js"
 import { RESERVATION_STATUSES, lockReservation, releaseSoldProduct } from "./reservations.controller.js";
 import { updateProfile } from "./users.controller.js";
 import { isValidDateTime } from "../utils/dates.js";
+import { refundForReservation } from "../services/creditService.js";
 import type { Role } from "../types/auth.js";
 
 export const ROLES = ["STORE", "RESTAURANT", "ADMIN"];
@@ -383,6 +384,7 @@ const cancelPendingReservations = async (
   where: string,
   values: number[],
   recipient: (row: { store_id: number; restaurant_id: number }) => number,
+  adminId: number,
 ) => {
   const pending = await client.query(
     `SELECT reservations.id, reservations.restaurant_id, reservations.quantity,
@@ -395,6 +397,8 @@ const cancelPendingReservations = async (
   );
   for (const row of pending.rows) {
     await client.query("UPDATE reservations SET status = 'Cancelled' WHERE reservations.id = $1", [row.id]);
+    // Cancelled by an admin, not by the restaurant: its credit always comes back.
+    await refundForReservation(client, row.id, { forced: true, by: { actor: "ADMIN", userId: adminId } });
     await createNotification(client, {
       userId: recipient(row),
       type: "RESERVATION_CANCELLED_BY_ADMIN",
@@ -450,6 +454,7 @@ export const blockUser = async (req: Request, res: Response) => {
       "reservations.restaurant_id = $1 OR products.store_id = $1",
       [targetId],
       (row) => (row.restaurant_id === targetId ? row.store_id : row.restaurant_id),
+      req.user!.id,
     );
     await logAdminAction(client, { adminId: req.user!.id, action: "BLOCK_USER", targetUserId: targetId, reason });
     await client.query("COMMIT");
@@ -586,7 +591,9 @@ export const removeProduct = async (req: Request, res: Response) => {
       "reservations.product_id = $1",
       [productId],
       (row) => row.restaurant_id,
+      req.user!.id,
     );
+    // No refund for the store: the product broke the rules, so its credit stays spent.
     const result = await client.query(
       "UPDATE products SET status = 'Removed' WHERE products.id = $1 RETURNING *",
       [productId],
@@ -873,6 +880,8 @@ export const cancelReservation = async (req: Request, res: Response) => {
     if (reservation.status === "Confirmed") {
       await releaseSoldProduct(client, reservation.product_id);
     }
+    // An admin settled a dispute: the restaurant always gets its credit back.
+    await refundForReservation(client, reservationId, { forced: true, by: { actor: "ADMIN", userId: req.user!.id } });
     for (const userId of [reservation.store_id, reservation.restaurant_id]) {
       await createNotification(client, {
         userId,

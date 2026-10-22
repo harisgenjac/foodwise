@@ -10,6 +10,8 @@ import { CATEGORY_LABELS } from "../utils/categories.js";
 import { UNIT_LABELS } from "../utils/units.js";
 import { dateInDays } from "../utils/expiry.js";
 import type { CsvRowError } from "../types/index.js";
+import InsufficientCreditsNotice from "../components/credits/InsufficientCreditsNotice.js";
+import { getCreditError, type CreditError } from "../utils/credits.js";
 
 // Keep in sync with CSV_COLUMNS in server/src/utils/productCsv.ts.
 const CSV_COLUMNS = [
@@ -43,11 +45,13 @@ function ImportProductsPage() {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [rowErrors, setRowErrors] = useState<CsvRowError[]>([]);
+  const [creditError, setCreditError] = useState<CreditError | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const selectFile = (selected: File | null) => {
     setFile(selected);
     setError("");
+    setCreditError(null);
     setRowErrors([]);
   };
 
@@ -62,6 +66,7 @@ function ImportProductsPage() {
     setUploading(true);
     setError("");
     setRowErrors([]);
+    setCreditError(null);
     try {
       const response = await api.post("/products/import", formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -69,6 +74,12 @@ function ImportProductsPage() {
       toast.success(t("importProducts.success", { count: response.data.products.length }));
       navigate("/my-products");
     } catch (err) {
+      // Each product costs a credit and the import is all or nothing.
+      const credits = getCreditError(err);
+      if (credits) {
+        setCreditError(credits);
+        return;
+      }
       const data = axios.isAxiosError(err) ? err.response?.data : null;
       setError(data?.error || t("importProducts.error"));
       setRowErrors(data?.rowErrors ?? []);
@@ -122,6 +133,7 @@ function ImportProductsPage() {
                 />
               </label>
 
+              {creditError && <InsufficientCreditsNotice error={creditError} />}
               {error && (
                 <p className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
                   <AlertCircle className="h-4 w-4 shrink-0" />

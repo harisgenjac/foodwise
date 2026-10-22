@@ -49,7 +49,7 @@ Stores and restaurants are registered businesses with a profile (business name, 
 ## Business rules (as implemented)
 
 - Available quantity is the total minus pending, confirmed and picked-up reservations, so two restaurants can never reserve more than exists, even at the same instant. Fully reserved products are not shown in the marketplace; the marketplace loads 24 offers at a time with "Load more".
-- A reservation keeps the price that applied when it was made. A store can edit only products that are still `Available`, and never below the quantity already reserved; lowering it to exactly the confirmed quantity marks the product `Sold`.
+- A reservation keeps the price that applied when it was made. A store can edit only products that are still `Available`, and after publishing never their quantity or expiry date (the published offer cost a credit); name, description, category, prices and unit stay editable. A different quantity or date means a new product.
 - Product input is validated on the server: known category and unit, prices and quantity above zero, discounted price not above the original, expiry date not in the past. Reservation quantity must be above zero.
 - Emails are not case-sensitive (one account per address) and passwords need at least 8 characters. A store's or restaurant's profile requires first and last name, business name, city, phone and address.
 - Business dates (expiry, "today", the midnight expiry run and the 07:00 reminders) follow Bosnia and Herzegovina time (`Europe/Sarajevo`), whatever the server's own time zone.
@@ -120,7 +120,7 @@ Ideas for the next phases (agreed as good directions, not yet scheduled):
 
 ## Credits (in progress)
 
-Monthly credits are being added in four parts (full spec: `docs/credits-spec.md`). Part 1 is done: the database and the credit rules in the backend. Nothing charges credits in the app yet. Parts 2–4 will charge credits in the product and reservation flows, add subscription and top-up requests with admin approval and auto-renew, and add the Credits page, the profile section and banners.
+Monthly credits are being added in four parts (full spec: `docs/credits-spec.md`). Parts 1 and 2 are done: the credit rules in the backend, and credits are charged and refunded in the product, CSV import, donation and reservation flows, with quantity and expiry date locked after publishing. When credits are missing, the form explains why and links to My profile. Part 3 (subscription and top-up requests, admin approval, auto-renew, notifications) and part 4 (Credits page, profile section, banners, "uses 1 credit" hints) are next. Until part 3, subscriptions can only be given in the database (the demo seed gives every demo business the Standard plan), so new accounts cannot publish or reserve yet.
 
 - Plans of 20, 50 or 150 credits per **calendar month**, paid offline: the user sends a request and an admin approves it. Unused credits expire at the end of the month. Any plan can be chosen mid-month, at full price. A plan change applies from the next month.
 - Top-ups of 10, 20 or 50 credits go into the current month and are possible **only with an active subscription for that month**. A user can have at most one pending top-up.

@@ -2,6 +2,7 @@ import cron from "node-cron";
 import pool from "../config/db.js";
 import { APP_TIMEZONE } from "../utils/dates.js";
 import { createNotification } from "../utils/notifications.js";
+import { refundForReservation } from "../services/creditService.js";
 
 // Marks Available products past their expiry date as Expired, cancels their
 // Pending reservations and notifies the stores and restaurants, all in one transaction.
@@ -40,6 +41,8 @@ export const expireProducts = async (): Promise<number> => {
       );
 
       for (const r of cancelledReservations.rows) {
+        // Cancelled by the system, not the restaurant: always refunded, on any day.
+        await refundForReservation(client, r.id, { forced: true });
         const product = expiredProducts.rows.find((p) => p.id === r.product_id);
         await createNotification(client, {
           userId: r.restaurant_id,

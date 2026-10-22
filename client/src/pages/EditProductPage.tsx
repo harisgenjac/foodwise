@@ -10,7 +10,6 @@ import LoadingSpinner from "../components/LoadingSpinner.js";
 import EmptyState from "../components/product/EmptyState.js";
 import ProductFormFields, { EMPTY_PRODUCT_FORM } from "../components/product/ProductFormFields.js";
 import ProductPreview from "../components/product/ProductPreview.js";
-import { toDateInput } from "../utils/expiry.js";
 import type { Product, ProductFormValues } from "../types/index.js";
 
 function EditProductPage() {
@@ -18,7 +17,6 @@ function EditProductPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [form, setForm] = useState<ProductFormValues>(EMPTY_PRODUCT_FORM);
-  const [originalExpiry, setOriginalExpiry] = useState("");
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState("");
@@ -34,7 +32,6 @@ function EditProductPage() {
         setNotFound(true);
         return;
       }
-      const expiry = data.expiry_date.slice(0, 10);
       setForm({
         name: data.name,
         description: data.description,
@@ -43,9 +40,8 @@ function EditProductPage() {
         discounted_price: data.discounted_price,
         quantity: data.quantity,
         unit: data.unit,
-        expiry_date: expiry,
+        expiry_date: data.expiry_date.slice(0, 10),
       });
-      setOriginalExpiry(expiry);
     } catch (err) {
       console.error("Error fetching product:", err);
       setNotFound(true);
@@ -74,7 +70,7 @@ function EditProductPage() {
       toast.success(response.data.message);
       navigate("/my-products");
     } catch (err) {
-      // The server explains why (sold product, quantity below what is reserved, invalid field).
+      // The server explains why (sold product, invalid field).
       const message = axios.isAxiosError(err)
         ? err.response?.data?.error
         : null;
@@ -102,10 +98,6 @@ function EditProductPage() {
     );
   }
 
-  const today = toDateInput(new Date());
-  // An already expired product keeps its past date valid, otherwise the browser would block saving.
-  const minExpiryDate = originalExpiry && originalExpiry < today ? undefined : today;
-
   return (
     <div className="max-w-6xl mx-auto pb-16">
       <div className="mb-6">
@@ -127,7 +119,8 @@ function EditProductPage() {
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <ProductFormFields values={form} onChange={updateField} minExpiryDate={minExpiryDate} />
+          {/* The published quantity and expiry date were paid for with a credit, so they stay fixed. */}
+          <ProductFormFields values={form} onChange={updateField} stockLocked />
         </div>
 
         <aside className="lg:sticky lg:top-0 lg:self-start space-y-4">

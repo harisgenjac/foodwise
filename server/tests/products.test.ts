@@ -59,11 +59,11 @@ describe("Products routes", () => {
       const product = await createProduct(store);
       const response = await store
         .put(`/api/products/${product.id}`)
-        .send(productPayload({ name: "Edited", discounted_price: 4, quantity: 20 }));
+        .send(productPayload({ name: "Edited", discounted_price: 4, category: "Fish" }));
       expect(response.status).toBe(200);
       expect(response.body.message).toBe("Product updated successfully.");
-      expect(response.body.product.name).toBe("Edited");
-      expect(parseFloat(response.body.product.quantity)).toBe(20);
+      expect(response.body.product).toMatchObject({ name: "Edited", category: "Fish" });
+      expect(parseFloat(response.body.product.discounted_price)).toBe(4);
     });
 
     it("returns 400 for invalid fields", async () => {

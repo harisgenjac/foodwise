@@ -2,7 +2,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import toast from "react-hot-toast";
 import ReserveProductModal from "./ReserveProductModal.js";
-import { apiMock, axiosError, makeProduct, t } from "../../test/utils.js";
+import { MemoryRouter } from "react-router-dom";
+import { apiMock, axiosError, creditError, makeProduct, t } from "../../test/utils.js";
 
 const product = makeProduct({ id: 7, available_quantity: "6.50", quantity: "10" });
 
@@ -44,6 +45,26 @@ describe("ReserveProductModal", () => {
     expect(success).toHaveBeenCalledWith(t("myProducts.reservationCreated"));
     expect(onClose).toHaveBeenCalled();
     expect(onReserved).toHaveBeenCalled();
+  });
+
+  it("explains a missing subscription inside the dialog with a link to it", async () => {
+    apiMock.post.mockRejectedValue(creditError(false));
+    const onClose = vi.fn();
+    render(
+      <MemoryRouter>
+        <ReserveProductModal product={product} onClose={onClose} onReserved={vi.fn()} />
+      </MemoryRouter>,
+    );
+
+    await fillForm();
+    await userEvent.click(screen.getByRole("button", { name: t("myReservations.confirmButton") }));
+
+    expect(await screen.findByText(t("credits.insufficient.noSubscription"))).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: t("credits.insufficient.subscribeLink") })).toHaveAttribute(
+      "href",
+      "/my-profile#subscription",
+    );
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it("shows the server error and stays open when the reservation fails", async () => {

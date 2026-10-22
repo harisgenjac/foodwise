@@ -12,6 +12,21 @@ export const apiMock = vi.mocked(api);
 export const t = i18n.t.bind(i18n);
 
 // A rejected axios call as the server sends it: `{ error }` with a status.
+// The server's 402 when a product or reservation needs a credit the user does not have.
+export const creditError = (hasActiveSubscription: boolean) =>
+  new AxiosError("Request failed", "402", undefined, undefined, {
+    status: 402,
+    statusText: "",
+    headers: {},
+    config: { headers: new AxiosHeaders() },
+    data: {
+      error: "Not enough credits.",
+      code: "INSUFFICIENT_CREDITS",
+      hasActiveSubscription,
+      actionUrl: hasActiveSubscription ? "/my-profile#topup" : "/my-profile#subscription",
+    },
+  });
+
 export const axiosError = (status: number, error = "Greška") =>
   new AxiosError("Request failed", String(status), undefined, undefined, {
     status,

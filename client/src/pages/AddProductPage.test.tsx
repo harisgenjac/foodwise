@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import toast from "react-hot-toast";
 import AddProductPage from "./AddProductPage.js";
 import { dateInDays } from "../utils/expiry.js";
-import { apiMock, axiosError, makeUser, renderWithProviders, t } from "../test/utils.js";
+import { apiMock, axiosError, creditError, makeUser, renderWithProviders, t } from "../test/utils.js";
 import type { ProductTemplate } from "../types/index.js";
 
 const TEMPLATE: ProductTemplate = {
@@ -99,6 +99,24 @@ describe("AddProductPage", () => {
     expect(error).toHaveBeenCalledWith("Discounted price cannot be higher than the original price.");
     expect(screen.getByText(t("product.addError"))).toBeInTheDocument();
     expect(screen.queryByTestId("location")).not.toBeInTheDocument();
+  });
+
+  it("explains a missing credit and links to the top-up", async () => {
+    const error = vi.spyOn(toast, "error");
+    apiMock.post.mockRejectedValue(creditError(true));
+    renderPage();
+
+    await fillForm();
+    await userEvent.click(screen.getByRole("button", { name: t("product.addButton") }));
+
+    const notice = await screen.findByRole("alert");
+    expect(notice).toHaveTextContent(t("credits.insufficient.noCredits"));
+    expect(within(notice).getByRole("link", { name: t("credits.insufficient.topUpLink") })).toHaveAttribute(
+      "href",
+      "/my-profile#topup",
+    );
+    expect(error).not.toHaveBeenCalled();
+    expect(screen.queryByText(t("product.addError"))).not.toBeInTheDocument();
   });
 
   it("fills the form from a template and clears it when the template is clicked again", async () => {

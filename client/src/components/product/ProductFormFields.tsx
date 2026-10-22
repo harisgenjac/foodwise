@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { AlertCircle, CalendarDays, FileText, Package, Scale, Tag } from "lucide-react";
+import { AlertCircle, CalendarDays, FileText, Lock, Package, Scale, Tag } from "lucide-react";
 import FormSection from "../form/FormSection.js";
 import FormField, { inputStyle } from "../form/FormField.js";
 import { getCategoryIcon } from "../../utils/categoryIcons.js";
@@ -22,12 +22,14 @@ export const EMPTY_PRODUCT_FORM: ProductFormValues = {
 interface ProductFormFieldsProps {
   values: ProductFormValues;
   onChange: (field: keyof ProductFormValues, value: string) => void;
-  // Lower bound for the expiry date input; omitted when editing an already expired product.
+  // Lower bound for the expiry date input.
   minExpiryDate?: string | undefined;
+  // Editing a published product: quantity and expiry date are shown but cannot be changed.
+  stockLocked?: boolean;
 }
 
 // The three form sections shared by AddProductPage and EditProductPage.
-function ProductFormFields({ values, onChange, minExpiryDate }: ProductFormFieldsProps) {
+function ProductFormFields({ values, onChange, minExpiryDate, stockLocked = false }: ProductFormFieldsProps) {
   const { t } = useTranslation();
   const categories = t("categories", { returnObjects: true }) as Record<string, string>;
   const units = t("units", { returnObjects: true }) as Record<string, string>;
@@ -139,7 +141,8 @@ function ProductFormFields({ values, onChange, minExpiryDate }: ProductFormField
               placeholder="0"
               value={values.quantity}
               onChange={(e) => onChange("quantity", e.target.value)}
-              className={inputStyle}
+              disabled={stockLocked}
+              className={`${inputStyle} disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500`}
             />
           </FormField>
           <FormField label={t("product.unit")} icon={Scale}>
@@ -159,33 +162,41 @@ function ProductFormFields({ values, onChange, minExpiryDate }: ProductFormField
                 min={minExpiryDate}
                 value={values.expiry_date}
                 onChange={(e) => onChange("expiry_date", e.target.value)}
-                className={inputStyle}
+                disabled={stockLocked}
+                className={`${inputStyle} disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500`}
               />
             </FormField>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {EXPIRY_SHORTCUTS.map((days) => {
-                const value = dateInDays(days);
-                const selected = values.expiry_date === value;
-                return (
-                  <button
-                    key={days}
-                    type="button"
-                    onClick={() => onChange("expiry_date", value)}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
-                      selected
-                        ? "border-orange-400 bg-orange-50 text-orange-700"
-                        : "border-gray-200 text-gray-600 hover:border-orange-200 hover:bg-orange-50/50"
-                    }`}
-                  >
-                    {days === 0
-                      ? t("product.expiresToday")
-                      : days === 1
-                        ? t("product.expiresTomorrow")
-                        : t("product.expiresInDays", { count: days })}
-                  </button>
-                );
-              })}
-            </div>
+            {stockLocked ? (
+              <p className="mt-2 flex items-start gap-2 text-sm text-gray-500">
+                <Lock className="mt-0.5 h-4 w-4 shrink-0" />
+                {t("product.stockLocked")}
+              </p>
+            ) : (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {EXPIRY_SHORTCUTS.map((days) => {
+                  const value = dateInDays(days);
+                  const selected = values.expiry_date === value;
+                  return (
+                    <button
+                      key={days}
+                      type="button"
+                      onClick={() => onChange("expiry_date", value)}
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                        selected
+                          ? "border-orange-400 bg-orange-50 text-orange-700"
+                          : "border-gray-200 text-gray-600 hover:border-orange-200 hover:bg-orange-50/50"
+                      }`}
+                    >
+                      {days === 0
+                        ? t("product.expiresToday")
+                        : days === 1
+                          ? t("product.expiresTomorrow")
+                          : t("product.expiresInDays", { count: days })}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </FormSection>

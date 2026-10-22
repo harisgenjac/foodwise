@@ -6,6 +6,7 @@ import {
   cleanupUsers,
   createDonation,
   createProduct,
+  giveSubscription,
   login,
   PASSWORD,
   registerAndLogin,
@@ -153,6 +154,8 @@ describe("Admin", () => {
       const newStore = await login(NEW_USER);
       // The admin's temporary password must be replaced before anything else works.
       await newStore.put("/api/users/me/password").send({ current_password: PASSWORD, new_password: "vlastita-lozinka" });
+      // A new account has no subscription yet; publishing needs credits.
+      await giveSubscription(await userId(NEW_USER), 5);
       const product = await createProduct(newStore, { name: "Hidden until profile" });
 
       const listed = async () => {
