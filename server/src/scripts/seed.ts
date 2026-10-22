@@ -6,6 +6,8 @@ import "dotenv/config";
 import bcrypt from "bcrypt";
 import pool from "../config/db.js";
 import { insertFakeData, printSummary } from "./fakeData.js";
+import { grantPlan } from "../services/creditService.js";
+import { creditMonth } from "../utils/creditTime.js";
 
 interface DemoUser {
   first_name: string;
@@ -38,7 +40,11 @@ async function seed() {
     await client.query("BEGIN");
 
     console.log("Deleting existing data...");
-    // Reservations, admin actions and announcements reference users with RESTRICT; everything else cascades from users.
+    // Reservations, admin actions, announcements and the credit ledger reference users with
+    // RESTRICT; everything else cascades from users. The ledger is append-only and allows
+    // deletes only with app.ledger_maintenance on (set for this transaction only).
+    await client.query("SET LOCAL app.ledger_maintenance = 'on'");
+    await client.query("DELETE FROM credit_transactions");
     await client.query("DELETE FROM admin_actions");
     await client.query("DELETE FROM notifications");
     await client.query("DELETE FROM announcements");
@@ -53,12 +59,22 @@ async function seed() {
       ...STORES.map((store): [DemoUser, "STORE"] => [store, "STORE"]),
       ...RESTAURANTS.map((restaurant): [DemoUser, "RESTAURANT"] => [restaurant, "RESTAURANT"]),
     ];
+    // Every demo business gets the Standard plan for the current month, so it can publish and reserve.
+    const standardPlan = await client.query<{ id: number }>("SELECT id FROM plans WHERE name = 'Standard'");
     for (const [user, role] of users) {
-      await client.query(
+      const inserted = await client.query<{ id: number }>(
         `INSERT INTO users (first_name, last_name, email, password_hash, role, business_name, city, phone, address)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         RETURNING id`,
         [user.first_name, user.last_name, user.email, passwordHash, role, user.business_name, user.city, user.phone, user.address],
       );
+      await grantPlan(client, {
+        userId: inserted.rows[0]!.id,
+        planId: standardPlan.rows[0]!.id,
+        periodMonth: creditMonth(new Date()),
+        autoRenew: false,
+        by: { actor: "SYSTEM", userId: null },
+      });
     }
 
     await client.query(
