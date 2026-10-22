@@ -20,7 +20,7 @@ interface RegisterBody {
 function validateRegFields(fields: RegisterBody) {
   const { first_name, last_name, email, password, role } = fields;
   if (!first_name || !last_name || !email || !password || !role) {
-    return "Sva polja su obavezna.";
+    return "All fields are required.";
   }
   return validateEmail(email) ?? validatePassword(password);
 }
@@ -38,7 +38,7 @@ interface LoginBody {
 function validateLoginFields(fields: LoginBody) {
   const { email, password } = fields;
   if (!email || !password || typeof email !== "string" || typeof password !== "string") {
-    return "Sva polja su obavezna.";
+    return "All fields are required.";
   }
 }
 
@@ -54,10 +54,10 @@ export const register = async (req: Request, res: Response) => {
     if (ADMIN_CREATED_ROLES.includes(role)) {
       return res
         .status(403)
-        .json({ error: "Naloge za prodavnice i restorane kreira administrator." });
+        .json({ error: "Store and restaurant accounts are created by an administrator." });
     }
     if (!PUBLIC_ROLES.includes(role)) {
-      return res.status(400).json({ error: "Rola nije ispravna." });
+      return res.status(400).json({ error: "Role is not valid." });
     }
 
     const email = normalizeEmail(req.body.email);
@@ -68,7 +68,7 @@ export const register = async (req: Request, res: Response) => {
     if (result.rows.length > 0) {
       return res
         .status(400)
-        .json({ error: "Korisnik s tim emailom već postoji." });
+        .json({ error: "A user with this email already exists." });
     }
 
     const hashedPassword = await hashPassword(password);
@@ -77,18 +77,18 @@ export const register = async (req: Request, res: Response) => {
       "INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES ($1, $2, $3, $4, $5)",
       [first_name, last_name, email, hashedPassword, role],
     );
-    return res.status(201).json({ message: "Registracija uspješna." });
+    return res.status(201).json({ message: "Registration successful." });
   } catch (error) {
     // Two registrations with the same email at the same moment: the unique index rejects the second.
     if (isUniqueViolation(error)) {
       return res
         .status(400)
-        .json({ error: "Korisnik s tim emailom već postoji." });
+        .json({ error: "A user with this email already exists." });
     }
-    console.error("Greška prilikom registracije:", error);
+    console.error("Error while registering:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom registracije." });
+      .json({ error: "An error occurred while registering." });
   }
 };
 
@@ -105,16 +105,16 @@ export const login = async (req: Request, res: Response) => {
       normalizeEmail(email),
     ]);
     if (result.rows.length === 0) {
-      return res.status(400).json({ error: "Pogrešan email ili lozinka." });
+      return res.status(400).json({ error: "Incorrect email or password." });
     }
     const user = result.rows[0];
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
-      return res.status(400).json({ error: "Pogrešan email ili lozinka." });
+      return res.status(400).json({ error: "Incorrect email or password." });
     }
     if (user.is_blocked) {
-      const reason = user.blocked_reason ? ` Razlog: ${user.blocked_reason}` : "";
-      return res.status(403).json({ error: `Vaš nalog je blokiran.${reason}` });
+      const reason = user.blocked_reason ? ` Reason: ${user.blocked_reason}` : "";
+      return res.status(403).json({ error: `Your account is blocked.${reason}` });
     }
     const token = jwt.sign(
       { id: user.id, role: user.role },
@@ -129,7 +129,7 @@ export const login = async (req: Request, res: Response) => {
     });
 
     return res.status(200).json({
-      message: "Prijava uspješna.",
+      message: "Login successful.",
       user: {
         id: user.id,
         first_name: user.first_name,
@@ -140,10 +140,10 @@ export const login = async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    console.error("Greška prilikom prijave:", error);
+    console.error("Error while logging in:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom prijave." });
+      .json({ error: "An error occurred while logging in." });
   }
 };
 
@@ -153,7 +153,7 @@ export const logout = (req: Request, res: Response) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
   });
-  return res.status(200).json({ message: "Uspješno ste se odjavili." });
+  return res.status(200).json({ message: "Logged out successfully." });
 };
 
 export const me = (req: Request, res: Response) => {

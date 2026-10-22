@@ -1,7 +1,7 @@
 import type { Role } from "../types/auth.js";
 
 // Reports are files the user opens outside the app, so they follow the UI language
-// (the client sends it as `lang`) instead of the usual Bosnian-only server text.
+// (the client sends it as `lang`) instead of the usual English-only server text.
 export type ReportLanguage = "bs" | "en";
 
 export const parseReportLanguage = (value: unknown): ReportLanguage => (value === "en" ? "en" : "bs");

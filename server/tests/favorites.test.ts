@@ -31,26 +31,26 @@ describe("Favorites routes", () => {
     it("adds a store to the favorites", async () => {
       const response = await restaurant.post("/api/favorites").send({ store_id: storeId });
       expect(response.status).toBe(201);
-      expect(response.body.message).toBe("Prodavnica dodana u omiljene");
+      expect(response.body.message).toBe("Store added to favorites");
     });
 
     it("returns 409 when the store is already a favorite", async () => {
       await restaurant.post("/api/favorites").send({ store_id: storeId });
       const response = await restaurant.post("/api/favorites").send({ store_id: storeId });
       expect(response.status).toBe(409);
-      expect(response.body.error).toBe("Prodavnica je već dodana u omiljene.");
+      expect(response.body.error).toBe("Store is already in favorites.");
     });
 
     it("returns 400 without store_id", async () => {
       const response = await restaurant.post("/api/favorites").send({});
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("ID prodavnice je obavezan.");
+      expect(response.body.error).toBe("Store ID is required.");
     });
 
     it("returns 404 for a store that does not exist", async () => {
       const response = await restaurant.post("/api/favorites").send({ store_id: 999999 });
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe("Prodavnica nije pronađena.");
+      expect(response.body.error).toBe("Store not found.");
     });
 
     it("returns 404 for a user who is not a store", async () => {
@@ -92,14 +92,14 @@ describe("Favorites routes", () => {
 
       const response = await restaurant.delete(`/api/favorites/${storeId}`);
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Prodavnica izbrisana iz omiljenih");
+      expect(response.body.message).toBe("Store removed from favorites");
       expect((await restaurant.get("/api/favorites")).body.favorites).toEqual([]);
     });
 
     it("returns 404 when the store was not a favorite", async () => {
       const response = await restaurant.delete(`/api/favorites/${storeId}`);
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe("Prodavnica nije bila u omiljenim.");
+      expect(response.body.error).toBe("Store was not in favorites.");
     });
 
     it("does not remove another restaurant's favorite", async () => {

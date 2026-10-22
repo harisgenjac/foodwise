@@ -9,12 +9,12 @@ export const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
 export const validateEmail = (email: unknown) =>
   typeof email !== "string" || !EMAIL_PATTERN.test(normalizeEmail(email))
-    ? "Email nije ispravan."
+    ? "Email is not valid."
     : null;
 
 export const validatePassword = (password: unknown) =>
   typeof password !== "string" || password.length < MIN_PASSWORD_LENGTH
-    ? `Lozinka mora imati najmanje ${MIN_PASSWORD_LENGTH} znakova.`
+    ? `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`
     : null;
 
 export const hashPassword = (password: string) => bcrypt.hash(password, SALT_ROUNDS);

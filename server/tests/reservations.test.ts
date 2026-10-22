@@ -41,7 +41,7 @@ describe("Reservations routes", () => {
         .post("/api/reservations")
         .send({ product_id: product.id, quantity: 4, pickup_date: futurePickup() });
       expect(response.status).toBe(201);
-      expect(response.body.message).toBe("Rezervacija uspješno kreirana.");
+      expect(response.body.message).toBe("Reservation created successfully.");
       expect(response.body.reservation.status).toBe("Pending");
       expect(await availableQuantity(product.id)).toBe(6);
     });
@@ -50,7 +50,7 @@ describe("Reservations routes", () => {
       const product = await createProduct(store);
       const response = await restaurant.post("/api/reservations").send({ product_id: product.id, quantity: 1 });
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Sva polja su obavezna.");
+      expect(response.body.error).toBe("All fields are required.");
     });
 
     it.each([-5, "abc"])("returns 400 for quantity %s", async (quantity) => {
@@ -59,7 +59,7 @@ describe("Reservations routes", () => {
         .post("/api/reservations")
         .send({ product_id: product.id, quantity, pickup_date: futurePickup() });
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Količina mora biti veća od nule.");
+      expect(response.body.error).toBe("Quantity must be greater than zero.");
       expect(await availableQuantity(product.id)).toBe(10);
     });
 
@@ -69,7 +69,7 @@ describe("Reservations routes", () => {
         .post("/api/reservations")
         .send({ product_id: product.id, quantity: 1, pickup_date: "sutra" });
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Datum preuzimanja nije ispravan.");
+      expect(response.body.error).toBe("Pickup date is not valid.");
     });
 
     it("returns 400 when the quantity exceeds what is available", async () => {
@@ -78,7 +78,7 @@ describe("Reservations routes", () => {
         .post("/api/reservations")
         .send({ product_id: product.id, quantity: 15, pickup_date: futurePickup() });
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Nema dovoljno proizvoda na raspolaganju.");
+      expect(response.body.error).toBe("Not enough product available.");
     });
 
     it("returns 404 for a product that does not exist", async () => {
@@ -86,7 +86,7 @@ describe("Reservations routes", () => {
         .post("/api/reservations")
         .send({ product_id: 999999, quantity: 5, pickup_date: futurePickup() });
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe("Proizvod nije pronađen.");
+      expect(response.body.error).toBe("Product not found.");
     });
 
     it.each([
@@ -101,7 +101,7 @@ describe("Reservations routes", () => {
         .post("/api/reservations")
         .send({ product_id: product.id, quantity: 2, pickup_date: futurePickup() });
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Proizvod više nije dostupan za rezervaciju.");
+      expect(response.body.error).toBe("Product is no longer available for reservation.");
     });
 
     it("returns 403 for a STORE", async () => {
@@ -109,7 +109,7 @@ describe("Reservations routes", () => {
         .post("/api/reservations")
         .send({ product_id: 999999, quantity: 5, pickup_date: futurePickup() });
       expect(response.status).toBe(403);
-      expect(response.body.error).toBe("Nemate odgovarajuću rolu za ovu akciju.");
+      expect(response.body.error).toBe("You do not have the required role for this action.");
     });
 
     it("lets several restaurants reserve parts of the same product", async () => {
@@ -206,7 +206,7 @@ describe("Reservations routes", () => {
 
       const response = await store.patch(`/api/reservations/${id}/accept`);
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Rezervacija je uspješno prihvaćena.");
+      expect(response.body.message).toBe("Reservation accepted successfully.");
       expect(await reservationStatus(id)).toBe("Confirmed");
     });
 
@@ -226,7 +226,7 @@ describe("Reservations routes", () => {
 
       const response = await storeB.patch(`/api/reservations/${id}/accept`);
       expect(response.status).toBe(403);
-      expect(response.body.error).toBe("Nemate ovlasti za prihvatanje ove rezervacije.");
+      expect(response.body.error).toBe("You are not allowed to accept this reservation.");
       expect(await reservationStatus(id)).toBe("Pending");
     });
 
@@ -240,7 +240,7 @@ describe("Reservations routes", () => {
     it("returns 404 for a reservation that does not exist", async () => {
       const response = await store.patch("/api/reservations/999999/accept");
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe("Rezervacija nije pronađena.");
+      expect(response.body.error).toBe("Reservation not found.");
     });
 
     it("returns 400 when the reservation is not Pending", async () => {
@@ -250,7 +250,7 @@ describe("Reservations routes", () => {
 
       const response = await store.patch(`/api/reservations/${id}/accept`);
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Rezervacija nije u statusu 'Pending'.");
+      expect(response.body.error).toBe("Reservation is not in 'Pending' status.");
     });
 
     it("returns 400 when the product has expired", async () => {
@@ -261,7 +261,7 @@ describe("Reservations routes", () => {
       const response = await store.patch(`/api/reservations/${id}/accept`);
       expect(response.status).toBe(400);
       expect(response.body.error).toBe(
-        "Rezervaciju nije moguće prihvatiti jer je proizvodu istekao rok trajanja.",
+        "The reservation cannot be accepted because the product has expired.",
       );
     });
   });
@@ -273,7 +273,7 @@ describe("Reservations routes", () => {
 
       const response = await store.patch(`/api/reservations/${id}/reject`);
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Rezervacija je uspješno odbijena.");
+      expect(response.body.message).toBe("Reservation rejected successfully.");
       expect(await reservationStatus(id)).toBe("Rejected");
       expect(await availableQuantity(product.id)).toBe(10);
     });
@@ -285,13 +285,13 @@ describe("Reservations routes", () => {
 
       const response = await storeB.patch(`/api/reservations/${id}/reject`);
       expect(response.status).toBe(403);
-      expect(response.body.error).toBe("Nemate ovlasti za odbijanje ove rezervacije.");
+      expect(response.body.error).toBe("You are not allowed to reject this reservation.");
     });
 
     it("returns 404 for a reservation that does not exist", async () => {
       const response = await store.patch("/api/reservations/999999/reject");
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe("Rezervacija nije pronađena.");
+      expect(response.body.error).toBe("Reservation not found.");
     });
 
     it("returns 400 when the reservation is not Pending", async () => {
@@ -301,7 +301,7 @@ describe("Reservations routes", () => {
 
       const response = await store.patch(`/api/reservations/${id}/reject`);
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Rezervacija nije u statusu 'Pending'.");
+      expect(response.body.error).toBe("Reservation is not in 'Pending' status.");
     });
   });
 
@@ -312,7 +312,7 @@ describe("Reservations routes", () => {
 
       const response = await restaurant.patch(`/api/reservations/${id}/cancel`);
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Rezervacija je uspješno otkazana.");
+      expect(response.body.message).toBe("Reservation cancelled successfully.");
       expect(await reservationStatus(id)).toBe("Cancelled");
       expect(await availableQuantity(product.id)).toBe(10);
     });
@@ -324,7 +324,7 @@ describe("Reservations routes", () => {
 
       const response = await restaurantB.patch(`/api/reservations/${id}/cancel`);
       expect(response.status).toBe(403);
-      expect(response.body.error).toBe("Nemate ovlasti za otkazivanje ove rezervacije.");
+      expect(response.body.error).toBe("You are not allowed to cancel this reservation.");
     });
 
     it("returns 404 for a reservation that does not exist", async () => {
@@ -339,7 +339,7 @@ describe("Reservations routes", () => {
 
       const response = await restaurant.patch(`/api/reservations/${id}/cancel`);
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Rezervacija nije u statusu 'Pending'.");
+      expect(response.body.error).toBe("Reservation is not in 'Pending' status.");
     });
   });
 
@@ -384,7 +384,7 @@ describe("Reservations routes", () => {
 
       const response = await restaurantB.get(`/api/reservations/${id}`);
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe("Ne postoji rezervacija sa tim ID");
+      expect(response.body.error).toBe("No reservation exists with that ID");
     });
 
     it("returns 404 to a store that does not own the product", async () => {

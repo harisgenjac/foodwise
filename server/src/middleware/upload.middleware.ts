@@ -45,7 +45,7 @@ const upload = multer({
     if (file.mimetype in EXTENSIONS) {
       cb(null, true);
     } else {
-      cb(new HttpError(400, 'Dozvoljene su samo JPEG, PNG i WEBP slike.'));
+      cb(new HttpError(400, 'Only JPEG, PNG and WEBP images are allowed.'));
     }
   },
 });
@@ -61,7 +61,7 @@ const csvUpload = multer({
     ) {
       cb(null, true);
     } else {
-      cb(new HttpError(400, 'Dozvoljeni su samo CSV fajlovi.'));
+      cb(new HttpError(400, 'Only CSV files are allowed.'));
     }
   },
 });
@@ -87,14 +87,14 @@ const handleUpload =
 
 export const uploadLogoFile = handleUpload(
   upload.single('logo'),
-  `Slika može imati najviše ${MAX_LOGO_SIZE_MB}MB.`,
-  'Slika nije ispravno poslana.',
+  `The image can be at most ${MAX_LOGO_SIZE_MB}MB.`,
+  'The image was not uploaded correctly.',
 );
 
 export const uploadCsvFile = handleUpload(
   csvUpload.single('file'),
-  `Fajl može imati najviše ${MAX_CSV_SIZE_MB}MB.`,
-  'Fajl nije ispravno poslan.',
+  `The file can be at most ${MAX_CSV_SIZE_MB}MB.`,
+  'The file was not uploaded correctly.',
 );
 
 export default upload;

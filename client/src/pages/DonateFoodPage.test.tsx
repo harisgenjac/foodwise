@@ -82,7 +82,7 @@ describe("DonateFoodPage", () => {
 
   it("deletes a donation after confirmation", async () => {
     const success = vi.spyOn(toast, "success");
-    apiMock.delete.mockResolvedValue({ data: { message: "Donacija je obrisana." } });
+    apiMock.delete.mockResolvedValue({ data: { message: "Donation deleted." } });
     renderPage([makeDonation({ id: 7, name: "Hljeb" })]);
 
     await userEvent.click(await screen.findByRole("button", { name: t("donations.delete.button") }));
@@ -96,7 +96,7 @@ describe("DonateFoodPage", () => {
 
   it("offers returning a moved product to the offer instead of deleting it", async () => {
     const success = vi.spyOn(toast, "success");
-    apiMock.post.mockResolvedValue({ data: { message: "Donacija je vraćena u ponudu." } });
+    apiMock.post.mockResolvedValue({ data: { message: "Donation returned to the offer." } });
     renderPage([makeDonation({ id: 7, name: "Jogurt", source_product_id: 3 })]);
 
     await userEvent.click(await screen.findByRole("button", { name: t("donations.delete.button") }));
@@ -133,12 +133,12 @@ describe("DonateFoodPage", () => {
 
   it("shows the server error when deleting fails", async () => {
     const error = vi.spyOn(toast, "error");
-    apiMock.delete.mockRejectedValue(axiosError(403, "Nemate ovlasti za brisanje ove donacije."));
+    apiMock.delete.mockRejectedValue(axiosError(403, "You are not allowed to delete this donation."));
     renderPage([makeDonation({ id: 7 })]);
 
     await userEvent.click(await screen.findByRole("button", { name: t("donations.delete.button") }));
     await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: t("donations.delete.confirm") }));
 
-    expect(error).toHaveBeenCalledWith("Nemate ovlasti za brisanje ove donacije.");
+    expect(error).toHaveBeenCalledWith("You are not allowed to delete this donation.");
   });
 });

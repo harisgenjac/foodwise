@@ -100,7 +100,7 @@ client/src/
 - Inline handlers need no annotations (`onChange={(e) => setName(e.target.value)}`). A standalone handler does, for example `(e: React.ChangeEvent<HTMLInputElement>)`. For form submit use `React.SyntheticEvent<HTMLFormElement>` (`FormEvent` is deprecated in current `@types/react`).
 - Props are typed with an interface or inline object: `({ children }: { children: React.ReactNode })`.
 - Non-null assertion only where the app guarantees it: `useParams()` id inside a route that requires it, `document.getElementById("root")!`, `selectedProduct!` inside a handler that only runs with the modal open.
-- `catch (err)`: use `axios.isAxiosError(err) ? err.response?.data?.error : null`, then fall back to a `t()` message. Server-provided messages are Bosnian and are shown as-is for now.
+- `catch (err)`: use `axios.isAxiosError(err) ? err.response?.data?.error : null`, then fall back to a `t()` message. Server-provided messages are English (backend rule) and are shown as-is, in either UI language.
 - Optional values used as an object key need a fallback: `categories[reservation.category || ""]`.
 
 ## i18n

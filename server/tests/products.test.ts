@@ -29,20 +29,20 @@ describe("Products routes", () => {
     it("creates a product owned by the store with status Available", async () => {
       const response = await store.post("/api/products").send(productPayload());
       expect(response.status).toBe(201);
-      expect(response.body.message).toBe("Proizvod uspješno dodan.");
+      expect(response.body.message).toBe("Product created successfully.");
       expect(response.body.product).toMatchObject({ name: "Test Product", status: "Available" });
     });
 
     it("returns 400 when a required field is missing", async () => {
       const response = await store.post("/api/products").send(productPayload({ category: undefined }));
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Sva polja su obavezna.");
+      expect(response.body.error).toBe("All fields are required.");
     });
 
     it("returns 400 for a negative price", async () => {
       const response = await store.post("/api/products").send(productPayload({ original_price: -10 }));
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Cijene i količina moraju biti pozitivni brojevi.");
+      expect(response.body.error).toBe("Prices and quantity must be positive numbers.");
     });
 
     it("returns 400 when the discounted price is above the original", async () => {
@@ -50,7 +50,7 @@ describe("Products routes", () => {
         .post("/api/products")
         .send(productPayload({ original_price: 5, discounted_price: 8 }));
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Snižena cijena ne može biti veća od originalne.");
+      expect(response.body.error).toBe("Discounted price cannot be higher than the original price.");
     });
   });
 
@@ -61,7 +61,7 @@ describe("Products routes", () => {
         .put(`/api/products/${product.id}`)
         .send(productPayload({ name: "Edited", discounted_price: 4, quantity: 20 }));
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Proizvod uspješno ažuriran.");
+      expect(response.body.message).toBe("Product updated successfully.");
       expect(response.body.product.name).toBe("Edited");
       expect(parseFloat(response.body.product.quantity)).toBe(20);
     });
@@ -70,7 +70,7 @@ describe("Products routes", () => {
       const product = await createProduct(store);
       const response = await store.put(`/api/products/${product.id}`).send(productPayload({ name: "" }));
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Sva polja su obavezna.");
+      expect(response.body.error).toBe("All fields are required.");
     });
 
     it("returns 403 for another store's product", async () => {
@@ -78,13 +78,13 @@ describe("Products routes", () => {
       const storeB = await registerAndLogin(STORE_B, "STORE");
       const response = await storeB.put(`/api/products/${product.id}`).send(productPayload({ name: "Hacked" }));
       expect(response.status).toBe(403);
-      expect(response.body.error).toBe("Nemate dozvolu za izmjenu ovog proizvoda.");
+      expect(response.body.error).toBe("You are not allowed to edit this product.");
     });
 
     it("returns 404 for a product that does not exist", async () => {
       const response = await store.put("/api/products/999999").send(productPayload());
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe("Proizvod nije pronađen.");
+      expect(response.body.error).toBe("Product not found.");
     });
   });
 
@@ -93,7 +93,7 @@ describe("Products routes", () => {
       const product = await createProduct(store);
       const response = await store.delete(`/api/products/${product.id}`);
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Proizvod uspješno obrisan.");
+      expect(response.body.message).toBe("Product deleted successfully.");
       expect(response.body.product.status).toBe("Removed");
     });
 
@@ -102,13 +102,13 @@ describe("Products routes", () => {
       const storeB = await registerAndLogin(STORE_B, "STORE");
       const response = await storeB.delete(`/api/products/${product.id}`);
       expect(response.status).toBe(403);
-      expect(response.body.error).toBe("Nemate dozvolu za brisanje ovog proizvoda.");
+      expect(response.body.error).toBe("You are not allowed to delete this product.");
     });
 
     it("returns 404 for a product that does not exist", async () => {
       const response = await store.delete("/api/products/999999");
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe("Proizvod nije pronađen.");
+      expect(response.body.error).toBe("Product not found.");
     });
 
     it("returns 400 when the product has an active reservation", async () => {
@@ -118,7 +118,7 @@ describe("Products routes", () => {
 
       const response = await store.delete(`/api/products/${product.id}`);
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Proizvod ima aktivne rezervacije i ne može biti obrisan.");
+      expect(response.body.error).toBe("Product has active reservations and cannot be deleted.");
     });
 
     it.each(["Sold", "Expired", "Removed"])("returns 400 for a %s product", async (status) => {
@@ -127,7 +127,7 @@ describe("Products routes", () => {
 
       const response = await store.delete(`/api/products/${product.id}`);
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Proizvod ne može biti obrisan jer je prodat ili istekao.");
+      expect(response.body.error).toBe("Product cannot be deleted because it is sold or expired.");
     });
   });
 
@@ -239,7 +239,7 @@ describe("Products routes", () => {
     it("returns 404 for a product that does not exist", async () => {
       const response = await store.get("/api/products/999999");
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe("Proizvod nije pronađen.");
+      expect(response.body.error).toBe("Product not found.");
     });
 
     it("returns the store contact details", async () => {

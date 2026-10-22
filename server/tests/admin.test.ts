@@ -68,7 +68,7 @@ describe("Admin", () => {
       for (const path of ["/api/admin/stats", "/api/admin/users", "/api/admin/products", "/api/admin/actions"]) {
         const response = await agent().get(path);
         expect(response.status).toBe(403);
-        expect(response.body.error).toBe("Nemate odgovarajuću rolu za ovu akciju.");
+        expect(response.body.error).toBe("You do not have the required role for this action.");
       }
     });
 
@@ -103,7 +103,7 @@ describe("Admin", () => {
 
       const missing = await admin.put("/api/users/me").send({ first_name: "Ana" });
       expect(missing.status).toBe(400);
-      expect(missing.body.error).toBe("Ime i prezime su obavezni.");
+      expect(missing.body.error).toBe("First and last name are required.");
 
       const update = await admin
         .put("/api/users/me")
@@ -118,7 +118,7 @@ describe("Admin", () => {
     it.each(["STORE", "RESTAURANT", "ADMIN"])("creates a %s account with only an email and a password", async (role) => {
       const response = await admin.post("/api/admin/users").send({ role, email: NEW_USER, password: PASSWORD });
       expect(response.status).toBe(201);
-      expect(response.body.message).toBe("Korisnik uspješno kreiran.");
+      expect(response.body.message).toBe("User created successfully.");
       expect(response.body.user).toMatchObject({
         email: NEW_USER,
         role,
@@ -136,11 +136,11 @@ describe("Admin", () => {
     });
 
     it.each([
-      [{ email: NEW_USER, password: PASSWORD }, "Email, lozinka i rola su obavezni."],
-      [{ role: "CHARITY", email: NEW_USER, password: PASSWORD }, "Rola mora biti STORE, RESTAURANT ili ADMIN."],
-      [{ role: "STORE", email: "not-an-email", password: PASSWORD }, "Email nije ispravan."],
-      [{ role: "STORE", email: NEW_USER, password: "kratka" }, "Lozinka mora imati najmanje 8 znakova."],
-      [{ role: "STORE", email: STORE.toUpperCase(), password: PASSWORD }, "Korisnik s tim emailom već postoji."],
+      [{ email: NEW_USER, password: PASSWORD }, "Email, password and role are required."],
+      [{ role: "CHARITY", email: NEW_USER, password: PASSWORD }, "Role must be STORE, RESTAURANT or ADMIN."],
+      [{ role: "STORE", email: "not-an-email", password: PASSWORD }, "Email is not valid."],
+      [{ role: "STORE", email: NEW_USER, password: "kratka" }, "Password must be at least 8 characters long."],
+      [{ role: "STORE", email: STORE.toUpperCase(), password: PASSWORD }, "A user with this email already exists."],
     ])("rejects %j", async (body, message) => {
       const response = await admin.post("/api/admin/users").send(body);
       expect(response.status).toBe(400);
@@ -183,11 +183,11 @@ describe("Admin", () => {
       const storeId = await userId(STORE);
       const short = await admin.patch(`/api/admin/users/${storeId}/password`).send({ password: "kratka" });
       expect(short.status).toBe(400);
-      expect(short.body.error).toBe("Lozinka mora imati najmanje 8 znakova.");
+      expect(short.body.error).toBe("Password must be at least 8 characters long.");
 
       const response = await admin.patch(`/api/admin/users/${storeId}/password`).send({ password: "nova-lozinka" });
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Lozinka je uspješno promijenjena.");
+      expect(response.body.message).toBe("Password changed successfully.");
       await expect(login(STORE)).rejects.toThrow();
       await expect(login(STORE, "nova-lozinka")).resolves.toBeDefined();
       expect(await actions()).toEqual([
@@ -196,7 +196,7 @@ describe("Admin", () => {
 
       const missing = await admin.patch("/api/admin/users/999999/password").send({ password: "nova-lozinka" });
       expect(missing.status).toBe(404);
-      expect(missing.body.error).toBe("Korisnik nije pronađen.");
+      expect(missing.body.error).toBe("User not found.");
     });
   });
 
@@ -219,7 +219,7 @@ describe("Admin", () => {
         .put(`/api/admin/users/${storeId}/profile`)
         .send({ ...profile, logo_url: "/uploads/logos/other.png" });
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Profil korisnika je ažuriran.");
+      expect(response.body.message).toBe("User profile updated.");
       expect(response.body.user).toMatchObject({ ...profile, email: STORE, logo_url: "/uploads/logos/keep.png" });
       expect(await actions()).toEqual([expect.objectContaining({ action: "UPDATE_PROFILE", target_user_id: storeId })]);
     });
@@ -229,7 +229,7 @@ describe("Admin", () => {
         .put(`/api/admin/users/${await userId(STORE)}/profile`)
         .send({ ...profile, phone: "" });
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Ime, prezime, naziv biznisa, grad, adresa i telefon su obavezni.");
+      expect(response.body.error).toBe("First name, last name, business name, city, address and phone are required.");
       expect(await actions()).toEqual([]);
     });
 
@@ -277,7 +277,7 @@ describe("Admin", () => {
       for (const query of ["role=CHARITY", "blocked=maybe", "limit=0", "limit=101", "offset=-1"]) {
         const response = await admin.get(`/api/admin/users?${query}`);
         expect(response.status).toBe(400);
-        expect(response.body.error).toBe("Neispravan filter.");
+        expect(response.body.error).toBe("Invalid filter.");
       }
     });
 
@@ -312,7 +312,7 @@ describe("Admin", () => {
       for (const reason of [undefined, "   ", "x".repeat(501)]) {
         const response = await admin.post(`/api/admin/users/${storeId}/block`).send({ reason });
         expect(response.status).toBe(400);
-        expect(response.body.error).toBe("Razlog je obavezan (najviše 500 znakova).");
+        expect(response.body.error).toBe("A reason is required (at most 500 characters).");
       }
     });
 
@@ -320,16 +320,16 @@ describe("Admin", () => {
       const storeId = await userId(STORE);
       const response = await admin.post(`/api/admin/users/${storeId}/block`).send({ reason: "Lažni proizvodi" });
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Nalog je blokiran.");
+      expect(response.body.message).toBe("Account blocked.");
       expect(response.body.user).toMatchObject({ is_blocked: true, blocked_reason: "Lažni proizvodi" });
 
       const session = await store.get("/api/users/me");
       expect(session.status).toBe(401);
-      expect(session.body.error).toBe("Vaš nalog je blokiran.");
+      expect(session.body.error).toBe("Your account is blocked.");
 
       const attempt = await request(app).post("/api/auth/login").send({ email: STORE, password: PASSWORD });
       expect(attempt.status).toBe(403);
-      expect(attempt.body.error).toBe("Vaš nalog je blokiran. Razlog: Lažni proizvodi");
+      expect(attempt.body.error).toBe("Your account is blocked. Reason: Lažni proizvodi");
 
       expect(await actions()).toEqual([
         expect.objectContaining({ action: "BLOCK_USER", reason: "Lažni proizvodi", target_user_id: storeId }),
@@ -371,7 +371,7 @@ describe("Admin", () => {
       // Unblocking brings the store back.
       const unblock = await admin.post(`/api/admin/users/${product.store_id}/unblock`);
       expect(unblock.status).toBe(200);
-      expect(unblock.body.message).toBe("Nalog je deblokiran.");
+      expect(unblock.body.message).toBe("Account unblocked.");
       expect(unblock.body.user).toMatchObject({ is_blocked: false, blocked_reason: null });
       expect((await restaurant.get(`/api/products/${product.id}`)).status).toBe(200);
       await expect(login(STORE)).resolves.toBeDefined();
@@ -393,18 +393,18 @@ describe("Admin", () => {
     it("refuses to block the admin's own account, an already blocked one and a missing one", async () => {
       const own = await admin.post(`/api/admin/users/${await userId(ADMIN)}/block`).send({ reason: "Test" });
       expect(own.status).toBe(400);
-      expect(own.body.error).toBe("Ne možete blokirati vlastiti nalog.");
+      expect(own.body.error).toBe("You cannot block your own account.");
 
       const storeId = await userId(STORE);
       await admin.post(`/api/admin/users/${storeId}/block`).send({ reason: "Test" });
       const again = await admin.post(`/api/admin/users/${storeId}/block`).send({ reason: "Test" });
       expect(again.status).toBe(400);
-      expect(again.body.error).toBe("Nalog je već blokiran.");
+      expect(again.body.error).toBe("Account is already blocked.");
 
       const restaurantId = await userId(RESTAURANT);
       const notBlocked = await admin.post(`/api/admin/users/${restaurantId}/unblock`);
       expect(notBlocked.status).toBe(400);
-      expect(notBlocked.body.error).toBe("Nalog nije blokiran.");
+      expect(notBlocked.body.error).toBe("Account is not blocked.");
 
       expect((await admin.post("/api/admin/users/999999/block").send({ reason: "Test" })).status).toBe(404);
       expect((await admin.post("/api/admin/users/999999/unblock")).status).toBe(404);
@@ -432,7 +432,7 @@ describe("Admin", () => {
 
       const response = await admin.delete(`/api/admin/products/${product.id}`).send({ reason: "Neispravan opis" });
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Proizvod je uklonjen.");
+      expect(response.body.message).toBe("Product removed.");
       expect(response.body.product.status).toBe("Removed");
       expect(await reservationStatus(pending)).toBe("Cancelled");
       expect(await reservationStatus(confirmed)).toBe("Confirmed");
@@ -461,7 +461,7 @@ describe("Admin", () => {
 
       const again = await admin.delete(`/api/admin/products/${product.id}`).send({ reason: "Opet" });
       expect(again.status).toBe(400);
-      expect(again.body.error).toBe("Proizvod je već uklonjen.");
+      expect(again.body.error).toBe("Product is already removed.");
       expect((await admin.delete("/api/admin/products/999999").send({ reason: "Test" })).status).toBe(404);
     });
 
@@ -481,7 +481,7 @@ describe("Admin", () => {
 
       const response = await admin.delete(`/api/admin/donations/${donation.id}`).send({ reason: "Nije hrana" });
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Donacija je uklonjena.");
+      expect(response.body.message).toBe("Donation removed.");
       expect((await restaurant.get(`/api/donations/${donation.id}`)).status).toBe(404);
 
       const listed = await restaurant.get("/api/notifications");
@@ -497,7 +497,7 @@ describe("Admin", () => {
 
       const again = await admin.delete(`/api/admin/donations/${donation.id}`).send({ reason: "Opet" });
       expect(again.status).toBe(400);
-      expect(again.body.error).toBe("Donacija je već uklonjena.");
+      expect(again.body.error).toBe("Donation is already removed.");
       expect((await admin.get("/api/admin/donations?type=PAID")).status).toBe(400);
     });
   });
@@ -539,11 +539,11 @@ describe("Admin", () => {
 
       const noReason = await admin.post(`/api/admin/reservations/${pending}/cancel`);
       expect(noReason.status).toBe(400);
-      expect(noReason.body.error).toBe("Razlog je obavezan (najviše 500 znakova).");
+      expect(noReason.body.error).toBe("A reason is required (at most 500 characters).");
 
       const response = await admin.post(`/api/admin/reservations/${pending}/cancel`).send({ reason: "Spor oko cijene" });
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Rezervacija je otkazana.");
+      expect(response.body.message).toBe("Reservation cancelled.");
       expect(await reservationStatus(pending)).toBe("Cancelled");
 
       for (const email of [STORE, RESTAURANT]) {
@@ -600,11 +600,11 @@ describe("Admin", () => {
       for (const id of [completed, rejected, cancelled]) {
         const response = await admin.post(`/api/admin/reservations/${id}/cancel`).send({ reason: "Test" });
         expect(response.status).toBe(400);
-        expect(response.body.error).toBe("Samo rezervacije na čekanju ili prihvaćene mogu biti otkazane.");
+        expect(response.body.error).toBe("Only pending or accepted reservations can be cancelled.");
       }
       const missing = await admin.post("/api/admin/reservations/999999/cancel").send({ reason: "Test" });
       expect(missing.status).toBe(404);
-      expect(missing.body.error).toBe("Rezervacija nije pronađena.");
+      expect(missing.body.error).toBe("Reservation not found.");
       expect(await actions()).toEqual([]);
     });
   });

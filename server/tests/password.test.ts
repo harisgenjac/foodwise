@@ -28,7 +28,7 @@ describe("Password", () => {
     it("changes the password: the new one logs in, the old one no longer does", async () => {
       const response = await change(store, PASSWORD, NEW_PASSWORD);
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Lozinka je promijenjena.");
+      expect(response.body.message).toBe("Password changed.");
 
       await expect(login(STORE, NEW_PASSWORD)).resolves.toBeDefined();
       const old = await request(app).post("/api/auth/login").send({ email: STORE, password: PASSWORD });
@@ -36,11 +36,11 @@ describe("Password", () => {
     });
 
     it.each([
-      [undefined, NEW_PASSWORD, "Sva polja su obavezna."],
-      [PASSWORD, "", "Sva polja su obavezna."],
-      ["pogresna-lozinka", NEW_PASSWORD, "Trenutna lozinka nije ispravna."],
-      [PASSWORD, "kratka", "Lozinka mora imati najmanje 8 znakova."],
-      [PASSWORD, PASSWORD, "Nova lozinka mora biti različita od trenutne."],
+      [undefined, NEW_PASSWORD, "All fields are required."],
+      [PASSWORD, "", "All fields are required."],
+      ["pogresna-lozinka", NEW_PASSWORD, "Current password is incorrect."],
+      [PASSWORD, "kratka", "Password must be at least 8 characters long."],
+      [PASSWORD, PASSWORD, "The new password must be different from the current one."],
     ])("rejects current %s and new %s", async (current, next, message) => {
       const response = await change(store, current, next);
       expect(response.status).toBe(400);
@@ -66,7 +66,7 @@ describe("Password", () => {
 
       const blocked = await user.get("/api/products");
       expect(blocked.status).toBe(403);
-      expect(blocked.body.error).toBe("Morate promijeniti lozinku prije nastavka.");
+      expect(blocked.body.error).toBe("You must change your password before continuing.");
       expect((await user.get("/api/notifications")).status).toBe(403);
 
       const me = await user.get("/api/users/me");

@@ -51,10 +51,10 @@ describe("ImportProductsPage", () => {
         headers: {},
         config: { headers: new AxiosHeaders() },
         data: {
-          error: "CSV sadrži neispravne redove.",
+          error: "The CSV contains invalid rows.",
           rowErrors: [
-            { row: 3, error: "Kategorija nije ispravna." },
-            { row: 5, error: "Datum isteka nije ispravan." },
+            { row: 3, error: "Category is not valid." },
+            { row: 5, error: "Expiry date is not valid." },
           ],
         },
       }),
@@ -64,11 +64,11 @@ describe("ImportProductsPage", () => {
     await chooseFile();
     await userEvent.click(screen.getByRole("button", { name: t("importProducts.importButton") }));
 
-    expect(await screen.findByText("CSV sadrži neispravne redove.")).toBeInTheDocument();
+    expect(await screen.findByText("The CSV contains invalid rows.")).toBeInTheDocument();
     const rows = within(screen.getByRole("table")).getAllByRole("row");
     expect(rows).toHaveLength(3);
-    expect(rows[1]).toHaveTextContent("3Kategorija nije ispravna.");
-    expect(rows[2]).toHaveTextContent("5Datum isteka nije ispravan.");
+    expect(rows[1]).toHaveTextContent("3Category is not valid.");
+    expect(rows[2]).toHaveTextContent("5Expiry date is not valid.");
     expect(screen.queryByTestId("location")).not.toBeInTheDocument();
   });
 });

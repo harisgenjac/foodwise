@@ -126,7 +126,7 @@ Ideas for the next phases (agreed as good directions, not yet scheduled):
 - Pickup follow-ups: a QR or PIN code shown by the restaurant and checked by the store at handover; a restaurant reliability score from missed pickups (temporary limits after repeated no-shows); optional automatic cancelling of missed pickups after a few hours; a reminder an hour before the pickup; pickup time slots set by the store; a daily packing list per product for the store; a rating after pickup.
 - Business ideas tied to pickups: charge the platform commission when a reservation is picked up (`Completed` is the moment the sale is real); a monthly impact report (kg of food saved, KM saved, CO₂ avoided) for stores and restaurants to use in ESG reporting and marketing (the CSV impact report covers kg and KM; CO₂ and a presentable PDF are still open).
 - More reports, built when users ask for specific ones (the reports page is set up so new ones are added one at a time).
-- Backend messages translated through keys instead of fixed Bosnian text.
+- Backend messages translated through keys instead of fixed English text (today a Bosnian-UI user sees server errors in English).
 - Instant dropdown filtering in the marketplace (text and dropdown filters are both debounced today).
 
 A store reliability score (accept versus reject ratio) was considered and declined for now.
@@ -134,7 +134,7 @@ A store reliability score (accept versus reject ratio) was considered and declin
 ## Market, language, tone
 
 - Initial market is Bosnia and Herzegovina: prices are in KM and demo data uses cities such as Sarajevo, Tuzla and Mostar.
-- Interface languages: Bosnian (default) and English. Server messages are currently Bosnian only.
+- Interface languages: Bosnian (default) and English. Server messages (errors, success messages) are English only.
 - Terminology: *prodavnica* = store, *restoran* = restaurant, *rezervacija* = reservation, *ponuda* = offer, *rok trajanja* = expiry date.
 - Name: FoodWise (working Bosnian name "Još vrijedi"). Tone: practical, friendly, focused on reducing waste. Confirm the exact spelling shown in the UI header before using it in public material.
 

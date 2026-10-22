@@ -61,7 +61,7 @@ describe("AuthContext", () => {
 
   it("lets a failed login reject so the page can show the error", async () => {
     mockGet({ "/users/me": axiosError(401) });
-    apiMock.post.mockRejectedValue(axiosError(400, "Pogrešan email ili lozinka."));
+    apiMock.post.mockRejectedValue(axiosError(400, "Incorrect email or password."));
 
     const { result } = renderHook(() => useAuth(), { wrapper });
     await waitFor(() => expect(result.current.loading).toBe(false));

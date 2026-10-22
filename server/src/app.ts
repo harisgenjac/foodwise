@@ -49,7 +49,7 @@ app.use('/uploads', express.static('uploads', {
 }));
 
 app.use((req: Request, res: Response) => {
-  res.status(404).json({ error: "Ruta nije pronađena." });
+  res.status(404).json({ error: "Route not found." });
 });
 
 // Express recognises an error handler by its four parameters. Errors thrown outside the
@@ -62,10 +62,10 @@ app.use((error: unknown, req: Request, res: Response, next: NextFunction) => {
     return res.status(error.status).json({ error: error.message });
   }
   if (error instanceof SyntaxError && "type" in error && error.type === "entity.parse.failed") {
-    return res.status(400).json({ error: "Neispravan format zahtjeva." });
+    return res.status(400).json({ error: "Invalid request format." });
   }
-  console.error("Neobrađena greška:", error);
-  return res.status(500).json({ error: "Došlo je do greške na serveru." });
+  console.error("Unhandled error:", error);
+  return res.status(500).json({ error: "A server error occurred." });
 });
 
 export default app;

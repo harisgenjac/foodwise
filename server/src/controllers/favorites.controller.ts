@@ -8,12 +8,12 @@ export const addFavorite = async (req: Request, res: Response) => {
     const { store_id } = req.body;
 
     if (!store_id) {
-      return res.status(400).json({ error: "ID prodavnice je obavezan." });
+      return res.status(400).json({ error: "Store ID is required." });
     }
 
     const storeId = parseId(store_id);
     if (storeId === null) {
-      return res.status(404).json({ error: "Prodavnica nije pronađena." });
+      return res.status(404).json({ error: "Store not found." });
     }
 
     const store = await pool.query(
@@ -21,26 +21,26 @@ export const addFavorite = async (req: Request, res: Response) => {
       [storeId],
     );
     if (store.rows.length === 0) {
-      return res.status(404).json({ error: "Prodavnica nije pronađena." });
+      return res.status(404).json({ error: "Store not found." });
     }
 
     await pool.query(
       `INSERT INTO favorites (restaurant_id, store_id) VALUES ($1, $2)`,
       [restaurant_id, storeId],
     );
-    return res.status(201).json({ message: "Prodavnica dodana u omiljene" });
+    return res.status(201).json({ message: "Store added to favorites" });
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === "23505") {
       return res
         .status(409)
-        .json({ error: "Prodavnica je već dodana u omiljene." });
+        .json({ error: "Store is already in favorites." });
     }
 
-    console.error("Greška prilikom dodavanja prodavnice u omiljene:", error);
+    console.error("Error while adding store to favorites:", error);
     return res
       .status(500)
       .json({
-        error: "Došlo je do greške prilikom dodavanja prodavnice u omiljene.",
+        error: "An error occurred while adding the store to favorites.",
       });
   }
 };
@@ -52,7 +52,7 @@ export const removeFavorite = async (req: Request, res: Response) => {
     if (storeId === null) {
       return res
         .status(404)
-        .json({ error: "Prodavnica nije bila u omiljenim." });
+        .json({ error: "Store was not in favorites." });
     }
 
     const result = await pool.query(
@@ -62,17 +62,17 @@ export const removeFavorite = async (req: Request, res: Response) => {
     if (result.rowCount === 0) {
       return res
         .status(404)
-        .json({ error: "Prodavnica nije bila u omiljenim." });
+        .json({ error: "Store was not in favorites." });
     }
     return res
       .status(200)
-      .json({ message: "Prodavnica izbrisana iz omiljenih" });
+      .json({ message: "Store removed from favorites" });
   } catch (error) {
-    console.error("Greška prilikom brisanja prodavnice iz omiljenih:", error);
+    console.error("Error while removing store from favorites:", error);
     return res
       .status(500)
       .json({
-        error: "Došlo je do greške prilikom brisanja prodavnice iz omiljenih.",
+        error: "An error occurred while removing the store from favorites.",
       });
   }
 };
@@ -91,15 +91,15 @@ export const getFavorites = async (req: Request, res: Response) => {
     return res
       .status(200)
       .json({
-        message: "Uspješno dohvaćene omiljene prodavnice",
+        message: "Favorite stores fetched successfully",
         favorites: result.rows,
       });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja omiljenih prodavnica:", error);
+    console.error("Error while fetching favorite stores:", error);
     return res
       .status(500)
       .json({
-        error: "Došlo je do greške prilikom dohvatanja omiljenih prodavnica.",
+        error: "An error occurred while fetching favorite stores.",
       });
   }
 };

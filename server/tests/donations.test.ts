@@ -48,7 +48,7 @@ describe("Donations routes", () => {
         .post("/api/donations")
         .send(donationPayload({ donation_price: 1 }));
       expect(response.status).toBe(201);
-      expect(response.body.message).toBe("Donacija uspješno objavljena.");
+      expect(response.body.message).toBe("Donation published successfully.");
       expect(response.body.donation).toMatchObject({
         donation_type: "FREE",
         donation_price: null,
@@ -81,23 +81,23 @@ describe("Donations routes", () => {
     });
 
     it.each([
-      [{ name: "" }, "Sva polja su obavezna."],
-      [{ original_price: undefined }, "Sva polja su obavezna."],
-      [{ category: "Pizza" }, "Kategorija nije ispravna."],
-      [{ unit: "box" }, "Jedinica mjere nije ispravna."],
-      [{ quantity: 0 }, "Količina i vrijednost moraju biti pozitivni brojevi."],
-      [{ donation_type: "GIFT" }, "Vrsta donacije nije ispravna."],
-      [{ donation_type: "SPONSORED" }, "Donacijska cijena je obavezna i mora biti veća od nule."],
+      [{ name: "" }, "All fields are required."],
+      [{ original_price: undefined }, "All fields are required."],
+      [{ category: "Pizza" }, "Category is not valid."],
+      [{ unit: "box" }, "Unit of measure is not valid."],
+      [{ quantity: 0 }, "Quantity and value must be positive numbers."],
+      [{ donation_type: "GIFT" }, "Donation type is not valid."],
+      [{ donation_type: "SPONSORED" }, "Donation price is required and must be greater than zero."],
       [
         { donation_type: "SPONSORED", donation_price: 2 },
-        "Donacijska cijena mora biti manja od vrijednosti proizvoda.",
+        "Donation price must be lower than the product's value.",
       ],
-      [{ expiry_date: "2020-01-01" }, "Datum isteka ne može biti u prošlosti."],
-      [{ expiry_date: "2026-02-31" }, "Datum isteka nije ispravan."],
-      [{ pickup_from: "25:00" }, "Vrijeme preuzimanja nije ispravno."],
-      [{ pickup_from: "20:00", pickup_until: "19:00" }, "Početak preuzimanja mora biti prije kraja."],
-      [{ category: "Meals", allergens: ["chocolate"] }, "Alergeni nisu ispravni."],
-      [{ category: "Meals", serving_temperature: "WARM" }, "Način serviranja nije ispravan."],
+      [{ expiry_date: "2020-01-01" }, "Expiry date cannot be in the past."],
+      [{ expiry_date: "2026-02-31" }, "Expiry date is not valid."],
+      [{ pickup_from: "25:00" }, "Pickup time is not valid."],
+      [{ pickup_from: "20:00", pickup_until: "19:00" }, "Pickup start must be before pickup end."],
+      [{ category: "Meals", allergens: ["chocolate"] }, "Allergens are not valid."],
+      [{ category: "Meals", serving_temperature: "WARM" }, "Serving temperature is not valid."],
     ])("rejects %o", async (overrides, error) => {
       const response = await storeA.post("/api/donations").send(donationPayload(overrides));
       expect(response.status).toBe(400);
@@ -136,7 +136,7 @@ describe("Donations routes", () => {
       for (const query of [{ type: "GIFT" }, { status: "Removed" }]) {
         const response = await storeA.get("/api/donations/mine").query(query);
         expect(response.status).toBe(400);
-        expect(response.body.error).toBe("Neispravan filter.");
+        expect(response.body.error).toBe("Invalid filter.");
       }
     });
 
@@ -148,7 +148,7 @@ describe("Donations routes", () => {
 
       const other = await restaurant.get(`/api/donations/${donation.id}`);
       expect(other.status).toBe(404);
-      expect(other.body.error).toBe("Donacija nije pronađena.");
+      expect(other.body.error).toBe("Donation not found.");
       expect((await storeA.get("/api/donations/abc")).status).toBe(404);
     });
   });
@@ -160,7 +160,7 @@ describe("Donations routes", () => {
         .put(`/api/donations/${donation.id}`)
         .send(donationPayload({ name: "Kifle", donation_type: "SPONSORED", donation_price: 1 }));
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Donacija uspješno ažurirana.");
+      expect(response.body.message).toBe("Donation updated successfully.");
       expect(response.body.donation).toMatchObject({ name: "Kifle", donation_price: "1" });
     });
 
@@ -168,10 +168,10 @@ describe("Donations routes", () => {
       const donation = await createDonation(storeA);
       const update = await restaurant.put(`/api/donations/${donation.id}`).send(donationPayload());
       expect(update.status).toBe(403);
-      expect(update.body.error).toBe("Nemate ovlasti za izmjenu ove donacije.");
+      expect(update.body.error).toBe("You are not allowed to edit this donation.");
       const remove = await restaurant.delete(`/api/donations/${donation.id}`);
       expect(remove.status).toBe(403);
-      expect(remove.body.error).toBe("Nemate ovlasti za brisanje ove donacije.");
+      expect(remove.body.error).toBe("You are not allowed to delete this donation.");
     });
 
     it("changes only active donations", async () => {
@@ -179,14 +179,14 @@ describe("Donations routes", () => {
       await pool.query("UPDATE donation_offers SET status = 'Expired' WHERE id = $1", [donation.id]);
       const response = await storeA.put(`/api/donations/${donation.id}`).send(donationPayload());
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Samo aktivne donacije se mogu mijenjati.");
+      expect(response.body.error).toBe("Only active donations can be edited.");
     });
 
     it("soft deletes a donation", async () => {
       const donation = await createDonation(storeA);
       const response = await storeA.delete(`/api/donations/${donation.id}`);
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Donacija je obrisana.");
+      expect(response.body.message).toBe("Donation deleted.");
       const row = await pool.query("SELECT status FROM donation_offers WHERE id = $1", [donation.id]);
       expect(row.rows[0].status).toBe("Removed");
       expect((await storeA.delete(`/api/donations/${donation.id}`)).status).toBe(404);
@@ -200,7 +200,7 @@ describe("Donations routes", () => {
         .post(`/api/donations/from-product/${product.id}`)
         .send({ donation_type: "FREE" });
       expect(response.status).toBe(201);
-      expect(response.body.message).toBe("Proizvod je prebačen u donacije.");
+      expect(response.body.message).toBe("Product moved to donations.");
       expect(response.body.donation).toMatchObject({
         source_product_id: product.id,
         name: product.name,
@@ -263,7 +263,7 @@ describe("Donations routes", () => {
         .send({ donation_type: "FREE", quantity: 3 });
 
       expect(second.status).toBe(200);
-      expect(second.body.message).toBe("Količina je dodana postojećoj donaciji.");
+      expect(second.body.message).toBe("Quantity added to the existing donation.");
       expect(second.body.donation).toMatchObject({ id: first.body.donation.id, quantity: "7" });
       const mine = await storeA.get("/api/donations/mine");
       expect(mine.body.donations).toHaveLength(1);
@@ -310,18 +310,18 @@ describe("Donations routes", () => {
         .post(`/api/donations/from-product/${product.id}`)
         .send({ donation_type: "FREE", quantity: 6 });
       expect(tooMuch.status).toBe(400);
-      expect(tooMuch.body.error).toBe("Nema dovoljno proizvoda na raspolaganju.");
+      expect(tooMuch.body.error).toBe("Not enough product available.");
 
       const zero = await storeA
         .post(`/api/donations/from-product/${product.id}`)
         .send({ donation_type: "FREE", quantity: 0 });
-      expect(zero.body.error).toBe("Količina mora biti veća od nule.");
+      expect(zero.body.error).toBe("Quantity must be greater than zero.");
 
       const price = await storeA
         .post(`/api/donations/from-product/${product.id}`)
         .send({ donation_type: "SPONSORED", donation_price: 10 });
       expect(price.status).toBe(400);
-      expect(price.body.error).toBe("Donacijska cijena mora biti manja od vrijednosti proizvoda.");
+      expect(price.body.error).toBe("Donation price must be lower than the product's value.");
     });
 
     it("moves only available, unexpired products", async () => {
@@ -331,7 +331,7 @@ describe("Donations routes", () => {
         .post(`/api/donations/from-product/${product.id}`)
         .send({ donation_type: "FREE" });
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Samo dostupni proizvodi se mogu prebaciti u donacije.");
+      expect(response.body.error).toBe("Only available products can be moved to donations.");
     });
 
     it("allows only the owning store", async () => {
@@ -341,13 +341,13 @@ describe("Donations routes", () => {
         .post(`/api/donations/from-product/${product.id}`)
         .send({ donation_type: "FREE" });
       expect(other.status).toBe(403);
-      expect(other.body.error).toBe("Nemate ovlasti za doniranje ovog proizvoda.");
+      expect(other.body.error).toBe("You are not allowed to donate this product.");
 
       const asRestaurant = await restaurant
         .post(`/api/donations/from-product/${product.id}`)
         .send({ donation_type: "FREE" });
       expect(asRestaurant.status).toBe(403);
-      expect(asRestaurant.body.error).toBe("Nemate odgovarajuću rolu za ovu akciju.");
+      expect(asRestaurant.body.error).toBe("You do not have the required role for this action.");
 
       const missing = await storeA
         .post("/api/donations/from-product/999999")
@@ -373,7 +373,7 @@ describe("Donations routes", () => {
 
       const response = await storeA.post(`/api/donations/${donationId}/return-to-product`);
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Donacija je vraćena u ponudu.");
+      expect(response.body.message).toBe("Donation returned to the offer.");
       expect(response.body.product).toMatchObject({ id: product.id, status: "Available", quantity: "10" });
 
       const donation = await pool.query("SELECT status FROM donation_offers WHERE id = $1", [donationId]);
@@ -406,18 +406,18 @@ describe("Donations routes", () => {
       const manual = await createDonation(storeA);
       const noSource = await storeA.post(`/api/donations/${manual.id}/return-to-product`);
       expect(noSource.status).toBe(400);
-      expect(noSource.body.error).toBe("Samo aktivne donacije iz ponude se mogu vratiti.");
+      expect(noSource.body.error).toBe("Only active donations from the offer can be returned.");
 
       const product = await createProduct(storeA, { quantity: 10 });
       const donationId = await moveToDonations(product.id, { quantity: 2 });
       await pool.query("UPDATE products SET expiry_date = CURRENT_DATE - 1 WHERE id = $1", [product.id]);
       const expiredProduct = await storeA.post(`/api/donations/${donationId}/return-to-product`);
       expect(expiredProduct.status).toBe(400);
-      expect(expiredProduct.body.error).toBe("Proizvod je istekao i ne može se vratiti u ponudu.");
+      expect(expiredProduct.body.error).toBe("Product has expired and cannot be returned to the offer.");
 
       await pool.query("UPDATE donation_offers SET status = 'Expired' WHERE id = $1", [donationId]);
       const expiredDonation = await storeA.post(`/api/donations/${donationId}/return-to-product`);
-      expect(expiredDonation.body.error).toBe("Samo aktivne donacije iz ponude se mogu vratiti.");
+      expect(expiredDonation.body.error).toBe("Only active donations from the offer can be returned.");
     });
 
     it("allows only the donating store", async () => {
@@ -427,7 +427,7 @@ describe("Donations routes", () => {
       const storeB = await registerAndLogin(STORE_B, "STORE");
       const other = await storeB.post(`/api/donations/${donationId}/return-to-product`);
       expect(other.status).toBe(403);
-      expect(other.body.error).toBe("Nemate ovlasti za izmjenu ove donacije.");
+      expect(other.body.error).toBe("You are not allowed to edit this donation.");
 
       const asRestaurant = await restaurant.post(`/api/donations/${donationId}/return-to-product`);
       expect(asRestaurant.status).toBe(403);

@@ -38,7 +38,7 @@ describe("Reservation rules", () => {
       const product = await createProduct(store);
       const response = await reserve(product.id, quantity);
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Količina mora biti veća od nule.");
+      expect(response.body.error).toBe("Quantity must be greater than zero.");
       expect(await availableQuantity(product.id)).toBe(10);
     });
 
@@ -50,7 +50,7 @@ describe("Reservation rules", () => {
       const response = await reserve(product.id, 2, pickupDate);
       expect(response.status).toBe(400);
       expect(response.body.error).toBe(
-        "Datum preuzimanja mora biti između danas i roka trajanja proizvoda.",
+        "Pickup date must be between today and the product's expiry date.",
       );
     });
 
@@ -103,7 +103,7 @@ describe("Reservation rules", () => {
 
       const response = await store.put(`/api/products/${product.id}`).send(productPayload({ quantity: 5 }));
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Količina ne može biti manja od već rezervisane količine.");
+      expect(response.body.error).toBe("Quantity cannot be lower than the already reserved quantity.");
     });
 
     it("marks the product Sold when the new quantity equals the confirmed quantity", async () => {
@@ -123,7 +123,7 @@ describe("Reservation rules", () => {
 
       const response = await store.put(`/api/products/${product.id}`).send(productPayload({ quantity: 20 }));
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Samo dostupni proizvodi se mogu mijenjati.");
+      expect(response.body.error).toBe("Only available products can be edited.");
     });
   });
 });

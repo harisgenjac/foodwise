@@ -151,12 +151,12 @@ describe("Notifications", () => {
       const [first] = await notificationsOf(store);
       const one = await store.patch(`/api/notifications/${first!.id}/read`);
       expect(one.status).toBe(200);
-      expect(one.body.message).toBe("Notifikacija označena kao pročitana.");
+      expect(one.body.message).toBe("Notification marked as read.");
       expect((await store.get("/api/notifications")).body.unreadCount).toBe(1);
 
       const all = await store.patch("/api/notifications/read-all");
       expect(all.status).toBe(200);
-      expect(all.body.message).toBe("Sve notifikacije su označene kao pročitane.");
+      expect(all.body.message).toBe("All notifications marked as read.");
       expect((await store.get("/api/notifications")).body.unreadCount).toBe(0);
     });
 
@@ -169,12 +169,12 @@ describe("Notifications", () => {
       const list = await notificationsOf(store);
       const removed = await store.delete(`/api/notifications/${list[0]!.id}`);
       expect(removed.status).toBe(200);
-      expect(removed.body.message).toBe("Notifikacija je obrisana.");
+      expect(removed.body.message).toBe("Notification deleted.");
 
       await store.patch(`/api/notifications/${list[1]!.id}/read`);
       const cleared = await store.delete("/api/notifications/read");
       expect(cleared.status).toBe(200);
-      expect(cleared.body.message).toBe("Pročitane notifikacije su obrisane.");
+      expect(cleared.body.message).toBe("Read notifications deleted.");
       expect(cleared.body.deleted).toBe(1);
 
       expect((await notificationsOf(store)).map((n) => n.id)).toEqual([list[2]!.id]);
@@ -187,7 +187,7 @@ describe("Notifications", () => {
 
       const read = await otherRestaurant.patch(`/api/notifications/${notification!.id}/read`);
       expect(read.status).toBe(404);
-      expect(read.body.error).toBe("Notifikacija nije pronađena.");
+      expect(read.body.error).toBe("Notification not found.");
 
       const removed = await otherRestaurant.delete(`/api/notifications/${notification!.id}`);
       expect(removed.status).toBe(404);

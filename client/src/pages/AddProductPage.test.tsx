@@ -90,13 +90,13 @@ describe("AddProductPage", () => {
 
   it("shows the server error when creating fails", async () => {
     const error = vi.spyOn(toast, "error");
-    apiMock.post.mockRejectedValue(axiosError(400, "Snižena cijena ne može biti veća od originalne."));
+    apiMock.post.mockRejectedValue(axiosError(400, "Discounted price cannot be higher than the original price."));
     renderPage();
 
     await fillForm();
     await userEvent.click(screen.getByRole("button", { name: t("product.addButton") }));
 
-    expect(error).toHaveBeenCalledWith("Snižena cijena ne može biti veća od originalne.");
+    expect(error).toHaveBeenCalledWith("Discounted price cannot be higher than the original price.");
     expect(screen.getByText(t("product.addError"))).toBeInTheDocument();
     expect(screen.queryByTestId("location")).not.toBeInTheDocument();
   });

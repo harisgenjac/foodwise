@@ -29,7 +29,7 @@ describe("Product templates routes", () => {
   it("creates a template", async () => {
     const response = await storeA.post("/api/product-templates").send(TEMPLATE);
     expect(response.status).toBe(201);
-    expect(response.body.message).toBe("Predložak uspješno sačuvan.");
+    expect(response.body.message).toBe("Template saved successfully.");
     expect(response.body.template.name).toBe(TEMPLATE.name);
     expect(response.body.template.shelf_life_days).toBe(3);
   });
@@ -86,7 +86,7 @@ describe("Product templates routes", () => {
   it.each(["name", "category", "unit"])("returns 400 without %s", async (field) => {
     const response = await storeA.post("/api/product-templates").send({ ...TEMPLATE, [field]: "" });
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe("Naziv, kategorija i jedinica mjere su obavezni.");
+    expect(response.body.error).toBe("Name, category and unit of measure are required.");
   });
 
   it("returns 403 for a RESTAURANT", async () => {
@@ -101,7 +101,7 @@ describe("Product templates routes", () => {
 
     const response = await storeB.delete(`/api/product-templates/${created.body.template.id}`);
     expect(response.status).toBe(403);
-    expect(response.body.error).toBe("Nemate ovlasti za brisanje ovog predloška.");
+    expect(response.body.error).toBe("You are not allowed to delete this template.");
     expect((await storeA.get("/api/product-templates")).body.templates).toHaveLength(1);
   });
 
@@ -111,10 +111,10 @@ describe("Product templates routes", () => {
 
     const deleted = await storeA.delete(`/api/product-templates/${id}`);
     expect(deleted.status).toBe(200);
-    expect(deleted.body.message).toBe("Predložak uspješno obrisan.");
+    expect(deleted.body.message).toBe("Template deleted successfully.");
 
     const again = await storeA.delete(`/api/product-templates/${id}`);
     expect(again.status).toBe(404);
-    expect(again.body.error).toBe("Predložak nije pronađen.");
+    expect(again.body.error).toBe("Template not found.");
   });
 });

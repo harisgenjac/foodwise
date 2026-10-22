@@ -41,7 +41,7 @@ describe("POST /api/products/import", () => {
       ),
     );
     expect(response.status).toBe(201);
-    expect(response.body.message).toBe("Uvezeno proizvoda: 2.");
+    expect(response.body.message).toBe("Products imported: 2.");
     expect(response.body.products).toHaveLength(2);
     expect(response.body.products[0]).toMatchObject({ name: "Piletina", status: "Available" });
     expect(response.body.products[1].description).toBeNull();
@@ -120,7 +120,7 @@ describe("POST /api/products/import", () => {
     expect(response.body.rowErrors).toEqual([
       {
         row: 2,
-        error: `Datum isteka nije ispravan: "31.02.${futureDate().slice(0, 4)}". Koristite format 31.12.2026.`,
+        error: `Expiry date is not valid: "31.02.${futureDate().slice(0, 4)}". Use the format 31.12.2026.`,
       },
     ]);
   });
@@ -136,10 +136,10 @@ describe("POST /api/products/import", () => {
       ),
     );
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe("CSV sadrži neispravne redove.");
+    expect(response.body.error).toBe("The CSV contains invalid rows.");
     expect(response.body.rowErrors).toEqual([
-      { row: 3, error: "Kategorija nije ispravna." },
-      { row: 4, error: "Snižena cijena ne može biti veća od originalne." },
+      { row: 3, error: "Category is not valid." },
+      { row: 4, error: "Discounted price cannot be higher than the original price." },
     ]);
     expect(await productCount()).toBe(0);
   });
@@ -148,45 +148,45 @@ describe("POST /api/products/import", () => {
     const response = await upload(store, csv("name,category", "Piletina,Meat"));
     expect(response.status).toBe(400);
     expect(response.body.error).toBe(
-      "CSV fajlu nedostaju kolone: original_price, discounted_price, quantity, unit, expiry_date.",
+      "The CSV file is missing columns: original_price, discounted_price, quantity, unit, expiry_date.",
     );
   });
 
   it("returns 400 for a file with only a header", async () => {
     const response = await upload(store, csv(HEADER));
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe("CSV fajl ne sadrži nijedan proizvod.");
+    expect(response.body.error).toBe("The CSV file does not contain any products.");
   });
 
   it("returns 400 when the file has too many rows", async () => {
     const row = `Hljeb,,Bakery,2,1,20,kom,${futureDate()}`;
     const response = await upload(store, csv(HEADER, ...Array(MAX_CSV_ROWS + 1).fill(row)));
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe(`CSV fajl može imati najviše ${MAX_CSV_ROWS} proizvoda.`);
+    expect(response.body.error).toBe(`The CSV file can contain at most ${MAX_CSV_ROWS} products.`);
   });
 
   it("returns 400 when no file is sent", async () => {
     const response = await store.post("/api/products/import");
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe("CSV fajl je obavezan.");
+    expect(response.body.error).toBe("A CSV file is required.");
   });
 
   it("returns 400 for a file that is not CSV", async () => {
     const response = await upload(store, Buffer.from("x"), "products.xlsx", "application/octet-stream");
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe("Dozvoljeni su samo CSV fajlovi.");
+    expect(response.body.error).toBe("Only CSV files are allowed.");
   });
 
   it("returns 400 for a file over 1MB", async () => {
     const response = await upload(store, Buffer.alloc(1024 * 1024 + 1, "a"));
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe("Fajl može imati najviše 1MB.");
+    expect(response.body.error).toBe("The file can be at most 1MB.");
   });
 
   it("returns 400 for a file that cannot be parsed", async () => {
     const response = await upload(store, csv(HEADER, '"Piletina,,Meat'));
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe("CSV fajl nije moguće pročitati.");
+    expect(response.body.error).toBe("The CSV file could not be read.");
   });
 
   it("returns 403 for a restaurant", async () => {

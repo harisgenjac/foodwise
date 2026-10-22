@@ -31,38 +31,38 @@ export function validateProductFields(fields: Partial<ProductFields> | undefined
     fields ?? ({} as Partial<ProductFields>);
 
   if (!name || !category || !original_price || !discounted_price || !quantity || !unit || !expiry_date) {
-    return "Sva polja su obavezna.";
+    return "All fields are required.";
   }
   if (typeof name !== "string" || name.trim() === "") {
-    return "Sva polja su obavezna.";
+    return "All fields are required.";
   }
   if (!CATEGORIES.includes(category)) {
-    return "Kategorija nije ispravna.";
+    return "Category is not valid.";
   }
   if (!UNITS.includes(unit)) {
-    return "Jedinica mjere nije ispravna.";
+    return "Unit of measure is not valid.";
   }
 
   const original = parseNumber(original_price);
   const discounted = parseNumber(discounted_price);
   if (original === null || discounted === null || original <= 0 || discounted <= 0) {
-    return "Cijene i količina moraju biti pozitivni brojevi.";
+    return "Prices and quantity must be positive numbers.";
   }
   if (discounted > original) {
-    return "Snižena cijena ne može biti veća od originalne.";
+    return "Discounted price cannot be higher than the original price.";
   }
 
   const amount = parseNumber(quantity);
   if (amount === null || amount <= 0) {
-    return "Cijene i količina moraju biti pozitivni brojevi.";
+    return "Prices and quantity must be positive numbers.";
   }
 
   if (!isValidDate(expiry_date)) {
-    return "Datum isteka nije ispravan.";
+    return "Expiry date is not valid.";
   }
   // Both are YYYY-MM-DD, so string order is date order.
   if (expiry_date < todayInAppTimezone()) {
-    return "Datum isteka ne može biti u prošlosti.";
+    return "Expiry date cannot be in the past.";
   }
 
   return null;
@@ -74,13 +74,13 @@ export function validateTemplateFields(fields: Record<string, unknown> | undefin
     fields ?? {};
 
   if (!name || !category || !unit || typeof name !== "string" || name.trim() === "") {
-    return "Naziv, kategorija i jedinica mjere su obavezni.";
+    return "Name, category and unit of measure are required.";
   }
   if (typeof category !== "string" || !CATEGORIES.includes(category)) {
-    return "Kategorija nije ispravna.";
+    return "Category is not valid.";
   }
   if (typeof unit !== "string" || !UNITS.includes(unit)) {
-    return "Jedinica mjere nije ispravna.";
+    return "Unit of measure is not valid.";
   }
 
   const isEmpty = (value: unknown) => value === undefined || value === null || value === "";
@@ -93,19 +93,19 @@ export function validateTemplateFields(fields: Record<string, unknown> | undefin
     (!isEmpty(discounted_price) && !isPositive(discounted_price)) ||
     (!isEmpty(quantity) && !isPositive(quantity))
   ) {
-    return "Cijene i količina moraju biti brojevi veći od nule.";
+    return "Prices and quantity must be numbers greater than zero.";
   }
   if (
     !isEmpty(original_price) &&
     !isEmpty(discounted_price) &&
     parseNumber(discounted_price)! > parseNumber(original_price)!
   ) {
-    return "Snižena cijena ne može biti veća od originalne.";
+    return "Discounted price cannot be higher than the original price.";
   }
   if (!isEmpty(shelf_life_days)) {
     const days = parseNumber(shelf_life_days);
     if (days === null || !Number.isInteger(days) || days < 0) {
-      return "Rok trajanja u danima mora biti cijeli broj.";
+      return "Shelf life in days must be a whole number.";
     }
   }
 

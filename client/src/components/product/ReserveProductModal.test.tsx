@@ -49,13 +49,13 @@ describe("ReserveProductModal", () => {
   it("shows the server error and stays open when the reservation fails", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const error = vi.spyOn(toast, "error");
-    apiMock.post.mockRejectedValue(axiosError(400, "Nema dovoljno proizvoda na raspolaganju."));
+    apiMock.post.mockRejectedValue(axiosError(400, "Not enough product available."));
     const { onClose, onReserved } = renderModal();
 
     await fillForm();
     await userEvent.click(screen.getByRole("button", { name: t("myReservations.confirmButton") }));
 
-    expect(error).toHaveBeenCalledWith("Nema dovoljno proizvoda na raspolaganju.");
+    expect(error).toHaveBeenCalledWith("Not enough product available.");
     expect(onClose).not.toHaveBeenCalled();
     expect(onReserved).not.toHaveBeenCalled();
   });

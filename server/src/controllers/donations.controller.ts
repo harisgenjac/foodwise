@@ -54,12 +54,12 @@ export const createDonation = async (req: Request, res: Response) => {
     );
     return res
       .status(201)
-      .json({ message: "Donacija uspješno objavljena.", donation: result.rows[0] });
+      .json({ message: "Donation published successfully.", donation: result.rows[0] });
   } catch (error) {
-    console.error("Greška prilikom kreiranja donacije:", error);
+    console.error("Error while creating donation:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom kreiranja donacije." });
+      .json({ error: "An error occurred while creating the donation." });
   }
 };
 
@@ -69,7 +69,7 @@ export const getMineDonations = async (req: Request, res: Response) => {
     (type && !DONATION_TYPES.includes(type as string)) ||
     (status && (status === "Removed" || !DONATION_STATUSES.includes(status as string)))
   ) {
-    return res.status(400).json({ error: "Neispravan filter." });
+    return res.status(400).json({ error: "Invalid filter." });
   }
 
   try {
@@ -96,10 +96,10 @@ export const getMineDonations = async (req: Request, res: Response) => {
     const result = await pool.query(query, values);
     return res.status(200).json({ donations: result.rows });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja donacija:", error);
+    console.error("Error while fetching donations:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom dohvatanja donacija." });
+      .json({ error: "An error occurred while fetching donations." });
   }
 };
 
@@ -107,7 +107,7 @@ export const getMineDonations = async (req: Request, res: Response) => {
 export const getDonationById = async (req: Request, res: Response) => {
   const donationId = parseId(req.params.id);
   if (donationId === null) {
-    return res.status(404).json({ error: "Donacija nije pronađena." });
+    return res.status(404).json({ error: "Donation not found." });
   }
   try {
     const result = await pool.query(
@@ -118,14 +118,14 @@ export const getDonationById = async (req: Request, res: Response) => {
       [donationId, req.user!.id],
     );
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Donacija nije pronađena." });
+      return res.status(404).json({ error: "Donation not found." });
     }
     return res.status(200).json({ donation: result.rows[0] });
   } catch (error) {
-    console.error("Greška prilikom dohvatanja donacije:", error);
+    console.error("Error while fetching donation:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom dohvatanja donacije." });
+      .json({ error: "An error occurred while fetching the donation." });
   }
 };
 
@@ -143,7 +143,7 @@ const findOwnDonation = async (donationId: number, userId: number) => {
 export const updateDonation = async (req: Request, res: Response) => {
   const donationId = parseId(req.params.id);
   if (donationId === null) {
-    return res.status(404).json({ error: "Donacija nije pronađena." });
+    return res.status(404).json({ error: "Donation not found." });
   }
   const validationError = validateDonationFields(req.body);
   if (validationError) {
@@ -154,13 +154,13 @@ export const updateDonation = async (req: Request, res: Response) => {
   try {
     const existing = await findOwnDonation(donationId, req.user!.id);
     if (existing.error === 404) {
-      return res.status(404).json({ error: "Donacija nije pronađena." });
+      return res.status(404).json({ error: "Donation not found." });
     }
     if (existing.error === 403) {
-      return res.status(403).json({ error: "Nemate ovlasti za izmjenu ove donacije." });
+      return res.status(403).json({ error: "You are not allowed to edit this donation." });
     }
     if (existing.status !== "Available") {
-      return res.status(400).json({ error: "Samo aktivne donacije se mogu mijenjati." });
+      return res.status(400).json({ error: "Only active donations can be edited." });
     }
 
     const result = await pool.query(
@@ -188,16 +188,16 @@ export const updateDonation = async (req: Request, res: Response) => {
       ],
     );
     if (result.rows.length === 0) {
-      return res.status(400).json({ error: "Samo aktivne donacije se mogu mijenjati." });
+      return res.status(400).json({ error: "Only active donations can be edited." });
     }
     return res
       .status(200)
-      .json({ message: "Donacija uspješno ažurirana.", donation: result.rows[0] });
+      .json({ message: "Donation updated successfully.", donation: result.rows[0] });
   } catch (error) {
-    console.error("Greška prilikom ažuriranja donacije:", error);
+    console.error("Error while updating donation:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom ažuriranja donacije." });
+      .json({ error: "An error occurred while updating the donation." });
   }
 };
 
@@ -205,25 +205,25 @@ export const updateDonation = async (req: Request, res: Response) => {
 export const deleteDonation = async (req: Request, res: Response) => {
   const donationId = parseId(req.params.id);
   if (donationId === null) {
-    return res.status(404).json({ error: "Donacija nije pronađena." });
+    return res.status(404).json({ error: "Donation not found." });
   }
   try {
     const existing = await findOwnDonation(donationId, req.user!.id);
     if (existing.error === 404) {
-      return res.status(404).json({ error: "Donacija nije pronađena." });
+      return res.status(404).json({ error: "Donation not found." });
     }
     if (existing.error === 403) {
-      return res.status(403).json({ error: "Nemate ovlasti za brisanje ove donacije." });
+      return res.status(403).json({ error: "You are not allowed to delete this donation." });
     }
     await pool.query("UPDATE donation_offers SET status = 'Removed' WHERE donation_offers.id = $1", [
       donationId,
     ]);
-    return res.status(200).json({ message: "Donacija je obrisana." });
+    return res.status(200).json({ message: "Donation deleted." });
   } catch (error) {
-    console.error("Greška prilikom brisanja donacije:", error);
+    console.error("Error while deleting donation:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom brisanja donacije." });
+      .json({ error: "An error occurred while deleting the donation." });
   }
 };
 
@@ -232,14 +232,14 @@ export const deleteDonation = async (req: Request, res: Response) => {
 export const donateProduct = async (req: Request, res: Response) => {
   const productId = parseId(req.params.productId);
   if (productId === null) {
-    return res.status(404).json({ error: "Proizvod nije pronađen." });
+    return res.status(404).json({ error: "Product not found." });
   }
   const { donation_type, quantity, donation_price } = req.body ?? {};
   // Without a quantity the whole available amount is donated.
   const hasQuantity = quantity !== undefined && quantity !== null && quantity !== "";
   const requestedQuantity = hasQuantity ? parseNumber(quantity) : null;
   if (hasQuantity && (requestedQuantity === null || requestedQuantity <= 0)) {
-    return res.status(400).json({ error: "Količina mora biti veća od nule." });
+    return res.status(400).json({ error: "Quantity must be greater than zero." });
   }
 
   let client;
@@ -255,17 +255,17 @@ export const donateProduct = async (req: Request, res: Response) => {
     const product = products.rows[0];
     if (!product || product.status === "Removed") {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Proizvod nije pronađen." });
+      return res.status(404).json({ error: "Product not found." });
     }
     if (product.store_id !== req.user!.id) {
       await client.query("ROLLBACK");
-      return res.status(403).json({ error: "Nemate ovlasti za doniranje ovog proizvoda." });
+      return res.status(403).json({ error: "You are not allowed to donate this product." });
     }
     if (product.status !== "Available" || product.is_expired) {
       await client.query("ROLLBACK");
       return res
         .status(400)
-        .json({ error: "Samo dostupni proizvodi se mogu prebaciti u donacije." });
+        .json({ error: "Only available products can be moved to donations." });
     }
 
     const priceError = validateDonationPrice(donation_type, donation_price, product.original_price);
@@ -283,7 +283,7 @@ export const donateProduct = async (req: Request, res: Response) => {
     const donatedQuantity = requestedQuantity ?? available;
     if (available <= 0 || donatedQuantity > available) {
       await client.query("ROLLBACK");
-      return res.status(400).json({ error: "Nema dovoljno proizvoda na raspolaganju." });
+      return res.status(400).json({ error: "Not enough product available." });
     }
 
     const price = donation_type === "SPONSORED" ? parseNumber(donation_price) : null;
@@ -345,17 +345,17 @@ export const donateProduct = async (req: Request, res: Response) => {
     if (mergeInto) {
       return res
         .status(200)
-        .json({ message: "Količina je dodana postojećoj donaciji.", donation: result.rows[0] });
+        .json({ message: "Quantity added to the existing donation.", donation: result.rows[0] });
     }
     return res
       .status(201)
-      .json({ message: "Proizvod je prebačen u donacije.", donation: result.rows[0] });
+      .json({ message: "Product moved to donations.", donation: result.rows[0] });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom prebacivanja proizvoda u donacije:", error);
+    console.error("Error while moving product to donations:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom prebacivanja proizvoda u donacije." });
+      .json({ error: "An error occurred while moving the product to donations." });
   } finally {
     if (client) client.release();
   }
@@ -366,7 +366,7 @@ export const donateProduct = async (req: Request, res: Response) => {
 export const returnDonationToProduct = async (req: Request, res: Response) => {
   const donationId = parseId(req.params.id);
   if (donationId === null) {
-    return res.status(404).json({ error: "Donacija nije pronađena." });
+    return res.status(404).json({ error: "Donation not found." });
   }
 
   let client;
@@ -383,11 +383,11 @@ export const returnDonationToProduct = async (req: Request, res: Response) => {
     const donation = donations.rows[0];
     if (!donation || donation.status === "Removed") {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Donacija nije pronađena." });
+      return res.status(404).json({ error: "Donation not found." });
     }
     if (donation.donor_id !== req.user!.id) {
       await client.query("ROLLBACK");
-      return res.status(403).json({ error: "Nemate ovlasti za izmjenu ove donacije." });
+      return res.status(403).json({ error: "You are not allowed to edit this donation." });
     }
 
     // Lock the product so reservations can't change its stock while the quantity comes back.
@@ -402,13 +402,13 @@ export const returnDonationToProduct = async (req: Request, res: Response) => {
       await client.query("ROLLBACK");
       return res
         .status(400)
-        .json({ error: "Samo aktivne donacije iz ponude se mogu vratiti." });
+        .json({ error: "Only active donations from the offer can be returned." });
     }
     if (product.is_expired) {
       await client.query("ROLLBACK");
       return res
         .status(400)
-        .json({ error: "Proizvod je istekao i ne može se vratiti u ponudu." });
+        .json({ error: "Product has expired and cannot be returned to the offer." });
     }
 
     // A Removed product kept its old quantity when everything was moved, so it is rebuilt from
@@ -437,13 +437,13 @@ export const returnDonationToProduct = async (req: Request, res: Response) => {
     await client.query("COMMIT");
     return res
       .status(200)
-      .json({ message: "Donacija je vraćena u ponudu.", product: updated.rows[0] });
+      .json({ message: "Donation returned to the offer.", product: updated.rows[0] });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    console.error("Greška prilikom vraćanja donacije u ponudu:", error);
+    console.error("Error while returning donation to the offer:", error);
     return res
       .status(500)
-      .json({ error: "Došlo je do greške prilikom vraćanja donacije u ponudu." });
+      .json({ error: "An error occurred while returning the donation to the offer." });
   } finally {
     if (client) client.release();
   }

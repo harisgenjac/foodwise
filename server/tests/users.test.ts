@@ -48,7 +48,7 @@ describe("Users routes", () => {
       const store = await registerAndLogin(STORE, "STORE");
       const response = await store.put("/api/users/me").send(PROFILE);
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Profil uspješno ažuriran.");
+      expect(response.body.message).toBe("Profile updated successfully.");
       expect(response.body.user).toMatchObject(PROFILE);
     });
 
@@ -68,7 +68,7 @@ describe("Users routes", () => {
         const store = await registerAndLogin(STORE, "STORE");
         const response = await store.put("/api/users/me").send({ ...PROFILE, [field]: "" });
         expect(response.status).toBe(400);
-        expect(response.body.error).toBe("Ime, prezime, naziv biznisa, grad, adresa i telefon su obavezni.");
+        expect(response.body.error).toBe("First name, last name, business name, city, address and phone are required.");
       },
     );
   });
@@ -139,14 +139,14 @@ describe("Users routes", () => {
       const store = await registerAndLogin(STORE, "STORE");
       const response = await store.get(`/api/users/stores/${await userId(STORE)}`);
       expect(response.status).toBe(403);
-      expect(response.body.error).toBe("Nemate permisiju za ovu akciju.");
+      expect(response.body.error).toBe("You do not have permission for this action.");
     });
 
     it("returns 404 for an id that is not a store", async () => {
       const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
       const response = await restaurant.get(`/api/users/stores/${await userId(RESTAURANT)}`);
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe("Prodavnica nije pronađena.");
+      expect(response.body.error).toBe("Store not found.");
     });
   });
 
@@ -169,7 +169,7 @@ describe("Users routes", () => {
         .post("/api/users/me/logo")
         .attach("logo", PNG, { filename: "logo.png", contentType: "image/png" });
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Slika uspješno postavljena.");
+      expect(response.body.message).toBe("Image uploaded successfully.");
       expect(response.body.logo_url).toMatch(/^\/uploads\/logos\/\d+-\d+\.png$/);
       uploaded.push(response.body.logo_url);
 
@@ -182,7 +182,7 @@ describe("Users routes", () => {
       const store = await registerAndLogin(STORE, "STORE");
       const response = await store.post("/api/users/me/logo");
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Slika nije poslana.");
+      expect(response.body.error).toBe("No image was uploaded.");
     });
 
     it("returns 400 for a file type that is not allowed", async () => {
@@ -191,7 +191,7 @@ describe("Users routes", () => {
         .post("/api/users/me/logo")
         .attach("logo", Buffer.from("hello"), { filename: "logo.txt", contentType: "text/plain" });
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Dozvoljene su samo JPEG, PNG i WEBP slike.");
+      expect(response.body.error).toBe("Only JPEG, PNG and WEBP images are allowed.");
     });
 
     it("returns 400 for a file over 5MB", async () => {
@@ -201,7 +201,7 @@ describe("Users routes", () => {
         .post("/api/users/me/logo")
         .attach("logo", big, { filename: "big.png", contentType: "image/png" });
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Slika može imati najviše 5MB.");
+      expect(response.body.error).toBe("The image can be at most 5MB.");
     });
   });
 });

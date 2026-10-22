@@ -27,11 +27,11 @@ describe("Input validation", () => {
 
   describe("product fields", () => {
     it.each([
-      ["an unknown category", { category: "Candy" }, "Kategorija nije ispravna."],
-      ["an unknown unit", { unit: "tona" }, "Jedinica mjere nije ispravna."],
-      ["a non-numeric price", { original_price: "deset" }, "Cijene i količina moraju biti pozitivni brojevi."],
-      ["an impossible date", { expiry_date: "2026-02-31" }, "Datum isteka nije ispravan."],
-      ["a past expiry date", { expiry_date: futureDate(-1) }, "Datum isteka ne može biti u prošlosti."],
+      ["an unknown category", { category: "Candy" }, "Category is not valid."],
+      ["an unknown unit", { unit: "tona" }, "Unit of measure is not valid."],
+      ["a non-numeric price", { original_price: "deset" }, "Prices and quantity must be positive numbers."],
+      ["an impossible date", { expiry_date: "2026-02-31" }, "Expiry date is not valid."],
+      ["a past expiry date", { expiry_date: futureDate(-1) }, "Expiry date cannot be in the past."],
     ])("rejects %s", async (_, overrides, message) => {
       const response = await store.post("/api/products").send(productPayload(overrides));
       expect(response.status).toBe(400);
@@ -52,7 +52,7 @@ describe("Input validation", () => {
         .post("/api/product-templates")
         .send({ name: "Predložak", category: "Candy", unit: "kg" });
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Kategorija nije ispravna.");
+      expect(response.body.error).toBe("Category is not valid.");
     });
   });
 
@@ -76,7 +76,7 @@ describe("Input validation", () => {
     ])("returns 400 for %s", async (url) => {
       const response = await restaurant.get(url);
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Neispravan filter.");
+      expect(response.body.error).toBe("Invalid filter.");
     });
 
     it("returns 400 for an unknown status filter on the store's products", async () => {
@@ -124,7 +124,7 @@ describe("Input validation", () => {
     const restaurantId = await userId("restaurant-a@test.com");
     const response = await restaurant.post("/api/favorites").send({ store_id: restaurantId });
     expect(response.status).toBe(404);
-    expect(response.body.error).toBe("Prodavnica nije pronađena.");
+    expect(response.body.error).toBe("Store not found.");
   });
 
   describe("auth", () => {
@@ -137,7 +137,7 @@ describe("Input validation", () => {
 
       const duplicate = await admin.post("/api/admin/users").send({ ...account, email: "ANA.CASE@test.com" });
       expect(duplicate.status).toBe(400);
-      expect(duplicate.body.error).toBe("Korisnik s tim emailom već postoji.");
+      expect(duplicate.body.error).toBe("A user with this email already exists.");
 
       const login = await request(app)
         .post("/api/auth/login")
@@ -152,13 +152,13 @@ describe("Input validation", () => {
         .post("/api/auth/register")
         .send({ ...base, email: "ana.case@test.com", password: "kratka" });
       expect(shortPassword.status).toBe(400);
-      expect(shortPassword.body.error).toBe("Lozinka mora imati najmanje 8 znakova.");
+      expect(shortPassword.body.error).toBe("Password must be at least 8 characters long.");
 
       const badEmail = await request(app)
         .post("/api/auth/register")
         .send({ ...base, email: "ana.case", password: "test12345" });
       expect(badEmail.status).toBe(400);
-      expect(badEmail.body.error).toBe("Email nije ispravan.");
+      expect(badEmail.body.error).toBe("Email is not valid.");
     });
   });
 });
