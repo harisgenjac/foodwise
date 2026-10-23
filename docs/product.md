@@ -149,7 +149,7 @@ Rules:
   - A missed pickup (the store cancels a late reservation) is **not** refunded.
   - A refund after a month change goes into the new month, and counts only once the user has a subscription for that month.
   - Each charge is refunded at most once.
-- Returning a fully moved donation to the offer charges 1 credit again.
+- Returning a fully moved donation to the offer charges 1 credit again only if the move refunded the product's credit (same day). If the move came after the charge day, the credit was never given back, so returning it is free. Every product costs at most one unrefunded credit at a time.
 - Admins get a notification for every new pending request. Users get a notification when their request is approved or rejected. The admin's note is never shown to the user.
 - Plans, prices and packages are database rows. The prices are placeholders for now: plans 15 / 30 / 75 KM, top-ups 8 / 15 / 35 KM.
 
