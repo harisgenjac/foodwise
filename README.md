@@ -122,9 +122,8 @@ This builds the server once, then runs the backend and frontend together:
 | `npm test` | Runs the tests against the test database (apply its schema first with `npx dotenv -e .env.test -- node-pg-migrate up`) |
 | `npm run test:watch` | Runs the tests in watch mode |
 | `npm run typecheck` | Type-checks the source and the tests |
-| `npm run seed` | Builds, then replaces all data with demo data |
+| `npm run seed` | Builds, then replaces all data with demo data that simulates two months of use |
 | `npm run create-admin -- <email> <password> [first] [last]` | Builds, then creates an admin account |
-| `npm run seed:fake` | Adds fake products and reservations for the existing stores and restaurants, without touching users (`-- --products 6 --reservations 4`) |
 
 ### Client (`cd client`)
 
@@ -139,15 +138,15 @@ This builds the server once, then runs the backend and frontend together:
 
 ## Demo accounts
 
-After `npm run seed`, every demo account uses the password `demo12345`:
+After `npm run seed`, every demo account uses the password `To12345678`:
 
 | Role | Email |
 |---|---|
-| Store | `market.centar@demo.com`, `pekara.dobra@demo.com`, `zeleni.market@demo.com` |
-| Restaurant | `restoran.ukus@demo.com`, `pizzeria.roma@demo.com` |
-| Admin | `admin@demo.com` |
+| Store (10) | `market.centar@demo.com`, `zeleni.market@demo.com`, `mesnica.bosna@demo.com`, `pekara.dobra@demo.com`, `mljekara.vrelo@demo.com`, `ribarnica.neretva@demo.com`, `market.neretva@demo.com`, `vocarna.butmir@demo.com`, `pekara.somun@demo.com`, `bio.kutak@demo.com` |
+| Restaurant (10) | `restoran.ukus@demo.com`, `bistro.avlija@demo.com`, `pizzeria.roma@demo.com`, `restoran.starigrad@demo.com`, `kafana.most@demo.com`, `restoran.panorama@demo.com`, `bistro.zelenikutak@demo.com`, `pizzeria.napoli@demo.com`, `restoran.tvrdjava@demo.com`, `ascinica.sofra@demo.com` |
+| Admin | `admin@demo.com`, `admin2@demo.com` |
 
-The seed deletes all existing data before inserting the demo data.
+The seed deletes all existing data and rebuilds the last two months of activity: products, reservations in every status, donations, subscriptions and credits, notifications and announcements.
 
 ## Project structure
 
