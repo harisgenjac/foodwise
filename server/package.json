@@ -9,7 +9,6 @@
     "dev": "concurrently \"tsc --watch\" \"node --watch dist/server.js\"",
     "test": "dotenv -e .env.test -- vitest run",
     "seed": "npm run build && node dist/scripts/seed.js",
-    "seed:fake": "npm run build && node dist/scripts/seedFakeData.js",
     "create-admin": "npm run build && node dist/scripts/createAdmin.js",
     "test:watch": "dotenv -e .env.test -- vitest",
     "typecheck": "tsc --noEmit -p tsconfig.test.json"
