@@ -11,7 +11,7 @@ import {
 import { parseId, parseNumber } from "../utils/params.js";
 import { markSoldIfFullyConfirmed } from "./reservations.controller.js";
 import { HttpError } from "../utils/httpError.js";
-import { chargeForProduct, refundForProduct } from "../services/creditService.js";
+import { chargeForProduct, hasOpenProductCharge, refundForProduct } from "../services/creditService.js";
 
 const DONATION_COLUMNS = `
   donation_offers.id, donation_offers.donor_id, donation_offers.source_product_id,
@@ -441,9 +441,10 @@ export const returnDonationToProduct = async (req: Request, res: Response) => {
       donationId,
     ]);
     // A Removed product had left the marketplace, so putting it back is a new publication and
-    // costs 1 credit (402 rolls the whole return back). A product that stayed on offer (partial
-    // move, or sold out) is still covered by its original credit.
-    if (product.status === "Removed") {
+    // costs 1 credit (402 rolls the whole return back), unless its charge was never refunded
+    // (moved after the charge day): then the original credit still covers it. A product that
+    // stayed on offer (partial move, or sold out) is still covered by its original credit.
+    if (product.status === "Removed" && !(await hasOpenProductCharge(client, product.id))) {
       await chargeForProduct(client, req.user!.id, { id: product.id, category: product.category });
     }
 

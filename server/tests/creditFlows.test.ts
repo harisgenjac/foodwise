@@ -190,6 +190,19 @@ describe("store: 1 credit per published product", () => {
     expect(await ledger("PRODUCT_CHARGE", product.id)).toHaveLength(2);
   });
 
+  it("does not charge again when a product moved after the charge day returns to the offer", async () => {
+    const product = await createProduct(store);
+    moveToTomorrow();
+    const moved = await store.post(`/api/donations/from-product/${product.id}`).send({ donation_type: "FREE" });
+    expect(moved.body.creditRefunded).toBe(false);
+
+    await setCredits(storeId, 0);
+    const returned = await store.post(`/api/donations/${moved.body.donation.id}/return-to-product`);
+    expect(returned.status).toBe(200);
+    expect(returned.body.product.status).toBe("Available");
+    expect(await ledger("PRODUCT_CHARGE", product.id)).toHaveLength(1);
+  });
+
   it("does not charge when quantity returns to a product that stayed on offer", async () => {
     const product = await createProduct(store);
     const donation = (
