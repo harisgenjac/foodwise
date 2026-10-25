@@ -800,9 +800,7 @@
       "kpiSubscriptionsDetail": "{{percent}}% of businesses are subscribed",
       "kpiCreditsUsed": "Credits used",
       "kpiCreditsUsedDetail": "in {{month}}",
-      "kpiFoodSaved": "Food saved",
-      "kpiFoodSavedDetail": "+ {{liters}} l · {{pieces}} pcs",
-      "attentionTitle": "Needs attention",
+      "kpiFoodSaved": "Food saved",      "attentionTitle": "Needs attention",
       "attention": {
         "pendingRequests_one": "{{count}} credit request waiting for approval",
         "pendingRequests_other": "{{count}} credit requests waiting for approval"

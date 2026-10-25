@@ -814,9 +814,7 @@
       "kpiSubscriptionsDetail": "{{percent}}% korisnika ima pretplatu",
       "kpiCreditsUsed": "Potrošeni krediti",
       "kpiCreditsUsedDetail": "u mjesecu {{month}}",
-      "kpiFoodSaved": "Spašena hrana",
-      "kpiFoodSavedDetail": "+ {{liters}} l · {{pieces}} kom",
-      "attentionTitle": "Čeka na vas",
+      "kpiFoodSaved": "Spašena hrana",      "attentionTitle": "Čeka na vas",
       "attention": {
         "pendingRequests_one": "{{count}} zahtjev za kredite čeka odobrenje",
         "pendingRequests_few": "{{count}} zahtjeva za kredite čekaju odobrenje",
