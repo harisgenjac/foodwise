@@ -22,6 +22,9 @@ import {
 import { useAuth } from "../context/AuthContext.js";
 import FormSection from "../components/form/FormSection.js";
 import FormField, { inputStyle } from "../components/form/FormField.js";
+import RequiredHint from "../components/form/RequiredHint.js";
+import { useFormValidation } from "../hooks/useFormValidation.js";
+import { isBlank, REQUIRED } from "../utils/validation.js";
 import ChangePasswordForm from "../components/profile/ChangePasswordForm.js";
 import SubscriptionSection from "../components/credits/SubscriptionSection.js";
 
@@ -112,6 +115,7 @@ function MyProfilePage() {
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!validate()) return;
     setSaving(true);
     try {
       await api.put("/users/me", isAdmin ? { first_name: firstName, last_name: lastName } : {
@@ -147,6 +151,13 @@ function MyProfilePage() {
   const isAdmin = role === "ADMIN";
   const RoleIcon = isAdmin ? ShieldCheck : isStore ? Store : UtensilsCrossed;
   const roleLabel = isAdmin ? t("user.adminRole") : isStore ? t("user.storeRole") : t("user.restaurantRole");
+  // The server's required fields; an admin has only a name.
+  const requiredValues = { firstName, lastName, ...(!isAdmin && { businessName, city, phone, address }) };
+  const { formRef, errorFor, blur, validate } = useFormValidation(
+    Object.fromEntries(
+      Object.entries(requiredValues).map(([field, value]) => [field, isBlank(value) ? REQUIRED : undefined]),
+    ),
+  );
   const avatarSrc = logoPreview || (logoUrl ? assetUrl(logoUrl) : null);
   const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`;
   const location = [address, city].filter(Boolean).join(", ");
@@ -237,15 +248,27 @@ function MyProfilePage() {
         )}
       </section>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form ref={formRef} noValidate onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <FormSection title={t("user.personalSection")} icon={UserRound}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField label={t("user.firstName")} icon={UserRound} required>
-                <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className={inputStyle} />
+              <FormField label={t("user.firstName")} icon={UserRound} required error={errorFor("firstName")}>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  onBlur={blur("firstName")}
+                  className={inputStyle}
+                />
               </FormField>
-              <FormField label={t("user.lastName")} icon={UserRound} required>
-                <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className={inputStyle} />
+              <FormField label={t("user.lastName")} icon={UserRound} required error={errorFor("lastName")}>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  onBlur={blur("lastName")}
+                  className={inputStyle}
+                />
               </FormField>
               <div className="sm:col-span-2">
                 <FormField label={t("user.email")} icon={Mail}>
@@ -260,19 +283,43 @@ function MyProfilePage() {
           <FormSection title={t("user.businessSection")} icon={Building2}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <FormField label={t("user.businessName")} icon={Building2} required>
-                  <input type="text" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className={inputStyle} />
+                <FormField label={t("user.businessName")} icon={Building2} required error={errorFor("businessName")}>
+                  <input
+                    type="text"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    onBlur={blur("businessName")}
+                    className={inputStyle}
+                  />
                 </FormField>
               </div>
-              <FormField label={t("user.city")} icon={MapPin} required>
-                <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className={inputStyle} />
+              <FormField label={t("user.city")} icon={MapPin} required error={errorFor("city")}>
+                <input
+                  type="text"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  onBlur={blur("city")}
+                  className={inputStyle}
+                />
               </FormField>
-              <FormField label={t("user.phone")} icon={Phone} required>
-                <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputStyle} />
+              <FormField label={t("user.phone")} icon={Phone} required error={errorFor("phone")}>
+                <input
+                  type="text"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  onBlur={blur("phone")}
+                  className={inputStyle}
+                />
               </FormField>
               <div className="sm:col-span-2">
-                <FormField label={t("user.address")} icon={MapPin} required>
-                  <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className={inputStyle} />
+                <FormField label={t("user.address")} icon={MapPin} required error={errorFor("address")}>
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    onBlur={blur("address")}
+                    className={inputStyle}
+                  />
                 </FormField>
               </div>
             </div>
@@ -304,7 +351,7 @@ function MyProfilePage() {
         </div>
 
         <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-gray-500">{t("user.requiredHint")}</p>
+          <RequiredHint />
           <button
             type="submit"
             disabled={saving}

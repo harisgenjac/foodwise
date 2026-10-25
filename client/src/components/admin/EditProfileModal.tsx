@@ -7,6 +7,9 @@ import { AlertCircle, Building2, Clock, FileText, MapPin, Phone, Truck, UserRoun
 import api from "../../api/axios.js";
 import Modal from "../product/Modal.js";
 import FormField, { inputStyle } from "../form/FormField.js";
+import RequiredHint from "../form/RequiredHint.js";
+import { useFormValidation } from "../../hooks/useFormValidation.js";
+import { isBlank, REQUIRED } from "../../utils/validation.js";
 import type { User } from "../../types/index.js";
 
 interface EditProfileModalProps {
@@ -61,9 +64,15 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
       : []),
   ];
 
+  const { formRef, errorFor, blur, validate } = useFormValidation<ProfileField>(
+    Object.fromEntries(
+      fields.filter(({ required }) => required).map(({ field }) => [field, isBlank(values[field]) ? REQUIRED : undefined]),
+    ),
+  );
+
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (saving) return;
+    if (saving || !validate()) return;
     setSaving(true);
     setError("");
     try {
@@ -79,7 +88,7 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
 
   return (
     <Modal onClose={onClose}>
-      <form onSubmit={handleSubmit} className="max-h-[80vh] space-y-4 overflow-y-auto">
+      <form ref={formRef} noValidate onSubmit={handleSubmit} className="max-h-[80vh] space-y-4 overflow-y-auto">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">{t("admin.userDetails.editProfileTitle")}</h2>
           <p className="mt-1 text-sm text-gray-600">{t("admin.userDetails.editProfileText", { name })}</p>
@@ -95,11 +104,12 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {fields.map(({ field, label, icon, wide, required }) => (
             <div key={field} className={wide ? "sm:col-span-2" : undefined}>
-              <FormField label={label} icon={icon} required={required ?? false}>
+              <FormField label={label} icon={icon} required={required ?? false} error={errorFor(field)}>
                 <input
                   type="text"
                   value={values[field]}
                   onChange={(e) => setValues((current) => ({ ...current, [field]: e.target.value }))}
+                  onBlur={blur(field)}
                   className={inputStyle}
                 />
               </FormField>
@@ -119,21 +129,24 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
           )}
         </div>
 
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-          >
-            {t("admin.common.cancel")}
-          </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="cursor-pointer rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-60"
-          >
-            {t("admin.userDetails.saveProfile")}
-          </button>
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <RequiredHint />
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              {t("admin.common.cancel")}
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="cursor-pointer rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-60"
+            >
+              {t("admin.userDetails.saveProfile")}
+            </button>
+          </div>
         </div>
       </form>
     </Modal>

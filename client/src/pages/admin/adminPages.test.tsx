@@ -89,10 +89,13 @@ describe("AdminUserDetailsPage", () => {
     await userEvent.click(await screen.findByRole("button", { name: t("admin.userDetails.block") }));
     const dialog = screen.getByRole("dialog");
     await userEvent.click(within(dialog).getByRole("button", { name: t("admin.userDetails.confirmBlock") }));
-    expect(within(dialog).getByText(t("admin.common.reasonRequired"))).toBeInTheDocument();
+    const reason = within(dialog).getByLabelText(t("admin.common.reasonLabel"));
+    expect(reason).toHaveAccessibleDescription(t("common.fieldRequired"));
+    expect(reason).toHaveFocus();
     expect(apiMock.post).not.toHaveBeenCalled();
 
-    await userEvent.type(within(dialog).getByLabelText(t("admin.common.reasonLabel")), "Lažni proizvodi");
+    await userEvent.type(reason, "Lažni proizvodi");
+    expect(reason).not.toHaveAttribute("aria-invalid");
     await userEvent.click(within(dialog).getByRole("button", { name: t("admin.userDetails.confirmBlock") }));
     expect(apiMock.post).toHaveBeenCalledWith("/admin/users/5/block", { reason: "Lažni proizvodi" });
     await waitFor(() => expect(success).toHaveBeenCalledWith("Account blocked."));

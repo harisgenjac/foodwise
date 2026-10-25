@@ -17,6 +17,7 @@ const store = makeUser({
   business_name: "Market Centar",
   city: "Sarajevo",
   phone: "061111111",
+  address: "Titova 1",
   is_blocked: false,
 });
 const counts = {
@@ -54,6 +55,27 @@ describe("Editing a profile as admin", () => {
     );
     await waitFor(() => expect(success).toHaveBeenCalledWith("User profile updated."));
     await waitFor(() => expect(respond).toHaveBeenCalledTimes(2));
+  });
+
+  it("does not save a business profile with an empty required field", async () => {
+    renderWithProviders(<AdminUserDetailsPage />, {
+      route: "/admin/users/5",
+      path: "/admin/users/:id",
+      user: admin,
+      get: { "/admin/users/5": { user: store, counts, actions: [] } },
+    });
+
+    await userEvent.click(await screen.findByRole("button", { name: t("admin.userDetails.editProfile") }));
+    const dialog = screen.getByRole("dialog");
+    const city = within(dialog).getByLabelText(t("admin.userDetails.city"));
+    expect(city).toHaveAttribute("aria-required", "true");
+    expect(within(dialog).getByLabelText(t("admin.userDetails.openingHours"))).not.toHaveAttribute("aria-required");
+    await userEvent.clear(city);
+    await userEvent.click(within(dialog).getByRole("button", { name: t("admin.userDetails.saveProfile") }));
+
+    expect(apiMock.put).not.toHaveBeenCalled();
+    expect(city).toHaveAccessibleDescription(t("common.fieldRequired"));
+    expect(city).toHaveFocus();
   });
 
   it("keeps the dialog open with the server's message on a validation error", async () => {
@@ -131,6 +153,37 @@ describe("AdminAnnouncementsPage", () => {
     await userEvent.click(screen.getByRole("button", { name: t("admin.announcements.end") }));
     await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: t("admin.announcements.end") }));
     expect(apiMock.post).toHaveBeenCalledWith("/admin/announcements/3/end");
+  });
+});
+
+describe("AdminAnnouncementsPage validation", () => {
+  it("requires the Bosnian text, and the English title and text only together", async () => {
+    renderWithProviders(<AdminAnnouncementsPage />, {
+      route: "/admin/announcements",
+      path: "/admin/announcements",
+      user: admin,
+      get: { "/admin/announcements": { announcements: [], total: 0 } },
+    });
+    const [titleBs] = await screen.findAllByLabelText(t("admin.announcements.titleLabel"), { exact: true });
+    const titleEn = screen.getByLabelText(`${t("admin.announcements.titleLabel")} (EN)`);
+    const bodyEn = screen.getByLabelText(`${t("admin.announcements.bodyLabel")} (EN)`);
+    expect(titleBs).toHaveAttribute("aria-required", "true");
+    expect(titleEn).not.toHaveAttribute("aria-required");
+    expect(bodyEn).not.toHaveAttribute("aria-required");
+
+    await userEvent.type(titleEn, "New deadline");
+    expect(bodyEn).toHaveAttribute("aria-required", "true");
+    expect(titleEn).not.toHaveAttribute("aria-required");
+
+    await userEvent.click(screen.getByRole("button", { name: t("admin.announcements.send") }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(titleBs).toHaveFocus();
+    expect(bodyEn).toHaveAccessibleDescription(t("common.fieldRequired"));
+
+    await userEvent.clear(titleEn);
+    expect(bodyEn).not.toHaveAttribute("aria-required");
+    expect(bodyEn).not.toHaveAttribute("aria-invalid");
+    expect(apiMock.post).not.toHaveBeenCalled();
   });
 });
 

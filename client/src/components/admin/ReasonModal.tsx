@@ -2,6 +2,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle } from "lucide-react";
 import Modal from "../product/Modal.js";
+import FormField from "../form/FormField.js";
+import RequiredHint from "../form/RequiredHint.js";
+import { useFormValidation } from "../../hooks/useFormValidation.js";
+import { isBlank, REQUIRED } from "../../utils/validation.js";
 
 interface ReasonModalProps {
   title: string;
@@ -19,20 +23,18 @@ const MAX_REASON_LENGTH = 500;
 function ReasonModal({ title, text, confirmLabel, busy, onConfirm, onClose }: ReasonModalProps) {
   const { t } = useTranslation();
   const [reason, setReason] = useState("");
-  const [error, setError] = useState("");
+  const { formRef, errorFor, blur, validate } = useFormValidation({ reason: isBlank(reason) ? REQUIRED : undefined });
+  const error = errorFor("reason");
 
   const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!reason.trim()) {
-      setError(t("admin.common.reasonRequired"));
-      return;
-    }
+    if (!validate()) return;
     onConfirm(reason.trim());
   };
 
   return (
     <Modal onClose={onClose}>
-      <form onSubmit={handleSubmit}>
+      <form ref={formRef} noValidate onSubmit={handleSubmit}>
         <div className="flex items-start gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600">
             <AlertTriangle className="h-5 w-5" />
@@ -43,23 +45,21 @@ function ReasonModal({ title, text, confirmLabel, busy, onConfirm, onClose }: Re
           </div>
         </div>
 
-        <label className="mt-5 block">
-          <span className="mb-1.5 block text-sm font-medium text-gray-700">{t("admin.common.reasonLabel")}</span>
-          <textarea
-            value={reason}
-            onChange={(e) => {
-              setReason(e.target.value);
-              setError("");
-            }}
-            maxLength={MAX_REASON_LENGTH}
-            rows={3}
-            placeholder={t("admin.common.reasonPlaceholder")}
-            className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100"
-          />
-        </label>
-        <p className={`mt-1 text-xs ${error ? "text-red-600" : "text-gray-500"}`}>
-          {error || t("admin.common.reasonHint")}
-        </p>
+        <div className="mt-5">
+          <FormField label={t("admin.common.reasonLabel")} required error={error}>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              onBlur={blur("reason")}
+              maxLength={MAX_REASON_LENGTH}
+              rows={3}
+              placeholder={t("admin.common.reasonPlaceholder")}
+              className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100"
+            />
+          </FormField>
+        </div>
+        {!error && <p className="mt-1 text-xs text-gray-500">{t("admin.common.reasonHint")}</p>}
+        <RequiredHint className="mt-1" />
 
         <div className="mt-6 flex justify-end gap-2">
           <button

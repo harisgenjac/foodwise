@@ -78,7 +78,6 @@
     "selectUnit": "-- Select a unit --",
     "expiryDate": "Expiry Date",
     "addButton": "Add Product",
-    "fillAllFields": "Please fill in all fields.",
     "addError": "Error adding product. Please try again.",
     "addedSuccess": "Product added successfully.",
     "noAvailableProductsTitle": "No products available right now",
@@ -448,6 +447,7 @@
     "downloadTemplate": "Download template",
     "uploadTitle": "CSV file",
     "uploadDescription": "Each row in the file becomes one product.",
+    "fileLabel": "CSV file",
     "chooseFile": "Choose a CSV file",
     "fileHint": "Up to 1MB and 500 products",
     "importButton": "Import products",
@@ -483,7 +483,8 @@
     "datePlaceholder": "dd/mm/yyyy",
     "pickDate": "Pick a date",
     "loadMore": "Load more",
-    "showingOf": "Showing {{shown}} of {{total}}"
+    "showingOf": "Showing {{shown}} of {{total}}",
+    "fieldRequired": "This field is required."
   },
   "pickups": {
     "title": "Pickups",
@@ -698,7 +699,6 @@
       "pickupUntil": "Pickup until",
       "pickupHint": "Optional: the time of day when the donation can be collected.",
       "preview": "Preview",
-      "fillAllFields": "Fill in all required fields.",
       "invalidPickup": "The pickup start must be before its end.",
       "submitAdd": "Publish donation",
       "submitEdit": "Save changes",
@@ -763,7 +763,6 @@
       "reasonLabel": "Reason",
       "reasonPlaceholder": "E.g. the product breaks the platform rules",
       "reasonHint": "The user will see this reason.",
-      "reasonRequired": "Enter a reason.",
       "previous": "Previous",
       "next": "Next",
       "range": "{{from}}–{{to}} of {{total}}",

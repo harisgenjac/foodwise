@@ -43,12 +43,66 @@ const fillForm = async () => {
 };
 
 describe("AddProductPage", () => {
-  it("does not submit an incomplete form", async () => {
+  it("marks the required fields and starts without errors", () => {
     renderPage();
+
+    expect(screen.getByLabelText(t("product.name"))).toHaveAttribute("aria-required", "true");
+    expect(screen.getByLabelText(t("product.unit"))).toHaveAttribute("aria-required", "true");
+    expect(screen.getByLabelText(t("product.description"))).not.toHaveAttribute("aria-required");
+    expect(screen.getByText(t("product.category"))).toHaveClass("after:content-['*']");
+    expect(screen.getByText(t("user.requiredHint"))).toBeInTheDocument();
+    expect(screen.queryByText(t("common.fieldRequired"))).not.toBeInTheDocument();
+    expect(document.querySelector("[aria-invalid]")).toBeNull();
+  });
+
+  it("shows a field's error once it is left empty and clears it when filled", async () => {
+    renderPage();
+    const name = screen.getByLabelText(t("product.name"));
+
+    await userEvent.click(name);
+    await userEvent.tab();
+    expect(name).toHaveAttribute("aria-invalid", "true");
+    expect(name).toHaveAccessibleDescription(t("common.fieldRequired"));
+    // Only the field that was left shows an error.
+    expect(screen.getAllByText(t("common.fieldRequired"))).toHaveLength(1);
+
+    await userEvent.type(name, "Jogurt");
+    expect(name).not.toHaveAttribute("aria-invalid");
+    expect(screen.queryByText(t("common.fieldRequired"))).not.toBeInTheDocument();
+  });
+
+  it("does not submit an incomplete form and focuses the first invalid field", async () => {
+    renderPage();
+    const submit = screen.getByRole("button", { name: t("product.addButton") });
+    await userEvent.click(submit);
+
+    expect(apiMock.post).not.toHaveBeenCalled();
+    expect(submit).toBeEnabled();
+    // Every required field: name, category, both prices, quantity, unit, expiry date.
+    expect(screen.getAllByText(t("common.fieldRequired"))).toHaveLength(7);
+    expect(screen.getByLabelText(t("product.name"))).toHaveFocus();
+    expect(screen.getByRole("group", { name: t("product.category") })).toHaveAccessibleDescription(
+      t("common.fieldRequired"),
+    );
+
+    await userEvent.type(screen.getByLabelText(t("product.name")), "Jogurt");
+    await userEvent.click(submit);
+    expect(screen.getByRole("button", { name: categories().Meat })).toHaveFocus();
+
+    await userEvent.click(screen.getByRole("button", { name: categories().Dairy }));
+    expect(screen.getByRole("group", { name: t("product.category") })).not.toHaveAccessibleDescription();
+    expect(apiMock.post).not.toHaveBeenCalled();
+  });
+
+  it("does not require a description", async () => {
+    apiMock.post.mockResolvedValue({ data: {} });
+    renderPage();
+
+    await fillForm();
+    await userEvent.clear(screen.getByLabelText(t("product.description")));
     await userEvent.click(screen.getByRole("button", { name: t("product.addButton") }));
 
-    expect(screen.getByText(t("product.fillAllFields"))).toBeInTheDocument();
-    expect(apiMock.post).not.toHaveBeenCalled();
+    expect(apiMock.post).toHaveBeenCalledWith("/products", expect.objectContaining({ name: "Jogurt", description: "" }));
   });
 
   it("creates the product and goes to the dashboard", async () => {

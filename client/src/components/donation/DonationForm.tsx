@@ -5,6 +5,8 @@ import { AlertCircle, Info } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import DonationFormFields from "./DonationFormFields.js";
 import DonationCard from "./DonationCard.js";
+import RequiredHint from "../form/RequiredHint.js";
+import { useFormValidation } from "../../hooks/useFormValidation.js";
 import { validateDonationForm } from "../../utils/donations.js";
 import type { DonationFormValues, DonationOffer } from "../../types/index.js";
 
@@ -33,6 +35,7 @@ function DonationForm({
   const [form, setForm] = useState<DonationFormValues>(initialValues);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const { formRef, errorFor, blur, validate } = useFormValidation(validateDonationForm(form));
 
   const updateField = <K extends keyof DonationFormValues>(field: K, value: DonationFormValues[K]) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -40,12 +43,7 @@ function DonationForm({
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (saving) return;
-    const validationKey = validateDonationForm(form);
-    if (validationKey) {
-      setError(t(validationKey));
-      return;
-    }
+    if (saving || !validate()) return;
     setError("");
     setSaving(true);
     const message = await onSubmit(form);
@@ -97,9 +95,15 @@ function DonationForm({
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <form ref={formRef} noValidate onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <DonationFormFields values={form} onChange={updateField} minExpiryDate={minExpiryDate} />
+          <DonationFormFields
+            values={form}
+            onChange={updateField}
+            minExpiryDate={minExpiryDate}
+            errorFor={errorFor}
+            onBlur={blur}
+          />
         </div>
 
         <aside className="lg:sticky lg:top-0 lg:self-start space-y-4">
@@ -119,6 +123,7 @@ function DonationForm({
             <Icon className="h-5 w-5" strokeWidth={1.8} />
             {submitLabel}
           </button>
+          <RequiredHint className="text-center" />
           <Link
             to="/donate-food"
             className="block w-full rounded-xl border border-gray-200 bg-white py-2.5 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"

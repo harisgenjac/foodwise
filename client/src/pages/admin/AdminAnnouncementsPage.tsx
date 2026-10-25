@@ -10,6 +10,10 @@ import { useAdminPage, useKeepPageInRange } from "../../hooks/useAdminPage.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
 import FormSection from "../../components/form/FormSection.js";
 import DateInput from "../../components/form/DateInput.js";
+import FormField from "../../components/form/FormField.js";
+import RequiredHint from "../../components/form/RequiredHint.js";
+import { useFormValidation } from "../../hooks/useFormValidation.js";
+import { isBlank, REQUIRED } from "../../utils/validation.js";
 import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
@@ -41,6 +45,14 @@ function AdminAnnouncementsPage() {
   const [confirming, setConfirming] = useState(false);
   const [ending, setEnding] = useState<AdminAnnouncement | null>(null);
   const [busy, setBusy] = useState(false);
+  // The Bosnian text is required; the English translation is optional, but needs both parts once one is filled.
+  const englishRequired = { title_en: !isBlank(form.body_en), body_en: !isBlank(form.title_en) };
+  const { formRef, errorFor, blur, validate, reset } = useFormValidation({
+    title_bs: isBlank(form.title_bs) ? REQUIRED : undefined,
+    body_bs: isBlank(form.body_bs) ? REQUIRED : undefined,
+    title_en: englishRequired.title_en && isBlank(form.title_en) ? REQUIRED : undefined,
+    body_en: englishRequired.body_en && isBlank(form.body_en) ? REQUIRED : undefined,
+  });
   const { page, offset, setPage } = useAdminPage();
 
   const { data: announcements, total, loading, error: loadError, refetch } = useFetch<AdminAnnouncement>(
@@ -59,6 +71,7 @@ function AdminAnnouncementsPage() {
 
   const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!validate()) return;
     setConfirming(true);
   };
 
@@ -77,6 +90,7 @@ function AdminAnnouncementsPage() {
       });
       toast.success(t("admin.announcements.sent", { count: response.data.recipients }));
       setForm(EMPTY_FORM);
+      reset();
       setPage(1);
       refetch();
     } catch (err) {
@@ -105,30 +119,28 @@ function AdminAnnouncementsPage() {
   };
 
   const textField = (field: "title_bs" | "title_en", label: string, required: boolean) => (
-    <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-gray-700">{label}</span>
+    <FormField label={label} required={required} error={errorFor(field)}>
       <input
         type="text"
         value={form[field]}
-        required={required}
         maxLength={MAX_TITLE}
         onChange={(e) => setField(field)(e.target.value)}
+        onBlur={blur(field)}
         className={fieldStyle}
       />
-    </label>
+    </FormField>
   );
   const bodyField = (field: "body_bs" | "body_en", label: string, required: boolean) => (
-    <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-gray-700">{label}</span>
+    <FormField label={label} required={required} error={errorFor(field)}>
       <textarea
         value={form[field]}
-        required={required}
         maxLength={MAX_BODY}
         rows={4}
         onChange={(e) => setField(field)(e.target.value)}
+        onBlur={blur(field)}
         className={`${fieldStyle} resize-none`}
       />
-    </label>
+    </FormField>
   );
 
   return (
@@ -142,9 +154,9 @@ function AdminAnnouncementsPage() {
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <form ref={formRef} noValidate onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <FormSection title={t("admin.announcements.audienceSection")} icon={Users}>
+          <FormSection title={t("admin.announcements.audienceSection")} icon={Users} required>
             <div role="radiogroup" aria-label={t("admin.announcements.audienceSection")} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {AUDIENCES.map(({ code, icon: Icon }) => {
                 const selected = audience === code;
@@ -181,8 +193,8 @@ function AdminAnnouncementsPage() {
             description={t("admin.announcements.englishHint")}
           >
             <div className="space-y-4">
-              {textField("title_en", `${t("admin.announcements.titleLabel")} (EN)`, Boolean(form.body_en))}
-              {bodyField("body_en", `${t("admin.announcements.bodyLabel")} (EN)`, Boolean(form.title_en))}
+              {textField("title_en", `${t("admin.announcements.titleLabel")} (EN)`, englishRequired.title_en)}
+              {bodyField("body_en", `${t("admin.announcements.bodyLabel")} (EN)`, englishRequired.body_en)}
             </div>
           </FormSection>
         </div>
@@ -225,6 +237,7 @@ function AdminAnnouncementsPage() {
           >
             {t("admin.announcements.send")}
           </button>
+          <RequiredHint className="text-center" />
         </div>
       </form>
 

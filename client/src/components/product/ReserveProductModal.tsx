@@ -6,6 +6,9 @@ import { CalendarClock, Scale } from "lucide-react";
 import api from "../../api/axios.js";
 import Modal from "./Modal.js";
 import FormField, { inputStyle } from "../form/FormField.js";
+import RequiredHint from "../form/RequiredHint.js";
+import { useFormValidation } from "../../hooks/useFormValidation.js";
+import { isBlank, REQUIRED } from "../../utils/validation.js";
 import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
 import { toDateInput } from "../../utils/expiry.js";
 import type { Product } from "../../types/index.js";
@@ -29,6 +32,10 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
   const [pickupDate, setPickupDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [creditError, setCreditError] = useState<CreditError | null>(null);
+  const { formRef, errorFor, blur, validate } = useFormValidation({
+    quantity: isBlank(quantity) ? REQUIRED : undefined,
+    pickupDate: pickupDate ? undefined : REQUIRED,
+  });
   const units = t("units", { returnObjects: true }) as Record<string, string>;
   const unit = units[product.unit] || product.unit;
   const available = product.available_quantity ?? product.quantity;
@@ -37,8 +44,9 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
   const minPickup = `${toDateInput(new Date())}T00:00`;
   const maxPickup = `${product.expiry_date.slice(0, 10)}T23:59`;
 
-  const handleReservation = async () => {
-    if (submitting) return;
+  const handleReservation = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (submitting || !validate()) return;
     setSubmitting(true);
     try {
       await api.post("/reservations", {
@@ -89,54 +97,58 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
         </div>
       </div>
 
-      <div className="space-y-4">
-        <FormField label={t("dashboard.quantity")} icon={Scale} suffix={unit}>
-          <input
-            type="number"
-            min="0.01"
-            step="any"
-            max={available}
-            placeholder={`${t("myReservations.placeholderMax")}: ${parseFloat(available)}`}
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            className={`${inputStyle} pr-14`}
-          />
-        </FormField>
-        <FormField label={t("myReservations.pickupDate")} icon={CalendarClock}>
-          <input
-            type="datetime-local"
-            min={minPickup}
-            max={maxPickup}
-            value={pickupDate}
-            onChange={(e) => setPickupDate(e.target.value)}
-            className={inputStyle}
-          />
-        </FormField>
-      </div>
+      <form ref={formRef} noValidate onSubmit={handleReservation}>
+        <div className="space-y-4">
+          <FormField label={t("dashboard.quantity")} icon={Scale} suffix={unit} required error={errorFor("quantity")}>
+            <input
+              type="number"
+              min="0.01"
+              step="any"
+              max={available}
+              placeholder={`${t("myReservations.placeholderMax")}: ${parseFloat(available)}`}
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              onBlur={blur("quantity")}
+              className={`${inputStyle} pr-14`}
+            />
+          </FormField>
+          <FormField label={t("myReservations.pickupDate")} icon={CalendarClock} required error={errorFor("pickupDate")}>
+            <input
+              type="datetime-local"
+              min={minPickup}
+              max={maxPickup}
+              value={pickupDate}
+              onChange={(e) => setPickupDate(e.target.value)}
+              onBlur={blur("pickupDate")}
+              className={inputStyle}
+            />
+          </FormField>
+          <RequiredHint />
+        </div>
 
-      {creditError ? (
-        <InsufficientCreditsNotice error={creditError} className="mt-4" />
-      ) : (
-        <CreditHint className="mt-4" />
-      )}
+        {creditError ? (
+          <InsufficientCreditsNotice error={creditError} className="mt-4" />
+        ) : (
+          <CreditHint className="mt-4" />
+        )}
 
-      <div className="mt-6 flex gap-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
-        >
-          {t("myReservations.cancelButton")}
-        </button>
-        <button
-          type="button"
-          onClick={handleReservation}
-          disabled={submitting}
-          className="flex-1 cursor-pointer rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-wait disabled:opacity-60"
-        >
-          {t("myReservations.confirmButton")}
-        </button>
-      </div>
+        <div className="mt-6 flex gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+          >
+            {t("myReservations.cancelButton")}
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="flex-1 cursor-pointer rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-wait disabled:opacity-60"
+          >
+            {t("myReservations.confirmButton")}
+          </button>
+        </div>
+      </form>
     </Modal>
   );
 }
