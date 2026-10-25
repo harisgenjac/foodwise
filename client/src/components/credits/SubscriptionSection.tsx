@@ -3,10 +3,11 @@ import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, CalendarRange, Coins, PlusCircle, Wallet } from "lucide-react";
+import { ArrowRight, CalendarRange, ChevronDown, Coins, PlusCircle, Wallet } from "lucide-react";
 import api from "../../api/axios.js";
 import { useCredits } from "../../context/CreditsContext.js";
 import SubscribeModal from "./SubscribeModal.js";
+import TopupModal from "./TopupModal.js";
 import AutoRenewTooltip from "./AutoRenewTooltip.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
 import {
@@ -19,11 +20,44 @@ import {
 import type { CreditRequest, Plan, Role, TopupPackage } from "../../types/index.js";
 
 const cardStyle = "rounded-2xl border border-gray-100 bg-white p-6 shadow-sm";
+const PLAN_OPTIONS = "plan-options";
+const TOPUP_OPTIONS = "topup-options";
+
+interface ToggleButtonProps {
+  open: boolean;
+  controls: string;
+  onClick: () => void;
+  // Orange when the user should act (no plan after this month), else a quiet outline.
+  prominent?: boolean;
+  children: React.ReactNode;
+}
+
+function ToggleButton({ open, controls, onClick, prominent = false, children }: ToggleButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={open}
+      aria-controls={controls}
+      className={`inline-flex w-fit shrink-0 cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
+        prominent
+          ? "bg-orange-500 text-white hover:bg-orange-600"
+          : "border border-gray-200 text-gray-700 hover:bg-gray-50"
+      }`}
+    >
+      {children}
+      <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+    </button>
+  );
+}
 
 // My profile for stores and restaurants: the current plan and balance, choosing a plan (this
 // month while there is none, else the next month), auto-renew, extra credits (only with an active
 // subscription) and the status of the user's requests. Payment is offline: every choice is a
 // request an admin approves. The two sections have ids so banners and errors can link to them.
+// With a subscription, next month's plans and the extra credits sit behind toggles that start
+// closed (extra credits open at 0 credits), open from #subscription / #topup links and close
+// again after a request is sent.
 function SubscriptionSection({ role }: { role: Role }) {
   const { t } = useTranslation();
   const { credits, refresh } = useCredits();
@@ -32,7 +66,12 @@ function SubscriptionSection({ role }: { role: Role }) {
   const [packages, setPackages] = useState<TopupPackage[]>([]);
   const [requests, setRequests] = useState<CreditRequest[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [selectedTopup, setSelectedTopup] = useState<TopupPackage | null>(null);
   const [busy, setBusy] = useState(false);
+  // Next month's plans and the extra credits stay collapsed until asked for; null means the
+  // extra credits follow the default (open only when no credits are left).
+  const [planOpen, setPlanOpen] = useState(false);
+  const [topupOpen, setTopupOpen] = useState<boolean | null>(null);
   const monthNames = t("dashboard.months", { returnObjects: true }) as string[];
   const requestTypes = t("credits.requestTypes", { returnObjects: true }) as Record<string, string>;
   const requestStatuses = t("credits.requestStatuses", { returnObjects: true }) as Record<string, string>;
@@ -56,10 +95,13 @@ function SubscriptionSection({ role }: { role: Role }) {
     loadRequests();
   }, [loadRequests]);
 
-  // Links like /my-profile#topup scroll to their section once it is on the page.
+  // Links like /my-profile#topup open their section and scroll to it once it is on the page.
   useEffect(() => {
     if (!credits || !hash) return;
-    document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const section = hash.slice(1);
+    if (section === TOPUP_SECTION) setTopupOpen(true);
+    if (section === SUBSCRIPTION_SECTION) setPlanOpen(true);
+    document.getElementById(section)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [credits, hash]);
 
   if (!credits) return null;
@@ -77,6 +119,10 @@ function SubscriptionSection({ role }: { role: Role }) {
   );
   const pendingTopup = credits.pendingRequests.find((request) => request.request_type === "TOPUP");
   const canChoosePlan = !pendingSubscription && !(period === "next" && credits.nextSubscription);
+  // Without a subscription the plans are the point of the card; with one they are optional.
+  const planCollapsible = period === "next" && canChoosePlan;
+  const showPlans = canChoosePlan && (!planCollapsible || planOpen);
+  const showTopups = topupOpen ?? credits.available === 0;
 
   const requestLabel = (request: CreditRequest) =>
     request.request_type === "SUBSCRIPTION"
@@ -105,21 +151,6 @@ function SubscriptionSection({ role }: { role: Role }) {
       const next = !subscription.auto_renew;
       await api.patch("/credits/subscription/auto-renew", { auto_renew: next });
       toast.success(t(next ? "credits.profile.autoRenewOn" : "credits.profile.autoRenewOff"));
-      await reload();
-    } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
-      toast.error(message || t("credits.profile.requestError"));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const buyTopup = async (topup: TopupPackage) => {
-    if (busy) return;
-    setBusy(true);
-    try {
-      await api.post("/credits/requests", { request_type: "TOPUP", topup_package_id: topup.id });
-      toast.success(t("credits.profile.topupSent"));
       await reload();
     } catch (err) {
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
@@ -229,13 +260,36 @@ function SubscriptionSection({ role }: { role: Role }) {
           </ul>
         )}
 
-        <h3 className="mt-6 text-sm font-semibold text-gray-900">
-          {t(period === "current" ? "credits.profile.choosePlan" : "credits.profile.changePlan", {
-            month: formatCreditMonth(requestMonth, monthNames),
-          })}
-        </h3>
-        {canChoosePlan ? (
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {subscription && planCollapsible && (
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-600">
+              {subscription.auto_renew
+                ? t("credits.profile.renewsOn", {
+                    plan: subscription.plan_name,
+                    date: formatDisplayDate(nextCreditMonth(credits.periodStart)),
+                  })
+                : t("credits.profile.endsOn", { date: formatDisplayDate(credits.periodEnd) })}
+            </p>
+            <ToggleButton
+              open={planOpen}
+              controls={PLAN_OPTIONS}
+              onClick={() => setPlanOpen(!planOpen)}
+              prominent={!subscription.auto_renew}
+            >
+              {t(subscription.auto_renew ? "credits.profile.changePlanNext" : "credits.profile.choosePlanNext")}
+            </ToggleButton>
+          </div>
+        )}
+
+        {(!planCollapsible || planOpen) && (
+          <h3 className="mt-6 text-sm font-semibold text-gray-900">
+            {t(period === "current" ? "credits.profile.choosePlan" : "credits.profile.changePlan", {
+              month: formatCreditMonth(requestMonth, monthNames),
+            })}
+          </h3>
+        )}
+        {showPlans ? (
+          <div id={PLAN_OPTIONS} className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
             {plans.map((plan) => (
               <div key={plan.id} className="flex flex-col rounded-xl border border-gray-200 p-4">
                 <p className="font-semibold text-gray-900">{plan.name}</p>
@@ -253,9 +307,11 @@ function SubscriptionSection({ role }: { role: Role }) {
             ))}
           </div>
         ) : (
-          <p className="mt-2 text-sm text-gray-500">
-            {t(pendingSubscription ? "credits.profile.planPending" : "credits.profile.planDecided")}
-          </p>
+          !canChoosePlan && (
+            <p className="mt-2 text-sm text-gray-500">
+              {t(pendingSubscription ? "credits.profile.planPending" : "credits.profile.planDecided")}
+            </p>
+          )
         )}
       </section>
 
@@ -274,13 +330,19 @@ function SubscriptionSection({ role }: { role: Role }) {
         ) : pendingTopup ? (
           <p className="mt-4 text-sm text-gray-600">{t("credits.profile.topupPending")}</p>
         ) : (
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="mt-4">
+            <ToggleButton open={showTopups} controls={TOPUP_OPTIONS} onClick={() => setTopupOpen(!showTopups)}>
+              {t("credits.profile.buyTopup")}
+            </ToggleButton>
+          </div>
+        )}
+        {credits.hasActiveSubscription && !pendingTopup && showTopups && (
+          <div id={TOPUP_OPTIONS} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
             {packages.map((topup) => (
               <button
                 key={topup.id}
                 type="button"
-                onClick={() => buyTopup(topup)}
-                disabled={busy}
+                onClick={() => setSelectedTopup(topup)}
                 className="flex cursor-pointer flex-col items-start rounded-xl border border-gray-200 p-4 text-left transition-colors hover:border-orange-300 hover:bg-orange-50/50 disabled:opacity-60"
               >
                 <span className="text-lg font-bold text-gray-900">
@@ -324,6 +386,20 @@ function SubscriptionSection({ role }: { role: Role }) {
           onClose={() => setSelectedPlan(null)}
           onSent={async () => {
             setSelectedPlan(null);
+            setPlanOpen(false);
+            await reload();
+          }}
+        />
+      )}
+      {selectedTopup && (
+        <TopupModal
+          topup={selectedTopup}
+          role={role}
+          periodEnd={credits.periodEnd}
+          onClose={() => setSelectedTopup(null)}
+          onSent={async () => {
+            setSelectedTopup(null);
+            setTopupOpen(false);
             await reload();
           }}
         />
