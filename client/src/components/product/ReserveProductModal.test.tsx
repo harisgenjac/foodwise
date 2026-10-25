@@ -87,8 +87,28 @@ describe("ReserveProductModal", () => {
     apiMock.post.mockRejectedValue(new Error("Network Error"));
     renderModal();
 
+    await fillForm();
     await userEvent.click(screen.getByRole("button", { name: t("myReservations.confirmButton") }));
     expect(error).toHaveBeenCalledWith(t("reservations.actionError"));
+  });
+
+  it("asks for the quantity and pickup date before sending", async () => {
+    renderModal();
+    const quantity = screen.getByLabelText(t("dashboard.quantity"), { exact: false });
+    const pickup = screen.getByLabelText(t("myReservations.pickupDate"));
+    expect(quantity).toHaveAttribute("aria-required", "true");
+    expect(pickup).toHaveAttribute("aria-required", "true");
+    expect(quantity).not.toHaveAttribute("aria-invalid");
+
+    await userEvent.click(screen.getByRole("button", { name: t("myReservations.confirmButton") }));
+    expect(apiMock.post).not.toHaveBeenCalled();
+    expect(quantity).toHaveAccessibleDescription(t("common.fieldRequired"));
+    expect(pickup).toHaveAccessibleDescription(t("common.fieldRequired"));
+    expect(quantity).toHaveFocus();
+
+    await userEvent.type(quantity, "2");
+    expect(quantity).not.toHaveAttribute("aria-invalid");
+    expect(pickup).toHaveAttribute("aria-invalid", "true");
   });
 
   it("closes with the cancel button", async () => {

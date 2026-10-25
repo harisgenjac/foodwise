@@ -79,7 +79,6 @@
     "selectUnit": "-- Odaberite jedinicu --",
     "expiryDate": "Datum isteka",
     "addButton": "Dodaj proizvod",
-    "fillAllFields": "Molimo popunite sva polja.",
     "addError": "Greška prilikom dodavanja proizvoda. Molimo pokušajte ponovo.",
     "addedSuccess": "Proizvod uspješno kreiran.",
     "editTitle": "Uredi proizvod",
@@ -458,6 +457,7 @@
     "downloadTemplate": "Preuzmi šablon",
     "uploadTitle": "CSV fajl",
     "uploadDescription": "Svaki red u fajlu postaje jedan proizvod.",
+    "fileLabel": "CSV fajl",
     "chooseFile": "Odaberite CSV fajl",
     "fileHint": "Najviše 1MB i 500 proizvoda",
     "importButton": "Uvezi proizvode",
@@ -494,7 +494,8 @@
     "datePlaceholder": "dd/mm/yyyy",
     "pickDate": "Odaberi datum",
     "loadMore": "Učitaj još",
-    "showingOf": "Prikazano {{shown}} od {{total}}"
+    "showingOf": "Prikazano {{shown}} od {{total}}",
+    "fieldRequired": "Ovo polje je obavezno."
   },
   "pickups": {
     "title": "Preuzimanja",
@@ -712,7 +713,6 @@
       "pickupUntil": "Preuzimanje do",
       "pickupHint": "Neobavezno: vrijeme u danu kada se donacija može preuzeti.",
       "preview": "Pregled",
-      "fillAllFields": "Popunite sva obavezna polja.",
       "invalidPickup": "Početak preuzimanja mora biti prije kraja.",
       "submitAdd": "Objavi donaciju",
       "submitEdit": "Sačuvaj izmjene",
@@ -777,7 +777,6 @@
       "reasonLabel": "Razlog",
       "reasonPlaceholder": "Npr. proizvod nije u skladu s pravilima platforme",
       "reasonHint": "Korisnik će vidjeti ovaj razlog.",
-      "reasonRequired": "Upišite razlog.",
       "previous": "Prethodna",
       "next": "Sljedeća",
       "range": "{{from}}–{{to}} od {{total}}",

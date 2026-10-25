@@ -13,6 +13,20 @@ describe("LoginPage", () => {
     await userEvent.click(screen.getByRole("button", { name: t("auth.loginButton") }));
   };
 
+  it("asks for both fields before logging in", async () => {
+    renderLogin();
+    const email = screen.getByLabelText(t("auth.email"));
+    expect(email).toHaveAttribute("aria-required", "true");
+    expect(email).not.toHaveAttribute("aria-invalid");
+
+    await userEvent.click(screen.getByRole("button", { name: t("auth.loginButton") }));
+    expect(apiMock.post).not.toHaveBeenCalled();
+    expect(email).toHaveAccessibleDescription(t("common.fieldRequired"));
+    expect(screen.getByLabelText(t("auth.password"))).toHaveAccessibleDescription(t("common.fieldRequired"));
+    expect(email).toHaveFocus();
+    expect(screen.queryByText(t("auth.loginError"))).not.toBeInTheDocument();
+  });
+
   it("logs in and goes to the dashboard", async () => {
     apiMock.post.mockResolvedValue({ data: { user: makeUser() } });
     renderLogin();

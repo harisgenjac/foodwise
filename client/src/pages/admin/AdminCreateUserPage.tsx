@@ -8,6 +8,9 @@ import { AlertCircle, Info, KeyRound, Lock, Mail, ShieldCheck, Store, UserPlus, 
 import api from "../../api/axios.js";
 import FormSection from "../../components/form/FormSection.js";
 import FormField, { inputStyle } from "../../components/form/FormField.js";
+import RequiredHint from "../../components/form/RequiredHint.js";
+import { useFormValidation } from "../../hooks/useFormValidation.js";
+import { isBlank, REQUIRED } from "../../utils/validation.js";
 import { ROLES } from "../../utils/admin.js";
 import type { Role } from "../../types/index.js";
 
@@ -27,13 +30,17 @@ function AdminCreateUserPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const { formRef, errorFor, blur, validate } = useFormValidation({
+    email: isBlank(email) ? REQUIRED : undefined,
+    password: password ? undefined : REQUIRED,
+  });
 
   const roles = t("admin.roles", { returnObjects: true }) as Record<string, string>;
   const descriptions = t("admin.createUser.roleDescriptions", { returnObjects: true }) as Record<string, string>;
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (saving) return;
+    if (saving || !validate()) return;
     setSaving(true);
     setError("");
     try {
@@ -66,9 +73,9 @@ function AdminCreateUserPage() {
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <form ref={formRef} noValidate onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <FormSection title={t("admin.createUser.roleSection")} icon={ShieldCheck}>
+          <FormSection title={t("admin.createUser.roleSection")} icon={ShieldCheck} required>
             <div role="radiogroup" aria-label={t("admin.createUser.roleSection")} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {ROLES.map((code) => {
                 const Icon = ROLE_ICONS[code];
@@ -95,24 +102,23 @@ function AdminCreateUserPage() {
 
           <FormSection title={t("admin.createUser.credentialsSection")} icon={KeyRound}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField label={t("admin.createUser.email")} icon={Mail}>
+              <FormField label={t("admin.createUser.email")} icon={Mail} required error={errorFor("email")}>
                 <input
                   type="email"
-                  required
                   autoComplete="off"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onBlur={blur("email")}
                   className={inputStyle}
                 />
               </FormField>
-              <FormField label={t("admin.createUser.password")} icon={Lock}>
+              <FormField label={t("admin.createUser.password")} icon={Lock} required error={errorFor("password")}>
                 <input
                   type="text"
-                  required
-                  minLength={8}
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onBlur={blur("password")}
                   className={inputStyle}
                 />
               </FormField>
@@ -136,6 +142,7 @@ function AdminCreateUserPage() {
           >
             {t("admin.createUser.submit")}
           </button>
+          <RequiredHint className="text-center" />
           <Link
             to="/admin/users"
             className="block rounded-xl border border-gray-200 bg-white px-8 py-2.5 text-center font-medium text-gray-700 transition-colors hover:bg-gray-50"

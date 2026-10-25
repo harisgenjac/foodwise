@@ -6,6 +6,9 @@ import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { AlertCircle, Download, FileSpreadsheet, FileUp, ListChecks } from "lucide-react";
 import FormSection from "../components/form/FormSection.js";
+import PickerField from "../components/form/PickerField.js";
+import RequiredHint from "../components/form/RequiredHint.js";
+import { useFormValidation } from "../hooks/useFormValidation.js";
 import { CATEGORY_LABELS } from "../utils/categories.js";
 import { UNIT_LABELS } from "../utils/units.js";
 import { dateInDays } from "../utils/expiry.js";
@@ -48,6 +51,7 @@ function ImportProductsPage() {
   const [rowErrors, setRowErrors] = useState<CsvRowError[]>([]);
   const [creditError, setCreditError] = useState<CreditError | null>(null);
   const [uploading, setUploading] = useState(false);
+  const { formRef, errorFor, validate } = useFormValidation({ file: file ? undefined : "importProducts.noFile" });
 
   const selectFile = (selected: File | null) => {
     setFile(selected);
@@ -58,10 +62,7 @@ function ImportProductsPage() {
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!file) {
-      setError(t("importProducts.noFile"));
-      return;
-    }
+    if (!validate() || !file) return;
     const formData = new FormData();
     formData.append("file", file);
     setUploading(true);
@@ -118,21 +119,24 @@ function ImportProductsPage() {
             icon={FileSpreadsheet}
             description={t("importProducts.uploadDescription")}
           >
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-6 py-10 text-center transition-colors hover:border-orange-300 hover:bg-orange-50/40">
-                <FileUp className="h-8 w-8 text-orange-500" strokeWidth={1.6} />
-                <span className="text-sm font-medium text-gray-900">
-                  {file ? file.name : t("importProducts.chooseFile")}
-                </span>
-                <span className="text-xs text-gray-500">{t("importProducts.fileHint")}</span>
-                <input
-                  type="file"
-                  accept=".csv,text/csv"
-                  aria-label={t("importProducts.chooseFile")}
-                  onChange={(e) => selectFile(e.target.files?.[0] ?? null)}
-                  className="sr-only"
-                />
-              </label>
+            <form ref={formRef} noValidate onSubmit={handleSubmit} className="space-y-4">
+              <PickerField label={t("importProducts.fileLabel")} required error={errorFor("file")}>
+                <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-6 py-10 text-center transition-colors hover:border-orange-300 hover:bg-orange-50/40 focus-within:border-orange-400 focus-within:ring-4 focus-within:ring-orange-100">
+                  <FileUp className="h-8 w-8 text-orange-500" strokeWidth={1.6} />
+                  <span className="text-sm font-medium text-gray-900">
+                    {file ? file.name : t("importProducts.chooseFile")}
+                  </span>
+                  <span className="text-xs text-gray-500">{t("importProducts.fileHint")}</span>
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    aria-label={t("importProducts.chooseFile")}
+                    aria-required
+                    onChange={(e) => selectFile(e.target.files?.[0] ?? null)}
+                    className="sr-only"
+                  />
+                </label>
+              </PickerField>
 
               {creditError && <InsufficientCreditsNotice error={creditError} />}
               {error && (
@@ -180,6 +184,7 @@ function ImportProductsPage() {
                 </Link>
               </div>
               <CreditHint perProduct />
+              <RequiredHint />
             </form>
           </FormSection>
         </div>

@@ -164,7 +164,11 @@ describe("UserCreditsPanel", () => {
     await userEvent.click(screen.getByRole("button", { name: t("admin.userCredits.adjust") }));
     const dialog = screen.getByRole("dialog");
     const save = within(dialog).getByRole("button", { name: t("admin.userCredits.save") });
-    expect(save).toBeDisabled();
+    expect(save).toBeEnabled();
+    await userEvent.click(save);
+    expect(apiMock.post).not.toHaveBeenCalled();
+    expect(within(dialog).getAllByText(t("common.fieldRequired"))).toHaveLength(2);
+    expect(within(dialog).getByLabelText(t("admin.userCredits.amount"))).toHaveFocus();
     await userEvent.type(within(dialog).getByLabelText(t("admin.userCredits.amount")), "5");
     await userEvent.type(within(dialog).getByLabelText(t("admin.common.reasonLabel")), "Goodwill");
     await userEvent.click(save);

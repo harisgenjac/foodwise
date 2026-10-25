@@ -7,6 +7,9 @@ import LanguageSwitcher from "../components/LanguageSwitcher.js";
 import { Info, Lock, Mail } from "lucide-react";
 import logo from "../assets/logoApp.png";
 import FormField, { inputStyle } from "../components/form/FormField.js";
+import RequiredHint from "../components/form/RequiredHint.js";
+import { useFormValidation } from "../hooks/useFormValidation.js";
+import { isBlank, REQUIRED } from "../utils/validation.js";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -16,6 +19,10 @@ function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const { formRef, errorFor, blur, validate } = useFormValidation({
+    email: isBlank(email) ? REQUIRED : undefined,
+    password: password ? undefined : REQUIRED,
+  });
   // Set when someone opened /register, which is closed for store and restaurant accounts.
   const registrationClosed = Boolean(
     (location.state as { registrationClosed?: boolean } | null)?.registrationClosed,
@@ -23,6 +30,7 @@ function LoginPage() {
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!validate()) return;
     try {
       await login(email, password);
       navigate("/dashboard");
@@ -89,8 +97,8 @@ function LoginPage() {
               </p>
             )}
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <FormField label={t("auth.email")} icon={Mail}>
+            <form ref={formRef} noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <FormField label={t("auth.email")} icon={Mail} required error={errorFor("email")}>
                 <input
                   id="email"
                   type="email"
@@ -98,10 +106,11 @@ function LoginPage() {
                   autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onBlur={blur("email")}
                   className={inputStyle}
                 />
               </FormField>
-              <FormField label={t("auth.password")} icon={Lock}>
+              <FormField label={t("auth.password")} icon={Lock} required error={errorFor("password")}>
                 <input
                   id="password"
                   type="password"
@@ -110,6 +119,7 @@ function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onBlur={blur("password")}
                   className={inputStyle}
                 />
               </FormField>
@@ -119,6 +129,7 @@ function LoginPage() {
               >
                 {t("auth.loginButton")}
               </button>
+              <RequiredHint className="text-center" />
             </form>
 
             <p className="text-sm text-gray-500 text-center mt-6">{t("auth.accountByAdmin")}</p>

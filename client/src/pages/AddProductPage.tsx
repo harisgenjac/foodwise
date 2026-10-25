@@ -5,7 +5,9 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { AlertCircle, Bookmark, FileUp, PackagePlus } from "lucide-react";
-import ProductFormFields, { EMPTY_PRODUCT_FORM } from "../components/product/ProductFormFields.js";
+import ProductFormFields, { EMPTY_PRODUCT_FORM, validateProductForm } from "../components/product/ProductFormFields.js";
+import RequiredHint from "../components/form/RequiredHint.js";
+import { useFormValidation } from "../hooks/useFormValidation.js";
 import ProductPreview from "../components/product/ProductPreview.js";
 import ProductTemplatesPanel from "../components/product/ProductTemplatesPanel.js";
 import { dateInDays, daysFromToday, toDateInput } from "../utils/expiry.js";
@@ -24,6 +26,7 @@ function AddProductPage() {
   const [appliedTemplateId, setAppliedTemplateId] = useState<number | null>(null);
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const { t } = useTranslation();
+  const { formRef, errorFor, blur, validate, reset } = useFormValidation(validateProductForm(form));
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -45,6 +48,7 @@ function AddProductPage() {
     setForm(EMPTY_PRODUCT_FORM);
     setAppliedTemplateId(null);
     setError("");
+    reset();
   };
 
   // Clicking the template that is already applied deselects it and empties the form.
@@ -65,6 +69,7 @@ function AddProductPage() {
     });
     setAppliedTemplateId(template.id);
     setError("");
+    reset();
     toast.success(t("templates.applied", { name: template.name }));
   };
 
@@ -103,10 +108,7 @@ function AddProductPage() {
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (Object.values(form).some((value) => !value)) {
-      setError(t("product.fillAllFields"));
-      return;
-    }
+    if (!validate()) return;
     setSaving(true);
     setCreditError(null);
     try {
@@ -166,7 +168,7 @@ function AddProductPage() {
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <form ref={formRef} noValidate onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <ProductTemplatesPanel
             templates={templates}
@@ -179,6 +181,8 @@ function AddProductPage() {
             values={form}
             onChange={updateField}
             minExpiryDate={toDateInput(new Date())}
+            errorFor={errorFor}
+            onBlur={blur}
           />
         </div>
 
@@ -222,6 +226,7 @@ function AddProductPage() {
             {t("product.addButton")}
           </button>
           <CreditHint className="justify-center" />
+          <RequiredHint className="text-center" />
           <Link
             to="/my-products"
             className="block w-full rounded-xl border border-gray-200 bg-white py-2.5 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"

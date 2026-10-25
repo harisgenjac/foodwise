@@ -4,17 +4,15 @@ import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { Coins, Inbox, SlidersHorizontal } from "lucide-react";
 import api from "../../api/axios.js";
-import Modal from "../product/Modal.js";
 import Pagination from "./Pagination.js";
 import CreditRequestDecisionModal, { CreditRequestDecisionButtons, type CreditRequestAction } from "./CreditRequestDecisionModal.js";
-import { inputStyle } from "../form/FormField.js";
+import AdjustCreditsModal from "./AdjustCreditsModal.js";
 import { formatDateTime } from "../../utils/admin.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
 import { describeCreditRequest, formatCreditMonth } from "../../utils/credits.js";
 import type { AdminCreditRequest, CreditSubscription, CreditTransaction } from "../../types/index.js";
 
 const LEDGER_PAGE_SIZE = 10;
-const MAX_REASON_LENGTH = 500;
 
 interface Balance {
   periodStart: string;
@@ -35,8 +33,6 @@ function UserCreditsPanel({ userId }: { userId: number }) {
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const [adjusting, setAdjusting] = useState(false);
-  const [amount, setAmount] = useState("");
-  const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<AdminCreditRequest[]>([]);
   const [decision, setDecision] = useState<{ request: AdminCreditRequest; action: CreditRequestAction } | null>(null);
@@ -82,11 +78,11 @@ function UserCreditsPanel({ userId }: { userId: number }) {
     load();
   };
 
-  const adjust = async () => {
+  const adjust = async (amount: number, reason: string) => {
     if (busy) return;
     setBusy(true);
     try {
-      await api.post(`/admin/credits/users/${userId}/adjust`, { amount: Number(amount), reason });
+      await api.post(`/admin/credits/users/${userId}/adjust`, { amount, reason });
       toast.success(t("admin.userCredits.adjusted"));
       setAdjusting(false);
       setOffset(0);
@@ -110,11 +106,7 @@ function UserCreditsPanel({ userId }: { userId: number }) {
         </h2>
         <button
           type="button"
-          onClick={() => {
-            setAmount("");
-            setReason("");
-            setAdjusting(true);
-          }}
+          onClick={() => setAdjusting(true)}
           className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
         >
           <SlidersHorizontal className="h-4 w-4" />
@@ -217,50 +209,7 @@ function UserCreditsPanel({ userId }: { userId: number }) {
         </>
       )}
 
-      {adjusting && (
-        <Modal onClose={() => setAdjusting(false)}>
-          <h3 className="text-lg font-bold text-gray-900">{t("admin.userCredits.adjustTitle")}</h3>
-          <p className="mt-2 text-sm text-gray-600">{t("admin.userCredits.adjustText")}</p>
-          <label className="mt-4 block text-sm font-medium text-gray-700">
-            {t("admin.userCredits.amount")}
-            <input
-              type="number"
-              step="1"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="+5 / -2"
-              className={`${inputStyle} mt-1.5`}
-            />
-          </label>
-          <label className="mt-3 block text-sm font-medium text-gray-700">
-            {t("admin.common.reasonLabel")}
-            <textarea
-              rows={3}
-              maxLength={MAX_REASON_LENGTH}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className={`${inputStyle} mt-1.5 resize-none`}
-            />
-          </label>
-          <div className="mt-5 flex gap-2">
-            <button
-              type="button"
-              onClick={() => setAdjusting(false)}
-              className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
-            >
-              {t("admin.common.cancel")}
-            </button>
-            <button
-              type="button"
-              onClick={adjust}
-              disabled={busy || !amount || !reason.trim()}
-              className="flex-1 cursor-pointer rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {t("admin.userCredits.save")}
-            </button>
-          </div>
-        </Modal>
-      )}
+      {adjusting && <AdjustCreditsModal busy={busy} onConfirm={adjust} onClose={() => setAdjusting(false)} />}
 
       {decision && (
         <CreditRequestDecisionModal

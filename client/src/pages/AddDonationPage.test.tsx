@@ -55,11 +55,52 @@ describe("AddDonationPage", () => {
     await fillBasics();
 
     await userEvent.click(screen.getByRole("button", { name: t("donations.form.submitAdd") }));
-    expect(screen.getByText(t("donations.form.fillAllFields"))).toBeInTheDocument();
+    const price = field("donations.form.donationPrice");
+    expect(price).toHaveAccessibleDescription(t("common.fieldRequired"));
+    expect(price).toHaveFocus();
 
-    await userEvent.type(field("donations.form.donationPrice"), "3");
+    await userEvent.type(price, "3");
     await userEvent.click(screen.getByRole("button", { name: t("donations.form.submitAdd") }));
-    expect(screen.getAllByText(t("donations.form.priceInvalid")).length).toBeGreaterThan(0);
+    expect(price).toHaveAccessibleDescription(t("donations.form.priceInvalid"));
+    expect(apiMock.post).not.toHaveBeenCalled();
+  });
+
+  it("requires the donation price only for a paid donation", async () => {
+    renderPage();
+    await screen.findByText(t("donations.form.addTitle"), { selector: "h1" });
+    expect(screen.queryByLabelText(t("donations.form.donationPrice"), { exact: false })).not.toBeInTheDocument();
+    expect(field("donations.form.originalPrice")).toHaveAttribute("aria-required", "true");
+
+    await userEvent.click(screen.getByRole("radio", { name: new RegExp(t("donations.types.SPONSORED")) }));
+    expect(field("donations.form.donationPrice")).toHaveAttribute("aria-required", "true");
+    expect(field("donations.form.donationPrice").closest("label")?.querySelector("span")).toHaveClass("after:content-['*']");
+
+    await userEvent.click(screen.getByRole("radio", { name: new RegExp(t("donations.types.FREE")) }));
+    expect(screen.queryByLabelText(t("donations.form.donationPrice"), { exact: false })).not.toBeInTheDocument();
+  });
+
+  it("marks the empty required fields on submit and sends nothing", async () => {
+    renderPage();
+    await screen.findByText(t("donations.form.addTitle"), { selector: "h1" });
+    expect(screen.queryByText(t("common.fieldRequired"))).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: t("donations.form.submitAdd") }));
+    // Name, category, value, quantity, unit and the last day.
+    expect(screen.getAllByText(t("common.fieldRequired"))).toHaveLength(6);
+    expect(field("donations.form.name")).toHaveFocus();
+    expect(field("donations.form.description")).not.toHaveAttribute("aria-invalid");
+    expect(apiMock.post).not.toHaveBeenCalled();
+  });
+
+  it("flags a pickup window that ends before it starts", async () => {
+    renderPage();
+    await screen.findByText(t("donations.form.addTitle"), { selector: "h1" });
+    await fillBasics();
+    await userEvent.type(field("donations.form.pickupFrom"), "18:00");
+    await userEvent.type(field("donations.form.pickupUntil"), "09:00");
+    await userEvent.click(screen.getByRole("button", { name: t("donations.form.submitAdd") }));
+
+    expect(field("donations.form.pickupUntil")).toHaveAccessibleDescription(t("donations.form.invalidPickup"));
     expect(apiMock.post).not.toHaveBeenCalled();
   });
 

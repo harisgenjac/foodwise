@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import FormSection from "../form/FormSection.js";
 import FormField, { inputStyle } from "../form/FormField.js";
+import PickerField from "../form/PickerField.js";
 import { useDonationLabels } from "../../hooks/useDonationLabels.js";
 import {
   ALLERGENS,
@@ -24,6 +25,7 @@ import {
   getDonationIcon,
 } from "../../utils/donations.js";
 import { dateInDays } from "../../utils/expiry.js";
+import type { DonationField } from "../../utils/donations.js";
 import type { DonationFormValues, DonationType } from "../../types/index.js";
 
 const EXPIRY_SHORTCUTS = [0, 1, 3, 7];
@@ -33,16 +35,26 @@ interface DonationFormFieldsProps {
   values: DonationFormValues;
   onChange: <K extends keyof DonationFormValues>(field: K, value: DonationFormValues[K]) => void;
   minExpiryDate?: string | undefined;
+  // From useFormValidation: the translated error of a field, and its blur handler.
+  errorFor?: (field: DonationField) => string | undefined;
+  onBlur?: (field: DonationField) => () => void;
 }
 
 // The form sections shared by AddDonationPage and EditDonationPage.
-function DonationFormFields({ values, onChange, minExpiryDate }: DonationFormFieldsProps) {
+function DonationFormFields({
+  values,
+  onChange,
+  minExpiryDate,
+  errorFor = () => undefined,
+  onBlur = () => () => {},
+}: DonationFormFieldsProps) {
   const { t } = useTranslation();
   const labels = useDonationLabels();
   const isMeal = values.category === MEAL_CATEGORY;
   const isSponsored = values.donation_type === "SPONSORED";
   const discountPercent = donationDiscountPercent(values.original_price, values.donation_price);
   const hasPrices = Number(values.original_price) > 0 && Number(values.donation_price) > 0;
+  const donationPriceError = errorFor("donation_price");
 
   const toggleAllergen = (allergen: string) => {
     onChange(
@@ -62,7 +74,7 @@ function DonationFormFields({ values, onChange, minExpiryDate }: DonationFormFie
 
   return (
     <>
-      <FormSection title={t("donations.form.typeSection")} icon={HeartHandshake}>
+      <FormSection title={t("donations.form.typeSection")} icon={HeartHandshake} required>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup">
           {(["FREE", "SPONSORED"] as DonationType[]).map((type) => {
             const Icon = TYPE_ICONS[type];
@@ -99,12 +111,13 @@ function DonationFormFields({ values, onChange, minExpiryDate }: DonationFormFie
 
       <FormSection title={t("donations.form.basicsSection")} icon={FileText}>
         <div className="space-y-4">
-          <FormField label={t("donations.form.name")} icon={Package}>
+          <FormField label={t("donations.form.name")} icon={Package} required error={errorFor("name")}>
             <input
               type="text"
               placeholder={t("donations.form.namePlaceholder")}
               value={values.name}
               onChange={(e) => onChange("name", e.target.value)}
+              onBlur={onBlur("name")}
               className={inputStyle}
             />
           </FormField>
@@ -118,8 +131,12 @@ function DonationFormFields({ values, onChange, minExpiryDate }: DonationFormFie
             />
           </FormField>
 
-          <div>
-            <span className="mb-1.5 block text-sm font-medium text-gray-700">{t("donations.form.category")}</span>
+          <PickerField
+            label={t("donations.form.category")}
+            required
+            error={errorFor("category")}
+            onBlur={onBlur("category")}
+          >
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {Object.entries(labels.categories).map(([key, label]) => {
                 const Icon = getDonationIcon(key);
@@ -142,7 +159,7 @@ function DonationFormFields({ values, onChange, minExpiryDate }: DonationFormFie
                 );
               })}
             </div>
-          </div>
+          </PickerField>
         </div>
       </FormSection>
 
@@ -196,7 +213,7 @@ function DonationFormFields({ values, onChange, minExpiryDate }: DonationFormFie
         icon={Tag}
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label={t("donations.form.originalPrice")} icon={Tag} suffix="KM">
+          <FormField label={t("donations.form.originalPrice")} icon={Tag} suffix="KM" required error={errorFor("original_price")}>
             <input
               type="number"
               min="0"
@@ -204,11 +221,12 @@ function DonationFormFields({ values, onChange, minExpiryDate }: DonationFormFie
               placeholder="0.00"
               value={values.original_price}
               onChange={(e) => onChange("original_price", e.target.value)}
+              onBlur={onBlur("original_price")}
               className={`${inputStyle} pr-12`}
             />
           </FormField>
           {isSponsored && (
-            <FormField label={t("donations.form.donationPrice")} icon={HandCoins} suffix="KM">
+            <FormField label={t("donations.form.donationPrice")} icon={HandCoins} suffix="KM" required error={donationPriceError}>
               <input
                 type="number"
                 min="0"
@@ -216,12 +234,13 @@ function DonationFormFields({ values, onChange, minExpiryDate }: DonationFormFie
                 placeholder="0.00"
                 value={values.donation_price}
                 onChange={(e) => onChange("donation_price", e.target.value)}
+                onBlur={onBlur("donation_price")}
                 className={`${inputStyle} pr-12`}
               />
             </FormField>
           )}
         </div>
-        {isSponsored && hasPrices && (
+        {isSponsored && hasPrices && !donationPriceError && (
           discountPercent !== null ? (
             <p className="mt-4 inline-flex items-center rounded-full bg-violet-50 px-3 py-1 text-sm font-semibold text-violet-700">
               {t("donations.form.donorPays", { price: values.donation_price, percent: discountPercent })}
@@ -237,7 +256,7 @@ function DonationFormFields({ values, onChange, minExpiryDate }: DonationFormFie
 
       <FormSection title={t("donations.form.stockSection")} icon={Scale}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label={t("donations.form.quantity")} icon={Package}>
+          <FormField label={t("donations.form.quantity")} icon={Package} required error={errorFor("quantity")}>
             <input
               type="number"
               min="0"
@@ -245,11 +264,17 @@ function DonationFormFields({ values, onChange, minExpiryDate }: DonationFormFie
               placeholder="0"
               value={values.quantity}
               onChange={(e) => onChange("quantity", e.target.value)}
+              onBlur={onBlur("quantity")}
               className={inputStyle}
             />
           </FormField>
-          <FormField label={t("donations.form.unit")} icon={Scale}>
-            <select value={values.unit} onChange={(e) => onChange("unit", e.target.value)} className={inputStyle}>
+          <FormField label={t("donations.form.unit")} icon={Scale} required error={errorFor("unit")}>
+            <select
+              value={values.unit}
+              onChange={(e) => onChange("unit", e.target.value)}
+              onBlur={onBlur("unit")}
+              className={inputStyle}
+            >
               <option value="">{t("product.selectUnit")}</option>
               {Object.entries(labels.units).map(([key, label]) => (
                 <option key={key} value={key}>
@@ -259,12 +284,13 @@ function DonationFormFields({ values, onChange, minExpiryDate }: DonationFormFie
             </select>
           </FormField>
           <div className="sm:col-span-2">
-            <FormField label={t("donations.form.expiryDate")} icon={CalendarDays}>
+            <FormField label={t("donations.form.expiryDate")} icon={CalendarDays} required error={errorFor("expiry_date")}>
               <input
                 type="date"
                 min={minExpiryDate}
                 value={values.expiry_date}
                 onChange={(e) => onChange("expiry_date", e.target.value)}
+                onBlur={onBlur("expiry_date")}
                 className={inputStyle}
               />
             </FormField>
@@ -296,11 +322,12 @@ function DonationFormFields({ values, onChange, minExpiryDate }: DonationFormFie
               className={inputStyle}
             />
           </FormField>
-          <FormField label={t("donations.form.pickupUntil")} icon={Clock}>
+          <FormField label={t("donations.form.pickupUntil")} icon={Clock} error={errorFor("pickup_until")}>
             <input
               type="time"
               value={values.pickup_until}
               onChange={(e) => onChange("pickup_until", e.target.value)}
+              onBlur={onBlur("pickup_until")}
               className={inputStyle}
             />
           </FormField>

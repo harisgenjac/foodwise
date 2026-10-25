@@ -2,6 +2,8 @@ import { useTranslation } from "react-i18next";
 import { AlertCircle, CalendarDays, FileText, Lock, Package, Scale, Tag } from "lucide-react";
 import FormSection from "../form/FormSection.js";
 import FormField, { inputStyle } from "../form/FormField.js";
+import PickerField from "../form/PickerField.js";
+import { isBlank, REQUIRED, type FieldErrors } from "../../utils/validation.js";
 import { getCategoryIcon } from "../../utils/categoryIcons.js";
 import { dateInDays } from "../../utils/expiry.js";
 import type { ProductFormValues } from "../../types/index.js";
@@ -19,6 +21,17 @@ export const EMPTY_PRODUCT_FORM: ProductFormValues = {
   expiry_date: "",
 };
 
+export type ProductField = keyof ProductFormValues;
+
+// Every field but the description is required (the server checks the values too).
+export const validateProductForm = (form: ProductFormValues): FieldErrors<ProductField> => {
+  const errors: FieldErrors<ProductField> = {};
+  for (const field of Object.keys(form) as ProductField[]) {
+    if (field !== "description" && isBlank(form[field] ?? "")) errors[field] = REQUIRED;
+  }
+  return errors;
+};
+
 interface ProductFormFieldsProps {
   values: ProductFormValues;
   onChange: (field: keyof ProductFormValues, value: string) => void;
@@ -26,10 +39,20 @@ interface ProductFormFieldsProps {
   minExpiryDate?: string | undefined;
   // Editing a published product: quantity and expiry date are shown but cannot be changed.
   stockLocked?: boolean;
+  // From useFormValidation: the translated error of a field, and its blur handler.
+  errorFor?: (field: ProductField) => string | undefined;
+  onBlur?: (field: ProductField) => () => void;
 }
 
 // The three form sections shared by AddProductPage and EditProductPage.
-function ProductFormFields({ values, onChange, minExpiryDate, stockLocked = false }: ProductFormFieldsProps) {
+function ProductFormFields({
+  values,
+  onChange,
+  minExpiryDate,
+  stockLocked = false,
+  errorFor = () => undefined,
+  onBlur = () => () => {},
+}: ProductFormFieldsProps) {
   const { t } = useTranslation();
   const categories = t("categories", { returnObjects: true }) as Record<string, string>;
   const units = t("units", { returnObjects: true }) as Record<string, string>;
@@ -45,12 +68,13 @@ function ProductFormFields({ values, onChange, minExpiryDate, stockLocked = fals
     <>
       <FormSection title={t("product.basicsSection")} icon={FileText}>
         <div className="space-y-4">
-          <FormField label={t("product.name")} icon={Package}>
+          <FormField label={t("product.name")} icon={Package} required error={errorFor("name")}>
             <input
               type="text"
               placeholder={t("product.namePlaceholder")}
               value={values.name}
               onChange={(e) => onChange("name", e.target.value)}
+              onBlur={onBlur("name")}
               className={inputStyle}
             />
           </FormField>
@@ -64,8 +88,7 @@ function ProductFormFields({ values, onChange, minExpiryDate, stockLocked = fals
             />
           </FormField>
 
-          <div>
-            <span className="mb-1.5 block text-sm font-medium text-gray-700">{t("product.category")}</span>
+          <PickerField label={t("product.category")} required error={errorFor("category")} onBlur={onBlur("category")}>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {Object.entries(categories).map(([key, label]) => {
                 const Icon = getCategoryIcon(key);
@@ -88,13 +111,13 @@ function ProductFormFields({ values, onChange, minExpiryDate, stockLocked = fals
                 );
               })}
             </div>
-          </div>
+          </PickerField>
         </div>
       </FormSection>
 
       <FormSection title={t("product.priceSection")} icon={Tag}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label={t("product.originalPrice")} icon={Tag} suffix="KM">
+          <FormField label={t("product.originalPrice")} icon={Tag} suffix="KM" required error={errorFor("original_price")}>
             <input
               type="number"
               min="0"
@@ -102,10 +125,11 @@ function ProductFormFields({ values, onChange, minExpiryDate, stockLocked = fals
               placeholder="0.00"
               value={values.original_price}
               onChange={(e) => onChange("original_price", e.target.value)}
+              onBlur={onBlur("original_price")}
               className={`${inputStyle} pr-12`}
             />
           </FormField>
-          <FormField label={t("product.discountedPrice")} icon={Tag} suffix="KM">
+          <FormField label={t("product.discountedPrice")} icon={Tag} suffix="KM" required error={errorFor("discounted_price")}>
             <input
               type="number"
               min="0"
@@ -113,6 +137,7 @@ function ProductFormFields({ values, onChange, minExpiryDate, stockLocked = fals
               placeholder="0.00"
               value={values.discounted_price}
               onChange={(e) => onChange("discounted_price", e.target.value)}
+              onBlur={onBlur("discounted_price")}
               className={`${inputStyle} pr-12`}
             />
           </FormField>
@@ -133,7 +158,7 @@ function ProductFormFields({ values, onChange, minExpiryDate, stockLocked = fals
 
       <FormSection title={t("product.stockSection")} icon={Scale}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label={t("product.quantity")} icon={Package}>
+          <FormField label={t("product.quantity")} icon={Package} required error={errorFor("quantity")}>
             <input
               type="number"
               min="0"
@@ -141,12 +166,18 @@ function ProductFormFields({ values, onChange, minExpiryDate, stockLocked = fals
               placeholder="0"
               value={values.quantity}
               onChange={(e) => onChange("quantity", e.target.value)}
+              onBlur={onBlur("quantity")}
               disabled={stockLocked}
               className={`${inputStyle} disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500`}
             />
           </FormField>
-          <FormField label={t("product.unit")} icon={Scale}>
-            <select value={values.unit} onChange={(e) => onChange("unit", e.target.value)} className={inputStyle}>
+          <FormField label={t("product.unit")} icon={Scale} required error={errorFor("unit")}>
+            <select
+              value={values.unit}
+              onChange={(e) => onChange("unit", e.target.value)}
+              onBlur={onBlur("unit")}
+              className={inputStyle}
+            >
               <option value="">{t("product.selectUnit")}</option>
               {Object.entries(units).map(([key, label]) => (
                 <option key={key} value={key}>
@@ -156,12 +187,13 @@ function ProductFormFields({ values, onChange, minExpiryDate, stockLocked = fals
             </select>
           </FormField>
           <div className="sm:col-span-2">
-            <FormField label={t("product.expiryDate")} icon={CalendarDays}>
+            <FormField label={t("product.expiryDate")} icon={CalendarDays} required error={errorFor("expiry_date")}>
               <input
                 type="date"
                 min={minExpiryDate}
                 value={values.expiry_date}
                 onChange={(e) => onChange("expiry_date", e.target.value)}
+                onBlur={onBlur("expiry_date")}
                 disabled={stockLocked}
                 className={`${inputStyle} disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500`}
               />

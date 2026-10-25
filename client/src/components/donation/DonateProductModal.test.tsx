@@ -43,6 +43,22 @@ describe("DonateProductModal", () => {
     expect(await screen.findByDisplayValue("3")).toBeInTheDocument();
   });
 
+  it("requires a price for a paid donation and sends nothing without it", async () => {
+    renderModal(makeProduct({ id: 4, available_quantity: "6", original_price: "10.00" }));
+
+    await userEvent.click(screen.getByRole("radio", { name: t("donations.types.SPONSORED") }));
+    const price = screen.getByLabelText(t("donations.form.donationPrice"), { exact: false });
+    expect(price).toHaveAttribute("aria-required", "true");
+    expect(price).not.toHaveAttribute("aria-invalid");
+
+    await userEvent.clear(quantityInput());
+    await userEvent.click(confirmButton());
+    expect(apiMock.post).not.toHaveBeenCalled();
+    expect(quantityInput()).toHaveAccessibleDescription(t("common.fieldRequired"));
+    expect(price).toHaveAccessibleDescription(t("common.fieldRequired"));
+    expect(quantityInput()).toHaveFocus();
+  });
+
   it("sends the donation price for a paid donation", async () => {
     apiMock.post.mockResolvedValue({ data: {} });
     renderModal(makeProduct({ id: 4, available_quantity: "6", original_price: "10.00" }));

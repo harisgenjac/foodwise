@@ -34,7 +34,7 @@ import UserCreditsPanel from "../../components/admin/UserCreditsPanel.js";
 import Modal from "../../components/product/Modal.js";
 import ReasonModal from "../../components/admin/ReasonModal.js";
 import EditProfileModal from "../../components/admin/EditProfileModal.js";
-import FormField, { inputStyle } from "../../components/form/FormField.js";
+import SetPasswordModal from "../../components/admin/SetPasswordModal.js";
 import { ROLE_STYLES, accountName, formatDateTime } from "../../utils/admin.js";
 import { getAccountSetup } from "../../utils/accountSetup.js";
 import type { AdminAction, AdminUserCounts, User } from "../../types/index.js";
@@ -53,9 +53,6 @@ function AdminUserDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [busy, setBusy] = useState(false);
-  const [password, setPassword] = useState("");
-  const [passwordRepeat, setPasswordRepeat] = useState("");
-  const [passwordError, setPasswordError] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -77,9 +74,6 @@ function AdminUserDetailsPage() {
 
   const closeDialog = () => {
     setDialog(null);
-    setPassword("");
-    setPasswordRepeat("");
-    setPasswordError("");
   };
 
   // Runs one admin action once (busy blocks double clicks), then reloads the user.
@@ -96,15 +90,6 @@ function AdminUserDetailsPage() {
     } finally {
       setBusy(false);
     }
-  };
-
-  const handlePasswordSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (password !== passwordRepeat) {
-      setPasswordError(t("admin.userDetails.passwordMismatch"));
-      return;
-    }
-    run(() => api.patch(`/admin/users/${id}/password`, { password }));
   };
 
   if (loading) return <LoadingSpinner />;
@@ -354,53 +339,12 @@ function AdminUserDetailsPage() {
       )}
 
       {dialog === "password" && (
-        <Modal onClose={closeDialog}>
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">{t("admin.userDetails.passwordTitle")}</h2>
-              <p className="mt-1 text-sm text-gray-600">{t("admin.userDetails.passwordText", { name })}</p>
-            </div>
-            <FormField label={t("admin.userDetails.newPassword")} icon={Lock}>
-              <input
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setPasswordError("");
-                }}
-                className={inputStyle}
-              />
-            </FormField>
-            <FormField label={t("admin.userDetails.confirmPassword")} icon={Lock}>
-              <input
-                type="password"
-                autoComplete="new-password"
-                value={passwordRepeat}
-                onChange={(e) => {
-                  setPasswordRepeat(e.target.value);
-                  setPasswordError("");
-                }}
-                className={inputStyle}
-              />
-            </FormField>
-            <p className={`text-xs ${passwordError ? "text-red-600" : "text-gray-500"}`}>
-              {passwordError || t("auth.passwordHint")}
-            </p>
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={closeDialog} className={secondaryButton}>
-                {t("admin.common.cancel")}
-              </button>
-              <button
-                type="submit"
-                disabled={busy}
-                className="cursor-pointer rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-60"
-              >
-                {t("admin.userDetails.savePassword")}
-              </button>
-            </div>
-          </form>
-        </Modal>
+        <SetPasswordModal
+          name={name}
+          busy={busy}
+          onConfirm={(password) => run(() => api.patch(`/admin/users/${id}/password`, { password }))}
+          onClose={closeDialog}
+        />
       )}
     </div>
   );

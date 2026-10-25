@@ -8,7 +8,9 @@ import { AlertCircle, Pencil, Save, SearchX } from "lucide-react";
 import { useAuth } from "../context/AuthContext.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import EmptyState from "../components/product/EmptyState.js";
-import ProductFormFields, { EMPTY_PRODUCT_FORM } from "../components/product/ProductFormFields.js";
+import ProductFormFields, { EMPTY_PRODUCT_FORM, validateProductForm } from "../components/product/ProductFormFields.js";
+import RequiredHint from "../components/form/RequiredHint.js";
+import { useFormValidation } from "../hooks/useFormValidation.js";
 import ProductPreview from "../components/product/ProductPreview.js";
 import type { Product, ProductFormValues } from "../types/index.js";
 
@@ -22,6 +24,7 @@ function EditProductPage() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const { t } = useTranslation();
+  const { formRef, errorFor, blur, validate } = useFormValidation(validateProductForm(form));
 
   const fetchProduct = async () => {
     try {
@@ -60,10 +63,7 @@ function EditProductPage() {
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (Object.values(form).some((value) => !value)) {
-      setError(t("product.fillAllFields"));
-      return;
-    }
+    if (!validate()) return;
     setSaving(true);
     try {
       const response = await api.put("/products/" + id, form);
@@ -117,10 +117,10 @@ function EditProductPage() {
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <form ref={formRef} noValidate onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           {/* The published quantity and expiry date were paid for with a credit, so they stay fixed. */}
-          <ProductFormFields values={form} onChange={updateField} stockLocked />
+          <ProductFormFields values={form} onChange={updateField} stockLocked errorFor={errorFor} onBlur={blur} />
         </div>
 
         <aside className="lg:sticky lg:top-0 lg:self-start space-y-4">
@@ -134,6 +134,7 @@ function EditProductPage() {
             <Save className="h-5 w-5" strokeWidth={1.8} />
             {t("product.saveChanges")}
           </button>
+          <RequiredHint className="text-center" />
           <Link
             to={`/products/${id}`}
             className="block w-full rounded-xl border border-gray-200 bg-white py-2.5 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"

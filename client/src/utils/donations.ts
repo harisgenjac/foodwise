@@ -2,6 +2,7 @@ import { UtensilsCrossed } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { CATEGORY_IMAGES } from "./categoryImages.js";
 import { getCategoryIcon } from "./categoryIcons.js";
+import { isBlank, REQUIRED, type FieldErrors } from "./validation.js";
 import type { DonationFormValues, DonationOffer } from "../types/index.js";
 
 // Keep in sync with server/src/utils/validateDonation.ts.
@@ -87,19 +88,28 @@ export const donationToForm = (donation: DonationOffer): DonationFormValues => (
   serving_temperature: donation.serving_temperature ?? "",
 });
 
-// The client-side checks before a request; returns an i18n key or null.
-export const validateDonationForm = (form: DonationFormValues): string | null => {
-  const required = [form.name.trim(), form.category, form.quantity, form.unit, form.original_price, form.expiry_date];
-  if (required.some((value) => !value) || (form.donation_type === "SPONSORED" && !form.donation_price)) {
-    return "donations.form.fillAllFields";
+export type DonationField = keyof DonationFormValues;
+
+const REQUIRED_DONATION_FIELDS = ["name", "category", "quantity", "unit", "original_price", "expiry_date"] as const;
+
+// The client-side checks before a request: an i18n key per invalid field. A paid donation also
+// needs a price below the value; the pickup window is optional but must end after it starts.
+export const validateDonationForm = (form: DonationFormValues): FieldErrors<DonationField> => {
+  const errors: FieldErrors<DonationField> = {};
+  for (const field of REQUIRED_DONATION_FIELDS) {
+    if (isBlank(form[field])) errors[field] = REQUIRED;
   }
-  if (form.donation_type === "SPONSORED" && donationDiscountPercent(form.original_price, form.donation_price) === null) {
-    return "donations.form.priceInvalid";
+  if (form.donation_type === "SPONSORED") {
+    if (isBlank(form.donation_price)) {
+      errors.donation_price = REQUIRED;
+    } else if (!errors.original_price && donationDiscountPercent(form.original_price, form.donation_price) === null) {
+      errors.donation_price = "donations.form.priceInvalid";
+    }
   }
   if (form.pickup_from && form.pickup_until && form.pickup_from >= form.pickup_until) {
-    return "donations.form.invalidPickup";
+    errors.pickup_until = "donations.form.invalidPickup";
   }
-  return null;
+  return errors;
 };
 
 // Request body: FREE donations carry no price and only meals carry meal details.
