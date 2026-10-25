@@ -1114,6 +1114,7 @@
     },
     "userCredits": {
       "title": "Krediti",
+      "pendingTitle": "Zahtjevi na čekanju",
       "adjust": "Ispravi stanje",
       "plan": "Plan",
       "ledgerTitle": "Historija kredita",

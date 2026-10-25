@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import toast from "react-hot-toast";
 import AdminCreditRequestsPage from "./AdminCreditRequestsPage.js";
@@ -123,38 +123,43 @@ describe("AdminCreditsPage", () => {
 });
 
 describe("UserCreditsPanel", () => {
-  it("shows the ledger and adjusts the balance with a reason", async () => {
-    apiMock.post.mockResolvedValue({ data: {} });
+  const LEDGER = {
+    balance: { periodStart: "2030-01-01", periodEnd: "2030-01-31", subscription: null, total: 5, used: 1, available: 0 },
+    transactions: [
+      {
+        id: 1,
+        period_month: "2030-01-01",
+        amount: -1,
+        type: "PRODUCT_CHARGE",
+        reason: null,
+        category: "Fish",
+        related_entity_type: "product",
+        related_entity_id: 77,
+        refunds_transaction_id: null,
+        actor: "USER",
+        created_at: "2030-01-02T09:00:00.000Z",
+        created_by_email: "store@demo.com",
+      },
+    ],
+    total: 1,
+  };
+
+  const renderPanel = (pending: (params: unknown) => unknown) =>
     renderWithProviders(<UserCreditsPanel userId={3} />, {
       route: "/admin/users/3",
       path: "/admin/users/:id",
       user: admin,
-      get: {
-        "/admin/credits/users/3/ledger": {
-          balance: { periodStart: "2030-01-01", periodEnd: "2030-01-31", subscription: null, total: 5, used: 1, available: 0 },
-          transactions: [
-            {
-              id: 1,
-              period_month: "2030-01-01",
-              amount: -1,
-              type: "PRODUCT_CHARGE",
-              reason: null,
-              category: "Fish",
-              related_entity_type: "product",
-              related_entity_id: 77,
-              refunds_transaction_id: null,
-              actor: "USER",
-              created_at: "2030-01-02T09:00:00.000Z",
-              created_by_email: "store@demo.com",
-            },
-          ],
-          total: 1,
-        },
-      },
+      get: { "/admin/credits/users/3/ledger": LEDGER, "/admin/credits/requests": pending },
     });
+
+  it("shows the ledger and adjusts the balance with a reason", async () => {
+    apiMock.post.mockResolvedValue({ data: {} });
+    renderPanel(() => ({ requests: [], total: 0 }));
 
     expect(await screen.findByText(t("admin.userCredits.types.PRODUCT_CHARGE"))).toBeInTheDocument();
     expect(screen.getByText("-1")).toBeInTheDocument();
+    // Nothing waits: no pending block.
+    expect(screen.queryByText(t("admin.userCredits.pendingTitle"))).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: t("admin.userCredits.adjust") }));
     const dialog = screen.getByRole("dialog");
@@ -164,5 +169,25 @@ describe("UserCreditsPanel", () => {
     await userEvent.type(within(dialog).getByLabelText(t("admin.common.reasonLabel")), "Goodwill");
     await userEvent.click(save);
     expect(apiMock.post).toHaveBeenCalledWith("/admin/credits/users/3/adjust", { amount: 5, reason: "Goodwill" });
+  });
+
+  it("approves the user's pending request and reloads it", async () => {
+    apiMock.post.mockResolvedValue({ data: {} });
+    let decided = false;
+    const pending = vi.fn(() => ({ requests: decided ? [] : [REQUEST], total: decided ? 0 : 1 }));
+    renderPanel(pending);
+
+    expect(await screen.findByText(t("admin.userCredits.pendingTitle"))).toBeInTheDocument();
+    expect(pending).toHaveBeenCalledWith({ user_id: 3, status: "PENDING" });
+    expect(screen.getByText(/Standard · .* · 30\.00 KM/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: t("admin.creditRequests.approve") }));
+    const dialog = screen.getByRole("dialog");
+    await userEvent.type(within(dialog).getByLabelText(t("admin.creditRequests.note")), "Paid in cash");
+    decided = true;
+    await userEvent.click(within(dialog).getByRole("button", { name: t("admin.creditRequests.approve") }));
+
+    expect(apiMock.post).toHaveBeenCalledWith("/admin/credits/requests/5/approve", { note: "Paid in cash" });
+    await waitFor(() => expect(screen.queryByText(t("admin.userCredits.pendingTitle"))).not.toBeInTheDocument());
   });
 });

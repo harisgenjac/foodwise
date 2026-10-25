@@ -1088,6 +1088,7 @@
     },
     "userCredits": {
       "title": "Credits",
+      "pendingTitle": "Pending requests",
       "adjust": "Adjust balance",
       "plan": "Plan",
       "ledgerTitle": "Credit history",
