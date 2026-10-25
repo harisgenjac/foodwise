@@ -68,7 +68,7 @@ describe("DonateFoodPage", () => {
       await screen.findByRole("combobox", { name: t("donations.filters.type") }),
       "SPONSORED",
     );
-    await waitFor(() => expect(params.at(-1)).toEqual({ name: "", type: "SPONSORED", status: "" }));
+    await waitFor(() => expect(params.at(-1)).toEqual({ name: "", type: "SPONSORED", status: "", limit: 12 }));
     expect(screen.getByText(t("donations.noResultsTitle"))).toBeInTheDocument();
   });
 

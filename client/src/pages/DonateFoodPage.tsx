@@ -26,7 +26,10 @@ import LoadErrorState from "../components/product/LoadErrorState.js";
 import Modal from "../components/product/Modal.js";
 import DonationCard from "../components/donation/DonationCard.js";
 import { inputStyle } from "../components/form/FormField.js";
+import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
+import { usePagedLimit } from "../hooks/usePagedLimit.js";
+import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import { useDonationLabels } from "../hooks/useDonationLabels.js";
 import type { DonationOffer } from "../types/index.js";
 import InsufficientCreditsNotice from "../components/credits/InsufficientCreditsNotice.js";
@@ -41,10 +44,13 @@ function DonateFoodPage() {
   const [selectedDonation, setSelectedDonation] = useState<DonationOffer | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [creditError, setCreditError] = useState<CreditError | null>(null);
-  const { data: donations, error, loading, refetch } = useFetch<DonationOffer>(
+  // 12 at a time; a filter change starts again from the first page, a reload keeps the limit.
+  const filters = { name, type, status };
+  const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(filters));
+  const { data: donations, total, error, loading, fetching, refetch } = useFetch<DonationOffer>(
     "/donations/mine",
     "donations",
-    { name, type, status },
+    { ...filters, limit },
   );
 
   const handleDelete = async (donation: DonationOffer) => {
@@ -110,7 +116,7 @@ function DonateFoodPage() {
         title={t("donations.title")}
         subtitle={t("donations.subtitle")}
         icon={HeartHandshake}
-        count={t("donations.count", { count: donations.length })}
+        count={t("donations.count", { count: total ?? donations.length })}
         action={{ to: "/donate-food/new", label: t("donations.newButton"), icon: HandHeart }}
       />
 
@@ -228,6 +234,13 @@ function DonateFoodPage() {
           ))}
         </div>
       )}
+
+      <LoadMore
+        shown={donations.length}
+        total={total ?? donations.length}
+        fetching={fetching}
+        onLoadMore={loadMore}
+      />
 
       {selectedDonation && (
         <Modal onClose={() => setSelectedDonation(null)}>

@@ -6,6 +6,7 @@ import type { LucideIcon } from "lucide-react";
 import { AlertCircle, Languages, Megaphone, Store, Users, UtensilsCrossed } from "lucide-react";
 import api from "../../api/axios.js";
 import { useFetch } from "../../hooks/useFetch.js";
+import { useAdminPage, useKeepPageInRange } from "../../hooks/useAdminPage.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
 import FormSection from "../../components/form/FormSection.js";
 import DateInput from "../../components/form/DateInput.js";
@@ -40,13 +41,14 @@ function AdminAnnouncementsPage() {
   const [confirming, setConfirming] = useState(false);
   const [ending, setEnding] = useState<AdminAnnouncement | null>(null);
   const [busy, setBusy] = useState(false);
-  const [offset, setOffset] = useState(0);
+  const { page, offset, setPage } = useAdminPage();
 
   const { data: announcements, total, loading, error: loadError, refetch } = useFetch<AdminAnnouncement>(
     "/admin/announcements",
     "announcements",
     { limit: ADMIN_PAGE_SIZE, offset },
   );
+  useKeepPageInRange(page, total, setPage);
 
   const audiences = t("admin.announcements.audiences", { returnObjects: true }) as Record<string, string>;
   const descriptions = t("admin.announcements.audienceDescriptions", { returnObjects: true }) as Record<string, string>;
@@ -75,7 +77,7 @@ function AdminAnnouncementsPage() {
       });
       toast.success(t("admin.announcements.sent", { count: response.data.recipients }));
       setForm(EMPTY_FORM);
-      setOffset(0);
+      setPage(1);
       refetch();
     } catch (err) {
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
@@ -296,7 +298,7 @@ function AdminAnnouncementsPage() {
                 </tbody>
               </table>
             </div>
-            <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={setOffset} />
+            <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={(next) => setPage(next / ADMIN_PAGE_SIZE + 1)} />
           </>
         )}
       </section>

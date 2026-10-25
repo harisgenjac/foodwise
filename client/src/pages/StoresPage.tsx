@@ -4,7 +4,10 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { Heart, HeartOff, MapPin, Search, SearchX, Store } from "lucide-react";
 import api from "../api/axios.js";
+import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
+import { usePagedLimit } from "../hooks/usePagedLimit.js";
+import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import ProductPageHeader from "../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../components/product/FilterBar.js";
@@ -21,11 +24,17 @@ function StoresPage() {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const { t } = useTranslation();
   // "Favorites only" is filtered on the server, so the list and its count cover every store.
-  const { data: storesList, loading, error, refetch } = useFetch<User>("/users/stores", "stores", {
-    city,
-    business_name: businessName,
-    favorites: showFavoritesOnly ? "true" : "",
-  });
+  // 12 at a time; a filter change starts again from the first page.
+  const filters = { city, business_name: businessName, favorites: showFavoritesOnly ? "true" : "" };
+  const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(filters));
+  const {
+    data: storesList,
+    total,
+    loading,
+    fetching,
+    error,
+    refetch,
+  } = useFetch<User>("/users/stores", "stores", { ...filters, limit });
 
   const fetchFavorites = async () => {
     try {
@@ -104,7 +113,7 @@ function StoresPage() {
         title={t("store.title")}
         subtitle={t("store.subtitle")}
         icon={Store}
-        count={t("store.count", { count: storesList.length })}
+        count={t("store.count", { count: total ?? storesList.length })}
       />
 
       <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={3}>
@@ -166,6 +175,13 @@ function StoresPage() {
           ))}
         </div>
       )}
+
+      <LoadMore
+        shown={storesList.length}
+        total={total ?? storesList.length}
+        fetching={fetching}
+        onLoadMore={loadMore}
+      />
     </div>
   );
 }

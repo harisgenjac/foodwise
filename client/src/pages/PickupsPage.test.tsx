@@ -127,3 +127,59 @@ describe("PickupsPage", () => {
     expect(screen.queryByRole("button", { name: t("pickups.completeButton") })).not.toBeInTheDocument();
   });
 });
+
+describe("PickupsPage paging", () => {
+  const completed = (count: number) =>
+    Array.from({ length: count }, (_, i) =>
+      makeReservation({
+        id: 100 + i,
+        status: "Completed",
+        product_name: `Preuzeto ${i + 1}`,
+        picked_up_at: "2030-01-01T10:00:00.000Z",
+      }),
+    );
+  const pickupParams = () =>
+    apiMock.get.mock.calls.filter(([url]) => url === "/reservations/pickups").map(([, config]) => config?.params);
+
+  const renderPaged = () =>
+    renderWithProviders(<PickupsPage />, {
+      route: "/pickups",
+      path: "/pickups",
+      user: makeUser({ role: "STORE" }),
+      get: {
+        "/reservations/pickups": (params: { scope: string; limit?: number }) =>
+          params.scope === "completed"
+            ? { reservations: completed(Math.min(params.limit ?? 30, 30)), total: 30 }
+            : { reservations: [overdue, onTime] },
+        "/reservations/pickups/counts": { counts: COUNTS },
+      },
+    });
+
+  it("asks for today without a limit and pages only the picked-up history", async () => {
+    renderPaged();
+    expect(await screen.findByText("Piletina")).toBeInTheDocument();
+    expect(pickupParams()[0]).not.toHaveProperty("limit");
+    expect(screen.queryByRole("button", { name: t("common.loadMore") })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("tab", { name: new RegExp(t("pickups.tabs.completed")) }));
+    expect(await screen.findByText("Preuzeto 12")).toBeInTheDocument();
+    expect(screen.queryByText("Preuzeto 13")).not.toBeInTheDocument();
+    expect(pickupParams().at(-1)).toMatchObject({ scope: "completed", limit: 12 });
+
+    await userEvent.click(screen.getByRole("button", { name: t("common.loadMore") }));
+    expect(await screen.findByText("Preuzeto 24")).toBeInTheDocument();
+    expect(pickupParams().at(-1)).toMatchObject({ limit: 24 });
+  });
+
+  it("shows day counts on today but not on the paged history", async () => {
+    renderPaged();
+    const overdueHeading = await screen.findByRole("heading", { name: new RegExp(t("pickups.sections.overdue")) });
+    expect(within(overdueHeading).getByText("1")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("tab", { name: new RegExp(t("pickups.tabs.completed")) }));
+    await screen.findByText("Preuzeto 1");
+    for (const heading of screen.getAllByRole("heading", { level: 2 })) {
+      expect(heading.textContent).not.toMatch(/\d+$/);
+    }
+  });
+});

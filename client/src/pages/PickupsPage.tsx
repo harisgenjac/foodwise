@@ -20,7 +20,10 @@ import { inputStyle } from "../components/form/FormField.js";
 import PickupCard from "../components/pickup/PickupCard.js";
 import PickupConfirmModal from "../components/pickup/PickupConfirmModal.js";
 import { useAuth } from "../context/AuthContext.js";
+import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
+import { usePagedLimit } from "../hooks/usePagedLimit.js";
+import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import { usePickupActions } from "../hooks/usePickupActions.js";
 import { daysFromToday, toDateInput } from "../utils/expiry.js";
 import type { Reservation } from "../types/index.js";
@@ -80,12 +83,22 @@ function PickupsPage() {
   const [name, setName] = useState("");
   const [counts, setCounts] = useState<PickupCounts | null>(null);
 
+  // Only the picked-up history is paged (12 at a time); today and upcoming always come whole, so
+  // a late pickup never hides behind "Load more".
+  const isHistory = scope === "completed";
+  const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, `${scope}-${name}`);
   const {
     data: pickups,
+    total,
     loading,
+    fetching,
     error,
     refetch,
-  } = useFetch<Reservation>("/reservations/pickups", "reservations", { scope, name });
+  } = useFetch<Reservation>("/reservations/pickups", "reservations", {
+    scope,
+    name,
+    ...(isHistory && { limit }),
+  });
 
   const fetchCounts = useCallback(async () => {
     try {
@@ -210,13 +223,16 @@ function PickupsPage() {
             >
               {group.overdue && <AlertTriangle className="h-4 w-4" />}
               {group.title}
-              <span
-                className={`rounded-full px-1.5 py-0.5 text-[11px] ${
-                  group.overdue ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-500"
-                }`}
-              >
-                {group.items.length}
-              </span>
+              {/* A day of the paged history may continue on the next page, so it has no count. */}
+              {!isHistory && (
+                <span
+                  className={`rounded-full px-1.5 py-0.5 text-[11px] ${
+                    group.overdue ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-500"
+                  }`}
+                >
+                  {group.items.length}
+                </span>
+              )}
             </h2>
             <div className="flex flex-col gap-3">
               {group.items.map((reservation) => (
@@ -231,6 +247,15 @@ function PickupsPage() {
             </div>
           </section>
         ))
+      )}
+
+      {isHistory && (
+        <LoadMore
+          shown={pickups.length}
+          total={total ?? pickups.length}
+          fetching={fetching}
+          onLoadMore={loadMore}
+        />
       )}
 
       {actions.pending && (
