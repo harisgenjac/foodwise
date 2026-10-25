@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Coins, ListFilter, Search } from "lucide-react";
 import { useFetch } from "../../hooks/useFetch.js";
+import { useAdminPage, useKeepPageInRange } from "../../hooks/useAdminPage.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../../components/product/FilterBar.js";
 import { inputStyle } from "../../components/form/FormField.js";
@@ -22,13 +23,14 @@ function AdminCreditsPage() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
-  const [offset, setOffset] = useState(0);
+  const { page, offset, setPage } = useAdminPage();
   const { data: users, total, loading, error } = useFetch<AdminCreditUser>("/admin/credits/overview", "users", {
     q,
     role,
     limit: ADMIN_PAGE_SIZE,
     offset,
   });
+  useKeepPageInRange(page, total, setPage);
   const roles = t("admin.roles", { returnObjects: true }) as Record<string, string>;
   const month = currentCreditMonth();
   const hasActiveFilters = Boolean(q || role);
@@ -50,7 +52,7 @@ function AdminCreditsPage() {
         onClear={() => {
           setQ("");
           setRole("");
-          setOffset(0);
+          setPage(1);
         }}
         columns={3}
       >
@@ -60,7 +62,7 @@ function AdminCreditsPage() {
             value={q}
             onChange={(e) => {
               setQ(e.target.value);
-              setOffset(0);
+              setPage(1);
             }}
             placeholder={t("admin.credits.search")}
             aria-label={t("admin.credits.search")}
@@ -72,7 +74,7 @@ function AdminCreditsPage() {
             value={role}
             onChange={(e) => {
               setRole(e.target.value);
-              setOffset(0);
+              setPage(1);
             }}
             aria-label={t("admin.credits.columnRole")}
             className={inputStyle}
@@ -155,7 +157,7 @@ function AdminCreditsPage() {
               </tbody>
             </table>
           </div>
-          <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={setOffset} />
+          <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={(next) => setPage(next / ADMIN_PAGE_SIZE + 1)} />
         </>
       )}
     </div>

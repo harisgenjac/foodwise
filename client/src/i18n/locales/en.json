@@ -105,7 +105,6 @@
     "previewName": "Product name",
     "previewDescription": "Product description",
     "cancel": "Cancel",
-    "loadMore": "Load more",
     "stockLocked": "Quantity and expiry date cannot be changed after publishing. For a different offer, add a new product."
   },
   "myProducts": {
@@ -482,7 +481,9 @@
     "loadErrorTitle": "Could not load the data",
     "loadErrorSubtitle": "Check your internet connection and refresh the page.",
     "datePlaceholder": "dd/mm/yyyy",
-    "pickDate": "Pick a date"
+    "pickDate": "Pick a date",
+    "loadMore": "Load more",
+    "showingOf": "Showing {{shown}} of {{total}}"
   },
   "pickups": {
     "title": "Pickups",
@@ -766,6 +767,8 @@
       "previous": "Previous",
       "next": "Next",
       "range": "{{from}}–{{to}} of {{total}}",
+      "pagination": "Pages",
+      "page": "Page {{page}}",
       "blocked": "Blocked",
       "active": "Active",
       "incompleteProfile": "Profile not completed",

@@ -23,7 +23,10 @@ import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
 import Modal from "../components/product/Modal.js";
 import { inputStyle } from "../components/form/FormField.js";
+import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
+import { usePagedLimit } from "../hooks/usePagedLimit.js";
+import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import type { Reservation } from "../types/index.js";
 
 function MyReservationsPage() {
@@ -34,16 +37,17 @@ function MyReservationsPage() {
     useState<Reservation | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const { t } = useTranslation();
+  // 12 at a time; a filter change starts again from the first page, a reload keeps the limit.
+  const filters = { name, status, business_name: businessName };
+  const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(filters));
   const {
     data: reservationsList,
+    total,
     error,
     loading,
+    fetching,
     refetch,
-  } = useFetch<Reservation>("/reservations/mine", "reservations", {
-    name,
-    status,
-    business_name: businessName,
-  });
+  } = useFetch<Reservation>("/reservations/mine", "reservations", { ...filters, limit });
 
   const handleCancellation = async (reservationId: number) => {
     if (cancelling) return;
@@ -82,7 +86,7 @@ function MyReservationsPage() {
         title={t("reservations.title")}
         subtitle={t("reservations.restaurantSubtitle")}
         icon={CalendarCheck}
-        count={t("reservations.count", { count: reservationsList.length })}
+        count={t("reservations.count", { count: total ?? reservationsList.length })}
         action={{ to: "/browse-products", label: t("dashboard.browseOffers"), icon: ShoppingBasket }}
       />
 
@@ -170,6 +174,13 @@ function MyReservationsPage() {
           ))}
         </div>
       )}
+
+      <LoadMore
+        shown={reservationsList.length}
+        total={total ?? reservationsList.length}
+        fetching={fetching}
+        onLoadMore={loadMore}
+      />
 
       {cancellingReservation && (
         <Modal onClose={() => setCancellingReservation(null)}>

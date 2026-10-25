@@ -1,7 +1,7 @@
 import type { Role, User } from "../types/index.js";
 
 // Rows per page on the admin lists (the server allows up to 100).
-export const ADMIN_PAGE_SIZE = 25;
+export const ADMIN_PAGE_SIZE = 10;
 
 export const ROLES: Role[] = ["STORE", "RESTAURANT", "ADMIN"];
 

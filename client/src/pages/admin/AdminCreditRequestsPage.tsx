@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Inbox, ListFilter, Tags, X } from "lucide-react";
 import { useFetch } from "../../hooks/useFetch.js";
+import { useAdminPage, useKeepPageInRange } from "../../hooks/useAdminPage.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../../components/product/FilterBar.js";
 import { inputStyle } from "../../components/form/FormField.js";
@@ -30,13 +31,14 @@ function AdminCreditRequestsPage() {
   const [type, setType] = useState("");
   // The overview links here with ?status=PENDING.
   const [status, setStatus] = useState(searchParams.get("status") ?? "");
-  const [offset, setOffset] = useState(0);
+  const { page, offset, setPage } = useAdminPage();
   const [decision, setDecision] = useState<Decision | null>(null);
   const { data: requests, total, loading, error, refetch } = useFetch<AdminCreditRequest>(
     "/admin/credits/requests",
     "requests",
     { type, status, user_id: userId, limit: ADMIN_PAGE_SIZE, offset },
   );
+  useKeepPageInRange(page, total, setPage);
   const requestTypes = t("credits.requestTypes", { returnObjects: true }) as Record<string, string>;
   const requestStatuses = t("credits.requestStatuses", { returnObjects: true }) as Record<string, string>;
   const monthNames = t("dashboard.months", { returnObjects: true }) as string[];
@@ -58,7 +60,6 @@ function AdminCreditRequestsPage() {
             type="button"
             onClick={() => {
               setSearchParams({});
-              setOffset(0);
             }}
             className="inline-flex cursor-pointer items-center gap-1 font-medium hover:underline"
           >
@@ -73,7 +74,7 @@ function AdminCreditRequestsPage() {
         onClear={() => {
           setType("");
           setStatus("");
-          setOffset(0);
+          setPage(1);
         }}
         columns={3}
       >
@@ -82,7 +83,7 @@ function AdminCreditRequestsPage() {
             value={type}
             onChange={(e) => {
               setType(e.target.value);
-              setOffset(0);
+              setPage(1);
             }}
             aria-label={t("admin.creditRequests.columnRequest")}
             className={inputStyle}
@@ -100,7 +101,7 @@ function AdminCreditRequestsPage() {
             value={status}
             onChange={(e) => {
               setStatus(e.target.value);
-              setOffset(0);
+              setPage(1);
             }}
             aria-label={t("admin.creditRequests.columnStatus")}
             className={inputStyle}
@@ -182,7 +183,7 @@ function AdminCreditRequestsPage() {
               </tbody>
             </table>
           </div>
-          <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={setOffset} />
+          <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={(next) => setPage(next / ADMIN_PAGE_SIZE + 1)} />
         </>
       )}
 

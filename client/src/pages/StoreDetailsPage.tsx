@@ -20,7 +20,10 @@ import {
   ClipboardList,
 } from "lucide-react";
 import api from "../api/axios.js";
+import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
+import { usePagedLimit } from "../hooks/usePagedLimit.js";
+import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import EmptyState from "../components/product/EmptyState.js";
 import DetailItem from "../components/product/DetailItem.js";
@@ -48,7 +51,6 @@ function StoreDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [store, setStore] = useState<User | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [myReservations, setMyReservations] = useState<MyReservationsCount | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,11 +65,9 @@ function StoreDetailsPage() {
     try {
       const response = await api.get(`/users/stores/${id}`);
       const storeData: User = response.data.store;
-      const productsData: Product[] = response.data.products;
       const reservationsData: MyReservationsCount = response.data.myReservations;
       const statsData: StoreStats = response.data.stats;
       setStore(storeData);
-      setProducts(productsData);
       setStats(statsData);
       setMyReservations(reservationsData);
     } catch (err) {
@@ -111,13 +111,27 @@ function StoreDetailsPage() {
     fetchFavorites();
   }, [id]);
 
+  // The store's offers come from the marketplace (same rules), paged; `total` counts them all.
+  // Each tab loads 12 at a time; another store or status filter starts from the first page.
+  const products = usePagedLimit(CARD_PAGE_SIZE, id);
+  const {
+    data: productsList,
+    total: productsTotal,
+    fetching: productsFetching,
+    refetch: refetchProducts,
+  } = useFetch<Product>("/products", "products", { store_id: id!, limit: products.limit });
+
+  const reservations = usePagedLimit(CARD_PAGE_SIZE, `${id}-${reservationStatus}`);
   const {
     data: reservationsList,
+    total: reservationsTotal,
     loading: reservationsLoading,
+    fetching: reservationsFetching,
     refetch: refetchReservations,
   } = useFetch<Reservation>("/reservations/mine", "reservations", {
     store_id: id!,
     status: reservationStatus,
+    limit: reservations.limit,
   });
 
   if (loading) {
@@ -138,8 +152,9 @@ function StoreDetailsPage() {
   }
 
   const location = [store.address, store.city].filter(Boolean).join(", ");
+  const activeProducts = productsTotal ?? productsList.length;
   const tabs: { key: Tab; label: string; count?: number }[] = [
-    { key: "products", label: t("store.productsTab"), count: products.length },
+    { key: "products", label: t("store.productsTab"), count: activeProducts },
     { key: "reservations", label: t("store.reservationsTab") },
   ];
   const statusFilters = [
@@ -223,7 +238,7 @@ function StoreDetailsPage() {
         </section>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-3">
-          <StatCard icon={Package} label={t("store.activeProducts")} value={products.length} tone="green" />
+          <StatCard icon={Package} label={t("store.activeProducts")} value={activeProducts} tone="green" />
           <StatCard icon={ShoppingBag} label={t("store.soldProducts")} value={stats.sold_articles} />
           <StatCard
             icon={CircleCheck}
@@ -265,7 +280,7 @@ function StoreDetailsPage() {
       </div>
 
       {activeTab === "products" &&
-        (products.length === 0 ? (
+        (productsList.length === 0 ? (
           <EmptyState
             icon={PackageOpen}
             title={t("store.storeNoProducts")}
@@ -274,7 +289,7 @@ function StoreDetailsPage() {
           />
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => (
+            {productsList.map((product) => (
               <DashboardProductCard
                 key={product.id}
                 product={product}
@@ -303,6 +318,15 @@ function StoreDetailsPage() {
             ))}
           </div>
         ))}
+
+      {activeTab === "products" && (
+        <LoadMore
+          shown={productsList.length}
+          total={activeProducts}
+          fetching={productsFetching}
+          onLoadMore={products.loadMore}
+        />
+      )}
 
       {activeTab === "reservations" && (
         <div className="space-y-6">
@@ -348,6 +372,13 @@ function StoreDetailsPage() {
               ))}
             </div>
           )}
+
+          <LoadMore
+            shown={reservationsList.length}
+            total={reservationsTotal ?? reservationsList.length}
+            fetching={reservationsFetching}
+            onLoadMore={reservations.loadMore}
+          />
         </div>
       )}
 
@@ -358,6 +389,7 @@ function StoreDetailsPage() {
           onClose={() => setSelectedProduct(null)}
           onReserved={() => {
             fetchStoreDetails();
+            refetchProducts();
             refetchReservations();
           }}
         />

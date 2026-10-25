@@ -33,13 +33,18 @@ describe("BrowseProductsPage", () => {
       const { limit } = params as { limit: number };
       return Array.from({ length: Math.min(limit, 30) }, (_, i) => makeProduct({ id: i + 1, name: `Proizvod ${i + 1}` }));
     }, 30);
-    await screen.findByText("Proizvod 24");
-    expect(screen.queryByText("Proizvod 25")).not.toBeInTheDocument();
+    await screen.findByText("Proizvod 12");
+    expect(screen.queryByText("Proizvod 13")).not.toBeInTheDocument();
+    expect(screen.getByText(t("common.showingOf", { shown: 12, total: 30 }))).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: t("product.loadMore") }));
+    await userEvent.click(screen.getByRole("button", { name: t("common.loadMore") }));
+    expect(await screen.findByText("Proizvod 24")).toBeInTheDocument();
+    expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ limit: 24 });
+
+    await userEvent.click(screen.getByRole("button", { name: t("common.loadMore") }));
     expect(await screen.findByText("Proizvod 30")).toBeInTheDocument();
-    expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ limit: 48 });
-    expect(screen.queryByRole("button", { name: t("product.loadMore") })).not.toBeInTheDocument();
+    expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ limit: 36 });
+    expect(screen.queryByRole("button", { name: t("common.loadMore") })).not.toBeInTheDocument();
   });
 
   it("shows a load error instead of an empty list when the request fails", async () => {
@@ -74,7 +79,7 @@ describe("BrowseProductsPage", () => {
         maxPrice: "",
         name: "mlijeko",
         expiryWithinDays: "",
-        limit: 24,
+        limit: 12,
       }),
     );
     expect(await screen.findByText(t("myProducts.noResultsTitle"))).toBeInTheDocument();

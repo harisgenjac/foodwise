@@ -27,7 +27,10 @@ import LoadErrorState from "../components/product/LoadErrorState.js";
 import Modal from "../components/product/Modal.js";
 import DonateProductModal from "../components/donation/DonateProductModal.js";
 import { inputStyle } from "../components/form/FormField.js";
+import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
+import { usePagedLimit } from "../hooks/usePagedLimit.js";
+import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import type { Product } from "../types/index.js";
 
 function MyProductsPage() {
@@ -46,17 +49,17 @@ function MyProductsPage() {
     string,
     string
   >;
+  // 12 at a time; a filter change starts again from the first page, a reload keeps the limit.
+  const filters = { name, status, category, expiryWithinDays };
+  const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(filters));
   const {
     data: productsList,
+    total,
     error,
     loading,
+    fetching,
     refetch,
-  } = useFetch<Product>("/products/mine", "products", {
-    name,
-    status,
-    category,
-    expiryWithinDays,
-  });
+  } = useFetch<Product>("/products/mine", "products", { ...filters, limit });
 
   const handleDelete = async (productId: number) => {
     try {
@@ -94,7 +97,7 @@ function MyProductsPage() {
         title={t("myProducts.title")}
         subtitle={t("myProducts.subtitle")}
         icon={Package}
-        count={t("myProducts.productsCount", { count: productsList.length })}
+        count={t("myProducts.productsCount", { count: total ?? productsList.length })}
         action={{ to: "/add-product", label: t("myProducts.addProductButton"), icon: PackagePlus }}
       />
 
@@ -215,6 +218,13 @@ function MyProductsPage() {
           ))}
         </div>
       )}
+
+      <LoadMore
+        shown={productsList.length}
+        total={total ?? productsList.length}
+        fetching={fetching}
+        onLoadMore={loadMore}
+      />
 
       {donatingProduct && (
         <DonateProductModal

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ClipboardList, ListFilter } from "lucide-react";
 import { useFetch } from "../../hooks/useFetch.js";
+import { useAdminPage, useKeepPageInRange } from "../../hooks/useAdminPage.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../../components/product/FilterBar.js";
 import { inputStyle } from "../../components/form/FormField.js";
@@ -32,13 +33,14 @@ const ACTION_STYLES: Record<AdminAction["action"], string> = {
 function AdminActionsPage() {
   const { t } = useTranslation();
   const [action, setAction] = useState("");
-  const [offset, setOffset] = useState(0);
+  const { page, offset, setPage } = useAdminPage();
 
   const { data: actions, total, loading, error } = useFetch<AdminAction>("/admin/actions", "actions", {
     action,
     limit: ADMIN_PAGE_SIZE,
     offset,
   });
+  useKeepPageInRange(page, total, setPage);
 
   const actionTypes = t("admin.actionTypes", { returnObjects: true }) as Record<string, string>;
 
@@ -55,7 +57,7 @@ function AdminActionsPage() {
         hasActiveFilters={Boolean(action)}
         onClear={() => {
           setAction("");
-          setOffset(0);
+          setPage(1);
         }}
         columns={3}
       >
@@ -64,7 +66,7 @@ function AdminActionsPage() {
             value={action}
             onChange={(e) => {
               setAction(e.target.value);
-              setOffset(0);
+              setPage(1);
             }}
             aria-label={t("admin.actions.columnAction")}
             className={inputStyle}
@@ -136,7 +138,7 @@ function AdminActionsPage() {
               </tbody>
             </table>
           </div>
-          <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={setOffset} />
+          <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={(next) => setPage(next / ADMIN_PAGE_SIZE + 1)} />
         </>
       )}
     </div>

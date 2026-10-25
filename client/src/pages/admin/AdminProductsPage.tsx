@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { ListFilter, Package, Search, Trash2, X } from "lucide-react";
 import api from "../../api/axios.js";
 import { useFetch } from "../../hooks/useFetch.js";
+import { useAdminPage, useKeepPageInRange } from "../../hooks/useAdminPage.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../../components/product/FilterBar.js";
 import { inputStyle } from "../../components/form/FormField.js";
@@ -26,7 +27,7 @@ function AdminProductsPage() {
   const storeId = searchParams.get("store_id") ?? "";
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
-  const [offset, setOffset] = useState(0);
+  const { page, offset, setPage } = useAdminPage();
   const [selected, setSelected] = useState<AdminProduct | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -37,6 +38,7 @@ function AdminProductsPage() {
     limit: ADMIN_PAGE_SIZE,
     offset,
   });
+  useKeepPageInRange(page, total, setPage);
 
   const statuses = t("productStatus", { returnObjects: true }) as Record<string, string>;
   const units = t("units", { returnObjects: true }) as Record<string, string>;
@@ -74,7 +76,6 @@ function AdminProductsPage() {
             type="button"
             onClick={() => {
               setSearchParams({});
-              setOffset(0);
             }}
             className="inline-flex cursor-pointer items-center gap-1 font-medium hover:underline"
           >
@@ -89,7 +90,7 @@ function AdminProductsPage() {
         onClear={() => {
           setQ("");
           setStatus("");
-          setOffset(0);
+          setPage(1);
         }}
         columns={3}
       >
@@ -99,7 +100,7 @@ function AdminProductsPage() {
             value={q}
             onChange={(e) => {
               setQ(e.target.value);
-              setOffset(0);
+              setPage(1);
             }}
             placeholder={t("admin.products.search")}
             aria-label={t("admin.products.search")}
@@ -111,7 +112,7 @@ function AdminProductsPage() {
             value={status}
             onChange={(e) => {
               setStatus(e.target.value);
-              setOffset(0);
+              setPage(1);
             }}
             aria-label={t("admin.products.columnStatus")}
             className={inputStyle}
@@ -196,7 +197,7 @@ function AdminProductsPage() {
               </tbody>
             </table>
           </div>
-          <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={setOffset} />
+          <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={(next) => setPage(next / ADMIN_PAGE_SIZE + 1)} />
         </>
       )}
 

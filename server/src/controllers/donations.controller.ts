@@ -9,6 +9,7 @@ import {
   type DonationFields,
 } from "../utils/validateDonation.js";
 import { parseId, parseNumber } from "../utils/params.js";
+import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import { markSoldIfFullyConfirmed } from "./reservations.controller.js";
 import { HttpError } from "../utils/httpError.js";
 import { chargeForProduct, hasOpenProductCharge, refundForProduct } from "../services/creditService.js";
@@ -73,10 +74,13 @@ export const getMineDonations = async (req: Request, res: Response) => {
   ) {
     return res.status(400).json({ error: "Invalid filter." });
   }
+  const page = parsePage(req.query, CARD_PAGE_SIZE);
+  if (!page) {
+    return res.status(400).json({ error: "Invalid filter." });
+  }
 
   try {
-    let query = `SELECT ${DONATION_COLUMNS}
-      FROM donation_offers
+    let query = `FROM donation_offers
       WHERE donation_offers.donor_id = $1 AND donation_offers.status != 'Removed'`;
     const values: (string | number)[] = [req.user!.id];
 
@@ -92,11 +96,15 @@ export const getMineDonations = async (req: Request, res: Response) => {
       values.push(`%${name as string}%`);
       query += ` AND donation_offers.name ILIKE $${values.length}`;
     }
-    query += ` ORDER BY CASE WHEN donation_offers.status = 'Available' THEN 0 ELSE 1 END,
-      donation_offers.created_at DESC, donation_offers.id DESC`;
-
-    const result = await pool.query(query, values);
-    return res.status(200).json({ donations: result.rows });
+    const { rows, total } = await listPage(
+      DONATION_COLUMNS,
+      query,
+      `CASE WHEN donation_offers.status = 'Available' THEN 0 ELSE 1 END,
+      donation_offers.created_at DESC, donation_offers.id DESC`,
+      values,
+      page,
+    );
+    return res.status(200).json({ donations: rows, total });
   } catch (error) {
     console.error("Error while fetching donations:", error);
     return res

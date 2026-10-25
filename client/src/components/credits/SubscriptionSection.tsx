@@ -9,6 +9,9 @@ import { useCredits } from "../../context/CreditsContext.js";
 import SubscribeModal from "./SubscribeModal.js";
 import TopupModal from "./TopupModal.js";
 import AutoRenewTooltip from "./AutoRenewTooltip.js";
+import LoadMore from "../LoadMore.js";
+import { usePagedLimit } from "../../hooks/usePagedLimit.js";
+import { LIST_PAGE_SIZE } from "../../utils/pagination.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
 import {
   CREDIT_REQUEST_STATUS_STYLES,
@@ -65,6 +68,10 @@ function SubscriptionSection({ role }: { role: Role }) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [packages, setPackages] = useState<TopupPackage[]>([]);
   const [requests, setRequests] = useState<CreditRequest[]>([]);
+  const [requestsTotal, setRequestsTotal] = useState(0);
+  const [requestsFetching, setRequestsFetching] = useState(false);
+  // The newest 10 requests, then 10 more per "Load more"; reloads keep the current limit.
+  const { limit: requestsLimit, loadMore: loadMoreRequests } = usePagedLimit(LIST_PAGE_SIZE);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [selectedTopup, setSelectedTopup] = useState<TopupPackage | null>(null);
   const [busy, setBusy] = useState(false);
@@ -77,13 +84,17 @@ function SubscriptionSection({ role }: { role: Role }) {
   const requestStatuses = t("credits.requestStatuses", { returnObjects: true }) as Record<string, string>;
 
   const loadRequests = useCallback(async () => {
+    setRequestsFetching(true);
     try {
-      const response = await api.get("/credits/requests");
+      const response = await api.get("/credits/requests", { params: { limit: requestsLimit } });
       setRequests(response.data.requests);
+      setRequestsTotal(response.data.total);
     } catch (err) {
       console.error("Error loading credit requests:", err);
+    } finally {
+      setRequestsFetching(false);
     }
-  }, []);
+  }, [requestsLimit]);
 
   useEffect(() => {
     Promise.all([api.get("/credits/plans"), api.get("/credits/topup-packages")])
@@ -92,6 +103,9 @@ function SubscriptionSection({ role }: { role: Role }) {
         setPackages(packageResponse.data.packages);
       })
       .catch((err) => console.error("Error loading plans:", err));
+  }, []);
+
+  useEffect(() => {
     loadRequests();
   }, [loadRequests]);
 
@@ -372,6 +386,16 @@ function SubscriptionSection({ role }: { role: Role }) {
                 </li>
               ))}
             </ul>
+            {requests.length < requestsTotal && (
+              <div className="mt-3">
+                <LoadMore
+                  shown={requests.length}
+                  total={requestsTotal}
+                  fetching={requestsFetching}
+                  onLoadMore={loadMoreRequests}
+                />
+              </div>
+            )}
           </>
         )}
       </section>

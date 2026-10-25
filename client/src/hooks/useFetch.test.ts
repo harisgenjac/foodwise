@@ -46,6 +46,20 @@ describe("useFetch", () => {
     expect(apiMock.get).toHaveBeenLastCalledWith(...requestFor({ name: "mlijeko" }));
   });
 
+  it("loads a new page right away, without the filter debounce", async () => {
+    apiMock.get.mockResolvedValue({ data: { products: [] } });
+    const { rerender } = renderHook(({ limit }) => useFetch("/products", "products", { name: "x", limit }), {
+      initialProps: { limit: 12 },
+    });
+    await act(() => vi.advanceTimersByTimeAsync(0));
+
+    rerender({ limit: 24 });
+    await act(() => vi.advanceTimersByTimeAsync(0));
+
+    expect(apiMock.get).toHaveBeenCalledTimes(2);
+    expect(apiMock.get).toHaveBeenLastCalledWith(...requestFor({ name: "x", limit: 24 }));
+  });
+
   it("aborts the previous request when a new one starts", async () => {
     let firstSignal: { aborted?: boolean } | undefined;
     apiMock.get.mockImplementationOnce(async (_url, config) => {

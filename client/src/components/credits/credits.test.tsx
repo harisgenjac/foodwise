@@ -242,4 +242,34 @@ describe("SubscriptionSection", () => {
     await userEvent.click(screen.getByRole("switch", { name: t("credits.profile.autoRenew") }));
     expect(apiMock.patch).toHaveBeenCalledWith("/credits/subscription/auto-renew", { auto_renew: true });
   });
+
+  it("shows the 10 newest requests and loads 10 more, keeping them after a withdrawal", async () => {
+    apiMock.delete.mockResolvedValue({ data: {} });
+    const requests = (limit: number) =>
+      Array.from({ length: Math.min(limit, 15) }, (_, i) => ({
+        ...PENDING_TOPUP,
+        id: 100 + i,
+        status: "REJECTED" as const,
+        period_month: `2029-${String((i % 12) + 1).padStart(2, "0")}-01`,
+      }));
+    renderWithCredits(<SubscriptionSection role="STORE" />, makeCreditSummary({ pendingRequests: [PENDING_TOPUP] }), {
+      "/credits/requests": (params: { limit: number }) => ({ requests: requests(params.limit), total: 15 }),
+    });
+    const requestParams = () =>
+      apiMock.get.mock.calls.filter(([url]) => url === "/credits/requests").at(-1)?.[1]?.params;
+
+    expect(await screen.findByText(t("common.showingOf", { shown: 10, total: 15 }))).toBeInTheDocument();
+    expect(requestParams()).toEqual({ limit: 10 });
+
+    await userEvent.click(screen.getByRole("button", { name: t("common.loadMore") }));
+    await waitFor(() => expect(requestParams()).toEqual({ limit: 20 }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: t("common.loadMore") })).not.toBeInTheDocument());
+
+    const requestCalls = () => apiMock.get.mock.calls.filter(([url]) => url === "/credits/requests").length;
+    const before = requestCalls();
+    await userEvent.click(screen.getByRole("button", { name: t("credits.profile.withdraw") }));
+    expect(apiMock.delete).toHaveBeenCalledWith("/credits/requests/9");
+    await waitFor(() => expect(requestCalls()).toBe(before + 1));
+    expect(requestParams()).toEqual({ limit: 20 });
+  });
 });

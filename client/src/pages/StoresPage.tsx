@@ -4,7 +4,10 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { Heart, HeartOff, MapPin, Search, SearchX, Store } from "lucide-react";
 import api from "../api/axios.js";
+import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
+import { usePagedLimit } from "../hooks/usePagedLimit.js";
+import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import ProductPageHeader from "../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../components/product/FilterBar.js";
@@ -20,10 +23,18 @@ function StoresPage() {
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const { t } = useTranslation();
-  const { data: storesList, loading, error } = useFetch<User>("/users/stores", "stores", {
-    city,
-    business_name: businessName,
-  });
+  // "Favorites only" is filtered on the server, so the list and its count cover every store.
+  // 12 at a time; a filter change starts again from the first page.
+  const filters = { city, business_name: businessName, favorites: showFavoritesOnly ? "true" : "" };
+  const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(filters));
+  const {
+    data: storesList,
+    total,
+    loading,
+    fetching,
+    error,
+    refetch,
+  } = useFetch<User>("/users/stores", "stores", { ...filters, limit });
 
   const fetchFavorites = async () => {
     try {
@@ -45,6 +56,8 @@ function StoresPage() {
         toast.success(t("store.addFavoriteSucces"));
       }
       fetchFavorites();
+      // A store taken out of favorites leaves the "favorites only" list.
+      if (showFavoritesOnly) refetch();
     } catch (err) {
       console.error(err);
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
@@ -69,9 +82,6 @@ function StoresPage() {
   }
 
   const hasActiveFilters = Boolean(city || businessName || showFavoritesOnly);
-  const displayedStores = showFavoritesOnly
-    ? storesList.filter((store) => favoriteIds.includes(store.id))
-    : storesList;
 
   const renderEmptyState = () => {
     if (showFavoritesOnly && !city && !businessName) {
@@ -103,7 +113,7 @@ function StoresPage() {
         title={t("store.title")}
         subtitle={t("store.subtitle")}
         icon={Store}
-        count={t("store.count", { count: displayedStores.length })}
+        count={t("store.count", { count: total ?? storesList.length })}
       />
 
       <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={3}>
@@ -151,11 +161,11 @@ function StoresPage() {
 
       {error && storesList.length === 0 ? (
         <LoadErrorState />
-      ) : displayedStores.length === 0 ? (
+      ) : storesList.length === 0 ? (
         renderEmptyState()
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {displayedStores.map((store) => (
+          {storesList.map((store) => (
             <StoreCard
               key={store.id}
               store={store}
@@ -165,6 +175,13 @@ function StoresPage() {
           ))}
         </div>
       )}
+
+      <LoadMore
+        shown={storesList.length}
+        total={total ?? storesList.length}
+        fetching={fetching}
+        onLoadMore={loadMore}
+      />
     </div>
   );
 }

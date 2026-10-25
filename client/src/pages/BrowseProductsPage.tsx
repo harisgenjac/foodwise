@@ -19,9 +19,10 @@ import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
 import ReserveProductModal from "../components/product/ReserveProductModal.js";
 import { inputStyle } from "../components/form/FormField.js";
+import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
-
-const PAGE_SIZE = 24;
+import { usePagedLimit } from "../hooks/usePagedLimit.js";
+import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import type { Product } from "../types/index.js";
 
 function BrowseProductsPage() {
@@ -29,14 +30,16 @@ function BrowseProductsPage() {
   const [maxPrice, setMaxPrice] = useState("");
   const [name, setName] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
-  const [limit, setLimit] = useState(PAGE_SIZE);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { t } = useTranslation();
   const categories = t("categories", { returnObjects: true }) as Record<
     string,
     string
   >;
-  // The server leaves out fully reserved products and pages the rest; "Load more" raises the limit.
+  // The server leaves out fully reserved products and pages the rest; "Load more" raises the
+  // limit, and any filter change starts again from the first page.
+  const filters = { category, maxPrice, name, expiryWithinDays };
+  const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(filters));
   const {
     data: visibleProducts,
     total,
@@ -44,26 +47,13 @@ function BrowseProductsPage() {
     fetching,
     error,
     refetch,
-  } = useFetch<Product>("/products", "products", {
-    category,
-    maxPrice,
-    name,
-    expiryWithinDays,
-    limit,
-  });
-
-  // A filter change starts again from the first page.
-  const changeFilter = (setter: (value: string) => void) => (value: string) => {
-    setter(value);
-    setLimit(PAGE_SIZE);
-  };
+  } = useFetch<Product>("/products", "products", { ...filters, limit });
 
   const clearFilters = () => {
     setName("");
     setCategory("");
     setMaxPrice("");
     setExpiryWithinDays("");
-    setLimit(PAGE_SIZE);
   };
 
   if (loading) {
@@ -71,7 +61,6 @@ function BrowseProductsPage() {
   }
 
   const totalCount = total ?? visibleProducts.length;
-  const hasMore = visibleProducts.length < totalCount;
   const hasActiveFilters = Boolean(name || category || maxPrice || expiryWithinDays);
 
   return (
@@ -89,14 +78,14 @@ function BrowseProductsPage() {
             type="text"
             placeholder={t("filters.searchByName")}
             value={name}
-            onChange={(e) => changeFilter(setName)(e.target.value)}
+            onChange={(e) => setName(e.target.value)}
             className={inputStyle}
           />
         </FilterField>
         <FilterField icon={Tag}>
           <select
             value={category}
-            onChange={(e) => changeFilter(setCategory)(e.target.value)}
+            onChange={(e) => setCategory(e.target.value)}
             className={inputStyle}
           >
             <option value="">{t("filters.allCategories")}</option>
@@ -113,14 +102,14 @@ function BrowseProductsPage() {
             min="0"
             placeholder={t("filters.maxPrice")}
             value={maxPrice}
-            onChange={(e) => changeFilter(setMaxPrice)(e.target.value)}
+            onChange={(e) => setMaxPrice(e.target.value)}
             className={inputStyle}
           />
         </FilterField>
         <FilterField icon={CalendarClock}>
           <select
             value={expiryWithinDays}
-            onChange={(e) => changeFilter(setExpiryWithinDays)(e.target.value)}
+            onChange={(e) => setExpiryWithinDays(e.target.value)}
             className={inputStyle}
           >
             <option value="">{t("filters.expiryDate")}</option>
@@ -179,18 +168,7 @@ function BrowseProductsPage() {
         </div>
       )}
 
-      {hasMore && (
-        <div className="flex justify-center">
-          <button
-            type="button"
-            onClick={() => setLimit((current) => current + PAGE_SIZE)}
-            disabled={fetching}
-            className="cursor-pointer rounded-xl border border-orange-200 bg-white px-6 py-2.5 text-sm font-semibold text-orange-600 transition-colors hover:bg-orange-50 disabled:cursor-wait disabled:opacity-60"
-          >
-            {fetching ? t("common.loading") : t("product.loadMore")}
-          </button>
-        </div>
-      )}
+      <LoadMore shown={visibleProducts.length} total={totalCount} fetching={fetching} onLoadMore={loadMore} />
 
       {selectedProduct && (
         <ReserveProductModal

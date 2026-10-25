@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Gift, HeartHandshake, ListFilter, Search, Trash2, X } from "lucide-react";
 import api from "../../api/axios.js";
 import { useFetch } from "../../hooks/useFetch.js";
+import { useAdminPage, useKeepPageInRange } from "../../hooks/useAdminPage.js";
 import { useDonationLabels } from "../../hooks/useDonationLabels.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../../components/product/FilterBar.js";
@@ -29,7 +30,7 @@ function AdminDonationsPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const [type, setType] = useState("");
-  const [offset, setOffset] = useState(0);
+  const { page, offset, setPage } = useAdminPage();
   const [selected, setSelected] = useState<AdminDonation | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -41,11 +42,12 @@ function AdminDonationsPage() {
     limit: ADMIN_PAGE_SIZE,
     offset,
   });
+  useKeepPageInRange(page, total, setPage);
 
   const hasActiveFilters = Boolean(q || status || type);
   const filter = (setter: (value: string) => void) => (value: string) => {
     setter(value);
-    setOffset(0);
+    setPage(1);
   };
 
   const removeDonation = async (reason: string) => {
@@ -80,7 +82,6 @@ function AdminDonationsPage() {
             type="button"
             onClick={() => {
               setSearchParams({});
-              setOffset(0);
             }}
             className="inline-flex cursor-pointer items-center gap-1 font-medium hover:underline"
           >
@@ -96,7 +97,7 @@ function AdminDonationsPage() {
           setQ("");
           setStatus("");
           setType("");
-          setOffset(0);
+          setPage(1);
         }}
         columns={3}
       >
@@ -210,7 +211,7 @@ function AdminDonationsPage() {
               </tbody>
             </table>
           </div>
-          <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={setOffset} />
+          <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={(next) => setPage(next / ADMIN_PAGE_SIZE + 1)} />
         </>
       )}
 

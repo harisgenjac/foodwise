@@ -12,6 +12,7 @@ import {
 } from "./helpers.js";
 
 const STORE = "users-store@test.com";
+const STORE_2 = "users-store-2@test.com";
 const RESTAURANT = "users-restaurant@test.com";
 
 const PROFILE = {
@@ -26,7 +27,7 @@ const PROFILE = {
 
 describe("Users routes", () => {
   afterEach(async () => {
-    await cleanupUsers([STORE, RESTAURANT]);
+    await cleanupUsers([STORE, STORE_2, RESTAURANT]);
   });
 
   describe("GET /api/users/me", () => {
@@ -110,6 +111,26 @@ describe("Users routes", () => {
       ]);
     });
 
+    it("lists only the caller's favorite stores with favorites=true", async () => {
+      const other = await registerAndLogin(STORE_2, "STORE");
+      await other.put("/api/users/me").send({ ...PROFILE, business_name: "Other Market Users" });
+      const favoriteId = await userId(STORE);
+      await restaurant.post("/api/favorites").send({ store_id: favoriteId });
+
+      const all = await restaurant.get("/api/users/stores").query({ city: "Testograd" });
+      expect(all.body.stores).toHaveLength(2);
+
+      const response = await restaurant.get("/api/users/stores").query({ city: "Testograd", favorites: "true" });
+      expect(response.status).toBe(200);
+      expect(response.body.stores.map((s: { id: number }) => s.id)).toEqual([favoriteId]);
+    });
+
+    it("returns 400 for an unknown favorites value", async () => {
+      const response = await restaurant.get("/api/users/stores").query({ favorites: "yes" });
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Invalid filter.");
+    });
+
     it("returns 403 for a STORE", async () => {
       const response = await store.get("/api/users/stores");
       expect(response.status).toBe(403);
@@ -117,7 +138,7 @@ describe("Users routes", () => {
   });
 
   describe("GET /api/users/stores/:id", () => {
-    it("returns the store, its active products and the stats", async () => {
+    it("returns the store and the stats; its products are paged through /products?store_id=", async () => {
       const store = await registerAndLogin(STORE, "STORE");
       await store.put("/api/users/me").send(PROFILE);
       const product = await createProduct(store, { quantity: 4 });
@@ -129,10 +150,14 @@ describe("Users routes", () => {
       expect(response.status).toBe(200);
       expect(response.body.store).toMatchObject({ business_name: PROFILE.business_name, city: PROFILE.city });
       expect(response.body.store.email).toBeUndefined();
-      expect(response.body.products).toHaveLength(1);
-      expect(parseFloat(response.body.products[0].available_quantity)).toBe(2);
+      expect(response.body.products).toBeUndefined();
       expect(response.body.stats.successful_reservations).toBe("1");
       expect(response.body.myReservations.my_reservations_count).toBe("1");
+
+      const products = await restaurant.get("/api/products").query({ store_id: await userId(STORE) });
+      expect(products.body.total).toBe(1);
+      expect(products.body.products[0].id).toBe(product.id);
+      expect(parseFloat(products.body.products[0].available_quantity)).toBe(2);
     });
 
     it("returns 403 for a STORE", async () => {

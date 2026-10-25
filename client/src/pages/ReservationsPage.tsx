@@ -26,7 +26,10 @@ import LoadErrorState from "../components/product/LoadErrorState.js";
 import Modal from "../components/product/Modal.js";
 import { inputStyle } from "../components/form/FormField.js";
 import PickupConfirmModal from "../components/pickup/PickupConfirmModal.js";
+import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
+import { usePagedLimit } from "../hooks/usePagedLimit.js";
+import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import { usePickupActions } from "../hooks/usePickupActions.js";
 import type { Reservation } from "../types/index.js";
 
@@ -39,16 +42,17 @@ function ReservationsPage() {
   // The reservation whose accept or reject request is in flight; blocks double clicks.
   const [busyId, setBusyId] = useState<number | null>(null);
   const { t } = useTranslation();
+  // 12 at a time; a filter change starts again from the first page, a reload keeps the limit.
+  const filters = { name, status, city };
+  const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(filters));
   const {
     data: reservationsList,
+    total,
     error,
     loading,
+    fetching,
     refetch,
-  } = useFetch<Reservation>("/reservations/store", "reservations", {
-    name,
-    status,
-    city,
-  });
+  } = useFetch<Reservation>("/reservations/store", "reservations", { ...filters, limit });
 
   const pickupActions = usePickupActions(refetch);
 
@@ -107,7 +111,7 @@ function ReservationsPage() {
         title={t("reservations.title")}
         subtitle={t("reservations.storeSubtitle")}
         icon={CalendarCheck}
-        count={t("reservations.count", { count: reservationsList.length })}
+        count={t("reservations.count", { count: total ?? reservationsList.length })}
       />
 
       <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={3}>
@@ -232,6 +236,13 @@ function ReservationsPage() {
           ))}
         </div>
       )}
+
+      <LoadMore
+        shown={reservationsList.length}
+        total={total ?? reservationsList.length}
+        fetching={fetching}
+        onLoadMore={loadMore}
+      />
 
       {pickupActions.pending && (
         <PickupConfirmModal

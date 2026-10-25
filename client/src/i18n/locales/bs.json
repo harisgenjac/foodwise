@@ -107,7 +107,6 @@
     "previewName": "Naziv proizvoda",
     "previewDescription": "Opis proizvoda",
     "cancel": "Odustani",
-    "loadMore": "Učitaj još",
     "stockLocked": "Količina i rok trajanja se ne mogu mijenjati nakon objave. Za drugačiju ponudu dodajte novi proizvod."
   },
   "myProducts": {
@@ -493,7 +492,9 @@
     "loadErrorTitle": "Podaci se nisu mogli učitati",
     "loadErrorSubtitle": "Provjerite internet vezu i osvježite stranicu.",
     "datePlaceholder": "dd/mm/yyyy",
-    "pickDate": "Odaberi datum"
+    "pickDate": "Odaberi datum",
+    "loadMore": "Učitaj još",
+    "showingOf": "Prikazano {{shown}} od {{total}}"
   },
   "pickups": {
     "title": "Preuzimanja",
@@ -780,6 +781,8 @@
       "previous": "Prethodna",
       "next": "Sljedeća",
       "range": "{{from}}–{{to}} od {{total}}",
+      "pagination": "Stranice",
+      "page": "Stranica {{page}}",
       "blocked": "Blokiran",
       "active": "Aktivan",
       "incompleteProfile": "Profil nije popunjen",

@@ -1,6 +1,7 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import { parseId, parseNonNegativeInt } from "../utils/params.js";
+import { TABLE_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import { isUniqueViolation } from "../utils/accounts.js";
 import { creditMonth, nextMonth } from "../utils/creditTime.js";
 import { notifyAdminsOfCreditRequest } from "../utils/notifications.js";
@@ -23,8 +24,6 @@ export const CREDIT_REQUEST_COLUMNS = `credit_requests.id, credit_requests.user_
 export const CREDIT_REQUEST_JOINS = `
   LEFT JOIN plans ON credit_requests.plan_id = plans.id
   LEFT JOIN topup_packages ON credit_requests.topup_package_id = topup_packages.id`;
-
-const RECENT_REQUESTS_LIMIT = 20;
 
 const findRequest = async (requestId: number) => {
   const result = await pool.query(
@@ -84,17 +83,22 @@ export const getMyCredits = async (req: Request, res: Response) => {
   }
 };
 
-// The user's latest requests in every status, so they can follow what the admin decided.
+// The user's requests in every status, newest first and in pages, so they can follow what the
+// admin decided.
 export const getMyRequests = async (req: Request, res: Response) => {
+  const page = parsePage(req.query, TABLE_PAGE_SIZE);
+  if (!page) {
+    return res.status(400).json({ error: "Invalid filter." });
+  }
   try {
-    const result = await pool.query(
-      `SELECT ${CREDIT_REQUEST_COLUMNS} FROM credit_requests ${CREDIT_REQUEST_JOINS}
-       WHERE credit_requests.user_id = $1
-       ORDER BY credit_requests.created_at DESC, credit_requests.id DESC
-       LIMIT $2`,
-      [req.user!.id, RECENT_REQUESTS_LIMIT],
+    const { rows, total } = await listPage(
+      CREDIT_REQUEST_COLUMNS,
+      `FROM credit_requests ${CREDIT_REQUEST_JOINS} WHERE credit_requests.user_id = $1`,
+      "credit_requests.created_at DESC, credit_requests.id DESC",
+      [req.user!.id],
+      page,
     );
-    return res.status(200).json({ requests: result.rows });
+    return res.status(200).json({ requests: rows, total });
   } catch (error) {
     console.error("Error while fetching credit requests:", error);
     return res.status(500).json({ error: "An error occurred while fetching credit requests." });
