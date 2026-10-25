@@ -50,10 +50,8 @@ function StoresPage() {
     try {
       if (isFavorite) {
         await api.delete(`/favorites/${storeId}`);
-        toast.success(t("store.deleteFavoriteSucces"));
       } else {
         await api.post("/favorites", { store_id: storeId });
-        toast.success(t("store.addFavoriteSucces"));
       }
       fetchFavorites();
       // A store taken out of favorites leaves the "favorites only" list.

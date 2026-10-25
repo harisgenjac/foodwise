@@ -1,7 +1,8 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
+import toast from "react-hot-toast";
 import { NotificationsProvider, useNotifications } from "./NotificationsContext.js";
-import { apiMock, axiosError, makeNotification } from "../test/utils.js";
+import { apiMock, axiosError, makeNotification, t } from "../test/utils.js";
 
 const wrapper = ({ children }: { children: ReactNode }) => <NotificationsProvider>{children}</NotificationsProvider>;
 
@@ -116,6 +117,37 @@ describe("NotificationsContext", () => {
     await act(() => result.current.markAllAsRead());
     await waitFor(() => expect(result.current.unreadCount).toBe(1));
     expect(result.current.notifications[0]!.is_read).toBe(false);
+  });
+
+  // Each action: its name on the context and the api method it calls.
+  const actions = [
+    ["markAsRead", "patch"],
+    ["markAllAsRead", "patch"],
+    ["deleteNotification", "delete"],
+    ["deleteRead", "delete"],
+  ] as const;
+
+  it.each(actions)("%s shows an error toast when the server fails", async (action, method) => {
+    apiMock[method].mockRejectedValue(axiosError(500));
+    const errorToast = vi.spyOn(toast, "error");
+    const { result } = await setup();
+    apiMock.get.mockResolvedValue({ data: { notifications: [unread, read], unreadCount: 1 } });
+
+    await act(() => result.current[action](unread));
+    expect(errorToast).toHaveBeenCalledWith(t("notifications.actionError"));
+    expect(errorToast).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(actions)("%s shows no toast on success, the list already shows the change", async (action, method) => {
+    apiMock[method].mockResolvedValue({ data: {} });
+    const success = vi.spyOn(toast, "success");
+    const errorToast = vi.spyOn(toast, "error");
+    const { result } = await setup();
+
+    await act(() => result.current[action](unread));
+    expect(apiMock[method]).toHaveBeenCalled();
+    expect(success).not.toHaveBeenCalled();
+    expect(errorToast).not.toHaveBeenCalled();
   });
 
   it("throws when used outside the provider", () => {

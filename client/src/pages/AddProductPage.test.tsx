@@ -128,8 +128,9 @@ describe("AddProductPage", () => {
     expect(await screen.findByTestId("location")).toHaveTextContent("/dashboard");
   });
 
-  it("also saves a template when the toggle is on", async () => {
+  it("also saves a template when the toggle is on and says so", async () => {
     apiMock.post.mockResolvedValue({ data: { template: { ...TEMPLATE, id: 99, name: "Jogurt" } } });
+    const success = vi.spyOn(toast, "success");
     renderPage();
 
     await fillForm();
@@ -140,6 +141,27 @@ describe("AddProductPage", () => {
       "/product-templates",
       expect.objectContaining({ name: "Jogurt", category: "Dairy", unit: "kom", shelf_life_days: 1 }),
     );
+    expect(success).toHaveBeenCalledWith(t("product.addedSuccess"));
+    expect(success).toHaveBeenCalledWith(t("templates.saved"));
+  });
+
+  it("keeps the added product when saving the template fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    apiMock.post
+      .mockResolvedValueOnce({ data: { message: "Product added." } })
+      .mockRejectedValueOnce(axiosError(500, "An error occurred while saving the template."));
+    const success = vi.spyOn(toast, "success");
+    const error = vi.spyOn(toast, "error");
+    renderPage();
+
+    await fillForm();
+    await userEvent.click(screen.getByText(t("templates.saveToggle")));
+    await userEvent.click(screen.getByRole("button", { name: t("product.addButton") }));
+
+    expect(await screen.findByTestId("location")).toHaveTextContent("/dashboard");
+    expect(success).toHaveBeenCalledWith(t("product.addedSuccess"));
+    expect(success).not.toHaveBeenCalledWith(t("templates.saved"));
+    expect(error).toHaveBeenCalledWith(t("templates.saveError"));
   });
 
   it("shows the server error when creating fails", async () => {
@@ -151,7 +173,8 @@ describe("AddProductPage", () => {
     await userEvent.click(screen.getByRole("button", { name: t("product.addButton") }));
 
     expect(error).toHaveBeenCalledWith("Discounted price cannot be higher than the original price.");
-    expect(screen.getByText(t("product.addError"))).toBeInTheDocument();
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(t("product.addError"))).not.toBeInTheDocument();
     expect(screen.queryByTestId("location")).not.toBeInTheDocument();
   });
 

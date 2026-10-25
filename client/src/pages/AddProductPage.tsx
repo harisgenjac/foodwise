@@ -4,7 +4,7 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { AlertCircle, Bookmark, FileUp, PackagePlus } from "lucide-react";
+import { Bookmark, FileUp, PackagePlus } from "lucide-react";
 import ProductFormFields, { EMPTY_PRODUCT_FORM, validateProductForm } from "../components/product/ProductFormFields.js";
 import RequiredHint from "../components/form/RequiredHint.js";
 import { useFormValidation } from "../hooks/useFormValidation.js";
@@ -19,7 +19,6 @@ import { getCreditError, type CreditError } from "../utils/credits.js";
 function AddProductPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState<ProductFormValues>(EMPTY_PRODUCT_FORM);
-  const [error, setError] = useState("");
   const [creditError, setCreditError] = useState<CreditError | null>(null);
   const [saving, setSaving] = useState(false);
   const [templates, setTemplates] = useState<ProductTemplate[]>([]);
@@ -47,7 +46,6 @@ function AddProductPage() {
   const clearForm = () => {
     setForm(EMPTY_PRODUCT_FORM);
     setAppliedTemplateId(null);
-    setError("");
     reset();
   };
 
@@ -68,7 +66,6 @@ function AddProductPage() {
       expiry_date: template.shelf_life_days !== null ? dateInDays(template.shelf_life_days) : "",
     });
     setAppliedTemplateId(template.id);
-    setError("");
     reset();
     toast.success(t("templates.applied", { name: template.name }));
   };
@@ -100,6 +97,7 @@ function AddProductPage() {
       });
       const saved: ProductTemplate = response.data.template;
       setTemplates((current) => [saved, ...current.filter((item) => item.id !== saved.id)]);
+      toast.success(t("templates.saved"));
     } catch (err) {
       console.error("Error saving template:", err);
       toast.error(t("templates.saveError"));
@@ -121,11 +119,9 @@ function AddProductPage() {
     } catch (err) {
       const credits = getCreditError(err);
       if (credits) {
-        setError("");
         setCreditError(credits);
         return;
       }
-      setError(t("product.addError"));
       const message = axios.isAxiosError(err)
         ? err.response?.data?.error
         : null;
@@ -161,12 +157,6 @@ function AddProductPage() {
       </div>
 
       {creditError && <InsufficientCreditsNotice error={creditError} className="mb-6" />}
-      {error && (
-        <p className="mb-6 flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-        </p>
-      )}
 
       <form ref={formRef} noValidate onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">

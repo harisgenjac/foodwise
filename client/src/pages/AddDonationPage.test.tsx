@@ -1,5 +1,6 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import toast from "react-hot-toast";
 import AddDonationPage from "./AddDonationPage.js";
 import { apiMock, axiosError, makeUser, renderWithProviders, t } from "../test/utils.js";
 import { dateInDays } from "../utils/expiry.js";
@@ -137,15 +138,18 @@ describe("AddDonationPage", () => {
     expect(screen.getByText(t("donations.form.mealSection"))).toBeInTheDocument();
   });
 
-  it("shows the server error and stays on the form", async () => {
+  it("shows the server error in a toast and stays on the form", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     apiMock.post.mockRejectedValue(axiosError(400, "Expiry date cannot be in the past."));
+    const errorToast = vi.spyOn(toast, "error");
     renderPage();
     await screen.findByText(t("donations.form.addTitle"), { selector: "h1" });
     await fillBasics();
     await userEvent.click(screen.getByRole("button", { name: t("donations.form.submitAdd") }));
 
-    expect(await screen.findByText("Expiry date cannot be in the past.", { selector: "p" })).toBeInTheDocument();
+    await waitFor(() => expect(errorToast).toHaveBeenCalledWith("Expiry date cannot be in the past."));
+    expect(errorToast).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Expiry date cannot be in the past.")).not.toBeInTheDocument();
     expect(screen.queryByTestId("location")).not.toBeInTheDocument();
   });
 });

@@ -35,11 +35,9 @@ function AddDonationPage() {
       await api.post("/donations", donationFormToPayload(values));
       toast.success(t("donations.form.addedSuccess"));
       navigate("/donate-food");
-      return null;
     } catch (err) {
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
       toast.error(message || t("donations.form.saveError"));
-      return message || t("donations.form.saveError");
     }
   };
 

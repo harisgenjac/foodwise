@@ -4,7 +4,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
-import { AlertCircle, Info, KeyRound, Lock, Mail, ShieldCheck, Store, UserPlus, UtensilsCrossed } from "lucide-react";
+import { Info, KeyRound, Lock, Mail, ShieldCheck, Store, UserPlus, UtensilsCrossed } from "lucide-react";
 import api from "../../api/axios.js";
 import FormSection from "../../components/form/FormSection.js";
 import FormField, { inputStyle } from "../../components/form/FormField.js";
@@ -28,7 +28,6 @@ function AdminCreateUserPage() {
   const [role, setRole] = useState<Role>("STORE");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const { formRef, errorFor, blur, validate } = useFormValidation({
     email: isBlank(email) ? REQUIRED : undefined,
@@ -42,14 +41,13 @@ function AdminCreateUserPage() {
     e.preventDefault();
     if (saving || !validate()) return;
     setSaving(true);
-    setError("");
     try {
       const response = await api.post("/admin/users", { role, email, password });
       toast.success(t("admin.createUser.success"));
       navigate(`/admin/users/${response.data.user.id}`);
     } catch (err) {
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
-      setError(message || t("admin.createUser.error"));
+      toast.error(message || t("admin.createUser.error"));
       setSaving(false);
     }
   };
@@ -65,13 +63,6 @@ function AdminCreateUserPage() {
           <p className="mt-0.5 text-sm text-gray-500">{t("admin.createUser.subtitle")}</p>
         </div>
       </div>
-
-      {error && (
-        <p className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-        </p>
-      )}
 
       <form ref={formRef} noValidate onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">

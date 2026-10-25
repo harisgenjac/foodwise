@@ -144,6 +144,23 @@ describe("AdminAnnouncementsPage", () => {
     await waitFor(() => expect(success).toHaveBeenCalledWith(t("admin.announcements.sent", { count: 4 })));
   });
 
+  it("shows the server's reason in a toast when sending fails and keeps the text", async () => {
+    apiMock.post.mockRejectedValue(axiosError(400, "The announcement title is too long."));
+    const errorToast = vi.spyOn(toast, "error");
+    renderPage();
+
+    const [titleBs] = await screen.findAllByLabelText(t("admin.announcements.titleLabel"), { exact: true });
+    await userEvent.type(titleBs!, "Praznik");
+    const [bodyBs] = screen.getAllByLabelText(t("admin.announcements.bodyLabel"), { exact: true });
+    await userEvent.type(bodyBs!, "Platforma radi skraćeno.");
+    await userEvent.click(screen.getByRole("button", { name: t("admin.announcements.send") }));
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: t("admin.announcements.confirmSend") }));
+
+    await waitFor(() => expect(errorToast).toHaveBeenCalledWith("The announcement title is too long."));
+    expect(screen.queryByText("The announcement title is too long.")).not.toBeInTheDocument();
+    expect(titleBs).toHaveValue("Praznik");
+  });
+
   it("lists sent announcements and ends an active one", async () => {
     apiMock.post.mockResolvedValue({ data: { message: "Announcement ended." } });
     renderPage();
@@ -212,10 +229,25 @@ describe("AnnouncementBanner", () => {
 
   it("hides a dismissed announcement and tells the server", async () => {
     apiMock.post.mockResolvedValue({ data: {} });
+    const success = vi.spyOn(toast, "success");
+    const errorToast = vi.spyOn(toast, "error");
     renderBanner([announcement]);
     await userEvent.click(await screen.findByRole("button", { name: t("announcements.dismiss") }));
     expect(screen.queryByText("Održavanje")).not.toBeInTheDocument();
     expect(apiMock.post).toHaveBeenCalledWith("/announcements/8/dismiss");
+    // Disappearing is the feedback.
+    expect(success).not.toHaveBeenCalled();
+    expect(errorToast).not.toHaveBeenCalled();
+  });
+
+  it("says so when the server does not record the dismissal", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    apiMock.post.mockRejectedValue(axiosError(500));
+    const errorToast = vi.spyOn(toast, "error");
+    renderBanner([announcement]);
+    await userEvent.click(await screen.findByRole("button", { name: t("announcements.dismiss") }));
+    expect(screen.queryByText("Održavanje")).not.toBeInTheDocument();
+    await waitFor(() => expect(errorToast).toHaveBeenCalledWith(t("announcements.dismissError")));
   });
 
   it("does not load announcements for an admin", async () => {
