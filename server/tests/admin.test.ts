@@ -624,6 +624,25 @@ describe("Admin", () => {
       expect(typeof stats.donations.available).toBe("number");
     });
 
+    it("counts food saved over Confirmed and Completed, and value and savings over Completed only", async () => {
+      const savedNow = async () => (await admin.get("/api/admin/stats")).body.stats.saved;
+      const before = await savedNow();
+
+      const product = await createProduct(store, { unit: "l", quantity: 20, original_price: 10, discounted_price: 4 });
+      const confirmed = await reserve(restaurant, product.id, 3);
+      await store.patch(`/api/reservations/${confirmed}/accept`);
+      const completed = await reserve(restaurant, product.id, 2);
+      await store.patch(`/api/reservations/${completed}/accept`);
+      await store.patch(`/api/reservations/${completed}/complete`);
+      await reserve(restaurant, product.id, 5); // Pending: not saved yet
+
+      const after = await savedNow();
+      expect(after.l).toBeCloseTo(before.l + 5);
+      expect(after.kg).toBeCloseTo(before.kg);
+      expect(after.value).toBeCloseTo(before.value + 2 * 4);
+      expect(after.savings).toBeCloseTo(before.savings + 2 * 6);
+    });
+
     it("lists the audit log, newest first, with filters", async () => {
       const storeId = await userId(STORE);
       await admin.post(`/api/admin/users/${storeId}/block`).send({ reason: "Prvi" });

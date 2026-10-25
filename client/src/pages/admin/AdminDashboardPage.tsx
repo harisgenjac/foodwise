@@ -22,6 +22,7 @@ import KpiStrip from "../../components/admin/overview/KpiStrip.js";
 import DistributionBar from "../../components/admin/overview/DistributionBar.js";
 import AttentionList from "../../components/admin/overview/AttentionList.js";
 import { formatCreditMonth, usagePercent } from "../../utils/credits.js";
+import { formatSavedFood } from "../../utils/savedFood.js";
 import type { AdminStats } from "../../types/index.js";
 
 // Bar colors by meaning, ordered so that easily confused hues (amber/red, amber/green) are not
@@ -92,6 +93,7 @@ function AdminDashboardPage() {
   const month = formatCreditMonth(credits.period_start, monthNames);
   const sum = (values: Record<string, number>) => Object.values(values).reduce((total, value) => total + value, 0);
   const subscribedPercent = usagePercent(credits.active_subscriptions, businesses);
+  const savedFood = formatSavedFood(stats.saved, t("dashboard.piecesShort"));
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 pb-16">
@@ -121,11 +123,9 @@ function AdminDashboardPage() {
           {
             icon: Leaf,
             label: t("admin.dashboard.kpiFoodSaved"),
-            value: `${number(stats.saved.kg, 1)} kg`,
-            detail: t("admin.dashboard.kpiFoodSavedDetail", {
-              liters: number(stats.saved.l, 1),
-              pieces: number(stats.saved.pieces),
-            }),
+            // Same rules as the store card: the first non-zero unit is the number, the others are chips.
+            value: savedFood[0] ?? "0 kg",
+            units: savedFood.slice(1),
           },
         ]}
       />

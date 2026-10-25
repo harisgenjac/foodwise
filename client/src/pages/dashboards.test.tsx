@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import StoreDashboardPage from "./StoreDashboardPage.js";
 import RestaurantDashboardPage from "./RestaurantDashboardPage.js";
 import { apiMock, makeProduct, makeReservation, makeUser, renderWithProviders, t } from "../test/utils.js";
@@ -7,6 +7,12 @@ import type { RestaurantDashboardStats, StoreDashboardStats } from "../types/ind
 // The value printed under a stat card's label (the label is the card's first, truncated line).
 const statValue = (label: string) =>
   screen.getByText(label, { selector: "p.truncate" }).nextElementSibling?.textContent;
+
+// The unit chips under a stat card's value (the shared UnitChips component).
+const chipsOf = (label: string) => {
+  const card = screen.getByText(label, { selector: "p.truncate" }).parentElement!;
+  return within(within(card).getByTestId("unit-chips")).getAllByRole("listitem").map((chip) => chip.textContent);
+};
 
 const paramsOf = (url: string) => apiMock.get.mock.calls.find(([called]) => called === url)?.[1]?.params;
 
@@ -44,7 +50,23 @@ describe("StoreDashboardPage", () => {
     expect(statValue(t("dashboard.statPending"))).toBe("4");
     expect(statValue(t("dashboard.statConfirmed"))).toBe("25");
     expect(statValue(t("dashboard.statSavedFood"))).toBe("12.5 kg");
-    expect(screen.getByText(`+ 3 l · 8 ${t("dashboard.piecesShort")}`)).toBeInTheDocument();
+    expect(chipsOf(t("dashboard.statSavedFood"))).toEqual(["3 l", `8 ${t("dashboard.piecesShort")}`]);
+  });
+
+  it("shows the other non-zero units of food saved as chips", async () => {
+    renderStore({ active_products: 0, pending_reservations: 0, successful_reservations: 0, saved: { kg: 0, l: 12, pieces: 40 } });
+
+    expect(await screen.findByText("Hljeb")).toBeInTheDocument();
+    expect(statValue(t("dashboard.statSavedFood"))).toBe("12 l");
+    expect(chipsOf(t("dashboard.statSavedFood"))).toEqual([`40 ${t("dashboard.piecesShort")}`]);
+  });
+
+  it("shows no chips when food was saved in a single unit", async () => {
+    renderStore({ active_products: 0, pending_reservations: 0, successful_reservations: 0, saved: { kg: 5, l: 0, pieces: 0 } });
+
+    expect(await screen.findByText("Hljeb")).toBeInTheDocument();
+    expect(statValue(t("dashboard.statSavedFood"))).toBe("5 kg");
+    expect(screen.queryByTestId("unit-chips")).not.toBeInTheDocument();
   });
 
   it("asks only for the 3 newest available products and reservations", async () => {

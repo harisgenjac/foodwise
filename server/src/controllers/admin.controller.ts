@@ -122,7 +122,8 @@ export const getStats = async (req: Request, res: Response) => {
     const reservations = await pool.query(
       `SELECT reservations.status, COUNT(*) AS count FROM reservations GROUP BY reservations.status`,
     );
-    // Same units as the impact report: g/kg as kg, ml/l as l, kom and pak as pieces.
+    // Food saved follows the store dashboard's rules: Confirmed and Completed reservations, g/kg as kg,
+    // ml/l as l, kom and pak as pieces. Value and savings count only Completed, like the impact report.
     const saved = await pool.query(
       `SELECT
          COALESCE(SUM(CASE products.unit
@@ -132,11 +133,13 @@ export const getStats = async (req: Request, res: Response) => {
            WHEN 'l' THEN reservations.quantity
            WHEN 'ml' THEN reservations.quantity / 1000 END), 0) AS l,
          COALESCE(SUM(CASE WHEN products.unit IN ('kom', 'pak') THEN reservations.quantity END), 0) AS pieces,
-         COALESCE(ROUND(SUM(reservations.unit_price * reservations.quantity), 2), 0) AS value,
-         COALESCE(ROUND(SUM(GREATEST(products.original_price - reservations.unit_price, 0) * reservations.quantity), 2), 0) AS savings
+         COALESCE(ROUND(SUM(reservations.unit_price * reservations.quantity)
+           FILTER (WHERE reservations.status = 'Completed'), 2), 0) AS value,
+         COALESCE(ROUND(SUM(GREATEST(products.original_price - reservations.unit_price, 0) * reservations.quantity)
+           FILTER (WHERE reservations.status = 'Completed'), 2), 0) AS savings
        FROM reservations
        JOIN products ON reservations.product_id = products.id
-       WHERE reservations.status = 'Completed'`,
+       WHERE reservations.status IN ('Confirmed', 'Completed')`,
     );
     const donations = await pool.query(
       `SELECT

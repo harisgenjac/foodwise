@@ -95,7 +95,7 @@ function StoreDashboardPage() {
           icon={Leaf}
           label={t("dashboard.statSavedFood")}
           value={savedFood[0] ?? "0 kg"}
-          detail={savedFood.slice(1).join(" · ") || undefined}
+          units={savedFood.slice(1)}
           tone="green"
         />
       </div>

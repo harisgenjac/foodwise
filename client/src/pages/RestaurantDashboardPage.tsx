@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  BadgePercent,
   CalendarCheck,
   CheckCircle2,
   Hourglass,
-  PiggyBank,
   ShoppingBasket,
 } from "lucide-react";
 import api from "../api/axios.js";
@@ -88,7 +88,7 @@ const RestaurantDashboardPage = () => {
         <StatCard icon={ShoppingBasket} label={t("dashboard.statAvailableOffers")} value={offersCount} />
         <StatCard icon={Hourglass} label={t("dashboard.statPending")} value={stats?.pending_reservations ?? 0} tone="amber" />
         <StatCard icon={CheckCircle2} label={t("dashboard.statConfirmed")} value={stats?.successful_reservations ?? 0} tone="green" />
-        <StatCard icon={PiggyBank} label={t("dashboard.statSavings")} value={`${(stats?.savings ?? 0).toFixed(2)} KM`} tone="green" />
+        <StatCard icon={BadgePercent} label={t("dashboard.statSavings")} value={`${(stats?.savings ?? 0).toFixed(2)} KM`} tone="green" />
       </div>
 
       <div className="space-y-10">
