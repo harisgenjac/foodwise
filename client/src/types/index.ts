@@ -173,6 +173,20 @@ export interface DonationFormValues {
   serving_temperature: string;
 }
 
+// Dashboard stat cards (GET /dashboard/stats), all numbers. Successful = Confirmed + Completed.
+export interface StoreDashboardStats {
+  active_products: number;
+  pending_reservations: number;
+  successful_reservations: number;
+  saved: { kg: number; l: number; pieces: number };
+}
+
+export interface RestaurantDashboardStats {
+  pending_reservations: number;
+  successful_reservations: number;
+  savings: number;
+}
+
 // Admin panel (GET /admin/*). Counts arrive as numbers.
 export interface AdminStats {
   users: { stores: number; restaurants: number; admins: number; blocked: number; incomplete_profiles: number };

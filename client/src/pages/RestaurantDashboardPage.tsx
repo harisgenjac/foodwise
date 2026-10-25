@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   CalendarCheck,
@@ -15,20 +15,33 @@ import StatCard from "../components/dashboard/StatCard.js";
 import SectionCard from "../components/dashboard/SectionCard.js";
 import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
 import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.js";
-import type { Reservation, Product } from "../types/index.js";
+import type { Reservation, Product, RestaurantDashboardStats } from "../types/index.js";
+
+const SECTION_SIZE = 3;
 
 const RestaurantDashboardPage = () => {
   // The three offers closest to expiry, and how many offers the marketplace has in total.
   const [bestOffers, setBestOffers] = useState<Product[]>([]);
   const [offersCount, setOffersCount] = useState(0);
   const [reservationsList, setReservationsList] = useState<Reservation[]>([]);
+  const [stats, setStats] = useState<RestaurantDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { t } = useTranslation();
 
+  // The stat cards come from the server over all reservations; the list is only the newest few.
+  const fetchStats = async () => {
+    try {
+      const response = await api.get("/dashboard/stats");
+      setStats(response.data.stats);
+    } catch (err) {
+      console.error("Error fetching dashboard stats:", err);
+    }
+  };
+
   const fetchProducts = async () => {
     try {
-      const response = await api.get("/products", { params: { sort: "expiry", limit: 3 } });
+      const response = await api.get("/products", { params: { sort: "expiry", limit: SECTION_SIZE } });
       setBestOffers(response.data.products);
       setOffersCount(response.data.total);
     } catch (err) {
@@ -38,9 +51,9 @@ const RestaurantDashboardPage = () => {
 
   const fetchReservations = async () => {
     try {
-      const response = await api.get("/reservations/mine");
+      const response = await api.get("/reservations/mine", { params: { limit: SECTION_SIZE } });
       const data: Reservation[] = response.data.reservations;
-      setReservationsList(data);
+      setReservationsList(data.slice(0, SECTION_SIZE));
     } catch (err) {
       console.error("Error fetching reservations:", err);
     }
@@ -48,33 +61,13 @@ const RestaurantDashboardPage = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      await Promise.all([fetchProducts(), fetchReservations()]);
+      await Promise.all([fetchStats(), fetchProducts(), fetchReservations()]);
 
       setLoading(false);
     };
 
     loadData();
   }, []);
-
-  const stats = useMemo(() => {
-    const confirmed = reservationsList.filter(
-      (r) => r.status === "Confirmed" || r.status === "Completed",
-    );
-    const savings = confirmed.reduce(
-      (sum, r) =>
-        sum +
-        (Number(r.original_price ?? 0) - Number(r.discounted_price ?? 0)) *
-          Number(r.quantity),
-      0,
-    );
-
-    return {
-      offers: offersCount,
-      pending: reservationsList.filter((r) => r.status === "Pending").length,
-      confirmed: confirmed.length,
-      savings: `${savings.toFixed(2)} KM`,
-    };
-  }, [offersCount, reservationsList]);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -92,10 +85,10 @@ const RestaurantDashboardPage = () => {
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard icon={ShoppingBasket} label={t("dashboard.statAvailableOffers")} value={stats.offers} />
-        <StatCard icon={Hourglass} label={t("dashboard.statPending")} value={stats.pending} tone="amber" />
-        <StatCard icon={CheckCircle2} label={t("dashboard.statConfirmed")} value={stats.confirmed} tone="green" />
-        <StatCard icon={PiggyBank} label={t("dashboard.statSavings")} value={stats.savings} tone="green" />
+        <StatCard icon={ShoppingBasket} label={t("dashboard.statAvailableOffers")} value={offersCount} />
+        <StatCard icon={Hourglass} label={t("dashboard.statPending")} value={stats?.pending_reservations ?? 0} tone="amber" />
+        <StatCard icon={CheckCircle2} label={t("dashboard.statConfirmed")} value={stats?.successful_reservations ?? 0} tone="green" />
+        <StatCard icon={PiggyBank} label={t("dashboard.statSavings")} value={`${(stats?.savings ?? 0).toFixed(2)} KM`} tone="green" />
       </div>
 
       <div className="space-y-10">
@@ -125,7 +118,7 @@ const RestaurantDashboardPage = () => {
           }}
         >
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {reservationsList.slice(0, 3).map((reservation) => (
+            {reservationsList.map((reservation) => (
               <DashboardReservationCard key={reservation.id} reservation={reservation} partyLabel={t("myProducts.store")} />
             ))}
           </div>

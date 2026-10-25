@@ -12,6 +12,7 @@ import {
 } from "./helpers.js";
 
 const STORE = "users-store@test.com";
+const STORE_2 = "users-store-2@test.com";
 const RESTAURANT = "users-restaurant@test.com";
 
 const PROFILE = {
@@ -26,7 +27,7 @@ const PROFILE = {
 
 describe("Users routes", () => {
   afterEach(async () => {
-    await cleanupUsers([STORE, RESTAURANT]);
+    await cleanupUsers([STORE, STORE_2, RESTAURANT]);
   });
 
   describe("GET /api/users/me", () => {
@@ -108,6 +109,26 @@ describe("Users routes", () => {
       expect(response.body.stores.map((s: { business_name: string }) => s.business_name)).toEqual([
         PROFILE.business_name,
       ]);
+    });
+
+    it("lists only the caller's favorite stores with favorites=true", async () => {
+      const other = await registerAndLogin(STORE_2, "STORE");
+      await other.put("/api/users/me").send({ ...PROFILE, business_name: "Other Market Users" });
+      const favoriteId = await userId(STORE);
+      await restaurant.post("/api/favorites").send({ store_id: favoriteId });
+
+      const all = await restaurant.get("/api/users/stores").query({ city: "Testograd" });
+      expect(all.body.stores).toHaveLength(2);
+
+      const response = await restaurant.get("/api/users/stores").query({ city: "Testograd", favorites: "true" });
+      expect(response.status).toBe(200);
+      expect(response.body.stores.map((s: { id: number }) => s.id)).toEqual([favoriteId]);
+    });
+
+    it("returns 400 for an unknown favorites value", async () => {
+      const response = await restaurant.get("/api/users/stores").query({ favorites: "yes" });
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Invalid filter.");
     });
 
     it("returns 403 for a STORE", async () => {

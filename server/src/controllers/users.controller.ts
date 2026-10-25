@@ -194,7 +194,7 @@ export const changePassword = async (req: Request, res: Response) => {
 
 export const getStores = async (req: Request, res: Response) => {
   try {
-    const { city, business_name } = req.query;
+    const { city, business_name, favorites } = req.query;
     let query = `SELECT users.id, users.business_name, users.city, users.address, users.logo_url,
      users.description, users.opening_hours, users.pickup_hours, users.phone,
      (SELECT COUNT(*) FROM products
@@ -204,7 +204,16 @@ export const getStores = async (req: Request, res: Response) => {
      FROM users
      WHERE users.role = 'STORE' AND users.is_blocked = false AND users.business_name IS NOT NULL`;
 
-    let values = [];
+    let values: (string | number)[] = [];
+
+    // "Favorites only" on the store list: the caller's favorite stores.
+    if (favorites !== undefined && favorites !== "") {
+      if (favorites !== "true") {
+        return res.status(400).json({ error: "Invalid filter." });
+      }
+      values.push(req.user!.id);
+      query += ` AND EXISTS (SELECT 1 FROM favorites WHERE favorites.store_id = users.id AND favorites.restaurant_id = $${values.length})`;
+    }
 
     if (city) {
       values.push(`%${city}%` as string);
