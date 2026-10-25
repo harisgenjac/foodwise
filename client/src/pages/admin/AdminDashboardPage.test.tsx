@@ -36,6 +36,11 @@ const renderPage = (stats: AdminStats | Error) =>
     get: { "/admin/stats": stats instanceof Error ? stats : { stats } },
   });
 
+const foodSavedChips = () =>
+  within(screen.getByTestId("unit-chips"))
+    .getAllByRole("listitem")
+    .map((chip) => chip.textContent);
+
 describe("AdminDashboardPage", () => {
   it("shows the headline numbers", async () => {
     renderPage(STATS);
@@ -45,6 +50,29 @@ describe("AdminDashboardPage", () => {
     expect(screen.getByText(t("admin.dashboard.kpiSubscriptionsDetail", { percent: 80 }))).toBeInTheDocument();
     expect(screen.getByText("37")).toBeInTheDocument();
     expect(screen.getByText(t("admin.dashboard.kpiBusinessesDetail", { stores: 3, restaurants: 2 }))).toBeInTheDocument();
+    expect(screen.getByText("41.5 kg")).toBeInTheDocument();
+    expect(foodSavedChips()).toEqual(["12 l", `30 ${t("dashboard.piecesShort")}`]);
+  });
+
+  it("leaves zero units out of the food saved chips", async () => {
+    renderPage({ ...STATS, saved: { ...STATS.saved, l: 0 } });
+
+    expect(await screen.findByText("41.5 kg")).toBeInTheDocument();
+    expect(foodSavedChips()).toEqual([`30 ${t("dashboard.piecesShort")}`]);
+  });
+
+  it("shows food saved in the first non-zero unit, like the store dashboard", async () => {
+    renderPage({ ...STATS, saved: { ...STATS.saved, kg: 0 } });
+
+    expect(await screen.findByText("12 l")).toBeInTheDocument();
+    expect(foodSavedChips()).toEqual([`30 ${t("dashboard.piecesShort")}`]);
+  });
+
+  it("shows no food saved chips when only kg is non-zero", async () => {
+    renderPage({ ...STATS, saved: { ...STATS.saved, l: 0, pieces: 0 } });
+
+    expect(await screen.findByText("41.5 kg")).toBeInTheDocument();
+    expect(screen.queryByTestId("unit-chips")).not.toBeInTheDocument();
   });
 
   it("lists only pending credit requests as waiting for the admin", async () => {
