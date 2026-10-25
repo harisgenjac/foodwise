@@ -132,7 +132,7 @@ Stores and restaurants pay with monthly credits (full spec: `docs/credits-spec.m
 - The add-product form, the CSV import and the reservation dialog say how many credits the action uses and how many are left. A refusal for missing credits links to the right section of My profile.
 - **Admin:**
   - A Credits overview of every store and restaurant (plan, used, available, total, pending requests).
-  - A requests page to approve or reject requests, with an internal note the user never sees. The sidebar shows how many requests are pending.
+  - A requests page to approve or reject requests, with an internal note the user never sees. The sidebar shows how many requests are pending. A user's pending requests can also be approved or rejected from the Credits section of that user's admin page.
   - On a user's page: the credit history, and a manual +/− adjustment with a required reason.
   - Every decision and adjustment is in the audit log.
 

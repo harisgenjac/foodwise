@@ -1,5 +1,12 @@
 import axios from "axios";
-import type { CreditRequestStatus } from "../types/index.js";
+import type { TFunction } from "i18next";
+import type { CreditRequest, CreditRequestStatus } from "../types/index.js";
+
+// "Standard · 40 credits" for a subscription, "+10 credits" for a top-up.
+export const describeCreditRequest = (request: CreditRequest, t: TFunction) =>
+  request.request_type === "SUBSCRIPTION"
+    ? `${request.plan_name} · ${t("credits.profile.planCredits", { count: request.credits })}`
+    : `+${t("credits.profile.creditsCount", { count: request.credits })}`;
 
 export const CREDIT_REQUEST_STATUS_STYLES: Record<CreditRequestStatus, string> = {
   PENDING: "bg-amber-50 text-amber-700",
