@@ -423,6 +423,11 @@ export const refundForProduct = async (
   return refund(client, original, "PRODUCT_REFUND", by, now);
 };
 
+// Whether the product's latest charge is still spent (never refunded). A product moved to
+// donations after the charge day keeps its charge, so returning it to the offer must not charge again.
+export const hasOpenProductCharge = async (client: PoolClient, productId: number) =>
+  (await findOpenCharge(client, "PRODUCT_CHARGE", "product", productId)) !== null;
+
 // A reservation ends without a sale. `forced` refunds regardless of the day: the store rejected
 // it, or the system/an admin cancelled it, so the restaurant is not at fault. The restaurant's
 // own cancel is not forced and follows the same-day rule.
