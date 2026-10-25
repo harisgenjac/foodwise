@@ -4,6 +4,7 @@ import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import type { Pool, PoolClient } from "pg";
 import { parseId } from "../utils/params.js";
+import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import type { Role } from "../types/auth.js";
 import bcrypt from "bcrypt";
 import { hashPassword, validatePassword } from "../utils/accounts.js";
@@ -195,13 +196,17 @@ export const changePassword = async (req: Request, res: Response) => {
 export const getStores = async (req: Request, res: Response) => {
   try {
     const { city, business_name, favorites } = req.query;
-    let query = `SELECT users.id, users.business_name, users.city, users.address, users.logo_url,
+    const page = parsePage(req.query, CARD_PAGE_SIZE);
+    if (!page) {
+      return res.status(400).json({ error: "Invalid filter." });
+    }
+    const columns = `users.id, users.business_name, users.city, users.address, users.logo_url,
      users.description, users.opening_hours, users.pickup_hours, users.phone,
      (SELECT COUNT(*) FROM products
       WHERE products.store_id = users.id
         AND products.status = 'Available'
-        AND products.expiry_date >= CURRENT_DATE) AS active_products
-     FROM users
+        AND products.expiry_date >= CURRENT_DATE) AS active_products`;
+    let query = `FROM users
      WHERE users.role = 'STORE' AND users.is_blocked = false AND users.business_name IS NOT NULL`;
 
     let values: (string | number)[] = [];
@@ -225,12 +230,17 @@ export const getStores = async (req: Request, res: Response) => {
       query += ` AND users.business_name ILIKE $${values.length}`;
     }
 
-    query += " ORDER BY users.business_name ASC";
-    const result = await pool.query(query, values);
+    const { rows, total } = await listPage(
+      columns,
+      query,
+      "users.business_name ASC, users.id DESC",
+      values,
+      page,
+    );
 
     return res
       .status(200)
-      .json({ message: "Stores fetched successfully", stores: result.rows });
+      .json({ message: "Stores fetched successfully", stores: rows, total });
   } catch (error) {
     console.error("Error while fetching stores:", error);
     return res
@@ -262,28 +272,7 @@ export const getStoreDetails = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Store not found." });
     }
 
-    const products = await pool.query(
-      `
-      SELECT listed.* FROM (
-        SELECT
-          products.*,
-          products.quantity - COALESCE(
-            (SELECT SUM(quantity) FROM reservations
-             WHERE reservations.product_id = products.id
-             AND reservations.status IN ('Pending', 'Confirmed', 'Completed')),
-            0
-          ) AS available_quantity,
-          products.expiry_date - CURRENT_DATE AS days_until_expiry
-        FROM products
-        WHERE store_id = $1 AND status = 'Available'
-        AND expiry_date >= CURRENT_DATE
-      ) AS listed
-      WHERE listed.available_quantity > 0
-      ORDER BY listed.created_at DESC
-    `,
-      [storeId],
-    );
-
+    // The store's offers are paged through GET /products?store_id=.
     const stats = await pool.query(
       `SELECT 
      COUNT(DISTINCT id) FILTER (WHERE status = 'Sold') AS sold_articles,
@@ -302,7 +291,6 @@ export const getStoreDetails = async (req: Request, res: Response) => {
     return res.status(200).json({
       message: "Store fetched successfully",
       store: result.rows[0],
-      products: products.rows,
       stats: stats.rows[0],
       myReservations: myReservations.rows[0],
     });

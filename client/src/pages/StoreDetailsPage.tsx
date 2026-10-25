@@ -48,7 +48,6 @@ function StoreDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [store, setStore] = useState<User | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [myReservations, setMyReservations] = useState<MyReservationsCount | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,11 +62,9 @@ function StoreDetailsPage() {
     try {
       const response = await api.get(`/users/stores/${id}`);
       const storeData: User = response.data.store;
-      const productsData: Product[] = response.data.products;
       const reservationsData: MyReservationsCount = response.data.myReservations;
       const statsData: StoreStats = response.data.stats;
       setStore(storeData);
-      setProducts(productsData);
       setStats(statsData);
       setMyReservations(reservationsData);
     } catch (err) {
@@ -111,6 +108,13 @@ function StoreDetailsPage() {
     fetchFavorites();
   }, [id]);
 
+  // The store's offers come from the marketplace (same rules), paged; `total` counts them all.
+  const {
+    data: products,
+    total: productsTotal,
+    refetch: refetchProducts,
+  } = useFetch<Product>("/products", "products", { store_id: id! });
+
   const {
     data: reservationsList,
     loading: reservationsLoading,
@@ -138,8 +142,9 @@ function StoreDetailsPage() {
   }
 
   const location = [store.address, store.city].filter(Boolean).join(", ");
+  const activeProducts = productsTotal ?? products.length;
   const tabs: { key: Tab; label: string; count?: number }[] = [
-    { key: "products", label: t("store.productsTab"), count: products.length },
+    { key: "products", label: t("store.productsTab"), count: activeProducts },
     { key: "reservations", label: t("store.reservationsTab") },
   ];
   const statusFilters = [
@@ -223,7 +228,7 @@ function StoreDetailsPage() {
         </section>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-3">
-          <StatCard icon={Package} label={t("store.activeProducts")} value={products.length} tone="green" />
+          <StatCard icon={Package} label={t("store.activeProducts")} value={activeProducts} tone="green" />
           <StatCard icon={ShoppingBag} label={t("store.soldProducts")} value={stats.sold_articles} />
           <StatCard
             icon={CircleCheck}
@@ -358,6 +363,7 @@ function StoreDetailsPage() {
           onClose={() => setSelectedProduct(null)}
           onReserved={() => {
             fetchStoreDetails();
+            refetchProducts();
             refetchReservations();
           }}
         />

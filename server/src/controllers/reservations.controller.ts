@@ -4,6 +4,7 @@ import type { PoolClient } from "pg";
 import { createNotification } from "../utils/notifications.js";
 import { isValidDateTime } from "../utils/dates.js";
 import { parseId, parseNumber } from "../utils/params.js";
+import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import { HttpError } from "../utils/httpError.js";
 import { chargeForReservation, refundForReservation } from "../services/creditService.js";
 
@@ -176,8 +177,12 @@ export const getReservationById = async (req: Request, res: Response) => {
 export const getMineReservations = async (req: Request, res: Response) => {
   const restaurant_id = req.user!.id;
   const { status, name, business_name, store_id } = req.query;
+  const page = parsePage(req.query, CARD_PAGE_SIZE);
+  if (!page) {
+    return res.status(400).json({ error: "Invalid filter." });
+  }
   try {
-    let query = `SELECT
+    const columns = `
     reservations.id,
     reservations.restaurant_id,
     reservations.quantity,
@@ -192,8 +197,8 @@ export const getMineReservations = async (req: Request, res: Response) => {
     products.category,
     products.unit,
     users.business_name,
-    users.city
-  FROM reservations
+    users.city`;
+    let query = `FROM reservations
   JOIN products ON reservations.product_id = products.id
   JOIN users ON products.store_id = users.id
   WHERE reservations.restaurant_id = $1`;
@@ -223,20 +228,24 @@ export const getMineReservations = async (req: Request, res: Response) => {
       query += ` AND products.store_id = $${values.length}`;
     }
 
-    query += ` ORDER BY
-      CASE
+    const { rows, total } = await listPage(
+      columns,
+      query,
+      `CASE
         WHEN reservations.status = 'Pending' THEN 0
         WHEN reservations.status = 'Confirmed' THEN 1
         WHEN reservations.status = 'Completed' THEN 2
         WHEN reservations.status = 'Rejected' THEN 3
         WHEN reservations.status = 'Cancelled' THEN 4
       END,
-      reservations.created_at DESC`;
-
-    const result = await pool.query(query, values);
+      reservations.created_at DESC, reservations.id DESC`,
+      values,
+      page,
+    );
     return res.status(200).json({
       message: "Reservations fetched successfully.",
-      reservations: result.rows,
+      reservations: rows,
+      total,
     });
   } catch (error) {
     console.error("Error while fetching reservations:", error);
@@ -249,8 +258,12 @@ export const getMineReservations = async (req: Request, res: Response) => {
 export const getStoreReservations = async (req: Request, res: Response) => {
   const store_id = req.user!.id;
   const { status, name, city } = req.query;
+  const page = parsePage(req.query, CARD_PAGE_SIZE);
+  if (!page) {
+    return res.status(400).json({ error: "Invalid filter." });
+  }
   try {
-    let query = `SELECT
+    const columns = `
         reservations.id,
         reservations.restaurant_id,
         reservations.quantity,
@@ -267,8 +280,8 @@ export const getStoreReservations = async (req: Request, res: Response) => {
         products.category,
         products.unit,
         users.business_name,
-        users.city
-      FROM reservations
+        users.city`;
+    let query = `FROM reservations
       JOIN products ON reservations.product_id = products.id
       JOIN users ON reservations.restaurant_id = users.id
       WHERE products.store_id = $1`;
@@ -290,15 +303,19 @@ export const getStoreReservations = async (req: Request, res: Response) => {
       query += ` AND users.city ILIKE $${values.length}`;
     }
 
-    query += ` ORDER BY
-      CASE WHEN reservations.status = 'Pending' THEN 0 ELSE 1 END,
-      reservations.created_at DESC`;
-
-    const result = await pool.query(query, values);
+    const { rows, total } = await listPage(
+      columns,
+      query,
+      `CASE WHEN reservations.status = 'Pending' THEN 0 ELSE 1 END,
+      reservations.created_at DESC, reservations.id DESC`,
+      values,
+      page,
+    );
 
     return res.status(200).json({
       message: "Reservations fetched successfully.",
-      reservations: result.rows,
+      reservations: rows,
+      total,
     });
   } catch (error) {
     console.error("Error while fetching reservations:", error);
@@ -570,10 +587,15 @@ export const getPickups = async (req: Request, res: Response) => {
   if (!PICKUP_SCOPES.includes(scope as string)) {
     return res.status(400).json({ error: "Invalid filter." });
   }
+  // Only the picked-up history is paged: an open (or late) pickup must never hide on a later page.
+  const page = scope === "completed" ? parsePage(req.query, CARD_PAGE_SIZE) : null;
+  if (scope === "completed" && !page) {
+    return res.status(400).json({ error: "Invalid filter." });
+  }
 
   try {
     const { owner, partyJoin } = pickupOwnership(role);
-    let query = `SELECT
+    const columns = `
         reservations.id,
         reservations.product_id,
         reservations.restaurant_id,
@@ -596,8 +618,8 @@ export const getPickups = async (req: Request, res: Response) => {
         parties.city,
         parties.phone AS party_phone,
         parties.address AS party_address,
-        parties.pickup_hours AS party_pickup_hours
-      FROM reservations
+        parties.pickup_hours AS party_pickup_hours`;
+    let query = `FROM reservations
       JOIN products ON reservations.product_id = products.id
       JOIN users AS parties ON ${partyJoin}
       WHERE ${owner}`;
@@ -615,13 +637,27 @@ export const getPickups = async (req: Request, res: Response) => {
       query += ` AND products.name ILIKE $${values.length}`;
     }
 
-    // Open pickups by time (missed ones from earlier days come first), handed-over ones newest first.
-    query +=
-      scope === "completed"
-        ? ` ORDER BY reservations.picked_up_at DESC NULLS LAST, reservations.pickup_date DESC`
-        : ` ORDER BY reservations.pickup_date ASC, reservations.id ASC`;
+    // Handed-over ones newest first, in pages.
+    if (page) {
+      const { rows, total } = await listPage(
+        columns,
+        query,
+        "reservations.picked_up_at DESC NULLS LAST, reservations.pickup_date DESC, reservations.id DESC",
+        values,
+        page,
+      );
+      return res.status(200).json({
+        message: "Pickups fetched successfully.",
+        reservations: rows,
+        total,
+      });
+    }
 
-    const result = await pool.query(query, values);
+    // Open pickups by time (missed ones from earlier days come first), all of them.
+    const result = await pool.query(
+      `SELECT ${columns} ${query} ORDER BY reservations.pickup_date ASC, reservations.id ASC`,
+      values,
+    );
     return res.status(200).json({
       message: "Pickups fetched successfully.",
       reservations: result.rows,

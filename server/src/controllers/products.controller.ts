@@ -3,13 +3,12 @@ import type { Request, Response } from 'express';
 import { validateProductFields, type ProductFields } from '../utils/validateProduct.js';
 import { parseId, parseNonNegativeInt, parseNumber } from '../utils/params.js';
 import { parseProductCsv } from '../utils/productCsv.js';
+import { CARD_PAGE_SIZE, listPage, parsePage } from '../utils/pagination.js';
 import { HttpError } from '../utils/httpError.js';
 import { chargeForProduct, chargeForProducts, refundForProduct } from '../services/creditService.js';
 
 export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
 
-const DEFAULT_PAGE_SIZE = 24;
-const MAX_PAGE_SIZE = 100;
 // Fixed SQL per allowed `sort` value; the query string never reaches the SQL text.
 const SORT_ORDERS: Record<string, string> = {
   newest: "listed.created_at DESC, listed.id DESC",
@@ -131,7 +130,7 @@ export const importProducts = async (req: Request, res: Response) => {
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const { category, maxPrice, expiryWithinDays, name, limit, offset, sort } = req.query;
+    const { category, maxPrice, expiryWithinDays, name, sort, store_id } = req.query;
 
     // Inner query: marketplace products with their remaining quantity; the outer queries
     // drop fully reserved ones, count the rest and return one page.
@@ -184,29 +183,31 @@ export const getProducts = async (req: Request, res: Response) => {
       query += ` AND products.name ILIKE $${values.length}`;
     }
 
-    const pageSize = limit === undefined ? DEFAULT_PAGE_SIZE : parseNonNegativeInt(limit);
-    const skip = offset === undefined ? 0 : parseNonNegativeInt(offset);
-    if (pageSize === null || pageSize === 0 || pageSize > MAX_PAGE_SIZE || skip === null) {
-      return res.status(400).json({ error: "Invalid filter." });
+    // A store's profile lists its offers through the marketplace, with the same rules.
+    if (store_id) {
+      const storeId = parseId(store_id);
+      if (storeId === null) {
+        return res.status(400).json({ error: "Invalid filter." });
+      }
+      values.push(storeId);
+      query += ` AND products.store_id = $${values.length}`;
     }
-    const sortKey = sort ?? "newest";
-    if (typeof sortKey !== "string" || !Object.hasOwn(SORT_ORDERS, sortKey)) {
-      return res.status(400).json({ error: "Invalid filter." });
-    }
-    const orderBy = SORT_ORDERS[sortKey];
 
-    const filtered = `FROM (${query}) AS listed WHERE listed.available_quantity > 0`;
-    const total = await pool.query(`SELECT COUNT(*) AS total ${filtered}`, values);
-    const result = await pool.query(
-      `SELECT listed.* ${filtered}
-       ORDER BY ${orderBy}
-       LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
-      [...values, pageSize, skip],
+    const page = parsePage(req.query, CARD_PAGE_SIZE);
+    const sortKey = sort ?? "newest";
+    if (!page || typeof sortKey !== "string" || !Object.hasOwn(SORT_ORDERS, sortKey)) {
+      return res.status(400).json({ error: "Invalid filter." });
+    }
+
+    const { rows, total } = await listPage(
+      "listed.*",
+      `FROM (${query}) AS listed WHERE listed.available_quantity > 0`,
+      SORT_ORDERS[sortKey]!,
+      values,
+      page,
     );
 
-    return res
-      .status(200)
-      .json({ products: result.rows, total: parseInt(total.rows[0].total, 10) });
+    return res.status(200).json({ products: rows, total });
   } catch (error) {
     console.error("Error while fetching products:", error);
     return res
@@ -259,9 +260,12 @@ export const getMineProducts = async (req: Request, res: Response) => {
   try {
     const store_id = req.user!.id;
     const { status, category, name, expiryWithinDays } = req.query;
+    const page = parsePage(req.query, CARD_PAGE_SIZE);
+    if (!page) {
+      return res.status(400).json({ error: "Invalid filter." });
+    }
 
-    let query =
-      "SELECT * FROM products WHERE store_id = $1 AND status != 'Removed'";
+    let query = "FROM products WHERE store_id = $1 AND status != 'Removed'";
     let values: (string | number)[] = [store_id];
 
     if (category) {
@@ -291,17 +295,20 @@ export const getMineProducts = async (req: Request, res: Response) => {
       query += ` AND name ILIKE $${values.length}`;
     }
 
-    query += ` ORDER BY
-  CASE
-    WHEN status = 'Available' THEN 0
-    WHEN status = 'Sold' THEN 1
-    WHEN status = 'Expired' THEN 2
-    ELSE 3
-  END,
-  created_at DESC`;
-
-    const result = await pool.query(query, values);
-    return res.status(200).json({ products: result.rows });
+    const { rows, total } = await listPage(
+      "*",
+      query,
+      `CASE
+        WHEN status = 'Available' THEN 0
+        WHEN status = 'Sold' THEN 1
+        WHEN status = 'Expired' THEN 2
+        ELSE 3
+      END,
+      created_at DESC, id DESC`,
+      values,
+      page,
+    );
+    return res.status(200).json({ products: rows, total });
   } catch (error) {
     console.error("Error while fetching products:", error);
     return res

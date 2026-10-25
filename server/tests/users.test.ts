@@ -138,7 +138,7 @@ describe("Users routes", () => {
   });
 
   describe("GET /api/users/stores/:id", () => {
-    it("returns the store, its active products and the stats", async () => {
+    it("returns the store and the stats; its products are paged through /products?store_id=", async () => {
       const store = await registerAndLogin(STORE, "STORE");
       await store.put("/api/users/me").send(PROFILE);
       const product = await createProduct(store, { quantity: 4 });
@@ -150,10 +150,14 @@ describe("Users routes", () => {
       expect(response.status).toBe(200);
       expect(response.body.store).toMatchObject({ business_name: PROFILE.business_name, city: PROFILE.city });
       expect(response.body.store.email).toBeUndefined();
-      expect(response.body.products).toHaveLength(1);
-      expect(parseFloat(response.body.products[0].available_quantity)).toBe(2);
+      expect(response.body.products).toBeUndefined();
       expect(response.body.stats.successful_reservations).toBe("1");
       expect(response.body.myReservations.my_reservations_count).toBe("1");
+
+      const products = await restaurant.get("/api/products").query({ store_id: await userId(STORE) });
+      expect(products.body.total).toBe(1);
+      expect(products.body.products[0].id).toBe(product.id);
+      expect(parseFloat(products.body.products[0].available_quantity)).toBe(2);
     });
 
     it("returns 403 for a STORE", async () => {

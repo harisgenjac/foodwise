@@ -45,7 +45,7 @@ function StoreDashboardPage() {
         params: { status: "Available", limit: SECTION_SIZE },
       });
       const data: Product[] = response.data.products;
-      setProductsList(data.slice(0, SECTION_SIZE));
+      setProductsList(data);
     } catch (err) {
       console.error("Error fetching products:", err);
     }
@@ -55,7 +55,7 @@ function StoreDashboardPage() {
     try {
       const response = await api.get("/reservations/store", { params: { limit: SECTION_SIZE } });
       const data: Reservation[] = response.data.reservations;
-      setReservationsList(data.slice(0, SECTION_SIZE));
+      setReservationsList(data);
     } catch (err) {
       console.error("Error fetching reservations:", err);
     }

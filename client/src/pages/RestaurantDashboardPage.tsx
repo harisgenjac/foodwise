@@ -53,7 +53,7 @@ const RestaurantDashboardPage = () => {
     try {
       const response = await api.get("/reservations/mine", { params: { limit: SECTION_SIZE } });
       const data: Reservation[] = response.data.reservations;
-      setReservationsList(data.slice(0, SECTION_SIZE));
+      setReservationsList(data);
     } catch (err) {
       console.error("Error fetching reservations:", err);
     }

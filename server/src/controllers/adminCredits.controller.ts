@@ -12,7 +12,8 @@ import {
   grantTopup,
   listTransactions,
 } from "../services/creditService.js";
-import { REASON_ERROR, listPage, logAdminAction, parsePage, parseReason } from "./admin.controller.js";
+import { REASON_ERROR, logAdminAction, parseReason } from "./admin.controller.js";
+import { TABLE_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import {
   CREDIT_REQUEST_COLUMNS,
   CREDIT_REQUEST_JOINS,
@@ -38,7 +39,7 @@ const parseNote = (value: unknown): string | null | undefined => {
 // Stores and restaurants with this month's plan and balance. Filters: role, q (email or business name).
 export const getCreditOverview = async (req: Request, res: Response) => {
   const { role, q } = req.query;
-  const page = parsePage(req.query);
+  const page = parsePage(req.query, TABLE_PAGE_SIZE);
   // Unused filters arrive as empty strings (?role=), which mean "no filter".
   if (!page || (role && !BUSINESS_ROLES.includes(role as string))) {
     return res.status(400).json({ error: "Invalid filter." });
@@ -60,7 +61,7 @@ export const getCreditOverview = async (req: Request, res: Response) => {
        (SELECT COUNT(*) FROM credit_requests
         WHERE credit_requests.user_id = users.id AND credit_requests.status = 'PENDING')::int AS pending_requests`,
       from,
-      "users.business_name ASC NULLS LAST, users.email ASC",
+      "users.business_name ASC NULLS LAST, users.email ASC, users.id DESC",
       values,
       page,
     );
@@ -88,7 +89,7 @@ export const getCreditOverview = async (req: Request, res: Response) => {
 // Subscription and top-up requests, pending first. Filters: type, status, user_id.
 export const getCreditRequests = async (req: Request, res: Response) => {
   const { type, status, user_id } = req.query;
-  const page = parsePage(req.query);
+  const page = parsePage(req.query, TABLE_PAGE_SIZE);
   if (
     !page ||
     (type && !CREDIT_REQUEST_TYPES.includes(type as string)) ||
@@ -311,7 +312,7 @@ export const adjustUserCredits = async (req: Request, res: Response) => {
 
 // One user's ledger, newest first, with this month's balance.
 export const getUserLedger = async (req: Request, res: Response) => {
-  const page = parsePage(req.query);
+  const page = parsePage(req.query, TABLE_PAGE_SIZE);
   if (!page) {
     return res.status(400).json({ error: "Invalid filter." });
   }

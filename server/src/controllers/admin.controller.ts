@@ -2,7 +2,8 @@ import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import type { Pool, PoolClient } from "pg";
 import { createNotification } from "../utils/notifications.js";
-import { parseId, parseNonNegativeInt } from "../utils/params.js";
+import { parseId } from "../utils/params.js";
+import { TABLE_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import {
   hashPassword,
   isUniqueViolation,
@@ -37,8 +38,6 @@ export const ADMIN_ACTIONS = [
 ];
 export const ANNOUNCEMENT_AUDIENCES = ["ALL", "STORE", "RESTAURANT"];
 
-const DEFAULT_PAGE_SIZE = 25;
-const MAX_PAGE_SIZE = 100;
 const MAX_REASON_LENGTH = 500;
 const RECENT_ACTIONS_LIMIT = 20;
 
@@ -100,31 +99,6 @@ export const parseReason = (value: unknown): string | null => {
   return reason && reason.length <= MAX_REASON_LENGTH ? reason : null;
 };
 export const REASON_ERROR = `A reason is required (at most ${MAX_REASON_LENGTH} characters).`;
-
-export const parsePage = (query: Request["query"]) => {
-  const limit = query.limit === undefined ? DEFAULT_PAGE_SIZE : parseNonNegativeInt(query.limit);
-  const offset = query.offset === undefined ? 0 : parseNonNegativeInt(query.offset);
-  if (limit === null || limit === 0 || limit > MAX_PAGE_SIZE || offset === null) return null;
-  return { limit, offset };
-};
-
-// Runs a filtered list query and its total count; `from` is everything after SELECT ... .
-export const listPage = async (
-  columns: string,
-  from: string,
-  orderBy: string,
-  values: (string | number | boolean)[],
-  page: { limit: number; offset: number },
-) => {
-  const total = await pool.query(`SELECT COUNT(*) AS total ${from}`, values);
-  const result = await pool.query(
-    `SELECT ${columns} ${from}
-     ORDER BY ${orderBy}
-     LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
-    [...values, page.limit, page.offset],
-  );
-  return { rows: result.rows, total: parseInt(total.rows[0].total, 10) };
-};
 
 export const getStats = async (req: Request, res: Response) => {
   try {
@@ -239,7 +213,7 @@ export const getStats = async (req: Request, res: Response) => {
 
 export const getUsers = async (req: Request, res: Response) => {
   const { role, q, city, blocked } = req.query;
-  const page = parsePage(req.query);
+  const page = parsePage(req.query, TABLE_PAGE_SIZE);
   if (!page) {
     return res.status(400).json({ error: "Invalid filter." });
   }
@@ -559,7 +533,7 @@ export const unblockUser = async (req: Request, res: Response) => {
 
 export const getAdminProducts = async (req: Request, res: Response) => {
   const { q, status, store_id } = req.query;
-  const page = parsePage(req.query);
+  const page = parsePage(req.query, TABLE_PAGE_SIZE);
   if (!page) {
     return res.status(400).json({ error: "Invalid filter." });
   }
@@ -673,7 +647,7 @@ export const removeProduct = async (req: Request, res: Response) => {
 
 export const getAdminDonations = async (req: Request, res: Response) => {
   const { q, status, type, donor_id } = req.query;
-  const page = parsePage(req.query);
+  const page = parsePage(req.query, TABLE_PAGE_SIZE);
   if (!page) {
     return res.status(400).json({ error: "Invalid filter." });
   }
@@ -785,7 +759,7 @@ export const removeDonation = async (req: Request, res: Response) => {
 
 export const getAdminActions = async (req: Request, res: Response) => {
   const { admin_id, action, target_user_id } = req.query;
-  const page = parsePage(req.query);
+  const page = parsePage(req.query, TABLE_PAGE_SIZE);
   if (!page) {
     return res.status(400).json({ error: "Invalid filter." });
   }
@@ -842,7 +816,7 @@ export const getAdminActions = async (req: Request, res: Response) => {
 
 export const getAdminReservations = async (req: Request, res: Response) => {
   const { q, status, user_id } = req.query;
-  const page = parsePage(req.query);
+  const page = parsePage(req.query, TABLE_PAGE_SIZE);
   if (!page) {
     return res.status(400).json({ error: "Invalid filter." });
   }
@@ -1101,7 +1075,7 @@ export const createAnnouncement = async (req: Request, res: Response) => {
 };
 
 export const getAnnouncements = async (req: Request, res: Response) => {
-  const page = parsePage(req.query);
+  const page = parsePage(req.query, TABLE_PAGE_SIZE);
   if (!page) {
     return res.status(400).json({ error: "Invalid filter." });
   }
