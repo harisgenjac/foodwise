@@ -47,29 +47,22 @@ describe("AdminDashboardPage", () => {
     expect(screen.getByText(t("admin.dashboard.kpiBusinessesDetail", { stores: 3, restaurants: 2 }))).toBeInTheDocument();
   });
 
-  it("lists only what needs attention, each linking to its list", async () => {
+  it("lists only pending credit requests as waiting for the admin", async () => {
     renderPage(STATS);
 
-    const requests = await screen.findByRole("link", {
-      name: t("admin.dashboard.attention.pendingRequests", { count: 2 }),
-    });
-    expect(requests).toHaveAttribute("href", "/admin/credit-requests?status=PENDING");
-    expect(
-      screen.getByRole("link", { name: t("admin.dashboard.attention.pendingReservations", { count: 2 }) }),
-    ).toHaveAttribute("href", "/admin/reservations");
-    expect(screen.getByRole("link", { name: t("admin.dashboard.attention.blocked", { count: 1 }) })).toBeInTheDocument();
-    // No incomplete profiles: no row for them.
-    expect(screen.queryByText(t("admin.dashboard.attention.incompleteProfiles", { count: 0 }))).not.toBeInTheDocument();
+    const panel = (await screen.findByText(t("admin.dashboard.attentionTitle"))).closest("section") as HTMLElement;
+    const links = within(panel).getAllByRole("link");
+    // Pending reservations and the blocked account are in the stats but do not wait for the admin.
+    expect(links).toHaveLength(1);
+    expect(links[0]).toHaveAccessibleName(t("admin.dashboard.attention.pendingRequests", { count: 2 }));
+    expect(links[0]).toHaveAttribute("href", "/admin/credit-requests?status=PENDING");
   });
 
-  it("says all is done when nothing waits", async () => {
-    renderPage({
-      ...STATS,
-      users: { ...STATS.users, blocked: 0 },
-      reservations: { ...STATS.reservations, Pending: 0 },
-      credits: { ...STATS.credits, pending_requests: 0, without_subscription: 0 },
-    });
-    expect(await screen.findByText(t("admin.dashboard.allClear"))).toBeInTheDocument();
+  it("hides the panel when no request waits", async () => {
+    renderPage({ ...STATS, credits: { ...STATS.credits, pending_requests: 0 } });
+
+    expect(await screen.findByText(t("admin.dashboard.creditsTitle"))).toBeInTheDocument();
+    expect(screen.queryByText(t("admin.dashboard.attentionTitle"))).not.toBeInTheDocument();
   });
 
   it("shows each area as a bar with a legend of counts", async () => {

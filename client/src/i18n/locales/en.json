@@ -800,18 +800,9 @@
       "kpiFoodSaved": "Food saved",
       "kpiFoodSavedDetail": "+ {{liters}} l · {{pieces}} pcs",
       "attentionTitle": "Needs attention",
-      "allClear": "All caught up.",
       "attention": {
         "pendingRequests_one": "{{count}} credit request waiting for approval",
-        "pendingRequests_other": "{{count}} credit requests waiting for approval",
-        "pendingReservations_one": "{{count}} reservation waiting for the store",
-        "pendingReservations_other": "{{count}} reservations waiting for the store",
-        "withoutSubscription_one": "{{count}} business without a subscription",
-        "withoutSubscription_other": "{{count}} businesses without a subscription",
-        "incompleteProfiles_one": "{{count}} incomplete profile",
-        "incompleteProfiles_other": "{{count}} incomplete profiles",
-        "blocked_one": "{{count}} blocked account",
-        "blocked_other": "{{count}} blocked accounts"
+        "pendingRequests_other": "{{count}} credit requests waiting for approval"
       },
       "creditsTitle": "Subscriptions and credits",
       "subscriptionsByPlan": "Subscriptions by plan",

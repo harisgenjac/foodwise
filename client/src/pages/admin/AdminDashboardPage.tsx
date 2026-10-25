@@ -2,9 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
-  Ban,
   CalendarCheck,
-  Clock,
   Coins,
   HeartHandshake,
   Inbox,
@@ -13,7 +11,6 @@ import {
   ShieldCheck,
   Store,
   UserPlus,
-  UserRoundX,
   WalletCards,
 } from "lucide-react";
 import api from "../../api/axios.js";
@@ -134,54 +131,27 @@ function AdminDashboardPage() {
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <OverviewPanel title={t("admin.dashboard.attentionTitle")} icon={AlertTriangle}>
-          <AttentionList
-            items={[
-              {
-                icon: Inbox,
-                text: t("admin.dashboard.attention.pendingRequests", { count: credits.pending_requests }),
-                count: credits.pending_requests,
-                to: "/admin/credit-requests?status=PENDING",
-                tone: "amber",
-              },
-              {
-                icon: Clock,
-                text: t("admin.dashboard.attention.pendingReservations", { count: stats.reservations.Pending }),
-                count: stats.reservations.Pending,
-                to: "/admin/reservations",
-                tone: "amber",
-              },
-              {
-                icon: WalletCards,
-                text: t("admin.dashboard.attention.withoutSubscription", { count: credits.without_subscription }),
-                count: credits.without_subscription,
-                to: "/admin/credits",
-                tone: "amber",
-              },
-              {
-                icon: UserRoundX,
-                text: t("admin.dashboard.attention.incompleteProfiles", { count: users.incomplete_profiles }),
-                count: users.incomplete_profiles,
-                to: "/admin/users",
-                tone: "amber",
-              },
-              {
-                icon: Ban,
-                text: t("admin.dashboard.attention.blocked", { count: users.blocked }),
-                count: users.blocked,
-                to: "/admin/users",
-                tone: "red",
-              },
-            ]}
-          />
-        </OverviewPanel>
+        {/* Only requests wait for the admin; anything else is handled from its list when needed. */}
+        {credits.pending_requests > 0 && (
+          <OverviewPanel title={t("admin.dashboard.attentionTitle")} icon={AlertTriangle}>
+            <AttentionList
+              items={[
+                {
+                  icon: Inbox,
+                  text: t("admin.dashboard.attention.pendingRequests", { count: credits.pending_requests }),
+                  to: "/admin/credit-requests?status=PENDING",
+                },
+              ]}
+            />
+          </OverviewPanel>
+        )}
 
         <OverviewPanel
           title={t("admin.dashboard.creditsTitle")}
           subtitle={month}
           icon={WalletCards}
           link={{ to: "/admin/credits", label: viewAll }}
-          className="lg:col-span-2"
+          className={credits.pending_requests > 0 ? "lg:col-span-2" : "lg:col-span-3"}
         >
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <DistributionBar
