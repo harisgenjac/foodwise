@@ -1230,6 +1230,12 @@
       "creditsCount_few": "{{count}} kredita",
       "creditsCount_other": "{{count}} kredita"
     },
+    "topupModal": {
+      "title": "Dodatni krediti: +{{credits}}",
+      "whatTitle": "Šta su dodatni krediti?",
+      "what": "Jednokratna dopuna: krediti se dodaju na stanje ovog mjeseca, uz kredite iz vašeg plana, i troše se isto kao i oni. Vaš plan i pretplata se ne mijenjaju.",
+      "expiry": "Dodatni krediti važe do {{date}} i ne prenose se u sljedeći mjesec."
+    },
     "modal": {
       "title": "Pretplata: {{plan}}",
       "whatTitle": "Šta su krediti i kada se troše?",

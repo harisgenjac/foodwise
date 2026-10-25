@@ -1201,6 +1201,12 @@
       "creditsCount_one": "{{count}} credit",
       "creditsCount_other": "{{count}} credits"
     },
+    "topupModal": {
+      "title": "Extra credits: +{{credits}}",
+      "whatTitle": "What are extra credits?",
+      "what": "A one-time top-up: the credits are added to this month's balance, next to your plan's credits, and are used the same way. Your plan and subscription stay the same.",
+      "expiry": "Extra credits are valid until {{date}} and do not carry over to next month."
+    },
     "modal": {
       "title": "Subscription: {{plan}}",
       "whatTitle": "What are credits and when are they used?",

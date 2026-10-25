@@ -190,7 +190,16 @@ describe("SubscriptionSection", () => {
     await userEvent.click(toggle);
     await userEvent.click(within(document.getElementById("topup-options")!).getByRole("button"));
 
+    // Nothing is sent before the user confirms in the dialog that explains extra credits.
+    const dialog = screen.getByRole("dialog");
+    expect(apiMock.post).not.toHaveBeenCalled();
+    expect(dialog).toHaveTextContent(t("credits.topupModal.what"));
+    expect(dialog).toHaveTextContent(t("credits.topupModal.expiry", { date: formatDisplayDate("2030-01-31") }));
+    expect(dialog).toHaveTextContent(t("credits.modal.chargeRestaurant"));
+    await userEvent.click(within(dialog).getByRole("button", { name: t("credits.modal.submit") }));
+
     expect(apiMock.post).toHaveBeenCalledWith("/credits/requests", { request_type: "TOPUP", topup_package_id: 4 });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await waitFor(() => expect(toggle).toHaveAttribute("aria-expanded", "false"));
   });
 

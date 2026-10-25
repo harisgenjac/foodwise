@@ -7,6 +7,7 @@ import { ArrowRight, CalendarRange, ChevronDown, Coins, PlusCircle, Wallet } fro
 import api from "../../api/axios.js";
 import { useCredits } from "../../context/CreditsContext.js";
 import SubscribeModal from "./SubscribeModal.js";
+import TopupModal from "./TopupModal.js";
 import AutoRenewTooltip from "./AutoRenewTooltip.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
 import {
@@ -65,6 +66,7 @@ function SubscriptionSection({ role }: { role: Role }) {
   const [packages, setPackages] = useState<TopupPackage[]>([]);
   const [requests, setRequests] = useState<CreditRequest[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [selectedTopup, setSelectedTopup] = useState<TopupPackage | null>(null);
   const [busy, setBusy] = useState(false);
   // Next month's plans and the extra credits stay collapsed until asked for; null means the
   // extra credits follow the default (open only when no credits are left).
@@ -149,22 +151,6 @@ function SubscriptionSection({ role }: { role: Role }) {
       const next = !subscription.auto_renew;
       await api.patch("/credits/subscription/auto-renew", { auto_renew: next });
       toast.success(t(next ? "credits.profile.autoRenewOn" : "credits.profile.autoRenewOff"));
-      await reload();
-    } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
-      toast.error(message || t("credits.profile.requestError"));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const buyTopup = async (topup: TopupPackage) => {
-    if (busy) return;
-    setBusy(true);
-    try {
-      await api.post("/credits/requests", { request_type: "TOPUP", topup_package_id: topup.id });
-      toast.success(t("credits.profile.topupSent"));
-      setTopupOpen(false);
       await reload();
     } catch (err) {
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
@@ -356,8 +342,7 @@ function SubscriptionSection({ role }: { role: Role }) {
               <button
                 key={topup.id}
                 type="button"
-                onClick={() => buyTopup(topup)}
-                disabled={busy}
+                onClick={() => setSelectedTopup(topup)}
                 className="flex cursor-pointer flex-col items-start rounded-xl border border-gray-200 p-4 text-left transition-colors hover:border-orange-300 hover:bg-orange-50/50 disabled:opacity-60"
               >
                 <span className="text-lg font-bold text-gray-900">
@@ -402,6 +387,19 @@ function SubscriptionSection({ role }: { role: Role }) {
           onSent={async () => {
             setSelectedPlan(null);
             setPlanOpen(false);
+            await reload();
+          }}
+        />
+      )}
+      {selectedTopup && (
+        <TopupModal
+          topup={selectedTopup}
+          role={role}
+          periodEnd={credits.periodEnd}
+          onClose={() => setSelectedTopup(null)}
+          onSent={async () => {
+            setSelectedTopup(null);
+            setTopupOpen(false);
             await reload();
           }}
         />
