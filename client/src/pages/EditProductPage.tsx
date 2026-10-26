@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { Pencil, Save, SearchX } from "lucide-react";
 import { useAuth } from "../context/AuthContext.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
+import Breadcrumbs, { BreadcrumbPlaceholder } from "../components/Breadcrumbs.js";
 import EmptyState from "../components/product/EmptyState.js";
 import ProductFormFields, { EMPTY_PRODUCT_FORM, validateProductForm } from "../components/product/ProductFormFields.js";
 import RequiredHint from "../components/form/RequiredHint.js";
@@ -19,6 +20,8 @@ function EditProductPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [form, setForm] = useState<ProductFormValues>(EMPTY_PRODUCT_FORM);
+  // The saved name for the breadcrumb; form.name changes while typing.
+  const [productName, setProductName] = useState("");
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -34,6 +37,7 @@ function EditProductPage() {
         setNotFound(true);
         return;
       }
+      setProductName(data.name);
       setForm({
         name: data.name,
         description: data.description,
@@ -79,13 +83,23 @@ function EditProductPage() {
     }
   };
 
+  const section = { label: t("sidebar.myProducts"), to: "/my-products" };
+
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="max-w-6xl mx-auto pb-16">
+        <Breadcrumbs
+          items={[section, { label: <BreadcrumbPlaceholder /> }, { label: t("breadcrumbs.edit") }]}
+        />
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   if (notFound) {
     return (
-      <div className="max-w-5xl mx-auto pb-10">
+      <div className="max-w-5xl mx-auto space-y-6 pb-10">
+        <Breadcrumbs items={[section]} />
         <EmptyState
           icon={SearchX}
           title={t("myProducts.productNotFoundTitle")}
@@ -98,6 +112,10 @@ function EditProductPage() {
 
   return (
     <div className="max-w-6xl mx-auto pb-16">
+      <Breadcrumbs
+        className="mb-4"
+        items={[section, { label: productName, to: `/products/${id}` }, { label: t("breadcrumbs.edit") }]}
+      />
       <div className="mb-6">
         <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-gray-900">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">

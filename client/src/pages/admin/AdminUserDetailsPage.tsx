@@ -4,7 +4,6 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import {
-  ArrowLeft,
   Ban,
   Building2,
   CalendarCheck,
@@ -27,6 +26,7 @@ import {
 import api from "../../api/axios.js";
 import { useAuth } from "../../context/AuthContext.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
+import Breadcrumbs, { BreadcrumbPlaceholder } from "../../components/Breadcrumbs.js";
 import EmptyState from "../../components/product/EmptyState.js";
 import DetailItem from "../../components/product/DetailItem.js";
 import StatCard from "../../components/dashboard/StatCard.js";
@@ -91,16 +91,28 @@ function AdminUserDetailsPage() {
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  const section = { label: t("sidebar.adminUsers"), to: "/admin/users" };
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-5xl pb-16">
+        <Breadcrumbs items={[section, { label: <BreadcrumbPlaceholder /> }]} />
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   if (!user || !counts) {
     return (
-      <EmptyState
-        icon={UserRoundX}
-        title={t("admin.userDetails.notFoundTitle")}
-        subtitle={t("admin.userDetails.notFoundSubtitle")}
-        action={{ to: "/admin/users", label: t("admin.userDetails.back") }}
-      />
+      <div className="mx-auto max-w-5xl space-y-6 pb-16">
+        <Breadcrumbs items={[section]} />
+        <EmptyState
+          icon={UserRoundX}
+          title={t("admin.userDetails.notFoundTitle")}
+          subtitle={t("admin.userDetails.notFoundSubtitle")}
+          action={{ to: "/admin/users", label: t("admin.userDetails.back") }}
+        />
+      </div>
     );
   }
 
@@ -116,13 +128,7 @@ function AdminUserDetailsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
-      <Link
-        to="/admin/users"
-        className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm transition-colors hover:text-orange-600"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        {t("admin.userDetails.back")}
-      </Link>
+      <Breadcrumbs items={[section, { label: name }]} />
 
       <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

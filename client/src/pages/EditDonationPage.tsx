@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { HandHeart, Pencil } from "lucide-react";
 import api from "../api/axios.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
+import Breadcrumbs, { BreadcrumbPlaceholder } from "../components/Breadcrumbs.js";
 import EmptyState from "../components/product/EmptyState.js";
 import DonationForm from "../components/donation/DonationForm.js";
 import { donationFormToPayload, donationToForm } from "../utils/donations.js";
@@ -44,12 +45,22 @@ function EditDonationPage() {
     }
   };
 
-  if (loading) return <LoadingSpinner />;
+  const section = { label: t("sidebar.donateFood"), to: "/donate-food" };
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <Breadcrumbs items={[section, { label: <BreadcrumbPlaceholder /> }]} />
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   // Only active donations can be edited; expired ones are shown on the list only.
   if (!donation || donation.status !== "Available") {
     return (
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-5xl mx-auto space-y-6">
+        <Breadcrumbs items={[section]} />
         <EmptyState
           icon={HandHeart}
           title={t("donations.form.notFoundTitle")}
@@ -62,16 +73,20 @@ function EditDonationPage() {
 
   const today = toDateInput(new Date());
 
+  // There is no donation detail page, so the donation itself is the last item.
   return (
-    <DonationForm
-      title={t("donations.form.editTitle")}
-      subtitle={t("donations.form.editSubtitle")}
-      icon={Pencil}
-      initialValues={donationToForm(donation)}
-      submitLabel={t("donations.form.submitEdit")}
-      minExpiryDate={donation.expiry_date < today ? undefined : today}
-      onSubmit={handleSubmit}
-    />
+    <>
+      <Breadcrumbs className="mx-auto mb-4 max-w-6xl" items={[section, { label: donation.name }]} />
+      <DonationForm
+        title={t("donations.form.editTitle")}
+        subtitle={t("donations.form.editSubtitle")}
+        icon={Pencil}
+        initialValues={donationToForm(donation)}
+        submitLabel={t("donations.form.submitEdit")}
+        minExpiryDate={donation.expiry_date < today ? undefined : today}
+        onSubmit={handleSubmit}
+      />
+    </>
   );
 }
 

@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
-  ArrowLeft,
   ArrowRight,
   CalendarClock,
   CalendarPlus,
@@ -26,6 +25,7 @@ import {
 import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
+import Breadcrumbs from "../components/Breadcrumbs.js";
 import EmptyState from "../components/product/EmptyState.js";
 import ConfirmModal from "../components/common/ConfirmModal.js";
 import AcceptReservationModal from "../components/reservation/AcceptReservationModal.js";
@@ -44,7 +44,6 @@ const dateTimeFormat: Intl.DateTimeFormatOptions = {
 function ReservationDetailsPage() {
   const { user } = useAuth();
   const { id } = useParams();
-  const navigate = useNavigate();
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [loading, setLoading] = useState(true);
   // The open confirmation: accept (store), or decline, i.e. reject (store) / cancel (restaurant).
@@ -100,15 +99,24 @@ function ReservationDetailsPage() {
     fetchReservation();
   }, [id]);
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
   const listPath = isStore ? "/reservations" : "/my-reservations";
+  const section = { label: t(isStore ? "sidebar.reservations" : "sidebar.myReservations"), to: listPath };
+  // The id is in the URL, so the trail is complete while the reservation loads.
+  const breadcrumbs = [section, { label: t("breadcrumbs.reservation", { id }) }];
+
+  if (loading) {
+    return (
+      <div className="max-w-5xl mx-auto pb-10">
+        <Breadcrumbs items={breadcrumbs} />
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   if (!reservation) {
     return (
-      <div className="max-w-5xl mx-auto pb-10">
+      <div className="max-w-5xl mx-auto space-y-6 pb-10">
+        <Breadcrumbs items={[section]} />
         <EmptyState
           icon={SearchX}
           title={t("reservations.noReservationFoundTitle")}
@@ -159,14 +167,7 @@ function ReservationDetailsPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-10">
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-orange-50 hover:text-orange-700"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        {t("reservations.backButton")}
-      </button>
+      <Breadcrumbs items={breadcrumbs} />
 
       <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm md:flex">
         <div className="relative h-56 shrink-0 md:h-auto md:w-2/5">

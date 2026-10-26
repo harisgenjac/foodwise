@@ -25,6 +25,11 @@
     "adminCredits": "Krediti",
     "adminCreditRequests": "Zahtjevi za kredite"
   },
+  "breadcrumbs": {
+    "label": "Putanja",
+    "reservation": "Rezervacija #{{id}}",
+    "edit": "Uredi"
+  },
   "header": {
     "notificationsLabel": "Notifikacije",
     "noNotifications": "Nemate notifikacija.",
@@ -136,7 +141,6 @@
     "reservedQuantity": "Rezervisano",
     "createdAt": "Dodano",
     "notAvailable": "Ovaj proizvod trenutno nije dostupan za rezervaciju.",
-    "backButton": "Nazad",
     "store": "Prodavnica",
     "availableQuantity": "Dostupna količina",
     "totalQuantity": "Ukupna količina",
@@ -182,7 +186,6 @@
     "reservationId": "Broj rezervacije",
     "pickupHours": "Vrijeme preuzimanja",
     "viewStore": "Pogledaj prodavnicu",
-    "backButton": "Nazad",
     "quantityReserved": "Rezervisana količina",
     "seller": "Prodavač",
     "acceptConfirmation": "Prihvatiti rezervaciju?",
@@ -299,7 +302,6 @@
     "reservationsTab": "Moje rezervacije",
     "storeNoProducts": "Ova prodavnica trenutno nema dostupnih proizvoda.",
     "restaurantNoRes": "Nemate rezervacija kod ove prodavnice.",
-    "backButton": "Nazad",
     "subtitle": "Pronađite prodavnice u svojoj blizini i pogledajte njihovu ponudu.",
     "count_one": "{{count}} prodavnica",
     "count_few": "{{count}} prodavnice",
