@@ -35,7 +35,7 @@ function StoreCard({ store, isFavorite, onToggleFavorite }: StoreCardProps) {
       </div>
 
       <div className="flex flex-1 flex-col gap-3 px-4 pb-4">
-        <StoreAvatar store={store} className="-mt-9 h-16 w-16 rounded-2xl text-xl" />
+        <StoreAvatar store={store} className="relative z-10 -mt-9 h-16 w-16 rounded-2xl text-xl" />
 
         <div>
           <h3 className="line-clamp-1 text-lg font-bold text-gray-800">{store.business_name}</h3>
