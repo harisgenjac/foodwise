@@ -39,7 +39,8 @@ function ProductPreview({ values }: ProductPreviewProps) {
         {t("product.previewTitle")}
       </h2>
       <p className="mb-4 text-xs text-gray-500">{t("product.previewHint")}</p>
-      <div aria-hidden="true" className="pointer-events-none select-none">
+      {/* inert keeps the card's links (Details, store name) out of the tab order. */}
+      <div aria-hidden="true" inert className="pointer-events-none select-none">
         <DashboardProductCard product={previewProduct} showStore />
       </div>
     </div>
