@@ -178,8 +178,15 @@ function SubscriptionSection({ role }: { role: Role }) {
     setBusy(true);
     try {
       const next = !subscription.auto_renew;
-      await api.patch("/credits/subscription/auto-renew", { auto_renew: next });
-      toast.success(t(next ? "credits.profile.autoRenewOn" : "credits.profile.autoRenewOff"));
+      const response = await api.patch("/credits/subscription/auto-renew", { auto_renew: next });
+      // Turned on in the last days of the month, the renewal request is sent at once.
+      toast.success(
+        response.data?.renewalCreated
+          ? t("credits.profile.autoRenewOnRenewalSent", {
+              month: formatCreditMonth(nextCreditMonth(credits.periodStart), monthNames),
+            })
+          : t(next ? "credits.profile.autoRenewOn" : "credits.profile.autoRenewOff"),
+      );
       await reload();
     } catch (err) {
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;

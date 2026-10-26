@@ -467,11 +467,123 @@ describe("auto-renew", () => {
   });
 
   it("validates auto-renew and needs an active subscription", async () => {
-
     expect((await store.patch("/api/credits/subscription/auto-renew").send({ auto_renew: "no" })).status).toBe(400);
     await cleanupUsers([STORE]);
     await insertUser(STORE, "STORE", "Credit Store", null);
     const none = await (await login(STORE)).patch("/api/credits/subscription/auto-renew").send({ auto_renew: true });
     expect(none.status).toBe(404);
+  });
+
+  it("tells the user when their renewal is created and when a request expires", async () => {
+    await runCreditRenewals(JUNE_29);
+    const [renewal] = await renewals(storeId);
+    expect(await notificationsOf(storeId, "CREDIT_RENEWAL_CREATED")).toMatchObject([{ credit_request_id: renewal.id }]);
+
+    // July ends without a decision: the renewal expires and the user hears about it once.
+    await runCreditRenewals(new Date("2030-08-01T12:00:00Z"));
+    await runCreditRenewals(new Date("2030-08-02T12:00:00Z"));
+    expect((await renewals(storeId))[0].status).toBe("EXPIRED");
+    expect(await notificationsOf(storeId, "CREDIT_REQUEST_EXPIRED")).toMatchObject([{ credit_request_id: renewal.id }]);
+  });
+
+  it("does not fail the run when the user already has their own pending request", async () => {
+    await pool.query(
+      `INSERT INTO credit_requests (user_id, request_type, plan_id, period_month)
+       VALUES ($1, 'SUBSCRIPTION', $2, '2030-07-01')`,
+      [storeId, planId],
+    );
+    const restaurantSubscription = await giveSubscription(restaurantId, 10, JUNE_28);
+    await pool.query("UPDATE subscriptions SET auto_renew = true WHERE id = $1", [restaurantSubscription]);
+
+    // The store is skipped; the restaurant's renewal is still created in the same run.
+    expect((await runCreditRenewals(JUNE_29)).created).toBe(1);
+    expect(await renewals(storeId)).toHaveLength(0);
+    expect(await renewals(restaurantId)).toHaveLength(1);
+  });
+
+  it("tells the user once when their plan is no longer offered", async () => {
+    const oldPlan = await pool.query<{ id: number }>(
+      `INSERT INTO plans (name, credits_per_period, price, is_active)
+       VALUES ('Retired test plan', 5, 1, false) RETURNING id`,
+    );
+    try {
+      await pool.query("UPDATE subscriptions SET plan_id = $1 WHERE user_id = $2", [oldPlan.rows[0]!.id, storeId]);
+      await runCreditRenewals(JUNE_29);
+      await runCreditRenewals(new Date("2030-06-30T12:00:00Z"));
+      expect(await renewals(storeId)).toHaveLength(0);
+      expect(await notificationsOf(storeId, "CREDIT_RENEWAL_SKIPPED")).toHaveLength(1);
+    } finally {
+      await cleanupUsers([STORE]);
+      await pool.query("DELETE FROM plans WHERE id = $1", [oldPlan.rows[0]!.id]);
+    }
+  });
+
+  describe("turned on by the user", () => {
+    // The API reads the real clock, so only Date is faked; sessions are opened at the faked time.
+    const at = async (instant: Date) => {
+      vi.useFakeTimers({ toFake: ["Date"], now: instant });
+      store = await login(STORE);
+      admin = await login(ADMIN);
+    };
+    const turn = async (on: boolean) =>
+      (await store.patch("/api/credits/subscription/auto-renew").send({ auto_renew: on })).body;
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("waits for the job before the renewal window", async () => {
+      await at(JUNE_28);
+      await turn(false);
+      expect((await turn(true)).renewalCreated).toBe(false);
+      expect(await renewals(storeId)).toHaveLength(0);
+    });
+
+    it("creates the renewal at once in the window, again after a withdrawal but not after a rejection", async () => {
+      await at(JUNE_29);
+      await turn(false);
+      const on = await turn(true);
+      expect(on).toMatchObject({ message: "Auto-renew turned on.", renewalCreated: true });
+      const [first] = await renewals(storeId);
+      expect(first).toMatchObject({ period_month: "2030-07-01", status: "PENDING", auto_renew: true });
+      expect(await notificationsOf(storeId, "CREDIT_RENEWAL_CREATED")).toHaveLength(1);
+      expect(await notificationsOf(await userId(ADMIN), "CREDIT_REQUEST_CREATED")).toHaveLength(1);
+      // Already waiting: turning it on again creates nothing new.
+      expect((await turn(true)).renewalCreated).toBe(false);
+
+      // Withdrawn by the user, then asked for again: a new renewal.
+      expect((await store.delete(`/api/credits/requests/${first.id}`)).status).toBe(200);
+      expect((await turn(true)).renewalCreated).toBe(true);
+      const second = (await renewals(storeId))[1];
+
+      // Rejected by the admin: not created again, and the job does not either.
+      expect((await admin.post(`/api/admin/credits/requests/${second.id}/reject`).send({})).status).toBe(200);
+      expect((await turn(true)).renewalCreated).toBe(false);
+      await runCreditRenewals(new Date("2030-06-30T12:00:00Z"));
+      expect(await renewals(storeId)).toHaveLength(2);
+    });
+  });
+});
+
+describe("request amounts", () => {
+  it("keeps the credits and price the user was quoted when the plan changes", async () => {
+    const plan = await pool.query<{ id: number }>(
+      `INSERT INTO plans (name, credits_per_period, price, is_active)
+       VALUES ('Snapshot test plan', 7, 3.50, true) RETURNING id`,
+    );
+    const testPlan = plan.rows[0]!.id;
+    try {
+      const request = (await subscribe(store, { plan_id: testPlan })).body.request;
+      expect(request).toMatchObject({ credits: 7, price: "3.50" });
+      await pool.query("UPDATE plans SET credits_per_period = 9, price = 5, is_active = false WHERE id = $1", [testPlan]);
+
+      const listed = (await store.get("/api/credits/requests")).body.requests;
+      expect(listed[0]).toMatchObject({ id: request.id, credits: 7, price: "3.50" });
+      expect((await admin.post(`/api/admin/credits/requests/${request.id}/approve`).send({})).status).toBe(200);
+      expect((await store.get("/api/credits/me")).body.credits).toMatchObject({ total: 7, available: 7 });
+    } finally {
+      await cleanupUsers([STORE]);
+      await pool.query("DELETE FROM plans WHERE id = $1", [testPlan]);
+    }
   });
 });

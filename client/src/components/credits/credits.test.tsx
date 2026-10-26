@@ -66,6 +66,34 @@ describe("CreditBanner", () => {
     expect(within(banner).getByRole("link")).toHaveAttribute("href", "/my-profile#topup");
   });
 
+  it("says a subscription request is waiting instead of asking for one", async () => {
+    renderWithCredits(
+      <CreditBanner />,
+      makeCreditSummary({
+        subscription: null,
+        hasActiveSubscription: false,
+        total: 0,
+        used: 0,
+        available: 0,
+        pendingRequests: [{ ...PENDING_TOPUP, request_type: "SUBSCRIPTION", plan_id: 2, topup_package_id: null }],
+      }),
+    );
+    const banner = await screen.findByRole("status");
+    expect(banner).toHaveTextContent(t("credits.banner.pending"));
+    expect(within(banner).getByRole("link", { name: t("credits.banner.pendingLink") })).toHaveAttribute(
+      "href",
+      "/my-profile#subscription",
+    );
+  });
+
+  it("says a top-up is waiting when no credits are left", async () => {
+    renderWithCredits(<CreditBanner />, makeCreditSummary({ used: 50, available: 0, pendingRequests: [PENDING_TOPUP] }));
+    const banner = await screen.findByRole("status");
+    expect(banner).toHaveTextContent(t("credits.banner.topupPending"));
+    expect(banner).not.toHaveTextContent(t("credits.banner.empty"));
+    expect(within(banner).getByRole("link")).toHaveAttribute("href", "/my-profile#topup");
+  });
+
   it("says how many are left from 80% used, with a link to the Credits page", async () => {
     renderWithCredits(<CreditBanner />, makeCreditSummary({ used: 40, available: 10 }));
     const banner = await screen.findByRole("status");
@@ -243,6 +271,20 @@ describe("SubscriptionSection", () => {
 
     await userEvent.click(screen.getByRole("switch", { name: t("credits.profile.autoRenew") }));
     expect(apiMock.patch).toHaveBeenCalledWith("/credits/subscription/auto-renew", { auto_renew: true });
+  });
+
+  it("says when turning auto-renew on sent the renewal request at once", async () => {
+    const success = vi.spyOn(toast, "success");
+    apiMock.patch.mockResolvedValue({ data: { message: "Auto-renew turned on.", autoRenew: true, renewalCreated: true } });
+    renderWithCredits(<SubscriptionSection role="STORE" />, makeCreditSummary());
+
+    await userEvent.click(await screen.findByRole("switch", { name: t("credits.profile.autoRenew") }));
+    const months = t("dashboard.months", { returnObjects: true }) as string[];
+    await waitFor(() =>
+      expect(success).toHaveBeenCalledWith(
+        t("credits.profile.autoRenewOnRenewalSent", { month: formatCreditMonth("2030-02-01", months) }),
+      ),
+    );
   });
 
   describe("a pending automatic renewal", () => {

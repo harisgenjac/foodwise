@@ -11,27 +11,47 @@ const TONES = {
 
 // One credit banner on every page for stores and restaurants, the most urgent one first:
 // no subscription (link to the subscription section), no credits left (link to the top-up),
-// or 80% used (how many are left, link to the Credits page). Nothing otherwise.
+// or 80% used (how many are left, link to the Credits page). Nothing otherwise. While a request
+// that would fix it already waits for an admin, the banner says so instead of asking again.
 function CreditBanner() {
   const { credits } = useCredits();
   const { t } = useTranslation();
   if (!credits) return null;
 
+  const waiting = (type: "SUBSCRIPTION" | "TOPUP") =>
+    credits.pendingRequests.some(
+      (request) => request.request_type === type && request.period_month === credits.periodStart,
+    );
+
   let banner: { tone: keyof typeof TONES; text: string; to: string; link: string } | null = null;
   if (!credits.hasActiveSubscription) {
-    banner = {
-      tone: "amber",
-      text: t("credits.banner.none"),
-      to: `/my-profile#${SUBSCRIPTION_SECTION}`,
-      link: t("credits.banner.noneLink"),
-    };
+    banner = waiting("SUBSCRIPTION")
+      ? {
+          tone: "amber",
+          text: t("credits.banner.pending"),
+          to: `/my-profile#${SUBSCRIPTION_SECTION}`,
+          link: t("credits.banner.pendingLink"),
+        }
+      : {
+          tone: "amber",
+          text: t("credits.banner.none"),
+          to: `/my-profile#${SUBSCRIPTION_SECTION}`,
+          link: t("credits.banner.noneLink"),
+        };
   } else if (credits.available === 0) {
-    banner = {
-      tone: "red",
-      text: t("credits.banner.empty"),
-      to: `/my-profile#${TOPUP_SECTION}`,
-      link: t("credits.banner.emptyLink"),
-    };
+    banner = waiting("TOPUP")
+      ? {
+          tone: "amber",
+          text: t("credits.banner.topupPending"),
+          to: `/my-profile#${TOPUP_SECTION}`,
+          link: t("credits.banner.pendingLink"),
+        }
+      : {
+          tone: "red",
+          text: t("credits.banner.empty"),
+          to: `/my-profile#${TOPUP_SECTION}`,
+          link: t("credits.banner.emptyLink"),
+        };
   } else if (usagePercent(credits.used, credits.total) >= LOW_CREDITS_PERCENT) {
     banner = {
       tone: "amber",

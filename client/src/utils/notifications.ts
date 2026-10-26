@@ -16,6 +16,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import type { Notification, NotificationType } from "../context/NotificationsContext.js";
 import type { User } from "../types/index.js";
+import { SUBSCRIPTION_SECTION, TOPUP_SECTION } from "./credits.js";
 
 export const NOTIFICATION_META: Record<NotificationType, { icon: LucideIcon; style: string }> = {
   RESERVATION_CREATED: { icon: ShoppingBag, style: "bg-amber-50 text-amber-600" },
@@ -36,6 +37,9 @@ export const NOTIFICATION_META: Record<NotificationType, { icon: LucideIcon; sty
   CREDIT_REQUEST_CREATED: { icon: Coins, style: "bg-amber-50 text-amber-600" },
   CREDIT_REQUEST_APPROVED: { icon: Coins, style: "bg-green-50 text-green-600" },
   CREDIT_REQUEST_REJECTED: { icon: Coins, style: "bg-red-50 text-red-600" },
+  CREDIT_RENEWAL_CREATED: { icon: Coins, style: "bg-blue-50 text-blue-600" },
+  CREDIT_REQUEST_EXPIRED: { icon: Coins, style: "bg-gray-100 text-gray-600" },
+  CREDIT_RENEWAL_SKIPPED: { icon: Coins, style: "bg-amber-50 text-amber-600" },
 };
 
 // notifications.credits.<key> per credit notification type and request type.
@@ -43,6 +47,9 @@ const CREDIT_TEXT_KEYS: Partial<Record<NotificationType, { SUBSCRIPTION: string;
   CREDIT_REQUEST_CREATED: { SUBSCRIPTION: "subscriptionCreated", TOPUP: "topupCreated" },
   CREDIT_REQUEST_APPROVED: { SUBSCRIPTION: "subscriptionApproved", TOPUP: "topupApproved" },
   CREDIT_REQUEST_REJECTED: { SUBSCRIPTION: "subscriptionRejected", TOPUP: "topupRejected" },
+  // Renewals are always subscriptions.
+  CREDIT_RENEWAL_CREATED: { SUBSCRIPTION: "renewalCreated", TOPUP: "renewalCreated" },
+  CREDIT_REQUEST_EXPIRED: { SUBSCRIPTION: "subscriptionExpired", TOPUP: "topupExpired" },
 };
 
 const DEFAULT_META = { icon: Bell, style: "bg-orange-50 text-orange-600" };
@@ -63,6 +70,17 @@ export const getNotificationLink = (notification: Notification, role: User["role
   if (notification.type === "CREDIT_REQUEST_APPROVED" || notification.type === "CREDIT_REQUEST_REJECTED") {
     return "/credits";
   }
+  // Renewals and expired requests: My profile, where the user sees the request or picks a plan.
+  if (notification.type === "CREDIT_REQUEST_EXPIRED" && notification.credit_request_type === "TOPUP") {
+    return `/my-profile#${TOPUP_SECTION}`;
+  }
+  if (
+    notification.type === "CREDIT_RENEWAL_CREATED" ||
+    notification.type === "CREDIT_REQUEST_EXPIRED" ||
+    notification.type === "CREDIT_RENEWAL_SKIPPED"
+  ) {
+    return `/my-profile#${SUBSCRIPTION_SECTION}`;
+  }
   return role === "STORE" ? "/reservations" : "/my-reservations";
 };
 
@@ -72,6 +90,8 @@ export const getNotificationText = (notification: Notification, t: TFunction, la
       (language === "en" && notification.announcement_title_en) || notification.announcement_title_bs;
     return t("notifications.types.PLATFORM_ANNOUNCEMENT", { title });
   }
+  // No request was created, so there is nothing to join: the type says it all.
+  if (notification.type === "CREDIT_RENEWAL_SKIPPED") return t("notifications.types.CREDIT_RENEWAL_SKIPPED");
   const creditKeys = notification.type ? CREDIT_TEXT_KEYS[notification.type] : undefined;
   if (creditKeys) {
     // Without the joined request (deleted) the generic text of the type is used.
