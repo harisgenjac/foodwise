@@ -1086,6 +1086,7 @@
       "search": "Search by name or email",
       "columnRole": "Role",
       "allRoles": "All roles",
+      "allPlans": "All plans",
       "emptyTitle": "No users",
       "emptySubtitle": "No store or restaurant matches the search.",
       "columnBusiness": "User",

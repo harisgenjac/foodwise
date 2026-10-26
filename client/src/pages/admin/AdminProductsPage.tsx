@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { ListFilter, Package, Search, Trash2, X } from "lucide-react";
 import api from "../../api/axios.js";
 import { useFetch } from "../../hooks/useFetch.js";
-import { useAdminPage, useKeepPageInRange } from "../../hooks/useAdminPage.js";
+import { useAdminPage, useAdminSort, useKeepPageInRange } from "../../hooks/useAdminPage.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../../components/product/FilterBar.js";
 import { inputStyle } from "../../components/form/FormField.js";
@@ -14,11 +14,15 @@ import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
+import SortableHeader from "../../components/admin/SortableHeader.js";
 import ConfirmModal from "../../components/common/ConfirmModal.js";
 import { PRODUCT_STATUS_STYLES } from "../../utils/productStatus.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
 import { ADMIN_PAGE_SIZE } from "../../utils/admin.js";
 import type { AdminProduct } from "../../types/index.js";
+
+// Sortable columns (the server whitelist of GET /admin/products).
+const SORT_KEYS = ["discounted_price", "expiry_date"];
 
 function AdminProductsPage() {
   const { t } = useTranslation();
@@ -28,6 +32,7 @@ function AdminProductsPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const { page, offset, setPage } = useAdminPage();
+  const { sort, dir, toggleSort } = useAdminSort(SORT_KEYS);
   const [selected, setSelected] = useState<AdminProduct | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -35,6 +40,8 @@ function AdminProductsPage() {
     q,
     status,
     store_id: storeId,
+    sort,
+    dir,
     limit: ADMIN_PAGE_SIZE,
     offset,
   });
@@ -145,8 +152,22 @@ function AdminProductsPage() {
                 <tr>
                   <th className="px-4 py-3">{t("admin.products.columnProduct")}</th>
                   <th className="px-4 py-3">{t("admin.products.columnStore")}</th>
-                  <th className="hidden px-4 py-3 md:table-cell">{t("admin.products.columnPrice")}</th>
-                  <th className="hidden px-4 py-3 md:table-cell">{t("admin.products.columnExpiry")}</th>
+                  <SortableHeader
+                    label={t("admin.products.columnPrice")}
+                    sortKey="discounted_price"
+                    sort={sort}
+                    dir={dir}
+                    onSort={toggleSort}
+                    className="hidden px-4 py-3 md:table-cell"
+                  />
+                  <SortableHeader
+                    label={t("admin.products.columnExpiry")}
+                    sortKey="expiry_date"
+                    sort={sort}
+                    dir={dir}
+                    onSort={toggleSort}
+                    className="hidden px-4 py-3 md:table-cell"
+                  />
                   <th className="px-4 py-3">{t("admin.products.columnStatus")}</th>
                   <th className="px-4 py-3" />
                 </tr>

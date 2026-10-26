@@ -28,6 +28,7 @@ import {
   getUserLedger,
   rejectCreditRequest,
 } from "../controllers/adminCredits.controller.js";
+import { getPlans } from "../controllers/credits.controller.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -51,6 +52,8 @@ router.get("/announcements", getAnnouncements);
 router.post("/announcements", createAnnouncement);
 router.post("/announcements/:id/end", endAnnouncement);
 router.get("/actions", getAdminActions);
+// The active plans (the same list stores and restaurants see), for the overview's plan filter.
+router.get("/credits/plans", getPlans);
 router.get("/credits/overview", getCreditOverview);
 router.get("/credits/requests", getCreditRequests);
 router.get("/credits/requests/pending-count", getPendingRequestCount);

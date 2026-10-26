@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Coins, ListFilter, Search } from "lucide-react";
+import { Coins, ListFilter, Search, WalletCards } from "lucide-react";
 import { useFetch } from "../../hooks/useFetch.js";
-import { useAdminPage, useKeepPageInRange } from "../../hooks/useAdminPage.js";
+import { useAdminPage, useAdminSort, useKeepPageInRange } from "../../hooks/useAdminPage.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../../components/product/FilterBar.js";
 import { inputStyle } from "../../components/form/FormField.js";
@@ -11,10 +11,14 @@ import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
+import SortableHeader from "../../components/admin/SortableHeader.js";
 import { ADMIN_PAGE_SIZE, ROLE_STYLES } from "../../utils/admin.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
 import { creditMonthEnd, currentCreditMonth, usageBarColor, usagePercent } from "../../utils/credits.js";
-import type { AdminCreditUser } from "../../types/index.js";
+import type { AdminCreditUser, Plan } from "../../types/index.js";
+
+// Sortable columns (the server whitelist of GET /admin/credits/overview).
+const SORT_KEYS = ["used", "available", "total", "usage"];
 
 // Every store's and restaurant's plan and balance for the current month. A row opens the user,
 // where the ledger and manual adjustments are.
@@ -23,17 +27,37 @@ function AdminCreditsPage() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
+  // A plan id or "none" (no subscription this month), kept in the URL: the dashboard links to ?plan=none.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const plan = searchParams.get("plan") ?? "";
   const { page, offset, setPage } = useAdminPage();
+  const { sort, dir, toggleSort } = useAdminSort(SORT_KEYS);
   const { data: users, total, loading, error } = useFetch<AdminCreditUser>("/admin/credits/overview", "users", {
     q,
     role,
+    plan,
+    sort,
+    dir,
     limit: ADMIN_PAGE_SIZE,
     offset,
   });
+  const { data: plans } = useFetch<Plan>("/admin/credits/plans", "plans", {});
   useKeepPageInRange(page, total, setPage);
   const roles = t("admin.roles", { returnObjects: true }) as Record<string, string>;
   const month = currentCreditMonth();
-  const hasActiveFilters = Boolean(q || role);
+  const hasActiveFilters = Boolean(q || role || plan);
+
+  // One URL update, so the plan and the reset to page 1 do not overwrite each other.
+  const setPlan = (value: string) => {
+    setSearchParams((current) => {
+      const params = new URLSearchParams(current);
+      if (value) params.set("plan", value);
+      else params.delete("plan");
+      params.delete("page");
+      return params;
+    });
+  };
+  const sortProps = { sort, dir, onSort: toggleSort };
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
@@ -52,7 +76,7 @@ function AdminCreditsPage() {
         onClear={() => {
           setQ("");
           setRole("");
-          setPage(1);
+          setPlan("");
         }}
         columns={3}
       >
@@ -84,6 +108,22 @@ function AdminCreditsPage() {
             <option value="RESTAURANT">{roles.RESTAURANT}</option>
           </select>
         </FilterField>
+        <FilterField icon={WalletCards}>
+          <select
+            value={plan}
+            onChange={(e) => setPlan(e.target.value)}
+            aria-label={t("admin.credits.columnPlan")}
+            className={inputStyle}
+          >
+            <option value="">{t("admin.credits.allPlans")}</option>
+            {plans.map((option) => (
+              <option key={option.id} value={String(option.id)}>
+                {option.name}
+              </option>
+            ))}
+            <option value="none">{t("admin.credits.noPlan")}</option>
+          </select>
+        </FilterField>
       </FilterBar>
 
       {loading ? (
@@ -100,10 +140,20 @@ function AdminCreditsPage() {
                 <tr>
                   <th className="px-4 py-3">{t("admin.credits.columnBusiness")}</th>
                   <th className="px-4 py-3">{t("admin.credits.columnPlan")}</th>
-                  <th className="px-4 py-3 text-right">{t("admin.credits.columnUsed")}</th>
-                  <th className="px-4 py-3 text-right">{t("admin.credits.columnAvailable")}</th>
-                  <th className="px-4 py-3 text-right">{t("admin.credits.columnTotal")}</th>
-                  <th className="hidden px-4 py-3 md:table-cell">{t("admin.credits.columnUsage")}</th>
+                  <SortableHeader label={t("admin.credits.columnUsed")} sortKey="used" {...sortProps} className="px-4 py-3 text-right" />
+                  <SortableHeader
+                    label={t("admin.credits.columnAvailable")}
+                    sortKey="available"
+                    {...sortProps}
+                    className="px-4 py-3 text-right"
+                  />
+                  <SortableHeader label={t("admin.credits.columnTotal")} sortKey="total" {...sortProps} className="px-4 py-3 text-right" />
+                  <SortableHeader
+                    label={t("admin.credits.columnUsage")}
+                    sortKey="usage"
+                    {...sortProps}
+                    className="hidden px-4 py-3 md:table-cell"
+                  />
                   <th className="px-4 py-3">{t("admin.credits.columnPending")}</th>
                 </tr>
               </thead>

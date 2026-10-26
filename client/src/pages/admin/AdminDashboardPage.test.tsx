@@ -54,6 +54,15 @@ describe("AdminDashboardPage", () => {
     expect(foodSavedChips()).toEqual(["12 l", `30 ${t("dashboard.piecesShort")}`]);
   });
 
+  it("links the businesses without a subscription to the filtered credits list", async () => {
+    renderPage(STATS);
+
+    expect(await screen.findByRole("link", { name: t("admin.dashboard.withoutSubscription") })).toHaveAttribute(
+      "href",
+      "/admin/credits?plan=none",
+    );
+  });
+
   it("leaves zero units out of the food saved chips", async () => {
     renderPage({ ...STATS, saved: { ...STATS.saved, l: 0 } });
 

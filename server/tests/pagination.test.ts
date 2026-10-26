@@ -203,15 +203,15 @@ describe("Pagination", () => {
     await expectStablePages(restaurant, "/api/credits/requests", "requests");
   });
 
-  it("admin lists return 10 by default", async () => {
+  it("admin lists return 20 by default", async () => {
     const admin = await registerAndLogin(ADMIN, "ADMIN");
-    for (let i = 0; i < 11; i += 1) {
+    for (let i = 0; i < 21; i += 1) {
       await createProduct(store, { name: `Admin stranica ${i}` });
     }
 
     const response = await admin.get("/api/admin/products").query({ q: "Admin stranica" });
-    expect(response.body.products).toHaveLength(10);
-    expect(response.body.total).toBe(11);
+    expect(response.body.products).toHaveLength(20);
+    expect(response.body.total).toBe(21);
   });
 
   it.each([

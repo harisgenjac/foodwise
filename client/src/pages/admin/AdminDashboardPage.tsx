@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
@@ -164,14 +165,25 @@ function AdminDashboardPage() {
               }))}
             />
             <dl className="space-y-2 text-sm">
-              {[
-                [t("admin.dashboard.autoRenew"), credits.auto_renew],
-                [t("admin.dashboard.nextMonthSubscriptions"), credits.next_month_subscriptions],
-                [t("admin.dashboard.withoutSubscription"), credits.without_subscription],
-                [t("admin.dashboard.pendingCreditRequests"), credits.pending_requests],
-              ].map(([label, value]) => (
+              {(
+                [
+                  [t("admin.dashboard.autoRenew"), credits.auto_renew],
+                  [t("admin.dashboard.nextMonthSubscriptions"), credits.next_month_subscriptions],
+                  // Opens the credits list filtered to the businesses without a subscription.
+                  [t("admin.dashboard.withoutSubscription"), credits.without_subscription, "/admin/credits?plan=none"],
+                  [t("admin.dashboard.pendingCreditRequests"), credits.pending_requests],
+                ] as [string, number, string?][]
+              ).map(([label, value, to]) => (
                 <div key={label} className="flex items-center justify-between gap-3 border-b border-gray-100 pb-2 last:border-0">
-                  <dt className="text-gray-600">{label}</dt>
+                  <dt className="text-gray-600">
+                    {to ? (
+                      <Link to={to} className="hover:text-orange-600 hover:underline">
+                        {label}
+                      </Link>
+                    ) : (
+                      label
+                    )}
+                  </dt>
                   <dd className="font-semibold tabular-nums text-gray-900">{value}</dd>
                 </div>
               ))}

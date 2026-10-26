@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { CalendarCheck, Ban, ListFilter, Search, X } from "lucide-react";
 import api from "../../api/axios.js";
 import { useFetch } from "../../hooks/useFetch.js";
-import { useAdminPage, useKeepPageInRange } from "../../hooks/useAdminPage.js";
+import { useAdminPage, useAdminSort, useKeepPageInRange } from "../../hooks/useAdminPage.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../../components/product/FilterBar.js";
 import { inputStyle } from "../../components/form/FormField.js";
@@ -14,6 +14,7 @@ import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
+import SortableHeader from "../../components/admin/SortableHeader.js";
 import ConfirmModal from "../../components/common/ConfirmModal.js";
 import { RESERVATION_STATUS_STYLES } from "../../utils/reservationStatus.js";
 import { ADMIN_PAGE_SIZE, formatDateTime } from "../../utils/admin.js";
@@ -21,6 +22,9 @@ import type { AdminReservation } from "../../types/index.js";
 
 // Only reservations that are still open can be cancelled by an admin.
 const CANCELLABLE: AdminReservation["status"][] = ["Pending", "Confirmed"];
+
+// Sortable columns (the server whitelist of GET /admin/reservations).
+const SORT_KEYS = ["pickup_date"];
 
 function AdminReservationsPage() {
   const { t } = useTranslation();
@@ -30,13 +34,14 @@ function AdminReservationsPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const { page, offset, setPage } = useAdminPage();
+  const { sort, dir, toggleSort } = useAdminSort(SORT_KEYS);
   const [selected, setSelected] = useState<AdminReservation | null>(null);
   const [busy, setBusy] = useState(false);
 
   const { data: reservations, total, loading, error, refetch } = useFetch<AdminReservation>(
     "/admin/reservations",
     "reservations",
-    { q, status, user_id: userId, limit: ADMIN_PAGE_SIZE, offset },
+    { q, status, user_id: userId, sort, dir, limit: ADMIN_PAGE_SIZE, offset },
   );
   useKeepPageInRange(page, total, setPage);
 
@@ -150,7 +155,14 @@ function AdminReservationsPage() {
                   <th className="px-4 py-3">{t("admin.reservations.columnProduct")}</th>
                   <th className="hidden px-4 py-3 md:table-cell">{t("admin.reservations.columnStore")}</th>
                   <th className="hidden px-4 py-3 md:table-cell">{t("admin.reservations.columnRestaurant")}</th>
-                  <th className="hidden px-4 py-3 lg:table-cell">{t("admin.reservations.columnPickup")}</th>
+                  <SortableHeader
+                    label={t("admin.reservations.columnPickup")}
+                    sortKey="pickup_date"
+                    sort={sort}
+                    dir={dir}
+                    onSort={toggleSort}
+                    className="hidden px-4 py-3 lg:table-cell"
+                  />
                   <th className="px-4 py-3">{t("admin.reservations.columnStatus")}</th>
                   <th className="px-4 py-3" />
                 </tr>

@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Gift, HeartHandshake, ListFilter, Search, Trash2, X } from "lucide-react";
 import api from "../../api/axios.js";
 import { useFetch } from "../../hooks/useFetch.js";
-import { useAdminPage, useKeepPageInRange } from "../../hooks/useAdminPage.js";
+import { useAdminPage, useAdminSort, useKeepPageInRange } from "../../hooks/useAdminPage.js";
 import { useDonationLabels } from "../../hooks/useDonationLabels.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../../components/product/FilterBar.js";
@@ -15,11 +15,15 @@ import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
+import SortableHeader from "../../components/admin/SortableHeader.js";
 import ConfirmModal from "../../components/common/ConfirmModal.js";
 import { DONATION_STATUS_STYLES, DONATION_TYPE_STYLES } from "../../utils/donations.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
 import { ADMIN_PAGE_SIZE } from "../../utils/admin.js";
 import type { AdminDonation } from "../../types/index.js";
+
+// Sortable columns (the server whitelist of GET /admin/donations).
+const SORT_KEYS = ["expiry_date"];
 
 function AdminDonationsPage() {
   const { t } = useTranslation();
@@ -31,6 +35,7 @@ function AdminDonationsPage() {
   const [status, setStatus] = useState("");
   const [type, setType] = useState("");
   const { page, offset, setPage } = useAdminPage();
+  const { sort, dir, toggleSort } = useAdminSort(SORT_KEYS);
   const [selected, setSelected] = useState<AdminDonation | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -39,6 +44,8 @@ function AdminDonationsPage() {
     status,
     type,
     donor_id: donorId,
+    sort,
+    dir,
     limit: ADMIN_PAGE_SIZE,
     offset,
   });
@@ -162,7 +169,14 @@ function AdminDonationsPage() {
                   <th className="px-4 py-3">{t("admin.donations.columnDonation")}</th>
                   <th className="px-4 py-3">{t("admin.donations.columnDonor")}</th>
                   <th className="hidden px-4 py-3 md:table-cell">{t("admin.donations.columnType")}</th>
-                  <th className="hidden px-4 py-3 md:table-cell">{t("admin.donations.columnExpiry")}</th>
+                  <SortableHeader
+                    label={t("admin.donations.columnExpiry")}
+                    sortKey="expiry_date"
+                    sort={sort}
+                    dir={dir}
+                    onSort={toggleSort}
+                    className="hidden px-4 py-3 md:table-cell"
+                  />
                   <th className="px-4 py-3">{t("admin.donations.columnStatus")}</th>
                   <th className="px-4 py-3" />
                 </tr>

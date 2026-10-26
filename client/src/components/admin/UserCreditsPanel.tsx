@@ -7,12 +7,10 @@ import api from "../../api/axios.js";
 import Pagination from "./Pagination.js";
 import CreditRequestDecisionModal, { CreditRequestDecisionButtons, type CreditRequestAction } from "./CreditRequestDecisionModal.js";
 import AdjustCreditsModal from "./AdjustCreditsModal.js";
-import { formatDateTime } from "../../utils/admin.js";
+import { ADMIN_PAGE_SIZE, formatDateTime } from "../../utils/admin.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
 import { describeCreditRequest, formatCreditMonth } from "../../utils/credits.js";
 import type { AdminCreditRequest, CreditSubscription, CreditTransaction } from "../../types/index.js";
-
-const LEDGER_PAGE_SIZE = 10;
 
 interface Balance {
   periodStart: string;
@@ -44,7 +42,7 @@ function UserCreditsPanel({ userId }: { userId: number }) {
   const load = useCallback(async () => {
     try {
       const response = await api.get(`/admin/credits/users/${userId}/ledger`, {
-        params: { limit: LEDGER_PAGE_SIZE, offset },
+        params: { limit: ADMIN_PAGE_SIZE, offset },
       });
       setBalance(response.data.balance);
       setTransactions(response.data.transactions);
@@ -205,7 +203,7 @@ function UserCreditsPanel({ userId }: { userId: number }) {
               </tbody>
             </table>
           </div>
-          <Pagination total={total} limit={LEDGER_PAGE_SIZE} offset={offset} onChange={setOffset} />
+          <Pagination total={total} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={setOffset} />
         </>
       )}
 

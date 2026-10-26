@@ -31,17 +31,17 @@ describe("Admin paging", () => {
         route: "/admin/users?page=2",
         path: "/admin/users",
         user: admin,
-        get: { "/admin/users": () => ({ users: users(10), total: 45 }) },
+        get: { "/admin/users": () => ({ users: users(10), total: 100 }) },
       },
     );
 
     await screen.findByText("Market 0");
-    expect(lastParams("/admin/users")).toMatchObject({ limit: 10, offset: 10 });
+    expect(lastParams("/admin/users")).toMatchObject({ limit: 20, offset: 20 });
     expect(screen.getByRole("button", { name: t("admin.common.page", { page: 2 }) })).toHaveAttribute("aria-current", "page");
 
     await userEvent.click(screen.getByRole("button", { name: t("admin.common.page", { page: 5 }) }));
     expect(screen.getByTestId("search")).toHaveTextContent("?page=5");
-    await waitFor(() => expect(lastParams("/admin/users")).toMatchObject({ offset: 40 }));
+    await waitFor(() => expect(lastParams("/admin/users")).toMatchObject({ offset: 80 }));
   });
 
   it("goes back to the first page when a filter changes", async () => {
