@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Store } from "lucide-react";
 import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
 import { getDaysUntilExpiry } from "../../utils/expiry.js";
 import { PRODUCT_STATUS_STYLES } from "../../utils/productStatus.js";
@@ -39,11 +39,29 @@ function DashboardProductCard({ product, showStore = false, actions }: Dashboard
 
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div>
-          <p className="text-xs text-gray-400">
-            {showStore
-              ? [product.business_name, product.city].filter(Boolean).join(" · ")
-              : new Date(product.created_at).toLocaleDateString()}
-          </p>
+          {showStore ? (
+            // The store name links to its profile; the product name below stays the main text.
+            <p className="flex min-w-0 items-center gap-1 text-xs text-gray-400">
+              <Store className="h-3.5 w-3.5 shrink-0 text-gray-500" aria-hidden="true" />
+              {product.business_name && (
+                <Link
+                  to={`/stores/${product.store_id}`}
+                  title={product.business_name}
+                  className="min-w-0 truncate rounded font-semibold text-gray-800 transition-colors hover:text-orange-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300"
+                >
+                  {product.business_name}
+                </Link>
+              )}
+              {product.city && (
+                <span className="shrink-0">
+                  {product.business_name && "· "}
+                  {product.city}
+                </span>
+              )}
+            </p>
+          ) : (
+            <p className="text-xs text-gray-400">{new Date(product.created_at).toLocaleDateString()}</p>
+          )}
           <h3 className="text-lg font-bold text-gray-800 line-clamp-1">{product.name}</h3>
         </div>
 
