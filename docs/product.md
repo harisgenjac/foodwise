@@ -39,7 +39,7 @@ Stores and restaurants are registered businesses with a profile (business name, 
 ## Core flows
 
 1. A store adds a product: name, an optional description, category, original and discounted price, quantity and unit, expiry date. Every form marks its required fields with * and shows a red error on an empty required field before anything is sent.
-2. A restaurant finds it in the marketplace (filters: category, max price, expiry window, name) or through a store profile.
+2. A restaurant finds it in the marketplace (filters: name, category, expiry window, city; sorted by newest, soonest expiry, price or discount) or through a store profile (same sorts). A store can sort its own products by newest, soonest expiry or price, to spot what expires soon.
 3. The restaurant reserves a quantity (partial reservations are allowed) and picks a pickup time between today and the product's expiry day. The reservation starts as `Pending` and the store is notified.
 4. The store accepts (`Confirmed`) or rejects (`Rejected`). The restaurant is notified either way. Accepting cannot be undone, so the store first confirms a dialog that repeats the product, quantity, restaurant and pickup time. A restaurant can cancel (`Cancelled`) only while the reservation is still `Pending`; an accept and a cancel can never both succeed.
 5. When accepted reservations cover the full quantity, the product is marked `Sold`.

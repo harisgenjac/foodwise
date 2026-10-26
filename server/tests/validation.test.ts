@@ -67,11 +67,11 @@ describe("Input validation", () => {
     );
 
     it.each([
-      ["/api/products?maxPrice=abc"],
       ["/api/products?expiryWithinDays=-1"],
       ["/api/products?limit=0"],
       ["/api/products?limit=1000"],
       ["/api/products?sort=price"],
+      ["/api/products?sort=PRICE_ASC"],
       ["/api/reservations/mine?status=Unknown"],
     ])("returns 400 for %s", async (url) => {
       const response = await restaurant.get(url);
@@ -82,6 +82,12 @@ describe("Input validation", () => {
     it("returns 400 for an unknown status filter on the store's products", async () => {
       const response = await store.get("/api/products/mine?status=Unknown");
       expect(response.status).toBe(400);
+    });
+
+    it("returns 400 for a sort the store's products do not offer", async () => {
+      const response = await store.get("/api/products/mine?sort=discount_desc");
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Invalid filter.");
     });
   });
 

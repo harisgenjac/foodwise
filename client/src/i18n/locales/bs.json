@@ -209,8 +209,14 @@
     "tomorrow": "Sutra",
     "within3Days": "Unutar 3 dana",
     "within7Days": "Unutar 7 dana",
-    "maxPrice": "Maksimalna cijena",
-    "clear": "Očisti filtere"
+    "clear": "Očisti filtere",
+    "sortBy": "Sortiraj po",
+    "sortNewest": "Najnovije",
+    "sortExpiry": "Najskoriji rok",
+    "sortPriceAsc": "Najniža cijena",
+    "sortPriceDesc": "Najviša cijena",
+    "sortDiscountDesc": "Najveći popust",
+    "sortDiscountAsc": "Najmanji popust"
   },
   "notifications": {
     "title": "Notifikacije",

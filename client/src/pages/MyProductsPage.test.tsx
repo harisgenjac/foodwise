@@ -51,6 +51,54 @@ describe("MyProductsPage", () => {
     await waitFor(() => expect(screen.queryByText("Proizvod 13")).not.toBeInTheDocument());
   });
 
+  describe("sort", () => {
+    const sortSelect = () => screen.getByLabelText(t("filters.sortBy"));
+
+    it("sorts by newest by default and offers no discount sort", async () => {
+      renderPage();
+      await screen.findByText("Proizvod 12");
+      expect(sortSelect()).toHaveValue("newest");
+      expect(lastParams()).toMatchObject({ sort: "newest" });
+      expect(within(sortSelect()).queryByText(t("filters.sortDiscountDesc"))).not.toBeInTheDocument();
+    });
+
+    it.each([
+      ["filters.sortExpiry", "expiry"],
+      ["filters.sortPriceAsc", "price_asc"],
+      ["filters.sortPriceDesc", "price_desc"],
+      ["filters.sortNewest", "newest"],
+    ])("sends the sort for %s", async (label, sort) => {
+      renderPage();
+      await screen.findByText("Proizvod 12");
+      // Start from another sort, so picking "Newest" is a change as well.
+      await userEvent.selectOptions(sortSelect(), sort === "newest" ? "expiry" : "newest");
+      await userEvent.selectOptions(sortSelect(), t(label));
+      await waitFor(() => expect(lastParams()).toMatchObject({ sort }));
+    });
+
+    it("goes back to the first page when the sort changes", async () => {
+      renderPage();
+      await screen.findByText("Proizvod 12");
+      await userEvent.click(loadMoreButton());
+      await screen.findByText("Proizvod 24");
+
+      await userEvent.selectOptions(sortSelect(), t("filters.sortExpiry"));
+      await waitFor(() => expect(lastParams()).toMatchObject({ sort: "expiry", limit: 12 }));
+    });
+
+    it("keeps the sort when the filters are cleared", async () => {
+      renderPage();
+      await screen.findByText("Proizvod 12");
+      await userEvent.selectOptions(sortSelect(), t("filters.sortExpiry"));
+      await userEvent.type(screen.getByPlaceholderText(t("filters.searchByName")), "Pro");
+      await waitFor(() => expect(lastParams()).toMatchObject({ name: "Pro" }));
+
+      await userEvent.click(screen.getByRole("button", { name: t("filters.clear") }));
+      await waitFor(() => expect(lastParams()).toMatchObject({ name: "", sort: "expiry" }));
+      expect(sortSelect()).toHaveValue("expiry");
+    });
+  });
+
   it("keeps the loaded pages after deleting a product", async () => {
     apiMock.delete.mockResolvedValue({ data: { message: "Product deleted successfully." } });
     renderPage();

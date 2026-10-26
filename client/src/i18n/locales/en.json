@@ -205,8 +205,14 @@
     "tomorrow": "Tomorrow",
     "within3Days": "Within 3 days",
     "within7Days": "Within 7 days",
-    "maxPrice": "Maximum Price",
-    "clear": "Clear filters"
+    "clear": "Clear filters",
+    "sortBy": "Sort by",
+    "sortNewest": "Newest",
+    "sortExpiry": "Expiry soonest",
+    "sortPriceAsc": "Lowest price",
+    "sortPriceDesc": "Highest price",
+    "sortDiscountDesc": "Biggest discount",
+    "sortDiscountAsc": "Smallest discount"
   },
   "notifications": {
     "title": "Notifications",

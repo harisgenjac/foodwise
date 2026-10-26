@@ -21,6 +21,7 @@ import LoadingSpinner from "../components/LoadingSpinner.js";
 import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
 import ProductPageHeader from "../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../components/product/FilterBar.js";
+import SortSelect, { ResultsBar } from "../components/product/SortSelect.js";
 import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
 import ConfirmModal from "../components/common/ConfirmModal.js";
@@ -32,11 +33,22 @@ import { usePagedLimit } from "../hooks/usePagedLimit.js";
 import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import type { Product } from "../types/index.js";
 
+// The `GET /products/mine` sorts; the server keeps Available products first under each of them.
+const SORT_OPTIONS = [
+  { value: "newest", label: "filters.sortNewest" },
+  { value: "expiry", label: "filters.sortExpiry" },
+  { value: "price_asc", label: "filters.sortPriceAsc" },
+  { value: "price_desc", label: "filters.sortPriceDesc" },
+] as const;
+
+type SortValue = (typeof SORT_OPTIONS)[number]["value"];
+
 function MyProductsPage() {
   const [name, setName] = useState("");
   const [status, setStatus] = useState("Available");
   const [category, setCategory] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
+  const [sort, setSort] = useState<SortValue>("newest");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [donatingProduct, setDonatingProduct] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -49,9 +61,10 @@ function MyProductsPage() {
     string,
     string
   >;
-  // 12 at a time; a filter change starts again from the first page, a reload keeps the limit.
+  // 12 at a time; a filter or sort change starts again from the first page, a reload keeps the limit.
   const filters = { name, status, category, expiryWithinDays };
-  const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(filters));
+  const query = { ...filters, sort };
+  const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(query));
   const {
     data: productsList,
     total,
@@ -59,7 +72,7 @@ function MyProductsPage() {
     loading,
     fetching,
     refetch,
-  } = useFetch<Product>("/products/mine", "products", { ...filters, limit });
+  } = useFetch<Product>("/products/mine", "products", { ...query, limit });
 
   const handleDelete = async (productId: number) => {
     if (deleting) return;
@@ -80,6 +93,7 @@ function MyProductsPage() {
     }
   };
 
+  // The sort is not a filter, so it stays.
   const clearFilters = () => {
     setName("");
     setCategory("");
@@ -101,7 +115,6 @@ function MyProductsPage() {
         title={t("myProducts.title")}
         subtitle={t("myProducts.subtitle")}
         icon={Package}
-        count={t("myProducts.productsCount", { count: total ?? productsList.length })}
         action={{ to: "/add-product", label: t("myProducts.addProductButton"), icon: PackagePlus }}
       />
 
@@ -155,6 +168,10 @@ function MyProductsPage() {
           </select>
         </FilterField>
       </FilterBar>
+
+      <ResultsBar count={t("myProducts.productsCount", { count: total ?? productsList.length })}>
+        <SortSelect value={sort} onChange={setSort} options={SORT_OPTIONS} />
+      </ResultsBar>
 
       {error && productsList.length === 0 ? (
         <LoadErrorState />

@@ -1,7 +1,7 @@
 import pool from "../config/db.js";
 import type { Request, Response } from 'express';
 import { validateProductFields, type ProductFields } from '../utils/validateProduct.js';
-import { parseId, parseNonNegativeInt, parseNumber } from '../utils/params.js';
+import { parseId, parseNonNegativeInt } from '../utils/params.js';
 import { parseProductCsv } from '../utils/productCsv.js';
 import { CARD_PAGE_SIZE, listPage, parsePage } from '../utils/pagination.js';
 import { HttpError } from '../utils/httpError.js';
@@ -10,9 +10,29 @@ import { chargeForProduct, chargeForProducts, refundForProduct } from '../servic
 export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
 
 // Fixed SQL per allowed `sort` value; the query string never reaches the SQL text.
+// Each ends with id DESC so equal values keep one order across pages.
+const DISCOUNT = "(listed.original_price - listed.discounted_price) / listed.original_price";
 const SORT_ORDERS: Record<string, string> = {
   newest: "listed.created_at DESC, listed.id DESC",
   expiry: "listed.expiry_date ASC, listed.id DESC",
+  price_asc: "listed.discounted_price ASC, listed.id DESC",
+  price_desc: "listed.discounted_price DESC, listed.id DESC",
+  discount_desc: `${DISCOUNT} DESC, listed.id DESC`,
+  discount_asc: `${DISCOUNT} ASC, listed.id DESC`,
+};
+
+// A store's own list: grouped by status (Available first), then the chosen order.
+const STATUS_GROUP = `CASE
+        WHEN status = 'Available' THEN 0
+        WHEN status = 'Sold' THEN 1
+        WHEN status = 'Expired' THEN 2
+        ELSE 3
+      END`;
+const MINE_SORT_ORDERS: Record<string, string> = {
+  newest: `${STATUS_GROUP}, created_at DESC, id DESC`,
+  expiry: `${STATUS_GROUP}, expiry_date ASC, id DESC`,
+  price_asc: `${STATUS_GROUP}, discounted_price ASC, id DESC`,
+  price_desc: `${STATUS_GROUP}, discounted_price DESC, id DESC`,
 };
 
 export const createProduct = async (req: Request, res: Response) => {
@@ -135,7 +155,7 @@ export const importProducts = async (req: Request, res: Response) => {
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const { category, maxPrice, expiryWithinDays, name, city, sort, store_id } = req.query;
+    const { category, expiryWithinDays, name, city, sort, store_id } = req.query;
 
     // Inner query: marketplace products with their remaining quantity; the outer queries
     // drop fully reserved ones, count the rest and return one page.
@@ -163,15 +183,6 @@ export const getProducts = async (req: Request, res: Response) => {
     if (category) {
       values.push(category as string);
       query += ` AND products.category = $${values.length}`;
-    }
-
-    if (maxPrice) {
-      const price = parseNumber(maxPrice);
-      if (price === null || price < 0) {
-        return res.status(400).json({ error: "Invalid filter." });
-      }
-      values.push(price);
-      query += ` AND products.discounted_price <= $${values.length}`;
     }
 
     if (expiryWithinDays) {
@@ -271,9 +282,10 @@ export const getProductById = async (req: Request, res: Response) => {
 export const getMineProducts = async (req: Request, res: Response) => {
   try {
     const store_id = req.user!.id;
-    const { status, category, name, expiryWithinDays } = req.query;
+    const { status, category, name, expiryWithinDays, sort } = req.query;
     const page = parsePage(req.query, CARD_PAGE_SIZE);
-    if (!page) {
+    const sortKey = sort ?? "newest";
+    if (!page || typeof sortKey !== "string" || !Object.hasOwn(MINE_SORT_ORDERS, sortKey)) {
       return res.status(400).json({ error: "Invalid filter." });
     }
 
@@ -310,13 +322,7 @@ export const getMineProducts = async (req: Request, res: Response) => {
     const { rows, total } = await listPage(
       "*",
       query,
-      `CASE
-        WHEN status = 'Available' THEN 0
-        WHEN status = 'Sold' THEN 1
-        WHEN status = 'Expired' THEN 2
-        ELSE 3
-      END,
-      created_at DESC, id DESC`,
+      MINE_SORT_ORDERS[sortKey]!,
       values,
       page,
     );

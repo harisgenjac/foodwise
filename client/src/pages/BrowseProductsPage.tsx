@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
-  Banknote,
   CalendarClock,
   CalendarPlus,
   MapPin,
@@ -16,6 +15,11 @@ import LoadingSpinner from "../components/LoadingSpinner.js";
 import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
 import ProductPageHeader from "../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../components/product/FilterBar.js";
+import SortSelect, {
+  MARKETPLACE_SORT_OPTIONS,
+  ResultsBar,
+  type MarketplaceSort,
+} from "../components/product/SortSelect.js";
 import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
 import ReserveProductModal from "../components/product/ReserveProductModal.js";
@@ -28,10 +32,10 @@ import type { Product } from "../types/index.js";
 
 function BrowseProductsPage() {
   const [category, setCategory] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
+  const [sort, setSort] = useState<MarketplaceSort>("newest");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { t } = useTranslation();
   const categories = t("categories", { returnObjects: true }) as Record<
@@ -39,9 +43,10 @@ function BrowseProductsPage() {
     string
   >;
   // The server leaves out fully reserved products and pages the rest; "Load more" raises the
-  // limit, and any filter change starts again from the first page.
-  const filters = { category, maxPrice, name, city, expiryWithinDays };
-  const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(filters));
+  // limit, and any filter or sort change starts again from the first page.
+  const filters = { category, name, city, expiryWithinDays };
+  const query = { ...filters, sort };
+  const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(query));
   const {
     data: visibleProducts,
     total,
@@ -49,13 +54,13 @@ function BrowseProductsPage() {
     fetching,
     error,
     refetch,
-  } = useFetch<Product>("/products", "products", { ...filters, limit });
+  } = useFetch<Product>("/products", "products", { ...query, limit });
 
+  // The sort is not a filter, so it stays.
   const clearFilters = () => {
     setName("");
     setCity("");
     setCategory("");
-    setMaxPrice("");
     setExpiryWithinDays("");
   };
 
@@ -64,7 +69,7 @@ function BrowseProductsPage() {
   }
 
   const totalCount = total ?? visibleProducts.length;
-  const hasActiveFilters = Boolean(name || city || category || maxPrice || expiryWithinDays);
+  const hasActiveFilters = Boolean(name || city || category || expiryWithinDays);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
@@ -72,26 +77,15 @@ function BrowseProductsPage() {
         title={t("product.browseTitle")}
         subtitle={t("product.browseSubtitle")}
         icon={ShoppingBasket}
-        count={t("product.offersCount", { count: totalCount })}
       />
 
-      {/* 1 column on phones; 2 on tablets with the expiry select full width; 5 in a row on desktop. */}
-      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={5}>
+      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters}>
         <FilterField icon={Search}>
           <input
             type="text"
             placeholder={t("filters.searchByName")}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className={inputStyle}
-          />
-        </FilterField>
-        <FilterField icon={MapPin}>
-          <input
-            type="text"
-            placeholder={t("filters.searchByCity")}
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
             className={inputStyle}
           />
         </FilterField>
@@ -109,17 +103,7 @@ function BrowseProductsPage() {
             ))}
           </select>
         </FilterField>
-        <FilterField icon={Banknote}>
-          <input
-            type="number"
-            min="0"
-            placeholder={t("filters.maxPrice")}
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
-            className={inputStyle}
-          />
-        </FilterField>
-        <FilterField icon={CalendarClock} className="sm:col-span-2 lg:col-span-1">
+        <FilterField icon={CalendarClock}>
           <select
             value={expiryWithinDays}
             onChange={(e) => setExpiryWithinDays(e.target.value)}
@@ -132,7 +116,20 @@ function BrowseProductsPage() {
             <option value="7">{t("filters.within7Days")}</option>
           </select>
         </FilterField>
+        <FilterField icon={MapPin}>
+          <input
+            type="text"
+            placeholder={t("filters.searchByCity")}
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            className={inputStyle}
+          />
+        </FilterField>
       </FilterBar>
+
+      <ResultsBar count={t("product.offersCount", { count: totalCount })}>
+        <SortSelect value={sort} onChange={setSort} options={MARKETPLACE_SORT_OPTIONS} />
+      </ResultsBar>
 
       {error && visibleProducts.length === 0 ? (
         <LoadErrorState />
