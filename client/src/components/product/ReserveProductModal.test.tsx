@@ -179,13 +179,25 @@ describe("ReserveProductModal", () => {
   });
 
   it.each([
-    ["2500", "25:00"],
-    ["1260", "12:60"],
-    ["147", "14:7"],
-  ])("keeps the invalid time %s as %s and explains it", async (typed, shown) => {
+    ["2999", "23:59"],
+    ["2500", "23:00"],
+    ["1260", "12:59"],
+    ["147", "14:59"],
+  ])("does not let %s go past 23:59 (shows %s)", async (typed, shown) => {
+    apiMock.post.mockResolvedValue({ data: {} });
     renderModal();
     await fillForm({ time: typed });
     expect(timeField()).toHaveValue(shown);
+    expect(timeField()).not.toHaveAttribute("aria-invalid");
+
+    await submit();
+    expect(apiMock.post).toHaveBeenCalledWith("/reservations", expect.objectContaining({ pickup_date: `2030-01-01T${shown}` }));
+  });
+
+  it("explains an unfinished time and does not send it", async () => {
+    renderModal();
+    await fillForm({ time: "143" });
+    expect(timeField()).toHaveValue("14:3");
     expect(timeField()).toHaveAttribute("aria-invalid", "true");
     expect(timeField()).toHaveAccessibleDescription(t("myReservations.invalidTime"));
 

@@ -106,6 +106,17 @@ describe("expiry utils", () => {
     }
   });
 
+  it("clamps the hour to 23 and the minutes to 59", () => {
+    expect(formatTimeTyping("29", "2")).toBe("23:");
+    expect(formatTimeTyping("24", "2")).toBe("23:");
+    expect(formatTimeTyping("20", "2")).toBe("20:");
+    expect(formatTimeTyping("23", "2")).toBe("23:");
+    expect(formatTimeTyping("23:7", "23:")).toBe("23:59");
+    expect(formatTimeTyping("14:5", "14:")).toBe("14:5");
+    expect(formatTimeTyping("2999", "")).toBe("23:59");
+    expect(formatTimeTyping("1460", "")).toBe("14:59");
+  });
+
   it("does not add the colon or the zero back while deleting", () => {
     expect(formatTimeTyping("14", "14:")).toBe("14");
     expect(formatTimeTyping("09", "09:")).toBe("09");
