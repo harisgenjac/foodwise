@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
 import {
   AlertTriangle,
   CalendarClock,
@@ -25,7 +24,7 @@ import { useFetch } from "../hooks/useFetch.js";
 import { usePagedLimit } from "../hooks/usePagedLimit.js";
 import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import { usePickupActions } from "../hooks/usePickupActions.js";
-import { daysFromToday, toDateInput } from "../utils/expiry.js";
+import { groupByDay, type DayGroup } from "../utils/dayGroups.js";
 import type { Reservation } from "../types/index.js";
 
 type Scope = "today" | "upcoming" | "completed";
@@ -37,43 +36,9 @@ interface PickupCounts {
   completed: number;
 }
 
-interface PickupGroup {
-  key: string;
-  title: string;
+interface PickupGroup extends DayGroup<Reservation> {
   overdue?: boolean;
-  items: Reservation[];
 }
-
-// "Today", "Tomorrow", "Yesterday" or "Wednesday, 22 October" (names from i18n, browsers lack Bosnian ones).
-const dayTitle = (dateInput: string, t: TFunction) => {
-  const offset = daysFromToday(dateInput);
-  if (offset === 0) return t("pickups.sections.today");
-  if (offset === 1) return t("pickups.sections.tomorrow");
-  if (offset === -1) return t("notifications.groups.yesterday");
-  const date = new Date(`${dateInput}T00:00:00`);
-  const weekdays = t("dashboard.weekdays", { returnObjects: true }) as string[];
-  const months = t("dashboard.months", { returnObjects: true }) as string[];
-  return t("dashboard.dateFormat", {
-    weekday: weekdays[date.getDay()],
-    day: date.getDate(),
-    month: months[date.getMonth()],
-  });
-};
-
-// Groups an already sorted list by local day, keeping the server order inside each day.
-const groupByDay = (items: Reservation[], dateOf: (r: Reservation) => string, t: TFunction): PickupGroup[] => {
-  const groups: PickupGroup[] = [];
-  for (const item of items) {
-    const key = toDateInput(new Date(dateOf(item)));
-    const last = groups[groups.length - 1];
-    if (last && last.key === key) {
-      last.items.push(item);
-    } else {
-      groups.push({ key, title: dayTitle(key, t), items: [item] });
-    }
-  }
-  return groups;
-};
 
 function PickupsPage() {
   const { user } = useAuth();

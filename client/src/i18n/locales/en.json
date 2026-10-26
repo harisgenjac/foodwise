@@ -184,6 +184,35 @@
     "viewStore": "View store",
     "quantityReserved": "Reserved Quantity",
     "seller": "Seller",
+    "tabs": {
+      "active": "Active",
+      "history": "History"
+    },
+    "period": {
+      "all": "Reserved: any time",
+      "today": "Reserved today",
+      "last7Days": "Last 7 days",
+      "thisMonth": "This month"
+    },
+    "sortPendingFirst": "Pending first",
+    "sortPickupSoonest": "Pickup soonest",
+    "summary": {
+      "total_one": "{{count}} reservation:",
+      "total_other": "{{count}} reservations:",
+      "Pending_one": "{{count}} pending",
+      "Pending_other": "{{count}} pending",
+      "Confirmed_one": "{{count}} accepted",
+      "Confirmed_other": "{{count}} accepted",
+      "Completed_one": "{{count}} picked up",
+      "Completed_other": "{{count}} picked up",
+      "Rejected_one": "{{count}} rejected",
+      "Rejected_other": "{{count}} rejected",
+      "Cancelled_one": "{{count}} cancelled",
+      "Cancelled_other": "{{count}} cancelled"
+    },
+    "emptyActiveTitle": "No active reservations",
+    "emptyActiveSubtitle": "Nothing is pending or accepted. Older reservations are in the history.",
+    "showHistory": "View history",
     "acceptConfirmation": "Accept this reservation?",
     "acceptConfirmationText": "{{business}} will be notified that the reservation was accepted. Accepting cannot be undone.",
     "acceptSummary": {
