@@ -3,6 +3,7 @@ import {
   createReservation,
   getReservationById,
   getMineReservations,
+  getMineReservationsSummary,
   getStoreReservations,
   acceptReservation,
   rejectReservation,
@@ -17,6 +18,7 @@ import { authenticate, authorize } from "../middleware/auth.middleware.js";
 const router = express.Router();
 router.post("/", authenticate, authorize("RESTAURANT"), createReservation);
 router.get("/mine", authenticate, authorize("RESTAURANT"), getMineReservations);
+router.get("/mine/summary", authenticate, authorize("RESTAURANT"), getMineReservationsSummary);
 router.get("/store", authenticate, authorize("STORE"), getStoreReservations);
 router.get("/pickups", authenticate, authorize("STORE", "RESTAURANT"), getPickups);
 router.get("/pickups/counts", authenticate, authorize("STORE", "RESTAURANT"), getPickupCounts);

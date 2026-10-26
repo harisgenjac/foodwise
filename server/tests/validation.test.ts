@@ -73,6 +73,11 @@ describe("Input validation", () => {
       ["/api/products?sort=price"],
       ["/api/products?sort=PRICE_ASC"],
       ["/api/reservations/mine?status=Unknown"],
+      ["/api/reservations/mine?scope=open"],
+      ["/api/reservations/mine?sort=oldest"],
+      ["/api/reservations/mine?period=year"],
+      ["/api/reservations/mine/summary?period=30d"],
+      ["/api/reservations/mine/summary?store_id=abc"],
     ])("returns 400 for %s", async (url) => {
       const response = await restaurant.get(url);
       expect(response.status).toBe(400);

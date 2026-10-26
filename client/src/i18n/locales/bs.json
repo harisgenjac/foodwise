@@ -188,6 +188,41 @@
     "viewStore": "Pogledaj prodavnicu",
     "quantityReserved": "Rezervisana količina",
     "seller": "Prodavač",
+    "tabs": {
+      "active": "Aktivne",
+      "history": "Historija"
+    },
+    "period": {
+      "all": "Rezervisano: sve",
+      "today": "Rezervisano danas",
+      "last7Days": "Zadnjih 7 dana",
+      "thisMonth": "Ovaj mjesec"
+    },
+    "sortPendingFirst": "Prvo na čekanju",
+    "sortPickupSoonest": "Najskorije preuzimanje",
+    "summary": {
+      "total_one": "{{count}} rezervacija:",
+      "total_few": "{{count}} rezervacije:",
+      "total_other": "{{count}} rezervacija:",
+      "Pending_one": "{{count}} na čekanju",
+      "Pending_few": "{{count}} na čekanju",
+      "Pending_other": "{{count}} na čekanju",
+      "Confirmed_one": "{{count}} prihvaćena",
+      "Confirmed_few": "{{count}} prihvaćene",
+      "Confirmed_other": "{{count}} prihvaćenih",
+      "Completed_one": "{{count}} preuzeta",
+      "Completed_few": "{{count}} preuzete",
+      "Completed_other": "{{count}} preuzetih",
+      "Rejected_one": "{{count}} odbijena",
+      "Rejected_few": "{{count}} odbijene",
+      "Rejected_other": "{{count}} odbijenih",
+      "Cancelled_one": "{{count}} otkazana",
+      "Cancelled_few": "{{count}} otkazane",
+      "Cancelled_other": "{{count}} otkazanih"
+    },
+    "emptyActiveTitle": "Nemate aktivnih rezervacija",
+    "emptyActiveSubtitle": "Nema rezervacija na čekanju ni prihvaćenih. Starije rezervacije su u historiji.",
+    "showHistory": "Pogledaj historiju",
     "acceptConfirmation": "Prihvatiti rezervaciju?",
     "acceptConfirmationText": "{{business}} će dobiti obavijest da je rezervacija prihvaćena. Prihvatanje se ne može poništiti.",
     "acceptSummary": {

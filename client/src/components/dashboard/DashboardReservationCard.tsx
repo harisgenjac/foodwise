@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AlertTriangle, ArrowRight } from "lucide-react";
 import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
 import { RESERVATION_STATUS_STYLES } from "../../utils/reservationStatus.js";
+import { formatRelativeTime } from "../../utils/notifications.js";
 import type { Reservation } from "../../types/index.js";
 
 interface DashboardReservationCardProps {
@@ -12,10 +13,12 @@ interface DashboardReservationCardProps {
   partyLabel: string;
   // Replaces the default "Details" link, e.g. with accept/reject or cancel buttons.
   actions?: ReactNode;
+  // Shows when the reservation was made ("5 min ago", the date after a week); My reservations only.
+  showCreatedAt?: boolean;
 }
 
-function DashboardReservationCard({ reservation, partyLabel, actions }: DashboardReservationCardProps) {
-  const { t } = useTranslation();
+function DashboardReservationCard({ reservation, partyLabel, actions, showCreatedAt }: DashboardReservationCardProps) {
+  const { t, i18n } = useTranslation();
   const reservationStatuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
   const units = t("units", { returnObjects: true }) as Record<string, string>;
   const image =
@@ -70,6 +73,14 @@ function DashboardReservationCard({ reservation, partyLabel, actions }: Dashboar
               })}
             </dd>
           </div>
+          {showCreatedAt && (
+            <div className="flex justify-between gap-2">
+              <dt className="text-gray-500">{t("reservations.createdAt")}</dt>
+              <dd className="text-right font-medium text-gray-800">
+                {formatRelativeTime(reservation.created_at, t, i18n.language)}
+              </dd>
+            </div>
+          )}
         </dl>
 
         {actions ? (

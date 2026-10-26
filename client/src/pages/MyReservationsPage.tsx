@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -6,7 +6,10 @@ import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
   CalendarCheck,
+  CalendarClock,
+  CalendarRange,
   CircleDot,
+  History,
   Search,
   SearchX,
   ShoppingBasket,
@@ -17,8 +20,14 @@ import {
 import api from "../api/axios.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.js";
-import ProductPageHeader from "../components/product/ProductPageHeader.js";
+import ReservationHistoryRow from "../components/reservation/ReservationHistoryRow.js";
+import ProductPageHeader, { CountPill } from "../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../components/product/FilterBar.js";
+import SortSelect, {
+  MY_RESERVATIONS_SORT_OPTIONS,
+  ResultsBar,
+  type MyReservationsSort,
+} from "../components/product/SortSelect.js";
 import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
 import ConfirmModal from "../components/common/ConfirmModal.js";
@@ -26,20 +35,54 @@ import { inputStyle } from "../components/form/FormField.js";
 import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { usePagedLimit } from "../hooks/usePagedLimit.js";
-import { CARD_PAGE_SIZE } from "../utils/pagination.js";
+import { CARD_PAGE_SIZE, HISTORY_PAGE_SIZE } from "../utils/pagination.js";
+import { groupByDay } from "../utils/dayGroups.js";
 import type { Reservation } from "../types/index.js";
 
+type Tab = "active" | "history";
+type Status = Reservation["status"];
+
+const STATUSES: Status[] = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
+const PERIODS = [
+  { value: "today", label: "reservations.period.today" },
+  { value: "7d", label: "reservations.period.last7Days" },
+  { value: "month", label: "reservations.period.thisMonth" },
+];
+const SUMMARY_DEBOUNCE_MS = 500;
+
+interface ReservationSummary {
+  total: number;
+  active: number;
+  counts: Record<Status, number>;
+}
+
 function MyReservationsPage() {
+  const [tab, setTab] = useState<Tab>("active");
   const [name, setName] = useState("");
-  const [status, setStatus] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [period, setPeriod] = useState("");
+  // Only on History; cleared when leaving it.
+  const [status, setStatus] = useState("");
+  // Only on Active; History is always newest first.
+  const [sort, setSort] = useState<MyReservationsSort>("newest");
+  const [summary, setSummary] = useState<ReservationSummary | null>(null);
   const [cancellingReservation, setCancellingReservation] =
     useState<Reservation | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const { t } = useTranslation();
-  // 12 at a time; a filter change starts again from the first page, a reload keeps the limit.
-  const filters = { name, status, business_name: businessName };
-  const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(filters));
+
+  const isHistory = tab === "history";
+  // Name, store and period apply to both tabs and to the summary.
+  const sharedFilters = { name, business_name: businessName, period };
+  const query = isHistory
+    ? { scope: "all", sort: "newest", status, ...sharedFilters }
+    : { scope: "active", sort, ...sharedFilters };
+  // Active loads 12 cards at a time, History 20 rows; a tab, sort or filter change starts again
+  // from the first page, a reload keeps the limit.
+  const { limit, loadMore } = usePagedLimit(
+    isHistory ? HISTORY_PAGE_SIZE : CARD_PAGE_SIZE,
+    JSON.stringify(query),
+  );
   const {
     data: reservationsList,
     total,
@@ -47,7 +90,42 @@ function MyReservationsPage() {
     loading,
     fetching,
     refetch,
-  } = useFetch<Reservation>("/reservations/mine", "reservations", { ...filters, limit });
+  } = useFetch<Reservation>("/reservations/mine", "reservations", { ...query, limit });
+
+  // The summary line and the tab counts: every status for the current name, store and period.
+  const summaryKey = JSON.stringify(sharedFilters);
+  const summaryLoadedRef = useRef(false);
+  const fetchSummary = useCallback(async () => {
+    try {
+      const response = await api.get("/reservations/mine/summary", { params: JSON.parse(summaryKey) });
+      setSummary(response.data.summary);
+    } catch (err) {
+      console.error("Error fetching the reservation summary:", err);
+    } finally {
+      summaryLoadedRef.current = true;
+    }
+  }, [summaryKey]);
+
+  useEffect(() => {
+    // The first load goes right away; typing in a filter is debounced like the list.
+    const timeoutId = setTimeout(fetchSummary, summaryLoadedRef.current ? SUMMARY_DEBOUNCE_MS : 0);
+    return () => clearTimeout(timeoutId);
+  }, [fetchSummary]);
+
+  const switchTab = (next: Tab) => {
+    if (next !== "history") setStatus("");
+    setTab(next);
+  };
+
+  // A summary status opens History filtered to it; clicking it again clears the filter.
+  const toggleStatus = (value: Status) => {
+    if (isHistory && status === value) {
+      setStatus("");
+    } else {
+      setTab("history");
+      setStatus(value);
+    }
+  };
 
   const handleCancellation = async (reservationId: number) => {
     if (cancelling) return;
@@ -57,6 +135,7 @@ function MyReservationsPage() {
       toast.success(response.data.message);
       setCancellingReservation(null);
       refetch();
+      fetchSummary();
     } catch (err) {
       console.error("Error canceling reservation:", err);
       const message = axios.isAxiosError(err)
@@ -68,17 +147,111 @@ function MyReservationsPage() {
     }
   };
 
+  // The tab and the sort are not filters, so they stay.
   const clearFilters = () => {
     setName("");
-    setStatus("");
     setBusinessName("");
+    setPeriod("");
+    setStatus("");
   };
 
   if (loading) {
     return <LoadingSpinner />;
   }
 
-  const hasActiveFilters = Boolean(name || status || businessName);
+  const hasActiveFilters = Boolean(name || businessName || period || (isHistory && status));
+  const totalCount = total ?? reservationsList.length;
+
+  const tabs: { key: Tab; label: string; icon: typeof CalendarClock; count?: number }[] = [
+    { key: "active", label: t("reservations.tabs.active"), icon: CalendarClock, ...(summary && { count: summary.active }) },
+    { key: "history", label: t("reservations.tabs.history"), icon: History, ...(summary && { count: summary.total }) },
+  ];
+
+  const summaryParts = summary ? STATUSES.filter((s) => summary.counts[s] > 0) : [];
+
+  const noResults = (
+    <EmptyState
+      icon={SearchX}
+      title={t("reservations.noResultsTitle")}
+      subtitle={t("reservations.noResultsSubtitle")}
+    />
+  );
+
+  let list;
+  if (error && reservationsList.length === 0) {
+    list = <LoadErrorState />;
+  } else if (reservationsList.length === 0) {
+    if (hasActiveFilters) {
+      list = noResults;
+    } else if (isHistory) {
+      list = (
+        <EmptyState
+          icon={CalendarCheck}
+          title={t("reservations.noCreatedResTitle")}
+          subtitle={t("reservations.noCreatedResSubtitle")}
+          action={{ to: "/browse-products", label: t("dashboard.browseOffers") }}
+        />
+      );
+    } else {
+      list = (
+        <EmptyState
+          icon={CalendarClock}
+          title={t("reservations.emptyActiveTitle")}
+          subtitle={t("reservations.emptyActiveSubtitle")}
+          action={{ to: "/browse-products", label: t("dashboard.browseOffers") }}
+          secondaryAction={{ label: t("reservations.showHistory"), onClick: () => switchTab("history") }}
+        />
+      );
+    }
+  } else if (isHistory) {
+    list = groupByDay(reservationsList, (r) => r.created_at, t).map((group) => (
+      <section key={group.key}>
+        {/* A day may continue on the next page, so the heading has no count. */}
+        <h2 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{group.title}</h2>
+        <div className="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+          {group.items.map((reservation) => (
+            <ReservationHistoryRow key={reservation.id} reservation={reservation} />
+          ))}
+        </div>
+      </section>
+    ));
+  } else {
+    list = (
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {reservationsList.map((reservation) => (
+          <DashboardReservationCard
+            key={reservation.id}
+            reservation={reservation}
+            partyLabel={t("reservations.seller")}
+            showCreatedAt
+            actions={
+              reservation.status === "Pending" ? (
+                <>
+                  <Link
+                    to={`/reservation/${reservation.id}`}
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-orange-50 py-2.5 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
+                  >
+                    {t("dashboard.detailsButton")}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setCancellingReservation(reservation)}
+                    className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                  >
+                    <X className="h-4 w-4" />
+                    {t("reservations.cancelShortButton")}
+                  </button>
+                </>
+              ) : undefined
+            }
+          />
+        ))}
+      </div>
+    );
+  }
+
+  const countText = t("reservations.count", { count: totalCount });
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
@@ -86,11 +259,37 @@ function MyReservationsPage() {
         title={t("reservations.title")}
         subtitle={t("reservations.restaurantSubtitle")}
         icon={CalendarCheck}
-        count={t("reservations.count", { count: total ?? reservationsList.length })}
         action={{ to: "/browse-products", label: t("dashboard.browseOffers"), icon: ShoppingBasket }}
       />
 
-      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={3}>
+      <div role="tablist" className="inline-flex w-fit flex-wrap rounded-full border border-gray-100 bg-white p-1 shadow-sm">
+        {tabs.map(({ key, label, icon: Icon, count }) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => switchTab(key)}
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              tab === key ? "bg-orange-500 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            <Icon className="h-4 w-4" strokeWidth={1.8} />
+            {label}
+            {!!count && (
+              <span
+                className={`rounded-full px-1.5 text-xs font-semibold ${
+                  tab === key ? "bg-white/25 text-white" : "bg-orange-100 text-orange-700"
+                }`}
+              >
+                {count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={isHistory ? 4 : 3}>
         <FilterField icon={Search}>
           <input
             type="text"
@@ -109,75 +308,77 @@ function MyReservationsPage() {
             className={inputStyle}
           />
         </FilterField>
-        <FilterField icon={CircleDot}>
+        <FilterField icon={CalendarRange}>
           <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            aria-label={t("reservations.period.all")}
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
             className={inputStyle}
           >
-            <option value="">{t("filters.selectResStatus")}</option>
-            <option value="Pending">{t("reservationStatus.Pending")}</option>
-            <option value="Confirmed">{t("reservationStatus.Confirmed")}</option>
-            <option value="Completed">{t("reservationStatus.Completed")}</option>
-            <option value="Rejected">{t("reservationStatus.Rejected")}</option>
-            <option value="Cancelled">{t("reservationStatus.Cancelled")}</option>
+            <option value="">{t("reservations.period.all")}</option>
+            {PERIODS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {t(option.label)}
+              </option>
+            ))}
           </select>
         </FilterField>
+        {isHistory && (
+          <FilterField icon={CircleDot}>
+            <select
+              aria-label={t("filters.selectResStatus")}
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className={inputStyle}
+            >
+              <option value="">{t("filters.selectResStatus")}</option>
+              {STATUSES.map((value) => (
+                <option key={value} value={value}>
+                  {t(`reservationStatus.${value}`)}
+                </option>
+              ))}
+            </select>
+          </FilterField>
+        )}
       </FilterBar>
 
-      {error && reservationsList.length === 0 ? (
-        <LoadErrorState />
-      ) : reservationsList.length === 0 ? (
-        hasActiveFilters ? (
-          <EmptyState
-            icon={SearchX}
-            title={t("reservations.noResultsTitle")}
-            subtitle={t("reservations.noResultsSubtitle")}
-          />
-        ) : (
-          <EmptyState
-            icon={CalendarCheck}
-            title={t("reservations.noCreatedResTitle")}
-            subtitle={t("reservations.noCreatedResSubtitle")}
-            action={{ to: "/browse-products", label: t("dashboard.browseOffers") }}
-          />
-        )
-      ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {reservationsList.map((reservation) => (
-            <DashboardReservationCard
-              key={reservation.id}
-              reservation={reservation}
-              partyLabel={t("reservations.seller")}
-              actions={
-                reservation.status === "Pending" ? (
-                  <>
-                    <Link
-                      to={`/reservation/${reservation.id}`}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-orange-50 py-2.5 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
-                    >
-                      {t("dashboard.detailsButton")}
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => setCancellingReservation(reservation)}
-                      className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-                    >
-                      <X className="h-4 w-4" />
-                      {t("reservations.cancelShortButton")}
-                    </button>
-                  </>
-                ) : undefined
-              }
-            />
-          ))}
-        </div>
+      {summary && summary.total > 0 && (
+        <p className="flex flex-wrap items-center gap-x-1 gap-y-1 px-1 text-sm text-gray-600">
+          <span className="font-semibold text-gray-800">{t("reservations.summary.total", { count: summary.total })}</span>
+          {summaryParts.map((value, index) => {
+            const pressed = isHistory && status === value;
+            return (
+              <span key={value} className="inline-flex items-center gap-1">
+                {index > 0 && <span aria-hidden="true" className="text-gray-300">·</span>}
+                <button
+                  type="button"
+                  aria-pressed={pressed}
+                  onClick={() => toggleStatus(value)}
+                  className={`cursor-pointer rounded-full px-2 py-0.5 transition-colors ${
+                    pressed ? "bg-orange-500 text-white" : "hover:bg-orange-50 hover:text-orange-700"
+                  }`}
+                >
+                  {t(`reservations.summary.${value}`, { count: summary.counts[value] })}
+                </button>
+              </span>
+            );
+          })}
+        </p>
       )}
+
+      {isHistory ? (
+        <CountPill>{countText}</CountPill>
+      ) : (
+        <ResultsBar count={countText}>
+          <SortSelect value={sort} onChange={setSort} options={MY_RESERVATIONS_SORT_OPTIONS} />
+        </ResultsBar>
+      )}
+
+      {list}
 
       <LoadMore
         shown={reservationsList.length}
-        total={total ?? reservationsList.length}
+        total={totalCount}
         fetching={fetching}
         onLoadMore={loadMore}
       />

@@ -1,6 +1,8 @@
 // Page sizes: card grids load 12 at a time (fills 2- and 3-column rows); short lists and tables 10.
 export const CARD_PAGE_SIZE = 12;
 export const LIST_PAGE_SIZE = 10;
+// Compact history rows (the restaurant's reservation history) take less room, so 20 at a time.
+export const HISTORY_PAGE_SIZE = 20;
 
 export type PageItem = number | "ellipsis";
 

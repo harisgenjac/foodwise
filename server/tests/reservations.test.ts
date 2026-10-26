@@ -167,6 +167,159 @@ describe("Reservations routes", () => {
     });
   });
 
+  describe("GET /api/reservations/mine scope, sort and period", () => {
+    // Five reservations, one per status, made one hour apart (Pending newest) unless moved.
+    const seed = async () => {
+      const product = await createProduct(store, { name: "Piletina", quantity: 50 });
+      const ids: Record<string, number> = {};
+      const statuses = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
+      for (const [index, status] of statuses.entries()) {
+        const id = await reserve(restaurant, product.id, 1);
+        await pool.query(
+          `UPDATE reservations SET status = $2, created_at = CURRENT_TIMESTAMP - ($3 * interval '1 hour')
+           WHERE id = $1`,
+          [id, status, index],
+        );
+        ids[status] = id;
+      }
+      return ids;
+    };
+    const idsOf = (response: { body: { reservations: { id: number }[] } }) =>
+      response.body.reservations.map((r) => r.id);
+    const setCreatedAt = (id: number, sql: string) =>
+      pool.query(`UPDATE reservations SET created_at = ${sql} WHERE id = $1`, [id]);
+
+    it("keeps all statuses in the status order without scope or sort", async () => {
+      const ids = await seed();
+      // Oldest Pending last within its status: the status comes first.
+      await setCreatedAt(ids.Pending!, "CURRENT_TIMESTAMP - interval '10 hours'");
+      const response = await restaurant.get("/api/reservations/mine");
+      expect(idsOf(response)).toEqual([ids.Pending, ids.Confirmed, ids.Completed, ids.Rejected, ids.Cancelled]);
+      expect(response.body.total).toBe(5);
+    });
+
+    it("returns only Pending and Confirmed for scope=active", async () => {
+      const ids = await seed();
+      const response = await restaurant.get("/api/reservations/mine").query({ scope: "active" });
+      expect(idsOf(response)).toEqual([ids.Pending, ids.Confirmed]);
+      expect(response.body.total).toBe(2);
+    });
+
+    it("combines scope=all with the status filter", async () => {
+      const ids = await seed();
+      const response = await restaurant.get("/api/reservations/mine").query({ scope: "all", status: "Cancelled" });
+      expect(idsOf(response)).toEqual([ids.Cancelled]);
+      const all = await restaurant.get("/api/reservations/mine").query({ scope: "all" });
+      expect(all.body.total).toBe(5);
+    });
+
+    it("sorts newest first, by status or by the soonest pickup, ties by id DESC", async () => {
+      const ids = await seed();
+      await setCreatedAt(ids.Cancelled!, "CURRENT_TIMESTAMP + interval '1 hour'");
+      await pool.query("UPDATE reservations SET pickup_date = CURRENT_DATE + 5 WHERE id = ANY($1)", [
+        [ids.Pending, ids.Confirmed],
+      ]);
+      await pool.query("UPDATE reservations SET pickup_date = CURRENT_DATE + 2 WHERE id = $1", [ids.Rejected]);
+
+      const newest = await restaurant.get("/api/reservations/mine").query({ sort: "newest" });
+      expect(idsOf(newest)).toEqual([ids.Cancelled, ids.Pending, ids.Confirmed, ids.Completed, ids.Rejected]);
+
+      const byStatus = await restaurant.get("/api/reservations/mine").query({ sort: "status" });
+      expect(idsOf(byStatus)).toEqual([ids.Pending, ids.Confirmed, ids.Completed, ids.Rejected, ids.Cancelled]);
+
+      // Completed and Cancelled keep tomorrow's pickup; equal pickups go by id DESC.
+      const byPickup = await restaurant.get("/api/reservations/mine").query({ scope: "active", sort: "pickup" });
+      expect(idsOf(byPickup)).toEqual([ids.Confirmed, ids.Pending]);
+      const allByPickup = await restaurant.get("/api/reservations/mine").query({ sort: "pickup" });
+      expect(idsOf(allByPickup)).toEqual([ids.Cancelled, ids.Completed, ids.Rejected, ids.Confirmed, ids.Pending]);
+    });
+
+    it.each([
+      ["today", "CURRENT_DATE", "CURRENT_DATE - interval '1 minute'"],
+      ["7d", "CURRENT_DATE - 6", "CURRENT_DATE - interval '6 days 1 minute'"],
+      ["month", "date_trunc('month', CURRENT_DATE)", "date_trunc('month', CURRENT_DATE) - interval '1 minute'"],
+    ])("period=%s counts from the local midnight", async (period, inside, outside) => {
+      const product = await createProduct(store);
+      const kept = await reserve(restaurant, product.id, 1);
+      const dropped = await reserve(restaurant, product.id, 1);
+      await setCreatedAt(kept, inside);
+      await setCreatedAt(dropped, outside);
+
+      const response = await restaurant.get("/api/reservations/mine").query({ period });
+      expect(idsOf(response)).toEqual([kept]);
+      expect(response.body.total).toBe(1);
+      const summary = await restaurant.get("/api/reservations/mine/summary").query({ period });
+      expect(summary.body.summary.total).toBe(1);
+    });
+
+    it("treats an empty period, scope and sort as not set", async () => {
+      await seed();
+      const response = await restaurant.get("/api/reservations/mine").query({ period: "", scope: "", sort: "" });
+      expect(response.status).toBe(200);
+      expect(response.body.total).toBe(5);
+    });
+
+    it("combines with the name, store and paging filters", async () => {
+      const ids = await seed();
+      const other = await createProduct(store, { name: "Mlijeko" });
+      await reserve(restaurant, other.id, 1);
+      const storeB = await registerAndLogin(STORE_B, "STORE");
+      await pool.query("UPDATE users SET business_name = 'Druga radnja' WHERE email = $1", [STORE_B]);
+      const elsewhere = await createProduct(storeB, { name: "Piletina" });
+      await reserve(restaurant, elsewhere.id, 1);
+
+      const page = await restaurant
+        .get("/api/reservations/mine")
+        .query({ scope: "all", sort: "newest", name: "pilet", store_id: other.store_id, period: "7d", limit: 2 });
+      expect(page.body.total).toBe(5);
+      expect(idsOf(page)).toEqual([ids.Pending, ids.Confirmed]);
+
+      const byStore = await restaurant.get("/api/reservations/mine").query({ business_name: "druga" });
+      expect(byStore.body.total).toBe(1);
+    });
+  });
+
+  describe("GET /api/reservations/mine/summary", () => {
+    it("counts the caller's reservations per status with the list's filters", async () => {
+      const product = await createProduct(store, { name: "Piletina", quantity: 50 });
+      const milk = await createProduct(store, { name: "Mlijeko" });
+      const statuses = ["Pending", "Pending", "Confirmed", "Rejected", "Cancelled", "Cancelled", "Cancelled"];
+      for (const status of statuses) {
+        const id = await reserve(restaurant, product.id, 1);
+        await pool.query("UPDATE reservations SET status = $2 WHERE id = $1", [id, status]);
+      }
+      await reserve(restaurant, milk.id, 1);
+      const restaurantB = await registerAndLogin(RESTAURANT_B, "RESTAURANT");
+      await reserve(restaurantB, product.id, 1);
+
+      // scope and status are ignored: the summary always counts every status.
+      const response = await restaurant
+        .get("/api/reservations/mine/summary")
+        .query({ name: "pilet", scope: "active", status: "Pending" });
+      expect(response.status).toBe(200);
+      expect(response.body.summary).toEqual({
+        total: 7,
+        active: 3,
+        counts: { Pending: 2, Confirmed: 1, Completed: 0, Rejected: 1, Cancelled: 3 },
+      });
+
+      for (const status of ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"]) {
+        const list = await restaurant.get("/api/reservations/mine").query({ name: "pilet", status });
+        expect(list.body.total).toBe(response.body.summary.counts[status]);
+      }
+      const active = await restaurant.get("/api/reservations/mine").query({ name: "pilet", scope: "active" });
+      expect(active.body.total).toBe(response.body.summary.active);
+
+      const unfiltered = await restaurant.get("/api/reservations/mine/summary");
+      expect(unfiltered.body.summary.total).toBe(8);
+    });
+
+    it("returns 403 for a STORE", async () => {
+      const response = await store.get("/api/reservations/mine/summary");
+      expect(response.status).toBe(403);
+    });
+  });
+
   describe("GET /api/reservations/store", () => {
     it("returns reservations for the store's products only, Pending first", async () => {
       const product = await createProduct(store);

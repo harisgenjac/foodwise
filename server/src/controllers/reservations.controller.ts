@@ -174,11 +174,77 @@ export const getReservationById = async (req: Request, res: Response) => {
   }
 };
 
+// "Reserved" periods of the restaurant's reservations, by created_at. created_at is a timestamp
+// written in the session time zone (APP_TIMEZONE), so CURRENT_DATE is the local midnight.
+const MINE_PERIODS: Record<string, string> = {
+  today: "reservations.created_at >= CURRENT_DATE",
+  "7d": "reservations.created_at >= CURRENT_DATE - 6",
+  month: "reservations.created_at >= date_trunc('month', CURRENT_DATE)",
+};
+
+const STATUS_ORDER = `CASE
+        WHEN reservations.status = 'Pending' THEN 0
+        WHEN reservations.status = 'Confirmed' THEN 1
+        WHEN reservations.status = 'Completed' THEN 2
+        WHEN reservations.status = 'Rejected' THEN 3
+        WHEN reservations.status = 'Cancelled' THEN 4
+      END`;
+
+const MINE_SORTS: Record<string, string> = {
+  newest: "reservations.created_at DESC, reservations.id DESC",
+  status: `${STATUS_ORDER}, reservations.created_at DESC, reservations.id DESC`,
+  pickup: "reservations.pickup_date ASC, reservations.id DESC",
+};
+
+// An empty value means "not set", as the client sends unused parameters.
+const optionalParam = (value: unknown, allowed: Record<string, string>): string | null | undefined => {
+  if (value === undefined || value === "") return undefined;
+  return typeof value === "string" && Object.hasOwn(allowed, value) ? allowed[value]! : null;
+};
+
+// FROM/WHERE shared by GET /reservations/mine and /mine/summary: the restaurant's own
+// reservations with the name, store and period filters (and status for the list). Null for an
+// invalid filter, which the caller answers with 400 "Invalid filter.".
+const mineFilters = (query: Request["query"], restaurantId: number, includeStatus: boolean) => {
+  const { status, name, business_name, store_id } = query;
+  let from = `FROM reservations
+  JOIN products ON reservations.product_id = products.id
+  JOIN users ON products.store_id = users.id
+  WHERE reservations.restaurant_id = $1`;
+  const values: (string | number)[] = [restaurantId];
+
+  if (includeStatus && status) {
+    if (!RESERVATION_STATUSES.includes(status as string)) return null;
+    values.push(status as string);
+    from += ` AND reservations.status = $${values.length}`;
+  }
+  if (name) {
+    values.push(`%${name}%` as string);
+    from += ` AND products.name ILIKE $${values.length}`;
+  }
+  if (business_name) {
+    values.push(`%${business_name}%` as string);
+    from += ` AND users.business_name ILIKE $${values.length}`;
+  }
+  if (store_id) {
+    const storeId = parseId(store_id);
+    if (storeId === null) return null;
+    values.push(storeId);
+    from += ` AND products.store_id = $${values.length}`;
+  }
+  const period = optionalParam(query.period, MINE_PERIODS);
+  if (period === null) return null;
+  if (period) from += ` AND ${period}`;
+  return { from, values };
+};
+
 export const getMineReservations = async (req: Request, res: Response) => {
   const restaurant_id = req.user!.id;
-  const { status, name, business_name, store_id } = req.query;
   const page = parsePage(req.query, CARD_PAGE_SIZE);
-  if (!page) {
+  const filters = mineFilters(req.query, restaurant_id, true);
+  const scope = optionalParam(req.query.scope, { active: "active", all: "all" });
+  const sort = optionalParam(req.query.sort, MINE_SORTS);
+  if (!page || !filters || scope === null || sort === null) {
     return res.status(400).json({ error: "Invalid filter." });
   }
   try {
@@ -198,54 +264,61 @@ export const getMineReservations = async (req: Request, res: Response) => {
     products.unit,
     users.business_name,
     users.city`;
-    let query = `FROM reservations
-  JOIN products ON reservations.product_id = products.id
-  JOIN users ON products.store_id = users.id
-  WHERE reservations.restaurant_id = $1`;
-    let values: (string | number)[] = [restaurant_id];
-
-    if (status) {
-      if (!RESERVATION_STATUSES.includes(status as string)) {
-        return res.status(400).json({ error: "Invalid filter." });
-      }
-      values.push(status as string);
-      query += ` AND reservations.status = $${values.length}`;
-    }
-    if (name) {
-      values.push(`%${name}%` as string);
-      query += ` AND products.name ILIKE $${values.length}`;
-    }
-    if (business_name) {
-      values.push(`%${business_name}%` as string);
-      query += ` AND users.business_name ILIKE $${values.length}`;
-    }
-    if (store_id) {
-      const storeId = parseId(store_id);
-      if (storeId === null) {
-        return res.status(400).json({ error: "Invalid filter." });
-      }
-      values.push(storeId);
-      query += ` AND products.store_id = $${values.length}`;
+    let { from } = filters;
+    // "active" is what still needs the restaurant's attention; without a scope, all statuses.
+    if (scope === "active") {
+      from += ` AND reservations.status IN ('Pending', 'Confirmed')`;
     }
 
-    const { rows, total } = await listPage(
-      columns,
-      query,
-      `CASE
-        WHEN reservations.status = 'Pending' THEN 0
-        WHEN reservations.status = 'Confirmed' THEN 1
-        WHEN reservations.status = 'Completed' THEN 2
-        WHEN reservations.status = 'Rejected' THEN 3
-        WHEN reservations.status = 'Cancelled' THEN 4
-      END,
-      reservations.created_at DESC, reservations.id DESC`,
-      values,
-      page,
-    );
+    // Without a sort, the status order (the dashboard and the store profile rely on it).
+    const { rows, total } = await listPage(columns, from, sort ?? MINE_SORTS.status!, filters.values, page);
     return res.status(200).json({
       message: "Reservations fetched successfully.",
       reservations: rows,
       total,
+    });
+  } catch (error) {
+    console.error("Error while fetching reservations:", error);
+    return res
+      .status(500)
+      .json({ error: "An error occurred while fetching reservations." });
+  }
+};
+
+// Counts per status for the same filters as the list, except scope and status: the summary
+// line and the tab counts on My reservations.
+export const getMineReservationsSummary = async (req: Request, res: Response) => {
+  const filters = mineFilters(req.query, req.user!.id, false);
+  if (!filters) {
+    return res.status(400).json({ error: "Invalid filter." });
+  }
+  try {
+    const result = await pool.query(
+      `SELECT
+         COUNT(*) AS total,
+         COUNT(*) FILTER (WHERE reservations.status = 'Pending') AS pending,
+         COUNT(*) FILTER (WHERE reservations.status = 'Confirmed') AS confirmed,
+         COUNT(*) FILTER (WHERE reservations.status = 'Completed') AS completed,
+         COUNT(*) FILTER (WHERE reservations.status = 'Rejected') AS rejected,
+         COUNT(*) FILTER (WHERE reservations.status = 'Cancelled') AS cancelled
+       ${filters.from}`,
+      filters.values,
+    );
+    const row = result.rows[0];
+    const counts = {
+      Pending: parseInt(row.pending, 10),
+      Confirmed: parseInt(row.confirmed, 10),
+      Completed: parseInt(row.completed, 10),
+      Rejected: parseInt(row.rejected, 10),
+      Cancelled: parseInt(row.cancelled, 10),
+    };
+    return res.status(200).json({
+      message: "Reservations fetched successfully.",
+      summary: {
+        total: parseInt(row.total, 10),
+        active: counts.Pending + counts.Confirmed,
+        counts,
+      },
     });
   } catch (error) {
     console.error("Error while fetching reservations:", error);
