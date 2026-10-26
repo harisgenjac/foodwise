@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
-  ArrowUpDown,
   CalendarClock,
   CalendarPlus,
   MapPin,
@@ -14,8 +13,13 @@ import {
 } from "lucide-react";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
-import ProductPageHeader, { CountPill } from "../components/product/ProductPageHeader.js";
+import ProductPageHeader from "../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../components/product/FilterBar.js";
+import SortSelect, {
+  MARKETPLACE_SORT_OPTIONS,
+  ResultsBar,
+  type MarketplaceSort,
+} from "../components/product/SortSelect.js";
 import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
 import ReserveProductModal from "../components/product/ReserveProductModal.js";
@@ -26,24 +30,12 @@ import { usePagedLimit } from "../hooks/usePagedLimit.js";
 import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import type { Product } from "../types/index.js";
 
-// The server's `sort` values with their labels. Prices are per unit, as the cards show.
-const SORT_OPTIONS = [
-  { value: "newest", label: "filters.sortNewest" },
-  { value: "expiry", label: "filters.sortExpiry" },
-  { value: "price_asc", label: "filters.sortPriceAsc" },
-  { value: "price_desc", label: "filters.sortPriceDesc" },
-  { value: "discount_desc", label: "filters.sortDiscountDesc" },
-  { value: "discount_asc", label: "filters.sortDiscountAsc" },
-] as const;
-
-type SortValue = (typeof SORT_OPTIONS)[number]["value"];
-
 function BrowseProductsPage() {
   const [category, setCategory] = useState("");
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
-  const [sort, setSort] = useState<SortValue>("newest");
+  const [sort, setSort] = useState<MarketplaceSort>("newest");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { t } = useTranslation();
   const categories = t("categories", { returnObjects: true }) as Record<
@@ -135,26 +127,9 @@ function BrowseProductsPage() {
         </FilterField>
       </FilterBar>
 
-      {/* Count on the left and sort on the right; stacked on phones. */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <CountPill>{t("product.offersCount", { count: totalCount })}</CountPill>
-        <label className="flex items-center gap-2 text-sm text-gray-500">
-          <span className="shrink-0">{t("filters.sortBy")}</span>
-          <FilterField icon={ArrowUpDown}>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as SortValue)}
-              className={`${inputStyle} sm:w-56`}
-            >
-              {SORT_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {t(option.label)}
-                </option>
-              ))}
-            </select>
-          </FilterField>
-        </label>
-      </div>
+      <ResultsBar count={t("product.offersCount", { count: totalCount })}>
+        <SortSelect value={sort} onChange={setSort} options={MARKETPLACE_SORT_OPTIONS} />
+      </ResultsBar>
 
       {error && visibleProducts.length === 0 ? (
         <LoadErrorState />

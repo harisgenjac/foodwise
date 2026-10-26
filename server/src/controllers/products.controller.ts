@@ -21,6 +21,20 @@ const SORT_ORDERS: Record<string, string> = {
   discount_asc: `${DISCOUNT} ASC, listed.id DESC`,
 };
 
+// A store's own list: grouped by status (Available first), then the chosen order.
+const STATUS_GROUP = `CASE
+        WHEN status = 'Available' THEN 0
+        WHEN status = 'Sold' THEN 1
+        WHEN status = 'Expired' THEN 2
+        ELSE 3
+      END`;
+const MINE_SORT_ORDERS: Record<string, string> = {
+  newest: `${STATUS_GROUP}, created_at DESC, id DESC`,
+  expiry: `${STATUS_GROUP}, expiry_date ASC, id DESC`,
+  price_asc: `${STATUS_GROUP}, discounted_price ASC, id DESC`,
+  price_desc: `${STATUS_GROUP}, discounted_price DESC, id DESC`,
+};
+
 export const createProduct = async (req: Request, res: Response) => {
   let client;
   try {
@@ -268,9 +282,10 @@ export const getProductById = async (req: Request, res: Response) => {
 export const getMineProducts = async (req: Request, res: Response) => {
   try {
     const store_id = req.user!.id;
-    const { status, category, name, expiryWithinDays } = req.query;
+    const { status, category, name, expiryWithinDays, sort } = req.query;
     const page = parsePage(req.query, CARD_PAGE_SIZE);
-    if (!page) {
+    const sortKey = sort ?? "newest";
+    if (!page || typeof sortKey !== "string" || !Object.hasOwn(MINE_SORT_ORDERS, sortKey)) {
       return res.status(400).json({ error: "Invalid filter." });
     }
 
@@ -307,13 +322,7 @@ export const getMineProducts = async (req: Request, res: Response) => {
     const { rows, total } = await listPage(
       "*",
       query,
-      `CASE
-        WHEN status = 'Available' THEN 0
-        WHEN status = 'Sold' THEN 1
-        WHEN status = 'Expired' THEN 2
-        ELSE 3
-      END,
-      created_at DESC, id DESC`,
+      MINE_SORT_ORDERS[sortKey]!,
       values,
       page,
     );

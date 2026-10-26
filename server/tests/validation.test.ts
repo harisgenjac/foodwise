@@ -83,6 +83,12 @@ describe("Input validation", () => {
       const response = await store.get("/api/products/mine?status=Unknown");
       expect(response.status).toBe(400);
     });
+
+    it("returns 400 for a sort the store's products do not offer", async () => {
+      const response = await store.get("/api/products/mine?sort=discount_desc");
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Invalid filter.");
+    });
   });
 
   describe("GET /api/products pagination", () => {

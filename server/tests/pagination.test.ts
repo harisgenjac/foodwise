@@ -107,7 +107,9 @@ describe("Pagination", () => {
       expect(first.body.products).toHaveLength(12);
       expect(first.body.total).toBe(14);
 
-      await expectStablePages(store, "/api/products/mine", "products");
+      for (const sort of ["newest", "expiry", "price_asc", "price_desc"]) {
+        await expectStablePages(store, "/api/products/mine", "products", { sort });
+      }
       const filtered = await store.get("/api/products/mine").query({ category: "Dairy", limit: 3, offset: 6 });
       expect(filtered.body.total).toBe(7);
       expect(filtered.body.products).toHaveLength(1);

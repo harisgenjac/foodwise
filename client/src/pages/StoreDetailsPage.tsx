@@ -26,6 +26,7 @@ import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import Breadcrumbs, { BreadcrumbPlaceholder } from "../components/Breadcrumbs.js";
 import EmptyState from "../components/product/EmptyState.js";
+import SortSelect, { MARKETPLACE_SORT_OPTIONS, type MarketplaceSort } from "../components/product/SortSelect.js";
 import DetailItem from "../components/product/DetailItem.js";
 import ReserveProductModal from "../components/product/ReserveProductModal.js";
 import StatCard from "../components/dashboard/StatCard.js";
@@ -56,6 +57,7 @@ function StoreDetailsPage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("products");
   const [reservationStatus, setReservationStatus] = useState("");
+  const [productSort, setProductSort] = useState<MarketplaceSort>("newest");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { t } = useTranslation();
   const reservationStatuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
@@ -109,14 +111,14 @@ function StoreDetailsPage() {
   }, [id]);
 
   // The store's offers come from the marketplace (same rules), paged; `total` counts them all.
-  // Each tab loads 12 at a time; another store or status filter starts from the first page.
-  const products = usePagedLimit(CARD_PAGE_SIZE, id);
+  // Each tab loads 12 at a time; another store, sort or status filter starts from the first page.
+  const products = usePagedLimit(CARD_PAGE_SIZE, `${id}-${productSort}`);
   const {
     data: productsList,
     total: productsTotal,
     fetching: productsFetching,
     refetch: refetchProducts,
-  } = useFetch<Product>("/products", "products", { store_id: id!, limit: products.limit });
+  } = useFetch<Product>("/products", "products", { store_id: id!, sort: productSort, limit: products.limit });
 
   const reservations = usePagedLimit(CARD_PAGE_SIZE, `${id}-${reservationStatus}`);
   const {
@@ -253,28 +255,34 @@ function StoreDetailsPage() {
         </div>
       </div>
 
-      <div className="inline-flex w-fit rounded-full border border-gray-100 bg-white p-1 shadow-sm">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              activeTab === tab.key ? "bg-orange-500 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            {tab.label}
-            {tab.count !== undefined && (
-              <span
-                className={`rounded-full px-1.5 text-xs font-semibold ${
-                  activeTab === tab.key ? "bg-white/25 text-white" : "bg-orange-100 text-orange-700"
-                }`}
-              >
-                {tab.count}
-              </span>
-            )}
-          </button>
-        ))}
+      {/* Tabs on the left; on the offers tab the sort on the right (stacked on phones). */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="inline-flex w-fit rounded-full border border-gray-100 bg-white p-1 shadow-sm">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                activeTab === tab.key ? "bg-orange-500 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              {tab.label}
+              {tab.count !== undefined && (
+                <span
+                  className={`rounded-full px-1.5 text-xs font-semibold ${
+                    activeTab === tab.key ? "bg-white/25 text-white" : "bg-orange-100 text-orange-700"
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+        {activeTab === "products" && activeProducts > 0 && (
+          <SortSelect value={productSort} onChange={setProductSort} options={MARKETPLACE_SORT_OPTIONS} />
+        )}
       </div>
 
       {activeTab === "products" &&

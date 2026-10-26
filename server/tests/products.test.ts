@@ -337,6 +337,21 @@ describe("Products routes", () => {
       expect(await mineIds({ expiryWithinDays: 5 })).toEqual([sold.id]);
     });
 
+    it("sorts by expiry and price within each status group", async () => {
+      const late = await createProduct(store, { discounted_price: 3, expiry_date: futureDate(20) });
+      const soon = await createProduct(store, { discounted_price: 8, expiry_date: futureDate(2) });
+      const mid = await createProduct(store, { discounted_price: 5, expiry_date: futureDate(10) });
+      // Sold, cheapest and soonest, but still after every Available product.
+      const sold = await createProduct(store, { discounted_price: 1, expiry_date: futureDate(1) });
+      await pool.query("UPDATE products SET status = 'Sold' WHERE id = $1", [sold.id]);
+
+      expect(await mineIds({ sort: "expiry" })).toEqual([soon.id, mid.id, late.id, sold.id]);
+      expect(await mineIds({ sort: "price_asc" })).toEqual([late.id, mid.id, soon.id, sold.id]);
+      expect(await mineIds({ sort: "price_desc" })).toEqual([soon.id, mid.id, late.id, sold.id]);
+      expect(await mineIds()).toEqual([mid.id, soon.id, late.id, sold.id]);
+      expect(await mineIds({ sort: "newest" })).toEqual([mid.id, soon.id, late.id, sold.id]);
+    });
+
     it("returns 403 for a RESTAURANT", async () => {
       const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
       const response = await restaurant.get("/api/products/mine");
