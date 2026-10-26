@@ -10,8 +10,8 @@ export interface SavedTotals {
 }
 
 // Platform-wide food saved, shared by the admin statistics and the footer's impact counter.
-// It follows the store dashboard's rules: Confirmed and Completed reservations, g/kg as kg,
-// ml/l as l, kom and pak as pieces. Value and savings count only Completed, like the impact report.
+// It follows the store dashboard's rules: picked-up (Completed) reservations only, g/kg as kg,
+// ml/l as l, kom and pak as pieces. Value and savings follow the impact report.
 export const getSavedTotals = async (db: Pool | PoolClient = pool): Promise<SavedTotals> => {
   const result = await db.query<Record<keyof SavedTotals, string>>(
     `SELECT
@@ -22,13 +22,11 @@ export const getSavedTotals = async (db: Pool | PoolClient = pool): Promise<Save
          WHEN 'l' THEN reservations.quantity
          WHEN 'ml' THEN reservations.quantity / 1000 END), 0) AS l,
        COALESCE(SUM(CASE WHEN products.unit IN ('kom', 'pak') THEN reservations.quantity END), 0) AS pieces,
-       COALESCE(ROUND(SUM(reservations.unit_price * reservations.quantity)
-         FILTER (WHERE reservations.status = 'Completed'), 2), 0) AS value,
-       COALESCE(ROUND(SUM(GREATEST(products.original_price - reservations.unit_price, 0) * reservations.quantity)
-         FILTER (WHERE reservations.status = 'Completed'), 2), 0) AS savings
+       COALESCE(ROUND(SUM(reservations.unit_price * reservations.quantity), 2), 0) AS value,
+       COALESCE(ROUND(SUM(GREATEST(products.original_price - reservations.unit_price, 0) * reservations.quantity), 2), 0) AS savings
      FROM reservations
      JOIN products ON reservations.product_id = products.id
-     WHERE reservations.status IN ('Confirmed', 'Completed')`,
+     WHERE reservations.status = 'Completed'`,
   );
   const row = result.rows[0]!;
   return {

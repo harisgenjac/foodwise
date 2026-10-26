@@ -2,7 +2,8 @@ import pool from "../config/db.js";
 import type { Request, Response } from "express";
 
 // The dashboard stat cards, computed over all of the caller's data (the lists on the dashboard
-// are only the 3 newest). Confirmed + Completed reservations count as successful.
+// are only the 3 newest). `successful_reservations` counts accepted ones (Confirmed + Completed);
+// food saved and savings count only picked-up (Completed) ones.
 export const getDashboardStats = async (req: Request, res: Response) => {
   const { id: userId, role } = req.user!;
   try {
@@ -19,11 +20,11 @@ export const getDashboardStats = async (req: Request, res: Response) => {
            COUNT(*) FILTER (WHERE reservations.status = 'Pending') AS pending_reservations,
            COUNT(*) FILTER (WHERE reservations.status IN ('Confirmed', 'Completed')) AS successful_reservations,
            COALESCE(SUM(CASE products.unit WHEN 'kg' THEN reservations.quantity WHEN 'g' THEN reservations.quantity / 1000 END)
-             FILTER (WHERE reservations.status IN ('Confirmed', 'Completed')), 0) AS kg,
+             FILTER (WHERE reservations.status = 'Completed'), 0) AS kg,
            COALESCE(SUM(CASE products.unit WHEN 'l' THEN reservations.quantity WHEN 'ml' THEN reservations.quantity / 1000 END)
-             FILTER (WHERE reservations.status IN ('Confirmed', 'Completed')), 0) AS l,
+             FILTER (WHERE reservations.status = 'Completed'), 0) AS l,
            COALESCE(SUM(CASE WHEN products.unit IN ('kom', 'pak') THEN reservations.quantity END)
-             FILTER (WHERE reservations.status IN ('Confirmed', 'Completed')), 0) AS pieces
+             FILTER (WHERE reservations.status = 'Completed'), 0) AS pieces
          FROM reservations
          JOIN products ON reservations.product_id = products.id
          WHERE products.store_id = $1`,
@@ -47,7 +48,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
          COUNT(*) FILTER (WHERE reservations.status = 'Pending') AS pending_reservations,
          COUNT(*) FILTER (WHERE reservations.status IN ('Confirmed', 'Completed')) AS successful_reservations,
          COALESCE(SUM((products.original_price - reservations.unit_price) * reservations.quantity)
-           FILTER (WHERE reservations.status IN ('Confirmed', 'Completed')), 0) AS savings
+           FILTER (WHERE reservations.status = 'Completed'), 0) AS savings
        FROM reservations
        JOIN products ON reservations.product_id = products.id
        WHERE reservations.restaurant_id = $1`,

@@ -132,6 +132,12 @@ function StoreDetailsPage() {
     status: reservationStatus,
     limit: reservations.limit,
   });
+  // The tab's count: every reservation here, whatever status pill is selected.
+  const { total: reservationsCount, refetch: refetchReservationsCount } = useFetch<Reservation>(
+    "/reservations/mine",
+    "reservations",
+    { store_id: id!, limit: 1 },
+  );
 
   const section = { label: t("sidebar.stores"), to: "/stores" };
 
@@ -162,7 +168,7 @@ function StoreDetailsPage() {
   const activeProducts = productsTotal ?? productsList.length;
   const tabs: { key: Tab; label: string; count?: number }[] = [
     { key: "products", label: t("store.productsTab"), count: activeProducts },
-    { key: "reservations", label: t("store.reservationsTab") },
+    { key: "reservations", label: t("store.reservationsTab"), count: reservationsCount ?? undefined },
   ];
   const statusFilters = [
     { value: "", label: t("store.allStatuses") },
@@ -399,6 +405,7 @@ function StoreDetailsPage() {
             fetchStoreDetails();
             refetchProducts();
             refetchReservations();
+            refetchReservationsCount();
           }}
         />
       )}

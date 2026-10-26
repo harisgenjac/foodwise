@@ -151,13 +151,33 @@ describe("Users routes", () => {
       expect(response.body.store).toMatchObject({ business_name: PROFILE.business_name, city: PROFILE.city });
       expect(response.body.store.email).toBeUndefined();
       expect(response.body.products).toBeUndefined();
-      expect(response.body.stats.successful_reservations).toBe("1");
-      expect(response.body.myReservations.my_reservations_count).toBe("1");
+      // Accepted but not picked up yet: not counted.
+      expect(response.body.stats.successful_reservations).toBe("0");
+      expect(response.body.myReservations.my_reservations_count).toBe("0");
 
       const products = await restaurant.get("/api/products").query({ store_id: await userId(STORE) });
       expect(products.body.total).toBe(1);
       expect(products.body.products[0].id).toBe(product.id);
       expect(parseFloat(products.body.products[0].available_quantity)).toBe(2);
+    });
+
+    it("counts only picked-up (Completed) reservations, not Pending, Confirmed, Rejected or Cancelled", async () => {
+      const store = await registerAndLogin(STORE, "STORE");
+      const product = await createProduct(store, { quantity: 10 });
+      const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
+      for (const status of ["Pending", "Confirmed", "Rejected", "Cancelled", "Completed"]) {
+        await pool.query(
+          `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date, picked_up_at)
+           VALUES ($1, $2, 1, 5, $3::reservation_status, CURRENT_DATE + 1,
+                   CASE WHEN $3::reservation_status = 'Completed' THEN NOW() END)`,
+          [product.id, await userId(RESTAURANT), status],
+        );
+      }
+
+      const response = await restaurant.get(`/api/users/stores/${await userId(STORE)}`);
+      expect(response.status).toBe(200);
+      expect(response.body.stats.successful_reservations).toBe("1");
+      expect(response.body.myReservations.my_reservations_count).toBe("1");
     });
 
     it("returns 403 for a STORE", async () => {

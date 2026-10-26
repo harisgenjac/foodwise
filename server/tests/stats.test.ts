@@ -53,7 +53,7 @@ describe("GET /api/stats/impact", () => {
     }
   });
 
-  it("counts kg and g over Confirmed and Completed reservations, like the admin statistics", async () => {
+  it("counts kg and g over picked-up (Completed) reservations only, like the admin statistics", async () => {
     const before = await impactKg(store);
 
     const kg = await createProduct(store, { unit: "kg", quantity: 100 });
@@ -70,7 +70,7 @@ describe("GET /api/stats/impact", () => {
     await insertReservation(kom.id, "Completed", 7);
 
     const after = await impactKg(restaurant);
-    expect(after - before).toBeCloseTo(4, 5);
+    expect(after - before).toBeCloseTo(3.5, 5);
 
     const adminStats = await admin.get("/api/admin/stats");
     expect(adminStats.body.stats.saved.kg).toBe(after);

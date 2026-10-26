@@ -624,7 +624,7 @@ describe("Admin", () => {
       expect(typeof stats.donations.available).toBe("number");
     });
 
-    it("counts food saved over Confirmed and Completed, and value and savings over Completed only", async () => {
+    it("counts food saved, value and savings over picked-up (Completed) reservations only", async () => {
       const savedNow = async () => (await admin.get("/api/admin/stats")).body.stats.saved;
       const before = await savedNow();
 
@@ -637,7 +637,7 @@ describe("Admin", () => {
       await reserve(restaurant, product.id, 5); // Pending: not saved yet
 
       const after = await savedNow();
-      expect(after.l).toBeCloseTo(before.l + 5);
+      expect(after.l).toBeCloseTo(before.l + 2); // the Confirmed 3 l are not picked up yet
       expect(after.kg).toBeCloseTo(before.kg);
       expect(after.value).toBeCloseTo(before.value + 2 * 4);
       expect(after.savings).toBeCloseTo(before.savings + 2 * 6);
