@@ -135,7 +135,7 @@ export const importProducts = async (req: Request, res: Response) => {
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const { category, maxPrice, expiryWithinDays, name, sort, store_id } = req.query;
+    const { category, maxPrice, expiryWithinDays, name, city, sort, store_id } = req.query;
 
     // Inner query: marketplace products with their remaining quantity; the outer queries
     // drop fully reserved ones, count the rest and return one page.
@@ -186,6 +186,13 @@ export const getProducts = async (req: Request, res: Response) => {
     if (name) {
       values.push(`%${name}%`);
       query += ` AND products.name ILIKE $${values.length}`;
+    }
+
+    // The store's city, a partial match like the store list's city filter.
+    const cityFilter = typeof city === "string" ? city.trim() : "";
+    if (cityFilter) {
+      values.push(`%${cityFilter}%`);
+      query += ` AND users.city ILIKE $${values.length}`;
     }
 
     // A store's profile lists its offers through the marketplace, with the same rules.
