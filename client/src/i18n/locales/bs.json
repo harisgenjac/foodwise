@@ -263,7 +263,10 @@
       "PLATFORM_ANNOUNCEMENT": "Obavještenje platforme: {{title}}",
       "CREDIT_REQUEST_CREATED": "Novi zahtjev za kredite čeka odobrenje",
       "CREDIT_REQUEST_APPROVED": "Vaš zahtjev za kredite je odobren",
-      "CREDIT_REQUEST_REJECTED": "Vaš zahtjev za kredite je odbijen"
+      "CREDIT_REQUEST_REJECTED": "Vaš zahtjev za kredite je odbijen",
+      "CREDIT_RENEWAL_CREATED": "Zahtjev za obnovu pretplate je poslan na odobrenje",
+      "CREDIT_REQUEST_EXPIRED": "Vaš zahtjev za kredite je istekao prije odobrenja",
+      "CREDIT_RENEWAL_SKIPPED": "Pretplata se ne može automatski obnoviti jer se njen plan više ne nudi. Izaberite plan za idući mjesec."
     },
     "reason": "Razlog: {{reason}}",
     "credits": {
@@ -272,7 +275,10 @@
       "subscriptionApproved": "Vaša pretplata ({{credits}} kredita) je odobrena.",
       "topupApproved": "Dodatni krediti ({{credits}}) su odobreni i dodani ovom mjesecu.",
       "subscriptionRejected": "Vaš zahtjev za pretplatu je odbijen.",
-      "topupRejected": "Vaš zahtjev za dodatne kredite je odbijen."
+      "topupRejected": "Vaš zahtjev za dodatne kredite je odbijen.",
+      "renewalCreated": "Zahtjev za obnovu pretplate ({{credits}} kredita) je poslan na odobrenje.",
+      "subscriptionExpired": "Vaš zahtjev za pretplatu je istekao prije nego što je odobren.",
+      "topupExpired": "Vaš zahtjev za dodatne kredite je istekao prije nego što je odobren."
     }
   },
   "store": {
@@ -1204,7 +1210,10 @@
       "low_one": "Preostao vam je još {{count}} kredit za ovaj mjesec.",
       "low_few": "Preostala su vam još {{count}} kredita za ovaj mjesec.",
       "low_other": "Preostalo vam je još {{count}} kredita za ovaj mjesec.",
-      "lowLink": "Pogledaj kredite"
+      "lowLink": "Pogledaj kredite",
+      "pending": "Vaš zahtjev za pretplatu čeka odobrenje administratora.",
+      "topupPending": "Potrošili ste sve kredite. Vaš zahtjev za dodatne kredite čeka odobrenje administratora.",
+      "pendingLink": "Pogledaj zahtjev"
     },
     "requestTypes": {
       "SUBSCRIPTION": "Pretplata",
@@ -1230,6 +1239,7 @@
       "autoRenewTooltip": "Dva dana prije početka novog mjeseca automatski šaljemo zahtjev za novu pretplatu administratoru, da je može odobriti na vrijeme. Možete ga isključiti bilo kada.",
       "autoRenewOn": "Automatsko obnavljanje je uključeno.",
       "autoRenewOff": "Automatsko obnavljanje je isključeno.",
+      "autoRenewOnRenewalSent": "Automatsko obnavljanje je uključeno. Zahtjev za obnovu za {{month}} je poslan.",
       "nextMonth": "{{month}}: plan {{plan}} je odobren.",
       "pendingRequest": "Na čekanju: {{what}} za {{month}}",
       "withdraw": "Povuci",

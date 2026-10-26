@@ -9,6 +9,7 @@ import {
 } from "./notifications.js";
 import i18n from "../i18n/config.js";
 import { makeNotification, t } from "../test/utils.js";
+import type { Notification } from "../context/NotificationsContext.js";
 
 describe("getNotificationMeta", () => {
   it("returns the icon for the notification type", () => {
@@ -54,6 +55,15 @@ describe("getNotificationLink", () => {
     expect(getNotificationLink(makeNotification({ ...base, type: "CREDIT_REQUEST_APPROVED" }), "STORE")).toBe("/credits");
     expect(getNotificationLink(makeNotification({ ...base, type: "CREDIT_REQUEST_REJECTED" }), "STORE")).toBe("/credits");
   });
+
+  it("sends renewal and expiry notices to the matching My profile section", () => {
+    const base = { reservation_id: null, product_id: null, credit_request_id: 4 };
+    const link = (overrides: Partial<Notification>) => getNotificationLink(makeNotification({ ...base, ...overrides }), "STORE");
+    expect(link({ type: "CREDIT_RENEWAL_CREATED", credit_request_type: "SUBSCRIPTION" })).toBe("/my-profile#subscription");
+    expect(link({ type: "CREDIT_REQUEST_EXPIRED", credit_request_type: "SUBSCRIPTION" })).toBe("/my-profile#subscription");
+    expect(link({ type: "CREDIT_REQUEST_EXPIRED", credit_request_type: "TOPUP" })).toBe("/my-profile#topup");
+    expect(link({ type: "CREDIT_RENEWAL_SKIPPED", credit_request_id: null })).toBe("/my-profile#subscription");
+  });
 });
 
 describe("getNotificationText", () => {
@@ -93,6 +103,16 @@ describe("getNotificationText", () => {
     // The request is gone: the type's generic text.
     const orphan = makeNotification({ type: "CREDIT_REQUEST_REJECTED", product_name: null, credit_request_type: null });
     expect(getNotificationText(orphan, t)).toBe(t("notifications.types.CREDIT_REQUEST_REJECTED"));
+  });
+
+  it("describes renewals, expired requests and a renewal that could not be created", () => {
+    const credit = { product_name: null, reservation_id: null, product_id: null };
+    const renewal = makeNotification({ ...credit, type: "CREDIT_RENEWAL_CREATED", credit_request_type: "SUBSCRIPTION", credit_amount: 50 });
+    expect(getNotificationText(renewal, t)).toBe(t("notifications.credits.renewalCreated", { credits: 50 }));
+    const expired = makeNotification({ ...credit, type: "CREDIT_REQUEST_EXPIRED", credit_request_type: "TOPUP", credit_amount: 20 });
+    expect(getNotificationText(expired, t)).toBe(t("notifications.credits.topupExpired"));
+    const skipped = makeNotification({ ...credit, type: "CREDIT_RENEWAL_SKIPPED", message: "English fallback" });
+    expect(getNotificationText(skipped, t)).toBe(t("notifications.types.CREDIT_RENEWAL_SKIPPED"));
   });
 
   it("returns the stored message for untyped notifications or without a product", () => {

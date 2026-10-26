@@ -5,6 +5,7 @@ import { TABLE_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import { isUniqueViolation } from "../utils/accounts.js";
 import { creditMonth, nextMonth } from "../utils/creditTime.js";
 import { notifyAdminsOfCreditRequest } from "../utils/notifications.js";
+import { createRenewals, isRenewalWindow } from "../jobs/creditRenewals.js";
 import { findActiveSubscription, getBalance, getUsageHistory } from "../services/creditService.js";
 
 // Stores and restaurants: their credits, plans and the requests they send to an admin.
@@ -18,9 +19,7 @@ export const CREDIT_REQUEST_COLUMNS = `credit_requests.id, credit_requests.user_
   credit_requests.plan_id, credit_requests.topup_package_id, credit_requests.period_month,
   credit_requests.auto_renew, credit_requests.status, credit_requests.source,
   credit_requests.created_at, credit_requests.reviewed_at,
-  plans.name AS plan_name,
-  COALESCE(plans.credits_per_period, topup_packages.credits) AS credits,
-  COALESCE(plans.price, topup_packages.price) AS price`;
+  plans.name AS plan_name, credit_requests.credits, credit_requests.price`;
 export const CREDIT_REQUEST_JOINS = `
   LEFT JOIN plans ON credit_requests.plan_id = plans.id
   LEFT JOIN topup_packages ON credit_requests.topup_package_id = topup_packages.id`;
@@ -248,12 +247,15 @@ export const withdrawRequest = async (req: Request, res: Response) => {
 // Auto-renew is set on the user's current and future subscriptions and on their pending
 // subscription requests (their own and the job's renewals), so an approval later never turns
 // it back on. Next month's plan stays either way: an approved one is kept, a request still waits.
+// Turned on in the renewal window, the renewal is created at once: the job may already have run
+// for the last time this month. `renewalCreated` tells the client.
 export const setAutoRenew = async (req: Request, res: Response) => {
   const { auto_renew } = req.body;
   if (typeof auto_renew !== "boolean") {
     return res.status(400).json({ error: "Auto-renew must be true or false." });
   }
   const userId = req.user!.id;
+  const now = new Date();
   let client;
   try {
     client = await pool.connect();
@@ -262,7 +264,7 @@ export const setAutoRenew = async (req: Request, res: Response) => {
       `UPDATE subscriptions SET auto_renew = $1
        WHERE user_id = $2 AND status = 'ACTIVE' AND period_month >= $3
        RETURNING id`,
-      [auto_renew, userId, creditMonth(new Date())],
+      [auto_renew, userId, creditMonth(now)],
     );
     if (updated.rows.length === 0) {
       await client.query("ROLLBACK");
@@ -273,10 +275,14 @@ export const setAutoRenew = async (req: Request, res: Response) => {
        WHERE user_id = $2 AND status = 'PENDING' AND request_type = 'SUBSCRIPTION'`,
       [auto_renew, userId],
     );
+    const renewals = auto_renew && isRenewalWindow(now)
+      ? await createRenewals(client, now, { userId, explicit: true })
+      : [];
     await client.query("COMMIT");
     return res.status(200).json({
       message: auto_renew ? "Auto-renew turned on." : "Auto-renew turned off.",
       autoRenew: auto_renew,
+      renewalCreated: renewals.length > 0,
     });
   } catch (error) {
     if (client) await client.query("ROLLBACK");

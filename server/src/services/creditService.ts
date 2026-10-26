@@ -446,7 +446,8 @@ export const refundForReservation = async (
 };
 
 // Admin approves a subscription request: creates the subscription for its month (the current or
-// the next one) and grants the plan's credits to that month.
+// the next one) and grants the credits to that month. `credits` is the request's snapshot (what
+// the user was quoted); without it the plan's current credits are granted.
 export const grantPlan = async (
   client: PoolClient,
   {
@@ -454,6 +455,7 @@ export const grantPlan = async (
     planId,
     periodMonth,
     autoRenew,
+    credits,
     requestId = null,
     by,
   }: {
@@ -461,6 +463,7 @@ export const grantPlan = async (
     planId: number;
     periodMonth: string;
     autoRenew: boolean;
+    credits?: number;
     requestId?: number | null;
     by: ActorRef;
   },
@@ -498,7 +501,7 @@ export const grantPlan = async (
       userId,
       subscription.rows[0].id,
       periodMonth,
-      plan.rows[0].credits_per_period,
+      credits ?? plan.rows[0].credits_per_period,
       requestId === null ? null : "credit_request",
       requestId,
       by.actor,
@@ -510,10 +513,17 @@ export const grantPlan = async (
 };
 
 // Admin approves a top-up: the credits go into the current month, which needs an active
-// subscription (top-ups extend a plan, they do not replace one).
+// subscription (top-ups extend a plan, they do not replace one). `credits` is the request's
+// snapshot, as for grantPlan.
 export const grantTopup = async (
   client: PoolClient,
-  { userId, packageId, requestId = null, by }: { userId: number; packageId: number; requestId?: number | null; by: ActorRef },
+  {
+    userId,
+    packageId,
+    credits,
+    requestId = null,
+    by,
+  }: { userId: number; packageId: number; credits?: number; requestId?: number | null; by: ActorRef },
   now = new Date(),
 ) => {
   const periodMonth = creditMonth(now);
@@ -538,7 +548,7 @@ export const grantTopup = async (
       userId,
       subscriptionId,
       periodMonth,
-      topupPackage.rows[0].credits,
+      credits ?? topupPackage.rows[0].credits,
       requestId === null ? null : "credit_request",
       requestId,
       by.actor,

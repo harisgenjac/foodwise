@@ -21,7 +21,12 @@ export type NotificationType =
   // Credits, linked by credit_request_id. CREATED goes to every admin (notifyAdminsOfCreditRequest).
   | "CREDIT_REQUEST_CREATED"
   | "CREDIT_REQUEST_APPROVED"
-  | "CREDIT_REQUEST_REJECTED";
+  | "CREDIT_REQUEST_REJECTED"
+  // To the user, from the renewal job (jobs/creditRenewals.ts). SKIPPED has no request: none was
+  // created because the plan is no longer offered.
+  | "CREDIT_RENEWAL_CREATED"
+  | "CREDIT_REQUEST_EXPIRED"
+  | "CREDIT_RENEWAL_SKIPPED";
 
 interface NewNotification {
   userId: number;

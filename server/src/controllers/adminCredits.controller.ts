@@ -172,7 +172,7 @@ const decideRequest = (decision: "APPROVED" | "REJECTED") => async (req: Request
     const locked = await client.query(
       `SELECT credit_requests.id, credit_requests.user_id, credit_requests.request_type,
               credit_requests.plan_id, credit_requests.topup_package_id, credit_requests.period_month,
-              credit_requests.auto_renew, credit_requests.status
+              credit_requests.auto_renew, credit_requests.status, credit_requests.credits
        FROM credit_requests WHERE credit_requests.id = $1 FOR UPDATE`,
       [requestId],
     );
@@ -194,6 +194,8 @@ const decideRequest = (decision: "APPROVED" | "REJECTED") => async (req: Request
           planId: request.plan_id,
           periodMonth: request.period_month,
           autoRenew: request.auto_renew,
+          // What the user was quoted, even if the plan changed since.
+          credits: request.credits,
           requestId,
           by,
         });
@@ -203,7 +205,13 @@ const decideRequest = (decision: "APPROVED" | "REJECTED") => async (req: Request
         if (request.period_month !== creditMonth(new Date())) {
           throw new HttpError(400, "This month has already ended.");
         }
-        await grantTopup(client, { userId: request.user_id, packageId: request.topup_package_id, requestId, by });
+        await grantTopup(client, {
+          userId: request.user_id,
+          packageId: request.topup_package_id,
+          credits: request.credits,
+          requestId,
+          by,
+        });
       }
     }
 

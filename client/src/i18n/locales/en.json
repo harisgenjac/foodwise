@@ -255,7 +255,10 @@
       "PLATFORM_ANNOUNCEMENT": "Platform announcement: {{title}}",
       "CREDIT_REQUEST_CREATED": "A new credit request is waiting for approval",
       "CREDIT_REQUEST_APPROVED": "Your credit request was approved",
-      "CREDIT_REQUEST_REJECTED": "Your credit request was rejected"
+      "CREDIT_REQUEST_REJECTED": "Your credit request was rejected",
+      "CREDIT_RENEWAL_CREATED": "Your subscription renewal request was sent for approval",
+      "CREDIT_REQUEST_EXPIRED": "Your credit request expired before it was approved",
+      "CREDIT_RENEWAL_SKIPPED": "Your subscription cannot renew automatically because its plan is no longer offered. Choose a plan for next month."
     },
     "reason": "Reason: {{reason}}",
     "credits": {
@@ -264,7 +267,10 @@
       "subscriptionApproved": "Your subscription ({{credits}} credits) was approved.",
       "topupApproved": "Your extra credits ({{credits}}) were approved and added to this month.",
       "subscriptionRejected": "Your subscription request was rejected.",
-      "topupRejected": "Your request for extra credits was rejected."
+      "topupRejected": "Your request for extra credits was rejected.",
+      "renewalCreated": "Your subscription renewal request ({{credits}} credits) was sent for approval.",
+      "subscriptionExpired": "Your subscription request expired before it was approved.",
+      "topupExpired": "Your request for extra credits expired before it was approved."
     }
   },
   "store": {
@@ -1173,7 +1179,10 @@
       "emptyLink": "Buy extra credits",
       "low_one": "You have {{count}} credit left this month.",
       "low_other": "You have {{count}} credits left this month.",
-      "lowLink": "View credits"
+      "lowLink": "View credits",
+      "pending": "Your subscription request is waiting for the administrator's approval.",
+      "topupPending": "You have used all credits. Your request for extra credits is waiting for the administrator's approval.",
+      "pendingLink": "View request"
     },
     "requestTypes": {
       "SUBSCRIPTION": "Subscription",
@@ -1199,6 +1208,7 @@
       "autoRenewTooltip": "Two days before a new month starts we automatically send the administrator a request for your next subscription, so it can be approved in time. You can turn it off at any time.",
       "autoRenewOn": "Auto-renew is on.",
       "autoRenewOff": "Auto-renew is off.",
+      "autoRenewOnRenewalSent": "Auto-renew is on. The renewal request for {{month}} was sent.",
       "nextMonth": "{{month}}: the {{plan}} plan is approved.",
       "pendingRequest": "Pending: {{what}} for {{month}}",
       "withdraw": "Withdraw",
