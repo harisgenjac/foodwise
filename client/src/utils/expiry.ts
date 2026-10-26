@@ -50,3 +50,15 @@ export function parseDisplayDate(text: string): string | null {
   if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
   return toDateInput(date);
 }
+
+// A typed 24-hour time as HH:MM, or null for anything outside 00:00–23:59. Accepts "14:30", "14.30",
+// "1430", "930", "9:05" and a bare hour ("9" is 09:00).
+export function parseTimeInput(text: string): string | null {
+  const value = text.trim();
+  const match = /^(\d{1,2})(?:[:.](\d{2}))?$/.exec(value) ?? /^(\d{1,2})(\d{2})$/.exec(value);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2] ?? 0);
+  if (hours > 23 || minutes > 59) return null;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}

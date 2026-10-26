@@ -4,6 +4,7 @@ import {
   formatDisplayDate,
   getDaysUntilExpiry,
   parseDisplayDate,
+  parseTimeInput,
   toDateInput,
 } from "./expiry.js";
 import { makeProduct } from "../test/utils.js";
@@ -60,5 +61,23 @@ describe("expiry utils", () => {
   it("falls back to the expiry date", () => {
     const { days_until_expiry: _unused, ...product } = makeProduct({ expiry_date: "2026-10-22" });
     expect(getDaysUntilExpiry(product)).toBe(2);
+  });
+
+  it("reads a typed 24-hour time as HH:MM", () => {
+    expect(parseTimeInput("14:30")).toBe("14:30");
+    expect(parseTimeInput("14.30")).toBe("14:30");
+    expect(parseTimeInput("1430")).toBe("14:30");
+    expect(parseTimeInput("930")).toBe("09:30");
+    expect(parseTimeInput("9:05")).toBe("09:05");
+    expect(parseTimeInput("9")).toBe("09:00");
+    expect(parseTimeInput("0")).toBe("00:00");
+    expect(parseTimeInput("23:59")).toBe("23:59");
+    expect(parseTimeInput(" 08:15 ")).toBe("08:15");
+  });
+
+  it("rejects a time outside 00:00-23:59 or in another format", () => {
+    for (const text of ["24:00", "12:60", "9:5", "12345", "2pm", "ab", "", "  "]) {
+      expect(parseTimeInput(text)).toBeNull();
+    }
   });
 });

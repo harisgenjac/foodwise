@@ -43,6 +43,25 @@ describe("DateInput", () => {
     expect(input).toHaveValue("05/03/2026");
   });
 
+  it("marks a required field and shows its error", async () => {
+    const onBlur = vi.fn();
+    render(<DateInput label="Od" value="" onChange={vi.fn()} required error="Obavezno." onBlur={onBlur} />);
+    const input = screen.getByLabelText("Od");
+    expect(input).toHaveAttribute("aria-required", "true");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(input).toHaveAccessibleDescription("Obavezno.");
+
+    await userEvent.click(input);
+    await userEvent.tab();
+    expect(onBlur).toHaveBeenCalled();
+  });
+
+  it("is neither required nor invalid by default", () => {
+    const { input } = renderInput();
+    expect(input).not.toHaveAttribute("aria-required");
+    expect(input).not.toHaveAttribute("aria-invalid");
+  });
+
   it("sends the date picked in the calendar", async () => {
     const { onChange } = renderInput();
     await userEvent.click(screen.getByRole("button", { name: t("common.pickDate") }));

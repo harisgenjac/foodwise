@@ -22,7 +22,7 @@ interface PickupCardProps {
   onCancelOverdue?: (reservation: Reservation) => void;
 }
 
-const timeFormat: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit" };
+const timeFormat: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit", hourCycle: "h23" };
 // "18.09." in both languages (browsers format Bosnian short dates inconsistently).
 const shortDate = (date: Date) =>
   `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.`;

@@ -148,6 +148,10 @@
     "reservePopupTitle": "Reserve",
     "placeholderMax": "Maximum",
     "pickupDate": "Pickup Date",
+    "pickupTime": "Pickup time",
+    "timePlaceholder": "HH:MM",
+    "invalidTime": "Enter a time as HH:MM (00:00–23:59).",
+    "pickupDateOutOfRange": "The date must be between today and the expiry date.",
     "cancelButton": "Cancel",
     "confirmButton": "Confirm"
   },

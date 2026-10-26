@@ -2,15 +2,16 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
-import { CalendarClock, Scale } from "lucide-react";
+import { Clock, Scale } from "lucide-react";
 import api from "../../api/axios.js";
 import Modal from "./Modal.js";
 import FormField, { inputStyle } from "../form/FormField.js";
 import RequiredHint from "../form/RequiredHint.js";
+import DateInput from "../form/DateInput.js";
 import { useFormValidation } from "../../hooks/useFormValidation.js";
 import { isBlank, REQUIRED } from "../../utils/validation.js";
 import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
-import { toDateInput } from "../../utils/expiry.js";
+import { parseTimeInput, toDateInput } from "../../utils/expiry.js";
 import type { Product } from "../../types/index.js";
 import InsufficientCreditsNotice from "../credits/InsufficientCreditsNotice.js";
 import CreditHint from "../credits/CreditHint.js";
@@ -29,20 +30,34 @@ interface ReserveProductModalProps {
 function ReserveProductModal({ product, storeLine, onClose, onReserved }: ReserveProductModalProps) {
   const { t } = useTranslation();
   const [quantity, setQuantity] = useState("");
+  // YYYY-MM-DD, and the time as typed (shown as HH:MM once it is valid and the field is left).
   const [pickupDate, setPickupDate] = useState("");
+  const [pickupTime, setPickupTime] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [creditError, setCreditError] = useState<CreditError | null>(null);
+  // The server accepts a pickup from today up to the end of the expiry day. A typed date skips the
+  // calendar's min/max, so the range is checked here too.
+  const minPickup = toDateInput(new Date());
+  const maxPickup = product.expiry_date.slice(0, 10);
+  const parsedTime = parseTimeInput(pickupTime);
   const { formRef, errorFor, blur, validate } = useFormValidation({
+    pickupDate: !pickupDate
+      ? REQUIRED
+      : pickupDate < minPickup || pickupDate > maxPickup
+        ? "myReservations.pickupDateOutOfRange"
+        : undefined,
+    pickupTime: isBlank(pickupTime) ? REQUIRED : parsedTime ? undefined : "myReservations.invalidTime",
     quantity: isBlank(quantity) ? REQUIRED : undefined,
-    pickupDate: pickupDate ? undefined : REQUIRED,
   });
   const units = t("units", { returnObjects: true }) as Record<string, string>;
   const unit = units[product.unit] || product.unit;
   const available = product.available_quantity ?? product.quantity;
   const subtitle = storeLine ?? [product.business_name, product.city].filter(Boolean).join(" · ");
-  // The server accepts a pickup from today up to the end of the expiry day.
-  const minPickup = `${toDateInput(new Date())}T00:00`;
-  const maxPickup = `${product.expiry_date.slice(0, 10)}T23:59`;
+
+  // Shows a valid time as HH:MM; invalid text stays as typed, with its error.
+  const normalizeTime = () => {
+    if (parsedTime && parsedTime !== pickupTime) setPickupTime(parsedTime);
+  };
 
   const handleReservation = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -52,7 +67,8 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
       await api.post("/reservations", {
         product_id: product.id,
         quantity,
-        pickup_date: pickupDate,
+        // Local time without a time zone, as the server expects.
+        pickup_date: `${pickupDate}T${parsedTime}`,
       });
       toast.success(t("myProducts.reservationCreated"));
       onClose();
@@ -99,6 +115,39 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
 
       <form ref={formRef} noValidate onSubmit={handleReservation}>
         <div className="space-y-4">
+          {/* First, so the calendar opening under the date does not cover the buttons. */}
+          <div className="grid grid-cols-2 gap-3">
+            <DateInput
+              label={t("myReservations.pickupDate")}
+              value={pickupDate}
+              onChange={setPickupDate}
+              min={minPickup}
+              max={maxPickup}
+              required
+              error={errorFor("pickupDate")}
+              onBlur={blur("pickupDate")}
+            />
+            <FormField label={t("myReservations.pickupTime")} icon={Clock} required error={errorFor("pickupTime")}>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder={t("myReservations.timePlaceholder")}
+                value={pickupTime}
+                onChange={(e) => setPickupTime(e.target.value)}
+                onBlur={() => {
+                  normalizeTime();
+                  blur("pickupTime")();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    normalizeTime();
+                  }
+                }}
+                className={inputStyle}
+              />
+            </FormField>
+          </div>
           <FormField label={t("dashboard.quantity")} icon={Scale} suffix={unit} required error={errorFor("quantity")}>
             <input
               type="number"
@@ -110,17 +159,6 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
               onChange={(e) => setQuantity(e.target.value)}
               onBlur={blur("quantity")}
               className={`${inputStyle} pr-14`}
-            />
-          </FormField>
-          <FormField label={t("myReservations.pickupDate")} icon={CalendarClock} required error={errorFor("pickupDate")}>
-            <input
-              type="datetime-local"
-              min={minPickup}
-              max={maxPickup}
-              value={pickupDate}
-              onChange={(e) => setPickupDate(e.target.value)}
-              onBlur={blur("pickupDate")}
-              className={inputStyle}
             />
           </FormField>
           <RequiredHint />
