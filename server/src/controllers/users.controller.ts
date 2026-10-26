@@ -272,11 +272,12 @@ export const getStoreDetails = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Store not found." });
     }
 
-    // The store's offers are paged through GET /products?store_id=.
+    // The store's offers are paged through GET /products?store_id=. Both reservation counts are
+    // picked-up (Completed) only: a Confirmed one can still become a missed pickup.
     const stats = await pool.query(
       `SELECT 
      COUNT(DISTINCT id) FILTER (WHERE status = 'Sold') AS sold_articles,
-     (SELECT COUNT(*) FROM reservations r JOIN products p ON r.product_id = p.id WHERE p.store_id = $1 AND r.status IN ('Confirmed', 'Completed')) AS successful_reservations
+     (SELECT COUNT(*) FROM reservations r JOIN products p ON r.product_id = p.id WHERE p.store_id = $1 AND r.status = 'Completed') AS successful_reservations
    FROM products WHERE store_id = $1`,
       [storeId],
     );
@@ -285,7 +286,7 @@ export const getStoreDetails = async (req: Request, res: Response) => {
       `SELECT COUNT(*) AS my_reservations_count
    FROM reservations r
    JOIN products p ON r.product_id = p.id
-   WHERE p.store_id = $1 AND r.restaurant_id = $2 AND r.status IN ('Confirmed', 'Completed')`,
+   WHERE p.store_id = $1 AND r.restaurant_id = $2 AND r.status = 'Completed'`,
       [storeId, req.user!.id],
     );
     return res.status(200).json({

@@ -60,7 +60,7 @@ describe("GET /api/dashboard/stats", () => {
     });
   });
 
-  it("counts the store's own active products, reservations and food saved by unit", async () => {
+  it("counts the store's own active products, reservations and picked-up food saved by unit", async () => {
     const kg = await createProduct(storeA, { unit: "kg", quantity: 100 });
     const g = await createProduct(storeA, { unit: "g", quantity: 5000 });
     const l = await createProduct(storeA, { unit: "l", quantity: 100 });
@@ -79,7 +79,7 @@ describe("GET /api/dashboard/stats", () => {
     await insertReservation(ml.id, RESTAURANT_A, "Completed", 250);
     await insertReservation(kom.id, RESTAURANT_A, "Completed", 4);
     await insertReservation(pak.id, RESTAURANT_A, "Confirmed", 2);
-    // Not saved: pending, rejected and cancelled quantities.
+    // Not saved: confirmed (not picked up yet), pending, rejected and cancelled quantities.
     await insertReservation(kg.id, RESTAURANT_A, "Pending", 10);
     await insertReservation(kg.id, RESTAURANT_B, "Pending", 10);
     await insertReservation(kg.id, RESTAURANT_A, "Rejected", 10);
@@ -94,11 +94,11 @@ describe("GET /api/dashboard/stats", () => {
       active_products: 6,
       pending_reservations: 2,
       successful_reservations: 7,
-      saved: { kg: 4, l: 3.25, pieces: 6 },
+      saved: { kg: 1.5, l: 0.25, pieces: 4 },
     });
   });
 
-  it("sums the restaurant's own reservations and savings at the agreed price", async () => {
+  it("sums the restaurant's own reservations and picked-up savings at the agreed price", async () => {
     const product = await createProduct(storeA, { original_price: 10, discounted_price: 6, quantity: 100 });
     await insertReservation(product.id, RESTAURANT_A, "Confirmed", 2, 6);
     await insertReservation(product.id, RESTAURANT_A, "Completed", 1.5, 4);
@@ -109,11 +109,11 @@ describe("GET /api/dashboard/stats", () => {
     await insertReservation(product.id, RESTAURANT_B, "Completed", 10, 6);
     await insertReservation(product.id, RESTAURANT_B, "Pending", 1, 6);
 
-    // (10 − 6) × 2 + (10 − 4) × 1.5 = 17
+    // Only the Completed one saves: (10 − 4) × 1.5 = 9; the Confirmed one is not picked up yet.
     expect(await stats(restaurantA)).toEqual({
       pending_reservations: 1,
       successful_reservations: 2,
-      savings: 17,
+      savings: 9,
     });
   });
 

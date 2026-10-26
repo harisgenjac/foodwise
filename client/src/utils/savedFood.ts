@@ -1,4 +1,4 @@
-// Food handed over through Confirmed and Completed reservations, as GET /dashboard/stats returns it:
+// Food handed over through picked-up (Completed) reservations, as GET /dashboard/stats returns it:
 // weight and volume normalised to kg and l, kom and pak counted together as pieces.
 export interface SavedFoodTotals {
   kg: number;

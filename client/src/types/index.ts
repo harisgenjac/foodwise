@@ -173,7 +173,8 @@ export interface DonationFormValues {
   serving_temperature: string;
 }
 
-// Dashboard stat cards (GET /dashboard/stats), all numbers. Successful = Confirmed + Completed.
+// Dashboard stat cards (GET /dashboard/stats), all numbers. `successful_reservations` = accepted
+// (Confirmed + Completed); `saved` and `savings` = picked up (Completed) only.
 export interface StoreDashboardStats {
   active_products: number;
   pending_reservations: number;
