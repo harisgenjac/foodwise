@@ -95,7 +95,7 @@ describe("ReportsPage", () => {
     expect(reportCalls()).toHaveLength(0);
   });
 
-  it("shows the server's error, which arrives as a blob", async () => {
+  it("shows the server's error, which arrives as a blob, in the interface language", async () => {
     const errorToast = vi.spyOn(toast, "error");
     const error = new AxiosError("Request failed", "400", undefined, undefined, {
       status: 400,
@@ -108,7 +108,7 @@ describe("ReportsPage", () => {
 
     await userEvent.click((await screen.findAllByRole("button", { name: t("reports.download") }))[0]!);
 
-    await waitFor(() => expect(errorToast).toHaveBeenCalledWith("Invalid period."));
+    await waitFor(() => expect(errorToast).toHaveBeenCalledWith("Neispravan period."));
     expect(createObjectURL).not.toHaveBeenCalled();
   });
 });
