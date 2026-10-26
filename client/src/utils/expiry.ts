@@ -52,13 +52,28 @@ export function parseDisplayDate(text: string): string | null {
 }
 
 // A typed 24-hour time as HH:MM, or null for anything outside 00:00–23:59. Accepts "14:30", "14.30",
-// "1430", "930", "9:05" and a bare hour ("9" is 09:00).
+// "1430", "930", "9:05" and a bare hour ("9" and "9:" are 09:00).
 export function parseTimeInput(text: string): string | null {
   const value = text.trim();
-  const match = /^(\d{1,2})(?:[:.](\d{2}))?$/.exec(value) ?? /^(\d{1,2})(\d{2})$/.exec(value);
+  const match = /^(\d{1,2})(?:[:.](\d{2})?)?$/.exec(value) ?? /^(\d{1,2})(\d{2})$/.exec(value);
   if (!match) return null;
   const hours = Number(match[1]);
   const minutes = Number(match[2] ?? 0);
   if (hours > 23 || minutes > 59) return null;
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+// The text of a time field while it is typed in: up to four digits shown as HH:MM, with the colon
+// added after the hour ("14" is "14:", "1430" is "14:30"). An hour that can only have one digit gets
+// its zero ("9", "930" and "1:" are "09:", "09:30" and "01:"). While deleting (`next` shorter than
+// `previous`) nothing is added back, so the colon and the zero can be removed.
+export function formatTimeTyping(next: string, previous: string): string {
+  let digits = next.replace(/\D/g, '');
+  const deleting = next.length < previous.length;
+  if (!deleting && (/^[3-9]/.test(digits) || (digits.length === 1 && /^\d[:.]/.test(next.trim())))) {
+    digits = `0${digits}`;
+  }
+  digits = digits.slice(0, 4);
+  if (digits.length < 2 || (digits.length === 2 && deleting)) return digits;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }

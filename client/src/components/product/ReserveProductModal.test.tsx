@@ -134,10 +134,12 @@ describe("ReserveProductModal", () => {
     ["14:30", "14:30"],
     ["14.30", "14:30"],
     ["1430", "14:30"],
+    ["905", "09:05"],
     ["9:05", "09:05"],
     ["9", "09:00"],
-    ["00:00", "00:00"],
-    ["23:59", "23:59"],
+    ["14", "14:00"],
+    ["0000", "00:00"],
+    ["2359", "23:59"],
   ])("shows the typed time %s as %s and sends it", async (typed, shown) => {
     apiMock.post.mockResolvedValue({ data: {} });
     renderModal();
@@ -152,17 +154,38 @@ describe("ReserveProductModal", () => {
     });
   });
 
-  it("normalizes the time on Enter without sending the form", async () => {
+  it("adds the colon after the hour while typing", async () => {
     renderModal();
-    await userEvent.type(timeField(), "1430{Enter}");
-    expect(timeField()).toHaveValue("14:30");
+    await userEvent.type(timeField(), "14");
+    expect(timeField()).toHaveValue("14:");
+    await userEvent.type(timeField(), "3");
+    expect(timeField()).toHaveValue("14:3");
+    expect(timeField()).toHaveAttribute("maxlength", "5");
+  });
+
+  it("lets the colon be deleted", async () => {
+    renderModal();
+    await userEvent.type(timeField(), "14{Backspace}");
+    expect(timeField()).toHaveValue("14");
+    await userEvent.type(timeField(), "{Backspace}");
+    expect(timeField()).toHaveValue("1");
+  });
+
+  it("completes the time on Enter without sending the form", async () => {
+    renderModal();
+    await userEvent.type(timeField(), "14{Enter}");
+    expect(timeField()).toHaveValue("14:00");
     expect(apiMock.post).not.toHaveBeenCalled();
   });
 
-  it.each(["24:00", "12:60", "9:5", "12345", "abc"])("keeps the invalid time %s and explains it", async (typed) => {
+  it.each([
+    ["2500", "25:00"],
+    ["1260", "12:60"],
+    ["147", "14:7"],
+  ])("keeps the invalid time %s as %s and explains it", async (typed, shown) => {
     renderModal();
     await fillForm({ time: typed });
-    expect(timeField()).toHaveValue(typed);
+    expect(timeField()).toHaveValue(shown);
     expect(timeField()).toHaveAttribute("aria-invalid", "true");
     expect(timeField()).toHaveAccessibleDescription(t("myReservations.invalidTime"));
 

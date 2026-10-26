@@ -11,7 +11,7 @@ import DateInput from "../form/DateInput.js";
 import { useFormValidation } from "../../hooks/useFormValidation.js";
 import { isBlank, REQUIRED } from "../../utils/validation.js";
 import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
-import { parseTimeInput, toDateInput } from "../../utils/expiry.js";
+import { formatTimeTyping, parseTimeInput, toDateInput } from "../../utils/expiry.js";
 import type { Product } from "../../types/index.js";
 import InsufficientCreditsNotice from "../credits/InsufficientCreditsNotice.js";
 import CreditHint from "../credits/CreditHint.js";
@@ -30,7 +30,7 @@ interface ReserveProductModalProps {
 function ReserveProductModal({ product, storeLine, onClose, onReserved }: ReserveProductModalProps) {
   const { t } = useTranslation();
   const [quantity, setQuantity] = useState("");
-  // YYYY-MM-DD, and the time as typed (shown as HH:MM once it is valid and the field is left).
+  // YYYY-MM-DD, and the time text (masked as HH:MM while typing, completed on blur).
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -132,8 +132,9 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
                 type="text"
                 inputMode="numeric"
                 placeholder={t("myReservations.timePlaceholder")}
+                maxLength={5}
                 value={pickupTime}
-                onChange={(e) => setPickupTime(e.target.value)}
+                onChange={(e) => setPickupTime(formatTimeTyping(e.target.value, pickupTime))}
                 onBlur={() => {
                   normalizeTime();
                   blur("pickupTime")();
