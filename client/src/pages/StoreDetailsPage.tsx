@@ -182,7 +182,7 @@ function StoreDetailsPage() {
         </div>
 
         <div className="flex flex-col gap-5 px-6 pb-6 sm:flex-row sm:items-end">
-          <StoreAvatar store={store} className="-mt-14 h-28 w-28 rounded-2xl text-3xl" />
+          <StoreAvatar store={store} className="relative z-10 -mt-14 h-28 w-28 rounded-2xl text-3xl" />
 
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-2xl font-bold tracking-tight text-gray-900">
