@@ -20,6 +20,7 @@ function ReservationHistoryRow({ reservation }: ReservationHistoryRowProps) {
   const time = new Date(reservation.created_at).toLocaleTimeString(i18n.language, {
     hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
   });
 
   return (

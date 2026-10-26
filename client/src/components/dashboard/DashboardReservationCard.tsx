@@ -70,6 +70,7 @@ function DashboardReservationCard({ reservation, partyLabel, actions, showCreate
               {new Date(reservation.pickup_date).toLocaleString(undefined, {
                 dateStyle: "medium",
                 timeStyle: "short",
+                hourCycle: "h23",
               })}
             </dd>
           </div>

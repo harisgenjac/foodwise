@@ -151,6 +151,10 @@
     "reservePopupTitle": "Rezerviši",
     "placeholderMax": "Maksimalno",
     "pickupDate": "Datum preuzimanja",
+    "pickupTime": "Vrijeme preuzimanja",
+    "timePlaceholder": "HH:MM",
+    "invalidTime": "Unesite vrijeme u formatu HH:MM (00:00–23:59).",
+    "pickupDateOutOfRange": "Datum mora biti između danas i datuma isteka.",
     "cancelButton": "Otkaži",
     "confirmButton": "Potvrdi"
   },

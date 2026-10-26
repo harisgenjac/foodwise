@@ -39,6 +39,7 @@ import type { Reservation } from "../types/index.js";
 const dateTimeFormat: Intl.DateTimeFormatOptions = {
   dateStyle: "medium",
   timeStyle: "short",
+  hourCycle: "h23",
 };
 
 function ReservationDetailsPage() {

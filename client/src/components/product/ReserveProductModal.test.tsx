@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import ReserveProductModal from "./ReserveProductModal.js";
 import { MemoryRouter } from "react-router-dom";
 import { apiMock, axiosError, creditError, makeProduct, t } from "../../test/utils.js";
+import { toDateInput } from "../../utils/expiry.js";
 
 const product = makeProduct({ id: 7, available_quantity: "6.50", quantity: "10" });
 
@@ -14,10 +15,16 @@ const renderModal = () => {
   return { onClose, onReserved };
 };
 
-const fillForm = async () => {
-  await userEvent.type(screen.getByLabelText(t("dashboard.quantity"), { exact: false }), "3");
-  const pickup = screen.getByLabelText(t("myReservations.pickupDate"));
-  await userEvent.type(pickup, "2030-01-01T10:00");
+const dateField = () => screen.getByLabelText(t("myReservations.pickupDate"));
+const timeField = () => screen.getByLabelText(t("myReservations.pickupTime"));
+const quantityField = () => screen.getByLabelText(t("dashboard.quantity"), { exact: false });
+const submit = () => userEvent.click(screen.getByRole("button", { name: t("myReservations.confirmButton") }));
+
+// Fills the form in page order; typing the quantity moves the focus out of the time field.
+const fillForm = async ({ date = "01/01/2030", time = "10:00" } = {}) => {
+  await userEvent.type(dateField(), date);
+  await userEvent.type(timeField(), time);
+  await userEvent.type(quantityField(), "3");
 };
 
 describe("ReserveProductModal", () => {
@@ -26,7 +33,7 @@ describe("ReserveProductModal", () => {
     expect(screen.getByText("Piletina")).toBeInTheDocument();
     expect(screen.getByText("Market Centar · Sarajevo")).toBeInTheDocument();
     expect(screen.getByText(/6\.5/)).toBeInTheDocument();
-    expect(screen.getByLabelText(t("dashboard.quantity"), { exact: false })).toHaveAttribute("max", "6.50");
+    expect(quantityField()).toHaveAttribute("max", "6.50");
   });
 
   it("reserves, closes and notifies the parent", async () => {
@@ -35,7 +42,7 @@ describe("ReserveProductModal", () => {
     const { onClose, onReserved } = renderModal();
 
     await fillForm();
-    await userEvent.click(screen.getByRole("button", { name: t("myReservations.confirmButton") }));
+    await submit();
 
     expect(apiMock.post).toHaveBeenCalledWith("/reservations", {
       product_id: 7,
@@ -57,7 +64,7 @@ describe("ReserveProductModal", () => {
     );
 
     await fillForm();
-    await userEvent.click(screen.getByRole("button", { name: t("myReservations.confirmButton") }));
+    await submit();
 
     expect(await screen.findByText(t("credits.insufficient.noSubscription"))).toBeInTheDocument();
     expect(screen.getByRole("link", { name: t("credits.insufficient.subscribeLink") })).toHaveAttribute(
@@ -74,7 +81,7 @@ describe("ReserveProductModal", () => {
     const { onClose, onReserved } = renderModal();
 
     await fillForm();
-    await userEvent.click(screen.getByRole("button", { name: t("myReservations.confirmButton") }));
+    await submit();
 
     expect(error).toHaveBeenCalledWith("Not enough product available.");
     expect(onClose).not.toHaveBeenCalled();
@@ -88,27 +95,131 @@ describe("ReserveProductModal", () => {
     renderModal();
 
     await fillForm();
-    await userEvent.click(screen.getByRole("button", { name: t("myReservations.confirmButton") }));
+    await submit();
     expect(error).toHaveBeenCalledWith(t("reservations.actionError"));
   });
 
-  it("asks for the quantity and pickup date before sending", async () => {
+  it("asks for the pickup date, time and quantity before sending", async () => {
     renderModal();
-    const quantity = screen.getByLabelText(t("dashboard.quantity"), { exact: false });
-    const pickup = screen.getByLabelText(t("myReservations.pickupDate"));
-    expect(quantity).toHaveAttribute("aria-required", "true");
-    expect(pickup).toHaveAttribute("aria-required", "true");
-    expect(quantity).not.toHaveAttribute("aria-invalid");
+    const fields = [dateField(), timeField(), quantityField()];
+    for (const field of fields) {
+      expect(field).toHaveAttribute("aria-required", "true");
+      expect(field).not.toHaveAttribute("aria-invalid");
+    }
 
-    await userEvent.click(screen.getByRole("button", { name: t("myReservations.confirmButton") }));
+    await submit();
     expect(apiMock.post).not.toHaveBeenCalled();
-    expect(quantity).toHaveAccessibleDescription(t("common.fieldRequired"));
-    expect(pickup).toHaveAccessibleDescription(t("common.fieldRequired"));
-    expect(quantity).toHaveFocus();
+    for (const field of fields) {
+      expect(field).toHaveAccessibleDescription(t("common.fieldRequired"));
+    }
+    // The date is the first field of the form.
+    expect(dateField()).toHaveFocus();
 
-    await userEvent.type(quantity, "2");
-    expect(quantity).not.toHaveAttribute("aria-invalid");
-    expect(pickup).toHaveAttribute("aria-invalid", "true");
+    await userEvent.type(dateField(), "01/01/2030");
+    await userEvent.type(timeField(), "10:00");
+    expect(dateField()).not.toHaveAttribute("aria-invalid");
+    expect(timeField()).not.toHaveAttribute("aria-invalid");
+    expect(quantityField()).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("puts the date and time above the quantity", () => {
+    renderModal();
+    expect(dateField().compareDocumentPosition(quantityField()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(timeField().compareDocumentPosition(quantityField()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(timeField()).toHaveAttribute("placeholder", t("myReservations.timePlaceholder"));
+    expect(timeField()).toHaveAttribute("inputmode", "numeric");
+  });
+
+  it.each([
+    ["14:30", "14:30"],
+    ["14.30", "14:30"],
+    ["1430", "14:30"],
+    ["905", "09:05"],
+    ["9:05", "09:05"],
+    ["9", "09:00"],
+    ["14", "14:00"],
+    ["0000", "00:00"],
+    ["2359", "23:59"],
+  ])("shows the typed time %s as %s and sends it", async (typed, shown) => {
+    apiMock.post.mockResolvedValue({ data: {} });
+    renderModal();
+    await fillForm({ time: typed });
+    expect(timeField()).toHaveValue(shown);
+
+    await submit();
+    expect(apiMock.post).toHaveBeenCalledWith("/reservations", {
+      product_id: 7,
+      quantity: "3",
+      pickup_date: `2030-01-01T${shown}`,
+    });
+  });
+
+  it("adds the colon after the hour while typing", async () => {
+    renderModal();
+    await userEvent.type(timeField(), "14");
+    expect(timeField()).toHaveValue("14:");
+    await userEvent.type(timeField(), "3");
+    expect(timeField()).toHaveValue("14:3");
+    expect(timeField()).toHaveAttribute("maxlength", "5");
+  });
+
+  it("lets the colon be deleted", async () => {
+    renderModal();
+    await userEvent.type(timeField(), "14{Backspace}");
+    expect(timeField()).toHaveValue("14");
+    await userEvent.type(timeField(), "{Backspace}");
+    expect(timeField()).toHaveValue("1");
+  });
+
+  it("completes the time on Enter without sending the form", async () => {
+    renderModal();
+    await userEvent.type(timeField(), "14{Enter}");
+    expect(timeField()).toHaveValue("14:00");
+    expect(apiMock.post).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["2999", "23:59"],
+    ["2500", "23:00"],
+    ["1260", "12:59"],
+    ["147", "14:59"],
+  ])("does not let %s go past 23:59 (shows %s)", async (typed, shown) => {
+    apiMock.post.mockResolvedValue({ data: {} });
+    renderModal();
+    await fillForm({ time: typed });
+    expect(timeField()).toHaveValue(shown);
+    expect(timeField()).not.toHaveAttribute("aria-invalid");
+
+    await submit();
+    expect(apiMock.post).toHaveBeenCalledWith("/reservations", expect.objectContaining({ pickup_date: `2030-01-01T${shown}` }));
+  });
+
+  it("explains an unfinished time and does not send it", async () => {
+    renderModal();
+    await fillForm({ time: "143" });
+    expect(timeField()).toHaveValue("14:3");
+    expect(timeField()).toHaveAttribute("aria-invalid", "true");
+    expect(timeField()).toHaveAccessibleDescription(t("myReservations.invalidTime"));
+
+    await submit();
+    expect(apiMock.post).not.toHaveBeenCalled();
+  });
+
+  it("limits the calendar from today to the expiry date", () => {
+    renderModal();
+    const picker = screen.getByTestId("date-picker");
+    expect(picker).toHaveAttribute("min", toDateInput(new Date()));
+    expect(picker).toHaveAttribute("max", "2030-01-01");
+  });
+
+  it.each(["02/01/2030", "01/01/2020"])("refuses the typed date %s outside today to the expiry date", async (typed) => {
+    renderModal();
+    await fillForm({ date: typed });
+    expect(dateField()).toHaveAttribute("aria-invalid", "true");
+    expect(dateField()).toHaveAccessibleDescription(t("myReservations.pickupDateOutOfRange"));
+
+    await submit();
+    expect(apiMock.post).not.toHaveBeenCalled();
   });
 
   it("closes with the cancel button", async () => {
