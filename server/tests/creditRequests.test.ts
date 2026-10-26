@@ -1,6 +1,6 @@
 import pool from "../src/config/db.js";
 import { runCreditRenewals } from "../src/jobs/creditRenewals.js";
-import { creditMonth } from "../src/utils/creditTime.js";
+import { creditMonth, nextMonth } from "../src/utils/creditTime.js";
 import {
   type Agent,
   cleanupUsers,
@@ -433,19 +433,40 @@ describe("auto-renew", () => {
     expect(row.rows[0].status).toBe("EXPIRED");
   });
 
-  it("turning auto-renew off withdraws the pending renewal", async () => {
+  it("turning auto-renew off keeps next month's plan and stops it renewing", async () => {
+    const subscriptionRenews = async (month: string) =>
+      (
+        await pool.query("SELECT auto_renew FROM subscriptions WHERE user_id = $1 AND period_month = $2", [storeId, month])
+      ).rows[0].auto_renew;
+    const requestState = async (id: number) =>
+      (await pool.query("SELECT auto_renew, status FROM credit_requests WHERE id = $1", [id])).rows[0];
     // The toggle works on current and future subscriptions, so give the store one this month.
-    await giveSubscription(storeId, 1);
+    const current = await giveSubscription(storeId, 1);
+    await pool.query("UPDATE subscriptions SET auto_renew = true WHERE id = $1", [current]);
+    // A renewal from the job (for July 2030) and a plan the store asked for next month itself.
     await runCreditRenewals(JUNE_29);
+    const [renewal] = await renewals(storeId);
+    const own = (await subscribe(store, { period: "next", auto_renew: true })).body.request;
+    expect(own.auto_renew).toBe(true);
+
     const off = await store.patch("/api/credits/subscription/auto-renew").send({ auto_renew: false });
     expect(off.status).toBe(200);
     expect(off.body.message).toBe("Auto-renew turned off.");
-    expect((await renewals(storeId))[0].status).toBe("CANCELLED");
-    const current = await pool.query("SELECT auto_renew FROM subscriptions WHERE user_id = $1 AND period_month = $2", [
-      storeId,
-      CURRENT,
-    ]);
-    expect(current.rows[0].auto_renew).toBe(false);
+    expect(await subscriptionRenews(CURRENT)).toBe(false);
+    expect(await requestState(renewal.id)).toEqual({ auto_renew: false, status: "PENDING" });
+    expect(await requestState(own.id)).toEqual({ auto_renew: false, status: "PENDING" });
+
+    // Approved later, next month's plan starts without auto-renew.
+    expect((await admin.post(`/api/admin/credits/requests/${own.id}/approve`).send({})).status).toBe(200);
+    expect(await subscriptionRenews(nextMonth(CURRENT))).toBe(false);
+
+    // Turning it on again applies to the approved next month and the waiting renewal too.
+    expect((await store.patch("/api/credits/subscription/auto-renew").send({ auto_renew: true })).status).toBe(200);
+    expect(await subscriptionRenews(nextMonth(CURRENT))).toBe(true);
+    expect(await requestState(renewal.id)).toEqual({ auto_renew: true, status: "PENDING" });
+  });
+
+  it("validates auto-renew and needs an active subscription", async () => {
 
     expect((await store.patch("/api/credits/subscription/auto-renew").send({ auto_renew: "no" })).status).toBe(400);
     await cleanupUsers([STORE]);

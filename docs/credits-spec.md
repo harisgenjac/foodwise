@@ -118,7 +118,8 @@ approves it. Card payments, auto-approval and invoicing come later, so keep the 
 5. **Auto-renew:** the system automatically creates the next month's request **2 days before the
    new month starts**, so the admin can approve it in time (use a scheduled job; reuse an existing
    scheduler if the project has one). Show a **tooltip** next to the auto-renew option explaining
-   this. User can turn auto-renew off.
+   this. User can turn auto-renew off; next month's plan (approved or still requested) stays and
+   just does not renew after that month.
 6. Users see their request status but never the admin note.
 
 ## Top-up flow
