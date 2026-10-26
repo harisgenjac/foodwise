@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import {
-  ArrowLeft,
   ArrowRight,
   CalendarClock,
   CalendarPlus,
@@ -25,6 +24,8 @@ import {
 import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
+import Breadcrumbs, { BreadcrumbPlaceholder } from "../components/Breadcrumbs.js";
+import type { BreadcrumbItem } from "../components/Breadcrumbs.js";
 import EmptyState from "../components/product/EmptyState.js";
 import ConfirmModal from "../components/common/ConfirmModal.js";
 import DetailItem from "../components/product/DetailItem.js";
@@ -39,6 +40,7 @@ function ProductDetailsPage() {
   const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [reserving, setReserving] = useState(false);
@@ -90,15 +92,29 @@ function ProductDetailsPage() {
     fetchProduct();
   }, [id]);
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
   const isStore = user?.role === "STORE";
+  // A restaurant that opened the product from a store profile sees it under that store (link state from StoreDetailsPage).
+  const fromStore =
+    user?.role === "RESTAURANT" && (location.state as { fromStore?: boolean } | null)?.fromStore === true;
+  const section: BreadcrumbItem = isStore
+    ? { label: t("sidebar.myProducts"), to: "/my-products" }
+    : fromStore
+      ? { label: t("sidebar.stores"), to: "/stores" }
+      : { label: t("sidebar.browseProducts"), to: "/browse-products" };
+
+  if (loading) {
+    return (
+      <div className="max-w-5xl mx-auto pb-10">
+        <Breadcrumbs items={[section, { label: <BreadcrumbPlaceholder /> }]} />
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
-      <div className="max-w-5xl mx-auto pb-10">
+      <div className="max-w-5xl mx-auto space-y-6 pb-10">
+        <Breadcrumbs items={[section]} />
         <EmptyState
           icon={SearchX}
           title={t("myProducts.productNotFoundTitle")}
@@ -136,17 +152,14 @@ function ProductDetailsPage() {
     user?.role === "RESTAURANT" && product.status === "Available" && available > 0;
   // The server refuses to delete Sold, Expired or Removed products.
   const canDelete = product.status === "Available";
+  const breadcrumbs: BreadcrumbItem[] =
+    fromStore && product.business_name
+      ? [section, { label: product.business_name, to: `/stores/${product.store_id}` }, { label: product.name }]
+      : [section, { label: product.name }];
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-10">
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-orange-50 hover:text-orange-700"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        {t("myProducts.backButton")}
-      </button>
+      <Breadcrumbs items={breadcrumbs} />
 
       <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm md:flex">
         <div className="relative h-56 shrink-0 md:h-auto md:w-2/5">

@@ -25,6 +25,11 @@
     "adminCredits": "Credits",
     "adminCreditRequests": "Credit requests"
   },
+  "breadcrumbs": {
+    "label": "Breadcrumb",
+    "reservation": "Reservation #{{id}}",
+    "edit": "Edit"
+  },
   "header": {
     "notificationsLabel": "Notifications",
     "noNotifications": "You have no notifications.",
@@ -133,7 +138,6 @@
     "createdAt": "Added",
     "notAvailable": "This product is currently not available for reservation.",
     "productNotFoundTitle": "Product not found.",
-    "backButton": "Back",
     "store": "Store",
     "availableQuantity": "Available Quantity",
     "totalQuantity": "Total Quantity",
@@ -178,7 +182,6 @@
     "reservationId": "Reservation number",
     "pickupHours": "Pickup hours",
     "viewStore": "View store",
-    "backButton": "Back",
     "quantityReserved": "Reserved Quantity",
     "seller": "Seller",
     "acceptConfirmation": "Accept this reservation?",
@@ -291,7 +294,6 @@
     "reservationsTab": "My Reservations",
     "storeNoProducts": "This store currently has no available products.",
     "restaurantNoRes": "You have no reservations with this store.",
-    "backButton": "Back",
     "subtitle": "Find stores near you and browse their offers.",
     "count_one": "{{count}} store",
     "count_other": "{{count}} stores",

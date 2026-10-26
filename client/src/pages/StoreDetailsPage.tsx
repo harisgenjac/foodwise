@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import {
-  ArrowLeft,
   ArrowRight,
   CalendarCheck,
   CalendarPlus,
@@ -25,6 +24,7 @@ import { useFetch } from "../hooks/useFetch.js";
 import { usePagedLimit } from "../hooks/usePagedLimit.js";
 import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
+import Breadcrumbs, { BreadcrumbPlaceholder } from "../components/Breadcrumbs.js";
 import EmptyState from "../components/product/EmptyState.js";
 import DetailItem from "../components/product/DetailItem.js";
 import ReserveProductModal from "../components/product/ReserveProductModal.js";
@@ -49,7 +49,6 @@ const RESERVATION_STATUSES: Reservation["status"][] = ["Pending", "Confirmed", "
 
 function StoreDetailsPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [store, setStore] = useState<User | null>(null);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [myReservations, setMyReservations] = useState<MyReservationsCount | null>(null);
@@ -132,13 +131,21 @@ function StoreDetailsPage() {
     limit: reservations.limit,
   });
 
+  const section = { label: t("sidebar.stores"), to: "/stores" };
+
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="mx-auto max-w-6xl pb-10">
+        <Breadcrumbs items={[section, { label: <BreadcrumbPlaceholder /> }]} />
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   if (!store || !stats || !myReservations) {
     return (
-      <div className="mx-auto max-w-5xl pb-10">
+      <div className="mx-auto max-w-5xl space-y-6 pb-10">
+        <Breadcrumbs items={[section]} />
         <EmptyState
           icon={Store}
           title={t("store.storeNotFound")}
@@ -165,14 +172,7 @@ function StoreDetailsPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 pb-10">
-      <button
-        type="button"
-        onClick={() => navigate(-1)}
-        className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-orange-50 hover:text-orange-700"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        {t("store.backButton")}
-      </button>
+      <Breadcrumbs items={[section, { label: store.business_name }]} />
 
       <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="relative h-28 bg-linear-to-br from-orange-50 via-amber-50/60 to-white">
@@ -295,6 +295,8 @@ function StoreDetailsPage() {
                   <>
                     <Link
                       to={`/products/${product.id}`}
+                      // The product page then shows Stores › {store} › {product}.
+                      state={{ fromStore: true }}
                       className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-orange-50 py-2.5 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-100"
                     >
                       {t("dashboard.detailsButton")}
