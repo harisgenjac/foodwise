@@ -203,6 +203,11 @@ describe("Reservations routes", () => {
       const response = await restaurant.get("/api/reservations/mine").query({ scope: "active" });
       expect(idsOf(response)).toEqual([ids.Pending, ids.Confirmed]);
       expect(response.body.total).toBe(2);
+
+      const pending = await restaurant.get("/api/reservations/mine").query({ scope: "active", status: "Pending" });
+      expect(idsOf(pending)).toEqual([ids.Pending]);
+      const completed = await restaurant.get("/api/reservations/mine").query({ scope: "active", status: "Completed" });
+      expect(completed.body.total).toBe(0);
     });
 
     it("combines scope=all with the status filter", async () => {
