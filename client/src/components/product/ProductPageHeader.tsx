@@ -1,5 +1,15 @@
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
+
+// The pluralized "N products" pill; also used on its own above a list.
+export function CountPill({ children }: { children: ReactNode }) {
+  return (
+    <p className="inline-flex w-fit rounded-full border border-orange-100 bg-orange-50/60 px-3 py-0.5 text-xs font-semibold text-orange-700">
+      {children}
+    </p>
+  );
+}
 
 interface ProductPageHeaderProps {
   title: string;
@@ -22,9 +32,9 @@ function ProductPageHeader({ title, subtitle, icon: TitleIcon, count, action }: 
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">{title}</h1>
           <p className="mt-0.5 text-sm text-gray-500">{subtitle}</p>
           {count && (
-            <p className="mt-2 inline-flex rounded-full border border-orange-100 bg-orange-50/60 px-3 py-0.5 text-xs font-semibold text-orange-700">
-              {count}
-            </p>
+            <div className="mt-2">
+              <CountPill>{count}</CountPill>
+            </div>
           )}
         </div>
       </div>

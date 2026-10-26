@@ -82,7 +82,9 @@ describe("Pagination", () => {
 
     it("GET /products keeps a stable order across pages, also with filters and sort", async () => {
       await expectStablePages(restaurant, "/api/products", "products", { name: "Stranica" });
-      await expectStablePages(restaurant, "/api/products", "products", { name: "Stranica", sort: "expiry" });
+      for (const sort of ["expiry", "price_asc", "price_desc", "discount_desc", "discount_asc"]) {
+        await expectStablePages(restaurant, "/api/products", "products", { name: "Stranica", sort });
+      }
       const meat = await expectStablePages(restaurant, "/api/products", "products", { name: "Stranica", category: "Meat" });
       expect(meat).toHaveLength(7);
     });

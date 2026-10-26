@@ -67,11 +67,11 @@ describe("Input validation", () => {
     );
 
     it.each([
-      ["/api/products?maxPrice=abc"],
       ["/api/products?expiryWithinDays=-1"],
       ["/api/products?limit=0"],
       ["/api/products?limit=1000"],
       ["/api/products?sort=price"],
+      ["/api/products?sort=PRICE_ASC"],
       ["/api/reservations/mine?status=Unknown"],
     ])("returns 400 for %s", async (url) => {
       const response = await restaurant.get(url);

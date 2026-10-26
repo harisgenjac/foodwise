@@ -166,12 +166,12 @@ describe("Products routes", () => {
       expect(ids).not.toContain(meat.id);
     });
 
-    it("filters by maxPrice on the discounted price", async () => {
+    it("no longer filters by maxPrice", async () => {
       const cheap = await createProduct(store, { discounted_price: 2 });
       const pricey = await createProduct(store, { discounted_price: 9 });
       const ids = await listIds({ maxPrice: 5 });
       expect(ids).toContain(cheap.id);
-      expect(ids).not.toContain(pricey.id);
+      expect(ids).toContain(pricey.id);
     });
 
     it("filters by expiryWithinDays", async () => {
@@ -225,6 +225,19 @@ describe("Products routes", () => {
         expect(paged.body.total).toBe(2);
       });
 
+      it("combines with a sort", async () => {
+        const pricey = await createProduct(store, { name: "Grad sort", discounted_price: 9 });
+        const cheap = await createProduct(store, { name: "Grad sort", discounted_price: 2 });
+        await createProduct(storeB, { name: "Grad sort", discounted_price: 1 });
+
+        const response = await store
+          .get("/api/products")
+          .query({ city: "zxcv", name: "grad sort", category: "Meat", expiryWithinDays: 30, sort: "price_asc" });
+        expect(response.status).toBe(200);
+        expect((response.body.products as Product[]).map((p) => p.id)).toEqual([cheap.id, pricey.id]);
+        expect(response.body.total).toBe(2);
+      });
+
       it("ignores an empty or blank city", async () => {
         const inA = await createProduct(store);
         const inB = await createProduct(storeB);
@@ -233,6 +246,64 @@ describe("Products routes", () => {
           expect(ids).toContain(inA.id);
           expect(ids).toContain(inB.id);
         }
+      });
+    });
+
+    describe("sort", () => {
+      const NAME = "Sortiranje XQ";
+      const sortedIds = (sort: string, query: Record<string, string | number> = {}) =>
+        listIds({ name: NAME, sort, ...query });
+
+      it.each([
+        ["price_asc", ["b", "c", "a"]],
+        ["price_desc", ["a", "c", "b"]],
+        ["discount_desc", ["b", "c", "a"]],
+        ["discount_asc", ["a", "c", "b"]],
+      ])("orders by %s", async (sort, order) => {
+        // a: 8 (20% off), b: 2 (80% off), c: 5 (75% off)
+        const products = {
+          a: await createProduct(store, { name: NAME, original_price: 10, discounted_price: 8 }),
+          b: await createProduct(store, { name: NAME, original_price: 10, discounted_price: 2 }),
+          c: await createProduct(store, { name: NAME, original_price: 20, discounted_price: 5 }),
+        };
+        expect(await sortedIds(sort)).toEqual(order.map((key) => products[key as keyof typeof products].id));
+      });
+
+      it("breaks ties by id across pages", async () => {
+        // The same discount from different prices (5/10 = 10/20).
+        const ids: number[] = [];
+        for (let i = 0; i < 5; i += 1) {
+          const product = await createProduct(store, {
+            name: NAME,
+            original_price: i % 2 ? 10 : 20,
+            discounted_price: i % 2 ? 5 : 10,
+          });
+          ids.push(product.id);
+        }
+        const expected = [...ids].sort((x, y) => y - x);
+        const pagedIds = async (sort: string) => {
+          const paged: number[] = [];
+          for (let offset = 0; offset < 5; offset += 2) {
+            paged.push(...(await sortedIds(sort, { limit: 2, offset })));
+          }
+          return paged;
+        };
+
+        expect(await pagedIds("discount_desc")).toEqual(expected);
+        expect(await pagedIds("discount_asc")).toEqual(expected);
+
+        // Then the same price everywhere.
+        await pool.query("UPDATE products SET original_price = 10, discounted_price = 5 WHERE id = ANY($1)", [ids]);
+        expect(await pagedIds("price_asc")).toEqual(expected);
+        expect(await pagedIds("price_desc")).toEqual(expected);
+      });
+
+      it("keeps newest as the default", async () => {
+        const first = await createProduct(store, { name: NAME });
+        const second = await createProduct(store, { name: NAME });
+        await pool.query("UPDATE products SET created_at = created_at - INTERVAL '1 hour' WHERE id = $1", [first.id]);
+        expect(await listIds({ name: NAME })).toEqual([second.id, first.id]);
+        expect(await sortedIds("newest")).toEqual([second.id, first.id]);
       });
     });
   });

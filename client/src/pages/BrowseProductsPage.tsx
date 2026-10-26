@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
-  Banknote,
+  ArrowUpDown,
   CalendarClock,
   CalendarPlus,
   MapPin,
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
-import ProductPageHeader from "../components/product/ProductPageHeader.js";
+import ProductPageHeader, { CountPill } from "../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../components/product/FilterBar.js";
 import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
@@ -26,12 +26,24 @@ import { usePagedLimit } from "../hooks/usePagedLimit.js";
 import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import type { Product } from "../types/index.js";
 
+// The server's `sort` values with their labels. Prices are per unit, as the cards show.
+const SORT_OPTIONS = [
+  { value: "newest", label: "filters.sortNewest" },
+  { value: "expiry", label: "filters.sortExpiry" },
+  { value: "price_asc", label: "filters.sortPriceAsc" },
+  { value: "price_desc", label: "filters.sortPriceDesc" },
+  { value: "discount_desc", label: "filters.sortDiscountDesc" },
+  { value: "discount_asc", label: "filters.sortDiscountAsc" },
+] as const;
+
+type SortValue = (typeof SORT_OPTIONS)[number]["value"];
+
 function BrowseProductsPage() {
   const [category, setCategory] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
+  const [sort, setSort] = useState<SortValue>("newest");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { t } = useTranslation();
   const categories = t("categories", { returnObjects: true }) as Record<
@@ -39,9 +51,10 @@ function BrowseProductsPage() {
     string
   >;
   // The server leaves out fully reserved products and pages the rest; "Load more" raises the
-  // limit, and any filter change starts again from the first page.
-  const filters = { category, maxPrice, name, city, expiryWithinDays };
-  const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(filters));
+  // limit, and any filter or sort change starts again from the first page.
+  const filters = { category, name, city, expiryWithinDays };
+  const query = { ...filters, sort };
+  const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(query));
   const {
     data: visibleProducts,
     total,
@@ -49,13 +62,13 @@ function BrowseProductsPage() {
     fetching,
     error,
     refetch,
-  } = useFetch<Product>("/products", "products", { ...filters, limit });
+  } = useFetch<Product>("/products", "products", { ...query, limit });
 
+  // The sort is not a filter, so it stays.
   const clearFilters = () => {
     setName("");
     setCity("");
     setCategory("");
-    setMaxPrice("");
     setExpiryWithinDays("");
   };
 
@@ -64,7 +77,7 @@ function BrowseProductsPage() {
   }
 
   const totalCount = total ?? visibleProducts.length;
-  const hasActiveFilters = Boolean(name || city || category || maxPrice || expiryWithinDays);
+  const hasActiveFilters = Boolean(name || city || category || expiryWithinDays);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
@@ -72,26 +85,15 @@ function BrowseProductsPage() {
         title={t("product.browseTitle")}
         subtitle={t("product.browseSubtitle")}
         icon={ShoppingBasket}
-        count={t("product.offersCount", { count: totalCount })}
       />
 
-      {/* 1 column on phones; 2 on tablets with the expiry select full width; 5 in a row on desktop. */}
-      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={5}>
+      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters}>
         <FilterField icon={Search}>
           <input
             type="text"
             placeholder={t("filters.searchByName")}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className={inputStyle}
-          />
-        </FilterField>
-        <FilterField icon={MapPin}>
-          <input
-            type="text"
-            placeholder={t("filters.searchByCity")}
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
             className={inputStyle}
           />
         </FilterField>
@@ -109,17 +111,7 @@ function BrowseProductsPage() {
             ))}
           </select>
         </FilterField>
-        <FilterField icon={Banknote}>
-          <input
-            type="number"
-            min="0"
-            placeholder={t("filters.maxPrice")}
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
-            className={inputStyle}
-          />
-        </FilterField>
-        <FilterField icon={CalendarClock} className="sm:col-span-2 lg:col-span-1">
+        <FilterField icon={CalendarClock}>
           <select
             value={expiryWithinDays}
             onChange={(e) => setExpiryWithinDays(e.target.value)}
@@ -132,7 +124,37 @@ function BrowseProductsPage() {
             <option value="7">{t("filters.within7Days")}</option>
           </select>
         </FilterField>
+        <FilterField icon={MapPin}>
+          <input
+            type="text"
+            placeholder={t("filters.searchByCity")}
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            className={inputStyle}
+          />
+        </FilterField>
       </FilterBar>
+
+      {/* Count on the left and sort on the right; stacked on phones. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <CountPill>{t("product.offersCount", { count: totalCount })}</CountPill>
+        <label className="flex items-center gap-2 text-sm text-gray-500">
+          <span className="shrink-0">{t("filters.sortBy")}</span>
+          <FilterField icon={ArrowUpDown}>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortValue)}
+              className={`${inputStyle} sm:w-56`}
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {t(option.label)}
+                </option>
+              ))}
+            </select>
+          </FilterField>
+        </label>
+      </div>
 
       {error && visibleProducts.length === 0 ? (
         <LoadErrorState />
