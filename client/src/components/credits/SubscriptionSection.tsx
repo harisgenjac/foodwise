@@ -8,6 +8,7 @@ import api from "../../api/axios.js";
 import { useCredits } from "../../context/CreditsContext.js";
 import SubscribeModal from "./SubscribeModal.js";
 import TopupModal from "./TopupModal.js";
+import ConfirmModal from "../common/ConfirmModal.js";
 import AutoRenewTooltip from "./AutoRenewTooltip.js";
 import LoadMore from "../LoadMore.js";
 import { usePagedLimit } from "../../hooks/usePagedLimit.js";
@@ -75,6 +76,12 @@ function SubscriptionSection({ role }: { role: Role }) {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [selectedTopup, setSelectedTopup] = useState<TopupPackage | null>(null);
   const [busy, setBusy] = useState(false);
+  // Turning auto-renew off or withdrawing an automatic renewal request drops that request for
+  // good (the renewal job never recreates it), so both are confirmed first.
+  const [confirmingRenewal, setConfirmingRenewal] = useState<{
+    action: "autoRenewOff" | "withdraw";
+    request: CreditRequest;
+  } | null>(null);
   // Next month's plans and the extra credits stay collapsed until asked for; null means the
   // extra credits follow the default (open only when no credits are left).
   const [planOpen, setPlanOpen] = useState(false);
@@ -132,6 +139,7 @@ function SubscriptionSection({ role }: { role: Role }) {
     (request) => request.request_type === "SUBSCRIPTION" && request.period_month === requestMonth,
   );
   const pendingTopup = credits.pendingRequests.find((request) => request.request_type === "TOPUP");
+  const pendingRenewal = credits.pendingRequests.find((request) => request.source === "AUTO_RENEW");
   const canChoosePlan = !pendingSubscription && !(period === "next" && credits.nextSubscription);
   // Without a subscription the plans are the point of the card; with one they are optional.
   const planCollapsible = period === "next" && canChoosePlan;
@@ -149,6 +157,7 @@ function SubscriptionSection({ role }: { role: Role }) {
     try {
       await api.delete(`/credits/requests/${request.id}`);
       toast.success(t("credits.profile.withdrawn"));
+      setConfirmingRenewal(null);
       await reload();
     } catch (err) {
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
@@ -158,13 +167,30 @@ function SubscriptionSection({ role }: { role: Role }) {
     }
   };
 
-  const toggleAutoRenew = async () => {
+  const requestWithdraw = (request: CreditRequest) => {
+    if (request.source === "AUTO_RENEW") {
+      setConfirmingRenewal({ action: "withdraw", request });
+      return;
+    }
+    withdraw(request);
+  };
+
+  const toggleAutoRenew = () => {
     if (busy || !subscription) return;
+    if (subscription.auto_renew && pendingRenewal) {
+      setConfirmingRenewal({ action: "autoRenewOff", request: pendingRenewal });
+      return;
+    }
+    setAutoRenew(!subscription.auto_renew);
+  };
+
+  const setAutoRenew = async (next: boolean) => {
+    if (busy) return;
     setBusy(true);
     try {
-      const next = !subscription.auto_renew;
       await api.patch("/credits/subscription/auto-renew", { auto_renew: next });
       toast.success(t(next ? "credits.profile.autoRenewOn" : "credits.profile.autoRenewOff"));
+      setConfirmingRenewal(null);
       await reload();
     } catch (err) {
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
@@ -263,7 +289,7 @@ function SubscriptionSection({ role }: { role: Role }) {
                 </span>
                 <button
                   type="button"
-                  onClick={() => withdraw(request)}
+                  onClick={() => requestWithdraw(request)}
                   disabled={busy}
                   className="w-fit cursor-pointer rounded-lg px-3 py-1.5 font-medium text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-60"
                 >
@@ -426,6 +452,22 @@ function SubscriptionSection({ role }: { role: Role }) {
             setTopupOpen(false);
             await reload();
           }}
+        />
+      )}
+      {confirmingRenewal && (
+        <ConfirmModal
+          variant="danger"
+          title={t(`credits.renewalConfirm.${confirmingRenewal.action}Title`)}
+          message={t(`credits.renewalConfirm.${confirmingRenewal.action}Text`, {
+            plan: confirmingRenewal.request.plan_name ?? "",
+            month: formatCreditMonth(confirmingRenewal.request.period_month, monthNames),
+          })}
+          confirmLabel={t(`credits.renewalConfirm.${confirmingRenewal.action}Button`)}
+          busy={busy}
+          onConfirm={() =>
+            confirmingRenewal.action === "withdraw" ? withdraw(confirmingRenewal.request) : setAutoRenew(false)
+          }
+          onClose={() => setConfirmingRenewal(null)}
         />
       )}
     </>

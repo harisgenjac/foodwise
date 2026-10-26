@@ -48,6 +48,32 @@ describe("POST /api/products/import", () => {
     expect(await productCount()).toBe(2);
   });
 
+  it("only checks the file on a dry run: counts the products and creates none", async () => {
+    const file = csv(
+      HEADER,
+      `Piletina,Svježa,Meat,10,5,4,kg,${futureDate()}`,
+      `Hljeb,,Bakery,2,1,20,kom,${futureDate(2)}`,
+    );
+    const response = await store
+      .post("/api/products/import?dryRun=true")
+      .attach("file", file, { filename: "products.csv", contentType: "text/csv" });
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ message: "The file is valid.", count: 2 });
+    expect(await productCount()).toBe(0);
+  });
+
+  it("reports row errors on a dry run like on an import", async () => {
+    const response = await store
+      .post("/api/products/import?dryRun=true")
+      .attach("file", csv(HEADER, `Piletina,,Meat,10,5,4,kg,not-a-date`), {
+        filename: "products.csv",
+        contentType: "text/csv",
+      });
+    expect(response.status).toBe(400);
+    expect(response.body.rowErrors).toHaveLength(1);
+    expect(await productCount()).toBe(0);
+  });
+
   it("reads Excel-style files with ';', a decimal comma, a BOM and DD.MM.YYYY dates", async () => {
     const [year, month, day] = futureDate().split("-");
     const response = await upload(

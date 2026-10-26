@@ -71,6 +71,8 @@ export const createProduct = async (req: Request, res: Response) => {
 };
 
 // All or nothing: one invalid row rejects the whole file, so re-sending a fixed file never duplicates products.
+// With ?dryRun=true the file is only checked: the same 400 for a bad file, else 200 with the
+// product count, so the client can confirm the credits it will cost before importing.
 export const importProducts = async (req: Request, res: Response) => {
   if (!req.file) {
     return res.status(400).json({ error: "A CSV file is required." });
@@ -78,6 +80,9 @@ export const importProducts = async (req: Request, res: Response) => {
   const parsed = parseProductCsv(req.file.buffer);
   if (parsed.error !== undefined) {
     return res.status(400).json({ error: parsed.error, rowErrors: parsed.rowErrors });
+  }
+  if (req.query.dryRun === "true") {
+    return res.status(200).json({ message: "The file is valid.", count: parsed.products.length });
   }
 
   let client;

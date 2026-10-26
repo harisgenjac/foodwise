@@ -27,7 +27,8 @@ import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import EmptyState from "../components/product/EmptyState.js";
-import Modal from "../components/product/Modal.js";
+import ConfirmModal from "../components/common/ConfirmModal.js";
+import AcceptReservationModal from "../components/reservation/AcceptReservationModal.js";
 import DetailItem from "../components/product/DetailItem.js";
 import PickupConfirmModal from "../components/pickup/PickupConfirmModal.js";
 import { usePickupActions } from "../hooks/usePickupActions.js";
@@ -46,7 +47,9 @@ function ReservationDetailsPage() {
   const navigate = useNavigate();
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [loading, setLoading] = useState(true);
-  const [confirming, setConfirming] = useState(false);
+  // The open confirmation: accept (store), or decline, i.e. reject (store) / cancel (restaurant).
+  const [confirming, setConfirming] = useState<"accept" | "decline" | null>(null);
+  const [busy, setBusy] = useState(false);
   const { t } = useTranslation();
   const reservationStatuses = t("reservationStatus", {
     returnObjects: true,
@@ -72,10 +75,12 @@ function ReservationDetailsPage() {
 
   // accept/reject belong to the store, cancel to the restaurant; the server checks ownership.
   const handleAction = async (action: "accept" | "reject" | "cancel") => {
+    if (busy) return;
+    setBusy(true);
     try {
       const response = await api.patch(`/reservations/${id}/${action}`);
       toast.success(response.data.message);
-      setConfirming(false);
+      setConfirming(null);
       fetchReservation();
     } catch (err) {
       console.error(err);
@@ -83,6 +88,8 @@ function ReservationDetailsPage() {
         ? err.response?.data?.error
         : null;
       toast.error(message || t("reservations.actionError"));
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -278,7 +285,7 @@ function ReservationDetailsPage() {
                 <>
                   <button
                     type="button"
-                    onClick={() => handleAction("accept")}
+                    onClick={() => setConfirming("accept")}
                     className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2.5 font-semibold text-white shadow-sm shadow-green-600/20 transition-colors hover:bg-green-700"
                   >
                     <Check className="h-4 w-4" />
@@ -286,7 +293,7 @@ function ReservationDetailsPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setConfirming(true)}
+                    onClick={() => setConfirming("decline")}
                     className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 font-semibold text-gray-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                   >
                     <X className="h-4 w-4" />
@@ -296,7 +303,7 @@ function ReservationDetailsPage() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => setConfirming(true)}
+                  onClick={() => setConfirming("decline")}
                   className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 font-semibold text-gray-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                 >
                   <X className="h-4 w-4" />
@@ -365,48 +372,38 @@ function ReservationDetailsPage() {
         />
       )}
 
-      {confirming && (
-        <Modal onClose={() => setConfirming(false)}>
-          <div className="flex flex-col items-center text-center">
-            <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
-              <XCircle className="h-6 w-6" strokeWidth={1.8} />
-            </span>
-            <h3 className="text-lg font-bold text-gray-900">
-              {isStore
-                ? t("reservations.rejectConfirmation")
-                : t("reservations.cancelConfirmation")}
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {isStore
-                ? t("reservations.rejectConfirmationText", {
-                    product: reservation.product_name,
-                    business: reservation.restaurant_name,
-                  })
-                : t("reservations.cancelConfirmationText", {
-                    product: reservation.product_name,
-                    business: reservation.business_name,
-                  })}
-            </p>
-          </div>
-          <div className="mt-6 flex gap-2">
-            <button
-              type="button"
-              onClick={() => setConfirming(false)}
-              className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
-            >
-              {t("reservations.keepButton")}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleAction(isStore ? "reject" : "cancel")}
-              className="flex-1 cursor-pointer rounded-xl bg-red-600 py-2.5 font-semibold text-white transition-colors hover:bg-red-700"
-            >
-              {isStore
-                ? t("reservations.rejectButton")
-                : t("reservations.cancelButton")}
-            </button>
-          </div>
-        </Modal>
+      {confirming === "accept" && (
+        <AcceptReservationModal
+          reservation={reservation}
+          restaurant={reservation.restaurant_name ?? ""}
+          busy={busy}
+          onConfirm={() => handleAction("accept")}
+          onClose={() => setConfirming(null)}
+        />
+      )}
+
+      {confirming === "decline" && (
+        <ConfirmModal
+          variant="danger"
+          icon={XCircle}
+          title={isStore ? t("reservations.rejectConfirmation") : t("reservations.cancelConfirmation")}
+          message={
+            isStore
+              ? t("reservations.rejectConfirmationText", {
+                  product: reservation.product_name,
+                  business: reservation.restaurant_name,
+                })
+              : t("reservations.cancelConfirmationText", {
+                  product: reservation.product_name,
+                  business: reservation.business_name,
+                })
+          }
+          confirmLabel={isStore ? t("reservations.rejectButton") : t("reservations.cancelButton")}
+          cancelLabel={t("reservations.keepButton")}
+          busy={busy}
+          onConfirm={() => handleAction(isStore ? "reject" : "cancel")}
+          onClose={() => setConfirming(null)}
+        />
       )}
     </div>
   );

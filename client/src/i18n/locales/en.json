@@ -180,7 +180,15 @@
     "viewStore": "View store",
     "backButton": "Back",
     "quantityReserved": "Reserved Quantity",
-    "seller": "Seller"
+    "seller": "Seller",
+    "acceptConfirmation": "Accept this reservation?",
+    "acceptConfirmationText": "{{business}} will be notified that the reservation was accepted. Accepting cannot be undone.",
+    "acceptSummary": {
+      "product": "Product",
+      "quantity": "Quantity",
+      "restaurant": "Restaurant",
+      "pickup": "Pickup"
+    }
   },
   "filters": {
     "searchByName": "Search by name",
@@ -208,6 +216,8 @@
     "unreadCount_other": "{{count}} unread",
     "markAllRead": "Mark all as read",
     "deleteRead": "Delete read",
+    "deleteReadConfirmation": "Delete read notifications?",
+    "deleteReadConfirmationText": "All read notifications will be deleted for good. Unread ones stay.",
     "delete": "Delete notification",
     "actionError": "The change was not saved. Please try again.",
     "allReadTitle": "All caught up",
@@ -465,7 +475,15 @@
     "formatDate": "Expiry date e.g. 31.12.2026, 31/12/2026 or 2026-12-31; the formats Excel writes on its own are recognized too. If a date still fails, format the date column as Text in Excel.",
     "formatAllOrNothing": "If any row has an error, nothing is imported. Fix the file and send it again.",
     "categoryCodes": "Category codes",
-    "unitCodes": "Unit codes"
+    "unitCodes": "Unit codes",
+    "confirmTitle_one": "Import {{count}} product?",
+    "confirmTitle_other": "Import {{count}} products?",
+    "confirmText_one": "This uses {{count}} credit ({{left}} left).",
+    "confirmText_other": "This uses {{count}} credits ({{left}} left).",
+    "confirmTextNoBalance_one": "This uses {{count}} credit.",
+    "confirmTextNoBalance_other": "This uses {{count}} credits.",
+    "confirmButton_one": "Import {{count}} product",
+    "confirmButton_other": "Import {{count}} products"
   },
   "comingSoon": {
     "badge": "Coming soon",
@@ -486,7 +504,8 @@
     "loadMore": "Load more",
     "showingOf": "Showing {{shown}} of {{total}}",
     "fieldRequired": "This field is required.",
-    "closeToast": "Close message"
+    "closeToast": "Close message",
+    "cancel": "Cancel"
   },
   "pickups": {
     "title": "Pickups",
@@ -1130,6 +1149,14 @@
     "profileHint": "The app unlocks once you save the required details (*) and set your own password."
   },
   "credits": {
+    "renewalConfirm": {
+      "autoRenewOffTitle": "Turn off auto-renew?",
+      "autoRenewOffText": "The renewal request for the {{plan}} plan for {{month}} is waiting for approval and will be withdrawn. It will not be sent again, so you will have to choose a plan for {{month}} yourself.",
+      "autoRenewOffButton": "Turn off auto-renew",
+      "withdrawTitle": "Withdraw the renewal request?",
+      "withdrawText": "The renewal request for the {{plan}} plan for {{month}} will be withdrawn and will not be sent again. You will have to choose a plan for {{month}} yourself.",
+      "withdrawButton": "Withdraw request"
+    },
     "insufficient": {
       "title": "Not enough credits",
       "noSubscription": "A subscription is required to publish products and make reservations.",

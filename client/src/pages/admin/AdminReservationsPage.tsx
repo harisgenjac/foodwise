@@ -14,7 +14,7 @@ import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
-import ReasonModal from "../../components/admin/ReasonModal.js";
+import ConfirmModal from "../../components/common/ConfirmModal.js";
 import { RESERVATION_STATUS_STYLES } from "../../utils/reservationStatus.js";
 import { ADMIN_PAGE_SIZE, formatDateTime } from "../../utils/admin.js";
 import type { AdminReservation } from "../../types/index.js";
@@ -210,15 +210,18 @@ function AdminReservationsPage() {
       )}
 
       {selected && (
-        <ReasonModal
+        <ConfirmModal
+          variant="danger"
+          reason
           title={t("admin.reservations.cancelTitle")}
-          text={t(
+          message={t(
             selected.status === "Confirmed"
               ? "admin.reservations.cancelTextConfirmed"
               : "admin.reservations.cancelTextPending",
             { name: selected.product_name },
           )}
           confirmLabel={t("admin.reservations.cancel")}
+          cancelLabel={t("admin.common.cancel")}
           busy={busy}
           onConfirm={cancelReservation}
           onClose={() => setSelected(null)}

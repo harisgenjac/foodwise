@@ -17,7 +17,7 @@ import { isBlank, REQUIRED } from "../../utils/validation.js";
 import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
-import Modal from "../../components/product/Modal.js";
+import ConfirmModal from "../../components/common/ConfirmModal.js";
 import Pagination from "../../components/admin/Pagination.js";
 import { ADMIN_PAGE_SIZE, formatDateTime } from "../../utils/admin.js";
 import { toDateInput } from "../../utils/expiry.js";
@@ -308,53 +308,30 @@ function AdminAnnouncementsPage() {
       </section>
 
       {confirming && (
-        <Modal onClose={() => setConfirming(false)}>
-          <h2 className="text-lg font-semibold text-gray-900">{t("admin.announcements.confirmTitle")}</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            {t("admin.announcements.confirmText", { title: form.title_bs, audience: audiences[audience] })}
-          </p>
-          <div className="mt-6 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setConfirming(false)}
-              className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-            >
-              {t("admin.common.cancel")}
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={send}
-              className="cursor-pointer rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-60"
-            >
-              {t("admin.announcements.confirmSend")}
-            </button>
-          </div>
-        </Modal>
+        <ConfirmModal
+          variant="success"
+          icon={Megaphone}
+          title={t("admin.announcements.confirmTitle")}
+          message={t("admin.announcements.confirmText", { title: form.title_bs, audience: audiences[audience] })}
+          confirmLabel={t("admin.announcements.confirmSend")}
+          cancelLabel={t("admin.common.cancel")}
+          busy={busy}
+          onConfirm={send}
+          onClose={() => setConfirming(false)}
+        />
       )}
 
       {ending && (
-        <Modal onClose={() => setEnding(null)}>
-          <h2 className="text-lg font-semibold text-gray-900">{t("admin.announcements.endTitle")}</h2>
-          <p className="mt-1 text-sm text-gray-600">{t("admin.announcements.endText", { title: ending.title_bs })}</p>
-          <div className="mt-6 flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setEnding(null)}
-              className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-            >
-              {t("admin.common.cancel")}
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={end}
-              className="cursor-pointer rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-60"
-            >
-              {t("admin.announcements.end")}
-            </button>
-          </div>
-        </Modal>
+        <ConfirmModal
+          variant="danger"
+          title={t("admin.announcements.endTitle")}
+          message={t("admin.announcements.endText", { title: ending.title_bs })}
+          confirmLabel={t("admin.announcements.end")}
+          cancelLabel={t("admin.common.cancel")}
+          busy={busy}
+          onConfirm={end}
+          onClose={() => setEnding(null)}
+        />
       )}
     </div>
   );

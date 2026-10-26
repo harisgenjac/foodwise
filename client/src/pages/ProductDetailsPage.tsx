@@ -4,7 +4,6 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import {
-  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   CalendarClock,
@@ -27,7 +26,7 @@ import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import EmptyState from "../components/product/EmptyState.js";
-import Modal from "../components/product/Modal.js";
+import ConfirmModal from "../components/common/ConfirmModal.js";
 import DetailItem from "../components/product/DetailItem.js";
 import ReserveProductModal from "../components/product/ReserveProductModal.js";
 import DonateProductModal from "../components/donation/DonateProductModal.js";
@@ -44,6 +43,7 @@ function ProductDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [reserving, setReserving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [donating, setDonating] = useState(false);
   const { t } = useTranslation();
   const productStatuses = t("productStatus", { returnObjects: true }) as Record<
@@ -69,6 +69,8 @@ function ProductDetailsPage() {
   };
 
   const handleDelete = async () => {
+    if (deleting) return;
+    setDeleting(true);
     try {
       await api.delete(`/products/${id}`);
       toast.success(t("myProducts.deleteSuccess"));
@@ -79,6 +81,8 @@ function ProductDetailsPage() {
         ? err.response?.data?.error
         : null;
       toast.error(message || t("myProducts.deleteError"));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -353,35 +357,16 @@ function ProductDetailsPage() {
       )}
 
       {showDeleteConfirm && (
-        <Modal onClose={() => setShowDeleteConfirm(false)}>
-          <div className="flex flex-col items-center text-center">
-            <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
-              <AlertTriangle className="h-6 w-6" strokeWidth={1.8} />
-            </span>
-            <h3 className="text-lg font-bold text-gray-900">
-              {t("myProducts.deleteConfirmation")}
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {t("myProducts.deleteConfirmationText", { name: product.name })}
-            </p>
-          </div>
-          <div className="mt-6 flex gap-2">
-            <button
-              type="button"
-              onClick={() => setShowDeleteConfirm(false)}
-              className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
-            >
-              {t("myProducts.cancelButton")}
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="flex-1 cursor-pointer rounded-xl bg-red-600 py-2.5 font-semibold text-white transition-colors hover:bg-red-700"
-            >
-              {t("myProducts.confirmDeleteButton")}
-            </button>
-          </div>
-        </Modal>
+        <ConfirmModal
+          variant="danger"
+          title={t("myProducts.deleteConfirmation")}
+          message={t("myProducts.deleteConfirmationText", { name: product.name })}
+          confirmLabel={t("myProducts.confirmDeleteButton")}
+          cancelLabel={t("myProducts.cancelButton")}
+          busy={deleting}
+          onConfirm={handleDelete}
+          onClose={() => setShowDeleteConfirm(false)}
+        />
       )}
 
       {reserving && (
