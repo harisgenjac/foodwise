@@ -5,6 +5,7 @@ import LoadingSpinner from "../components/LoadingSpinner.js";
 import ProductPageHeader from "../components/product/ProductPageHeader.js";
 import EmptyState from "../components/product/EmptyState.js";
 import NotificationItem from "../components/notifications/NotificationItem.js";
+import ConfirmModal from "../components/common/ConfirmModal.js";
 import { useNotifications } from "../context/NotificationsContext.js";
 import type { Notification } from "../context/NotificationsContext.js";
 import { getNotificationGroup } from "../utils/notifications.js";
@@ -18,6 +19,7 @@ function NotificationsPage() {
   const { notifications, unreadCount, loading, markAllAsRead, deleteRead } = useNotifications();
   const { t } = useTranslation();
   const [filter, setFilter] = useState<Filter>("all");
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -93,7 +95,7 @@ function NotificationsPage() {
               {hasRead && (
                 <button
                   type="button"
-                  onClick={deleteRead}
+                  onClick={() => setConfirmingDelete(true)}
                   className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -115,6 +117,23 @@ function NotificationsPage() {
             ))
           )}
         </>
+      )}
+
+      {confirmingDelete && (
+        // The list updates at once (optimistic), so the dialog closes before the request ends.
+        <ConfirmModal
+          variant="danger"
+          icon={Trash2}
+          title={t("notifications.deleteReadConfirmation")}
+          message={t("notifications.deleteReadConfirmationText")}
+          confirmLabel={t("notifications.deleteRead")}
+          busy={false}
+          onConfirm={() => {
+            setConfirmingDelete(false);
+            deleteRead();
+          }}
+          onClose={() => setConfirmingDelete(false)}
+        />
       )}
     </div>
   );

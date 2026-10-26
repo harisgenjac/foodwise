@@ -16,6 +16,8 @@ import type { CsvRowError } from "../types/index.js";
 import InsufficientCreditsNotice from "../components/credits/InsufficientCreditsNotice.js";
 import CreditHint from "../components/credits/CreditHint.js";
 import { getCreditError, type CreditError } from "../utils/credits.js";
+import { useCredits } from "../context/CreditsContext.js";
+import ConfirmModal from "../components/common/ConfirmModal.js";
 
 // Keep in sync with CSV_COLUMNS in server/src/utils/productCsv.ts.
 const CSV_COLUMNS = [
@@ -50,6 +52,9 @@ function ImportProductsPage() {
   const [rowErrors, setRowErrors] = useState<CsvRowError[]>([]);
   const [creditError, setCreditError] = useState<CreditError | null>(null);
   const [uploading, setUploading] = useState(false);
+  // Products in the checked file, while the credit confirmation is open.
+  const [confirmCount, setConfirmCount] = useState<number | null>(null);
+  const { credits } = useCredits();
   const { formRef, errorFor, validate } = useFormValidation({ file: file ? undefined : "importProducts.noFile" });
 
   const selectFile = (selected: File | null) => {
@@ -58,33 +63,68 @@ function ImportProductsPage() {
     setRowErrors([]);
   };
 
-  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!validate() || !file) return;
+  const fileData = (selected: File) => {
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", selected);
+    return formData;
+  };
+
+  const showError = (err: unknown) => {
+    // Each product costs a credit and the import is all or nothing.
+    const creditProblem = getCreditError(err);
+    if (creditProblem) {
+      setCreditError(creditProblem);
+      return;
+    }
+    const data = axios.isAxiosError(err) ? err.response?.data : null;
+    toast.error(data?.error || t("importProducts.error"));
+    setRowErrors(data?.rowErrors ?? []);
+  };
+
+  const runImport = async () => {
+    if (!file) return;
     setUploading(true);
-    setRowErrors([]);
-    setCreditError(null);
     try {
-      const response = await api.post("/products/import", formData, {
+      const response = await api.post("/products/import", fileData(file), {
         headers: { "Content-Type": "multipart/form-data" },
       });
       toast.success(t("importProducts.success", { count: response.data.products.length }));
       navigate("/my-products");
     } catch (err) {
-      // Each product costs a credit and the import is all or nothing.
-      const credits = getCreditError(err);
-      if (credits) {
-        setCreditError(credits);
-        return;
-      }
-      const data = axios.isAxiosError(err) ? err.response?.data : null;
-      toast.error(data?.error || t("importProducts.error"));
-      setRowErrors(data?.rowErrors ?? []);
+      setConfirmCount(null);
+      showError(err);
     } finally {
       setUploading(false);
     }
+  };
+
+  // The server checks the file first (dry run), so row errors show before anything is confirmed
+  // and the dialog names the exact number of credits. Without enough credits there is nothing to
+  // confirm: the import itself answers with the 402 notice and charges nothing.
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!validate() || !file || uploading) return;
+    setUploading(true);
+    setRowErrors([]);
+    setCreditError(null);
+    let count: number;
+    try {
+      const response = await api.post("/products/import", fileData(file), {
+        params: { dryRun: true },
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      count = response.data.count;
+    } catch (err) {
+      showError(err);
+      setUploading(false);
+      return;
+    }
+    setUploading(false);
+    if (credits && count > credits.available) {
+      await runImport();
+      return;
+    }
+    setConfirmCount(count);
   };
 
   return (
@@ -218,6 +258,23 @@ function ImportProductsPage() {
           </FormSection>
         </aside>
       </div>
+
+      {confirmCount !== null && (
+        <ConfirmModal
+          variant="success"
+          icon={FileUp}
+          title={t("importProducts.confirmTitle", { count: confirmCount })}
+          message={
+            credits
+              ? t("importProducts.confirmText", { count: confirmCount, left: credits.available })
+              : t("importProducts.confirmTextNoBalance", { count: confirmCount })
+          }
+          confirmLabel={t("importProducts.confirmButton", { count: confirmCount })}
+          busy={uploading}
+          onConfirm={runImport}
+          onClose={() => setConfirmCount(null)}
+        />
+      )}
     </div>
   );
 }

@@ -14,7 +14,7 @@ import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
-import ReasonModal from "../../components/admin/ReasonModal.js";
+import ConfirmModal from "../../components/common/ConfirmModal.js";
 import { PRODUCT_STATUS_STYLES } from "../../utils/productStatus.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
 import { ADMIN_PAGE_SIZE } from "../../utils/admin.js";
@@ -202,10 +202,13 @@ function AdminProductsPage() {
       )}
 
       {selected && (
-        <ReasonModal
+        <ConfirmModal
+          variant="danger"
+          reason
           title={t("admin.products.removeTitle")}
-          text={t("admin.products.removeText", { name: selected.name })}
+          message={t("admin.products.removeText", { name: selected.name })}
           confirmLabel={t("admin.common.remove")}
+          cancelLabel={t("admin.common.cancel")}
           busy={busy}
           onConfirm={removeProduct}
           onClose={() => setSelected(null)}

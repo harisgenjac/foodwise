@@ -184,7 +184,15 @@
     "viewStore": "Pogledaj prodavnicu",
     "backButton": "Nazad",
     "quantityReserved": "Rezervisana količina",
-    "seller": "Prodavač"
+    "seller": "Prodavač",
+    "acceptConfirmation": "Prihvatiti rezervaciju?",
+    "acceptConfirmationText": "{{business}} će dobiti obavijest da je rezervacija prihvaćena. Prihvatanje se ne može poništiti.",
+    "acceptSummary": {
+      "product": "Proizvod",
+      "quantity": "Količina",
+      "restaurant": "Restoran",
+      "pickup": "Preuzimanje"
+    }
   },
   "filters": {
     "searchByName": "Pretraga po imenu",
@@ -213,6 +221,8 @@
     "unreadCount_other": "{{count}} nepročitanih",
     "markAllRead": "Označi sve kao pročitano",
     "deleteRead": "Obriši pročitane",
+    "deleteReadConfirmation": "Obrisati pročitane obavijesti?",
+    "deleteReadConfirmationText": "Sve pročitane obavijesti bit će trajno obrisane. Nepročitane ostaju.",
     "delete": "Obriši notifikaciju",
     "actionError": "Promjena nije sačuvana. Pokušajte ponovo.",
     "allReadTitle": "Sve je pročitano",
@@ -476,7 +486,19 @@
     "formatDate": "Datum isteka npr. 31.12.2026, 31/12/2026 ili 2026-12-31; prepoznaju se i formati koje Excel sam upiše. Ako datum ipak ne prolazi, u Excelu formatirajte kolonu datuma kao Tekst.",
     "formatAllOrNothing": "Ako i jedan red ima grešku, ništa se ne uvozi. Ispravite fajl i pošaljite ga ponovo.",
     "categoryCodes": "Kodovi kategorija",
-    "unitCodes": "Kodovi jedinica"
+    "unitCodes": "Kodovi jedinica",
+    "confirmTitle_one": "Uvesti {{count}} proizvod?",
+    "confirmTitle_few": "Uvesti {{count}} proizvoda?",
+    "confirmTitle_other": "Uvesti {{count}} proizvoda?",
+    "confirmText_one": "Ovo troši {{count}} kredit (preostalo: {{left}}).",
+    "confirmText_few": "Ovo troši {{count}} kredita (preostalo: {{left}}).",
+    "confirmText_other": "Ovo troši {{count}} kredita (preostalo: {{left}}).",
+    "confirmTextNoBalance_one": "Ovo troši {{count}} kredit.",
+    "confirmTextNoBalance_few": "Ovo troši {{count}} kredita.",
+    "confirmTextNoBalance_other": "Ovo troši {{count}} kredita.",
+    "confirmButton_one": "Uvezi {{count}} proizvod",
+    "confirmButton_few": "Uvezi {{count}} proizvoda",
+    "confirmButton_other": "Uvezi {{count}} proizvoda"
   },
   "comingSoon": {
     "badge": "Uskoro dostupno",
@@ -497,7 +519,8 @@
     "loadMore": "Učitaj još",
     "showingOf": "Prikazano {{shown}} od {{total}}",
     "fieldRequired": "Ovo polje je obavezno.",
-    "closeToast": "Zatvori poruku"
+    "closeToast": "Zatvori poruku",
+    "cancel": "Odustani"
   },
   "pickups": {
     "title": "Preuzimanja",
@@ -1156,6 +1179,14 @@
     "profileHint": "Aplikacija se otključava kada sačuvate obavezne podatke (*) i postavite svoju lozinku."
   },
   "credits": {
+    "renewalConfirm": {
+      "autoRenewOffTitle": "Isključiti automatsku obnovu?",
+      "autoRenewOffText": "Zahtjev za obnovu plana {{plan}} za {{month}} čeka odobrenje i bit će povučen. Neće biti ponovo poslan, pa ćete plan za {{month}} morati izabrati sami.",
+      "autoRenewOffButton": "Isključi obnovu",
+      "withdrawTitle": "Povući zahtjev za obnovu?",
+      "withdrawText": "Zahtjev za obnovu plana {{plan}} za {{month}} bit će povučen i neće biti ponovo poslan. Plan za {{month}} ćete morati izabrati sami.",
+      "withdrawButton": "Povuci zahtjev"
+    },
     "insufficient": {
       "title": "Nemate dovoljno kredita",
       "noSubscription": "Za objavu proizvoda i rezervacije potrebna je pretplata.",

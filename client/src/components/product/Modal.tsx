@@ -4,9 +4,11 @@ import type { ReactNode } from "react";
 interface ModalProps {
   onClose: () => void;
   children: ReactNode;
+  // Id of the element that names the dialog (its title).
+  labelledBy?: string;
 }
 
-function Modal({ onClose, children }: ModalProps) {
+function Modal({ onClose, children, labelledBy }: ModalProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -23,6 +25,7 @@ function Modal({ onClose, children }: ModalProps) {
       <div
         role="dialog"
         aria-modal="true"
+        aria-labelledby={labelledBy}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
       >

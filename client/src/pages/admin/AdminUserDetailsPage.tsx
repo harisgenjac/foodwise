@@ -31,8 +31,7 @@ import EmptyState from "../../components/product/EmptyState.js";
 import DetailItem from "../../components/product/DetailItem.js";
 import StatCard from "../../components/dashboard/StatCard.js";
 import UserCreditsPanel from "../../components/admin/UserCreditsPanel.js";
-import Modal from "../../components/product/Modal.js";
-import ReasonModal from "../../components/admin/ReasonModal.js";
+import ConfirmModal from "../../components/common/ConfirmModal.js";
 import EditProfileModal from "../../components/admin/EditProfileModal.js";
 import SetPasswordModal from "../../components/admin/SetPasswordModal.js";
 import { ROLE_STYLES, accountName, formatDateTime } from "../../utils/admin.js";
@@ -308,10 +307,14 @@ function AdminUserDetailsPage() {
       )}
 
       {dialog === "block" && (
-        <ReasonModal
+        <ConfirmModal
+          variant="danger"
+          icon={Ban}
+          reason
           title={t("admin.userDetails.blockTitle")}
-          text={t("admin.userDetails.blockText", { name })}
+          message={t("admin.userDetails.blockText", { name })}
           confirmLabel={t("admin.userDetails.confirmBlock")}
+          cancelLabel={t("admin.common.cancel")}
           busy={busy}
           onConfirm={(reason) => run(() => api.post(`/admin/users/${id}/block`, { reason }))}
           onClose={closeDialog}
@@ -319,23 +322,17 @@ function AdminUserDetailsPage() {
       )}
 
       {dialog === "unblock" && (
-        <Modal onClose={closeDialog}>
-          <h2 className="text-lg font-semibold text-gray-900">{t("admin.userDetails.unblockTitle")}</h2>
-          <p className="mt-1 text-sm text-gray-600">{t("admin.userDetails.unblockText", { name })}</p>
-          <div className="mt-6 flex justify-end gap-2">
-            <button type="button" onClick={closeDialog} className={secondaryButton}>
-              {t("admin.common.cancel")}
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => run(() => api.post(`/admin/users/${id}/unblock`))}
-              className="cursor-pointer rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700 disabled:opacity-60"
-            >
-              {t("admin.userDetails.confirmUnblock")}
-            </button>
-          </div>
-        </Modal>
+        <ConfirmModal
+          variant="success"
+          icon={ShieldCheck}
+          title={t("admin.userDetails.unblockTitle")}
+          message={t("admin.userDetails.unblockText", { name })}
+          confirmLabel={t("admin.userDetails.confirmUnblock")}
+          cancelLabel={t("admin.common.cancel")}
+          busy={busy}
+          onConfirm={() => run(() => api.post(`/admin/users/${id}/unblock`))}
+          onClose={closeDialog}
+        />
       )}
 
       {dialog === "password" && (

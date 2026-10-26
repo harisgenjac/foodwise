@@ -23,7 +23,8 @@ import ProductPageHeader from "../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../components/product/FilterBar.js";
 import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
-import Modal from "../components/product/Modal.js";
+import ConfirmModal from "../components/common/ConfirmModal.js";
+import AcceptReservationModal from "../components/reservation/AcceptReservationModal.js";
 import { inputStyle } from "../components/form/FormField.js";
 import PickupConfirmModal from "../components/pickup/PickupConfirmModal.js";
 import LoadMore from "../components/LoadMore.js";
@@ -37,6 +38,8 @@ function ReservationsPage() {
   const [name, setName] = useState("");
   const [status, setStatus] = useState("");
   const [city, setCity] = useState("");
+  const [acceptingReservation, setAcceptingReservation] =
+    useState<Reservation | null>(null);
   const [rejectingReservation, setRejectingReservation] =
     useState<Reservation | null>(null);
   // The reservation whose accept or reject request is in flight; blocks double clicks.
@@ -62,6 +65,7 @@ function ReservationsPage() {
     try {
       const response = await api.patch(`/reservations/${reservationId}/accept`);
       toast.success(response.data.message);
+      setAcceptingReservation(null);
       refetch();
     } catch (err) {
       console.error(err);
@@ -177,7 +181,7 @@ function ReservationsPage() {
                   <>
                     <button
                       type="button"
-                      onClick={() => handleAccept(reservation.id)}
+                      onClick={() => setAcceptingReservation(reservation)}
                       disabled={busyId === reservation.id}
                       className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-green-600/20 transition-colors hover:bg-green-700 disabled:cursor-wait disabled:opacity-60"
                     >
@@ -253,40 +257,31 @@ function ReservationsPage() {
         />
       )}
 
+      {acceptingReservation && (
+        <AcceptReservationModal
+          reservation={acceptingReservation}
+          restaurant={acceptingReservation.business_name ?? ""}
+          busy={busyId === acceptingReservation.id}
+          onConfirm={() => handleAccept(acceptingReservation.id)}
+          onClose={() => setAcceptingReservation(null)}
+        />
+      )}
+
       {rejectingReservation && (
-        <Modal onClose={() => setRejectingReservation(null)}>
-          <div className="flex flex-col items-center text-center">
-            <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
-              <XCircle className="h-6 w-6" strokeWidth={1.8} />
-            </span>
-            <h3 className="text-lg font-bold text-gray-900">
-              {t("reservations.rejectConfirmation")}
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {t("reservations.rejectConfirmationText", {
-                product: rejectingReservation.product_name,
-                business: rejectingReservation.business_name,
-              })}
-            </p>
-          </div>
-          <div className="mt-6 flex gap-2">
-            <button
-              type="button"
-              onClick={() => setRejectingReservation(null)}
-              className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
-            >
-              {t("reservations.keepButton")}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleReject(rejectingReservation.id)}
-              disabled={busyId === rejectingReservation.id}
-              className="flex-1 cursor-pointer rounded-xl bg-red-600 py-2.5 font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-wait disabled:opacity-60"
-            >
-              {t("reservations.rejectButton")}
-            </button>
-          </div>
-        </Modal>
+        <ConfirmModal
+          variant="danger"
+          icon={XCircle}
+          title={t("reservations.rejectConfirmation")}
+          message={t("reservations.rejectConfirmationText", {
+            product: rejectingReservation.product_name,
+            business: rejectingReservation.business_name,
+          })}
+          confirmLabel={t("reservations.rejectButton")}
+          cancelLabel={t("reservations.keepButton")}
+          busy={busyId === rejectingReservation.id}
+          onConfirm={() => handleReject(rejectingReservation.id)}
+          onClose={() => setRejectingReservation(null)}
+        />
       )}
     </div>
   );

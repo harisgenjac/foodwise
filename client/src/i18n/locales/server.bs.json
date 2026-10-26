@@ -210,6 +210,7 @@
   "The CSV file does not contain any products.": "CSV datoteka ne sadrži nijedan proizvod.",
   "The CSV file is missing columns: {{columns}}.": "U CSV datoteci nedostaju kolone: {{columns}}.",
   "The file can be at most {{max}}MB.": "Datoteka može imati najviše {{max}} MB.",
+  "The file is valid.": "Datoteka je ispravna.",
   "The image can be at most {{max}}MB.": "Slika može imati najviše {{max}} MB.",
   "The new password must be different from the current one.": "Nova lozinka mora biti različita od trenutne.",
   "The note can be at most {{max}} characters long.": "Napomena može imati najviše {{max}} znakova.",
