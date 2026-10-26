@@ -17,6 +17,7 @@ import { RESERVATION_STATUSES, lockReservation, releaseSoldProduct } from "./res
 import { updateProfile } from "./users.controller.js";
 import { isValidDateTime } from "../utils/dates.js";
 import { getPlatformUsage, refundForReservation } from "../services/creditService.js";
+import { getSavedTotals } from "../services/impactStats.js";
 import { creditMonth, nextMonth } from "../utils/creditTime.js";
 import type { Role } from "../types/auth.js";
 
@@ -122,25 +123,7 @@ export const getStats = async (req: Request, res: Response) => {
     const reservations = await pool.query(
       `SELECT reservations.status, COUNT(*) AS count FROM reservations GROUP BY reservations.status`,
     );
-    // Food saved follows the store dashboard's rules: Confirmed and Completed reservations, g/kg as kg,
-    // ml/l as l, kom and pak as pieces. Value and savings count only Completed, like the impact report.
-    const saved = await pool.query(
-      `SELECT
-         COALESCE(SUM(CASE products.unit
-           WHEN 'kg' THEN reservations.quantity
-           WHEN 'g' THEN reservations.quantity / 1000 END), 0) AS kg,
-         COALESCE(SUM(CASE products.unit
-           WHEN 'l' THEN reservations.quantity
-           WHEN 'ml' THEN reservations.quantity / 1000 END), 0) AS l,
-         COALESCE(SUM(CASE WHEN products.unit IN ('kom', 'pak') THEN reservations.quantity END), 0) AS pieces,
-         COALESCE(ROUND(SUM(reservations.unit_price * reservations.quantity)
-           FILTER (WHERE reservations.status = 'Completed'), 2), 0) AS value,
-         COALESCE(ROUND(SUM(GREATEST(products.original_price - reservations.unit_price, 0) * reservations.quantity)
-           FILTER (WHERE reservations.status = 'Completed'), 2), 0) AS savings
-       FROM reservations
-       JOIN products ON reservations.product_id = products.id
-       WHERE reservations.status IN ('Confirmed', 'Completed')`,
-    );
+    const saved = await getSavedTotals();
     const donations = await pool.query(
       `SELECT
          COUNT(*) FILTER (WHERE donation_offers.status = 'Available') AS available,
@@ -197,7 +180,7 @@ export const getStats = async (req: Request, res: Response) => {
         users: toNumbers(users.rows[0]),
         products: toNumbers(products.rows[0]),
         reservations: reservationCounts,
-        saved: toNumbers(saved.rows[0]),
+        saved,
         donations: toNumbers(donations.rows[0]),
         credits: {
           period_start: periodMonth,

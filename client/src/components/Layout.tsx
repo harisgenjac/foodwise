@@ -6,6 +6,7 @@ import Header from './Header.js';
 import Sidebar from './Sidebar.js';
 import AccountSetupGate from './AccountSetupGate.js';
 import AnnouncementBanner from './AnnouncementBanner.js';
+import Footer from './Footer.js';
 import { NotificationsProvider } from '../context/NotificationsContext.js';
 import { CreditsProvider } from '../context/CreditsContext.js';
 import CreditBanner from './credits/CreditBanner.js';
@@ -45,11 +46,15 @@ function Layout() {
           <Header isSidebarOpen={isSidebarOpen} onToggleSidebar={onToggleSidebar} locked={setup.locked} />
           <div className="flex flex-row flex-1 overflow-hidden">
             <Sidebar isSidebarOpen={isSidebarOpen} locked={setup.locked} />
-            <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
-              {!setup.locked && <AnnouncementBanner />}
-              {!setup.locked && <CreditBanner />}
-              <AccountSetupGate />
-              <Outlet />
+            {/* A flex column, so the footer sits at the bottom of short pages and after the content of long ones. */}
+            <main className="flex flex-1 flex-col overflow-y-auto p-6 bg-gray-50">
+              <div className="flex-1 pb-6">
+                {!setup.locked && <AnnouncementBanner />}
+                {!setup.locked && <CreditBanner />}
+                <AccountSetupGate />
+                <Outlet />
+              </div>
+              <Footer showImpact={!setup.needsPassword} />
             </main>
           </div>
         </div>

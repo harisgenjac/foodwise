@@ -20,10 +20,10 @@ server/
 │   ├── server.ts            loads dotenv, starts the cron jobs, listens on PORT (default 3000)
 │   ├── app.ts               builds and exports the Express app (no listen, so supertest can import it)
 │   ├── config/db.ts         exports the shared pg Pool (DATABASE_URL)
-│   ├── controllers/         auth, products, reservations, notifications, favorites, users, productTemplates, reports, donations, admin, credits (user side), adminCredits (admin side, `/api/admin/credits`), dashboard (stat cards)
+│   ├── controllers/         auth, products, reservations, notifications, favorites, users, productTemplates, reports, donations, admin, credits (user side), adminCredits (admin side, `/api/admin/credits`), dashboard (stat cards), stats (footer impact counter)
 │   ├── middleware/          auth.middleware.ts (authenticate, authorize), upload.middleware.ts (multer, `uploadLogoFile`, `uploadCsvFile`)
 │   ├── routes/              one router per resource, mounted in app.ts
-│   ├── services/            creditService.ts (all credit logic: balance, charges, refunds, grants, adjustments; see Credits)
+│   ├── services/            creditService.ts (all credit logic: balance, charges, refunds, grants, adjustments; see Credits), impactStats.ts (`getSavedTotals`: platform-wide food saved, shared by admin stats and `/api/stats/impact`)
 │   ├── jobs/                expireProducts.ts, notificationReminders.ts, creditRenewals.ts
 │   ├── types/               auth.ts (AuthUser, Role), express.d.ts (req.user, req.file)
 │   ├── utils/               accounts.ts (email/password rules, `hashPassword`, `isUniqueViolation`), validateProduct.ts, validateDonation.ts, productCsv.ts (`parseProductCsv`), notifications.ts (createNotification, NotificationType), csv.ts (`toCsv`), reportLabels.ts, params.ts, dates.ts, creditTime.ts (credit day/month in Europe/London), httpError.ts, pagination.ts (`parsePage`, `listPage`, page sizes)
@@ -170,6 +170,9 @@ Unknown `status` filter values or a non-numeric `store_id` are 400 `"Invalid fil
 - Store: `{ active_products, pending_reservations, successful_reservations, saved: { kg, l, pieces } }`. `active_products` counts its products with status `Available` (no expiry check, the midnight job sets `Expired`). Reservations are those on its products; `saved` sums successful quantities by the product's unit: kg + g/1000 → kg, l + ml/1000 → l, kom + pak → pieces (the impact report's rules).
 - Restaurant: `{ pending_reservations, successful_reservations, savings }`, its own reservations; `savings` = Σ (the product's **current** `original_price` − `unit_price`) × quantity over successful ones, not clamped. The "available offers" card uses the `total` of `GET /products`.
 - An account without data gets zeros. ADMIN → 403.
+
+### Stats `/api/stats` (STORE, RESTAURANT, ADMIN)
+`GET /impact` (`stats.controller.ts`): `{ message, kg }`, the platform-wide food saved in kg for the footer's counter. It is `getSavedTotals().kg` (`services/impactStats.ts`), the same query as the admin stats' `saved`: Confirmed + Completed reservations, kg + g/1000 (l, ml, kom and pak are left out). Not rounded; the client rounds. 401 without a session; 403 while a temporary password is set (like every route outside the allow-list).
 
 ### Notifications `/api/notifications`
 All routes are scoped to the caller (`user_id`); another user's notification is a 404, never a 403.
@@ -354,6 +357,7 @@ Controller `adminCredits.controller.ts`. An empty filter value (`?role=`, as the
   - `creditFlows` (HTTP, server clock moved a day with `vi.useFakeTimers({ toFake: ["Date"] })`): product charge with category, 402 at 0 credits and without a subscription (nothing created), CSV all or nothing, delete refund same day / not after the boundary / not with a picked-up reservation, complete vs partial move to donations, return to offer charging a removed product (402 at 0 leaves it removed) but not one moved after the charge day or still on offer, donations free, quantity and expiry locked while other fields edit; reservation charge with category, 402 keeps the stock free, own cancel same day / next day, store reject refunded next day, cancel-overdue not refunded, expiry job, admin cancel (also Confirmed), admin product removal (restaurant refunded, store not), blocking
   - `validation`: category/unit/date rules, date round trip, invalid ids and filters, pagination and sort, favorite must be a store, case-insensitive email and password length
   - `pagination`: default sizes and `total` vs page length for every paged endpoint, the pages joined equal the whole list with equal timestamps (or names), filters with paging, `/products?store_id=`, completed pickups paged while today and upcoming ignore the limit, admin default 10, invalid `limit`/`offset` on every endpoint
+  - `stats`: `/stats/impact` for every role, 401 without a session, kg + g over Confirmed and Completed only (other units and statuses left out, measured as a delta because the value is platform-wide), equal to the admin stats' `saved.kg`
   - `dashboard`: every stat for both roles (all units, every status, the current full price for savings), other users' data left out, zeros for an empty account, 403 for admins, 401 without a session
   - `users` (profile, store list with the favorites filter, store details without products, logo upload incl. wrong type and size), `uploads` (file named by type, nosniff, old logo removed), `favorites`, `productTemplates`
   - `notifications`: every type and link, the routes, and the expiry and reminder jobs called directly, including what they must skip (the expiry job keeps Confirmed reservations)
