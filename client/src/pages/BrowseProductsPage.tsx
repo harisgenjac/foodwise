@@ -6,6 +6,7 @@ import {
   Banknote,
   CalendarClock,
   CalendarPlus,
+  MapPin,
   Search,
   SearchX,
   ShoppingBasket,
@@ -29,6 +30,7 @@ function BrowseProductsPage() {
   const [category, setCategory] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [name, setName] = useState("");
+  const [city, setCity] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { t } = useTranslation();
@@ -38,7 +40,7 @@ function BrowseProductsPage() {
   >;
   // The server leaves out fully reserved products and pages the rest; "Load more" raises the
   // limit, and any filter change starts again from the first page.
-  const filters = { category, maxPrice, name, expiryWithinDays };
+  const filters = { category, maxPrice, name, city, expiryWithinDays };
   const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(filters));
   const {
     data: visibleProducts,
@@ -51,6 +53,7 @@ function BrowseProductsPage() {
 
   const clearFilters = () => {
     setName("");
+    setCity("");
     setCategory("");
     setMaxPrice("");
     setExpiryWithinDays("");
@@ -61,7 +64,7 @@ function BrowseProductsPage() {
   }
 
   const totalCount = total ?? visibleProducts.length;
-  const hasActiveFilters = Boolean(name || category || maxPrice || expiryWithinDays);
+  const hasActiveFilters = Boolean(name || city || category || maxPrice || expiryWithinDays);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
@@ -72,13 +75,23 @@ function BrowseProductsPage() {
         count={t("product.offersCount", { count: totalCount })}
       />
 
-      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters}>
+      {/* 1 column on phones; 2 on tablets with the expiry select full width; 5 in a row on desktop. */}
+      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={5}>
         <FilterField icon={Search}>
           <input
             type="text"
             placeholder={t("filters.searchByName")}
             value={name}
             onChange={(e) => setName(e.target.value)}
+            className={inputStyle}
+          />
+        </FilterField>
+        <FilterField icon={MapPin}>
+          <input
+            type="text"
+            placeholder={t("filters.searchByCity")}
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
             className={inputStyle}
           />
         </FilterField>
@@ -106,7 +119,7 @@ function BrowseProductsPage() {
             className={inputStyle}
           />
         </FilterField>
-        <FilterField icon={CalendarClock}>
+        <FilterField icon={CalendarClock} className="sm:col-span-2 lg:col-span-1">
           <select
             value={expiryWithinDays}
             onChange={(e) => setExpiryWithinDays(e.target.value)}

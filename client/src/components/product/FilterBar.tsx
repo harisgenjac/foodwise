@@ -7,13 +7,16 @@ interface FilterBarProps {
   hasActiveFilters: boolean;
   onClear: () => void;
   // Number of filters per row on large screens.
-  columns?: 3 | 4;
+  columns?: 3 | 4 | 5;
   children: ReactNode;
 }
 
+// Full class names, so Tailwind can find them.
+const COLUMN_STYLES = { 3: "lg:grid-cols-3", 4: "lg:grid-cols-4", 5: "lg:grid-cols-5" };
+
 function FilterBar({ hasActiveFilters, onClear, columns = 4, children }: FilterBarProps) {
   const { t } = useTranslation();
-  const columnsStyle = columns === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4";
+  const columnsStyle = COLUMN_STYLES[columns];
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -36,13 +39,15 @@ function FilterBar({ hasActiveFilters, onClear, columns = 4, children }: FilterB
 
 interface FilterFieldProps {
   icon: LucideIcon;
+  // Extra classes for the wrapper, e.g. a column span.
+  className?: string;
   children: ReactNode;
 }
 
 // Wraps one filter input/select (styled with inputStyle) and adds its leading icon.
-export function FilterField({ icon: Icon, children }: FilterFieldProps) {
+export function FilterField({ icon: Icon, className = "", children }: FilterFieldProps) {
   return (
-    <span className="relative block">
+    <span className={`relative block ${className}`}>
       <Icon className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-gray-400" strokeWidth={1.8} />
       {children}
     </span>

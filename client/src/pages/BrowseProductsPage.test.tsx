@@ -78,6 +78,7 @@ describe("BrowseProductsPage", () => {
         category: "Dairy",
         maxPrice: "",
         name: "mlijeko",
+        city: "",
         expiryWithinDays: "",
         limit: 12,
       }),
@@ -86,6 +87,23 @@ describe("BrowseProductsPage", () => {
 
     await userEvent.click(screen.getByRole("button", { name: t("filters.clear") }));
     expect(await screen.findByText("Piletina")).toBeInTheDocument();
+  });
+
+  it("sends the city filter and clears it", async () => {
+    renderPage((params) =>
+      (params as { city?: string }).city ? [] : [makeProduct({ id: 1, name: "Piletina" })],
+    );
+    await screen.findByText("Piletina");
+
+    const cityInput = screen.getByPlaceholderText(t("filters.searchByCity"));
+    await userEvent.type(cityInput, "sara");
+    await waitFor(() => expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ city: "sara" }));
+    expect(await screen.findByText(t("myProducts.noResultsTitle"))).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: t("filters.clear") }));
+    expect(cityInput).toHaveValue("");
+    expect(await screen.findByText("Piletina")).toBeInTheDocument();
+    expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ city: "" });
   });
 
   it("opens the reservation modal for a product", async () => {

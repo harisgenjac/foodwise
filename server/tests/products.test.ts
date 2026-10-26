@@ -189,6 +189,52 @@ describe("Products routes", () => {
       expect(ids).toContain(milk.id);
       expect(ids).not.toContain(bread.id);
     });
+
+    describe("city filter", () => {
+      const setCity = (email: string, city: string) =>
+        pool.query("UPDATE users SET city = $1 WHERE email = $2", [city, email]);
+
+      let storeB: Agent;
+      beforeEach(async () => {
+        storeB = await registerAndLogin(STORE_B, "STORE");
+        await setCity(STORE_A, "Zxcvgrad");
+        await setCity(STORE_B, "Qwertyvil");
+      });
+
+      it("filters by the store's city, partially and case-insensitively", async () => {
+        const inA = await createProduct(store);
+        const inB = await createProduct(storeB);
+        const ids = await listIds({ city: "XCVG" });
+        expect(ids).toContain(inA.id);
+        expect(ids).not.toContain(inB.id);
+      });
+
+      it("combines with the other filters, paging and total", async () => {
+        const dairyA = await createProduct(store, { category: "Dairy" });
+        await createProduct(store, { category: "Meat" });
+        await createProduct(storeB, { category: "Dairy" });
+
+        const filtered = await store.get("/api/products").query({ city: "zxcv", category: "Dairy" });
+        expect(filtered.status).toBe(200);
+        expect((filtered.body.products as Product[]).map((p) => p.id)).toEqual([dairyA.id]);
+        expect(filtered.body.total).toBe(1);
+
+        const paged = await store.get("/api/products").query({ city: "zxcv", limit: 1 });
+        expect(paged.status).toBe(200);
+        expect(paged.body.products).toHaveLength(1);
+        expect(paged.body.total).toBe(2);
+      });
+
+      it("ignores an empty or blank city", async () => {
+        const inA = await createProduct(store);
+        const inB = await createProduct(storeB);
+        for (const city of ["", "   "]) {
+          const ids = await listIds({ city });
+          expect(ids).toContain(inA.id);
+          expect(ids).toContain(inB.id);
+        }
+      });
+    });
   });
 
   describe("GET /api/products/mine", () => {
