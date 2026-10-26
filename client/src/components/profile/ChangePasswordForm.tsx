@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { AlertCircle, KeyRound, Lock } from "lucide-react";
+import { KeyRound, Lock } from "lucide-react";
 import api from "../../api/axios.js";
 import { useAuth } from "../../context/AuthContext.js";
 import FormSection from "../form/FormSection.js";
@@ -19,7 +19,6 @@ function ChangePasswordForm({ required = false }: { required?: boolean }) {
   const { t } = useTranslation();
   const { refreshUser } = useAuth();
   const [values, setValues] = useState(EMPTY);
-  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const { formRef, errorFor, blur, validate, reset } = useFormValidation({
     current: values.current ? undefined : REQUIRED,
@@ -29,7 +28,6 @@ function ChangePasswordForm({ required = false }: { required?: boolean }) {
 
   const setField = (field: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setValues((current) => ({ ...current, [field]: e.target.value }));
-    setError("");
   };
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -44,7 +42,7 @@ function ChangePasswordForm({ required = false }: { required?: boolean }) {
       refreshUser().catch((err) => console.error("Error refreshing user:", err));
     } catch (err) {
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
-      setError(message || t("user.passwordError"));
+      toast.error(message || t("user.passwordError"));
     } finally {
       setSaving(false);
     }
@@ -58,12 +56,6 @@ function ChangePasswordForm({ required = false }: { required?: boolean }) {
         description={required ? t("user.passwordSectionRequired") : t("auth.passwordHint")}
       >
         <form ref={formRef} noValidate onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <p className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              {error}
-            </p>
-          )}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <FormField label={t("user.currentPassword")} icon={Lock} required error={errorFor("current")}>
               <input

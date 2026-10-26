@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { AlertCircle, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import DonationFormFields from "./DonationFormFields.js";
 import DonationCard from "./DonationCard.js";
@@ -17,8 +17,8 @@ interface DonationFormProps {
   initialValues: DonationFormValues;
   submitLabel: string;
   minExpiryDate?: string | undefined;
-  // Sends the request; returns an error message to show, or null after success.
-  onSubmit: (values: DonationFormValues) => Promise<string | null>;
+  // Sends the request and shows its own success or error toast.
+  onSubmit: (values: DonationFormValues) => Promise<void>;
 }
 
 // Header, form sections and the sticky live preview shared by AddDonationPage and EditDonationPage.
@@ -33,7 +33,6 @@ function DonationForm({
 }: DonationFormProps) {
   const { t } = useTranslation();
   const [form, setForm] = useState<DonationFormValues>(initialValues);
-  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const { formRef, errorFor, blur, validate } = useFormValidation(validateDonationForm(form));
 
@@ -44,11 +43,9 @@ function DonationForm({
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (saving || !validate()) return;
-    setError("");
     setSaving(true);
-    const message = await onSubmit(form);
+    await onSubmit(form);
     setSaving(false);
-    if (message) setError(message);
   };
 
   const preview: DonationOffer = {
@@ -87,13 +84,6 @@ function DonationForm({
         </h1>
         <p className="mt-2 text-sm text-gray-500">{subtitle}</p>
       </div>
-
-      {error && (
-        <p className="mb-6 flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-        </p>
-      )}
 
       <form ref={formRef} noValidate onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">

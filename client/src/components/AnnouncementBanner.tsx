@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { Megaphone, X } from "lucide-react";
 import api from "../api/axios.js";
@@ -23,7 +24,11 @@ function AnnouncementBanner() {
 
   const dismiss = (id: number) => {
     setAnnouncements((current) => current.filter((announcement) => announcement.id !== id));
-    api.post(`/announcements/${id}/dismiss`).catch((err) => console.error("Error dismissing announcement:", err));
+    // It stays hidden for now; without the server's record it comes back on the next load.
+    api.post(`/announcements/${id}/dismiss`).catch((err) => {
+      console.error("Error dismissing announcement:", err);
+      toast.error(t("announcements.dismissError"));
+    });
   };
 
   if (!isBusiness || announcements.length === 0) return null;

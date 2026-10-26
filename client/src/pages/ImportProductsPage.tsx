@@ -4,7 +4,7 @@ import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { AlertCircle, Download, FileSpreadsheet, FileUp, ListChecks } from "lucide-react";
+import { Download, FileSpreadsheet, FileUp, ListChecks } from "lucide-react";
 import FormSection from "../components/form/FormSection.js";
 import PickerField from "../components/form/PickerField.js";
 import RequiredHint from "../components/form/RequiredHint.js";
@@ -47,7 +47,6 @@ function ImportProductsPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [file, setFile] = useState<File | null>(null);
-  const [error, setError] = useState("");
   const [rowErrors, setRowErrors] = useState<CsvRowError[]>([]);
   const [creditError, setCreditError] = useState<CreditError | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -55,7 +54,6 @@ function ImportProductsPage() {
 
   const selectFile = (selected: File | null) => {
     setFile(selected);
-    setError("");
     setCreditError(null);
     setRowErrors([]);
   };
@@ -66,7 +64,6 @@ function ImportProductsPage() {
     const formData = new FormData();
     formData.append("file", file);
     setUploading(true);
-    setError("");
     setRowErrors([]);
     setCreditError(null);
     try {
@@ -83,7 +80,7 @@ function ImportProductsPage() {
         return;
       }
       const data = axios.isAxiosError(err) ? err.response?.data : null;
-      setError(data?.error || t("importProducts.error"));
+      toast.error(data?.error || t("importProducts.error"));
       setRowErrors(data?.rowErrors ?? []);
     } finally {
       setUploading(false);
@@ -139,12 +136,6 @@ function ImportProductsPage() {
               </PickerField>
 
               {creditError && <InsufficientCreditsNotice error={creditError} />}
-              {error && (
-                <p className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  {error}
-                </p>
-              )}
 
               {rowErrors.length > 0 && (
                 <div className="overflow-hidden rounded-xl border border-red-100">

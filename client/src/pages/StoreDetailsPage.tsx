@@ -91,11 +91,9 @@ function StoreDetailsPage() {
       if (isFavorite) {
         await api.delete(`/favorites/${id}`);
         setIsFavorite(false);
-        toast.success(t("store.deleteFavoriteSucces"));
       } else {
         await api.post("/favorites", { store_id: id });
         setIsFavorite(true);
-        toast.success(t("store.addFavoriteSucces"));
       }
     } catch (err) {
       console.error(err);

@@ -31,7 +31,8 @@
     "viewAllNotifications": "Vidi sve notifikacije",
     "logout": "Odjavi se",
     "collapseSidebar": "Sakrij meni",
-    "expandSidebar": "Prikaži meni"
+    "expandSidebar": "Prikaži meni",
+    "logoutError": "Odjava nije uspjela. Pokušajte ponovo."
   },
   "auth": {
     "welcomeBack": "Dobrodošli nazad",
@@ -213,6 +214,7 @@
     "markAllRead": "Označi sve kao pročitano",
     "deleteRead": "Obriši pročitane",
     "delete": "Obriši notifikaciju",
+    "actionError": "Promjena nije sačuvana. Pokušajte ponovo.",
     "allReadTitle": "Sve je pročitano",
     "allReadSubtitle": "Nemate nepročitanih notifikacija.",
     "markAllReadShort": "Pročitaj sve",
@@ -264,9 +266,7 @@
     }
   },
   "store": {
-    "addFavoriteSucces": "Prodavnica uspješno dodana u omiljene.",
     "addFavoriteError": "Greška prilikom dodavanja prodavnice u omiljene.",
-    "deleteFavoriteSucces": "Prodavnica izbrisana iz omiljenih",
     "deleteFavoriteError": "Greška prilikom brisanja prodavnice iz omiljenih.",
     "title": "Prodavnice",
     "onlyFavorites": "Samo omiljene",
@@ -448,6 +448,7 @@
     "deleteConfirm": "Obriši",
     "deleted": "Predložak je obrisan.",
     "deleteError": "Greška prilikom brisanja predloška.",
+    "saved": "Predložak je sačuvan.",
     "saveError": "Proizvod je dodan, ali predložak nije sačuvan."
   },
   "importProducts": {
@@ -495,7 +496,8 @@
     "pickDate": "Odaberi datum",
     "loadMore": "Učitaj još",
     "showingOf": "Prikazano {{shown}} od {{total}}",
-    "fieldRequired": "Ovo polje je obavezno."
+    "fieldRequired": "Ovo polje je obavezno.",
+    "closeToast": "Zatvori poruku"
   },
   "pickups": {
     "title": "Preuzimanja",
@@ -1142,7 +1144,8 @@
   },
   "announcements": {
     "label": "Obavještenje platforme",
-    "dismiss": "Zatvori obavještenje"
+    "dismiss": "Zatvori obavještenje",
+    "dismissError": "Obavještenje nije zatvoreno. Pojavit će se ponovo nakon osvježavanja."
   },
   "accountSetup": {
     "title": "Dovršite podešavanje naloga",

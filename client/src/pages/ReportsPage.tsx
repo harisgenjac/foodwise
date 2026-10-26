@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { CalendarRange, Download, FileChartColumn, Leaf, Receipt } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import api from "../api/axios.js";
+import { translateServerMessage } from "../i18n/serverMessages.js";
 import { useAuth } from "../context/AuthContext.js";
 import ProductPageHeader from "../components/product/ProductPageHeader.js";
 import FormSection from "../components/form/FormSection.js";
@@ -23,7 +24,8 @@ const REPORTS: { id: ReportId; icon: LucideIcon }[] = [
 const readError = async (err: unknown): Promise<string | null> => {
   if (!axios.isAxiosError(err) || !(err.response?.data instanceof Blob)) return null;
   try {
-    return JSON.parse(await err.response.data.text()).error ?? null;
+    const message = JSON.parse(await err.response.data.text()).error;
+    return typeof message === "string" ? translateServerMessage(message) : null;
   } catch {
     return null;
   }

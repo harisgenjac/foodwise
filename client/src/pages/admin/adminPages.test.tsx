@@ -172,12 +172,14 @@ describe("AdminCreateUserPage", () => {
     expect(await screen.findByTestId("location")).toHaveTextContent("/admin/users/9");
   });
 
-  it("shows the server's reason when the account is not created", async () => {
+  it("shows the server's reason in a toast when the account is not created", async () => {
     apiMock.post.mockRejectedValue(axiosError(400, "A user with this email already exists."));
+    const errorToast = vi.spyOn(toast, "error");
     renderPage();
 
     await fill();
-    expect(await screen.findByText("A user with this email already exists.")).toBeInTheDocument();
+    await waitFor(() => expect(errorToast).toHaveBeenCalledWith("A user with this email already exists."));
+    expect(screen.queryByText("A user with this email already exists.")).not.toBeInTheDocument();
   });
 });
 

@@ -4,7 +4,7 @@ import axios from "axios";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { AlertCircle, Pencil, Save, SearchX } from "lucide-react";
+import { Pencil, Save, SearchX } from "lucide-react";
 import { useAuth } from "../context/AuthContext.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import EmptyState from "../components/product/EmptyState.js";
@@ -21,7 +21,6 @@ function EditProductPage() {
   const [form, setForm] = useState<ProductFormValues>(EMPTY_PRODUCT_FORM);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const { t } = useTranslation();
   const { formRef, errorFor, blur, validate } = useFormValidation(validateProductForm(form));
@@ -74,7 +73,6 @@ function EditProductPage() {
       const message = axios.isAxiosError(err)
         ? err.response?.data?.error
         : null;
-      setError(message || t("product.editError"));
       toast.error(message || t("product.editError"));
     } finally {
       setSaving(false);
@@ -109,13 +107,6 @@ function EditProductPage() {
         </h1>
         <p className="mt-2 text-sm text-gray-500">{t("product.editSubtitle")}</p>
       </div>
-
-      {error && (
-        <p className="mb-6 flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-        </p>
-      )}
 
       <form ref={formRef} noValidate onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">

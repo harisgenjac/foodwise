@@ -38,11 +38,9 @@ function EditDonationPage() {
       const response = await api.put(`/donations/${id}`, donationFormToPayload(values));
       toast.success(response.data.message || t("donations.form.updatedSuccess"));
       navigate("/donate-food");
-      return null;
     } catch (err) {
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
       toast.error(message || t("donations.form.saveError"));
-      return message || t("donations.form.saveError");
     }
   };
 

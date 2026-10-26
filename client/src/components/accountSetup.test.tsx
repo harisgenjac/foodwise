@@ -101,12 +101,14 @@ describe("ChangePasswordForm", () => {
     expect(apiMock.put).not.toHaveBeenCalled();
   });
 
-  it("shows the server's reason", async () => {
+  it("shows the server's reason in a toast", async () => {
     apiMock.put.mockRejectedValue(axiosError(400, "Current password is incorrect."));
+    const errorToast = vi.spyOn(toast, "error");
     renderWithProviders(<ChangePasswordForm required />, { user: complete });
     expect(screen.getByText(t("user.passwordSectionRequired"))).toBeInTheDocument();
     await fill("pogresna", "nova-lozinka", "nova-lozinka");
-    expect(await screen.findByText("Current password is incorrect.")).toBeInTheDocument();
+    await waitFor(() => expect(errorToast).toHaveBeenCalledWith("Current password is incorrect."));
+    expect(screen.queryByText("Current password is incorrect.")).not.toBeInTheDocument();
   });
 });
 

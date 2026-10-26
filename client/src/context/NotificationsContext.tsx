@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import api from "../api/axios.js";
 
 export type NotificationType =
@@ -73,6 +75,7 @@ export const NotificationsProvider = ({
   children: React.ReactNode;
   enabled?: boolean;
 }) => {
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -100,7 +103,7 @@ export const NotificationsProvider = ({
     };
   }, [fetchNotifications, enabled]);
 
-  // The updates below are applied optimistically; on failure the list is reloaded from the server.
+  // The updates below are applied optimistically; on failure a toast says so and the list is reloaded from the server.
   const markAsRead = async (notification: Notification) => {
     if (notification.is_read) return;
     setNotifications((prev) =>
@@ -111,6 +114,7 @@ export const NotificationsProvider = ({
       await api.patch(`/notifications/${notification.id}/read`);
     } catch (err) {
       console.error(err);
+      toast.error(t("notifications.actionError"));
       fetchNotifications();
     }
   };
@@ -122,6 +126,7 @@ export const NotificationsProvider = ({
       await api.patch("/notifications/read-all");
     } catch (err) {
       console.error(err);
+      toast.error(t("notifications.actionError"));
       fetchNotifications();
     }
   };
@@ -133,6 +138,7 @@ export const NotificationsProvider = ({
       await api.delete(`/notifications/${notification.id}`);
     } catch (err) {
       console.error(err);
+      toast.error(t("notifications.actionError"));
       fetchNotifications();
     }
   };
@@ -145,6 +151,7 @@ export const NotificationsProvider = ({
       fetchNotifications();
     } catch (err) {
       console.error(err);
+      toast.error(t("notifications.actionError"));
       fetchNotifications();
     }
   };

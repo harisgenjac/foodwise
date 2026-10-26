@@ -44,7 +44,7 @@ More commands (tests, seed, lint, type-check) are in the two technical docs.
 ## Rules that apply everywhere
 
 - **API responses:** `{ error: "..." }` for failures, `{ message, <entity> }` for successes.
-- **Server messages are in English** (errors, success messages, log lines) and the tests assert on them. Keep new ones in English and consistent with existing wording (e.g. `"Product not found."`, `"An error occurred while fetching products."`). UI translation stays on the client: notification text is translated from the notification `type` (the stored `message` is an English fallback), and CSV reports follow the `lang` query param.
+- **Server messages are in English** (errors, success messages, log lines) and the tests assert on them. Keep new ones in English and consistent with existing wording (e.g. `"Product not found."`, `"An error occurred while fetching products."`). UI translation stays on the client: `error`/`message` texts are translated by their exact English text from `client/src/i18n/locales/server.bs.json` (an axios interceptor applies it; a client test fails when a server text has no entry, so a new or reworded message needs one), notification text is translated from the notification `type` (the stored `message` is an English fallback), and CSV reports follow the `lang` query param.
 - **Authorization checks ownership, not only role.**
 - **SQL:** parameterized queries only. With a JOIN, always use explicit `table.column` prefixes and never a bare `*`.
 - **Migrations:** never edit one that has already been run. Every schema change is a new migration.

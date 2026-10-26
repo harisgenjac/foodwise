@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { assetUrl } from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.js";
 import { useNavigate, Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
@@ -55,8 +56,13 @@ function Header({ isSidebarOpen, onToggleSidebar, locked = false }: HeaderProps)
   }, []);
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/login");
+    try {
+      await logout();
+      navigate("/login");
+    } catch (err) {
+      console.error("Error logging out:", err);
+      toast.error(t("header.logoutError"));
+    }
   };
 
   const toggleLabel = isSidebarOpen

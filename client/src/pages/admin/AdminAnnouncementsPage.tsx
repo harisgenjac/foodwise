@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
-import { AlertCircle, Languages, Megaphone, Store, Users, UtensilsCrossed } from "lucide-react";
+import { Languages, Megaphone, Store, Users, UtensilsCrossed } from "lucide-react";
 import api from "../../api/axios.js";
 import { useFetch } from "../../hooks/useFetch.js";
 import { useAdminPage, useKeepPageInRange } from "../../hooks/useAdminPage.js";
@@ -41,7 +41,6 @@ function AdminAnnouncementsPage() {
   const { t } = useTranslation();
   const [audience, setAudience] = useState<AnnouncementAudience>("ALL");
   const [form, setForm] = useState(EMPTY_FORM);
-  const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [ending, setEnding] = useState<AdminAnnouncement | null>(null);
   const [busy, setBusy] = useState(false);
@@ -66,7 +65,6 @@ function AdminAnnouncementsPage() {
   const descriptions = t("admin.announcements.audienceDescriptions", { returnObjects: true }) as Record<string, string>;
   const setField = (field: keyof typeof EMPTY_FORM) => (value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
-    setError("");
   };
 
   const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -95,7 +93,7 @@ function AdminAnnouncementsPage() {
       refetch();
     } catch (err) {
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
-      setError(message || t("admin.announcements.sendError"));
+      toast.error(message || t("admin.announcements.sendError"));
     } finally {
       setBusy(false);
       setConfirming(false);
@@ -146,13 +144,6 @@ function AdminAnnouncementsPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
       <ProductPageHeader title={t("admin.announcements.title")} subtitle={t("admin.announcements.subtitle")} icon={Megaphone} />
-
-      {error && (
-        <p className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-        </p>
-      )}
 
       <form ref={formRef} noValidate onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">

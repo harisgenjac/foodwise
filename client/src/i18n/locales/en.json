@@ -31,7 +31,8 @@
     "viewAllNotifications": "View all notifications",
     "logout": "Log out",
     "collapseSidebar": "Collapse menu",
-    "expandSidebar": "Expand menu"
+    "expandSidebar": "Expand menu",
+    "logoutError": "Logging out failed. Please try again."
   },
   "auth": {
     "welcomeBack": "Welcome back",
@@ -208,6 +209,7 @@
     "markAllRead": "Mark all as read",
     "deleteRead": "Delete read",
     "delete": "Delete notification",
+    "actionError": "The change was not saved. Please try again.",
     "allReadTitle": "All caught up",
     "allReadSubtitle": "You have no unread notifications.",
     "markAllReadShort": "Mark all read",
@@ -256,9 +258,7 @@
     }
   },
   "store": {
-    "addFavoriteSucces": "Store added to favorites successfully.",
     "addFavoriteError": "Error adding store to favorites.",
-    "deleteFavoriteSucces": "Store removed from favorites",
     "deleteFavoriteError": "Error removing store from favorites.",
     "title": "Stores",
     "onlyFavorites": "Favorites only",
@@ -438,6 +438,7 @@
     "deleteConfirm": "Delete",
     "deleted": "Template deleted.",
     "deleteError": "Error deleting the template.",
+    "saved": "The template was saved.",
     "saveError": "The product was added, but the template was not saved."
   },
   "importProducts": {
@@ -484,7 +485,8 @@
     "pickDate": "Pick a date",
     "loadMore": "Load more",
     "showingOf": "Showing {{shown}} of {{total}}",
-    "fieldRequired": "This field is required."
+    "fieldRequired": "This field is required.",
+    "closeToast": "Close message"
   },
   "pickups": {
     "title": "Pickups",
@@ -1116,7 +1118,8 @@
   },
   "announcements": {
     "label": "Platform announcement",
-    "dismiss": "Dismiss announcement"
+    "dismiss": "Dismiss announcement",
+    "dismissError": "The announcement was not dismissed. It will show again after a refresh."
   },
   "accountSetup": {
     "title": "Finish setting up your account",

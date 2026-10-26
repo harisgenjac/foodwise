@@ -44,6 +44,7 @@ describe("ImportProductsPage", () => {
   });
 
   it("lists the rows the server rejected", async () => {
+    const errorToast = vi.spyOn(toast, "error");
     apiMock.post.mockRejectedValue(
       new AxiosError("Request failed", "400", undefined, undefined, {
         status: 400,
@@ -64,8 +65,9 @@ describe("ImportProductsPage", () => {
     await chooseFile();
     await userEvent.click(screen.getByRole("button", { name: t("importProducts.importButton") }));
 
-    expect(await screen.findByText("The CSV contains invalid rows.")).toBeInTheDocument();
-    const rows = within(screen.getByRole("table")).getAllByRole("row");
+    const rows = within(await screen.findByRole("table")).getAllByRole("row");
+    expect(errorToast).toHaveBeenCalledWith("The CSV contains invalid rows.");
+    expect(screen.queryByText("The CSV contains invalid rows.")).not.toBeInTheDocument();
     expect(rows).toHaveLength(3);
     expect(rows[1]).toHaveTextContent("3Category is not valid.");
     expect(rows[2]).toHaveTextContent("5Expiry date is not valid.");

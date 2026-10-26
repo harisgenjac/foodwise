@@ -2,12 +2,11 @@ import { useState, useEffect } from "react";
 import api, { assetUrl } from "../api/axios.js";
 import type { User } from "../types/index.js";
 import axios from "axios";
+import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import {
-  AlertCircle,
   Building2,
   Camera,
-  CheckCircle2,
   Clock,
   FileText,
   Mail,
@@ -44,8 +43,6 @@ function MyProfilePage() {
   const [logoUrl, setLogoUrl] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
   const { t } = useTranslation();
 
@@ -101,15 +98,11 @@ function MyProfilePage() {
       setLogoFile(null);
       setLogoPreview(null);
       refreshUser().catch((err) => console.error("Error refreshing user:", err));
-      setSuccess(t("user.addedLogoSuccess"));
-      setError("");
-      document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+      toast.success(t("user.addedLogoSuccess"));
     } catch (err) {
       console.error(err);
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null
-      setError(message || t("user.uploadError"));
-      setSuccess("");
-      document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      toast.error(message || t("user.uploadError"));
     }
   };
 
@@ -130,17 +123,11 @@ function MyProfilePage() {
         description,
       });
       refreshUser().catch((err) => console.error("Error refreshing user:", err));
-      setSuccess(t("user.editedSuccess"));
-      setError("");
-      document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+      toast.success(t("user.editedSuccess"));
     } catch (err) {
       console.error("Error updating user:", err);
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null
-      setError(
-        message || t("user.editError"),
-      );
-      setSuccess("");
-      document.querySelector("main")?.scrollTo({ top: 0, behavior: "smooth" });
+      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      toast.error(message || t("user.editError"));
     } finally {
       setSaving(false);
     }
@@ -164,19 +151,6 @@ function MyProfilePage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-16">
-      {error && (
-        <p className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {error}
-        </p>
-      )}
-      {success && (
-        <p className="flex items-center gap-2 rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm text-green-700">
-          <CheckCircle2 className="h-4 w-4 shrink-0" />
-          {success}
-        </p>
-      )}
-
       <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="relative h-28 bg-linear-to-br from-orange-50 via-amber-50/60 to-white">
           <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-orange-200/30 blur-3xl" />
