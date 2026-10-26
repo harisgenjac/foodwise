@@ -4,6 +4,7 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext.js";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../components/LanguageSwitcher.js";
+import Footer from "../components/Footer.js";
 import { Info, Lock, Mail } from "lucide-react";
 import logo from "../assets/logoApp.png";
 import FormField, { inputStyle } from "../components/form/FormField.js";
@@ -65,76 +66,81 @@ function LoginPage() {
         </div>
       </div>
 
-      <div className="relative flex flex-1 items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="relative flex flex-1 flex-col bg-gray-50 px-4 pt-12 pb-6">
         <div className="absolute top-4 right-4">
           <LanguageSwitcher />
         </div>
 
-        <div className="w-full max-w-md">
-          <div className="flex items-center justify-center gap-2 mb-6 lg:hidden">
-            <img src={logo} alt="Logo" className="h-14 w-14" />
-            <span className="font-bold text-2xl">FoodWise</span>
-          </div>
+        <div className="flex flex-1 items-center justify-center pb-12">
+          <div className="w-full max-w-md">
+            <div className="flex items-center justify-center gap-2 mb-6 lg:hidden">
+              <img src={logo} alt="Logo" className="h-14 w-14" />
+              <span className="font-bold text-2xl">FoodWise</span>
+            </div>
 
-          <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-            <h1 className="text-2xl font-bold text-gray-800 mb-1">
-              {t("auth.welcomeBack")}
-            </h1>
-            <p className="text-sm text-gray-500 mb-6">
-              {t("auth.loginSubtitle")}
-            </p>
-
-            {registrationClosed && (
-              <p className="mb-4 flex items-start gap-2 rounded-xl border border-orange-100 bg-orange-50 px-3 py-2 text-sm text-orange-800">
-                <Info className="mt-0.5 h-4 w-4 shrink-0" />
-                {t("auth.registrationClosed")}
+            <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
+              <h1 className="text-2xl font-bold text-gray-800 mb-1">
+                {t("auth.welcomeBack")}
+              </h1>
+              <p className="text-sm text-gray-500 mb-6">
+                {t("auth.loginSubtitle")}
               </p>
-            )}
 
-            {error && (
-              <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
-                {error}
-              </p>
-            )}
+              {registrationClosed && (
+                <p className="mb-4 flex items-start gap-2 rounded-xl border border-orange-100 bg-orange-50 px-3 py-2 text-sm text-orange-800">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                  {t("auth.registrationClosed")}
+                </p>
+              )}
 
-            <form ref={formRef} noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <FormField label={t("auth.email")} icon={Mail} required error={errorFor("email")}>
-                <input
-                  id="email"
-                  type="email"
-                  name="email"
-                  autoComplete="username"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onBlur={blur("email")}
-                  className={inputStyle}
-                />
-              </FormField>
-              <FormField label={t("auth.password")} icon={Lock} required error={errorFor("password")}>
-                <input
-                  id="password"
-                  type="password"
-                  name="password"
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onBlur={blur("password")}
-                  className={inputStyle}
-                />
-              </FormField>
-              <button
-                type="submit"
-                className="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
-              >
-                {t("auth.loginButton")}
-              </button>
-              <RequiredHint className="text-center" />
-            </form>
+              {error && (
+                <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+                  {error}
+                </p>
+              )}
 
-            <p className="text-sm text-gray-500 text-center mt-6">{t("auth.accountByAdmin")}</p>
+              <form ref={formRef} noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <FormField label={t("auth.email")} icon={Mail} required error={errorFor("email")}>
+                  <input
+                    id="email"
+                    type="email"
+                    name="email"
+                    autoComplete="username"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onBlur={blur("email")}
+                    className={inputStyle}
+                  />
+                </FormField>
+                <FormField label={t("auth.password")} icon={Lock} required error={errorFor("password")}>
+                  <input
+                    id="password"
+                    type="password"
+                    name="password"
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onBlur={blur("password")}
+                    className={inputStyle}
+                  />
+                </FormField>
+                <button
+                  type="submit"
+                  className="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
+                >
+                  {t("auth.loginButton")}
+                </button>
+                <RequiredHint className="text-center" />
+              </form>
+
+              <p className="text-sm text-gray-500 text-center mt-6">{t("auth.accountByAdmin")}</p>
+            </div>
           </div>
         </div>
+
+        {/* The impact counter needs a login. */}
+        <Footer showImpact={false} />
       </div>
     </div>
   );

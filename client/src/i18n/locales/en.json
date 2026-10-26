@@ -515,6 +515,14 @@
     "closeToast": "Close message",
     "cancel": "Cancel"
   },
+  "footer": {
+    "impact": "Together we have saved {{kg}} kg of food",
+    "linksLabel": "Footer",
+    "help": "Help",
+    "contact": "Contact",
+    "terms": "Terms of use",
+    "privacy": "Privacy"
+  },
   "pickups": {
     "title": "Pickups",
     "storeSubtitle": "Hand food over to restaurants and keep track of today's and upcoming pickups.",

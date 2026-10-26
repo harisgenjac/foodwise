@@ -530,6 +530,14 @@
     "closeToast": "Zatvori poruku",
     "cancel": "Odustani"
   },
+  "footer": {
+    "impact": "Zajedno smo spasili {{kg}} kg hrane",
+    "linksLabel": "Podnožje",
+    "help": "Pomoć",
+    "contact": "Kontakt",
+    "terms": "Uslovi korištenja",
+    "privacy": "Privatnost"
+  },
   "pickups": {
     "title": "Preuzimanja",
     "storeSubtitle": "Predajte robu restoranima i pratite današnja i buduća preuzimanja.",
