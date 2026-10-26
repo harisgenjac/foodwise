@@ -263,57 +263,33 @@ describe("SubscriptionSection", () => {
         subscription: { ...makeCreditSummary().subscription!, auto_renew: true },
         pendingRequests: [RENEWAL],
       });
-    const texts = (action: "autoRenewOff" | "withdraw") => ({
-      title: t(`credits.renewalConfirm.${action}Title`),
-      text: t(`credits.renewalConfirm.${action}Text`, {
-        plan: "Standard",
-        month: formatCreditMonth("2030-02-01", t("dashboard.months", { returnObjects: true }) as string[]),
-      }),
-      button: t(`credits.renewalConfirm.${action}Button`),
-    });
-
-    it("explains that turning auto-renew off withdraws it, and sends nothing until confirmed", async () => {
+    // The server keeps the renewal and only turns its auto-renew off, so nothing is asked.
+    it("turns auto-renew off at once, keeping the renewal", async () => {
       apiMock.patch.mockResolvedValue({ data: {} });
       renderWithCredits(<SubscriptionSection role="STORE" />, withRenewal());
-      const { title, text, button } = texts("autoRenewOff");
-
-      await userEvent.click(await screen.findByRole("switch", { name: t("credits.profile.autoRenew") }));
-      let dialog = screen.getByRole("dialog", { name: title });
-      expect(dialog).toHaveTextContent(text);
-      expect(within(dialog).getByRole("button", { name: t("common.cancel") })).toHaveFocus();
-      await userEvent.click(within(dialog).getByRole("button", { name: t("common.cancel") }));
-      expect(apiMock.patch).not.toHaveBeenCalled();
-
-      await userEvent.click(screen.getByRole("switch", { name: t("credits.profile.autoRenew") }));
-      dialog = screen.getByRole("dialog", { name: title });
-      await userEvent.click(within(dialog).getByRole("button", { name: button }));
-      expect(apiMock.patch).toHaveBeenCalledWith("/credits/subscription/auto-renew", { auto_renew: false });
-      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    });
-
-    it("turns auto-renew off at once when no renewal is pending", async () => {
-      apiMock.patch.mockResolvedValue({ data: {} });
-      renderWithCredits(
-        <SubscriptionSection role="STORE" />,
-        makeCreditSummary({ subscription: { ...makeCreditSummary().subscription!, auto_renew: true } }),
-      );
 
       await userEvent.click(await screen.findByRole("switch", { name: t("credits.profile.autoRenew") }));
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
       expect(apiMock.patch).toHaveBeenCalledWith("/credits/subscription/auto-renew", { auto_renew: false });
+      expect(apiMock.delete).not.toHaveBeenCalled();
     });
 
     it("confirms withdrawing the renewal request", async () => {
       apiMock.delete.mockResolvedValue({ data: {} });
       renderWithCredits(<SubscriptionSection role="STORE" />, withRenewal());
-      const { title, text, button } = texts("withdraw");
 
       await userEvent.click(await screen.findByRole("button", { name: t("credits.profile.withdraw") }));
-      const dialog = screen.getByRole("dialog", { name: title });
-      expect(dialog).toHaveTextContent(text);
+      const dialog = screen.getByRole("dialog", { name: t("credits.renewalConfirm.withdrawTitle") });
+      expect(dialog).toHaveTextContent(
+        t("credits.renewalConfirm.withdrawText", {
+          plan: "Standard",
+          month: formatCreditMonth("2030-02-01", t("dashboard.months", { returnObjects: true }) as string[]),
+        }),
+      );
+      expect(within(dialog).getByRole("button", { name: t("common.cancel") })).toHaveFocus();
       expect(apiMock.delete).not.toHaveBeenCalled();
 
-      await userEvent.click(within(dialog).getByRole("button", { name: button }));
+      await userEvent.click(within(dialog).getByRole("button", { name: t("credits.renewalConfirm.withdrawButton") }));
       expect(apiMock.delete).toHaveBeenCalledWith("/credits/requests/12");
     });
   });

@@ -1150,9 +1150,6 @@
   },
   "credits": {
     "renewalConfirm": {
-      "autoRenewOffTitle": "Turn off auto-renew?",
-      "autoRenewOffText": "The renewal request for the {{plan}} plan for {{month}} is waiting for approval and will be withdrawn. It will not be sent again, so you will have to choose a plan for {{month}} yourself.",
-      "autoRenewOffButton": "Turn off auto-renew",
       "withdrawTitle": "Withdraw the renewal request?",
       "withdrawText": "The renewal request for the {{plan}} plan for {{month}} will be withdrawn and will not be sent again. You will have to choose a plan for {{month}} yourself.",
       "withdrawButton": "Withdraw request"

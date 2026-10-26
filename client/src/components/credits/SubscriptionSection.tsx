@@ -76,12 +76,9 @@ function SubscriptionSection({ role }: { role: Role }) {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [selectedTopup, setSelectedTopup] = useState<TopupPackage | null>(null);
   const [busy, setBusy] = useState(false);
-  // Turning auto-renew off or withdrawing an automatic renewal request drops that request for
-  // good (the renewal job never recreates it), so both are confirmed first.
-  const [confirmingRenewal, setConfirmingRenewal] = useState<{
-    action: "autoRenewOff" | "withdraw";
-    request: CreditRequest;
-  } | null>(null);
+  // Withdrawing an automatic renewal request drops it for good (the renewal job never recreates
+  // it), so it is confirmed first.
+  const [withdrawingRenewal, setWithdrawingRenewal] = useState<CreditRequest | null>(null);
   // Next month's plans and the extra credits stay collapsed until asked for; null means the
   // extra credits follow the default (open only when no credits are left).
   const [planOpen, setPlanOpen] = useState(false);
@@ -139,7 +136,6 @@ function SubscriptionSection({ role }: { role: Role }) {
     (request) => request.request_type === "SUBSCRIPTION" && request.period_month === requestMonth,
   );
   const pendingTopup = credits.pendingRequests.find((request) => request.request_type === "TOPUP");
-  const pendingRenewal = credits.pendingRequests.find((request) => request.source === "AUTO_RENEW");
   const canChoosePlan = !pendingSubscription && !(period === "next" && credits.nextSubscription);
   // Without a subscription the plans are the point of the card; with one they are optional.
   const planCollapsible = period === "next" && canChoosePlan;
@@ -157,7 +153,7 @@ function SubscriptionSection({ role }: { role: Role }) {
     try {
       await api.delete(`/credits/requests/${request.id}`);
       toast.success(t("credits.profile.withdrawn"));
-      setConfirmingRenewal(null);
+      setWithdrawingRenewal(null);
       await reload();
     } catch (err) {
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
@@ -169,28 +165,21 @@ function SubscriptionSection({ role }: { role: Role }) {
 
   const requestWithdraw = (request: CreditRequest) => {
     if (request.source === "AUTO_RENEW") {
-      setConfirmingRenewal({ action: "withdraw", request });
+      setWithdrawingRenewal(request);
       return;
     }
     withdraw(request);
   };
 
-  const toggleAutoRenew = () => {
+  // Nothing is withdrawn: the switch also applies to next month's approved plan and pending
+  // requests, which stay, so it needs no confirmation.
+  const toggleAutoRenew = async () => {
     if (busy || !subscription) return;
-    if (subscription.auto_renew && pendingRenewal) {
-      setConfirmingRenewal({ action: "autoRenewOff", request: pendingRenewal });
-      return;
-    }
-    setAutoRenew(!subscription.auto_renew);
-  };
-
-  const setAutoRenew = async (next: boolean) => {
-    if (busy) return;
     setBusy(true);
     try {
+      const next = !subscription.auto_renew;
       await api.patch("/credits/subscription/auto-renew", { auto_renew: next });
       toast.success(t(next ? "credits.profile.autoRenewOn" : "credits.profile.autoRenewOff"));
-      setConfirmingRenewal(null);
       await reload();
     } catch (err) {
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
@@ -454,20 +443,18 @@ function SubscriptionSection({ role }: { role: Role }) {
           }}
         />
       )}
-      {confirmingRenewal && (
+      {withdrawingRenewal && (
         <ConfirmModal
           variant="danger"
-          title={t(`credits.renewalConfirm.${confirmingRenewal.action}Title`)}
-          message={t(`credits.renewalConfirm.${confirmingRenewal.action}Text`, {
-            plan: confirmingRenewal.request.plan_name ?? "",
-            month: formatCreditMonth(confirmingRenewal.request.period_month, monthNames),
+          title={t("credits.renewalConfirm.withdrawTitle")}
+          message={t("credits.renewalConfirm.withdrawText", {
+            plan: withdrawingRenewal.plan_name ?? "",
+            month: formatCreditMonth(withdrawingRenewal.period_month, monthNames),
           })}
-          confirmLabel={t(`credits.renewalConfirm.${confirmingRenewal.action}Button`)}
+          confirmLabel={t("credits.renewalConfirm.withdrawButton")}
           busy={busy}
-          onConfirm={() =>
-            confirmingRenewal.action === "withdraw" ? withdraw(confirmingRenewal.request) : setAutoRenew(false)
-          }
-          onClose={() => setConfirmingRenewal(null)}
+          onConfirm={() => withdraw(withdrawingRenewal)}
+          onClose={() => setWithdrawingRenewal(null)}
         />
       )}
     </>

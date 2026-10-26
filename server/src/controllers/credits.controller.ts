@@ -245,8 +245,9 @@ export const withdrawRequest = async (req: Request, res: Response) => {
   }
 };
 
-// Auto-renew is set on the user's current and future subscriptions. Turning it off also
-// withdraws a renewal request the job already created, so nothing renews behind the user's back.
+// Auto-renew is set on the user's current and future subscriptions and on their pending
+// subscription requests (their own and the job's renewals), so an approval later never turns
+// it back on. Next month's plan stays either way: an approved one is kept, a request still waits.
 export const setAutoRenew = async (req: Request, res: Response) => {
   const { auto_renew } = req.body;
   if (typeof auto_renew !== "boolean") {
@@ -267,13 +268,11 @@ export const setAutoRenew = async (req: Request, res: Response) => {
       await client.query("ROLLBACK");
       return res.status(404).json({ error: "You do not have an active subscription." });
     }
-    if (!auto_renew) {
-      await client.query(
-        `UPDATE credit_requests SET status = 'CANCELLED'
-         WHERE user_id = $1 AND status = 'PENDING' AND source = 'AUTO_RENEW'`,
-        [userId],
-      );
-    }
+    await client.query(
+      `UPDATE credit_requests SET auto_renew = $1
+       WHERE user_id = $2 AND status = 'PENDING' AND request_type = 'SUBSCRIPTION'`,
+      [auto_renew, userId],
+    );
     await client.query("COMMIT");
     return res.status(200).json({
       message: auto_renew ? "Auto-renew turned on." : "Auto-renew turned off.",

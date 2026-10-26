@@ -1180,9 +1180,6 @@
   },
   "credits": {
     "renewalConfirm": {
-      "autoRenewOffTitle": "Isključiti automatsku obnovu?",
-      "autoRenewOffText": "Zahtjev za obnovu plana {{plan}} za {{month}} čeka odobrenje i bit će povučen. Neće biti ponovo poslan, pa ćete plan za {{month}} morati izabrati sami.",
-      "autoRenewOffButton": "Isključi obnovu",
       "withdrawTitle": "Povući zahtjev za obnovu?",
       "withdrawText": "Zahtjev za obnovu plana {{plan}} za {{month}} bit će povučen i neće biti ponovo poslan. Plan za {{month}} ćete morati izabrati sami.",
       "withdrawButton": "Povuci zahtjev"
