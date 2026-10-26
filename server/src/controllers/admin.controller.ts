@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import type { Pool, PoolClient } from "pg";
 import { createNotification } from "../utils/notifications.js";
 import { parseId } from "../utils/params.js";
-import { TABLE_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
+import { ADMIN_PAGE_SIZE, listPage, parsePage, parseSort } from "../utils/pagination.js";
 import {
   hashPassword,
   isUniqueViolation,
@@ -41,6 +41,12 @@ export const ANNOUNCEMENT_AUDIENCES = ["ALL", "STORE", "RESTAURANT"];
 
 const MAX_REASON_LENGTH = 500;
 const RECENT_ACTIONS_LIMIT = 20;
+
+// The sortable columns of each admin table (`?sort=<key>&dir=asc|desc`, see parseSort).
+const USER_SORTS = { created_at: "users.created_at" };
+const PRODUCT_SORTS = { discounted_price: "products.discounted_price", expiry_date: "products.expiry_date" };
+const RESERVATION_SORTS = { pickup_date: "reservations.pickup_date" };
+const DONATION_SORTS = { expiry_date: "donation_offers.expiry_date" };
 
 const USER_COLUMNS = `users.id, users.email, users.role, users.first_name, users.last_name,
   users.business_name, users.city, users.address, users.phone, users.logo_url,
@@ -199,8 +205,9 @@ export const getStats = async (req: Request, res: Response) => {
 
 export const getUsers = async (req: Request, res: Response) => {
   const { role, q, city, blocked } = req.query;
-  const page = parsePage(req.query, TABLE_PAGE_SIZE);
-  if (!page) {
+  const page = parsePage(req.query, ADMIN_PAGE_SIZE);
+  const orderBy = parseSort(req.query, USER_SORTS, "users.created_at DESC, users.id DESC", "users.id DESC");
+  if (!page || !orderBy) {
     return res.status(400).json({ error: "Invalid filter." });
   }
 
@@ -234,7 +241,7 @@ export const getUsers = async (req: Request, res: Response) => {
     const { rows, total } = await listPage(
       USER_COLUMNS,
       from,
-      "users.created_at DESC, users.id DESC",
+      orderBy,
       values,
       page,
     );
@@ -519,8 +526,9 @@ export const unblockUser = async (req: Request, res: Response) => {
 
 export const getAdminProducts = async (req: Request, res: Response) => {
   const { q, status, store_id } = req.query;
-  const page = parsePage(req.query, TABLE_PAGE_SIZE);
-  if (!page) {
+  const page = parsePage(req.query, ADMIN_PAGE_SIZE);
+  const orderBy = parseSort(req.query, PRODUCT_SORTS, "products.created_at DESC, products.id DESC", "products.id DESC");
+  if (!page || !orderBy) {
     return res.status(400).json({ error: "Invalid filter." });
   }
 
@@ -553,7 +561,7 @@ export const getAdminProducts = async (req: Request, res: Response) => {
        products.status, products.created_at, users.business_name, users.email AS store_email,
        users.is_blocked AS store_is_blocked`,
       from,
-      "products.created_at DESC, products.id DESC",
+      orderBy,
       values,
       page,
     );
@@ -633,8 +641,14 @@ export const removeProduct = async (req: Request, res: Response) => {
 
 export const getAdminDonations = async (req: Request, res: Response) => {
   const { q, status, type, donor_id } = req.query;
-  const page = parsePage(req.query, TABLE_PAGE_SIZE);
-  if (!page) {
+  const page = parsePage(req.query, ADMIN_PAGE_SIZE);
+  const orderBy = parseSort(
+    req.query,
+    DONATION_SORTS,
+    "donation_offers.created_at DESC, donation_offers.id DESC",
+    "donation_offers.id DESC",
+  );
+  if (!page || !orderBy) {
     return res.status(400).json({ error: "Invalid filter." });
   }
 
@@ -675,7 +689,7 @@ export const getAdminDonations = async (req: Request, res: Response) => {
        donation_offers.status, donation_offers.created_at, users.business_name,
        users.email AS donor_email, users.role AS donor_role`,
       from,
-      "donation_offers.created_at DESC, donation_offers.id DESC",
+      orderBy,
       values,
       page,
     );
@@ -745,7 +759,7 @@ export const removeDonation = async (req: Request, res: Response) => {
 
 export const getAdminActions = async (req: Request, res: Response) => {
   const { admin_id, action, target_user_id } = req.query;
-  const page = parsePage(req.query, TABLE_PAGE_SIZE);
+  const page = parsePage(req.query, ADMIN_PAGE_SIZE);
   if (!page) {
     return res.status(400).json({ error: "Invalid filter." });
   }
@@ -802,8 +816,14 @@ export const getAdminActions = async (req: Request, res: Response) => {
 
 export const getAdminReservations = async (req: Request, res: Response) => {
   const { q, status, user_id } = req.query;
-  const page = parsePage(req.query, TABLE_PAGE_SIZE);
-  if (!page) {
+  const page = parsePage(req.query, ADMIN_PAGE_SIZE);
+  const orderBy = parseSort(
+    req.query,
+    RESERVATION_SORTS,
+    "reservations.created_at DESC, reservations.id DESC",
+    "reservations.id DESC",
+  );
+  if (!page || !orderBy) {
     return res.status(400).json({ error: "Invalid filter." });
   }
 
@@ -845,7 +865,7 @@ export const getAdminReservations = async (req: Request, res: Response) => {
        restaurants.id AS restaurant_id, restaurants.business_name AS restaurant_name,
        restaurants.email AS restaurant_email`,
       from,
-      "reservations.created_at DESC, reservations.id DESC",
+      orderBy,
       values,
       page,
     );
@@ -1061,7 +1081,7 @@ export const createAnnouncement = async (req: Request, res: Response) => {
 };
 
 export const getAnnouncements = async (req: Request, res: Response) => {
-  const page = parsePage(req.query, TABLE_PAGE_SIZE);
+  const page = parsePage(req.query, ADMIN_PAGE_SIZE);
   if (!page) {
     return res.status(400).json({ error: "Invalid filter." });
   }

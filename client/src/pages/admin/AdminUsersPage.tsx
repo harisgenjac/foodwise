@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { MapPin, Search, ShieldCheck, ToggleLeft, UserPlus, Users } from "lucide-react";
 import { useFetch } from "../../hooks/useFetch.js";
-import { useAdminPage, useKeepPageInRange } from "../../hooks/useAdminPage.js";
+import { useAdminPage, useAdminSort, useKeepPageInRange } from "../../hooks/useAdminPage.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../../components/product/FilterBar.js";
 import { inputStyle } from "../../components/form/FormField.js";
@@ -11,9 +11,13 @@ import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
+import SortableHeader from "../../components/admin/SortableHeader.js";
 import { ADMIN_PAGE_SIZE, ROLES, ROLE_STYLES, accountName, formatDateTime } from "../../utils/admin.js";
 import { getAccountSetup } from "../../utils/accountSetup.js";
 import type { User } from "../../types/index.js";
+
+// Sortable columns (the server whitelist of GET /admin/users).
+const SORT_KEYS = ["created_at"];
 
 function AdminUsersPage() {
   const { t } = useTranslation();
@@ -23,12 +27,15 @@ function AdminUsersPage() {
   const [blocked, setBlocked] = useState("");
   const [city, setCity] = useState("");
   const { page, offset, setPage } = useAdminPage();
+  const { sort, dir, toggleSort } = useAdminSort(SORT_KEYS);
 
   const { data: users, total, loading, error } = useFetch<User>("/admin/users", "users", {
     q,
     role,
     blocked,
     city,
+    sort,
+    dir,
     limit: ADMIN_PAGE_SIZE,
     offset,
   });
@@ -134,7 +141,14 @@ function AdminUsersPage() {
                   <th className="px-4 py-3">{t("admin.users.columnRole")}</th>
                   <th className="hidden px-4 py-3 md:table-cell">{t("admin.users.columnCity")}</th>
                   <th className="px-4 py-3">{t("admin.users.columnStatus")}</th>
-                  <th className="hidden px-4 py-3 md:table-cell">{t("admin.users.columnCreated")}</th>
+                  <SortableHeader
+                    label={t("admin.users.columnCreated")}
+                    sortKey="created_at"
+                    sort={sort}
+                    dir={dir}
+                    onSort={toggleSort}
+                    className="hidden px-4 py-3 md:table-cell"
+                  />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">

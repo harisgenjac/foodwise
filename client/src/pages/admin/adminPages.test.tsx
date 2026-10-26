@@ -62,7 +62,7 @@ describe("AdminUsersPage", () => {
     await waitFor(() => expect(respond).toHaveBeenLastCalledWith(expect.objectContaining({ role: "STORE", offset: 0 })));
 
     await userEvent.click(screen.getByRole("button", { name: t("admin.common.next") }));
-    await waitFor(() => expect(respond).toHaveBeenLastCalledWith(expect.objectContaining({ offset: 10 })));
+    await waitFor(() => expect(respond).toHaveBeenLastCalledWith(expect.objectContaining({ offset: 20 })));
   });
 
   it("opens a user", async () => {

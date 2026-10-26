@@ -110,7 +110,7 @@ describe("AdminCreditsPage", () => {
       route: "/admin/credits",
       path: "/admin/credits",
       user: admin,
-      get: { "/admin/credits/overview": { users: [row], total: 1 } },
+      get: { "/admin/credits/overview": { users: [row], total: 1 }, "/admin/credits/plans": { plans: [] } },
     });
 
     expect(await screen.findByText("Market Centar")).toBeInTheDocument();

@@ -152,48 +152,30 @@ export const getBalance = async (db: Db, userId: number, now = new Date()): Prom
   };
 };
 
-export interface UserCreditSummary {
-  userId: number;
-  planName: string | null;
-  hasActiveSubscription: boolean;
-  total: number;
-  used: number;
-  available: number;
-}
+// The balance of the month `periodParam` (a query placeholder such as `$1`) for every row of a
+// list query over `users`, so the admin overview can filter and sort by it in SQL before paging.
+// The same rules as getBalance: the totals come from TOTALS_COLUMNS (the lateral subquery always
+// returns one row, 0/0 without ledger rows) and Available is 0 without an active subscription.
+export const balanceJoins = (periodParam: string) => `
+  LEFT JOIN subscriptions AS balance_subscriptions
+    ON balance_subscriptions.user_id = users.id AND balance_subscriptions.period_month = ${periodParam}
+    AND balance_subscriptions.status = 'ACTIVE'
+  LEFT JOIN plans AS balance_plans ON balance_plans.id = balance_subscriptions.plan_id
+  CROSS JOIN LATERAL (
+    SELECT ${TOTALS_COLUMNS} ${TOTALS_FROM}
+    WHERE entry.user_id = users.id AND entry.period_month = ${periodParam}
+  ) AS balance_totals`;
 
-// The current month's balance of many users in two queries (the admin overview page).
-export const getBalances = async (db: Db, userIds: number[], now = new Date()): Promise<Map<number, UserCreditSummary>> => {
-  const periodMonth = creditMonth(now);
-  const totals = await db.query<{ user_id: number; total: number; used: number }>(
-    `SELECT entry.user_id, ${TOTALS_COLUMNS} ${TOTALS_FROM}
-     WHERE entry.user_id = ANY($1) AND entry.period_month = $2
-     GROUP BY entry.user_id`,
-    [userIds, periodMonth],
-  );
-  const subscriptions = await db.query<{ user_id: number; plan_name: string }>(
-    `SELECT subscriptions.user_id, plans.name AS plan_name
-     FROM subscriptions
-     JOIN plans ON plans.id = subscriptions.plan_id
-     WHERE subscriptions.user_id = ANY($1) AND subscriptions.period_month = $2
-       AND subscriptions.status = 'ACTIVE'`,
-    [userIds, periodMonth],
-  );
-  const summaries = new Map<number, UserCreditSummary>();
-  for (const userId of userIds) {
-    const row = totals.rows.find((totalsRow) => totalsRow.user_id === userId);
-    const subscription = subscriptions.rows.find((subscriptionRow) => subscriptionRow.user_id === userId);
-    const total = row?.total ?? 0;
-    const used = row?.used ?? 0;
-    summaries.set(userId, {
-      userId,
-      planName: subscription?.plan_name ?? null,
-      hasActiveSubscription: subscription !== undefined,
-      total,
-      used,
-      available: subscription ? Math.max(total - used, 0) : 0,
-    });
-  }
-  return summaries;
+// Expressions over balanceJoins. Usage is used / total, NULL when the total is 0.
+export const BALANCE_SQL = {
+  planId: "balance_subscriptions.plan_id",
+  planName: "balance_plans.name",
+  hasSubscription: "balance_subscriptions.id IS NOT NULL",
+  total: "balance_totals.total",
+  used: "balance_totals.used",
+  available: `CASE WHEN balance_subscriptions.id IS NULL THEN 0
+    ELSE GREATEST(balance_totals.total - balance_totals.used, 0) END`,
+  usage: "balance_totals.used::numeric / NULLIF(balance_totals.total, 0)",
 };
 
 // Credits used by all stores and restaurants in the current month (the admin overview), with

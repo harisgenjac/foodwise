@@ -5,15 +5,16 @@ import { HttpError } from "../utils/httpError.js";
 import { createNotification } from "../utils/notifications.js";
 import { creditMonth, monthEnd } from "../utils/creditTime.js";
 import {
+  BALANCE_SQL,
   adjustCredits,
+  balanceJoins,
   getBalance,
-  getBalances,
   grantPlan,
   grantTopup,
   listTransactions,
 } from "../services/creditService.js";
 import { REASON_ERROR, logAdminAction, parseReason } from "./admin.controller.js";
-import { TABLE_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
+import { ADMIN_PAGE_SIZE, listPage, parsePage, parseSort } from "../utils/pagination.js";
 import {
   CREDIT_REQUEST_COLUMNS,
   CREDIT_REQUEST_JOINS,
@@ -36,16 +37,40 @@ const parseNote = (value: unknown): string | null | undefined => {
   return note || null;
 };
 
-// Stores and restaurants with this month's plan and balance. Filters: role, q (email or business name).
+// The overview's sortable columns. The balance is computed in SQL for every matching user, so a
+// sort covers all pages, not only the one shown.
+const OVERVIEW_SORTS = {
+  used: BALANCE_SQL.used,
+  available: BALANCE_SQL.available,
+  total: BALANCE_SQL.total,
+  usage: BALANCE_SQL.usage,
+};
+
+// Stores and restaurants with this month's plan and balance. Filters: role, q (email or business
+// name), plan (a plan id, or `none` for no active subscription this month); sortable (OVERVIEW_SORTS).
 export const getCreditOverview = async (req: Request, res: Response) => {
-  const { role, q } = req.query;
-  const page = parsePage(req.query, TABLE_PAGE_SIZE);
+  const { role, q, plan } = req.query;
+  const page = parsePage(req.query, ADMIN_PAGE_SIZE);
+  const orderBy = parseSort(
+    req.query,
+    OVERVIEW_SORTS,
+    "users.business_name ASC NULLS LAST, users.email ASC, users.id DESC",
+    "users.id DESC",
+  );
   // Unused filters arrive as empty strings (?role=), which mean "no filter".
-  if (!page || (role && !BUSINESS_ROLES.includes(role as string))) {
+  const planId = plan && plan !== "none" ? parseId(plan) : null;
+  if (
+    !page ||
+    !orderBy ||
+    (role && !BUSINESS_ROLES.includes(role as string)) ||
+    (plan && plan !== "none" && planId === null)
+  ) {
     return res.status(400).json({ error: "Invalid filter." });
   }
-  let from = "FROM users WHERE users.role IN ('STORE', 'RESTAURANT')";
-  const values: string[] = [];
+  const now = new Date();
+  const periodMonth = creditMonth(now);
+  let from = `FROM users ${balanceJoins("$1")} WHERE users.role IN ('STORE', 'RESTAURANT')`;
+  const values: (string | number)[] = [periodMonth];
   if (role) {
     values.push(role as string);
     from += ` AND users.role = $${values.length}`;
@@ -54,31 +79,25 @@ export const getCreditOverview = async (req: Request, res: Response) => {
     values.push(`%${q as string}%`);
     from += ` AND (users.email ILIKE $${values.length} OR users.business_name ILIKE $${values.length})`;
   }
+  if (plan === "none") {
+    from += ` AND NOT (${BALANCE_SQL.hasSubscription})`;
+  } else if (planId !== null) {
+    values.push(planId);
+    from += ` AND ${BALANCE_SQL.planId} = $${values.length}`;
+  }
 
   try {
-    const { rows, total } = await listPage(
+    const { rows: users, total } = await listPage(
       `users.id, users.email, users.role, users.business_name, users.is_blocked,
        (SELECT COUNT(*) FROM credit_requests
-        WHERE credit_requests.user_id = users.id AND credit_requests.status = 'PENDING')::int AS pending_requests`,
+        WHERE credit_requests.user_id = users.id AND credit_requests.status = 'PENDING')::int AS pending_requests,
+       ${BALANCE_SQL.planName} AS plan_name, ${BALANCE_SQL.hasSubscription} AS has_subscription,
+       ${BALANCE_SQL.total} AS total, ${BALANCE_SQL.used} AS used, ${BALANCE_SQL.available} AS available`,
       from,
-      "users.business_name ASC NULLS LAST, users.email ASC, users.id DESC",
+      orderBy,
       values,
       page,
     );
-    const now = new Date();
-    const balances = await getBalances(pool, rows.map((row) => row.id as number), now);
-    const users = rows.map((row) => {
-      const balance = balances.get(row.id)!;
-      return {
-        ...row,
-        plan_name: balance.planName,
-        has_subscription: balance.hasActiveSubscription,
-        total: balance.total,
-        used: balance.used,
-        available: balance.available,
-      };
-    });
-    const periodMonth = creditMonth(now);
     return res.status(200).json({ users, total, periodStart: periodMonth, periodEnd: monthEnd(periodMonth) });
   } catch (error) {
     console.error("Error while fetching the credit overview:", error);
@@ -89,7 +108,7 @@ export const getCreditOverview = async (req: Request, res: Response) => {
 // Subscription and top-up requests, pending first. Filters: type, status, user_id.
 export const getCreditRequests = async (req: Request, res: Response) => {
   const { type, status, user_id } = req.query;
-  const page = parsePage(req.query, TABLE_PAGE_SIZE);
+  const page = parsePage(req.query, ADMIN_PAGE_SIZE);
   if (
     !page ||
     (type && !CREDIT_REQUEST_TYPES.includes(type as string)) ||
@@ -320,7 +339,7 @@ export const adjustUserCredits = async (req: Request, res: Response) => {
 
 // One user's ledger, newest first, with this month's balance.
 export const getUserLedger = async (req: Request, res: Response) => {
-  const page = parsePage(req.query, TABLE_PAGE_SIZE);
+  const page = parsePage(req.query, ADMIN_PAGE_SIZE);
   if (!page) {
     return res.status(400).json({ error: "Invalid filter." });
   }

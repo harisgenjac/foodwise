@@ -1114,6 +1114,7 @@
       "search": "Pretraži po nazivu ili emailu",
       "columnRole": "Uloga",
       "allRoles": "Sve uloge",
+      "allPlans": "Svi planovi",
       "emptyTitle": "Nema korisnika",
       "emptySubtitle": "Nijedna prodavnica ili restoran ne odgovara pretrazi.",
       "columnBusiness": "Korisnik",
