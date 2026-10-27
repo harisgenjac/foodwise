@@ -91,7 +91,13 @@ function MyReservationsPage() {
     loading,
     fetching,
     refetch,
-  } = useFetch<Reservation>("/reservations/mine", "reservations", { ...query, limit });
+  } = useFetch<Reservation>(
+    "/reservations/mine",
+    "reservations",
+    { ...query, limit },
+    // Each tab is its own list: a switch drops the previous tab's list and shows the loading state.
+    { resetKey: tab },
+  );
 
   const fetchSummary = useCallback(async () => {
     try {
@@ -139,10 +145,6 @@ function MyReservationsPage() {
     }
   };
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
   const hasActiveFilters = Boolean(name || businessName || status || period);
   const totalCount = total ?? reservationsList.length;
 
@@ -159,8 +161,11 @@ function MyReservationsPage() {
     />
   );
 
+  // The header, tabs and filters stay while a tab loads; only the list waits.
   let list;
-  if (error && reservationsList.length === 0) {
+  if (loading) {
+    list = <LoadingSpinner />;
+  } else if (error && reservationsList.length === 0) {
     list = <LoadErrorState />;
   } else if (reservationsList.length === 0) {
     if (hasActiveFilters) {
@@ -325,22 +330,25 @@ function MyReservationsPage() {
         </FilterField>
       </FilterBar>
 
-      {isHistory ? (
-        <CountPill>{countText}</CountPill>
-      ) : (
-        <ResultsBar count={countText}>
-          <SortSelect value={sort} onChange={setSort} options={MY_RESERVATIONS_SORT_OPTIONS} />
-        </ResultsBar>
-      )}
+      {!loading &&
+        (isHistory ? (
+          <CountPill>{countText}</CountPill>
+        ) : (
+          <ResultsBar count={countText}>
+            <SortSelect value={sort} onChange={setSort} options={MY_RESERVATIONS_SORT_OPTIONS} />
+          </ResultsBar>
+        ))}
 
       {list}
 
-      <LoadMore
-        shown={reservationsList.length}
-        total={totalCount}
-        fetching={fetching}
-        onLoadMore={loadMore}
-      />
+      {!loading && (
+        <LoadMore
+          shown={reservationsList.length}
+          total={totalCount}
+          fetching={fetching}
+          onLoadMore={loadMore}
+        />
+      )}
 
       {cancellingReservation && (
         <ConfirmModal

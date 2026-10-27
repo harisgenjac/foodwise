@@ -74,6 +74,71 @@ describe("useFetch", () => {
     expect(firstSignal?.aborted).toBe(true);
   });
 
+  it("ignores an outdated response that arrives after the newer one", async () => {
+    // Like a transport that does not honour the abort: the first answer still comes, but last.
+    let answerOld: (value: unknown) => void = () => {};
+    apiMock.get
+      .mockImplementationOnce(() => new Promise((resolve) => (answerOld = resolve)))
+      .mockResolvedValueOnce({ data: { products: [{ id: 2 }] } });
+    const { result, rerender } = renderHook(
+      ({ scope }) => useFetch<{ id: number }>("/products", "products", { scope }, { resetKey: scope }),
+      { initialProps: { scope: "a" } },
+    );
+    await act(() => vi.advanceTimersByTimeAsync(0));
+
+    rerender({ scope: "b" });
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(apiMock.get).toHaveBeenLastCalledWith(...requestFor({ scope: "b" }));
+    expect(result.current.data).toEqual([{ id: 2 }]);
+
+    await act(async () => answerOld({ data: { products: [{ id: 1 }] } }));
+    expect(result.current.data).toEqual([{ id: 2 }]);
+    expect(result.current.loading).toBe(false);
+  });
+
+  it("aborts the request in flight as soon as the filters change, before the debounced one", async () => {
+    let answerSecond: (value: unknown) => void = () => {};
+    let secondSignal: AbortSignal | undefined;
+    apiMock.get
+      .mockResolvedValueOnce({ data: { products: [{ id: 1 }] } })
+      .mockImplementationOnce((_url, config) => {
+        secondSignal = config?.signal as AbortSignal;
+        return new Promise((resolve) => (answerSecond = resolve));
+      })
+      .mockResolvedValue({ data: { products: [{ id: 3 }] } });
+    const { result, rerender } = renderHook(({ name }) => useFetch<{ id: number }>("/products", "products", { name }), {
+      initialProps: { name: "" },
+    });
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    rerender({ name: "m" });
+    await flush();
+
+    // The "m" request is out; typing more makes it outdated right away.
+    rerender({ name: "ml" });
+    expect(secondSignal?.aborted).toBe(true);
+    await act(async () => answerSecond({ data: { products: [{ id: 2 }] } }));
+    expect(result.current.data).toEqual([{ id: 1 }]);
+
+    await flush();
+    expect(result.current.data).toEqual([{ id: 3 }]);
+  });
+
+  it("drops the data and loads right away when the resetKey changes", async () => {
+    apiMock.get.mockResolvedValueOnce({ data: { products: [{ id: 1 }] } }).mockImplementationOnce(() => new Promise(() => {}));
+    const { result, rerender } = renderHook(
+      ({ tab }) => useFetch<{ id: number }>("/products", "products", { tab }, { resetKey: tab }),
+      { initialProps: { tab: "a" } },
+    );
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(result.current.data).toEqual([{ id: 1 }]);
+
+    rerender({ tab: "b" });
+    expect(result.current.data).toEqual([]);
+    expect(result.current.loading).toBe(true);
+    await act(() => vi.advanceTimersByTimeAsync(0));
+    expect(apiMock.get).toHaveBeenLastCalledWith(...requestFor({ tab: "b" }));
+  });
+
   it("reports a failed load through error", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     apiMock.get.mockRejectedValue(new Error("network"));
