@@ -11,13 +11,6 @@ const SUMMARY = {
   counts: { Pending: 4, Confirmed: 3, Completed: 0, Rejected: 3, Cancelled: 0 },
 };
 
-// What the summary returns for a request with a period.
-const PERIOD_SUMMARY = {
-  total: 2,
-  active: 1,
-  counts: { Pending: 1, Confirmed: 0, Completed: 0, Rejected: 1, Cancelled: 0 },
-};
-
 const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3600 * 1000).toISOString();
 
 // The list mock gets the request params, so a test can answer Active and History differently.
@@ -31,26 +24,20 @@ const renderPage = (reservations: Reservation[] | ((params: Record<string, unkno
         const list = typeof reservations === "function" ? reservations(params as Record<string, unknown>) : reservations;
         return { reservations: list, total: list.length };
       },
-      "/reservations/mine/summary": (params: unknown) => ({
-        summary: (params as { period?: string }).period ? PERIOD_SUMMARY : SUMMARY,
-      }),
+      "/reservations/mine/summary": { summary: SUMMARY },
     },
   });
 
 const listCalls = () => apiMock.get.mock.calls.filter(([url]) => url === "/reservations/mine");
 const lastListParams = () => listCalls().at(-1)?.[1]?.params;
-const lastSummaryParams = () =>
-  apiMock.get.mock.calls.filter(([url]) => url === "/reservations/mine/summary").at(-1)?.[1]?.params;
+const summaryCalls = () => apiMock.get.mock.calls.filter(([url]) => url === "/reservations/mine/summary");
 
 const tab = (key: "active" | "history") => screen.getByRole("tab", { name: new RegExp(t(`reservations.tabs.${key}`)) });
 const statusSelect = () => screen.getByLabelText(t("filters.selectResStatus"));
 const statusOptions = () => within(statusSelect()).getAllByRole("option").map((option) => option.getAttribute("value"));
 const periodSelect = () => screen.getByLabelText(t("reservations.period.all"));
 const queryPeriodSelect = () => screen.queryByLabelText(t("reservations.period.all"));
-const summaryTotal = (count: number) => screen.queryByText(t("reservations.summary.total", { count }));
 const cancelButton = () => screen.getByRole("button", { name: t("reservations.cancelShortButton") });
-const summaryButton = (status: string, count: number) =>
-  screen.getByRole("button", { name: t(`reservations.summary.${status}`, { count }) });
 
 describe("MyReservationsPage", () => {
   it("opens on Active with the active scope, newest first, 12 at a time", async () => {
@@ -61,10 +48,9 @@ describe("MyReservationsPage", () => {
     expect(lastListParams()).toMatchObject({ scope: "active", sort: "newest", status: "", limit: 12 });
     expect(lastListParams()).not.toHaveProperty("period");
     expect(screen.getByLabelText(t("filters.sortBy"))).toHaveValue("newest");
-    // No period filter and no summary line on Active.
+    // No period filter on Active.
     expect(queryPeriodSelect()).not.toBeInTheDocument();
     await waitFor(() => expect(within(tab("history")).getByText("10")).toBeInTheDocument());
-    expect(summaryTotal(10)).not.toBeInTheDocument();
   });
 
   it("filters Active by the two active statuses only", async () => {
@@ -76,10 +62,19 @@ describe("MyReservationsPage", () => {
     await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "active", status: "Confirmed" }));
   });
 
-  it("shows the tab counts from the summary", async () => {
-    renderPage([]);
+  it("shows the unfiltered tab counts from one summary request", async () => {
+    renderPage([makeReservation()]);
     await waitFor(() => expect(within(tab("active")).getByText("7")).toBeInTheDocument());
     expect(within(tab("history")).getByText("10")).toBeInTheDocument();
+    expect(summaryCalls()).toEqual([["/reservations/mine/summary"]]);
+
+    // Filtering the list and switching tabs leave the counts alone.
+    await userEvent.type(screen.getByPlaceholderText(t("filters.searchByName")), "pile");
+    await waitFor(() => expect(lastListParams()).toMatchObject({ name: "pile" }));
+    await userEvent.click(tab("history"));
+    await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all" }));
+    expect(summaryCalls()).toHaveLength(1);
+    expect(within(tab("active")).getByText("7")).toBeInTheDocument();
   });
 
   it("shows the reservations and offers cancelling only Pending ones", async () => {
@@ -170,59 +165,53 @@ describe("MyReservationsPage", () => {
       expect(statusSelect()).toHaveValue("");
     });
 
-    it("keeps the name and store across tabs and applies the period on History only", async () => {
+    it("resets the name, store, period and status on each tab switch and keeps the sort", async () => {
       renderHistory();
       await screen.findByText("Aktivna");
 
+      await userEvent.selectOptions(screen.getByLabelText(t("filters.sortBy")), t("reservations.sortPickupSoonest"));
       await userEvent.type(screen.getByPlaceholderText(t("filters.searchByName")), "jog");
       await userEvent.type(screen.getByPlaceholderText(t("filters.searchByStore")), "centar");
-      const filters = { name: "jog", business_name: "centar" };
-      await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "active", ...filters }));
+      await userEvent.selectOptions(statusSelect(), t("reservationStatus.Confirmed"));
+      await waitFor(() =>
+        expect(lastListParams()).toMatchObject({ scope: "active", name: "jog", business_name: "centar", status: "Confirmed" }),
+      );
 
       await userEvent.click(tab("history"));
+      await waitFor(() =>
+        expect(lastListParams()).toMatchObject({ scope: "all", name: "", business_name: "", status: "", period: "" }),
+      );
+      expect(screen.getByPlaceholderText(t("filters.searchByName"))).toHaveValue("");
+      expect(screen.getByPlaceholderText(t("filters.searchByStore"))).toHaveValue("");
+      expect(statusSelect()).toHaveValue("");
+      expect(screen.queryByRole("button", { name: t("filters.clear") })).not.toBeInTheDocument();
+
       await userEvent.selectOptions(periodSelect(), t("reservations.period.last7Days"));
-      await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all", ...filters, period: "7d" }));
-      await waitFor(() => expect(lastSummaryParams()).toEqual({ ...filters, period: "" }));
-      expect(apiMock.get).toHaveBeenCalledWith("/reservations/mine/summary", { params: { ...filters, period: "7d" } });
+      await userEvent.type(screen.getByPlaceholderText(t("filters.searchByName")), "hlj");
+      await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all", name: "hlj", period: "7d" }));
 
       await userEvent.click(tab("active"));
-      await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "active", ...filters }));
+      await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "active", name: "", sort: "pickup" }));
       expect(lastListParams()).not.toHaveProperty("period");
-      expect(screen.getByPlaceholderText(t("filters.searchByName"))).toHaveValue("jog");
+      expect(screen.getByPlaceholderText(t("filters.searchByName"))).toHaveValue("");
+      expect(screen.getByLabelText(t("filters.sortBy"))).toHaveValue("pickup");
 
       await userEvent.click(tab("history"));
-      expect(periodSelect()).toHaveValue("7d");
+      expect(periodSelect()).toHaveValue("");
     });
 
-    it("counts History by the period and Active without it", async () => {
+    it("has no status chips; the status select filters and the count pill shows the results", async () => {
       renderHistory();
       await screen.findByText("Aktivna");
       await userEvent.click(tab("history"));
-      await userEvent.selectOptions(periodSelect(), t("reservations.period.today"));
+      await screen.findByText("Jogurt");
 
-      await waitFor(() => expect(within(tab("history")).getByText(String(PERIOD_SUMMARY.total))).toBeInTheDocument());
-      expect(within(tab("active")).getByText(String(SUMMARY.active))).toBeInTheDocument();
-    });
+      expect(screen.getByText(t("reservations.count", { count: 2 }))).toBeInTheDocument();
+      expect(screen.queryAllByRole("button", { pressed: false })).toHaveLength(0);
+      expect(screen.queryAllByRole("button", { pressed: true })).toHaveLength(0);
 
-    it("shows the summary as status chips that filter History and clear on a second click", async () => {
-      renderHistory();
-      await screen.findByText("Aktivna");
-      await userEvent.click(tab("history"));
-
-      expect(await screen.findByText(t("reservations.summary.total", { count: 10 }))).toBeInTheDocument();
-      expect(summaryButton("Pending", 4)).toHaveAttribute("aria-pressed", "false");
-      expect(summaryButton("Confirmed", 3)).toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: t("reservations.summary.Completed", { count: 0 }) })).not.toBeInTheDocument();
-
-      await userEvent.click(summaryButton("Rejected", 3));
-      expect(summaryButton("Rejected", 3)).toHaveAttribute("aria-pressed", "true");
-      expect(statusSelect()).toHaveValue("Rejected");
+      await userEvent.selectOptions(statusSelect(), t("reservationStatus.Rejected"));
       await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all", status: "Rejected" }));
-
-      await userEvent.click(summaryButton("Rejected", 3));
-      expect(summaryButton("Rejected", 3)).toHaveAttribute("aria-pressed", "false");
-      expect(statusSelect()).toHaveValue("");
-      expect(tab("history")).toHaveAttribute("aria-selected", "true");
     });
 
     it("clears the period, name and status but keeps the tab", async () => {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -45,49 +45,39 @@ type Status = Reservation["status"];
 const STATUSES: Status[] = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
 // The statuses a reservation on the Active tab can have.
 const ACTIVE_STATUSES: Status[] = ["Pending", "Confirmed"];
-// The dot on each summary chip, in the colour of the status pill.
-const STATUS_DOTS: Record<Status, string> = {
-  Pending: "bg-amber-500",
-  Confirmed: "bg-green-500",
-  Completed: "bg-gray-400",
-  Rejected: "bg-red-500",
-  Cancelled: "bg-red-300",
-};
 const PERIODS = [
   { value: "today", label: "reservations.period.today" },
   { value: "7d", label: "reservations.period.last7Days" },
   { value: "month", label: "reservations.period.thisMonth" },
 ];
-const SUMMARY_DEBOUNCE_MS = 500;
 
+// The tab counts: every reservation (History) and every active one (Active), without filters.
 interface ReservationSummary {
   total: number;
   active: number;
-  counts: Record<Status, number>;
 }
 
 function MyReservationsPage() {
   const [tab, setTab] = useState<Tab>("active");
+  // Each tab has its own filters, so a tab switch resets them.
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
-  // Only applied on History; kept (but ignored) on Active.
+  // Only on History.
   const [period, setPeriod] = useState("");
-  // Each tab has its own status options, so a tab switch clears it.
   const [status, setStatus] = useState("");
   // Only on Active; History is always newest first.
   const [sort, setSort] = useState<MyReservationsSort>("newest");
-  const [summary, setSummary] = useState<{ history: ReservationSummary; activeCount: number } | null>(null);
+  const [summary, setSummary] = useState<ReservationSummary | null>(null);
   const [cancellingReservation, setCancellingReservation] =
     useState<Reservation | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const { t } = useTranslation();
 
   const isHistory = tab === "history";
-  // Name and store apply to both tabs, the period only to History.
-  const sharedFilters = { name, business_name: businessName };
+  const filters = { name, business_name: businessName, status };
   const query = isHistory
-    ? { scope: "all", sort: "newest", status, ...sharedFilters, period }
-    : { scope: "active", sort, status, ...sharedFilters };
+    ? { scope: "all", sort: "newest", ...filters, period }
+    : { scope: "active", sort, ...filters };
   // Active loads 12 cards at a time, History 20 rows; a tab, sort or filter change starts again
   // from the first page, a reload keeps the limit.
   const { limit, loadMore } = usePagedLimit(
@@ -103,41 +93,31 @@ function MyReservationsPage() {
     refetch,
   } = useFetch<Reservation>("/reservations/mine", "reservations", { ...query, limit });
 
-  // The History summary line and count: every status for the current name, store and period.
-  // The Active count ignores the period, so with a period set it needs a second request.
-  const summaryKey = JSON.stringify({ ...sharedFilters, period });
-  const summaryLoadedRef = useRef(false);
   const fetchSummary = useCallback(async () => {
-    const params = JSON.parse(summaryKey);
     try {
-      const [history, active] = await Promise.all([
-        api.get("/reservations/mine/summary", { params }),
-        params.period ? api.get("/reservations/mine/summary", { params: { ...params, period: "" } }) : null,
-      ]);
-      setSummary({
-        history: history.data.summary,
-        activeCount: (active ?? history).data.summary.active,
-      });
+      const response = await api.get("/reservations/mine/summary");
+      setSummary(response.data.summary);
     } catch (err) {
       console.error("Error fetching the reservation summary:", err);
-    } finally {
-      summaryLoadedRef.current = true;
     }
-  }, [summaryKey]);
+  }, []);
 
   useEffect(() => {
-    // The first load goes right away; typing in a filter is debounced like the list.
-    const timeoutId = setTimeout(fetchSummary, summaryLoadedRef.current ? SUMMARY_DEBOUNCE_MS : 0);
-    return () => clearTimeout(timeoutId);
+    fetchSummary();
   }, [fetchSummary]);
 
-  const switchTab = (next: Tab) => {
-    if (next !== tab) setStatus("");
-    setTab(next);
+  // The tab and the sort are not filters, so they stay.
+  const clearFilters = () => {
+    setName("");
+    setBusinessName("");
+    setPeriod("");
+    setStatus("");
   };
 
-  // A summary chip filters History to its status; clicking it again clears the filter.
-  const toggleStatus = (value: Status) => setStatus(status === value ? "" : value);
+  const switchTab = (next: Tab) => {
+    if (next !== tab) clearFilters();
+    setTab(next);
+  };
 
   const handleCancellation = async (reservationId: number) => {
     if (cancelling) return;
@@ -159,28 +139,17 @@ function MyReservationsPage() {
     }
   };
 
-  // The tab and the sort are not filters, so they stay.
-  const clearFilters = () => {
-    setName("");
-    setBusinessName("");
-    setPeriod("");
-    setStatus("");
-  };
-
   if (loading) {
     return <LoadingSpinner />;
   }
 
-  const hasActiveFilters = Boolean(name || businessName || status || (isHistory && period));
+  const hasActiveFilters = Boolean(name || businessName || status || period);
   const totalCount = total ?? reservationsList.length;
 
   const tabs: { key: Tab; label: string; icon: typeof CalendarClock; count?: number }[] = [
-    { key: "active", label: t("reservations.tabs.active"), icon: CalendarClock, ...(summary && { count: summary.activeCount }) },
-    { key: "history", label: t("reservations.tabs.history"), icon: History, ...(summary && { count: summary.history.total }) },
+    { key: "active", label: t("reservations.tabs.active"), icon: CalendarClock, ...(summary && { count: summary.active }) },
+    { key: "history", label: t("reservations.tabs.history"), icon: History, ...(summary && { count: summary.total }) },
   ];
-
-  const historySummary = summary?.history;
-  const summaryParts = historySummary ? STATUSES.filter((s) => historySummary.counts[s] > 0) : [];
 
   const noResults = (
     <EmptyState
@@ -355,36 +324,6 @@ function MyReservationsPage() {
           </select>
         </FilterField>
       </FilterBar>
-
-      {isHistory && historySummary && historySummary.total > 0 && (
-        <div className="flex flex-wrap items-center gap-2 px-1 text-sm">
-          <span className="font-semibold text-gray-800">
-            {t("reservations.summary.total", { count: historySummary.total })}
-          </span>
-          {summaryParts.map((value) => {
-            const pressed = status === value;
-            return (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={pressed}
-                onClick={() => toggleStatus(value)}
-                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 font-medium shadow-sm transition-colors ${
-                  pressed
-                    ? "border-orange-500 bg-orange-500 text-white"
-                    : "border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700"
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`h-2 w-2 rounded-full ${pressed ? "bg-white" : STATUS_DOTS[value]}`}
-                />
-                {t(`reservations.summary.${value}`, { count: historySummary.counts[value] })}
-              </button>
-            );
-          })}
-        </div>
-      )}
 
       {isHistory ? (
         <CountPill>{countText}</CountPill>
