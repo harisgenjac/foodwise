@@ -107,7 +107,7 @@ const RestaurantDashboardPage = () => {
         </SectionCard>
 
         <SectionCard
-          title={t("dashboard.recentReservationsTitle")}
+          title={t("dashboard.myReservationsTitle")}
           icon={CalendarCheck}
           viewAll={{ to: "/my-reservations", label: t("dashboard.viewAllReservations") }}
           isEmpty={reservationsList.length === 0}
