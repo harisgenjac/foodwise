@@ -3,7 +3,8 @@ import userEvent from "@testing-library/user-event";
 import toast from "react-hot-toast";
 import ReserveProductModal from "./ReserveProductModal.js";
 import { MemoryRouter } from "react-router-dom";
-import { apiMock, axiosError, creditError, makeProduct, t } from "../../test/utils.js";
+import { apiMock, axiosError, creditError, makeProduct, mockGet, t } from "../../test/utils.js";
+import { translateServerMessage } from "../../i18n/serverMessages.js";
 import { toDateInput } from "../../utils/expiry.js";
 
 const product = makeProduct({ id: 7, available_quantity: "6.50", quantity: "10" });
@@ -86,6 +87,50 @@ describe("ReserveProductModal", () => {
     expect(error).toHaveBeenCalledWith("Not enough product available.");
     expect(onClose).not.toHaveBeenCalled();
     expect(onReserved).not.toHaveBeenCalled();
+  });
+
+  // The axios interceptor translates the server's error before the modal sees it.
+  const notEnoughAvailable = () => axiosError(400, translateServerMessage("Not enough product available."));
+
+  it("puts the quantity still available into the field when there is not enough", async () => {
+    const error = vi.spyOn(toast, "error");
+    apiMock.post.mockRejectedValueOnce(notEnoughAvailable()).mockResolvedValueOnce({ data: {} });
+    mockGet({ "/products/7": { product: makeProduct({ id: 7, available_quantity: "2.50", quantity: "10" }) } });
+    const { onClose, onReserved } = renderModal();
+
+    await fillForm();
+    await submit();
+
+    expect(error).toHaveBeenCalledWith("Nema dovoljno dostupne količine proizvoda.");
+    expect(onClose).not.toHaveBeenCalled();
+    expect(apiMock.get).toHaveBeenCalledWith("/products/7");
+    expect(quantityField()).toHaveValue(2.5);
+    expect(quantityField()).toHaveAttribute("max", "2.50");
+    expect(screen.getByText(/2\.5/)).toBeInTheDocument();
+
+    await submit();
+    expect(apiMock.post).toHaveBeenLastCalledWith("/reservations", {
+      product_id: 7,
+      quantity: "2.5",
+      pickup_date: "2030-01-01T10:00",
+    });
+    expect(onReserved).toHaveBeenCalled();
+  });
+
+  it("keeps the typed quantity when nothing is available anymore", async () => {
+    const error = vi.spyOn(toast, "error");
+    apiMock.post.mockRejectedValue(notEnoughAvailable());
+    mockGet({ "/products/7": { product: makeProduct({ id: 7, available_quantity: "0", quantity: "10" }) } });
+    const { onClose } = renderModal();
+
+    await fillForm();
+    await submit();
+
+    expect(error).toHaveBeenCalledWith("Nema dovoljno dostupne količine proizvoda.");
+    expect(apiMock.get).toHaveBeenCalledWith("/products/7");
+    expect(quantityField()).toHaveValue(3);
+    expect(quantityField()).toHaveAttribute("max", "6.50");
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it("falls back to a generic message for network errors", async () => {
