@@ -16,6 +16,10 @@ import type { Product } from "../../types/index.js";
 import InsufficientCreditsNotice from "../credits/InsufficientCreditsNotice.js";
 import CreditHint from "../credits/CreditHint.js";
 import { getCreditError, type CreditError } from "../../utils/credits.js";
+import { translateServerMessage } from "../../i18n/serverMessages.js";
+
+// The axios interceptor has already translated `error`, so it is compared with the translated text.
+const NOT_ENOUGH_AVAILABLE = "Not enough product available.";
 
 interface ReserveProductModalProps {
   product: Product;
@@ -35,6 +39,8 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
   const [pickupTime, setPickupTime] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [creditError, setCreditError] = useState<CreditError | null>(null);
+  // Refreshed after the server refuses a quantity that is no longer available.
+  const [available, setAvailable] = useState(product.available_quantity ?? product.quantity);
   // The server accepts a pickup from today up to the end of the expiry day. A typed date skips the
   // calendar's min/max, so the range is checked here too.
   const minPickup = toDateInput(new Date());
@@ -51,12 +57,24 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
   });
   const units = t("units", { returnObjects: true }) as Record<string, string>;
   const unit = units[product.unit] || product.unit;
-  const available = product.available_quantity ?? product.quantity;
   const subtitle = storeLine ?? [product.business_name, product.city].filter(Boolean).join(" · ");
 
   // Shows a valid time as HH:MM; invalid text stays as typed, with its error.
   const normalizeTime = () => {
     if (parsedTime && parsedTime !== pickupTime) setPickupTime(parsedTime);
+  };
+
+  // Puts what is left into the field, so the next submit sends it. Sold out changes nothing.
+  const refreshAvailable = async () => {
+    try {
+      const response = await api.get(`/products/${product.id}`);
+      const amount: string = response.data.product.available_quantity ?? response.data.product.quantity;
+      if (!(parseFloat(amount) > 0)) return;
+      setAvailable(amount);
+      setQuantity(String(parseFloat(amount)));
+    } catch (err) {
+      console.error("Error fetching product:", err);
+    }
   };
 
   const handleReservation = async (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -83,6 +101,7 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
       console.error(err);
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
       toast.error(message || t("reservations.actionError"));
+      if (message === translateServerMessage(NOT_ENOUGH_AVAILABLE)) await refreshAvailable();
     } finally {
       setSubmitting(false);
     }
