@@ -59,11 +59,13 @@ function PickupsPage() {
     fetching,
     error,
     refetch,
-  } = useFetch<Reservation>("/reservations/pickups", "reservations", {
-    scope,
-    name,
-    ...(isHistory && { limit }),
-  });
+  } = useFetch<Reservation>(
+    "/reservations/pickups",
+    "reservations",
+    { scope, name, ...(isHistory && { limit }) },
+    // Each tab is its own list: a switch drops the previous tab's list and shows the loading state.
+    { resetKey: scope },
+  );
 
   const fetchCounts = useCallback(async () => {
     try {
@@ -82,10 +84,6 @@ function PickupsPage() {
     refetch();
     fetchCounts();
   });
-
-  if (loading) {
-    return <LoadingSpinner />;
-  }
 
   const tabs: { key: Scope; label: string; icon: typeof CalendarClock; count?: number }[] = [
     { key: "today", label: t("pickups.tabs.today"), icon: CalendarClock, ...(counts && { count: counts.today }) },
@@ -170,7 +168,10 @@ function PickupsPage() {
         </div>
       </div>
 
-      {error && pickups.length === 0 ? (
+      {/* The header, tabs and search stay while a tab loads; only the list waits. */}
+      {loading ? (
+        <LoadingSpinner />
+      ) : error && pickups.length === 0 ? (
         <LoadErrorState />
       ) : groups.length === 0 ? (
         name ? (
@@ -214,7 +215,7 @@ function PickupsPage() {
         ))
       )}
 
-      {isHistory && (
+      {isHistory && !loading && (
         <LoadMore
           shown={pickups.length}
           total={total ?? pickups.length}

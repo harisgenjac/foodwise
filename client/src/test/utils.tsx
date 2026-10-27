@@ -38,13 +38,14 @@ export const axiosError = (status: number, error = "Greška") =>
 
 type MockResponse = unknown | Error | ((params: unknown) => unknown);
 
-// Answers api.get by URL; a value is returned as `data`, an Error is thrown, a function gets the query params.
+// Answers api.get by URL; a value is returned as `data`, an Error is thrown, a function gets the query params
+// (and may return a promise, to control when the response arrives).
 export const mockGet = (routes: Record<string, MockResponse>) => {
   apiMock.get.mockImplementation(async (url: string, config?: { params?: unknown }) => {
     if (!(url in routes)) throw new Error(`Unmocked GET ${url}`);
     const response = routes[url];
     if (response instanceof Error) throw response;
-    return { data: typeof response === "function" ? response(config?.params) : response };
+    return { data: typeof response === "function" ? await response(config?.params) : response };
   });
 };
 

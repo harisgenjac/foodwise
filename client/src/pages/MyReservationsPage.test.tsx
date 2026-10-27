@@ -149,6 +149,46 @@ describe("MyReservationsPage", () => {
       expect(screen.queryByLabelText(t("filters.sortBy"))).not.toBeInTheDocument();
     });
 
+    it("shows the loading state, not the Active list, while History loads, and ignores a late Active response", async () => {
+      // Each list request waits until the test answers it.
+      const pending: { scope: unknown; respond: () => void }[] = [];
+      renderWithProviders(<MyReservationsPage />, {
+        route: "/my-reservations",
+        path: "/my-reservations",
+        user: makeUser(),
+        get: {
+          "/reservations/mine": (params: unknown) => {
+            const { scope } = params as { scope: string };
+            const list = scope === "all" ? history : [makeReservation({ id: 1, product_name: "Aktivna" })];
+            return new Promise((resolve) => {
+              pending.push({ scope, respond: () => resolve({ reservations: list, total: list.length }) });
+            });
+          },
+          "/reservations/mine/summary": { summary: SUMMARY },
+        },
+      });
+      const respond = async (scope: string) => {
+        await waitFor(() => expect(pending.some((p) => p.scope === scope)).toBe(true));
+        pending.splice(pending.findIndex((p) => p.scope === scope), 1)[0]!.respond();
+      };
+
+      await respond("active");
+      await screen.findByText("Aktivna");
+
+      await userEvent.click(tab("history"));
+      expect(screen.queryByText("Aktivna")).not.toBeInTheDocument();
+      expect(screen.getByRole("status")).toBeInTheDocument();
+
+      // Back to Active and to History again; the first History answer arrives after the second Active one.
+      await waitFor(() => expect(pending.some((p) => p.scope === "all")).toBe(true));
+      await userEvent.click(tab("active"));
+      await respond("active");
+      await respond("all");
+      expect(await screen.findByText("Aktivna")).toBeInTheDocument();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(screen.queryByText("Jogurt")).not.toBeInTheDocument();
+    });
+
     it("offers every status on History and clears the status on each tab switch", async () => {
       renderHistory();
       await screen.findByText("Aktivna");
