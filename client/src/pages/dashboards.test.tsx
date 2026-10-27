@@ -86,6 +86,15 @@ describe("StoreDashboardPage", () => {
     expect(statValue(t("dashboard.statActiveProducts"))).toBe("0");
     expect(statValue(t("dashboard.statSavedFood"))).toBe("0 kg");
   });
+
+  it("titles the reservations section Recent reservations", async () => {
+    renderStore({ active_products: 0, pending_reservations: 0, successful_reservations: 0, saved: { kg: 0, l: 0, pieces: 0 } });
+
+    expect(await screen.findByRole("heading", { name: t("dashboard.recentReservationsTitle") })).toHaveTextContent(
+      "Nedavne rezervacije",
+    );
+    expect(screen.queryByRole("heading", { name: t("dashboard.myReservationsTitle") })).not.toBeInTheDocument();
+  });
 });
 
 describe("RestaurantDashboardPage", () => {
@@ -121,5 +130,15 @@ describe("RestaurantDashboardPage", () => {
     expect(paramsOf("/products")).toEqual({ sort: "expiry", limit: 3 });
     expect(paramsOf("/reservations/mine")).toEqual({ limit: 3 });
     expect(statValue(t("dashboard.statSavings"))).toBe("0.00 KM");
+  });
+
+  it("titles the reservations section My reservations, like the page its link opens", async () => {
+    renderRestaurant({ pending_reservations: 0, successful_reservations: 0, savings: 0 });
+
+    expect(await screen.findByRole("heading", { name: t("dashboard.myReservationsTitle") })).toHaveTextContent(
+      "Moje rezervacije",
+    );
+    expect(screen.queryByRole("heading", { name: t("dashboard.recentReservationsTitle") })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: t("dashboard.viewAllReservations") })).toHaveAttribute("href", "/my-reservations");
   });
 });
