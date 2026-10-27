@@ -262,6 +262,7 @@ export const getMineReservations = async (req: Request, res: Response) => {
     products.original_price,
     products.category,
     products.unit,
+    products.store_id,
     users.business_name,
     users.city`;
     let { from } = filters;

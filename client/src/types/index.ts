@@ -43,8 +43,9 @@ export interface Reservation {
   unit?: string;
   business_name?: string;
   city?: string;
-  // Only on GET /reservations/:id, which returns both parties.
+  // On GET /reservations/:id and /reservations/mine.
   store_id?: number;
+  // Only on GET /reservations/:id, which returns both parties.
   store_address?: string | null;
   store_phone?: string | null;
   store_pickup_hours?: string | null;

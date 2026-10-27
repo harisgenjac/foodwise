@@ -5,6 +5,7 @@ import { ArrowRight, Store } from "lucide-react";
 import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
 import { getDaysUntilExpiry } from "../../utils/expiry.js";
 import { PRODUCT_STATUS_STYLES } from "../../utils/productStatus.js";
+import StoreNameLink from "../store/StoreNameLink.js";
 import type { Product } from "../../types/index.js";
 
 interface DashboardProductCardProps {
@@ -44,13 +45,7 @@ function DashboardProductCard({ product, showStore = false, actions }: Dashboard
             <p className="flex min-w-0 items-center gap-1 text-xs text-gray-400">
               <Store className="h-3.5 w-3.5 shrink-0 text-gray-500" aria-hidden="true" />
               {product.business_name && (
-                <Link
-                  to={`/stores/${product.store_id}`}
-                  title={product.business_name}
-                  className="min-w-0 truncate rounded font-semibold text-gray-800 transition-colors hover:text-orange-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300"
-                >
-                  {product.business_name}
-                </Link>
+                <StoreNameLink storeId={product.store_id} name={product.business_name} />
               )}
               {product.city && (
                 <span className="shrink-0">

@@ -237,6 +237,7 @@ function MyReservationsPage() {
             reservation={reservation}
             partyLabel={t("reservations.seller")}
             showCreatedAt
+            linkStore
             actions={
               reservation.status === "Pending" ? (
                 <>
