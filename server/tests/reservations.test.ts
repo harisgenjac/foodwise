@@ -144,7 +144,12 @@ describe("Reservations routes", () => {
       const response = await restaurant.get("/api/reservations/mine");
       expect(response.status).toBe(200);
       expect(response.body.reservations).toHaveLength(1);
-      expect(response.body.reservations[0]).toMatchObject({ id: own, product_name: "Piletina", unit: "kg" });
+      expect(response.body.reservations[0]).toMatchObject({
+        id: own,
+        product_name: "Piletina",
+        unit: "kg",
+        store_id: product.store_id,
+      });
     });
 
     it("filters by status and product name", async () => {

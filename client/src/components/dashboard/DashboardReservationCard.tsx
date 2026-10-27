@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowRight } from "lucide-react";
 import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
 import { RESERVATION_STATUS_STYLES } from "../../utils/reservationStatus.js";
 import { formatRelativeTime } from "../../utils/notifications.js";
+import StoreNameLink from "../store/StoreNameLink.js";
 import type { Reservation } from "../../types/index.js";
 
 interface DashboardReservationCardProps {
@@ -15,9 +16,11 @@ interface DashboardReservationCardProps {
   actions?: ReactNode;
   // Shows when the reservation was made ("5 min ago", the date after a week); My reservations only.
   showCreatedAt?: boolean;
+  // Links the store name to its profile; restaurant side only, and not on that store's own page.
+  linkStore?: boolean;
 }
 
-function DashboardReservationCard({ reservation, partyLabel, actions, showCreatedAt }: DashboardReservationCardProps) {
+function DashboardReservationCard({ reservation, partyLabel, actions, showCreatedAt, linkStore = false }: DashboardReservationCardProps) {
   const { t, i18n } = useTranslation();
   const reservationStatuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
   const units = t("units", { returnObjects: true }) as Record<string, string>;
@@ -58,7 +61,13 @@ function DashboardReservationCard({ reservation, partyLabel, actions, showCreate
           </div>
           <div className="flex justify-between gap-2">
             <dt className="text-gray-500">{partyLabel}</dt>
-            <dd className="truncate font-medium text-gray-800">{reservation.business_name}</dd>
+            <dd className="min-w-0 truncate font-medium text-gray-800">
+              {linkStore && reservation.store_id && reservation.business_name ? (
+                <StoreNameLink storeId={reservation.store_id} name={reservation.business_name} className="block" />
+              ) : (
+                reservation.business_name
+              )}
+            </dd>
           </div>
           <div className="flex justify-between gap-2">
             <dt className="text-gray-500">{t("dashboard.city")}</dt>
