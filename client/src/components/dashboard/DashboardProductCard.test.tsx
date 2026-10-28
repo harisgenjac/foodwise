@@ -50,3 +50,14 @@ describe("DashboardProductCard", () => {
     expect(screen.getByText("· Visoko · " + t("radius.inYourCity"))).toBeInTheDocument();
   });
 });
+
+describe("DashboardProductCard chain label", () => {
+  it("names a branch's company next to the store, and nothing for an independent store", () => {
+    renderWithProviders(<DashboardProductCard product={makeProduct({ company_name: "Bingo d.o.o." })} showStore />);
+    expect(screen.getByText(t("store.chainLabel", { company: "Bingo d.o.o." }))).toBeInTheDocument();
+
+    cleanup();
+    renderWithProviders(<DashboardProductCard product={makeProduct({ company_name: null })} showStore />);
+    expect(screen.queryByText(/Bingo/)).not.toBeInTheDocument();
+  });
+});

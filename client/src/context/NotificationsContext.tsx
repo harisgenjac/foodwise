@@ -18,6 +18,11 @@ export type NotificationType =
   | "PRODUCT_REMOVED_BY_ADMIN"
   | "DONATION_REMOVED_BY_ADMIN"
   | "RESERVATION_CANCELLED_BY_ADMIN"
+  | "RESERVATION_CANCELLED_STORE_CLOSED"
+  | "BRANCH_BLOCKED"
+  | "BRANCH_UNBLOCKED"
+  | "BRANCH_DEACTIVATED"
+  | "BRANCH_REACTIVATED"
   | "PLATFORM_ANNOUNCEMENT"
   | "CREDIT_REQUEST_CREATED"
   | "CREDIT_REQUEST_APPROVED"
@@ -49,6 +54,9 @@ export interface Notification {
   credit_request_type?: "SUBSCRIPTION" | "TOPUP" | null;
   credit_amount?: number | null;
   credit_requester?: string | null;
+  // A company headquarters' notifications about one of its branches: the branch and its name.
+  branch_id?: number | null;
+  branch_name?: string | null;
   // The product's name, or the donation's for donation notifications.
   product_name: string | null;
   unit: string | null;

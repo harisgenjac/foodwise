@@ -104,7 +104,7 @@ export const login = async (req: Request, res: Response) => {
 
     const result = await pool.query(
       `SELECT users.id, users.first_name, users.last_name, users.email, users.role, users.password_hash,
-         users.must_change_password, users.is_blocked, users.blocked_reason,
+         users.must_change_password, users.is_blocked, users.blocked_reason, users.deactivated_at,
          companies.is_blocked AS company_is_blocked, companies.blocked_reason AS company_blocked_reason
        FROM users LEFT JOIN companies ON companies.id = users.company_id
        WHERE LOWER(users.email) = $1`,
@@ -124,6 +124,10 @@ export const login = async (req: Request, res: Response) => {
       const blockedReason = user.is_blocked ? user.blocked_reason : user.company_blocked_reason;
       const reason = blockedReason ? ` Reason: ${blockedReason}` : "";
       return res.status(403).json({ error: `Your account is blocked.${reason}` });
+    }
+    // A deactivated branch (by its headquarters or an admin) cannot sign in until reactivated.
+    if (user.deactivated_at) {
+      return res.status(403).json({ error: "This branch has been deactivated. Contact your company." });
     }
     const token = jwt.sign(
       { id: user.id, role: user.role },

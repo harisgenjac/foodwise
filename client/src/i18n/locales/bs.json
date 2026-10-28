@@ -26,7 +26,8 @@
     "adminCreditRequests": "Zahtjevi za kredite",
     "adminCompanies": "Firme",
     "companyOverview": "Pregled",
-    "companyProfile": "Profil firme"
+    "companyProfile": "Profil firme",
+    "companyBranches": "Poslovnice"
   },
   "breadcrumbs": {
     "label": "Putanja",
@@ -40,7 +41,8 @@
     "logout": "Odjavi se",
     "collapseSidebar": "Sakrij meni",
     "expandSidebar": "Prikaži meni",
-    "logoutError": "Odjava nije uspjela. Pokušajte ponovo."
+    "logoutError": "Odjava nije uspjela. Pokušajte ponovo.",
+    "branchOf": "{{branch}} · dio {{company}}"
   },
   "auth": {
     "welcomeBack": "Dobrodošli nazad",
@@ -320,7 +322,12 @@
       "CREDIT_REQUEST_REJECTED": "Vaš zahtjev za kredite je odbijen",
       "CREDIT_RENEWAL_CREATED": "Zahtjev za obnovu pretplate je poslan na odobrenje",
       "CREDIT_REQUEST_EXPIRED": "Vaš zahtjev za kredite je istekao prije odobrenja",
-      "CREDIT_RENEWAL_SKIPPED": "Pretplata se ne može automatski obnoviti jer se njen plan više ne nudi. Izaberite plan za idući mjesec."
+      "CREDIT_RENEWAL_SKIPPED": "Pretplata se ne može automatski obnoviti jer se njen plan više ne nudi. Izaberite plan za idući mjesec.",
+      "RESERVATION_CANCELLED_STORE_CLOSED": "Rezervacija za {{product}} je otkazana jer prodavnica više nije aktivna.",
+      "BRANCH_BLOCKED": "Administrator je blokirao poslovnicu {{branch}}.",
+      "BRANCH_UNBLOCKED": "Administrator je odblokirao poslovnicu {{branch}}.",
+      "BRANCH_DEACTIVATED": "Administrator je deaktivirao poslovnicu {{branch}}.",
+      "BRANCH_REACTIVATED": "Administrator je ponovo aktivirao poslovnicu {{branch}}."
     },
     "reason": "Razlog: {{reason}}",
     "credits": {
@@ -375,7 +382,8 @@
     "browseOtherOffers": "Pogledaj sve ponude",
     "restaurantNoResSubtitle": "Kada rezervišete proizvod iz ove prodavnice, rezervacija će se pojaviti ovdje.",
     "noStatusResultsSubtitle": "Nemate rezervacija s ovim statusom kod ove prodavnice.",
-    "allStatuses": "Sve"
+    "allStatuses": "Sve",
+    "chainLabel": "dio {{company}}"
   },
   "categories": {
     "Meat": "Meso",
@@ -434,7 +442,11 @@
     "changePassword": "Promijeni lozinku",
     "passwordChanged": "Lozinka je promijenjena.",
     "passwordError": "Lozinka nije promijenjena. Pokušajte ponovo.",
-    "companyRole": "Centrala"
+    "companyRole": "Centrala",
+    "managedByCompany": "Mijenja centrala",
+    "usesCompanyLogo": "Prikazuje se logo firme dok ne postavite svoj.",
+    "companyDescriptionHint": "Ako ostavite prazno, prikazuje se opis firme.",
+    "removeLogo": "Ukloni logo"
   },
   "dashboard": {
     "appTitle": "Dobrodošli na FoodWise",
@@ -869,7 +881,10 @@
       "CREATE_COMPANY": "Firma kreirana",
       "UPDATE_COMPANY": "Firma izmijenjena",
       "BLOCK_COMPANY": "Firma blokirana",
-      "UNBLOCK_COMPANY": "Firma odblokirana"
+      "UNBLOCK_COMPANY": "Firma odblokirana",
+      "DEACTIVATE_BRANCH": "Poslovnica deaktivirana",
+      "REACTIVATE_BRANCH": "Poslovnica ponovo aktivirana",
+      "ATTACH_BRANCH": "Prodavnica pripojena firmi"
     },
     "common": {
       "cancel": "Odustani",
@@ -1296,8 +1311,15 @@
       "profileNotFilled": "Profil još nije popunjen",
       "branchesSection": "Poslovnice",
       "noBranchesTitle": "Još nema poslovnica",
-      "noBranchesSubtitle": "Poslovnice firme će se dodavati u sljedećem koraku.",
-      "historySection": "Nedavne akcije"
+      "noBranchesSubtitle": "Centrala dodaje poslovnice, a postojeću prodavnicu možete pripojiti ovdje.",
+      "historySection": "Nedavne akcije",
+      "attachButton": "Pripoji postojeću prodavnicu",
+      "attachTitle": "Pripoji postojeću prodavnicu",
+      "attachText": "Prodavnica postaje poslovnica firme {{name}}. Ovo se ne može poništiti.",
+      "attachSearch": "Naziv ili email prodavnice",
+      "attachNone": "Nema prodavnica bez firme za ovu pretragu.",
+      "attach": "Pripoji",
+      "deactivateBranchText": "Poslovnica {{name}} nestaje za restorane i ne može se prijaviti. Rezervacije na čekanju se otkazuju, a centrala dobija obavještenje. Odbija se dok postoje prihvaćena preuzimanja."
     }
   },
   "announcements": {
@@ -1459,7 +1481,11 @@
       "editProfile": "Profil firme",
       "branchesTitle": "Poslovnice",
       "noBranchesTitle": "Još nemate poslovnica",
-      "noBranchesSubtitle": "Ovdje će se prikazati poslovnice vaše firme kada ih administrator doda."
+      "noBranchesSubtitle": "Dodajte prvu poslovnicu; ona zatim sama objavljuje ponude i vodi rezervacije.",
+      "activeBranches_one": "aktivna poslovnica",
+      "activeBranches_few": "aktivne poslovnice",
+      "activeBranches_other": "aktivnih poslovnica",
+      "viewBranches": "Sve poslovnice"
     },
     "profile": {
       "subtitle": "Opis i logo vide se na stranicama firme.",
@@ -1469,6 +1495,88 @@
       "description": "Opis",
       "logoLabel": "Logo firme",
       "saveError": "Profil firme nije sačuvan. Pokušajte ponovo."
+    },
+    "branchStatus": {
+      "active": "Aktivna",
+      "deactivated": "Deaktivirana",
+      "blocked": "Blokirana"
+    },
+    "branches": {
+      "title": "Poslovnice",
+      "subtitle": "Prodavnice vaše firme. Svaka poslovnica sama objavljuje ponude i vodi rezervacije.",
+      "newBranch": "Nova poslovnica",
+      "count_one": "{{count}} poslovnica",
+      "count_few": "{{count}} poslovnice",
+      "count_other": "{{count}} poslovnica",
+      "search": "Naziv poslovnice",
+      "statusFilter": "Status",
+      "allStatuses": "-- Svi statusi --",
+      "emptyTitle": "Još nemate poslovnica",
+      "emptySubtitle": "Dodajte prvu poslovnicu i proslijedite joj pristupne podatke.",
+      "noResultsTitle": "Nijedna poslovnica ne odgovara filterima",
+      "noResultsSubtitle": "Promijenite pretragu ili očistite filtere.",
+      "activeProducts_one": "{{count}} aktivna ponuda",
+      "activeProducts_few": "{{count}} aktivne ponude",
+      "activeProducts_other": "{{count}} aktivnih ponuda",
+      "pendingReservations_one": "{{count}} rezervacija na čekanju",
+      "pendingReservations_few": "{{count}} rezervacije na čekanju",
+      "pendingReservations_other": "{{count}} rezervacija na čekanju",
+      "open": "Otvori"
+    },
+    "createBranch": {
+      "title": "Nova poslovnica",
+      "subtitle": "Podaci poslovnice i pristup za njeno osoblje.",
+      "businessSection": "Poslovnica",
+      "name": "Naziv poslovnice",
+      "loginSection": "Pristup za poslovnicu",
+      "email": "Email za prijavu",
+      "password": "Privremena lozinka",
+      "passwordHint": "Najmanje 8 znakova. Osoblje je mijenja pri prvoj prijavi.",
+      "preview": "Ovako je vide restorani",
+      "previewName": "Naziv poslovnice",
+      "infoTitle": "Šta slijedi",
+      "infoText": "Proslijedite email i lozinku poslovnici. Pri prvoj prijavi osoblje bira svoju lozinku i upisuje ime i prezime. Dok poslovnica ne postavi svoj logo i opis, prikazuju se logo i opis firme.",
+      "submit": "Kreiraj poslovnicu",
+      "error": "Poslovnica nije kreirana. Pokušajte ponovo."
+    },
+    "branchDetails": {
+      "back": "Nazad na poslovnice",
+      "notFoundTitle": "Poslovnica nije pronađena",
+      "notFoundSubtitle": "Možda pripada drugoj firmi ili link nije ispravan.",
+      "readOnly": "Pregled je samo za čitanje. Proizvode i rezervacije vodi poslovnica.",
+      "edit": "Uredi podatke",
+      "editTitle": "Uredi poslovnicu",
+      "editText": "Naziv i grad mijenjate samo vi (ili administrator); ostale podatke poslovnica uređuje sama.",
+      "save": "Sačuvaj",
+      "setPassword": "Postavi novu lozinku",
+      "login": "Email za prijavu",
+      "staff": "Osoblje",
+      "staffNotSet": "Još se nije prijavilo",
+      "statsSection": "Ovaj mjesec",
+      "activeProducts": "Aktivne ponude",
+      "pendingReservations": "Rezervacije na čekanju",
+      "completedThisMonth": "Preuzeto ovaj mjesec",
+      "savedThisMonth": "Spašena hrana ovaj mjesec",
+      "productsTab": "Proizvodi",
+      "reservationsTab": "Rezervacije",
+      "statusFilter": "Status",
+      "allStatuses": "-- Svi statusi --",
+      "noProducts": "Nema proizvoda",
+      "noReservations": "Nema rezervacija",
+      "deactivateTitle": "Deaktiviranje poslovnice",
+      "deactivateHidden": "Poslovnica i njene ponude nestaju za restorane; proizvodi se ne brišu.",
+      "deactivatePending": "Rezervacije na čekanju se otkazuju, a restorani dobijaju kredit nazad.",
+      "deactivateConfirmed": "Dok postoje prihvaćena preuzimanja, deaktiviranje nije moguće: sačekajte da budu preuzeta ili otkazana.",
+      "deactivateLogin": "Osoblje poslovnice se ne može prijaviti dok je ponovo ne aktivirate.",
+      "deactivate": "Deaktiviraj",
+      "deactivateConfirmTitle": "Deaktivirati poslovnicu?",
+      "deactivateConfirmText": "Poslovnica {{name}} nestaje za restorane i njeno osoblje se ne može prijaviti. Rezervacije na čekanju se otkazuju.",
+      "reactivateTitle": "Poslovnica je deaktivirana",
+      "deactivatedSince": "Deaktivirana {{date}} ({{by}}).",
+      "reactivateText": "Nakon ponovnog aktiviranja, ponude koje nisu istekle ponovo se prikazuju restoranima.",
+      "reactivate": "Ponovo aktiviraj",
+      "reactivateConfirmTitle": "Ponovo aktivirati poslovnicu?",
+      "reactivateConfirmText": "Poslovnica {{name}} se ponovo prikazuje restoranima i osoblje se može prijaviti."
     }
   }
 }

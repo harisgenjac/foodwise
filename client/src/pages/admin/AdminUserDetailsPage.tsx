@@ -145,6 +145,10 @@ function AdminUserDetailsPage() {
                 <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
                   {t("admin.common.blocked")}
                 </span>
+              ) : user.deactivated_at ? (
+                <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
+                  {t("company.branchStatus.deactivated")}
+                </span>
               ) : user.company_is_blocked ? (
                 <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
                   {t("admin.common.companyBlocked")}
@@ -217,27 +221,22 @@ function AdminUserDetailsPage() {
 
         <dl className="mt-6 grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2 lg:grid-cols-3">
           <DetailItem icon={UserRound} label={t("admin.userDetails.name")} value={fullName || "—"} />
-          {isCompany && (
-            <>
-              <DetailItem
-                icon={Building2}
-                label={t("admin.userDetails.company")}
-                value={
-                  user.company_id ? (
-                    <Link
-                      to={`/admin/companies/${user.company_id}`}
-                      className="text-orange-600 hover:text-orange-700 hover:underline"
-                    >
-                      {user.company_name}
-                    </Link>
-                  ) : (
-                    "—"
-                  )
-                }
-              />
-              <DetailItem icon={Phone} label={t("admin.userDetails.phone")} value={user.phone || "—"} />
-            </>
+          {/* A company headquarters login or a branch: its company, linked to the company page. */}
+          {user.company_id && (
+            <DetailItem
+              icon={Building2}
+              label={t("admin.userDetails.company")}
+              value={
+                <Link
+                  to={`/admin/companies/${user.company_id}`}
+                  className="text-orange-600 hover:text-orange-700 hover:underline"
+                >
+                  {user.company_name}
+                </Link>
+              }
+            />
           )}
+          {isCompany && <DetailItem icon={Phone} label={t("admin.userDetails.phone")} value={user.phone || "—"} />}
           {isBusiness && (
             <>
               <DetailItem icon={Building2} label={t("admin.userDetails.businessName")} value={user.business_name || "—"} />

@@ -110,3 +110,53 @@ describe("MyProfilePage feedback", () => {
     await waitFor(() => expect(errorToast).toHaveBeenCalledWith("Only image files are allowed."));
   });
 });
+
+describe("MyProfilePage for a branch", () => {
+  const branch = makeUser({
+    role: "STORE",
+    business_name: "Bingo Visoko",
+    city: "Sarajevo",
+    city_id: 1,
+    phone: "032 400",
+    address: "Titova 1",
+    company_id: 3,
+    company_name: "Bingo d.o.o.",
+    company_logo_url: "/uploads/logos/company-3.png",
+    company_description: "Lanac prodavnica",
+  });
+
+  beforeEach(() => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  it("shows the business name and city read-only and leaves them out of the save", async () => {
+    apiMock.put.mockResolvedValue({ data: { message: "Profile updated successfully." } });
+    renderWithProviders(<MyProfilePage />, { route: "/my-profile", path: "/my-profile", user: branch });
+
+    const name = await screen.findByDisplayValue("Bingo Visoko");
+    expect(name).toBeDisabled();
+    expect(screen.getByLabelText(t("cities.label"))).toBeDisabled();
+    expect(screen.getAllByText(t("user.managedByCompany"))).toHaveLength(2);
+    // Without its own logo and description, the company's are shown.
+    expect(screen.getByText(new RegExp(t("user.usesCompanyLogo")))).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Lanac prodavnica")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: t("user.saveButton") }));
+    const body = apiMock.put.mock.calls[0]![1] as Record<string, unknown>;
+    expect(body).not.toHaveProperty("business_name");
+    expect(body).not.toHaveProperty("city_id");
+    expect(body).toMatchObject({ address: "Titova 1", phone: "032 400" });
+  });
+
+  it("removes its own logo", async () => {
+    apiMock.delete.mockResolvedValue({ data: { message: "Logo removed." } });
+    renderWithProviders(<MyProfilePage />, {
+      route: "/my-profile",
+      path: "/my-profile",
+      user: { ...branch, logo_url: "/uploads/logos/own.png" },
+    });
+    await userEvent.click(await screen.findByRole("button", { name: t("user.removeLogo") }));
+    expect(apiMock.delete).toHaveBeenCalledWith("/users/me/logo");
+    expect(await screen.findByText(new RegExp(t("user.usesCompanyLogo")))).toBeInTheDocument();
+  });
+});

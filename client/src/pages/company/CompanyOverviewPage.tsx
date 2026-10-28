@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Building2, PencilLine, Store } from "lucide-react";
+import { ArrowRight, Building2, PencilLine, Store } from "lucide-react";
 import api, { assetUrl } from "../../api/axios.js";
 import { useAuth } from "../../context/AuthContext.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
@@ -65,11 +65,35 @@ function CompanyOverviewPage() {
           <Store className="h-5 w-5 text-orange-600" />
           {t("company.overview.branchesTitle")}
         </h2>
-        <EmptyState
-          icon={Store}
-          title={t("company.overview.noBranchesTitle")}
-          subtitle={t("company.overview.noBranchesSubtitle")}
-        />
+        {company.branch_count === 0 ? (
+          <EmptyState
+            icon={Store}
+            title={t("company.overview.noBranchesTitle")}
+            subtitle={t("company.overview.noBranchesSubtitle")}
+            action={{ to: "/company/branches/new", label: t("company.branches.newBranch") }}
+          />
+        ) : (
+          <Link
+            to="/company/branches"
+            className="group flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <div className="flex items-center gap-4">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-50 text-green-700">
+                <Store className="h-6 w-6" />
+              </span>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{company.active_branch_count ?? 0}</p>
+                <p className="text-sm text-gray-500">
+                  {t("company.overview.activeBranches", { count: company.active_branch_count ?? 0 })}
+                </p>
+              </div>
+            </div>
+            <span className="inline-flex items-center gap-1 text-sm font-medium text-orange-600">
+              {t("company.overview.viewBranches")}
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </span>
+          </Link>
+        )}
       </section>
     </div>
   );

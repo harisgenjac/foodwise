@@ -10,6 +10,7 @@ import bcrypt from "bcrypt";
 import { hashPassword, validatePassword } from "../utils/accounts.js";
 import { CITY_NAME, cityDistance, cityExists, parseCityFilter, parseRadius, userCityId } from "../utils/cities.js";
 import { visibleStore } from "../utils/visibility.js";
+import { companyName, storeDescription, storeLogo } from "../utils/branding.js";
 
 const LOGO_URL_PREFIX = "/uploads/logos/";
 
@@ -33,7 +34,8 @@ export const getUser = async (req: Request, res: Response) => {
       `SELECT users.id, users.first_name, users.last_name, users.email, users.role, users.business_name,
          users.logo_url, users.address, users.city_id, cities.name AS city, users.opening_hours,
          users.pickup_hours, users.description, users.phone, users.must_change_password, users.created_at,
-         users.company_id, companies.name AS company_name, companies.logo_url AS company_logo_url
+         users.company_id, companies.name AS company_name, companies.logo_url AS company_logo_url,
+         companies.description AS company_description
        FROM users
        LEFT JOIN cities ON cities.id = users.city_id
        LEFT JOIN companies ON companies.id = users.company_id
@@ -88,11 +90,14 @@ type ProfileResult = { error: string; user?: never } | { user: Record<string, un
 // Shared by PUT /users/me and the admin's PUT /admin/users/:id/profile. An admin has no business
 // profile, so only the name changes; a company headquarters login has a name and a phone (the
 // company's own data is under /api/company). Optional fields use COALESCE, so they cannot be cleared.
+// With `lockBranchFields` (the user's own PUT /users/me) a branch keeps its business name and city:
+// only its headquarters or an admin changes them, and the values sent are ignored.
 export const updateProfile = async (
   db: Pool | PoolClient,
   userId: number,
   role: Role,
   body: UserFields,
+  { lockBranchFields = false }: { lockBranchFields?: boolean } = {},
 ): Promise<ProfileResult> => {
   if (role === "ADMIN") {
     if (!body.first_name || !body.last_name) {
@@ -117,6 +122,17 @@ export const updateProfile = async (
       [body.first_name, body.last_name, body.phone, userId],
     );
     return { user: result.rows[0] };
+  }
+
+  if (role === "STORE" && lockBranchFields) {
+    const current = await db.query(
+      "SELECT users.business_name, users.city_id, users.company_id FROM users WHERE users.id = $1",
+      [userId],
+    );
+    const row = current.rows[0];
+    if (row && row.company_id !== null) {
+      body = { ...body, business_name: row.business_name, city_id: row.city_id };
+    }
   }
 
   const validationError = validateUserFields(body);
@@ -171,7 +187,7 @@ export const updateProfile = async (
 
 export const updateUser = async (req: Request, res: Response) => {
   try {
-    const result = await updateProfile(pool, req.user!.id, req.user!.role, req.body);
+    const result = await updateProfile(pool, req.user!.id, req.user!.role, req.body, { lockBranchFields: true });
     if (result.error) {
       return res.status(400).json({ error: result.error });
     }
@@ -239,7 +255,8 @@ export const getStores = async (req: Request, res: Response) => {
     const fromCity = await userCityId(pool, req.user!.id);
     const distance = cityDistance("from_city.id", "users.city_id");
     const columns = `users.id, users.business_name, users.city_id, cities.name AS city, ${distance} AS distance_km,
-     users.address, users.logo_url, users.description, users.opening_hours, users.pickup_hours, users.phone,
+     users.address, ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
+     users.opening_hours, users.pickup_hours, users.phone, ${companyName("users")} AS company_name,
      (SELECT COUNT(*) FROM products
       WHERE products.store_id = users.id
         AND products.status = 'Available'
@@ -319,8 +336,9 @@ export const getStoreDetails = async (req: Request, res: Response) => {
     }
 
     const result = await pool.query(
-      `SELECT users.id, users.business_name, users.city_id, cities.name AS city, users.address, users.logo_url,
-       users.description, users.opening_hours, users.pickup_hours, users.phone
+      `SELECT users.id, users.business_name, users.city_id, cities.name AS city, users.address,
+       ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
+       users.opening_hours, users.pickup_hours, users.phone, ${companyName("users")} AS company_name
        FROM users LEFT JOIN cities ON cities.id = users.city_id
        WHERE users.id = $1 AND users.role = 'STORE' AND ${visibleStore("users")}`,
       [storeId],
@@ -386,5 +404,18 @@ export const uploadLogo = async (req: Request, res: Response) => {
     return res
       .status(500)
       .json({ error: "An error occurred while uploading the image." });
+  }
+};
+
+// Removes the user's own logo. A branch then shows its company's logo again.
+export const removeLogo = async (req: Request, res: Response) => {
+  try {
+    const previous = await pool.query("SELECT users.logo_url FROM users WHERE users.id = $1", [req.user!.id]);
+    await pool.query("UPDATE users SET logo_url = NULL WHERE users.id = $1", [req.user!.id]);
+    await removeLogoFile(previous.rows[0]?.logo_url);
+    return res.status(200).json({ message: "Logo removed." });
+  } catch (error) {
+    console.error("Error while removing logo:", error);
+    return res.status(500).json({ error: "An error occurred while removing the logo." });
   }
 };

@@ -270,3 +270,58 @@ describe("Company HQ accounts in the other admin pages", () => {
     expect(screen.getAllByText(t("admin.actionTypes.BLOCK_COMPANY")).length).toBeGreaterThan(0);
   });
 });
+
+describe("AdminCompanyDetailsPage branches", () => {
+  const withBranches = (): AdminCompanyDetails => ({
+    ...details(),
+    branches: [
+      {
+        id: 21,
+        email: "visoko@test.com",
+        business_name: "Bingo Visoko",
+        city: "Visoko",
+        is_blocked: false,
+        deactivated_at: null,
+        status: "active",
+        active_products: 4,
+        created_at: "2026-10-01T10:00:00.000Z",
+      },
+    ],
+  });
+
+  it("deactivates a branch after confirming", async () => {
+    apiMock.post.mockResolvedValue({ data: { message: "Branch deactivated." } });
+    renderWithProviders(<AdminCompanyDetailsPage />, {
+      route: "/admin/companies/3",
+      path: "/admin/companies/:id",
+      user: admin,
+      get: { "/admin/companies/3": withBranches() },
+    });
+    const row = (await screen.findByText("Bingo Visoko")).closest("li")!;
+    expect(within(row).getByText(t("company.branchStatus.active"))).toBeInTheDocument();
+    await userEvent.click(within(row).getByRole("button", { name: t("company.branchDetails.deactivate") }));
+    await userEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", { name: t("company.branchDetails.deactivate") }),
+    );
+    expect(apiMock.post).toHaveBeenCalledWith("/admin/companies/3/branches/21/deactivate");
+  });
+
+  it("attaches an existing store without a company", async () => {
+    apiMock.post.mockResolvedValue({ data: { message: "Store attached to the company." } });
+    const lone = makeUser({ id: 40, role: "STORE", email: "lone@test.com", business_name: "Lone Market", company_id: null });
+    const chained = makeUser({ id: 41, role: "STORE", email: "other@test.com", business_name: "Other Branch", company_id: 8 });
+    renderWithProviders(<AdminCompanyDetailsPage />, {
+      route: "/admin/companies/3",
+      path: "/admin/companies/:id",
+      user: admin,
+      get: { "/admin/companies/3": details(), "/admin/users": () => ({ users: [lone, chained], total: 2 }) },
+    });
+    await userEvent.click(await screen.findByRole("button", { name: t("admin.companyDetails.attachButton") }));
+    const dialog = screen.getByRole("dialog");
+    expect(await within(dialog).findByText("Lone Market")).toBeInTheDocument();
+    // A store that already belongs to a company is not offered.
+    expect(within(dialog).queryByText("Other Branch")).not.toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: t("admin.companyDetails.attach") }));
+    expect(apiMock.post).toHaveBeenCalledWith("/admin/companies/3/branches/attach", { user_id: 40 });
+  });
+});

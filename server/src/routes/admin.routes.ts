@@ -35,6 +35,9 @@ import {
   getCompanyDetails,
   unblockCompany,
   updateCompany,
+  attachBranch,
+  deactivateBranchByAdmin,
+  reactivateBranchByAdmin,
 } from "../controllers/adminCompanies.controller.js";
 import { getPlans } from "../controllers/credits.controller.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
@@ -66,6 +69,9 @@ router.get("/companies/:id", getCompanyDetails);
 router.put("/companies/:id", updateCompany);
 router.post("/companies/:id/block", blockCompany);
 router.post("/companies/:id/unblock", unblockCompany);
+router.post("/companies/:id/branches/attach", attachBranch);
+router.post("/companies/:id/branches/:branchId/deactivate", deactivateBranchByAdmin);
+router.post("/companies/:id/branches/:branchId/reactivate", reactivateBranchByAdmin);
 // The active plans (the same list stores and restaurants see), for the overview's plan filter.
 router.get("/credits/plans", getPlans);
 router.get("/credits/overview", getCreditOverview);

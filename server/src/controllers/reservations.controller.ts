@@ -334,74 +334,78 @@ export const getMineReservationsSummary = async (req: Request, res: Response) =>
   }
 };
 
-export const getStoreReservations = async (req: Request, res: Response) => {
-  const store_id = req.user!.id;
-  const { status, name, city_id } = req.query;
-  const page = parsePage(req.query, CARD_PAGE_SIZE);
+// The reservations on a store's products (GET /reservations/store), also shown read-only to its
+// company's headquarters (GET /company/branches/:id/reservations). Null for an invalid filter or page.
+export const listStoreReservations = async (storeId: number, query: Request["query"]) => {
+  const { status, name, city_id } = query;
+  const page = parsePage(query, CARD_PAGE_SIZE);
   if (!page) {
-    return res.status(400).json({ error: "Invalid filter." });
+    return null;
   }
-  try {
-    const columns = `
-        reservations.id,
-        reservations.restaurant_id,
-        reservations.quantity,
-        reservations.status,
-        reservations.pickup_date,
-        reservations.picked_up_at,
-        reservations.created_at,
-        reservations.updated_at,
-        reservations.status = 'Confirmed' AND reservations.pickup_date::date < CURRENT_DATE AS is_overdue,
-        products.name AS product_name,
-        products.description,
-        reservations.unit_price AS discounted_price,
-        products.original_price,
-        products.category,
-        products.unit,
-        users.business_name,
-        cities.name AS city`;
-    let query = `FROM reservations
-      JOIN products ON reservations.product_id = products.id
-      JOIN users ON reservations.restaurant_id = users.id
-      LEFT JOIN cities ON cities.id = users.city_id
-      WHERE products.store_id = $1`;
-    let values: (string | number)[] = [store_id];
+  const columns = `
+      reservations.id,
+      reservations.restaurant_id,
+      reservations.quantity,
+      reservations.status,
+      reservations.pickup_date,
+      reservations.picked_up_at,
+      reservations.created_at,
+      reservations.updated_at,
+      reservations.status = 'Confirmed' AND reservations.pickup_date::date < CURRENT_DATE AS is_overdue,
+      products.name AS product_name,
+      products.description,
+      reservations.unit_price AS discounted_price,
+      products.original_price,
+      products.category,
+      products.unit,
+      users.business_name,
+      cities.name AS city`;
+  let from = `FROM reservations
+    JOIN products ON reservations.product_id = products.id
+    JOIN users ON reservations.restaurant_id = users.id
+    LEFT JOIN cities ON cities.id = users.city_id
+    WHERE products.store_id = $1`;
+  const values: (string | number)[] = [storeId];
 
-    if (status) {
-      if (!RESERVATION_STATUSES.includes(status as string)) {
-        return res.status(400).json({ error: "Invalid filter." });
-      }
-      values.push(status as string);
-      query += ` AND reservations.status = $${values.length}`;
+  if (status) {
+    if (!RESERVATION_STATUSES.includes(status as string)) {
+      return null;
     }
-    if (name) {
-      values.push(`%${name}%` as string);
-      query += ` AND products.name ILIKE $${values.length}`;
-    }
-    // The restaurant's city.
-    const cityFilter = await parseCityFilter(pool, city_id);
-    if ("invalid" in cityFilter) {
+    values.push(status as string);
+    from += ` AND reservations.status = $${values.length}`;
+  }
+  if (name) {
+    values.push(`%${name}%` as string);
+    from += ` AND products.name ILIKE $${values.length}`;
+  }
+  // The restaurant's city.
+  const cityFilter = await parseCityFilter(pool, city_id);
+  if ("invalid" in cityFilter) {
+    return null;
+  }
+  if (cityFilter.cityId !== null) {
+    values.push(cityFilter.cityId);
+    from += ` AND users.city_id = $${values.length}`;
+  }
+
+  const { rows, total } = await listPage(
+    columns,
+    from,
+    `CASE WHEN reservations.status = 'Pending' THEN 0 ELSE 1 END,
+    reservations.created_at DESC, reservations.id DESC`,
+    values,
+    page,
+  );
+  return { reservations: rows, total };
+};
+
+export const getStoreReservations = async (req: Request, res: Response) => {
+  try {
+    const result = await listStoreReservations(req.user!.id, req.query);
+    if (!result) {
       return res.status(400).json({ error: "Invalid filter." });
     }
-    if (cityFilter.cityId !== null) {
-      values.push(cityFilter.cityId);
-      query += ` AND users.city_id = $${values.length}`;
-    }
-
-    const { rows, total } = await listPage(
-      columns,
-      query,
-      `CASE WHEN reservations.status = 'Pending' THEN 0 ELSE 1 END,
-      reservations.created_at DESC, reservations.id DESC`,
-      values,
-      page,
-    );
-
-    return res.status(200).json({
-      message: "Reservations fetched successfully.",
-      reservations: rows,
-      total,
-    });
+    return res.status(200).json({ message: "Reservations fetched successfully.", ...result });
   } catch (error) {
     console.error("Error while fetching reservations:", error);
     return res

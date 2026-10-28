@@ -43,3 +43,22 @@ describe("Header logout", () => {
     expect(screen.queryByTestId("location")).not.toBeInTheDocument();
   });
 });
+
+describe("Header for a branch", () => {
+  it("shows the branch and its company instead of the role", async () => {
+    renderWithProviders(
+      <NotificationsProvider enabled={false}>
+        <Header isSidebarOpen onToggleSidebar={() => {}} />
+      </NotificationsProvider>,
+      {
+        route: "/dashboard",
+        path: "/dashboard",
+        user: makeUser({ role: "STORE", business_name: "Bingo Visoko", company_id: 3, company_name: "Bingo d.o.o." }),
+      },
+    );
+    expect(
+      await screen.findByText(t("header.branchOf", { branch: "Bingo Visoko", company: "Bingo d.o.o." })),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(t("auth.storeRole"))).not.toBeInTheDocument();
+  });
+});

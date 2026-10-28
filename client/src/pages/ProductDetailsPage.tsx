@@ -34,6 +34,7 @@ import DonateProductModal from "../components/donation/DonateProductModal.js";
 import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
 import { PRODUCT_STATUS_STYLES } from "../utils/productStatus.js";
 import { getDaysUntilExpiry } from "../utils/expiry.js";
+import ChainLabel from "../components/store/ChainLabel.js";
 import type { Product } from "../types/index.js";
 
 function ProductDetailsPage() {
@@ -325,6 +326,7 @@ function ProductDetailsPage() {
               <p className="text-lg font-bold text-gray-900">
                 {product.business_name || "-"}
               </p>
+              <ChainLabel company={product.company_name} />
               {(product.store_address || product.city) && (
                 <p className="flex items-center gap-2 text-sm text-gray-600">
                   <MapPin className="h-4 w-4 shrink-0 text-gray-400" />

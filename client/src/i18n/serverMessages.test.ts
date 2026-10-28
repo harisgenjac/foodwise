@@ -74,6 +74,8 @@ describe("server texts", () => {
     /^New .* request waiting for approval\.$/,
     /^Your .* request was /,
     /^Reservation cancelled by the platform administrator: /,
+    /^Reservation cancelled because the store is no longer active: /,
+    /^Branch 7 by the platform administrator: /,
     /^Your (product|donation) was removed by the platform administrator: /,
     /^Platform announcement: /,
     /\(KM\)$/,
@@ -81,7 +83,7 @@ describe("server texts", () => {
     /^(Bakery Products|Dairy Products|Frozen Food|Favorites only|Pickup date|Reservation no\.)$/,
     /^(Broj|Datum|Pekarski|Smrznuta|Mliječni|Spašena) /,
     /^(GET|POST|PUT|PATCH|DELETE) \/api\//,
-    /^(SELECT|UPDATE|INSERT|DELETE|WITH|FROM) /,
+    /^(SELECT|UPDATE|INSERT|DELETE|WITH|FROM|FOR|COALESCE|SAVEPOINT|RELEASE|ROLLBACK)[ (]/,
     // `Your account is blocked.${reason}`: the reason part has its own key (see below).
     /^Your account is blocked\.7$/,
   ];

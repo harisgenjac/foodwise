@@ -26,7 +26,8 @@
     "adminCreditRequests": "Credit requests",
     "adminCompanies": "Companies",
     "companyOverview": "Overview",
-    "companyProfile": "Company profile"
+    "companyProfile": "Company profile",
+    "companyBranches": "Branches"
   },
   "breadcrumbs": {
     "label": "Breadcrumb",
@@ -40,7 +41,8 @@
     "logout": "Log out",
     "collapseSidebar": "Collapse menu",
     "expandSidebar": "Expand menu",
-    "logoutError": "Logging out failed. Please try again."
+    "logoutError": "Logging out failed. Please try again.",
+    "branchOf": "{{branch}} · part of {{company}}"
   },
   "auth": {
     "welcomeBack": "Welcome back",
@@ -310,7 +312,12 @@
       "CREDIT_REQUEST_REJECTED": "Your credit request was rejected",
       "CREDIT_RENEWAL_CREATED": "Your subscription renewal request was sent for approval",
       "CREDIT_REQUEST_EXPIRED": "Your credit request expired before it was approved",
-      "CREDIT_RENEWAL_SKIPPED": "Your subscription cannot renew automatically because its plan is no longer offered. Choose a plan for next month."
+      "CREDIT_RENEWAL_SKIPPED": "Your subscription cannot renew automatically because its plan is no longer offered. Choose a plan for next month.",
+      "RESERVATION_CANCELLED_STORE_CLOSED": "The reservation for {{product}} was cancelled because the store is no longer active.",
+      "BRANCH_BLOCKED": "The platform administrator blocked the branch {{branch}}.",
+      "BRANCH_UNBLOCKED": "The platform administrator unblocked the branch {{branch}}.",
+      "BRANCH_DEACTIVATED": "The platform administrator deactivated the branch {{branch}}.",
+      "BRANCH_REACTIVATED": "The platform administrator reactivated the branch {{branch}}."
     },
     "reason": "Reason: {{reason}}",
     "credits": {
@@ -363,7 +370,8 @@
     "browseOtherOffers": "Browse all offers",
     "restaurantNoResSubtitle": "When you reserve a product from this store, the reservation will appear here.",
     "noStatusResultsSubtitle": "You have no reservations with this status at this store.",
-    "allStatuses": "All"
+    "allStatuses": "All",
+    "chainLabel": "part of {{company}}"
   },
   "categories": {
     "Meat": "Meat",
@@ -422,7 +430,11 @@
     "changePassword": "Change password",
     "passwordChanged": "Your password was changed.",
     "passwordError": "The password was not changed. Please try again.",
-    "companyRole": "Company HQ"
+    "companyRole": "Company HQ",
+    "managedByCompany": "Managed by your company",
+    "usesCompanyLogo": "Your company's logo is shown until you set your own.",
+    "companyDescriptionHint": "Left empty, your company's description is shown.",
+    "removeLogo": "Remove logo"
   },
   "dashboard": {
     "appTitle": "Welcome to FoodWise",
@@ -849,7 +861,10 @@
       "CREATE_COMPANY": "Company created",
       "UPDATE_COMPANY": "Company edited",
       "BLOCK_COMPANY": "Company blocked",
-      "UNBLOCK_COMPANY": "Company unblocked"
+      "UNBLOCK_COMPANY": "Company unblocked",
+      "DEACTIVATE_BRANCH": "Branch deactivated",
+      "REACTIVATE_BRANCH": "Branch reactivated",
+      "ATTACH_BRANCH": "Store attached to a company"
     },
     "common": {
       "cancel": "Cancel",
@@ -1263,8 +1278,15 @@
       "profileNotFilled": "Profile not completed yet",
       "branchesSection": "Branches",
       "noBranchesTitle": "No branches yet",
-      "noBranchesSubtitle": "The company's branches will be added in the next step.",
-      "historySection": "Recent actions"
+      "noBranchesSubtitle": "The headquarters adds branches; you can attach an existing store here.",
+      "historySection": "Recent actions",
+      "attachButton": "Attach an existing store",
+      "attachTitle": "Attach an existing store",
+      "attachText": "The store becomes a branch of {{name}}. This cannot be undone.",
+      "attachSearch": "Store name or email",
+      "attachNone": "No stores without a company match this search.",
+      "attach": "Attach",
+      "deactivateBranchText": "The branch {{name}} disappears for restaurants and cannot sign in. Pending reservations are cancelled and the headquarters is notified. Refused while accepted pickups wait."
     }
   },
   "announcements": {
@@ -1422,7 +1444,10 @@
       "editProfile": "Company profile",
       "branchesTitle": "Branches",
       "noBranchesTitle": "You have no branches yet",
-      "noBranchesSubtitle": "Your company's branches will show here once an admin adds them."
+      "noBranchesSubtitle": "Add your first branch; it then publishes offers and handles reservations itself.",
+      "activeBranches_one": "active branch",
+      "activeBranches_other": "active branches",
+      "viewBranches": "All branches"
     },
     "profile": {
       "subtitle": "The description and logo appear on the company's pages.",
@@ -1432,6 +1457,85 @@
       "description": "Description",
       "logoLabel": "Company logo",
       "saveError": "The company profile was not saved. Please try again."
+    },
+    "branchStatus": {
+      "active": "Active",
+      "deactivated": "Deactivated",
+      "blocked": "Blocked"
+    },
+    "branches": {
+      "title": "Branches",
+      "subtitle": "Your company's stores. Each branch publishes its offers and handles its reservations.",
+      "newBranch": "New branch",
+      "count_one": "{{count}} branch",
+      "count_other": "{{count}} branches",
+      "search": "Branch name",
+      "statusFilter": "Status",
+      "allStatuses": "-- All statuses --",
+      "emptyTitle": "You have no branches yet",
+      "emptySubtitle": "Add your first branch and pass its login on.",
+      "noResultsTitle": "No branches match these filters",
+      "noResultsSubtitle": "Change the search or clear the filters.",
+      "activeProducts_one": "{{count}} active offer",
+      "activeProducts_other": "{{count}} active offers",
+      "pendingReservations_one": "{{count}} pending reservation",
+      "pendingReservations_other": "{{count}} pending reservations",
+      "open": "Open"
+    },
+    "createBranch": {
+      "title": "New branch",
+      "subtitle": "The branch's details and a login for its staff.",
+      "businessSection": "Branch",
+      "name": "Branch name",
+      "loginSection": "Branch login",
+      "email": "Login email",
+      "password": "Temporary password",
+      "passwordHint": "At least 8 characters. The staff change it at the first login.",
+      "preview": "How restaurants see it",
+      "previewName": "Branch name",
+      "infoTitle": "What happens next",
+      "infoText": "Pass the email and password on to the branch. At the first login the staff choose their own password and enter a first and last name. Until the branch sets its own logo and description, the company's are shown.",
+      "submit": "Create branch",
+      "error": "The branch was not created. Please try again."
+    },
+    "branchDetails": {
+      "back": "Back to branches",
+      "notFoundTitle": "Branch not found",
+      "notFoundSubtitle": "It may belong to another company or the link is wrong.",
+      "readOnly": "This view is read-only. The branch manages its products and reservations.",
+      "edit": "Edit details",
+      "editTitle": "Edit branch",
+      "editText": "Only you (or an admin) change the name and city; the branch edits its other details itself.",
+      "save": "Save",
+      "setPassword": "Set a new password",
+      "login": "Login email",
+      "staff": "Staff",
+      "staffNotSet": "Not signed in yet",
+      "statsSection": "This month",
+      "activeProducts": "Active offers",
+      "pendingReservations": "Pending reservations",
+      "completedThisMonth": "Picked up this month",
+      "savedThisMonth": "Food saved this month",
+      "productsTab": "Products",
+      "reservationsTab": "Reservations",
+      "statusFilter": "Status",
+      "allStatuses": "-- All statuses --",
+      "noProducts": "No products",
+      "noReservations": "No reservations",
+      "deactivateTitle": "Deactivate the branch",
+      "deactivateHidden": "The branch and its offers disappear for restaurants; products are not deleted.",
+      "deactivatePending": "Pending reservations are cancelled and the restaurants get their credit back.",
+      "deactivateConfirmed": "While accepted pickups wait, the branch cannot be deactivated: wait until they are picked up or cancelled.",
+      "deactivateLogin": "The branch staff cannot sign in until you reactivate it.",
+      "deactivate": "Deactivate",
+      "deactivateConfirmTitle": "Deactivate the branch?",
+      "deactivateConfirmText": "The branch {{name}} disappears for restaurants and its staff cannot sign in. Pending reservations are cancelled.",
+      "reactivateTitle": "The branch is deactivated",
+      "deactivatedSince": "Deactivated on {{date}} ({{by}}).",
+      "reactivateText": "After reactivation, its offers that have not expired show to restaurants again.",
+      "reactivate": "Reactivate",
+      "reactivateConfirmTitle": "Reactivate the branch?",
+      "reactivateConfirmText": "The branch {{name}} shows to restaurants again and its staff can sign in."
     }
   }
 }

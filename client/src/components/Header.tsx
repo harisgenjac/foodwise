@@ -69,16 +69,20 @@ function Header({ isSidebarOpen, onToggleSidebar, locked = false }: HeaderProps)
     ? t("header.collapseSidebar")
     : t("header.expandSidebar");
   const ToggleIcon = isSidebarOpen ? PanelLeftClose : PanelLeftOpen;
-  const roleLabel =
-    user?.role === "ADMIN"
+  // A branch (a store of a company) shows its name and its chain instead of the role.
+  const isBranch = user?.role === "STORE" && Boolean(user.company_name);
+  const roleLabel = isBranch
+    ? t("header.branchOf", { branch: user?.business_name ?? "", company: user?.company_name ?? "" })
+    : user?.role === "ADMIN"
       ? t("auth.adminRole")
       : user?.role === "COMPANY"
         ? t("auth.companyRole")
         : user?.role === "STORE"
           ? t("auth.storeRole")
           : t("auth.restaurantRole");
-  // A company headquarters login shows its company's logo.
-  const avatarUrl = user?.role === "COMPANY" ? user.company_logo_url : user?.logo_url;
+  // A company headquarters login shows its company's logo, a branch without its own logo too.
+  const avatarUrl =
+    user?.role === "COMPANY" ? user.company_logo_url : user?.logo_url || (isBranch ? user?.company_logo_url : null);
   // Accounts created by an admin have no name until the profile is filled in.
   const fullName = `${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim();
   const displayName = fullName || user?.business_name || user?.email || "";

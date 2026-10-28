@@ -11,7 +11,9 @@ import {
   FileText,
   History,
   KeyRound,
+  Link2,
   PencilLine,
+  Power,
   ShieldCheck,
   Store,
 } from "lucide-react";
@@ -22,10 +24,18 @@ import EmptyState from "../../components/product/EmptyState.js";
 import DetailItem from "../../components/product/DetailItem.js";
 import ConfirmModal from "../../components/common/ConfirmModal.js";
 import EditCompanyModal from "../../components/admin/EditCompanyModal.js";
+import AttachStoreModal from "../../components/admin/AttachStoreModal.js";
+import { BRANCH_STATUS_STYLES } from "../../utils/branches.js";
 import { formatDateTime } from "../../utils/admin.js";
 import type { AdminCompanyDetails } from "../../types/index.js";
 
-type Dialog = "block" | "unblock" | "edit" | null;
+type Dialog =
+  | "block"
+  | "unblock"
+  | "edit"
+  | "attach"
+  | { kind: "deactivate" | "reactivate"; branch: AdminCompanyDetails["branches"][number] }
+  | null;
 
 const errorMessage = (err: unknown) => (axios.isAxiosError(err) ? err.response?.data?.error : null);
 
@@ -243,20 +253,45 @@ function AdminCompanyDetailsPage() {
         ) : (
           <ul className="divide-y divide-gray-100">
             {branches.map((branch) => (
-              <li key={branch.id} className="flex items-center justify-between gap-2 py-3">
+              <li key={branch.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <Link to={`/admin/users/${branch.id}`} className="min-w-0 hover:text-orange-600">
                   <p className="truncate font-medium text-gray-900">{branch.business_name || branch.email}</p>
-                  <p className="text-sm text-gray-500">{branch.city || "—"}</p>
+                  <p className="text-sm text-gray-500">
+                    {[branch.city, t("company.branches.activeProducts", { count: branch.active_products })]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
                 </Link>
-                {branch.is_blocked && (
-                  <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
-                    {t("admin.common.blocked")}
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${BRANCH_STATUS_STYLES[branch.status]}`}>
+                    {t(`company.branchStatus.${branch.status}`)}
                   </span>
-                )}
+                  {branch.status === "deactivated" ? (
+                    <button
+                      type="button"
+                      onClick={() => setDialog({ kind: "reactivate", branch })}
+                      className={secondaryButton}
+                    >
+                      {t("company.branchDetails.reactivate")}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setDialog({ kind: "deactivate", branch })}
+                      className={secondaryButton}
+                    >
+                      {t("company.branchDetails.deactivate")}
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
         )}
+        <button type="button" onClick={() => setDialog("attach")} className={`${secondaryButton} mt-4`}>
+          <Link2 className="h-4 w-4" />
+          {t("admin.companyDetails.attachButton")}
+        </button>
       </section>
 
       <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
@@ -271,7 +306,12 @@ function AdminCompanyDetailsPage() {
             {actions.map((action) => (
               <li key={action.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900">{actionTypes[action.action] ?? action.action}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {actionTypes[action.action] ?? action.action}
+                    {action.target_business_name && (
+                      <span className="font-normal text-gray-600">: {action.target_business_name}</span>
+                    )}
+                  </p>
                   {action.reason && <p className="mt-0.5 text-sm text-gray-600">{action.reason}</p>}
                 </div>
                 <p className="shrink-0 text-xs text-gray-500 sm:text-right">
@@ -296,6 +336,45 @@ function AdminCompanyDetailsPage() {
             closeDialog();
             load();
           }}
+        />
+      )}
+
+      {dialog === "attach" && (
+        <AttachStoreModal
+          companyId={company.id}
+          companyName={company.name}
+          onClose={closeDialog}
+          onAttached={() => {
+            closeDialog();
+            load();
+          }}
+        />
+      )}
+
+      {dialog !== null && typeof dialog === "object" && (
+        <ConfirmModal
+          variant={dialog.kind === "deactivate" ? "danger" : "success"}
+          icon={dialog.kind === "deactivate" ? Power : CircleCheck}
+          title={t(
+            dialog.kind === "deactivate"
+              ? "company.branchDetails.deactivateConfirmTitle"
+              : "company.branchDetails.reactivateConfirmTitle",
+          )}
+          message={t(
+            dialog.kind === "deactivate"
+              ? "admin.companyDetails.deactivateBranchText"
+              : "company.branchDetails.reactivateConfirmText",
+            { name: dialog.branch.business_name ?? dialog.branch.email },
+          )}
+          confirmLabel={t(
+            dialog.kind === "deactivate" ? "company.branchDetails.deactivate" : "company.branchDetails.reactivate",
+          )}
+          cancelLabel={t("admin.common.cancel")}
+          busy={busy}
+          onConfirm={() =>
+            run(() => api.post(`/admin/companies/${company.id}/branches/${dialog.branch.id}/${dialog.kind}`))
+          }
+          onClose={closeDialog}
         />
       )}
 

@@ -7,6 +7,7 @@ import { getDaysUntilExpiry } from "../../utils/expiry.js";
 import { PRODUCT_STATUS_STYLES } from "../../utils/productStatus.js";
 import { formatCityDistance } from "../../utils/radius.js";
 import StoreNameLink from "../store/StoreNameLink.js";
+import ChainLabel from "../store/ChainLabel.js";
 import type { Product } from "../../types/index.js";
 
 interface DashboardProductCardProps {
@@ -48,6 +49,7 @@ function DashboardProductCard({ product, showStore = false, actions }: Dashboard
               {product.business_name && (
                 <StoreNameLink storeId={product.store_id} name={product.business_name} />
               )}
+              <ChainLabel company={product.company_name} className="px-1.5" />
               {product.city && (
                 <span className="shrink-0">
                   {product.business_name && "· "}

@@ -81,6 +81,7 @@ function Sidebar({ isSidebarOpen, locked = false }: { isSidebarOpen: boolean; lo
   // A company headquarters manages its chain only; it never acts as a store.
   const companyLinks: SidebarLink[] = [
     { to: "/dashboard", label: t("sidebar.companyOverview"), icon: LayoutDashboard },
+    { to: "/company/branches", label: t("sidebar.companyBranches"), icon: Store },
     { to: "/company/profile", label: t("sidebar.companyProfile"), icon: Building2 },
     { to: "/my-profile", label: t("sidebar.myProfile"), icon: UserRound },
   ];

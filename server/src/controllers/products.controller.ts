@@ -8,6 +8,7 @@ import { HttpError } from '../utils/httpError.js';
 import { cityDistance, parseCityFilter, parseRadius, userCityId } from '../utils/cities.js';
 import { chargeForProduct, chargeForProducts, refundForProduct } from '../services/creditService.js';
 import { visibleStore } from '../utils/visibility.js';
+import { companyName } from '../utils/branding.js';
 
 export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
 
@@ -175,6 +176,7 @@ export const getProducts = async (req: Request, res: Response) => {
       SELECT
         products.*,
         users.business_name,
+        ${companyName("users")} AS company_name,
         cities.name AS city,
         ${cityDistance("$1::integer", "users.city_id")} AS distance_km,
         products.quantity - COALESCE(
@@ -275,6 +277,7 @@ export const getProductById = async (req: Request, res: Response) => {
       `SELECT
     products.*,
     users.business_name,
+    ${companyName("users")} AS company_name,
     cities.name AS city,
     users.address AS store_address,
     users.phone AS store_phone,
@@ -305,54 +308,57 @@ export const getProductById = async (req: Request, res: Response) => {
   }
 };
 
+// A store's own products (GET /products/mine), also shown read-only to its company's headquarters
+// (GET /company/branches/:id/products). Null for an invalid filter or page.
+export const listStoreProducts = async (storeId: number, query: Request["query"]) => {
+  const { status, category, name, expiryWithinDays, sort } = query;
+  const page = parsePage(query, CARD_PAGE_SIZE);
+  const sortKey = sort ?? "newest";
+  if (!page || typeof sortKey !== "string" || !Object.hasOwn(MINE_SORT_ORDERS, sortKey)) {
+    return null;
+  }
+
+  let from = "FROM products WHERE store_id = $1 AND status != 'Removed'";
+  const values: (string | number)[] = [storeId];
+
+  if (category) {
+    values.push(category as string);
+    from += ` AND category = $${values.length}`;
+  }
+
+  if (status) {
+    if (!PRODUCT_STATUSES.includes(status as string)) {
+      return null;
+    }
+    values.push(status as string);
+    from += ` AND status = $${values.length}`;
+  }
+
+  if (expiryWithinDays) {
+    const days = parseNonNegativeInt(expiryWithinDays);
+    if (days === null) {
+      return null;
+    }
+    values.push(days);
+    from += ` AND expiry_date <= CURRENT_DATE + ($${values.length} * INTERVAL '1 day')`;
+  }
+
+  if (name) {
+    values.push(`%${name}%` as string);
+    from += ` AND name ILIKE $${values.length}`;
+  }
+
+  const { rows, total } = await listPage("*", from, MINE_SORT_ORDERS[sortKey]!, values, page);
+  return { products: rows, total };
+};
+
 export const getMineProducts = async (req: Request, res: Response) => {
   try {
-    const store_id = req.user!.id;
-    const { status, category, name, expiryWithinDays, sort } = req.query;
-    const page = parsePage(req.query, CARD_PAGE_SIZE);
-    const sortKey = sort ?? "newest";
-    if (!page || typeof sortKey !== "string" || !Object.hasOwn(MINE_SORT_ORDERS, sortKey)) {
+    const result = await listStoreProducts(req.user!.id, req.query);
+    if (!result) {
       return res.status(400).json({ error: "Invalid filter." });
     }
-
-    let query = "FROM products WHERE store_id = $1 AND status != 'Removed'";
-    let values: (string | number)[] = [store_id];
-
-    if (category) {
-      values.push(category as string);
-      query += ` AND category = $${values.length}`;
-    }
-
-    if (status) {
-      if (!PRODUCT_STATUSES.includes(status as string)) {
-        return res.status(400).json({ error: "Invalid filter." });
-      }
-      values.push(status as string);
-      query += ` AND status = $${values.length}`;
-    }
-
-    if (expiryWithinDays) {
-      const days = parseNonNegativeInt(expiryWithinDays);
-      if (days === null) {
-        return res.status(400).json({ error: "Invalid filter." });
-      }
-      values.push(days);
-      query += ` AND expiry_date <= CURRENT_DATE + ($${values.length} * INTERVAL '1 day')`;
-    }
-
-    if (name) {
-      values.push(`%${name}%` as string);
-      query += ` AND name ILIKE $${values.length}`;
-    }
-
-    const { rows, total } = await listPage(
-      "*",
-      query,
-      MINE_SORT_ORDERS[sortKey]!,
-      values,
-      page,
-    );
-    return res.status(200).json({ products: rows, total });
+    return res.status(200).json(result);
   } catch (error) {
     console.error("Error while fetching products:", error);
     return res

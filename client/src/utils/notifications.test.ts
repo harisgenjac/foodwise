@@ -167,3 +167,30 @@ describe("getNotificationGroup", () => {
     expect(getNotificationGroup(new Date(2026, 9, 18, 23, 59).toISOString())).toBe("earlier");
   });
 });
+
+describe("branch notifications", () => {
+  const branchNotification = (overrides: Partial<Notification> = {}) =>
+    makeNotification({
+      type: "BRANCH_BLOCKED",
+      reservation_id: null,
+      product_id: null,
+      product_name: null,
+      branch_id: 21,
+      branch_name: "Bingo Visoko",
+      details: "Kršenje pravila",
+      ...overrides,
+    });
+
+  it("opens the branch page for its headquarters", () => {
+    expect(getNotificationLink(branchNotification(), "COMPANY")).toBe("/company/branches/21");
+  });
+
+  it("names the branch and adds the reason", () => {
+    const blocked = t("notifications.types.BRANCH_BLOCKED", { branch: "Bingo Visoko" });
+    const reason = t("notifications.reason", { reason: "Kršenje pravila" });
+    expect(getNotificationText(branchNotification(), t)).toBe(blocked + " " + reason);
+    expect(getNotificationText(branchNotification({ type: "BRANCH_REACTIVATED", details: null }), t)).toBe(
+      t("notifications.types.BRANCH_REACTIVATED", { branch: "Bingo Visoko" }),
+    );
+  });
+});

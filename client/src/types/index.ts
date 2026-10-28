@@ -17,6 +17,8 @@ export interface Product {
   // For a restaurant: straight-line km from its city to the store's (null without a city on either side).
   distance_km?: number | null;
   business_name?: string;
+  // The store's chain (a branch's company) on the marketplace and product details; null otherwise.
+  company_name?: string | null;
   city?: string;
   // Only on GET /products/:id.
   store_address?: string | null;
@@ -94,12 +96,15 @@ export interface User {
   company_name?: string | null;
   // Only on GET /users/me: the company's logo, shown as a COMPANY user's avatar.
   company_logo_url?: string | null;
+  company_description?: string | null;
   // Only on the admin endpoints.
   is_blocked?: boolean;
   blocked_at?: string | null;
   blocked_reason?: string | null;
   // Only on the admin endpoints: the user's company is blocked (the user cannot sign in).
   company_is_blocked?: boolean;
+  // Only on the admin endpoints: a branch deactivated by its headquarters or an admin.
+  deactivated_at?: string | null;
 }
 
 // A store chain (GET /company/me for its headquarters, the admin's company endpoints).
@@ -109,11 +114,59 @@ export interface Company {
   description: string | null;
   logo_url: string | null;
   branch_count: number;
+  // Only on GET /company/me: branches that are neither deactivated nor blocked.
+  active_branch_count?: number;
   // Only on the admin endpoints.
   is_blocked?: boolean;
   blocked_at?: string | null;
   blocked_reason?: string | null;
   created_at?: string;
+}
+
+// A branch (a store of a company) as its headquarters sees it.
+export type BranchStatus = "active" | "deactivated" | "blocked";
+
+// A row of GET /company/branches.
+export interface Branch {
+  id: number;
+  business_name: string;
+  city: string | null;
+  address: string | null;
+  email: string;
+  status: BranchStatus;
+  active_products: number;
+  pending_reservations: number;
+  created_at: string;
+}
+
+// GET /company/branches/:id: the profile (logo and description resolved) and this month's numbers.
+export interface BranchDetails {
+  branch: {
+    id: number;
+    email: string;
+    first_name: string | null;
+    last_name: string | null;
+    business_name: string;
+    city_id: number | null;
+    city: string | null;
+    address: string | null;
+    phone: string | null;
+    opening_hours: string | null;
+    pickup_hours: string | null;
+    logo_url: string | null;
+    description: string | null;
+    status: BranchStatus;
+    deactivated_at: string | null;
+    deactivated_by_email: string | null;
+    must_change_password: boolean;
+    created_at: string;
+  };
+  stats: {
+    active_products: number;
+    pending_reservations: number;
+    completed_this_month: number;
+    saved_this_month: { kg: number; l: number; pieces: number };
+  };
 }
 
 // A row of GET /admin/companies.
@@ -130,8 +183,18 @@ export interface AdminCompanyListItem {
 export interface AdminCompanyDetails {
   company: Company;
   hqUsers: Pick<User, "id" | "email" | "first_name" | "last_name" | "phone" | "is_blocked" | "must_change_password" | "created_at">[];
-  branches: { id: number; email: string; business_name: string | null; city: string | null; is_blocked: boolean; created_at: string }[];
-  actions: Pick<AdminAction, "id" | "action" | "reason" | "created_at" | "admin_email">[];
+  branches: {
+    id: number;
+    email: string;
+    business_name: string | null;
+    city: string | null;
+    is_blocked: boolean;
+    deactivated_at: string | null;
+    status: BranchStatus;
+    active_products: number;
+    created_at: string;
+  }[];
+  actions: Pick<AdminAction, "id" | "action" | "reason" | "created_at" | "admin_email" | "target_user_id" | "target_business_name">[];
 }
 
 export interface Favorites {
@@ -272,7 +335,10 @@ export type AdminActionType =
   | "CREATE_COMPANY"
   | "UPDATE_COMPANY"
   | "BLOCK_COMPANY"
-  | "UNBLOCK_COMPANY";
+  | "UNBLOCK_COMPANY"
+  | "DEACTIVATE_BRANCH"
+  | "REACTIVATE_BRANCH"
+  | "ATTACH_BRANCH";
 
 export interface AdminAction {
   id: number;

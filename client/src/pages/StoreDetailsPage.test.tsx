@@ -126,3 +126,24 @@ describe("StoreDetailsPage reservations tab count", () => {
     await waitFor(() => expect(reservationsTab()).toHaveTextContent("6"));
   });
 });
+
+describe("StoreDetailsPage chain label", () => {
+  it("shows the chain of a branch in the header", async () => {
+    renderWithProviders(<StoreDetailsPage />, {
+      route: "/stores/2",
+      path: "/stores/:id",
+      user: makeUser({ id: 1, role: "RESTAURANT" }),
+      get: {
+        "/users/stores/2": {
+          store: { ...STORE, company_name: "Bingo d.o.o." },
+          stats: { sold_articles: "0", successful_reservations: "0" },
+          myReservations: { my_reservations_count: "0" },
+        },
+        "/favorites": { favorites: [] },
+        "/products": { products: [], total: 0 },
+        "/reservations/mine": { reservations: [], total: 0 },
+      },
+    });
+    expect(await screen.findByText(t("store.chainLabel", { company: "Bingo d.o.o." }))).toBeInTheDocument();
+  });
+});
