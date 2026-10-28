@@ -127,7 +127,7 @@ describe("RestaurantDashboardPage", () => {
     renderRestaurant({ pending_reservations: 0, successful_reservations: 0, savings: 0 });
 
     expect(await screen.findByText("Hljeb")).toBeInTheDocument();
-    expect(paramsOf("/products")).toEqual({ sort: "expiry", limit: 3 });
+    expect(paramsOf("/products")).toEqual({ sort: "expiry", radius: "10", limit: 3 });
     expect(paramsOf("/reservations/mine")).toEqual({ limit: 3 });
     expect(statValue(t("dashboard.statSavings"))).toBe("0.00 KM");
   });
@@ -140,5 +140,79 @@ describe("RestaurantDashboardPage", () => {
     );
     expect(screen.queryByRole("heading", { name: t("dashboard.recentReservationsTitle") })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: t("dashboard.viewAllReservations") })).toHaveAttribute("href", "/my-reservations");
+  });
+
+  describe("offers closest to expiry, nearby first", () => {
+    const VISOKO = makeProduct({ id: 1, name: "Hljeb", city: "Visoko", distance_km: 0 });
+    const KAKANJ = makeProduct({ id: 2, name: "Mlijeko", city: "Kakanj", distance_km: 16 });
+    const ZENICA = makeProduct({ id: 3, name: "Sir", city: "Zenica", distance_km: 32 });
+    const TUZLA = makeProduct({ id: 4, name: "Jaja", city: "Tuzla", distance_km: 73 });
+    // The server's answer per radius, sorted by expiry (the far ones expire sooner here, so a
+    // wider result lists them before the near one).
+    const BY_RADIUS: Record<string, { products: typeof VISOKO[]; outside: number }> = {
+      "10": { products: [VISOKO], outside: 3 },
+      "20": { products: [KAKANJ, VISOKO], outside: 2 },
+      "50": { products: [ZENICA, KAKANJ, VISOKO], outside: 1 },
+      all: { products: [TUZLA, ZENICA, KAKANJ, VISOKO], outside: 0 },
+    };
+    const renderOffers = (byRadius: Record<string, { products: typeof VISOKO[]; outside: number }>) =>
+      renderWithProviders(<RestaurantDashboardPage />, {
+        route: "/dashboard",
+        path: "/dashboard",
+        user: makeUser({ role: "RESTAURANT" }),
+        get: {
+          "/dashboard/stats": { stats: { pending_reservations: 0, successful_reservations: 0, savings: 0 } },
+          "/products": ({ radius, limit }: { radius: string; limit: number }) => ({
+            products: byRadius[radius]!.products.slice(0, limit),
+            total: byRadius[radius]!.products.length,
+            outside_radius_count: byRadius[radius]!.outside,
+          }),
+          "/reservations/mine": { reservations: [], total: 0 },
+        },
+      });
+    const productRadii = () =>
+      apiMock.get.mock.calls
+        .filter(([url]) => url === "/products")
+        .map(([, config]) => config?.params as { radius: string; limit: number; sort: string });
+
+    it("asks once when 10 km has three offers", async () => {
+      renderOffers({ "10": { products: [VISOKO, KAKANJ, ZENICA, TUZLA], outside: 5 } });
+      expect(await screen.findByText("Sir")).toBeInTheDocument();
+      expect(productRadii()).toEqual([{ sort: "expiry", radius: "10", limit: 3 }]);
+      expect(statValue(t("dashboard.statAvailableOffers"))).toBe("4");
+    });
+
+    it("keeps the nearby offer first and fills the rest from the next radii", async () => {
+      renderOffers(BY_RADIUS);
+      expect(await screen.findByText("Sir")).toBeInTheDocument();
+      expect(productRadii()).toEqual([
+        { sort: "expiry", radius: "10", limit: 3 },
+        { sort: "expiry", radius: "20", limit: 4 },
+        { sort: "expiry", radius: "50", limit: 5 },
+      ]);
+      expect(screen.getAllByText(/·/).map((line) => line.textContent)).toEqual([
+        "· Visoko · u vašem gradu",
+        "· Kakanj · 16 km",
+        "· Zenica · 32 km",
+      ]);
+      expect(screen.queryByText("Jaja")).not.toBeInTheDocument();
+      // The count covers the widest radius asked for.
+      expect(statValue(t("dashboard.statAvailableOffers"))).toBe("3");
+    });
+
+    it("goes on to all cities when nothing is nearer", async () => {
+      const empty = { products: [], outside: 1 };
+      renderOffers({ "10": empty, "20": empty, "50": empty, all: { products: [TUZLA], outside: 0 } });
+      expect(await screen.findByText("Jaja")).toBeInTheDocument();
+      expect(productRadii().map((params) => params.radius)).toEqual(["10", "20", "50", "all"]);
+      expect(statValue(t("dashboard.statAvailableOffers"))).toBe("1");
+    });
+
+    it("stops when nothing lies further away and shows the empty message", async () => {
+      renderOffers({ "10": { products: [], outside: 0 } });
+      expect(await screen.findByText(t("dashboard.noProducts"))).toBeInTheDocument();
+      expect(productRadii()).toEqual([{ sort: "expiry", radius: "10", limit: 3 }]);
+      expect(statValue(t("dashboard.statAvailableOffers"))).toBe("0");
+    });
   });
 });

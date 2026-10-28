@@ -4,6 +4,7 @@ import { ArrowRight, Clock, MapPin, Phone } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import StoreAvatar from "./StoreAvatar.js";
 import FavoriteButton from "./FavoriteButton.js";
+import { formatCityDistance } from "../../utils/radius.js";
 import type { User } from "../../types/index.js";
 
 interface StoreCardProps {
@@ -43,7 +44,7 @@ function StoreCard({ store, isFavorite, onToggleFavorite }: StoreCardProps) {
             {store.city && (
               <span className="inline-flex items-center gap-1 text-gray-500">
                 <MapPin className="h-3.5 w-3.5" />
-                {store.city}
+                {formatCityDistance(t, store.city, store.distance_km)}
               </span>
             )}
             <span

@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { cleanup, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import DashboardProductCard from "./DashboardProductCard.js";
 import { makeProduct, renderWithProviders, t } from "../../test/utils.js";
@@ -40,5 +40,13 @@ describe("DashboardProductCard", () => {
       "href",
       "/products/10",
     );
+  });
+
+  it("adds the distance from the restaurant's city to the store's city", () => {
+    renderWithProviders(<DashboardProductCard product={makeProduct({ city: "Kakanj", distance_km: 16 })} showStore />);
+    expect(screen.getByText("· Kakanj · 16 km")).toBeInTheDocument();
+    cleanup();
+    renderWithProviders(<DashboardProductCard product={makeProduct({ city: "Visoko", distance_km: 0 })} showStore />);
+    expect(screen.getByText("· Visoko · " + t("radius.inYourCity"))).toBeInTheDocument();
   });
 });

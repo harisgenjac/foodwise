@@ -25,6 +25,8 @@ export function useFetch<T>(
   const [data, setData] = useState<T[]>([]);
   // Set by paginated endpoints that return { total }; null otherwise.
   const [total, setTotal] = useState<number | null>(null);
+  // The whole last response body, for extra fields next to the list (e.g. outside_radius_count).
+  const [meta, setMeta] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState(false);
@@ -42,6 +44,7 @@ export function useFetch<T>(
     setShownResetKey(resetKey);
     setData([]);
     setTotal(null);
+    setMeta(null);
     setError(false);
     setLoading(true);
   }
@@ -59,6 +62,7 @@ export function useFetch<T>(
       if (!isCurrent()) return;
       setData(response.data[dataKey]);
       setTotal(typeof response.data.total === 'number' ? response.data.total : null);
+      setMeta(response.data);
       setError(false);
       hasLoadedRef.current = true;
     } catch (err) {
@@ -91,5 +95,5 @@ export function useFetch<T>(
 
   useEffect(() => () => controllerRef.current?.abort(), []);
 
-  return { data, total, loading, fetching, error, refetch: fetchData };
+  return { data, total, meta, loading, fetching, error, refetch: fetchData };
 }

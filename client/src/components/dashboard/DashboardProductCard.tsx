@@ -5,6 +5,7 @@ import { ArrowRight, Store } from "lucide-react";
 import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
 import { getDaysUntilExpiry } from "../../utils/expiry.js";
 import { PRODUCT_STATUS_STYLES } from "../../utils/productStatus.js";
+import { formatCityDistance } from "../../utils/radius.js";
 import StoreNameLink from "../store/StoreNameLink.js";
 import type { Product } from "../../types/index.js";
 
@@ -50,7 +51,7 @@ function DashboardProductCard({ product, showStore = false, actions }: Dashboard
               {product.city && (
                 <span className="shrink-0">
                   {product.business_name && "· "}
-                  {product.city}
+                  {formatCityDistance(t, product.city, product.distance_km)}
                 </span>
               )}
             </p>
