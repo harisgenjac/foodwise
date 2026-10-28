@@ -6,9 +6,16 @@ import { removeLogoFile } from "./users.controller.js";
 // The company of the signed-in headquarters user (COMPANY role). The name is changed only by an
 // admin; the headquarters edits the description and the logo.
 const COMPANY_PROFILE_COLUMNS = `companies.id, companies.name, companies.description, companies.logo_url,
-  ${BRANCH_COUNT}`;
+  ${BRANCH_COUNT},
+  (SELECT COUNT(*) FROM users AS branches
+   WHERE branches.company_id = companies.id AND branches.role = 'STORE'
+     AND branches.deactivated_at IS NULL AND branches.is_blocked = false) AS active_branch_count`;
 
-const toCompany = (row: Record<string, unknown>) => ({ ...row, branch_count: Number(row.branch_count) });
+const toCompany = (row: Record<string, unknown>) => ({
+  ...row,
+  branch_count: Number(row.branch_count),
+  active_branch_count: Number(row.active_branch_count),
+});
 
 export const getMyCompany = async (req: Request, res: Response) => {
   try {

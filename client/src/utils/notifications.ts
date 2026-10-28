@@ -12,6 +12,7 @@ import {
   PackageCheck,
   ShieldAlert,
   ShoppingBag,
+  Store,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Notification, NotificationType } from "../context/NotificationsContext.js";
@@ -33,6 +34,11 @@ export const NOTIFICATION_META: Record<NotificationType, { icon: LucideIcon; sty
   PRODUCT_REMOVED_BY_ADMIN: { icon: ShieldAlert, style: "bg-red-50 text-red-600" },
   DONATION_REMOVED_BY_ADMIN: { icon: ShieldAlert, style: "bg-red-50 text-red-600" },
   RESERVATION_CANCELLED_BY_ADMIN: { icon: ShieldAlert, style: "bg-gray-100 text-gray-600" },
+  RESERVATION_CANCELLED_STORE_CLOSED: { icon: Ban, style: "bg-gray-100 text-gray-600" },
+  BRANCH_BLOCKED: { icon: ShieldAlert, style: "bg-red-50 text-red-600" },
+  BRANCH_UNBLOCKED: { icon: Store, style: "bg-green-50 text-green-600" },
+  BRANCH_DEACTIVATED: { icon: Store, style: "bg-gray-100 text-gray-600" },
+  BRANCH_REACTIVATED: { icon: Store, style: "bg-green-50 text-green-600" },
   PLATFORM_ANNOUNCEMENT: { icon: Megaphone, style: "bg-blue-50 text-blue-600" },
   CREDIT_REQUEST_CREATED: { icon: Coins, style: "bg-amber-50 text-amber-600" },
   CREDIT_REQUEST_APPROVED: { icon: Coins, style: "bg-green-50 text-green-600" },
@@ -60,6 +66,8 @@ export const getNotificationMeta = (notification: Notification) =>
 // Reservation details first, then product details, then the donations page; untyped (older)
 // notifications go to the role's list.
 export const getNotificationLink = (notification: Notification, role: User["role"] | undefined) => {
+  // A headquarters' notification about one of its branches opens the branch page.
+  if (role === "COMPANY" && notification.branch_id) return `/company/branches/${notification.branch_id}`;
   if (notification.reservation_id) return `/reservation/${notification.reservation_id}`;
   if (notification.product_id) return `/products/${notification.product_id}`;
   if (notification.donation_id) return "/donate-food";
@@ -103,8 +111,9 @@ export const getNotificationText = (notification: Notification, t: TFunction, la
         })
       : t(`notifications.types.${notification.type}`);
   }
-  const text =
-    !notification.type || !notification.product_name
+  const text = notification.type?.startsWith("BRANCH_")
+    ? t(`notifications.types.${notification.type}`, { branch: notification.branch_name ?? "" })
+    : !notification.type || !notification.product_name
       ? notification.message
       : t(`notifications.types.${notification.type}`, {
           product: notification.product_name,

@@ -12,7 +12,8 @@ export interface SeedBusiness {
   phone: string;
   opening_hours: string;
   pickup_hours: string;
-  description: string;
+  // Left out for a branch: it shows its company's description.
+  description?: string;
   // Pickup window in hours (local time), used for pickup dates.
   pickup: [number, number];
   // Chance per day that the business acts (a store publishes a product, a restaurant reserves).
@@ -26,6 +27,8 @@ export interface SeedStore extends SeedBusiness {
   categories: string[];
   // Products the store has on offer right now.
   currentStock: number;
+  // A branch: the name of its company in COMPANIES (created by its headquarters).
+  company?: string;
 }
 
 export interface ProductTemplate {
@@ -123,6 +126,38 @@ export const STORES: SeedStore[] = [
     city: "Visoko", address: "Čaršijska 4", phone: "062000000", opening_hours: "09:00–20:00", pickup_hours: "17:00–20:00",
     description: "Organske namirnice, biljni napici i zdrava hrana.",
     pickup: [17, 20], activity: 0.12, currentStock: 5, categories: ["Other", "Drinks", "Dairy", "Vegetables"], plans: ["Basic"], autoRenew: false,
+  },
+  // Branches of Bingo d.o.o. (after the stores with product templates). No description or logo of
+  // their own, so they show the company's.
+  {
+    first_name: "Lejla", last_name: "Kovač", email: "bingo.sarajevo@demo.com", business_name: "Bingo Sarajevo Centar",
+    city: "Sarajevo", address: "Zmaja od Bosne 8", phone: "033400100", opening_hours: "07:00–22:00", pickup_hours: "16:00–20:00",
+    pickup: [16, 20], activity: 0.35, currentStock: 10, categories: ALL_CATEGORIES, plans: ["Standard"], autoRenew: true,
+    company: "Bingo d.o.o.",
+  },
+  {
+    first_name: "Mirza", last_name: "Hadžić", email: "bingo.visoko@demo.com", business_name: "Bingo Visoko",
+    city: "Visoko", address: "Alije Izetbegovića 22", phone: "032400200", opening_hours: "07:00–21:00", pickup_hours: "16:00–19:00",
+    pickup: [16, 19], activity: 0.25, currentStock: 8, categories: ALL_CATEGORIES, plans: ["Standard"], autoRenew: true,
+    company: "Bingo d.o.o.",
+  },
+  {
+    first_name: "Edina", last_name: "Bešić", email: "bingo.kakanj@demo.com", business_name: "Bingo Kakanj",
+    city: "Kakanj", address: "Alije Izetbegovića 5", phone: "032400300", opening_hours: "07:00–21:00", pickup_hours: "16:00–19:00",
+    pickup: [16, 19], activity: 0.2, currentStock: 7, categories: ALL_CATEGORIES, plans: ["Basic"], autoRenew: true,
+    company: "Bingo d.o.o.",
+  },
+  {
+    first_name: "Haris", last_name: "Delić", email: "bingo.zenica@demo.com", business_name: "Bingo Zenica",
+    city: "Zenica", address: "Bulevar Kralja Tvrtka I 14", phone: "032400400", opening_hours: "07:00–22:00", pickup_hours: "16:00–20:00",
+    pickup: [16, 20], activity: 0.3, currentStock: 9, categories: ALL_CATEGORIES, plans: ["Standard"], autoRenew: true,
+    company: "Bingo d.o.o.",
+  },
+  {
+    first_name: "Amela", last_name: "Mehić", email: "bingo.tuzla@demo.com", business_name: "Bingo Tuzla",
+    city: "Tuzla", address: "Mitra Trifunovića Uče 2", phone: "035400500", opening_hours: "07:00–22:00", pickup_hours: "16:00–20:00",
+    pickup: [16, 20], activity: 0.3, currentStock: 9, categories: ALL_CATEGORIES, plans: ["Standard"], autoRenew: true,
+    company: "Bingo d.o.o.",
   },
 ];
 

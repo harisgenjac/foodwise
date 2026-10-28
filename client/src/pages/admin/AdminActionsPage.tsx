@@ -32,6 +32,9 @@ const ACTION_STYLES: Record<AdminAction["action"], string> = {
   UPDATE_COMPANY: "bg-blue-50 text-blue-700",
   BLOCK_COMPANY: "bg-red-50 text-red-600",
   UNBLOCK_COMPANY: "bg-green-50 text-green-700",
+  DEACTIVATE_BRANCH: "bg-gray-100 text-gray-700",
+  REACTIVATE_BRANCH: "bg-green-50 text-green-700",
+  ATTACH_BRANCH: "bg-blue-50 text-blue-700",
 };
 
 function AdminActionsPage() {

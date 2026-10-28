@@ -1,6 +1,17 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
 
+// Food saved as three columns (kg, l, pieces) over the reservations matching `filter` (an SQL
+// condition on reservations joined with products): g and ml are converted to kg and l, kom and pak
+// are counted together as pieces. Also used for a branch's monthly stats (services/branches.ts).
+export const savedUnits = (filter: string) => `
+  COALESCE(SUM(CASE products.unit WHEN 'kg' THEN reservations.quantity WHEN 'g' THEN reservations.quantity / 1000 END)
+    FILTER (WHERE ${filter}), 0) AS kg,
+  COALESCE(SUM(CASE products.unit WHEN 'l' THEN reservations.quantity WHEN 'ml' THEN reservations.quantity / 1000 END)
+    FILTER (WHERE ${filter}), 0) AS l,
+  COALESCE(SUM(CASE WHEN products.unit IN ('kom', 'pak') THEN reservations.quantity END)
+    FILTER (WHERE ${filter}), 0) AS pieces`;
+
 // The dashboard stat cards, computed over all of the caller's data (the lists on the dashboard
 // are only the 3 newest). `successful_reservations` counts accepted ones (Confirmed + Completed);
 // food saved and savings count only picked-up (Completed) ones.
@@ -14,17 +25,11 @@ export const getDashboardStats = async (req: Request, res: Response) => {
          WHERE products.store_id = $1 AND products.status = 'Available'`,
         [userId],
       );
-      // Food saved: g and ml are converted to kg and l, kom and pak are counted together as pieces.
       const reservations = await pool.query(
         `SELECT
            COUNT(*) FILTER (WHERE reservations.status = 'Pending') AS pending_reservations,
            COUNT(*) FILTER (WHERE reservations.status IN ('Confirmed', 'Completed')) AS successful_reservations,
-           COALESCE(SUM(CASE products.unit WHEN 'kg' THEN reservations.quantity WHEN 'g' THEN reservations.quantity / 1000 END)
-             FILTER (WHERE reservations.status = 'Completed'), 0) AS kg,
-           COALESCE(SUM(CASE products.unit WHEN 'l' THEN reservations.quantity WHEN 'ml' THEN reservations.quantity / 1000 END)
-             FILTER (WHERE reservations.status = 'Completed'), 0) AS l,
-           COALESCE(SUM(CASE WHEN products.unit IN ('kom', 'pak') THEN reservations.quantity END)
-             FILTER (WHERE reservations.status = 'Completed'), 0) AS pieces
+           ${savedUnits("reservations.status = 'Completed'")}
          FROM reservations
          JOIN products ON reservations.product_id = products.id
          WHERE products.store_id = $1`,

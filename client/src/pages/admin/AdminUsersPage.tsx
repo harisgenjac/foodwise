@@ -168,7 +168,7 @@ function AdminUsersPage() {
                     <td className="px-4 py-3">
                       <p className="font-medium text-gray-900">{accountName(user)}</p>
                       <p className="text-xs text-gray-500">{user.email}</p>
-                      {user.role === "COMPANY" && user.company_name && (
+                      {user.company_name && (
                         <p className="text-xs text-teal-700">{user.company_name}</p>
                       )}
                     </td>
@@ -179,7 +179,11 @@ function AdminUsersPage() {
                     </td>
                     <td className="hidden px-4 py-3 text-gray-600 md:table-cell">{user.city || "—"}</td>
                     <td className="px-4 py-3">
-                      {isEffectivelyBlocked(user) ? (
+                      {user.deactivated_at && !isEffectivelyBlocked(user) ? (
+                        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
+                          {t("company.branchStatus.deactivated")}
+                        </span>
+                      ) : isEffectivelyBlocked(user) ? (
                         <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
                           {t("admin.common.blocked")}
                         </span>

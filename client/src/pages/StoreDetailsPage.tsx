@@ -33,6 +33,7 @@ import StatCard from "../components/dashboard/StatCard.js";
 import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
 import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.js";
 import StoreAvatar from "../components/store/StoreAvatar.js";
+import ChainLabel from "../components/store/ChainLabel.js";
 import FavoriteButton from "../components/store/FavoriteButton.js";
 import type { Product, Reservation, User, Favorites } from "../types/index.js";
 
@@ -199,6 +200,7 @@ function StoreDetailsPage() {
                 <Store className="h-3.5 w-3.5" />
                 {t("auth.storeRole")}
               </span>
+              <ChainLabel company={store.company_name} className="px-2.5 py-1" />
               {store.city && (
                 <span className="inline-flex items-center gap-1.5">
                   <MapPin className="h-4 w-4" />

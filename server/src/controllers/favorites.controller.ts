@@ -2,6 +2,7 @@ import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import { parseId } from "../utils/params.js";
 import { visibleStore } from "../utils/visibility.js";
+import { companyName, storeDescription, storeLogo } from "../utils/branding.js";
 
 export const addFavorite = async (req: Request, res: Response) => {
   try {
@@ -84,7 +85,9 @@ export const getFavorites = async (req: Request, res: Response) => {
 
     const result = await pool.query(
       `SELECT users.id, users.business_name, users.city_id, cities.name AS city, users.address,
-        users.logo_url, users.description, users.opening_hours, users.pickup_hours, users.phone FROM favorites 
+        ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
+        users.opening_hours, users.pickup_hours, users.phone, ${companyName("users")} AS company_name
+        FROM favorites 
         JOIN users ON favorites.store_id = users.id
         LEFT JOIN cities ON cities.id = users.city_id
         WHERE favorites.restaurant_id = $1 AND ${visibleStore("users")}`,

@@ -16,6 +16,16 @@ import {
   logAdminAction,
   parseReason,
 } from "./admin.controller.js";
+import { HttpError } from "../utils/httpError.js";
+import { notifyCompanyHq } from "../utils/notifications.js";
+import {
+  ACTIVE_PRODUCTS,
+  BRANCH_NOT_FOUND,
+  BRANCH_STATUS,
+  deactivateBranch,
+  findCompanyBranch,
+  reactivateBranch,
+} from "../services/branches.js";
 
 // Companies are store chains. An admin creates a company together with its headquarters login
 // (a COMPANY user); branches are STORE users with the company's company_id (step 2.2).
@@ -124,7 +134,8 @@ export const getCompanyDetails = async (req: Request, res: Response) => {
       [companyId],
     );
     const branches = await pool.query(
-      `SELECT users.id, users.email, users.business_name, cities.name AS city, users.is_blocked, users.created_at
+      `SELECT users.id, users.email, users.business_name, cities.name AS city, users.is_blocked,
+         users.deactivated_at, ${BRANCH_STATUS} AS status, ${ACTIVE_PRODUCTS}, users.created_at
        FROM users LEFT JOIN cities ON cities.id = users.city_id
        WHERE users.company_id = $1 AND users.role = 'STORE'
        ORDER BY users.business_name, users.id`,
@@ -132,9 +143,10 @@ export const getCompanyDetails = async (req: Request, res: Response) => {
     );
     const actions = await pool.query(
       `SELECT admin_actions.id, admin_actions.action, admin_actions.reason, admin_actions.created_at,
-         admins.email AS admin_email
+         admins.email AS admin_email, admin_actions.target_user_id, targets.business_name AS target_business_name
        FROM admin_actions
        JOIN users AS admins ON admin_actions.admin_id = admins.id
+       LEFT JOIN users AS targets ON admin_actions.target_user_id = targets.id
        WHERE admin_actions.target_company_id = $1
        ORDER BY admin_actions.created_at DESC, admin_actions.id DESC
        LIMIT $2`,
@@ -144,7 +156,7 @@ export const getCompanyDetails = async (req: Request, res: Response) => {
     return res.status(200).json({
       company: { ...row, branch_count: Number(row.branch_count) },
       hqUsers: hqUsers.rows,
-      branches: branches.rows,
+      branches: branches.rows.map((branch) => ({ ...branch, active_products: Number(branch.active_products) })),
       actions: actions.rows,
     });
   } catch (error) {
@@ -361,3 +373,98 @@ export const unblockCompany = async (req: Request, res: Response) => {
     if (client) client.release();
   }
 };
+
+// A chain whose stores are already on the platform: an admin attaches an existing store without a
+// company. There is no detach; a branch cannot leave its company.
+export const attachBranch = async (req: Request, res: Response) => {
+  const companyId = parseId(req.params.id);
+  if (companyId === null) {
+    return res.status(404).json({ error: "Company not found." });
+  }
+  const userId = parseId(req.body.user_id);
+  if (userId === null) {
+    return res.status(404).json({ error: "User not found." });
+  }
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const company = await client.query("SELECT companies.id FROM companies WHERE companies.id = $1", [companyId]);
+    if (company.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Company not found." });
+    }
+    const user = await client.query(
+      "SELECT users.role, users.company_id FROM users WHERE users.id = $1 FOR UPDATE",
+      [userId],
+    );
+    if (user.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "User not found." });
+    }
+    if (user.rows[0].role !== "STORE" || user.rows[0].company_id !== null) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Only a store without a company can be attached." });
+    }
+    await client.query("UPDATE users SET company_id = $1 WHERE users.id = $2", [companyId, userId]);
+    await logAdminAction(client, {
+      adminId: req.user!.id,
+      action: "ATTACH_BRANCH",
+      targetUserId: userId,
+      targetCompanyId: companyId,
+    });
+    await client.query("COMMIT");
+    return res.status(200).json({ message: "Store attached to the company." });
+  } catch (error) {
+    if (client) await client.query("ROLLBACK");
+    console.error("Error while attaching store:", error);
+    return res.status(500).json({ error: "An error occurred while attaching the store." });
+  } finally {
+    if (client) client.release();
+  }
+};
+
+// The admin deactivates or reactivates a branch with the headquarters' rules; the headquarters is
+// notified and the action is logged.
+const changeBranchActivation = async (req: Request, res: Response, deactivate: boolean) => {
+  const companyId = parseId(req.params.id);
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const branch = companyId === null ? null : await findCompanyBranch(client, companyId, req.params.branchId, { lock: true });
+    if (!branch) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: BRANCH_NOT_FOUND });
+    }
+    let cancelledReservations = 0;
+    if (deactivate) {
+      cancelledReservations = await deactivateBranch(client, branch, { actor: "ADMIN", userId: req.user!.id });
+    } else {
+      await reactivateBranch(client, branch);
+    }
+    await notifyCompanyHq(client, branch, deactivate ? "BRANCH_DEACTIVATED" : "BRANCH_REACTIVATED");
+    await logAdminAction(client, {
+      adminId: req.user!.id,
+      action: deactivate ? "DEACTIVATE_BRANCH" : "REACTIVATE_BRANCH",
+      targetUserId: branch.id,
+      targetCompanyId: companyId,
+    });
+    await client.query("COMMIT");
+    return res
+      .status(200)
+      .json(deactivate ? { message: "Branch deactivated.", cancelledReservations } : { message: "Branch reactivated." });
+  } catch (error) {
+    if (client) await client.query("ROLLBACK");
+    if (error instanceof HttpError) {
+      return res.status(error.status).json(error.body());
+    }
+    console.error("Error while changing branch:", error);
+    return res.status(500).json({ error: "An error occurred while changing the branch." });
+  } finally {
+    if (client) client.release();
+  }
+};
+
+export const deactivateBranchByAdmin = (req: Request, res: Response) => changeBranchActivation(req, res, true);
+export const reactivateBranchByAdmin = (req: Request, res: Response) => changeBranchActivation(req, res, false);

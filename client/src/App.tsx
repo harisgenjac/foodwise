@@ -39,6 +39,9 @@ import AdminCompaniesPage from './pages/admin/AdminCompaniesPage.js';
 import AdminCreateCompanyPage from './pages/admin/AdminCreateCompanyPage.js';
 import AdminCompanyDetailsPage from './pages/admin/AdminCompanyDetailsPage.js';
 import CompanyProfilePage from './pages/company/CompanyProfilePage.js';
+import CompanyBranchesPage from './pages/company/CompanyBranchesPage.js';
+import CompanyCreateBranchPage from './pages/company/CompanyCreateBranchPage.js';
+import CompanyBranchDetailsPage from './pages/company/CompanyBranchDetailsPage.js';
 
 function App() {
   return (
@@ -84,6 +87,9 @@ function App() {
         <Route path="/admin/companies/new" element={<ProtectedRoute role="ADMIN"><AdminCreateCompanyPage /></ProtectedRoute>} />
         <Route path="/admin/companies/:id" element={<ProtectedRoute role="ADMIN"><AdminCompanyDetailsPage /></ProtectedRoute>} />
         <Route path="/company/profile" element={<ProtectedRoute role="COMPANY"><CompanyProfilePage /></ProtectedRoute>} />
+        <Route path="/company/branches" element={<ProtectedRoute role="COMPANY"><CompanyBranchesPage /></ProtectedRoute>} />
+        <Route path="/company/branches/new" element={<ProtectedRoute role="COMPANY"><CompanyCreateBranchPage /></ProtectedRoute>} />
+        <Route path="/company/branches/:id" element={<ProtectedRoute role="COMPANY"><CompanyBranchDetailsPage /></ProtectedRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

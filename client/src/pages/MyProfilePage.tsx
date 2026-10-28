@@ -43,6 +43,9 @@ function MyProfilePage() {
   const [pickupHours, setPickupHours] = useState("");
   const [description, setDescription] = useState("");
   const [companyName, setCompanyName] = useState("");
+  // A branch without its own logo or description shows its company's.
+  const [companyLogoUrl, setCompanyLogoUrl] = useState("");
+  const [companyDescription, setCompanyDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -66,6 +69,8 @@ function MyProfilePage() {
       setPickupHours(data.pickup_hours || "");
       setDescription(data.description || "");
       setCompanyName(data.company_name || "");
+      setCompanyLogoUrl(data.company_logo_url || "");
+      setCompanyDescription(data.company_description || "");
       setLogoUrl(data.logo_url || "");
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -111,6 +116,20 @@ function MyProfilePage() {
     }
   };
 
+  // Removes the own logo; a branch then shows its company's again.
+  const handleLogoRemove = async () => {
+    try {
+      const response = await api.delete("/users/me/logo");
+      setLogoUrl("");
+      refreshUser().catch((err) => console.error("Error refreshing user:", err));
+      toast.success(response.data.message);
+    } catch (err) {
+      console.error(err);
+      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      toast.error(message || t("user.uploadError"));
+    }
+  };
+
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validate()) return;
@@ -123,8 +142,8 @@ function MyProfilePage() {
       } : {
         first_name: firstName,
         last_name: lastName,
-        business_name: businessName,
-        city_id: Number(cityId),
+        // A branch's name and city are managed by its company (the server ignores them).
+        ...(!isBranch && { business_name: businessName, city_id: Number(cityId) }),
         phone,
         address,
         opening_hours: openingHours,
@@ -148,6 +167,8 @@ function MyProfilePage() {
   const isAdmin = role === "ADMIN";
   const isCompany = role === "COMPANY";
   const hasBusinessProfile = !isAdmin && !isCompany;
+  // A store of a company: its headquarters (or an admin) sets the name and the city.
+  const isBranch = isStore && Boolean(companyName);
   const RoleIcon = isAdmin ? ShieldCheck : isCompany ? Building2 : isStore ? Store : UtensilsCrossed;
   const roleLabel = isAdmin
     ? t("user.adminRole")
@@ -161,14 +182,17 @@ function MyProfilePage() {
     firstName,
     lastName,
     ...(isCompany && { phone }),
-    ...(hasBusinessProfile && { businessName, city: cityId, phone, address }),
+    ...(hasBusinessProfile && { phone, address }),
+    ...(hasBusinessProfile && !isBranch && { businessName, city: cityId }),
   };
   const { formRef, errorFor, blur, validate } = useFormValidation(
     Object.fromEntries(
       Object.entries(requiredValues).map(([field, value]) => [field, isBlank(value) ? REQUIRED : undefined]),
     ),
   );
-  const avatarSrc = logoPreview || (logoUrl ? assetUrl(logoUrl) : null);
+  const usesCompanyLogo = isBranch && !logoUrl && !logoPreview && Boolean(companyLogoUrl);
+  const avatarSrc =
+    logoPreview || (logoUrl ? assetUrl(logoUrl) : usesCompanyLogo ? assetUrl(companyLogoUrl) : null);
   const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`;
   const cityName = cities.find((city) => String(city.id) === cityId)?.name;
   const location = [address, cityName].filter(Boolean).join(", ");
@@ -209,7 +233,7 @@ function MyProfilePage() {
                   {roleLabel}
                 </span>
               )}
-              {isCompany && companyName && (
+              {(isCompany || isBranch) && companyName && (
                 <span className="inline-flex items-center gap-1.5">
                   <Building2 className="h-4 w-4" />
                   {companyName}
@@ -228,6 +252,15 @@ function MyProfilePage() {
             </div>
           </div>
 
+          {!logoFile && hasBusinessProfile && logoUrl && (
+            <button
+              type="button"
+              onClick={handleLogoRemove}
+              className="shrink-0 cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              {t("user.removeLogo")}
+            </button>
+          )}
           {logoFile && (
             <div className="flex shrink-0 gap-2">
               <button
@@ -248,7 +281,10 @@ function MyProfilePage() {
           )}
         </div>
         {hasBusinessProfile && (
-          <p className="border-t border-gray-100 px-6 py-3 text-xs text-gray-400">{t("user.tooltipLogoText")}</p>
+          <p className="border-t border-gray-100 px-6 py-3 text-xs text-gray-400">
+            {usesCompanyLogo ? `${t("user.usesCompanyLogo")} ` : ""}
+            {t("user.tooltipLogoText")}
+          </p>
         )}
       </section>
 
@@ -300,25 +336,36 @@ function MyProfilePage() {
           <FormSection title={t("user.businessSection")} icon={Building2}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <FormField label={t("user.businessName")} icon={Building2} required error={errorFor("businessName")}>
+                <FormField
+                  label={t("user.businessName")}
+                  icon={Building2}
+                  required={!isBranch}
+                  error={errorFor("businessName")}
+                >
                   <input
                     type="text"
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
                     onBlur={blur("businessName")}
+                    disabled={isBranch}
                     className={inputStyle}
                   />
                 </FormField>
+                {isBranch && <p className="mt-1.5 text-xs text-gray-500">{t("user.managedByCompany")}</p>}
               </div>
-              <FormField label={t("cities.label")} icon={MapPin} required error={errorFor("city")}>
-                <CitySelect
-                  value={cityId}
-                  onChange={setCityId}
-                  emptyLabel={t("cities.choose")}
-                  onBlur={blur("city")}
-                  className={inputStyle}
-                />
-              </FormField>
+              <div>
+                <FormField label={t("cities.label")} icon={MapPin} required={!isBranch} error={errorFor("city")}>
+                  <CitySelect
+                    value={cityId}
+                    onChange={setCityId}
+                    emptyLabel={t("cities.choose")}
+                    onBlur={blur("city")}
+                    disabled={isBranch}
+                    className={inputStyle}
+                  />
+                </FormField>
+                {isBranch && <p className="mt-1.5 text-xs text-gray-500">{t("user.managedByCompany")}</p>}
+              </div>
               <FormField label={t("user.phone")} icon={Phone} required error={errorFor("phone")}>
                 <input
                   type="text"
@@ -359,9 +406,11 @@ function MyProfilePage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
+                placeholder={isBranch ? companyDescription : undefined}
                 className={`${inputStyle} resize-none`}
               />
             </FormField>
+            {isBranch && <p className="mt-1.5 text-xs text-gray-500">{t("user.companyDescriptionHint")}</p>}
           </FormSection>
           </>
           )}

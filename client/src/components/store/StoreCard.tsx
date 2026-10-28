@@ -4,6 +4,7 @@ import { ArrowRight, Clock, MapPin, Phone } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import StoreAvatar from "./StoreAvatar.js";
 import FavoriteButton from "./FavoriteButton.js";
+import ChainLabel from "./ChainLabel.js";
 import { formatCityDistance } from "../../utils/radius.js";
 import type { User } from "../../types/index.js";
 
@@ -40,6 +41,7 @@ function StoreCard({ store, isFavorite, onToggleFavorite }: StoreCardProps) {
 
         <div>
           <h3 className="line-clamp-1 text-lg font-bold text-gray-800">{store.business_name}</h3>
+          <ChainLabel company={store.company_name} className="mt-1 max-w-full" />
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
             {store.city && (
               <span className="inline-flex items-center gap-1 text-gray-500">

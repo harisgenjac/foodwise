@@ -1,7 +1,7 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import type { Pool, PoolClient } from "pg";
-import { createNotification } from "../utils/notifications.js";
+import { createNotification, notifyCompanyHq } from "../utils/notifications.js";
 import { parseId } from "../utils/params.js";
 import { ADMIN_PAGE_SIZE, listPage, parsePage, parseSort } from "../utils/pagination.js";
 import {
@@ -45,6 +45,9 @@ export const ADMIN_ACTIONS = [
   "UPDATE_COMPANY",
   "BLOCK_COMPANY",
   "UNBLOCK_COMPANY",
+  "DEACTIVATE_BRANCH",
+  "REACTIVATE_BRANCH",
+  "ATTACH_BRANCH",
 ];
 export const ANNOUNCEMENT_AUDIENCES = ["ALL", "STORE", "RESTAURANT"];
 
@@ -61,7 +64,7 @@ const USER_COLUMNS = `users.id, users.email, users.role, users.first_name, users
   users.business_name, users.city_id, ${CITY_NAME}, users.address, users.phone, users.logo_url,
   users.opening_hours, users.pickup_hours, users.description,
   users.is_blocked, users.blocked_at, users.blocked_reason, users.must_change_password, users.created_at,
-  users.company_id,
+  users.company_id, users.deactivated_at,
   (SELECT companies.name FROM companies WHERE companies.id = users.company_id) AS company_name,
   COALESCE((SELECT companies.is_blocked FROM companies WHERE companies.id = users.company_id), false)
     AS company_is_blocked`;
@@ -419,13 +422,17 @@ export const resetPassword = async (req: Request, res: Response) => {
 };
 
 // Cancels the Pending reservations of `where` (locked first) and notifies `recipient` of each.
-// Confirmed reservations are kept: the store already agreed to hand that food over.
+// Confirmed reservations are kept: the store already agreed to hand that food over. `by` is the
+// admin (or, for `storeClosed`, the headquarters that deactivated its branch): the restaurant's
+// credit always comes back. `storeClosed` sends RESERVATION_CANCELLED_STORE_CLOSED instead of
+// RESERVATION_CANCELLED_BY_ADMIN.
 export const cancelPendingReservations = async (
   client: PoolClient,
   where: string,
   values: number[],
   recipient: (row: { store_id: number; restaurant_id: number }) => number,
   adminId: number,
+  { actor = "ADMIN", storeClosed = false }: { actor?: "ADMIN" | "USER"; storeClosed?: boolean } = {},
 ) => {
   const pending = await client.query(
     `SELECT reservations.id, reservations.restaurant_id, reservations.quantity,
@@ -438,12 +445,15 @@ export const cancelPendingReservations = async (
   );
   for (const row of pending.rows) {
     await client.query("UPDATE reservations SET status = 'Cancelled' WHERE reservations.id = $1", [row.id]);
-    // Cancelled by an admin, not by the restaurant: its credit always comes back.
-    await refundForReservation(client, row.id, { forced: true, by: { actor: "ADMIN", userId: adminId } });
+    // Not cancelled by the restaurant: its credit always comes back.
+    await refundForReservation(client, row.id, { forced: true, by: { actor, userId: adminId } });
+    const item = `${Number(row.quantity)}${row.unit} ${row.name}`;
     await createNotification(client, {
       userId: recipient(row),
-      type: "RESERVATION_CANCELLED_BY_ADMIN",
-      message: `Reservation cancelled by the platform administrator: ${Number(row.quantity)}${row.unit} ${row.name}`,
+      type: storeClosed ? "RESERVATION_CANCELLED_STORE_CLOSED" : "RESERVATION_CANCELLED_BY_ADMIN",
+      message: storeClosed
+        ? `Reservation cancelled because the store is no longer active: ${item}`
+        : `Reservation cancelled by the platform administrator: ${item}`,
       reservationId: row.id,
       productId: row.product_id,
     });
@@ -497,6 +507,9 @@ export const blockUser = async (req: Request, res: Response) => {
       (row) => (row.restaurant_id === targetId ? row.store_id : row.restaurant_id),
       req.user!.id,
     );
+    const blocked = result.rows[0];
+    // A branch's headquarters learns it was blocked, with the reason.
+    if (blocked.role === "STORE") await notifyCompanyHq(client, blocked, "BRANCH_BLOCKED", reason);
     await logAdminAction(client, { adminId: req.user!.id, action: "BLOCK_USER", targetUserId: targetId, reason });
     await client.query("COMMIT");
     return res
@@ -538,6 +551,7 @@ export const unblockUser = async (req: Request, res: Response) => {
        WHERE users.id = $1 RETURNING ${USER_COLUMNS}`,
       [targetId],
     );
+    if (result.rows[0].role === "STORE") await notifyCompanyHq(client, result.rows[0], "BRANCH_UNBLOCKED");
     await logAdminAction(client, { adminId: req.user!.id, action: "UNBLOCK_USER", targetUserId: targetId });
     await client.query("COMMIT");
     return res.status(200).json({ message: "Account unblocked.", user: result.rows[0] });

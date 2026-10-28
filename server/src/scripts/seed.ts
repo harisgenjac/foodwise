@@ -288,6 +288,7 @@ async function seed() {
 
     // Companies (store chains) with their headquarters login; the demo login has its profile
     // filled in and no temporary password, like the other demo accounts.
+    const companyIds = new Map<string, number>();
     for (const [index, company] of COMPANIES.entries()) {
       const createdAt = at(startDay, 9 + index * 0.5);
       const companyRow = await client.query<{ id: number }>(
@@ -295,6 +296,7 @@ async function seed() {
         [company.name, company.description, createdAt],
       );
       const id = companyRow.rows[0]!.id;
+      companyIds.set(company.name, id);
       await client.query(
         `INSERT INTO users (first_name, last_name, phone, email, password_hash, role, company_id, created_at)
          VALUES ($1, $2, $3, $4, $5, 'COMPANY', $6, $7)`,
@@ -315,17 +317,21 @@ async function seed() {
 
     const createBusiness = async (data: SeedBusiness, role: "STORE" | "RESTAURANT", index: number): Promise<Business> => {
       const createdAt = at(addDays(startDay, Math.floor(index * (role === "STORE" ? 0.5 : 0.6))), between(9, 16));
+      const companyName = role === "STORE" ? (data as SeedStore).company : undefined;
+      const companyId = companyName === undefined ? null : companyIds.get(companyName);
+      if (companyId === undefined) throw new Error(`Unknown seed company: ${companyName}`);
       const result = await client.query<{ id: number }>(
         `INSERT INTO users (first_name, last_name, email, password_hash, role, business_name, city_id, phone, address,
-                            opening_hours, pickup_hours, description, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
+                            opening_hours, pickup_hours, description, company_id, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
         [
           data.first_name, data.last_name, data.email, passwordHash, role, data.business_name, cityId(data.city), data.phone,
-          data.address, data.opening_hours, data.pickup_hours || null, data.description, createdAt,
+          data.address, data.opening_hours, data.pickup_hours || null, data.description ?? null, companyId, createdAt,
         ],
       );
       const id = result.rows[0]!.id;
-      await logAction(client, mainAdmin, "CREATE_USER", createdAt, { userId: id });
+      // A branch is created by its headquarters, not by an admin, so it has no admin action.
+      if (companyId === null) await logAction(client, mainAdmin, "CREATE_USER", createdAt, { userId: id });
       return {
         id,
         role,
@@ -1053,10 +1059,11 @@ async function printSummary(stores: Business[], restaurants: Business[], reserva
   for (const row of perStore.rows) console.log(`  - ${row.business_name}: ${row.available} on offer, ${row.total} in total`);
 
   console.log(`\nPassword for all accounts: ${SEED_PASSWORD}`);
-  console.log(`Stores: ${stores.map((s) => s.data.email).join(", ")}`);
+  console.log(`Stores: ${stores.filter((s) => !s.store?.company).map((s) => s.data.email).join(", ")}`);
   console.log(`Restaurants: ${restaurants.map((r) => r.data.email).join(", ")}`);
   console.log(`Admins: ${ADMINS.map((a) => a.email).join(", ")}`);
   console.log(`Company headquarters: ${COMPANIES.map((c) => `${c.hq.email} (${c.name})`).join(", ")}`);
+  console.log(`Branches: ${STORES.filter((s) => s.company).map((s) => `${s.email} (${s.company})`).join(", ")}`);
 }
 
 seed();
