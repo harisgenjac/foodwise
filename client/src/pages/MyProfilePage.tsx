@@ -23,6 +23,8 @@ import FormSection from "../components/form/FormSection.js";
 import FormField, { inputStyle } from "../components/form/FormField.js";
 import RequiredHint from "../components/form/RequiredHint.js";
 import { useFormValidation } from "../hooks/useFormValidation.js";
+import { useCities } from "../hooks/useCities.js";
+import CitySelect from "../components/form/CitySelect.js";
 import { isBlank, REQUIRED } from "../utils/validation.js";
 import ChangePasswordForm from "../components/profile/ChangePasswordForm.js";
 import SubscriptionSection from "../components/credits/SubscriptionSection.js";
@@ -34,7 +36,7 @@ function MyProfilePage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [businessName, setBusinessName] = useState("");
-  const [city, setCity] = useState("");
+  const [cityId, setCityId] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [openingHours, setOpeningHours] = useState("");
@@ -45,6 +47,7 @@ function MyProfilePage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const { t } = useTranslation();
+  const { cities } = useCities();
 
   const fetchProfile = async () => {
     try {
@@ -55,7 +58,7 @@ function MyProfilePage() {
       setFirstName(data.first_name || "");
       setLastName(data.last_name || "");
       setBusinessName(data.business_name || "");
-      setCity(data.city || "");
+      setCityId(data.city_id ? String(data.city_id) : "");
       setPhone(data.phone || "");
       setAddress(data.address || "");
       setOpeningHours(data.opening_hours || "");
@@ -115,7 +118,7 @@ function MyProfilePage() {
         first_name: firstName,
         last_name: lastName,
         business_name: businessName,
-        city,
+        city_id: Number(cityId),
         phone,
         address,
         opening_hours: openingHours,
@@ -139,7 +142,7 @@ function MyProfilePage() {
   const RoleIcon = isAdmin ? ShieldCheck : isStore ? Store : UtensilsCrossed;
   const roleLabel = isAdmin ? t("user.adminRole") : isStore ? t("user.storeRole") : t("user.restaurantRole");
   // The server's required fields; an admin has only a name.
-  const requiredValues = { firstName, lastName, ...(!isAdmin && { businessName, city, phone, address }) };
+  const requiredValues = { firstName, lastName, ...(!isAdmin && { businessName, city: cityId, phone, address }) };
   const { formRef, errorFor, blur, validate } = useFormValidation(
     Object.fromEntries(
       Object.entries(requiredValues).map(([field, value]) => [field, isBlank(value) ? REQUIRED : undefined]),
@@ -147,7 +150,8 @@ function MyProfilePage() {
   );
   const avatarSrc = logoPreview || (logoUrl ? assetUrl(logoUrl) : null);
   const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`;
-  const location = [address, city].filter(Boolean).join(", ");
+  const cityName = cities.find((city) => String(city.id) === cityId)?.name;
+  const location = [address, cityName].filter(Boolean).join(", ");
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-16">
@@ -267,11 +271,11 @@ function MyProfilePage() {
                   />
                 </FormField>
               </div>
-              <FormField label={t("user.city")} icon={MapPin} required error={errorFor("city")}>
-                <input
-                  type="text"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
+              <FormField label={t("cities.label")} icon={MapPin} required error={errorFor("city")}>
+                <CitySelect
+                  value={cityId}
+                  onChange={setCityId}
+                  emptyLabel={t("cities.choose")}
                   onBlur={blur("city")}
                   className={inputStyle}
                 />

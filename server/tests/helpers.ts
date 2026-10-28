@@ -72,6 +72,12 @@ export const userId = async (email: string): Promise<number> => {
   return result.rows[0]!.id;
 };
 
+// The id of a city from the list the migration fills (e.g. "Sarajevo").
+export const cityId = async (name: string): Promise<number> => {
+  const result = await pool.query<{ id: number }>("SELECT cities.id FROM cities WHERE cities.name = $1", [name]);
+  return result.rows[0]!.id;
+};
+
 // Dates relative to today, so the tests never go stale. Built from the local
 // date (not toISOString, which is UTC) so they agree with CURRENT_DATE around midnight.
 export const futureDate = (days = 30) => {

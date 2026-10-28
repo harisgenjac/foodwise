@@ -16,6 +16,7 @@ import { DONATION_STATUSES, DONATION_TYPES } from "../utils/validateDonation.js"
 import { RESERVATION_STATUSES, lockReservation, releaseSoldProduct } from "./reservations.controller.js";
 import { updateProfile } from "./users.controller.js";
 import { isValidDateTime } from "../utils/dates.js";
+import { CITY_NAME, parseCityFilter } from "../utils/cities.js";
 import { getPlatformUsage, refundForReservation } from "../services/creditService.js";
 import { getSavedTotals } from "../services/impactStats.js";
 import { creditMonth, nextMonth } from "../utils/creditTime.js";
@@ -49,7 +50,7 @@ const RESERVATION_SORTS = { pickup_date: "reservations.pickup_date" };
 const DONATION_SORTS = { expiry_date: "donation_offers.expiry_date" };
 
 const USER_COLUMNS = `users.id, users.email, users.role, users.first_name, users.last_name,
-  users.business_name, users.city, users.address, users.phone, users.logo_url,
+  users.business_name, users.city_id, ${CITY_NAME}, users.address, users.phone, users.logo_url,
   users.opening_hours, users.pickup_hours, users.description,
   users.is_blocked, users.blocked_at, users.blocked_reason, users.must_change_password, users.created_at`;
 
@@ -204,7 +205,7 @@ export const getStats = async (req: Request, res: Response) => {
 };
 
 export const getUsers = async (req: Request, res: Response) => {
-  const { role, q, city, blocked } = req.query;
+  const { role, q, city_id, blocked } = req.query;
   const page = parsePage(req.query, ADMIN_PAGE_SIZE);
   const orderBy = parseSort(req.query, USER_SORTS, "users.created_at DESC, users.id DESC", "users.id DESC");
   if (!page || !orderBy) {
@@ -232,12 +233,17 @@ export const getUsers = async (req: Request, res: Response) => {
     from += ` AND (users.email ILIKE $${values.length} OR users.business_name ILIKE $${values.length}
       OR users.first_name ILIKE $${values.length} OR users.last_name ILIKE $${values.length})`;
   }
-  if (city) {
-    values.push(`%${city}%`);
-    from += ` AND users.city ILIKE $${values.length}`;
-  }
 
   try {
+    const cityFilter = await parseCityFilter(pool, city_id);
+    if ("invalid" in cityFilter) {
+      return res.status(400).json({ error: "Invalid filter." });
+    }
+    if (cityFilter.cityId !== null) {
+      values.push(cityFilter.cityId);
+      from += ` AND users.city_id = $${values.length}`;
+    }
+
     const { rows, total } = await listPage(
       USER_COLUMNS,
       from,

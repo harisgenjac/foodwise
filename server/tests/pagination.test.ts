@@ -1,5 +1,6 @@
 import pool from "../src/config/db.js";
 import {
+  cityId,
   cleanupUsers,
   createDonation,
   createProduct,
@@ -165,14 +166,17 @@ describe("Pagination", () => {
     for (const email of EXTRA_STORES) {
       await registerAndLogin(email, "STORE");
     }
-    await pool.query("UPDATE users SET business_name = 'Paging Market', city = 'Pagingrad' WHERE email = ANY($1)", [
+    const breza = await cityId("Breza");
+    await pool.query("UPDATE users SET business_name = 'Paging Market', city_id = $1 WHERE email = ANY($2)", [
+      breza,
       EXTRA_STORES,
     ]);
 
-    const response = await restaurant.get("/api/users/stores").query({ city: "Pagingrad", limit: 3 });
+    const filters = { city_id: breza, business_name: "Paging Market" };
+    const response = await restaurant.get("/api/users/stores").query({ ...filters, limit: 3 });
     expect(response.body.total).toBe(4);
     expect(response.body.stores).toHaveLength(3);
-    await expectStablePages(restaurant, "/api/users/stores", "stores", { city: "Pagingrad" });
+    await expectStablePages(restaurant, "/api/users/stores", "stores", filters);
   });
 
   it("GET /donations/mine pages the donor's donations", async () => {

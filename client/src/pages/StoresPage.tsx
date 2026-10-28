@@ -15,17 +15,18 @@ import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
 import StoreCard from "../components/store/StoreCard.js";
 import { inputStyle } from "../components/form/FormField.js";
+import CitySelect from "../components/form/CitySelect.js";
 import type { Favorites, User } from "../types/index.js";
 
 function StoresPage() {
-  const [city, setCity] = useState("");
+  const [cityId, setCityId] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const { t } = useTranslation();
   // "Favorites only" is filtered on the server, so the list and its count cover every store.
   // 12 at a time; a filter change starts again from the first page.
-  const filters = { city, business_name: businessName, favorites: showFavoritesOnly ? "true" : "" };
+  const filters = { city_id: cityId, business_name: businessName, favorites: showFavoritesOnly ? "true" : "" };
   const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(filters));
   const {
     data: storesList,
@@ -66,7 +67,7 @@ function StoresPage() {
   };
 
   const clearFilters = () => {
-    setCity("");
+    setCityId("");
     setBusinessName("");
     setShowFavoritesOnly(false);
   };
@@ -79,10 +80,10 @@ function StoresPage() {
     return <LoadingSpinner />;
   }
 
-  const hasActiveFilters = Boolean(city || businessName || showFavoritesOnly);
+  const hasActiveFilters = Boolean(cityId || businessName || showFavoritesOnly);
 
   const renderEmptyState = () => {
-    if (showFavoritesOnly && !city && !businessName) {
+    if (showFavoritesOnly && !cityId && !businessName) {
       return (
         <EmptyState
           icon={HeartOff}
@@ -125,11 +126,11 @@ function StoresPage() {
           />
         </FilterField>
         <FilterField icon={MapPin}>
-          <input
-            type="text"
-            placeholder={t("filters.searchByCity")}
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
+          <CitySelect
+            value={cityId}
+            onChange={setCityId}
+            emptyLabel={t("cities.all")}
+            aria-label={t("cities.label")}
             className={inputStyle}
           />
         </FilterField>

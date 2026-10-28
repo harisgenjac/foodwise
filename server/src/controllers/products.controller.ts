@@ -5,6 +5,7 @@ import { parseId, parseNonNegativeInt } from '../utils/params.js';
 import { parseProductCsv } from '../utils/productCsv.js';
 import { CARD_PAGE_SIZE, listPage, parsePage } from '../utils/pagination.js';
 import { HttpError } from '../utils/httpError.js';
+import { parseCityFilter } from '../utils/cities.js';
 import { chargeForProduct, chargeForProducts, refundForProduct } from '../services/creditService.js';
 
 export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
@@ -155,7 +156,7 @@ export const importProducts = async (req: Request, res: Response) => {
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const { category, expiryWithinDays, name, city, sort, store_id } = req.query;
+    const { category, expiryWithinDays, name, city_id, sort, store_id } = req.query;
 
     // Inner query: marketplace products with their remaining quantity; the outer queries
     // drop fully reserved ones, count the rest and return one page.
@@ -163,7 +164,7 @@ export const getProducts = async (req: Request, res: Response) => {
       SELECT
         products.*,
         users.business_name,
-        users.city,
+        cities.name AS city,
         products.quantity - COALESCE(
           (SELECT SUM(quantity) FROM reservations
            WHERE reservations.product_id = products.id
@@ -173,6 +174,7 @@ export const getProducts = async (req: Request, res: Response) => {
         products.expiry_date - CURRENT_DATE AS days_until_expiry
       FROM products
       JOIN users ON products.store_id = users.id
+      LEFT JOIN cities ON cities.id = users.city_id
       WHERE products.status = 'Available'
       AND products.expiry_date >= CURRENT_DATE
       AND users.is_blocked = false
@@ -199,11 +201,14 @@ export const getProducts = async (req: Request, res: Response) => {
       query += ` AND products.name ILIKE $${values.length}`;
     }
 
-    // The store's city, a partial match like the store list's city filter.
-    const cityFilter = typeof city === "string" ? city.trim() : "";
-    if (cityFilter) {
-      values.push(`%${cityFilter}%`);
-      query += ` AND users.city ILIKE $${values.length}`;
+    // The store's city, from the cities list like the store list's city filter.
+    const cityFilter = await parseCityFilter(pool, city_id);
+    if ("invalid" in cityFilter) {
+      return res.status(400).json({ error: "Invalid filter." });
+    }
+    if (cityFilter.cityId !== null) {
+      values.push(cityFilter.cityId);
+      query += ` AND users.city_id = $${values.length}`;
     }
 
     // A store's profile lists its offers through the marketplace, with the same rules.
@@ -250,7 +255,7 @@ export const getProductById = async (req: Request, res: Response) => {
       `SELECT
     products.*,
     users.business_name,
-    users.city,
+    cities.name AS city,
     users.address AS store_address,
     users.phone AS store_phone,
     users.pickup_hours AS store_pickup_hours,
@@ -263,6 +268,7 @@ export const getProductById = async (req: Request, res: Response) => {
      products.expiry_date - CURRENT_DATE AS days_until_expiry
    FROM products
    JOIN users ON products.store_id = users.id
+   LEFT JOIN cities ON cities.id = users.city_id
    WHERE products.id = $1 AND users.is_blocked = false`,
       [productId],
     );

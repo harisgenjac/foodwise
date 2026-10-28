@@ -4,13 +4,14 @@ import pool from "../config/db.js";
 import type { AuthUser, Role } from "../types/auth.js";
 
 // What a user with a temporary password (set by an admin) may still call: their profile, so they
-// can fill it in, and the password change itself.
+// can fill it in (with the city list), and the password change itself.
 const ALLOWED_BEFORE_PASSWORD_CHANGE = new Set([
   "GET /api/auth/me",
   "GET /api/users/me",
   "PUT /api/users/me",
   "POST /api/users/me/logo",
   "PUT /api/users/me/password",
+  "GET /api/cities",
 ]);
 
 // The token proves who the caller is; the role and the blocked flag are read from the

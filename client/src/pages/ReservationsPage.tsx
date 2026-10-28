@@ -26,6 +26,7 @@ import LoadErrorState from "../components/product/LoadErrorState.js";
 import ConfirmModal from "../components/common/ConfirmModal.js";
 import AcceptReservationModal from "../components/reservation/AcceptReservationModal.js";
 import { inputStyle } from "../components/form/FormField.js";
+import CitySelect from "../components/form/CitySelect.js";
 import PickupConfirmModal from "../components/pickup/PickupConfirmModal.js";
 import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
@@ -37,7 +38,7 @@ import type { Reservation } from "../types/index.js";
 function ReservationsPage() {
   const [name, setName] = useState("");
   const [status, setStatus] = useState("");
-  const [city, setCity] = useState("");
+  const [cityId, setCityId] = useState("");
   const [acceptingReservation, setAcceptingReservation] =
     useState<Reservation | null>(null);
   const [rejectingReservation, setRejectingReservation] =
@@ -46,7 +47,7 @@ function ReservationsPage() {
   const [busyId, setBusyId] = useState<number | null>(null);
   const { t } = useTranslation();
   // 12 at a time; a filter change starts again from the first page, a reload keeps the limit.
-  const filters = { name, status, city };
+  const filters = { name, status, city_id: cityId };
   const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(filters));
   const {
     data: reservationsList,
@@ -100,14 +101,14 @@ function ReservationsPage() {
   const clearFilters = () => {
     setName("");
     setStatus("");
-    setCity("");
+    setCityId("");
   };
 
   if (loading) {
     return <LoadingSpinner />;
   }
 
-  const hasActiveFilters = Boolean(name || status || city);
+  const hasActiveFilters = Boolean(name || status || cityId);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
@@ -129,11 +130,11 @@ function ReservationsPage() {
           />
         </FilterField>
         <FilterField icon={MapPin}>
-          <input
-            type="text"
-            placeholder={t("filters.searchByCity")}
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
+          <CitySelect
+            value={cityId}
+            onChange={setCityId}
+            emptyLabel={t("cities.all")}
+            aria-label={t("cities.label")}
             className={inputStyle}
           />
         </FilterField>

@@ -77,7 +77,7 @@ describe("BrowseProductsPage", () => {
       expect(productCalls().at(-1)?.[1]?.params).toEqual({
         category: "Dairy",
         name: "mlijeko",
-        city: "",
+        city_id: "",
         expiryWithinDays: "",
         sort: "newest",
         limit: 12,
@@ -89,21 +89,23 @@ describe("BrowseProductsPage", () => {
     expect(await screen.findByText("Piletina")).toBeInTheDocument();
   });
 
-  it("sends the city filter and clears it", async () => {
+  it("sends the city filter as an id from the list and clears it", async () => {
     renderPage((params) =>
-      (params as { city?: string }).city ? [] : [makeProduct({ id: 1, name: "Piletina" })],
+      (params as { city_id?: string }).city_id ? [] : [makeProduct({ id: 1, name: "Piletina" })],
     );
     await screen.findByText("Piletina");
 
-    const cityInput = screen.getByPlaceholderText(t("filters.searchByCity"));
-    await userEvent.type(cityInput, "sara");
-    await waitFor(() => expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ city: "sara" }));
+    const citySelect = screen.getByLabelText(t("cities.label"));
+    expect(citySelect).toHaveDisplayValue(t("cities.all"));
+    await screen.findByRole("option", { name: "Tuzla" });
+    await userEvent.selectOptions(citySelect, "Tuzla");
+    await waitFor(() => expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ city_id: "2" }));
     expect(await screen.findByText(t("myProducts.noResultsTitle"))).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: t("filters.clear") }));
-    expect(cityInput).toHaveValue("");
+    expect(citySelect).toHaveDisplayValue(t("cities.all"));
     expect(await screen.findByText("Piletina")).toBeInTheDocument();
-    expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ city: "" });
+    expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ city_id: "" });
   });
 
   it("has no max price filter", async () => {

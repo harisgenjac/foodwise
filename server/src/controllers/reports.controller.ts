@@ -70,7 +70,7 @@ export const getSalesReport = async (req: Request, res: Response) => {
          products.name AS product_name,
          products.category,
          COALESCE(parties.business_name, parties.first_name || ' ' || parties.last_name, parties.email) AS party_name,
-         parties.city,
+         cities.name AS city,
          reservations.quantity,
          products.unit,
          reservations.unit_price,
@@ -80,6 +80,7 @@ export const getSalesReport = async (req: Request, res: Response) => {
        FROM reservations
        JOIN products ON reservations.product_id = products.id
        JOIN users AS parties ON ${partyJoin}
+       LEFT JOIN cities ON cities.id = parties.city_id
        WHERE ${owner}
          AND reservations.status = 'Completed'
          AND reservations.picked_up_at::date BETWEEN $2 AND $3

@@ -218,7 +218,6 @@
   },
   "filters": {
     "searchByName": "Pretraga po imenu",
-    "searchByCity": "Pretraga po gradu",
     "searchByStore": "Pretraga po prodavnici",
     "allCategories": "-- Sve kategorije --",
     "selectStatus": "-- Status proizvoda --",
@@ -236,6 +235,11 @@
     "sortPriceDesc": "Najviša cijena",
     "sortDiscountDesc": "Najveći popust",
     "sortDiscountAsc": "Najmanji popust"
+  },
+  "cities": {
+    "label": "Grad",
+    "choose": "Izaberite grad",
+    "all": "-- Svi gradovi --"
   },
   "notifications": {
     "title": "Notifikacije",
@@ -901,7 +905,6 @@
       "title": "Korisnici",
       "subtitle": "Svi nalozi na platformi. Otvorite korisnika da biste ga blokirali ili mu postavili novu lozinku.",
       "search": "Email, naziv ili ime",
-      "city": "Grad",
       "allRoles": "-- Sve uloge --",
       "allStatuses": "-- Svi statusi --",
       "columnUser": "Korisnik",

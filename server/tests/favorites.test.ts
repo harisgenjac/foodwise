@@ -1,4 +1,4 @@
-import { cleanupUsers, registerAndLogin, userId, type Agent } from "./helpers.js";
+import { cityId, cleanupUsers, registerAndLogin, userId, type Agent } from "./helpers.js";
 
 const STORE_A = "favorites-store-a@test.com";
 const STORE_B = "favorites-store-b@test.com";
@@ -15,7 +15,7 @@ describe("Favorites routes", () => {
       first_name: "Store",
       last_name: "A",
       business_name: "Omiljena Prodavnica",
-      city: "Sarajevo",
+      city_id: await cityId("Sarajevo"),
       address: "Titova 1",
       phone: "061000000",
     });

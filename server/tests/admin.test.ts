@@ -2,6 +2,7 @@ import request from "supertest";
 import app from "../src/app.js";
 import pool from "../src/config/db.js";
 import {
+  cityId,
   type Agent,
   cleanupUsers,
   createDonation,
@@ -174,7 +175,7 @@ describe("Admin", () => {
           first_name: "Nova",
           last_name: "Prodavnica",
           business_name: "Nova",
-          city: "Sarajevo",
+          city_id: await cityId("Sarajevo"),
           address: "Titova 2",
           phone: "061000000",
         });
@@ -208,11 +209,15 @@ describe("Admin", () => {
       first_name: "Nova",
       last_name: "Vlasnica",
       business_name: "Market Ispravljen",
-      city: "Zenica",
+      city_id: 0, // Zenica, set in beforeAll
       phone: "061999999",
       address: "Glavna 1",
       opening_hours: "08-20",
     };
+
+    beforeAll(async () => {
+      profile.city_id = await cityId("Zenica");
+    });
 
     it("lets the admin fix a store's profile and logs it", async () => {
       const storeId = await userId(STORE);
@@ -223,7 +228,12 @@ describe("Admin", () => {
         .send({ ...profile, logo_url: "/uploads/logos/other.png" });
       expect(response.status).toBe(200);
       expect(response.body.message).toBe("User profile updated.");
-      expect(response.body.user).toMatchObject({ ...profile, email: STORE, logo_url: "/uploads/logos/keep.png" });
+      expect(response.body.user).toMatchObject({
+        ...profile,
+        city: "Zenica",
+        email: STORE,
+        logo_url: "/uploads/logos/keep.png",
+      });
       expect(await actions()).toEqual([expect.objectContaining({ action: "UPDATE_PROFILE", target_user_id: storeId })]);
     });
 
@@ -233,6 +243,18 @@ describe("Admin", () => {
         .send({ ...profile, phone: "" });
       expect(response.status).toBe(400);
       expect(response.body.error).toBe("First name, last name, business name, city, address and phone are required.");
+      expect(await actions()).toEqual([]);
+    });
+
+    it("requires a city from the list", async () => {
+      const storeId = await userId(STORE);
+      const missing = await admin.put(`/api/admin/users/${storeId}/profile`).send({ ...profile, city_id: "" });
+      expect(missing.status).toBe(400);
+      expect(missing.body.error).toBe("First name, last name, business name, city, address and phone are required.");
+
+      const unknown = await admin.put(`/api/admin/users/${storeId}/profile`).send({ ...profile, city_id: 999999 });
+      expect(unknown.status).toBe(400);
+      expect(unknown.body.error).toBe("Invalid city.");
       expect(await actions()).toEqual([]);
     });
 
@@ -277,11 +299,23 @@ describe("Admin", () => {
       expect(page.body.users).toHaveLength(1);
       expect(page.body.total).toBe(3);
 
-      for (const query of ["role=CHARITY", "blocked=maybe", "limit=0", "limit=101", "offset=-1"]) {
+      for (const query of ["role=CHARITY", "blocked=maybe", "limit=0", "limit=101", "offset=-1", "city_id=999999", "city_id=abc"]) {
         const response = await admin.get(`/api/admin/users?${query}`);
         expect(response.status).toBe(400);
         expect(response.body.error).toBe("Invalid filter.");
       }
+    });
+
+    it("filters by city_id, and an empty city_id means all cities", async () => {
+      const tuzla = await cityId("Tuzla");
+      await pool.query("UPDATE users SET city_id = $1 WHERE email = $2", [tuzla, STORE]);
+
+      const response = await admin.get("/api/admin/users").query({ q: "admin-", city_id: tuzla });
+      expect(response.status).toBe(200);
+      expect(response.body.users).toEqual([expect.objectContaining({ email: STORE, city_id: tuzla, city: "Tuzla" })]);
+
+      const all = await admin.get("/api/admin/users").query({ q: "admin-", city_id: "" });
+      expect(all.body.total).toBe(3);
     });
 
     it("shows a user with counts and the admin actions on them", async () => {

@@ -282,14 +282,23 @@ async function seed() {
     const [mainAdmin, secondAdmin] = [admins[0]!, admins[1]!];
     const anyAdmin = () => pick(admins);
 
+    // Seed businesses name their city; the cities table (filled by a migration) holds the ids.
+    const cityRows = await client.query<{ id: number; name: string }>("SELECT cities.id, cities.name FROM cities");
+    const cityIds = new Map(cityRows.rows.map((row) => [row.name, row.id]));
+    const cityId = (name: string) => {
+      const id = cityIds.get(name);
+      if (id === undefined) throw new Error(`Unknown seed city: ${name}`);
+      return id;
+    };
+
     const createBusiness = async (data: SeedBusiness, role: "STORE" | "RESTAURANT", index: number): Promise<Business> => {
       const createdAt = at(addDays(startDay, Math.floor(index * (role === "STORE" ? 0.5 : 0.6))), between(9, 16));
       const result = await client.query<{ id: number }>(
-        `INSERT INTO users (first_name, last_name, email, password_hash, role, business_name, city, phone, address,
+        `INSERT INTO users (first_name, last_name, email, password_hash, role, business_name, city_id, phone, address,
                             opening_hours, pickup_hours, description, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
         [
-          data.first_name, data.last_name, data.email, passwordHash, role, data.business_name, data.city, data.phone,
+          data.first_name, data.last_name, data.email, passwordHash, role, data.business_name, cityId(data.city), data.phone,
           data.address, data.opening_hours, data.pickup_hours || null, data.description, createdAt,
         ],
       );

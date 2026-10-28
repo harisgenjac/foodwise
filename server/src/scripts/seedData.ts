@@ -6,6 +6,7 @@ export interface SeedBusiness {
   last_name: string;
   email: string;
   business_name: string;
+  // A name from the cities table.
   city: string;
   address: string;
   phone: string;
@@ -80,19 +81,19 @@ export const STORES: SeedStore[] = [
   },
   {
     first_name: "Lamija", last_name: "Hadžić", email: "mljekara.vrelo@demo.com", business_name: "Mljekara Vrelo",
-    city: "Sarajevo", address: "Igmanska 9", phone: "061555555", opening_hours: "07:00–18:00", pickup_hours: "12:00–17:00",
+    city: "Visoko", address: "Alije Izetbegovića 12", phone: "061555555", opening_hours: "07:00–18:00", pickup_hours: "12:00–17:00",
     description: "Mlijeko, jogurt, sirevi i pavlaka iz vlastite mljekare.",
     pickup: [12, 17], activity: 0.3, currentStock: 11, categories: ["Dairy", "Drinks"], plans: ["Standard"], autoRenew: true,
   },
   {
     first_name: "Dino", last_name: "Marić", email: "ribarnica.neretva@demo.com", business_name: "Ribarnica Neretva",
-    city: "Mostar", address: "Kralja Tvrtka 22", phone: "061666666", opening_hours: "07:00–17:00", pickup_hours: "12:00–16:00",
+    city: "Zenica", address: "Trg Alije Izetbegovića 3", phone: "061666666", opening_hours: "07:00–17:00", pickup_hours: "12:00–16:00",
     description: "Svježa riječna i morska riba, isporuka svako jutro.",
     pickup: [12, 16], activity: 0.25, currentStock: 10, categories: ["Fish", "Frozen Food"], plans: ["Basic", "Standard"], autoRenew: false,
   },
   {
     first_name: "Ivana", last_name: "Bošnjak", email: "market.neretva@demo.com", business_name: "Market Neretva",
-    city: "Mostar", address: "Bulevar 3", phone: "061777777", opening_hours: "07:00–21:00", pickup_hours: "15:00–19:00",
+    city: "Kakanj", address: "Branilaca 5", phone: "061777777", opening_hours: "07:00–21:00", pickup_hours: "15:00–19:00",
     description: "Kvartovski market sa širokim izborom namirnica.",
     pickup: [15, 19], activity: 0.3, currentStock: 9, categories: ALL_CATEGORIES, plans: ["Standard"], autoRenew: false,
   },
@@ -104,13 +105,13 @@ export const STORES: SeedStore[] = [
   },
   {
     first_name: "Aida", last_name: "Salihović", email: "pekara.somun@demo.com", business_name: "Pekara Somun",
-    city: "Tuzla", address: "Maršala Tita 60", phone: "061999999", opening_hours: "06:00–19:00", pickup_hours: "17:00–19:00",
+    city: "Zenica", address: "Maršala Tita 60", phone: "061999999", opening_hours: "06:00–19:00", pickup_hours: "17:00–19:00",
     description: "Somuni, pite i hljeb iz krušne peći.",
     pickup: [17, 19], activity: 0.15, currentStock: 6, categories: ["Bakery"], plans: ["Basic"], autoRenew: false,
   },
   {
     first_name: "Nermin", last_name: "Čaušević", email: "bio.kutak@demo.com", business_name: "Bio Kutak",
-    city: "Sarajevo", address: "Mula Mustafe Bašeskije 14", phone: "062000000", opening_hours: "09:00–20:00", pickup_hours: "17:00–20:00",
+    city: "Visoko", address: "Čaršijska 4", phone: "062000000", opening_hours: "09:00–20:00", pickup_hours: "17:00–20:00",
     description: "Organske namirnice, biljni napici i zdrava hrana.",
     pickup: [17, 20], activity: 0.12, currentStock: 5, categories: ["Other", "Drinks", "Dairy", "Vegetables"], plans: ["Basic"], autoRenew: false,
   },
@@ -143,8 +144,8 @@ export const RESTAURANTS: SeedBusiness[] = [
   },
   {
     first_name: "Ana", last_name: "Jurić", email: "kafana.most@demo.com", business_name: "Kafana Most",
-    city: "Mostar", address: "Onešćukova 15", phone: "062444444", opening_hours: "09:00–24:00", pickup_hours: "",
-    description: "Hercegovačka kuhinja i riblji specijaliteti s pogledom na Neretvu.",
+    city: "Zenica", address: "Kamberovića čikma 2", phone: "062444444", opening_hours: "09:00–24:00", pickup_hours: "",
+    description: "Domaća kuhinja i riblji specijaliteti s pogledom na rijeku Bosnu.",
     pickup: [0, 0], activity: 0.55, plans: ["Standard"], autoRenew: true,
   },
   {
@@ -155,7 +156,7 @@ export const RESTAURANTS: SeedBusiness[] = [
   },
   {
     first_name: "Maja", last_name: "Pašić", email: "bistro.zelenikutak@demo.com", business_name: "Bistro Zeleni Kutak",
-    city: "Sarajevo", address: "Kranjčevićeva 33", phone: "062666666", opening_hours: "08:00–21:00", pickup_hours: "",
+    city: "Kakanj", address: "Rudarska 12", phone: "062666666", opening_hours: "08:00–21:00", pickup_hours: "",
     description: "Vegetarijanska i veganska jela od lokalnih namirnica.",
     pickup: [0, 0], activity: 0.4, plans: ["Basic"], autoRenew: true,
   },
@@ -167,13 +168,13 @@ export const RESTAURANTS: SeedBusiness[] = [
   },
   {
     first_name: "Goran", last_name: "Vuković", email: "restoran.tvrdjava@demo.com", business_name: "Restoran Tvrđava",
-    city: "Mostar", address: "Kujundžiluk 8", phone: "062888888", opening_hours: "10:00–23:00", pickup_hours: "",
+    city: "Visoko", address: "Čaršijska 20", phone: "062888888", opening_hours: "10:00–23:00", pickup_hours: "",
     description: "Jela s ražnja i peke, domaća vina.",
     pickup: [0, 0], activity: 0.3, plans: ["Basic"], autoRenew: false,
   },
   {
     first_name: "Senad", last_name: "Bajrić", email: "ascinica.sofra@demo.com", business_name: "Aščinica Sofra",
-    city: "Sarajevo", address: "Bravadžiluk 21", phone: "062999999", opening_hours: "08:00–18:00", pickup_hours: "",
+    city: "Zenica", address: "Maršala Tita 15", phone: "062999999", opening_hours: "08:00–18:00", pickup_hours: "",
     description: "Kuhana jela, dolme i sogan-dolma po starim receptima.",
     pickup: [0, 0], activity: 0.2, plans: ["Basic"], autoRenew: true,
   },

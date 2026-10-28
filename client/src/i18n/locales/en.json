@@ -214,7 +214,6 @@
   },
   "filters": {
     "searchByName": "Search by name",
-    "searchByCity": "Search by city",
     "searchByStore": "Search by store",
     "selectResStatus": "-- Reservation status --",
     "allCategories": "-- All categories --",
@@ -232,6 +231,11 @@
     "sortPriceDesc": "Highest price",
     "sortDiscountDesc": "Biggest discount",
     "sortDiscountAsc": "Smallest discount"
+  },
+  "cities": {
+    "label": "City",
+    "choose": "Choose a city",
+    "all": "-- All cities --"
   },
   "notifications": {
     "title": "Notifications",
@@ -880,7 +884,6 @@
       "title": "Users",
       "subtitle": "Every account on the platform. Open a user to block them or set a new password.",
       "search": "Email, name or business",
-      "city": "City",
       "allRoles": "-- All roles --",
       "allStatuses": "-- All statuses --",
       "columnUser": "User",

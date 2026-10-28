@@ -7,6 +7,7 @@ import { useAdminPage, useAdminSort, useKeepPageInRange } from "../../hooks/useA
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../../components/product/FilterBar.js";
 import { inputStyle } from "../../components/form/FormField.js";
+import CitySelect from "../../components/form/CitySelect.js";
 import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
@@ -25,7 +26,7 @@ function AdminUsersPage() {
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
   const [blocked, setBlocked] = useState("");
-  const [city, setCity] = useState("");
+  const [cityId, setCityId] = useState("");
   const { page, offset, setPage } = useAdminPage();
   const { sort, dir, toggleSort } = useAdminSort(SORT_KEYS);
 
@@ -33,7 +34,7 @@ function AdminUsersPage() {
     q,
     role,
     blocked,
-    city,
+    city_id: cityId,
     sort,
     dir,
     limit: ADMIN_PAGE_SIZE,
@@ -42,7 +43,7 @@ function AdminUsersPage() {
   useKeepPageInRange(page, total, setPage);
 
   const roles = t("admin.roles", { returnObjects: true }) as Record<string, string>;
-  const hasActiveFilters = Boolean(q || role || blocked || city);
+  const hasActiveFilters = Boolean(q || role || blocked || cityId);
   // Any filter change goes back to the first page.
   const filter = (setter: (value: string) => void) => (value: string) => {
     setter(value);
@@ -52,7 +53,7 @@ function AdminUsersPage() {
     setQ("");
     setRole("");
     setBlocked("");
-    setCity("");
+    setCityId("");
     setPage(1);
   };
 
@@ -105,12 +106,11 @@ function AdminUsersPage() {
           </select>
         </FilterField>
         <FilterField icon={MapPin}>
-          <input
-            type="text"
-            value={city}
-            onChange={(e) => filter(setCity)(e.target.value)}
-            placeholder={t("admin.users.city")}
-            aria-label={t("admin.users.city")}
+          <CitySelect
+            value={cityId}
+            onChange={filter(setCityId)}
+            emptyLabel={t("cities.all")}
+            aria-label={t("cities.label")}
             className={inputStyle}
           />
         </FilterField>

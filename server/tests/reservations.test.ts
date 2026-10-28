@@ -1,5 +1,6 @@
 import pool from "../src/config/db.js";
 import {
+  cityId,
   cleanupUsers,
   createProduct,
   futurePickup,
@@ -356,6 +357,29 @@ describe("Reservations routes", () => {
       expect(response.body.reservations.map((r: { id: number }) => r.id)).toEqual([accepted]);
     });
 
+    it("filters by the restaurant's city_id", async () => {
+      const [tuzla, zenica] = [await cityId("Tuzla"), await cityId("Zenica")];
+      await pool.query("UPDATE users SET city_id = $1 WHERE email = $2", [tuzla, RESTAURANT_A]);
+      const restaurantB = await registerAndLogin(RESTAURANT_B, "RESTAURANT");
+      await pool.query("UPDATE users SET city_id = $1 WHERE email = $2", [zenica, RESTAURANT_B]);
+      const product = await createProduct(store);
+      const inTuzla = await reserve(restaurant, product.id, 1);
+      await reserve(restaurantB, product.id, 1);
+
+      const response = await store.get("/api/reservations/store").query({ city_id: tuzla });
+      expect(response.status).toBe(200);
+      expect(response.body.reservations).toEqual([expect.objectContaining({ id: inTuzla, city: "Tuzla" })]);
+
+      const all = await store.get("/api/reservations/store").query({ city_id: "" });
+      expect(all.body.total).toBe(2);
+
+      for (const value of ["999999", "abc"]) {
+        const invalid = await store.get("/api/reservations/store").query({ city_id: value });
+        expect(invalid.status).toBe(400);
+        expect(invalid.body.error).toBe("Invalid filter.");
+      }
+    });
+
     it("returns 403 for a RESTAURANT", async () => {
       const response = await restaurant.get("/api/reservations/store");
       expect(response.status).toBe(403);
@@ -513,7 +537,7 @@ describe("Reservations routes", () => {
         first_name: "Restaurant",
         last_name: "A",
         business_name: "Restoran Test",
-        city: "Sarajevo",
+        city_id: await cityId("Sarajevo"),
         phone: "061111222",
         address: "Ulica 1",
       });

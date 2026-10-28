@@ -1,5 +1,6 @@
 import pool from "../src/config/db.js";
 import {
+  cityId,
   cleanupUsers,
   createProduct,
   futureDate,
@@ -191,22 +192,36 @@ describe("Products routes", () => {
     });
 
     describe("city filter", () => {
-      const setCity = (email: string, city: string) =>
-        pool.query("UPDATE users SET city = $1 WHERE email = $2", [city, email]);
+      const setCity = (email: string, city: number) =>
+        pool.query("UPDATE users SET city_id = $1 WHERE email = $2", [city, email]);
 
+      // Two cities no other test uses, so only these stores' products match.
+      let cityA: number;
+      let cityB: number;
       let storeB: Agent;
       beforeEach(async () => {
+        cityA = await cityId("Vareš");
+        cityB = await cityId("Kladanj");
         storeB = await registerAndLogin(STORE_B, "STORE");
-        await setCity(STORE_A, "Zxcvgrad");
-        await setCity(STORE_B, "Qwertyvil");
+        await setCity(STORE_A, cityA);
+        await setCity(STORE_B, cityB);
       });
 
-      it("filters by the store's city, partially and case-insensitively", async () => {
+      it("filters by the store's city_id and returns the city name", async () => {
         const inA = await createProduct(store);
         const inB = await createProduct(storeB);
-        const ids = await listIds({ city: "XCVG" });
+        const response = await store.get("/api/products").query({ city_id: cityA });
+        expect(response.status).toBe(200);
+        const ids = (response.body.products as Product[]).map((p) => p.id);
         expect(ids).toContain(inA.id);
         expect(ids).not.toContain(inB.id);
+        expect(response.body.products[0]).toMatchObject({ city: "Vareš" });
+      });
+
+      it.each(["999999", "abc"])("returns 400 for an unknown or invalid city_id (%s)", async (value) => {
+        const response = await store.get("/api/products").query({ city_id: value });
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe("Invalid filter.");
       });
 
       it("combines with the other filters, paging and total", async () => {
@@ -214,12 +229,12 @@ describe("Products routes", () => {
         await createProduct(store, { category: "Meat" });
         await createProduct(storeB, { category: "Dairy" });
 
-        const filtered = await store.get("/api/products").query({ city: "zxcv", category: "Dairy" });
+        const filtered = await store.get("/api/products").query({ city_id: cityA, category: "Dairy" });
         expect(filtered.status).toBe(200);
         expect((filtered.body.products as Product[]).map((p) => p.id)).toEqual([dairyA.id]);
         expect(filtered.body.total).toBe(1);
 
-        const paged = await store.get("/api/products").query({ city: "zxcv", limit: 1 });
+        const paged = await store.get("/api/products").query({ city_id: cityA, limit: 1 });
         expect(paged.status).toBe(200);
         expect(paged.body.products).toHaveLength(1);
         expect(paged.body.total).toBe(2);
@@ -232,20 +247,18 @@ describe("Products routes", () => {
 
         const response = await store
           .get("/api/products")
-          .query({ city: "zxcv", name: "grad sort", category: "Meat", expiryWithinDays: 30, sort: "price_asc" });
+          .query({ city_id: cityA, name: "grad sort", category: "Meat", expiryWithinDays: 30, sort: "price_asc" });
         expect(response.status).toBe(200);
         expect((response.body.products as Product[]).map((p) => p.id)).toEqual([cheap.id, pricey.id]);
         expect(response.body.total).toBe(2);
       });
 
-      it("ignores an empty or blank city", async () => {
+      it("ignores an empty city_id", async () => {
         const inA = await createProduct(store);
         const inB = await createProduct(storeB);
-        for (const city of ["", "   "]) {
-          const ids = await listIds({ city });
-          expect(ids).toContain(inA.id);
-          expect(ids).toContain(inB.id);
-        }
+        const ids = await listIds({ city_id: "" });
+        expect(ids).toContain(inA.id);
+        expect(ids).toContain(inB.id);
       });
     });
 
@@ -379,7 +392,7 @@ describe("Products routes", () => {
         first_name: "Test",
         last_name: "Korisnik",
         business_name: "Prodavnica Test",
-        city: "Sarajevo",
+        city_id: await cityId("Sarajevo"),
         phone: "033123456",
         address: "Titova 1",
         pickup_hours: "08-16",

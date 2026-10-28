@@ -21,7 +21,7 @@ FoodWise connects the two sides directly, without intermediaries, phone calls or
 
 - **Admin (`ADMIN`):** runs the platform. Creates accounts, blocks and unblocks them, removes products and donations that break the rules, and sees platform-wide statistics and the audit log. An admin only has the admin panel: no marketplace, reservations, reports or donations.
 
-Stores and restaurants are registered businesses with a profile (business name, city, address, phone, opening and pickup hours, description, logo).
+Stores and restaurants are registered businesses with a profile (business name, city, address, phone, opening and pickup hours, description, logo). The city is chosen from a fixed list (no free text), so nearby offers and later store chains with branches per city can rely on it. The list covers the Sarajevo–Zenica–Tuzla area for now; adding a city is a small database change, and there is no admin screen for it.
 
 ### Accounts and the admin role
 
@@ -39,7 +39,7 @@ Stores and restaurants are registered businesses with a profile (business name, 
 ## Core flows
 
 1. A store adds a product: name, an optional description, category, original and discounted price, quantity and unit, expiry date. Every form marks its required fields with * and shows a red error on an empty required field before anything is sent.
-2. A restaurant finds it in the marketplace (filters: name, category, expiry window, city; sorted by newest, soonest expiry, price or discount) or through a store profile (same sorts). A store can sort its own products by newest, soonest expiry or price, to spot what expires soon.
+2. A restaurant finds it in the marketplace (filters: name, category, expiry window, city from the list; sorted by newest, soonest expiry, price or discount) or through a store profile (same sorts). A store can sort its own products by newest, soonest expiry or price, to spot what expires soon.
 3. The restaurant reserves a quantity (partial reservations are allowed) and picks a pickup time between today and the product's expiry day. The reservation starts as `Pending` and the store is notified.
 4. The store accepts (`Confirmed`) or rejects (`Rejected`). The restaurant is notified either way. Accepting cannot be undone, so the store first confirms a dialog that repeats the product, quantity, restaurant and pickup time. A restaurant can cancel (`Cancelled`) only while the reservation is still `Pending`; an accept and a cancel can never both succeed.
 5. When accepted reservations cover the full quantity, the product is marked `Sold`.
@@ -158,6 +158,7 @@ Rules:
 ## Other roadmap and ideas
 
 - Public launch (deploy) with proper image storage.
+- Nearby offers (next step): restaurants see offers by distance from their city (the city list already carries coordinates), with a radius filter and sorting by distance; later, store chains with branches per city. The city list grows beyond the Sarajevo–Zenica–Tuzla area as the market does.
 - Admin role, next steps: send the login details (or a link to set the password) to a new user by email instead of the admin passing a temporary password on, and add "forgot password". Decided against for the admin role: problem reports (a support matter, not administration), managing categories, units and allergens in the database (they change rarely and are added in code), and login rate limiting (for now).
 - Real product photos instead of category images.
 - Pickup follow-ups: a QR or PIN code shown by the restaurant and checked by the store at handover; a restaurant reliability score from missed pickups (temporary limits after repeated no-shows); optional automatic cancelling of missed pickups after a few hours; a reminder an hour before the pickup; pickup time slots set by the store; a daily packing list per product for the store; a rating after pickup.
@@ -170,7 +171,7 @@ A store reliability score (accept versus reject ratio) was considered and declin
 
 ## Market, language, tone
 
-- Initial market is Bosnia and Herzegovina: prices are in KM and demo data uses cities such as Sarajevo, Tuzla and Mostar.
+- Initial market is Bosnia and Herzegovina: prices are in KM and demo businesses are spread over Sarajevo, Visoko, Kakanj, Zenica and Tuzla.
 - Interface languages: Bosnian (default) and English. Server messages (errors, success messages) are English only.
 - Terminology: *prodavnica* = store, *restoran* = restaurant, *rezervacija* = reservation, *ponuda* = offer, *rok trajanja* = expiry date.
 - Name: FoodWise (working Bosnian name "Još vrijedi"). Tone: practical, friendly, focused on reducing waste. Confirm the exact spelling shown in the UI header before using it in public material.

@@ -1,6 +1,6 @@
 import request from "supertest";
 import app from "../src/app.js";
-import { type Agent, cleanupUsers, login, PASSWORD, registerAndLogin, userId } from "./helpers.js";
+import { type Agent, cityId, cleanupUsers, login, PASSWORD, registerAndLogin, userId } from "./helpers.js";
 
 const ADMIN = "password-admin@test.com";
 const STORE = "password-store@test.com";
@@ -76,7 +76,7 @@ describe("Password", () => {
         first_name: "Nova",
         last_name: "Prodavnica",
         business_name: "Nova",
-        city: "Sarajevo",
+        city_id: await cityId("Sarajevo"),
         address: "Titova 3",
         phone: "061000000",
       });

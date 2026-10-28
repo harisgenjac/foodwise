@@ -12,7 +12,10 @@ let store: Agent;
 let restaurant: Agent;
 
 const setBusiness = async (email: string, businessName: string, city: string) => {
-  await pool.query("UPDATE users SET business_name = $1, city = $2 WHERE email = $3", [businessName, city, email]);
+  await pool.query(
+    "UPDATE users SET business_name = $1, city_id = (SELECT cities.id FROM cities WHERE cities.name = $2) WHERE email = $3",
+    [businessName, city, email],
+  );
 };
 
 // Inserts a reservation picked up `daysAgo` days before today (the API cannot backdate a pickup).
