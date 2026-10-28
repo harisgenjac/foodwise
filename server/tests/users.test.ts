@@ -3,6 +3,7 @@ import request from "supertest";
 import app from "../src/app.js";
 import pool from "../src/config/db.js";
 import {
+  cityId,
   cleanupUsers,
   createProduct,
   registerAndLogin,
@@ -19,13 +20,21 @@ const PROFILE = {
   first_name: "Amir",
   last_name: "Hodžić",
   business_name: "Test Market Users",
-  city: "Testograd",
+  // Olovo (set in beforeAll): a city no other test uses, so the city filter sees only these stores.
+  city_id: 0,
   phone: "061000000",
   address: "Ferhadija 1",
   description: "Opis",
 };
 
 describe("Users routes", () => {
+  let zenica: number;
+
+  beforeAll(async () => {
+    PROFILE.city_id = await cityId("Olovo");
+    zenica = await cityId("Zenica");
+  });
+
   afterEach(async () => {
     await cleanupUsers([STORE, STORE_2, RESTAURANT]);
   });
@@ -50,7 +59,17 @@ describe("Users routes", () => {
       const response = await store.put("/api/users/me").send(PROFILE);
       expect(response.status).toBe(200);
       expect(response.body.message).toBe("Profile updated successfully.");
-      expect(response.body.user).toMatchObject(PROFILE);
+      expect(response.body.user).toMatchObject({ ...PROFILE, city: "Olovo" });
+
+      const me = await store.get("/api/users/me");
+      expect(me.body.user).toMatchObject({ city_id: PROFILE.city_id, city: "Olovo" });
+    });
+
+    it("accepts the city id as a numeric string", async () => {
+      const store = await registerAndLogin(STORE, "STORE");
+      const response = await store.put("/api/users/me").send({ ...PROFILE, city_id: String(zenica) });
+      expect(response.status).toBe(200);
+      expect(response.body.user).toMatchObject({ city_id: zenica, city: "Zenica" });
     });
 
     it("keeps optional fields that are left out", async () => {
@@ -58,12 +77,12 @@ describe("Users routes", () => {
       await store.put("/api/users/me").send(PROFILE);
       const { description, ...required } = PROFILE;
 
-      const response = await store.put("/api/users/me").send({ ...required, city: "Mostar" });
+      const response = await store.put("/api/users/me").send({ ...required, city_id: zenica });
       expect(response.status).toBe(200);
-      expect(response.body.user).toMatchObject({ city: "Mostar", description });
+      expect(response.body.user).toMatchObject({ city: "Zenica", description });
     });
 
-    it.each(["first_name", "last_name", "business_name", "city", "address", "phone"])(
+    it.each(["first_name", "last_name", "business_name", "city_id", "address", "phone"])(
       "returns 400 without %s",
       async (field) => {
         const store = await registerAndLogin(STORE, "STORE");
@@ -72,6 +91,21 @@ describe("Users routes", () => {
         expect(response.body.error).toBe("First name, last name, business name, city, address and phone are required.");
       },
     );
+
+    it("returns 400 when city_id is left out", async () => {
+      const store = await registerAndLogin(STORE, "STORE");
+      const { city_id: _cityId, ...withoutCity } = PROFILE;
+      const response = await store.put("/api/users/me").send(withoutCity);
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("First name, last name, business name, city, address and phone are required.");
+    });
+
+    it.each([999999, "abc", -1, 1.5])("returns 400 for an unknown or invalid city_id (%s)", async (value) => {
+      const store = await registerAndLogin(STORE, "STORE");
+      const response = await store.put("/api/users/me").send({ ...PROFILE, city_id: value });
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Invalid city.");
+    });
   });
 
   describe("GET /api/users/stores", () => {
@@ -101,14 +135,31 @@ describe("Users routes", () => {
       expect(response.body.stores[0].active_products).toBe("2");
     });
 
-    it("filters by city, case-insensitively, and lists only stores", async () => {
+    it("filters by city_id and lists only stores", async () => {
       await restaurant.put("/api/users/me").send({ ...PROFILE, business_name: "Restoran" });
+      const other = await registerAndLogin(STORE_2, "STORE");
+      await other.put("/api/users/me").send({ ...PROFILE, business_name: "Zenica Market Users", city_id: zenica });
 
-      const response = await restaurant.get("/api/users/stores").query({ city: "testo" });
+      const response = await restaurant.get("/api/users/stores").query({ city_id: PROFILE.city_id });
       expect(response.status).toBe(200);
-      expect(response.body.stores.map((s: { business_name: string }) => s.business_name)).toEqual([
-        PROFILE.business_name,
-      ]);
+      expect(response.body.stores).toHaveLength(1);
+      expect(response.body.stores[0]).toMatchObject({
+        business_name: PROFILE.business_name,
+        city_id: PROFILE.city_id,
+        city: "Olovo",
+      });
+    });
+
+    it("ignores an empty city_id", async () => {
+      const response = await restaurant.get("/api/users/stores").query({ city_id: "", business_name: PROFILE.business_name });
+      expect(response.status).toBe(200);
+      expect(response.body.stores).toHaveLength(1);
+    });
+
+    it.each(["999999", "abc"])("returns 400 for an unknown or invalid city_id (%s)", async (value) => {
+      const response = await restaurant.get("/api/users/stores").query({ city_id: value });
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Invalid filter.");
     });
 
     it("lists only the caller's favorite stores with favorites=true", async () => {
@@ -117,10 +168,10 @@ describe("Users routes", () => {
       const favoriteId = await userId(STORE);
       await restaurant.post("/api/favorites").send({ store_id: favoriteId });
 
-      const all = await restaurant.get("/api/users/stores").query({ city: "Testograd" });
+      const all = await restaurant.get("/api/users/stores").query({ city_id: PROFILE.city_id });
       expect(all.body.stores).toHaveLength(2);
 
-      const response = await restaurant.get("/api/users/stores").query({ city: "Testograd", favorites: "true" });
+      const response = await restaurant.get("/api/users/stores").query({ city_id: PROFILE.city_id, favorites: "true" });
       expect(response.status).toBe(200);
       expect(response.body.stores.map((s: { id: number }) => s.id)).toEqual([favoriteId]);
     });
@@ -148,7 +199,11 @@ describe("Users routes", () => {
 
       const response = await restaurant.get(`/api/users/stores/${await userId(STORE)}`);
       expect(response.status).toBe(200);
-      expect(response.body.store).toMatchObject({ business_name: PROFILE.business_name, city: PROFILE.city });
+      expect(response.body.store).toMatchObject({
+        business_name: PROFILE.business_name,
+        city_id: PROFILE.city_id,
+        city: "Olovo",
+      });
       expect(response.body.store.email).toBeUndefined();
       expect(response.body.products).toBeUndefined();
       // Accepted but not picked up yet: not counted.

@@ -6,7 +6,7 @@ import api from "../api/axios.js";
 import i18n from "../i18n/config.js";
 import { AuthProvider } from "../context/AuthContext.jsx";
 import type { Notification } from "../context/NotificationsContext.js";
-import type { CreditSummary, DonationOffer, Product, Reservation, User } from "../types/index.js";
+import type { City, CreditSummary, DonationOffer, Product, Reservation, User } from "../types/index.js";
 
 export const apiMock = vi.mocked(api);
 export const t = i18n.t.bind(i18n);
@@ -70,7 +70,11 @@ export function renderWithProviders(
   ui: ReactElement,
   { route = "/", path = "/", user = null, get = {}, state }: RenderOptions = {},
 ) {
-  mockGet({ "/users/me": user ? { user } : axiosError(401, "Niste prijavljeni."), ...get });
+  mockGet({
+    "/users/me": user ? { user } : axiosError(401, "Niste prijavljeni."),
+    "/cities": { cities: CITIES },
+    ...get,
+  });
   return render(
     <AuthProvider>
       <MemoryRouter initialEntries={[state === undefined ? route : { pathname: route, state }]}>
@@ -82,6 +86,14 @@ export function renderWithProviders(
     </AuthProvider>,
   );
 }
+
+// A short city list for CitySelect, in the server's (Bosnian alphabetical) order.
+export const CITIES: City[] = [
+  { id: 1, name: "Sarajevo" },
+  { id: 2, name: "Tuzla" },
+  { id: 3, name: "Zenica" },
+  { id: 4, name: "Žepče" },
+];
 
 export const makeUser = (overrides: Partial<User> = {}): User => ({
   id: 1,

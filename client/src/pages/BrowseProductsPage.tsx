@@ -24,6 +24,7 @@ import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
 import ReserveProductModal from "../components/product/ReserveProductModal.js";
 import { inputStyle } from "../components/form/FormField.js";
+import CitySelect from "../components/form/CitySelect.js";
 import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { usePagedLimit } from "../hooks/usePagedLimit.js";
@@ -33,7 +34,7 @@ import type { Product } from "../types/index.js";
 function BrowseProductsPage() {
   const [category, setCategory] = useState("");
   const [name, setName] = useState("");
-  const [city, setCity] = useState("");
+  const [cityId, setCityId] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
   const [sort, setSort] = useState<MarketplaceSort>("newest");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -44,7 +45,7 @@ function BrowseProductsPage() {
   >;
   // The server leaves out fully reserved products and pages the rest; "Load more" raises the
   // limit, and any filter or sort change starts again from the first page.
-  const filters = { category, name, city, expiryWithinDays };
+  const filters = { category, name, city_id: cityId, expiryWithinDays };
   const query = { ...filters, sort };
   const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(query));
   const {
@@ -59,7 +60,7 @@ function BrowseProductsPage() {
   // The sort is not a filter, so it stays.
   const clearFilters = () => {
     setName("");
-    setCity("");
+    setCityId("");
     setCategory("");
     setExpiryWithinDays("");
   };
@@ -69,7 +70,7 @@ function BrowseProductsPage() {
   }
 
   const totalCount = total ?? visibleProducts.length;
-  const hasActiveFilters = Boolean(name || city || category || expiryWithinDays);
+  const hasActiveFilters = Boolean(name || cityId || category || expiryWithinDays);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
@@ -117,11 +118,11 @@ function BrowseProductsPage() {
           </select>
         </FilterField>
         <FilterField icon={MapPin}>
-          <input
-            type="text"
-            placeholder={t("filters.searchByCity")}
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
+          <CitySelect
+            value={cityId}
+            onChange={setCityId}
+            emptyLabel={t("cities.all")}
+            aria-label={t("cities.label")}
             className={inputStyle}
           />
         </FilterField>

@@ -63,6 +63,17 @@ describe("AdminUsersPage", () => {
 
     await userEvent.click(screen.getByRole("button", { name: t("admin.common.next") }));
     await waitFor(() => expect(respond).toHaveBeenLastCalledWith(expect.objectContaining({ offset: 20 })));
+
+    // A city from the list, sent as its id; choosing one goes back to the first page.
+    const city = screen.getByLabelText(t("cities.label"));
+    expect(city).toHaveDisplayValue(t("cities.all"));
+    await screen.findByRole("option", { name: "Zenica" });
+    await userEvent.selectOptions(city, "Zenica");
+    await waitFor(() =>
+      expect(respond).toHaveBeenLastCalledWith(expect.objectContaining({ city_id: "3", offset: 0 })),
+    );
+    await userEvent.click(screen.getByRole("button", { name: t("filters.clear") }));
+    await waitFor(() => expect(respond).toHaveBeenLastCalledWith(expect.objectContaining({ city_id: "" })));
   });
 
   it("opens a user", async () => {

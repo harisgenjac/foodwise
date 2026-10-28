@@ -7,7 +7,8 @@ import { apiMock, axiosError, makeUser, renderWithProviders, t } from "../test/u
 const restaurant = makeUser({
   role: "RESTAURANT",
   business_name: "Bistro Most",
-  city: "Mostar",
+  city: "Zenica",
+  city_id: 3,
   phone: "061222333",
   address: "Rondo 2",
 });
@@ -43,6 +44,39 @@ describe("MyProfilePage feedback", () => {
 
     await waitFor(() => expect(errorToast).toHaveBeenCalledWith("Phone number is not valid."));
     expect(screen.queryByText("Phone number is not valid.")).not.toBeInTheDocument();
+  });
+
+  it("picks the city from the list and sends its id", async () => {
+    apiMock.put.mockResolvedValue({ data: { message: "Profile updated." } });
+    renderPage();
+
+    const city = await screen.findByLabelText(t("cities.label"));
+    await waitFor(() => expect(city).toHaveDisplayValue("Zenica"));
+    expect(screen.getByText("Rondo 2, Zenica")).toBeInTheDocument();
+
+    await userEvent.selectOptions(city, "Tuzla");
+    await userEvent.click(screen.getByRole("button", { name: t("user.saveButton") }));
+    await waitFor(() =>
+      expect(apiMock.put).toHaveBeenCalledWith("/users/me", expect.objectContaining({ city_id: 2 })),
+    );
+  });
+
+  it("requires a city like the other required fields", async () => {
+    renderWithProviders(<MyProfilePage />, {
+      route: "/my-profile",
+      path: "/my-profile",
+      user: { ...restaurant, city: undefined, city_id: null },
+    });
+
+    const city = await screen.findByLabelText(t("cities.label"));
+    expect(await screen.findByDisplayValue("Bistro Most")).toBeInTheDocument();
+    expect(city).toHaveDisplayValue(t("cities.choose"));
+    expect(city).toHaveAttribute("aria-required", "true");
+
+    await userEvent.click(screen.getByRole("button", { name: t("user.saveButton") }));
+    expect(city).toHaveAccessibleDescription(t("common.fieldRequired"));
+    expect(city).toHaveFocus();
+    expect(apiMock.put).not.toHaveBeenCalled();
   });
 
   const chooseLogo = async (container: HTMLElement) => {

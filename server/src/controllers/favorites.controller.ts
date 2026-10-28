@@ -82,9 +82,10 @@ export const getFavorites = async (req: Request, res: Response) => {
     const restaurant_id = req.user!.id;
 
     const result = await pool.query(
-      `SELECT users.id, users.business_name, users.city, users.address, 
+      `SELECT users.id, users.business_name, users.city_id, cities.name AS city, users.address,
         users.logo_url, users.description, users.opening_hours, users.pickup_hours, users.phone FROM favorites 
         JOIN users ON favorites.store_id = users.id
+        LEFT JOIN cities ON cities.id = users.city_id
         WHERE favorites.restaurant_id = $1 AND users.is_blocked = false`,
       [restaurant_id],
     );

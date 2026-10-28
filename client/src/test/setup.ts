@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, configure } from "@testing-library/react";
 import i18n from "../i18n/config.js";
+import { resetCitiesCache } from "../hooks/useCities.js";
 
 // No test talks to the server: every file gets this mocked axios instance,
 // and tests set responses through the helpers in ./utils.tsx.
@@ -26,5 +27,6 @@ afterEach(async () => {
   // Forget the mocked responses and undo vi.spyOn (console, toast) so tests stay independent.
   vi.resetAllMocks();
   vi.restoreAllMocks();
+  resetCitiesCache();
   await i18n.changeLanguage("bs");
 });

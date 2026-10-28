@@ -97,3 +97,26 @@ describe("rejecting a reservation", () => {
     expect(apiMock.patch).toHaveBeenCalledWith("/reservations/7/reject");
   });
 });
+
+describe("filtering the store's reservations by city", () => {
+  it("sends the restaurant's city as an id from the list and clears it", async () => {
+    const respond = vi.fn(() => ({ reservations: [PENDING], total: 1 }));
+    renderWithProviders(<ReservationsPage />, {
+      route: "/reservations",
+      path: "/reservations",
+      user: makeUser({ role: "STORE" }),
+      get: { "/reservations/store": respond },
+    });
+    await screen.findByText("Piletina");
+
+    const city = screen.getByLabelText(t("cities.label"));
+    expect(city).toHaveDisplayValue(t("cities.all"));
+    await screen.findByRole("option", { name: "Tuzla" });
+    await userEvent.selectOptions(city, "Tuzla");
+    await waitFor(() => expect(respond).toHaveBeenLastCalledWith(expect.objectContaining({ city_id: "2" })));
+
+    await userEvent.click(screen.getByRole("button", { name: t("filters.clear") }));
+    expect(city).toHaveDisplayValue(t("cities.all"));
+    await waitFor(() => expect(respond).toHaveBeenLastCalledWith(expect.objectContaining({ city_id: "" })));
+  });
+});

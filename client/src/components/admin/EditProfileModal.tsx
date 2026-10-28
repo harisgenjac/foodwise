@@ -8,6 +8,7 @@ import api from "../../api/axios.js";
 import Modal from "../product/Modal.js";
 import FormField, { inputStyle } from "../form/FormField.js";
 import RequiredHint from "../form/RequiredHint.js";
+import CitySelect from "../form/CitySelect.js";
 import { useFormValidation } from "../../hooks/useFormValidation.js";
 import { isBlank, REQUIRED } from "../../utils/validation.js";
 import type { User } from "../../types/index.js";
@@ -23,7 +24,7 @@ type ProfileField =
   | "first_name"
   | "last_name"
   | "business_name"
-  | "city"
+  | "city_id"
   | "phone"
   | "address"
   | "opening_hours"
@@ -38,7 +39,7 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
     first_name: user.first_name ?? "",
     last_name: user.last_name ?? "",
     business_name: user.business_name ?? "",
-    city: user.city ?? "",
+    city_id: user.city_id ? String(user.city_id) : "",
     phone: user.phone ?? "",
     address: user.address ?? "",
     opening_hours: user.opening_hours ?? "",
@@ -55,7 +56,7 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
     ...(isBusiness
       ? [
           { field: "business_name" as const, label: t("admin.userDetails.businessName"), icon: Building2, wide: true, required: true },
-          { field: "city" as const, label: t("admin.userDetails.city"), icon: MapPin, required: true },
+          { field: "city_id" as const, label: t("admin.userDetails.city"), icon: MapPin, required: true },
           { field: "phone" as const, label: t("admin.userDetails.phone"), icon: Phone, required: true },
           { field: "address" as const, label: t("admin.userDetails.address"), icon: MapPin, wide: true, required: true },
           { field: "opening_hours" as const, label: t("admin.userDetails.openingHours"), icon: Clock },
@@ -102,19 +103,32 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
         )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {fields.map(({ field, label, icon, wide, required }) => (
-            <div key={field} className={wide ? "sm:col-span-2" : undefined}>
-              <FormField label={label} icon={icon} required={required ?? false} error={errorFor(field)}>
-                <input
-                  type="text"
-                  value={values[field]}
-                  onChange={(e) => setValues((current) => ({ ...current, [field]: e.target.value }))}
-                  onBlur={blur(field)}
-                  className={inputStyle}
-                />
-              </FormField>
-            </div>
-          ))}
+          {fields.map(({ field, label, icon, wide, required }) => {
+            const setValue = (value: string) => setValues((current) => ({ ...current, [field]: value }));
+            return (
+              <div key={field} className={wide ? "sm:col-span-2" : undefined}>
+                <FormField label={label} icon={icon} required={required ?? false} error={errorFor(field)}>
+                  {field === "city_id" ? (
+                    <CitySelect
+                      value={values.city_id}
+                      onChange={setValue}
+                      emptyLabel={t("cities.choose")}
+                      onBlur={blur(field)}
+                      className={inputStyle}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={values[field]}
+                      onChange={(e) => setValue(e.target.value)}
+                      onBlur={blur(field)}
+                      className={inputStyle}
+                    />
+                  )}
+                </FormField>
+              </div>
+            );
+          })}
           {isBusiness && (
             <div className="sm:col-span-2">
               <FormField label={t("admin.userDetails.description")} icon={FileText}>

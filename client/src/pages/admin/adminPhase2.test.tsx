@@ -16,6 +16,7 @@ const store = makeUser({
   email: "market@test.com",
   business_name: "Market Centar",
   city: "Sarajevo",
+  city_id: 1,
   phone: "061111111",
   address: "Titova 1",
   is_blocked: false,
@@ -44,14 +45,13 @@ describe("Editing a profile as admin", () => {
     await userEvent.click(await screen.findByRole("button", { name: t("admin.userDetails.editProfile") }));
     const dialog = screen.getByRole("dialog");
     const city = within(dialog).getByLabelText(t("admin.userDetails.city"));
-    expect(city).toHaveValue("Sarajevo");
-    await userEvent.clear(city);
-    await userEvent.type(city, "Zenica");
+    await waitFor(() => expect(city).toHaveDisplayValue("Sarajevo"));
+    await userEvent.selectOptions(city, "Zenica");
     await userEvent.click(within(dialog).getByRole("button", { name: t("admin.userDetails.saveProfile") }));
 
     expect(apiMock.put).toHaveBeenCalledWith(
       "/admin/users/5/profile",
-      expect.objectContaining({ business_name: "Market Centar", city: "Zenica", phone: "061111111" }),
+      expect.objectContaining({ business_name: "Market Centar", city_id: "3", phone: "061111111" }),
     );
     await waitFor(() => expect(success).toHaveBeenCalledWith("User profile updated."));
     await waitFor(() => expect(respond).toHaveBeenCalledTimes(2));
@@ -70,7 +70,8 @@ describe("Editing a profile as admin", () => {
     const city = within(dialog).getByLabelText(t("admin.userDetails.city"));
     expect(city).toHaveAttribute("aria-required", "true");
     expect(within(dialog).getByLabelText(t("admin.userDetails.openingHours"))).not.toHaveAttribute("aria-required");
-    await userEvent.clear(city);
+    await waitFor(() => expect(city).toHaveDisplayValue("Sarajevo"));
+    await userEvent.selectOptions(city, t("cities.choose"));
     await userEvent.click(within(dialog).getByRole("button", { name: t("admin.userDetails.saveProfile") }));
 
     expect(apiMock.put).not.toHaveBeenCalled();

@@ -72,7 +72,9 @@ export interface User {
   business_name?: string;
   logo_url?: string;
   address?: string;
+  // The city's name (for display) and its id in the city list (for forms and filters).
   city?: string;
+  city_id?: number | null;
   opening_hours?: string;
   pickup_hours?: string;
   description?: string;
@@ -433,4 +435,10 @@ export interface CreditTransaction {
   actor: "USER" | "ADMIN" | "SYSTEM";
   created_at: string;
   created_by_email: string | null;
+}
+
+// One entry of the fixed city list (GET /cities).
+export interface City {
+  id: number;
+  name: string;
 }

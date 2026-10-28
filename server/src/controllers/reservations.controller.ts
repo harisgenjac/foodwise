@@ -6,6 +6,7 @@ import { isValidDateTime } from "../utils/dates.js";
 import { parseId, parseNumber } from "../utils/params.js";
 import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import { HttpError } from "../utils/httpError.js";
+import { parseCityFilter } from "../utils/cities.js";
 import { chargeForReservation, refundForReservation } from "../services/creditService.js";
 
 export const RESERVATION_STATUSES = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
@@ -141,18 +142,20 @@ export const getReservationById = async (req: Request, res: Response) => {
     products.unit,
     products.store_id,
     stores.business_name,
-    stores.city,
+    store_cities.name AS city,
     stores.address AS store_address,
     stores.phone AS store_phone,
     stores.pickup_hours AS store_pickup_hours,
     restaurants.business_name AS restaurant_name,
-    restaurants.city AS restaurant_city,
+    restaurant_cities.name AS restaurant_city,
     restaurants.address AS restaurant_address,
     restaurants.phone AS restaurant_phone
     FROM reservations
     JOIN products ON reservations.product_id = products.id
     JOIN users AS stores ON products.store_id = stores.id
     JOIN users AS restaurants ON reservations.restaurant_id = restaurants.id
+    LEFT JOIN cities AS store_cities ON store_cities.id = stores.city_id
+    LEFT JOIN cities AS restaurant_cities ON restaurant_cities.id = restaurants.city_id
     WHERE reservations.id = $1
     AND (reservations.restaurant_id = $2 OR products.store_id = $2)`,
       [reservationId, restorantId],
@@ -210,6 +213,7 @@ const mineFilters = (query: Request["query"], restaurantId: number, includeStatu
   let from = `FROM reservations
   JOIN products ON reservations.product_id = products.id
   JOIN users ON products.store_id = users.id
+  LEFT JOIN cities ON cities.id = users.city_id
   WHERE reservations.restaurant_id = $1`;
   const values: (string | number)[] = [restaurantId];
 
@@ -264,7 +268,7 @@ export const getMineReservations = async (req: Request, res: Response) => {
     products.unit,
     products.store_id,
     users.business_name,
-    users.city`;
+    cities.name AS city`;
     let { from } = filters;
     // "active" is what still needs the restaurant's attention; without a scope, all statuses.
     if (scope === "active") {
@@ -331,7 +335,7 @@ export const getMineReservationsSummary = async (req: Request, res: Response) =>
 
 export const getStoreReservations = async (req: Request, res: Response) => {
   const store_id = req.user!.id;
-  const { status, name, city } = req.query;
+  const { status, name, city_id } = req.query;
   const page = parsePage(req.query, CARD_PAGE_SIZE);
   if (!page) {
     return res.status(400).json({ error: "Invalid filter." });
@@ -354,10 +358,11 @@ export const getStoreReservations = async (req: Request, res: Response) => {
         products.category,
         products.unit,
         users.business_name,
-        users.city`;
+        cities.name AS city`;
     let query = `FROM reservations
       JOIN products ON reservations.product_id = products.id
       JOIN users ON reservations.restaurant_id = users.id
+      LEFT JOIN cities ON cities.id = users.city_id
       WHERE products.store_id = $1`;
     let values: (string | number)[] = [store_id];
 
@@ -372,9 +377,14 @@ export const getStoreReservations = async (req: Request, res: Response) => {
       values.push(`%${name}%` as string);
       query += ` AND products.name ILIKE $${values.length}`;
     }
-    if (city) {
-      values.push(`%${city}%` as string);
-      query += ` AND users.city ILIKE $${values.length}`;
+    // The restaurant's city.
+    const cityFilter = await parseCityFilter(pool, city_id);
+    if ("invalid" in cityFilter) {
+      return res.status(400).json({ error: "Invalid filter." });
+    }
+    if (cityFilter.cityId !== null) {
+      values.push(cityFilter.cityId);
+      query += ` AND users.city_id = $${values.length}`;
     }
 
     const { rows, total } = await listPage(
@@ -689,13 +699,14 @@ export const getPickups = async (req: Request, res: Response) => {
         products.unit,
         products.store_id,
         parties.business_name,
-        parties.city,
+        cities.name AS city,
         parties.phone AS party_phone,
         parties.address AS party_address,
         parties.pickup_hours AS party_pickup_hours`;
     let query = `FROM reservations
       JOIN products ON reservations.product_id = products.id
       JOIN users AS parties ON ${partyJoin}
+      LEFT JOIN cities ON cities.id = parties.city_id
       WHERE ${owner}`;
     const values: (string | number)[] = [userId];
 

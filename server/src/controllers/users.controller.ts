@@ -8,6 +8,7 @@ import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import type { Role } from "../types/auth.js";
 import bcrypt from "bcrypt";
 import { hashPassword, validatePassword } from "../utils/accounts.js";
+import { CITY_NAME, cityExists, parseCityFilter } from "../utils/cities.js";
 
 const LOGO_URL_PREFIX = "/uploads/logos/";
 
@@ -28,7 +29,11 @@ export const getUser = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const result = await pool.query(
-      "SELECT id, first_name, last_name, email, role, business_name, logo_url, address, city, opening_hours, pickup_hours, description, phone, must_change_password, created_at FROM users WHERE id = $1",
+      `SELECT users.id, users.first_name, users.last_name, users.email, users.role, users.business_name,
+         users.logo_url, users.address, users.city_id, cities.name AS city, users.opening_hours,
+         users.pickup_hours, users.description, users.phone, users.must_change_password, users.created_at
+       FROM users LEFT JOIN cities ON cities.id = users.city_id
+       WHERE users.id = $1`,
       [userId],
     );
     return res.status(200).json({ user: result.rows[0] });
@@ -46,7 +51,8 @@ export interface UserFields {
   business_name: string;
   logo_url?: string;
   address?: string;
-  city: string;
+  // An id from the cities list (a number, or a numeric string).
+  city_id: unknown;
   opening_hours?: string;
   pickup_hours?: string;
   description?: string;
@@ -59,19 +65,19 @@ function validateUserFields(fields: UserFields) {
     business_name,
     logo_url,
     address,
-    city,
+    city_id,
     opening_hours,
     pickup_hours,
     description,
     phone,
   } = fields;
-  if (!first_name || !last_name || !business_name || !city || !address || !phone) {
+  if (!first_name || !last_name || !business_name || city_id == null || city_id === "" || !address || !phone) {
     return "First name, last name, business name, city, address and phone are required.";
   }
 }
 
-const PROFILE_COLUMNS =
-  "id, first_name, last_name, email, role, business_name, logo_url, address, city, opening_hours, pickup_hours, description, phone";
+const PROFILE_COLUMNS = `id, first_name, last_name, email, role, business_name, logo_url, address, city_id,
+  ${CITY_NAME}, opening_hours, pickup_hours, description, phone`;
 
 type ProfileResult = { error: string; user?: never } | { user: Record<string, unknown> | undefined; error?: never };
 
@@ -100,13 +106,16 @@ export const updateProfile = async (
   if (validationError) {
     return { error: validationError };
   }
+  const cityId = parseId(body.city_id);
+  if (cityId === null || !(await cityExists(db, cityId))) {
+    return { error: "Invalid city." };
+  }
   const {
     first_name,
     last_name,
     business_name,
     logo_url,
     address,
-    city,
     opening_hours,
     pickup_hours,
     description,
@@ -119,7 +128,7 @@ export const updateProfile = async (
        business_name = $3,
        logo_url = COALESCE($4, logo_url),
        address = $5,
-       city = $6,
+       city_id = $6,
        opening_hours = COALESCE($7, opening_hours),
        pickup_hours = COALESCE($8, pickup_hours),
        description = COALESCE($9, description),
@@ -132,7 +141,7 @@ export const updateProfile = async (
       business_name,
       logo_url,
       address,
-      city,
+      cityId,
       opening_hours,
       pickup_hours,
       description,
@@ -195,18 +204,19 @@ export const changePassword = async (req: Request, res: Response) => {
 
 export const getStores = async (req: Request, res: Response) => {
   try {
-    const { city, business_name, favorites } = req.query;
+    const { city_id, business_name, favorites } = req.query;
     const page = parsePage(req.query, CARD_PAGE_SIZE);
     if (!page) {
       return res.status(400).json({ error: "Invalid filter." });
     }
-    const columns = `users.id, users.business_name, users.city, users.address, users.logo_url,
+    const columns = `users.id, users.business_name, users.city_id, cities.name AS city, users.address, users.logo_url,
      users.description, users.opening_hours, users.pickup_hours, users.phone,
      (SELECT COUNT(*) FROM products
       WHERE products.store_id = users.id
         AND products.status = 'Available'
         AND products.expiry_date >= CURRENT_DATE) AS active_products`;
     let query = `FROM users
+     LEFT JOIN cities ON cities.id = users.city_id
      WHERE users.role = 'STORE' AND users.is_blocked = false AND users.business_name IS NOT NULL`;
 
     let values: (string | number)[] = [];
@@ -220,9 +230,13 @@ export const getStores = async (req: Request, res: Response) => {
       query += ` AND EXISTS (SELECT 1 FROM favorites WHERE favorites.store_id = users.id AND favorites.restaurant_id = $${values.length})`;
     }
 
-    if (city) {
-      values.push(`%${city}%` as string);
-      query += ` AND users.city ILIKE $${values.length}`;
+    const cityFilter = await parseCityFilter(pool, city_id);
+    if ("invalid" in cityFilter) {
+      return res.status(400).json({ error: "Invalid filter." });
+    }
+    if (cityFilter.cityId !== null) {
+      values.push(cityFilter.cityId);
+      query += ` AND users.city_id = $${values.length}`;
     }
 
     if (business_name) {
@@ -262,9 +276,10 @@ export const getStoreDetails = async (req: Request, res: Response) => {
     }
 
     const result = await pool.query(
-      `SELECT id, business_name, city, address, logo_url, 
-       description, opening_hours, pickup_hours, phone 
-       FROM users WHERE id = $1 AND role = 'STORE' AND is_blocked = false`,
+      `SELECT users.id, users.business_name, users.city_id, cities.name AS city, users.address, users.logo_url,
+       users.description, users.opening_hours, users.pickup_hours, users.phone
+       FROM users LEFT JOIN cities ON cities.id = users.city_id
+       WHERE users.id = $1 AND users.role = 'STORE' AND users.is_blocked = false`,
       [storeId],
     );
 

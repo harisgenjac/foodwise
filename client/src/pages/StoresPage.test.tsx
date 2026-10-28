@@ -72,4 +72,39 @@ describe("StoresPage", () => {
     await waitFor(() => expect(errorToast).toHaveBeenCalledWith("Store is already in favorites."));
     expect(screen.getByRole("button", { name: t("store.addToFavorites") })).toHaveAttribute("aria-pressed", "false");
   });
+
+  it("filters by a city from the list, with all cities as the default", async () => {
+    renderWithProviders(<StoresPage />, {
+      route: "/stores",
+      path: "/stores",
+      user: makeUser(),
+      get: {
+        "/favorites": { favorites: [] },
+        "/users/stores": (params: { city_id: string }) => ({
+          stores: params.city_id === "2" ? [store(2, "Tuzlanski")] : [store(1, "Prva"), store(2, "Tuzlanski")],
+        }),
+      },
+    });
+    expect(await screen.findByText("Prva")).toBeInTheDocument();
+
+    const city = screen.getByLabelText(t("cities.label"));
+    expect(city).toHaveDisplayValue(t("cities.all"));
+    await screen.findByRole("option", { name: "Tuzla" });
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      t("cities.all"),
+      "Sarajevo",
+      "Tuzla",
+      "Zenica",
+      "Žepče",
+    ]);
+    await userEvent.selectOptions(city, "Tuzla");
+    await waitFor(() => expect(screen.queryByText("Prva")).not.toBeInTheDocument());
+    expect(apiMock.get.mock.calls.filter(([url]) => url === "/users/stores").at(-1)?.[1]?.params).toMatchObject({
+      city_id: "2",
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: t("filters.clear") }));
+    expect(await screen.findByText("Prva")).toBeInTheDocument();
+    expect(city).toHaveDisplayValue(t("cities.all"));
+  });
 });
