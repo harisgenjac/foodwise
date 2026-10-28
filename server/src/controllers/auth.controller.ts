@@ -25,10 +25,11 @@ function validateRegFields(fields: RegisterBody) {
   return validateEmail(email) ?? validatePassword(password);
 }
 
-// Store, restaurant and admin accounts are created by an admin (POST /api/admin/users).
+// Store, restaurant and admin accounts are created by an admin (POST /api/admin/users), company
+// headquarters accounts together with their company (POST /api/admin/companies).
 // Public registration is kept for the planned recipient roles (individuals, public kitchens,
 // humanitarian organizations); none of them exists yet, so the list is empty.
-const ADMIN_CREATED_ROLES = ["STORE", "RESTAURANT", "ADMIN"];
+const ADMIN_CREATED_ROLES = ["STORE", "RESTAURANT", "ADMIN", "COMPANY"];
 const PUBLIC_ROLES: string[] = [];
 
 interface LoginBody {
@@ -101,9 +102,14 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ error: validationError });
     }
 
-    const result = await pool.query("SELECT * FROM users WHERE LOWER(email) = $1", [
-      normalizeEmail(email),
-    ]);
+    const result = await pool.query(
+      `SELECT users.id, users.first_name, users.last_name, users.email, users.role, users.password_hash,
+         users.must_change_password, users.is_blocked, users.blocked_reason,
+         companies.is_blocked AS company_is_blocked, companies.blocked_reason AS company_blocked_reason
+       FROM users LEFT JOIN companies ON companies.id = users.company_id
+       WHERE LOWER(users.email) = $1`,
+      [normalizeEmail(email)],
+    );
     if (result.rows.length === 0) {
       return res.status(400).json({ error: "Incorrect email or password." });
     }
@@ -112,8 +118,11 @@ export const login = async (req: Request, res: Response) => {
     if (!isMatch) {
       return res.status(400).json({ error: "Incorrect email or password." });
     }
-    if (user.is_blocked) {
-      const reason = user.blocked_reason ? ` Reason: ${user.blocked_reason}` : "";
+    // The account's own block comes first; otherwise a blocked company blocks its users with
+    // the company's reason.
+    if (user.is_blocked || user.company_is_blocked) {
+      const blockedReason = user.is_blocked ? user.blocked_reason : user.company_blocked_reason;
+      const reason = blockedReason ? ` Reason: ${blockedReason}` : "";
       return res.status(403).json({ error: `Your account is blocked.${reason}` });
     }
     const token = jwt.sign(

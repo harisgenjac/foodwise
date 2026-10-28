@@ -145,6 +145,7 @@ After `npm run seed`, every demo account uses the password `To12345678`:
 | Store (10) | `market.centar@demo.com`, `zeleni.market@demo.com`, `mesnica.bosna@demo.com`, `pekara.dobra@demo.com`, `mljekara.vrelo@demo.com`, `ribarnica.neretva@demo.com`, `market.neretva@demo.com`, `vocarna.butmir@demo.com`, `pekara.somun@demo.com`, `bio.kutak@demo.com` |
 | Restaurant (10) | `restoran.ukus@demo.com`, `bistro.avlija@demo.com`, `pizzeria.roma@demo.com`, `restoran.starigrad@demo.com`, `kafana.most@demo.com`, `restoran.panorama@demo.com`, `bistro.zelenikutak@demo.com`, `pizzeria.napoli@demo.com`, `restoran.tvrdjava@demo.com`, `ascinica.sofra@demo.com` |
 | Admin | `admin@demo.com`, `admin2@demo.com` |
+| Company HQ (Bingo d.o.o.) | `bingo@demo.com` |
 
 The seed deletes all existing data and rebuilds the last two months of activity: products, reservations in every status, donations, subscriptions and credits, notifications and announcements.
 

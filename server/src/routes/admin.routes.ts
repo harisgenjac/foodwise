@@ -28,6 +28,14 @@ import {
   getUserLedger,
   rejectCreditRequest,
 } from "../controllers/adminCredits.controller.js";
+import {
+  blockCompany,
+  createCompany,
+  getCompanies,
+  getCompanyDetails,
+  unblockCompany,
+  updateCompany,
+} from "../controllers/adminCompanies.controller.js";
 import { getPlans } from "../controllers/credits.controller.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
 
@@ -52,6 +60,12 @@ router.get("/announcements", getAnnouncements);
 router.post("/announcements", createAnnouncement);
 router.post("/announcements/:id/end", endAnnouncement);
 router.get("/actions", getAdminActions);
+router.get("/companies", getCompanies);
+router.post("/companies", createCompany);
+router.get("/companies/:id", getCompanyDetails);
+router.put("/companies/:id", updateCompany);
+router.post("/companies/:id/block", blockCompany);
+router.post("/companies/:id/unblock", unblockCompany);
 // The active plans (the same list stores and restaurants see), for the overview's plan filter.
 router.get("/credits/plans", getPlans);
 router.get("/credits/overview", getCreditOverview);

@@ -23,7 +23,10 @@
     "adminAnnouncements": "Obavještenja",
     "credits": "Krediti",
     "adminCredits": "Krediti",
-    "adminCreditRequests": "Zahtjevi za kredite"
+    "adminCreditRequests": "Zahtjevi za kredite",
+    "adminCompanies": "Firme",
+    "companyOverview": "Pregled",
+    "companyProfile": "Profil firme"
   },
   "breadcrumbs": {
     "label": "Putanja",
@@ -64,7 +67,8 @@
     "adminRole": "Administrator",
     "accountBlocked": "Vaš nalog je blokiran.",
     "registrationClosed": "Naloge za prodavnice i restorane kreira administrator platforme. Obratite nam se da dobijete pristupne podatke.",
-    "accountByAdmin": "Nemate nalog? Nalog za prodavnicu ili restoran kreira administrator platforme."
+    "accountByAdmin": "Nemate nalog? Nalog za prodavnicu ili restoran kreira administrator platforme.",
+    "companyRole": "Centrala"
   },
   "product": {
     "addTitle": "Dodaj proizvod",
@@ -429,7 +433,8 @@
     "passwordMismatch": "Nove lozinke se ne podudaraju.",
     "changePassword": "Promijeni lozinku",
     "passwordChanged": "Lozinka je promijenjena.",
-    "passwordError": "Lozinka nije promijenjena. Pokušajte ponovo."
+    "passwordError": "Lozinka nije promijenjena. Pokušajte ponovo.",
+    "companyRole": "Centrala"
   },
   "dashboard": {
     "appTitle": "Dobrodošli na FoodWise",
@@ -844,7 +849,8 @@
     "roles": {
       "STORE": "Prodavnica",
       "RESTAURANT": "Restoran",
-      "ADMIN": "Administrator"
+      "ADMIN": "Administrator",
+      "COMPANY": "Centrala"
     },
     "actionTypes": {
       "CREATE_USER": "Kreiran nalog",
@@ -859,7 +865,11 @@
       "END_ANNOUNCEMENT": "Završeno obavještenje",
       "APPROVE_CREDIT_REQUEST": "Zahtjev za kredite odobren",
       "REJECT_CREDIT_REQUEST": "Zahtjev za kredite odbijen",
-      "ADJUST_CREDITS": "Krediti ispravljeni"
+      "ADJUST_CREDITS": "Krediti ispravljeni",
+      "CREATE_COMPANY": "Firma kreirana",
+      "UPDATE_COMPANY": "Firma izmijenjena",
+      "BLOCK_COMPANY": "Firma blokirana",
+      "UNBLOCK_COMPANY": "Firma odblokirana"
     },
     "common": {
       "cancel": "Odustani",
@@ -876,7 +886,8 @@
       "incompleteProfile": "Profil nije popunjen",
       "actionError": "Akcija nije uspjela. Pokušajte ponovo.",
       "remove": "Ukloni",
-      "pendingPassword": "Čeka promjenu lozinke"
+      "pendingPassword": "Čeka promjenu lozinke",
+      "companyBlocked": "Firma blokirana"
     },
     "dashboard": {
       "title": "Pregled platforme",
@@ -902,7 +913,8 @@
       "kpiSubscriptionsDetail": "{{percent}}% korisnika ima pretplatu",
       "kpiCreditsUsed": "Potrošeni krediti",
       "kpiCreditsUsedDetail": "u mjesecu {{month}}",
-      "kpiFoodSaved": "Spašena hrana (preuzeto)",      "attentionTitle": "Čeka na vas",
+      "kpiFoodSaved": "Spašena hrana (preuzeto)",
+      "attentionTitle": "Čeka na vas",
       "attention": {
         "pendingRequests_one": "{{count}} zahtjev za kredite čeka odobrenje",
         "pendingRequests_few": "{{count}} zahtjeva za kredite čekaju odobrenje",
@@ -986,7 +998,8 @@
       "pickupHours": "Vrijeme preuzimanja",
       "description": "Opis",
       "firstName": "Ime",
-      "lastName": "Prezime"
+      "lastName": "Prezime",
+      "company": "Firma"
     },
     "createUser": {
       "title": "Novi korisnik",
@@ -995,7 +1008,8 @@
       "roleDescriptions": {
         "STORE": "Prodaje proizvode pred istekom roka.",
         "RESTAURANT": "Kupuje i preuzima proizvode.",
-        "ADMIN": "Upravlja platformom."
+        "ADMIN": "Upravlja platformom.",
+        "COMPANY": "Upravlja lancem prodavnica."
       },
       "credentialsSection": "Pristupni podaci",
       "email": "Email",
@@ -1227,6 +1241,63 @@
         "RESERVATION_CHARGE": "Rezervacija",
         "RESERVATION_REFUND": "Povrat za rezervaciju"
       }
+    },
+    "companies": {
+      "title": "Firme",
+      "subtitle": "Lanci prodavnica. Svaka firma ima pristup za centralu, a poslovnice dolaze uskoro.",
+      "newCompany": "Nova firma",
+      "search": "Naziv firme ili email centrale",
+      "columnCompany": "Firma",
+      "columnBranches": "Poslovnice",
+      "columnStatus": "Status",
+      "columnCreated": "Kreirana",
+      "emptyTitle": "Još nema firmi",
+      "emptySubtitle": "Kreirajte prvu firmu i pristup za njenu centralu.",
+      "noResultsTitle": "Nijedna firma ne odgovara filterima",
+      "noResultsSubtitle": "Promijenite pretragu ili očistite filtere.",
+      "count_one": "{{count}} firma",
+      "count_few": "{{count}} firme",
+      "count_other": "{{count}} firmi"
+    },
+    "createCompany": {
+      "title": "Nova firma",
+      "subtitle": "Kreirajte firmu i pristup za njenu centralu.",
+      "companySection": "Firma",
+      "name": "Naziv firme",
+      "loginSection": "Pristup za centralu",
+      "email": "Email centrale",
+      "password": "Privremena lozinka",
+      "infoTitle": "Šta slijedi",
+      "infoText": "Proslijedite email i lozinku centrali. Pri prvoj prijavi centrala bira svoju lozinku i upisuje ime, prezime i telefon. Naziv firme kasnije mijenja samo administrator.",
+      "submit": "Kreiraj firmu",
+      "success": "Firma je kreirana.",
+      "error": "Firma nije kreirana. Pokušajte ponovo."
+    },
+    "companyDetails": {
+      "back": "Nazad na firme",
+      "notFoundTitle": "Firma nije pronađena",
+      "notFoundSubtitle": "Možda je obrisana ili link nije ispravan.",
+      "name": "Naziv firme",
+      "description": "Opis",
+      "edit": "Uredi firmu",
+      "editTitle": "Uredi firmu",
+      "editText": "Izmjene podataka firme {{name}}.",
+      "save": "Sačuvaj",
+      "block": "Blokiraj firmu",
+      "unblock": "Odblokiraj firmu",
+      "blockTitle": "Blokirati firmu?",
+      "blockText": "Centrala i sve poslovnice firme {{name}} odmah se odjavljuju i ne mogu se prijaviti, a ponude poslovnica nestaju za restorane. Rezervacije na čekanju se otkazuju, prihvaćene ostaju.",
+      "confirmBlock": "Blokiraj",
+      "unblockTitle": "Odblokirati firmu?",
+      "unblockText": "Centrala i poslovnice firme {{name}} ponovo mogu raditi. Poslovnica koju je administrator blokirao posebno ostaje blokirana.",
+      "confirmUnblock": "Odblokiraj",
+      "blockedSection": "Firma je blokirana",
+      "hqSection": "Pristup za centralu",
+      "profileNotFilled": "Profil još nije popunjen",
+      "branchesSection": "Poslovnice",
+      "noBranchesTitle": "Još nema poslovnica",
+      "noBranchesSubtitle": "Poslovnice firme će se dodavati u sljedećem koraku.",
+      "historySection": "Nedavne akcije"
     }
   },
   "announcements": {
@@ -1377,6 +1448,27 @@
       "legendUnused": "Neiskorišteno",
       "legendNone": "Bez pretplate ili budući mjesec",
       "noUsage": "U ovoj godini još nema potrošenih kredita."
+    }
+  },
+  "company": {
+    "overview": {
+      "greeting": "Dobro došli, {{name}}",
+      "branchCount_one": "{{count}} poslovnica",
+      "branchCount_few": "{{count}} poslovnice",
+      "branchCount_other": "{{count}} poslovnica",
+      "editProfile": "Profil firme",
+      "branchesTitle": "Poslovnice",
+      "noBranchesTitle": "Još nemate poslovnica",
+      "noBranchesSubtitle": "Ovdje će se prikazati poslovnice vaše firme kada ih administrator doda."
+    },
+    "profile": {
+      "subtitle": "Opis i logo vide se na stranicama firme.",
+      "companySection": "Podaci firme",
+      "name": "Naziv firme",
+      "nameNote": "Naziv firme mijenja administrator. Javite se administratoru ako ga treba promijeniti.",
+      "description": "Opis",
+      "logoLabel": "Logo firme",
+      "saveError": "Profil firme nije sačuvan. Pokušajte ponovo."
     }
   }
 }

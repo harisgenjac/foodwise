@@ -33,7 +33,9 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req: Request, file, cb) => {
-    const uniqueName = `${req.user!.id}-${Date.now()}${EXTENSIONS[file.mimetype]}`;
+    // A company headquarters uploads its company's logo, so its files are named apart.
+    const prefix = req.user!.role === 'COMPANY' ? 'company-' : '';
+    const uniqueName = `${prefix}${req.user!.id}-${Date.now()}${EXTENSIONS[file.mimetype]}`;
     cb(null, uniqueName);
   },
 });

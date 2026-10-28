@@ -26,6 +26,7 @@ import {
 import {
   ADMINS,
   ANNOUNCEMENTS,
+  COMPANIES,
   MEAL_TEMPLATES,
   PRODUCT_TEMPLATES,
   RESTAURANTS,
@@ -201,6 +202,7 @@ interface AdminActionTargets {
   reservationId?: number;
   announcementId?: number;
   creditRequestId?: number;
+  companyId?: number;
   reason?: string;
 }
 
@@ -208,8 +210,8 @@ const logAction = async (client: PoolClient, admin: Admin, action: string, creat
   await client.query(
     `INSERT INTO admin_actions
        (admin_id, action, target_user_id, target_product_id, target_donation_id, target_reservation_id,
-        target_announcement_id, target_credit_request_id, reason, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        target_announcement_id, target_credit_request_id, target_company_id, reason, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
     [
       admin.id,
       action,
@@ -219,6 +221,7 @@ const logAction = async (client: PoolClient, admin: Admin, action: string, creat
       targets.reservationId ?? null,
       targets.announcementId ?? null,
       targets.creditRequestId ?? null,
+      targets.companyId ?? null,
       targets.reason ?? null,
       createdAt,
     ],
@@ -234,7 +237,8 @@ async function seed() {
 
     console.log("Deleting existing data...");
     // Reservations, admin actions, announcements and the credit ledger reference users with
-    // RESTRICT; everything else cascades from users. The ledger is append-only and allows
+    // RESTRICT; everything else cascades from users, and companies go after their users
+    // (users.company_id is RESTRICT). The ledger is append-only and allows
     // deletes only with app.ledger_maintenance on (set for this transaction only).
     await client.query("SET LOCAL app.ledger_maintenance = 'on'");
     await client.query("DELETE FROM credit_transactions");
@@ -245,6 +249,7 @@ async function seed() {
     await client.query("DELETE FROM donation_offers");
     await client.query("DELETE FROM products");
     await client.query("DELETE FROM users");
+    await client.query("DELETE FROM companies");
 
     const plans = new Map<string, number>();
     for (const row of (await client.query<{ id: number; name: string }>("SELECT id, name FROM plans")).rows) {
@@ -280,6 +285,23 @@ async function seed() {
       if (index > 0) await logAction(client, admins[0]!, "CREATE_USER", createdAt, { userId: result.rows[0]!.id });
     }
     const [mainAdmin, secondAdmin] = [admins[0]!, admins[1]!];
+
+    // Companies (store chains) with their headquarters login; the demo login has its profile
+    // filled in and no temporary password, like the other demo accounts.
+    for (const [index, company] of COMPANIES.entries()) {
+      const createdAt = at(startDay, 9 + index * 0.5);
+      const companyRow = await client.query<{ id: number }>(
+        "INSERT INTO companies (name, description, created_at, updated_at) VALUES ($1, $2, $3, $3) RETURNING id",
+        [company.name, company.description, createdAt],
+      );
+      const id = companyRow.rows[0]!.id;
+      await client.query(
+        `INSERT INTO users (first_name, last_name, phone, email, password_hash, role, company_id, created_at)
+         VALUES ($1, $2, $3, $4, $5, 'COMPANY', $6, $7)`,
+        [company.hq.first_name, company.hq.last_name, company.hq.phone, company.hq.email, passwordHash, id, createdAt],
+      );
+      await logAction(client, mainAdmin, "CREATE_COMPANY", createdAt, { companyId: id });
+    }
     const anyAdmin = () => pick(admins);
 
     // Seed businesses name their city; the cities table (filled by a migration) holds the ids.
@@ -1034,6 +1056,7 @@ async function printSummary(stores: Business[], restaurants: Business[], reserva
   console.log(`Stores: ${stores.map((s) => s.data.email).join(", ")}`);
   console.log(`Restaurants: ${restaurants.map((r) => r.data.email).join(", ")}`);
   console.log(`Admins: ${ADMINS.map((a) => a.email).join(", ")}`);
+  console.log(`Company headquarters: ${COMPANIES.map((c) => `${c.hq.email} (${c.name})`).join(", ")}`);
 }
 
 seed();

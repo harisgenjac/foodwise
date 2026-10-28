@@ -4,20 +4,21 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
-import { Info, KeyRound, Lock, Mail, ShieldCheck, Store, UserPlus, UtensilsCrossed } from "lucide-react";
+import { Building2, Info, KeyRound, Lock, Mail, ShieldCheck, Store, UserPlus, UtensilsCrossed } from "lucide-react";
 import api from "../../api/axios.js";
 import FormSection from "../../components/form/FormSection.js";
 import FormField, { inputStyle } from "../../components/form/FormField.js";
 import RequiredHint from "../../components/form/RequiredHint.js";
 import { useFormValidation } from "../../hooks/useFormValidation.js";
 import { isBlank, REQUIRED } from "../../utils/validation.js";
-import { ROLES } from "../../utils/admin.js";
+import { CREATABLE_ROLES } from "../../utils/admin.js";
 import type { Role } from "../../types/index.js";
 
 const ROLE_ICONS: Record<Role, LucideIcon> = {
   STORE: Store,
   RESTAURANT: UtensilsCrossed,
   ADMIN: ShieldCheck,
+  COMPANY: Building2,
 };
 
 // The admin enters only the account type, email and password; the user fills in the rest
@@ -68,7 +69,7 @@ function AdminCreateUserPage() {
         <div className="space-y-6 lg:col-span-2">
           <FormSection title={t("admin.createUser.roleSection")} icon={ShieldCheck} required>
             <div role="radiogroup" aria-label={t("admin.createUser.roleSection")} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {ROLES.map((code) => {
+              {CREATABLE_ROLES.map((code) => {
                 const Icon = ROLE_ICONS[code];
                 const selected = role === code;
                 return (

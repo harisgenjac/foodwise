@@ -2,6 +2,7 @@ import { screen } from "@testing-library/react";
 import ProtectedRoute from "./ProtectedRoute.js";
 import PublicRoute from "./PublicRoute.js";
 import { makeUser, renderWithProviders } from "../test/utils.js";
+import type { Role } from "../types/index.js";
 
 describe("ProtectedRoute", () => {
   it("shows a spinner while the session is loading", () => {
@@ -38,6 +39,29 @@ describe("ProtectedRoute", () => {
       user: makeUser({ role: "ADMIN" }),
     });
     expect(await screen.findByTestId("location")).toHaveTextContent("/dashboard");
+  });
+
+  it("keeps a company headquarters out of store, restaurant and admin pages", async () => {
+    const hq = makeUser({ role: "COMPANY", company_id: 3 });
+    const guards: (Role | Role[])[] = [["STORE", "RESTAURANT"], "STORE", "RESTAURANT", "ADMIN"];
+    for (const role of guards) {
+      const { unmount } = renderWithProviders(<ProtectedRoute role={role}>Secret</ProtectedRoute>, {
+        route: "/guarded",
+        path: "/guarded",
+        user: hq,
+      });
+      expect(await screen.findByTestId("location")).toHaveTextContent("/dashboard");
+      unmount();
+    }
+  });
+
+  it("lets a company headquarters into its own pages", async () => {
+    renderWithProviders(<ProtectedRoute role="COMPANY">Company profile</ProtectedRoute>, {
+      route: "/company/profile",
+      path: "/company/profile",
+      user: makeUser({ role: "COMPANY", company_id: 3 }),
+    });
+    expect(await screen.findByText("Company profile")).toBeInTheDocument();
   });
 });
 

@@ -9,11 +9,12 @@ import type { Role } from "../types/auth.js";
 import bcrypt from "bcrypt";
 import { hashPassword, validatePassword } from "../utils/accounts.js";
 import { CITY_NAME, cityDistance, cityExists, parseCityFilter, parseRadius, userCityId } from "../utils/cities.js";
+import { visibleStore } from "../utils/visibility.js";
 
 const LOGO_URL_PREFIX = "/uploads/logos/";
 
 // Deletes a replaced logo. Only plain file names under uploads/logos are touched.
-const removeLogoFile = async (logoUrl: string | null | undefined) => {
+export const removeLogoFile = async (logoUrl: string | null | undefined) => {
   if (!logoUrl || !logoUrl.startsWith(LOGO_URL_PREFIX)) return;
   const fileName = logoUrl.slice(LOGO_URL_PREFIX.length);
   if (fileName !== path.basename(fileName)) return;
@@ -31,8 +32,11 @@ export const getUser = async (req: Request, res: Response) => {
     const result = await pool.query(
       `SELECT users.id, users.first_name, users.last_name, users.email, users.role, users.business_name,
          users.logo_url, users.address, users.city_id, cities.name AS city, users.opening_hours,
-         users.pickup_hours, users.description, users.phone, users.must_change_password, users.created_at
-       FROM users LEFT JOIN cities ON cities.id = users.city_id
+         users.pickup_hours, users.description, users.phone, users.must_change_password, users.created_at,
+         users.company_id, companies.name AS company_name, companies.logo_url AS company_logo_url
+       FROM users
+       LEFT JOIN cities ON cities.id = users.city_id
+       LEFT JOIN companies ON companies.id = users.company_id
        WHERE users.id = $1`,
       [userId],
     );
@@ -82,7 +86,8 @@ const PROFILE_COLUMNS = `id, first_name, last_name, email, role, business_name, 
 type ProfileResult = { error: string; user?: never } | { user: Record<string, unknown> | undefined; error?: never };
 
 // Shared by PUT /users/me and the admin's PUT /admin/users/:id/profile. An admin has no business
-// profile, so only the name changes. Optional fields use COALESCE, so they cannot be cleared.
+// profile, so only the name changes; a company headquarters login has a name and a phone (the
+// company's own data is under /api/company). Optional fields use COALESCE, so they cannot be cleared.
 export const updateProfile = async (
   db: Pool | PoolClient,
   userId: number,
@@ -98,6 +103,18 @@ export const updateProfile = async (
        WHERE id = $3
        RETURNING id, first_name, last_name, email, role`,
       [body.first_name, body.last_name, userId],
+    );
+    return { user: result.rows[0] };
+  }
+  if (role === "COMPANY") {
+    if (!body.first_name || !body.last_name || !body.phone) {
+      return { error: "First name, last name and phone are required." };
+    }
+    const result = await db.query(
+      `UPDATE users SET first_name = $1, last_name = $2, phone = $3
+       WHERE id = $4
+       RETURNING id, first_name, last_name, email, role, phone, company_id`,
+      [body.first_name, body.last_name, body.phone, userId],
     );
     return { user: result.rows[0] };
   }
@@ -230,7 +247,7 @@ export const getStores = async (req: Request, res: Response) => {
     let query = `FROM users
      LEFT JOIN cities ON cities.id = users.city_id
      LEFT JOIN cities AS from_city ON from_city.id = $1::integer
-     WHERE users.role = 'STORE' AND users.is_blocked = false AND users.business_name IS NOT NULL`;
+     WHERE users.role = 'STORE' AND ${visibleStore("users")}`;
 
     const values: (string | number | null)[] = [fromCity];
 
@@ -305,7 +322,7 @@ export const getStoreDetails = async (req: Request, res: Response) => {
       `SELECT users.id, users.business_name, users.city_id, cities.name AS city, users.address, users.logo_url,
        users.description, users.opening_hours, users.pickup_hours, users.phone
        FROM users LEFT JOIN cities ON cities.id = users.city_id
-       WHERE users.id = $1 AND users.role = 'STORE' AND users.is_blocked = false`,
+       WHERE users.id = $1 AND users.role = 'STORE' AND ${visibleStore("users")}`,
       [storeId],
     );
 

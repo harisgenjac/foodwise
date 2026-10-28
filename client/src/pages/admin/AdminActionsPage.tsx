@@ -28,6 +28,10 @@ const ACTION_STYLES: Record<AdminAction["action"], string> = {
   APPROVE_CREDIT_REQUEST: "bg-green-50 text-green-700",
   REJECT_CREDIT_REQUEST: "bg-red-50 text-red-600",
   ADJUST_CREDITS: "bg-amber-50 text-amber-700",
+  CREATE_COMPANY: "bg-green-50 text-green-700",
+  UPDATE_COMPANY: "bg-blue-50 text-blue-700",
+  BLOCK_COMPANY: "bg-red-50 text-red-600",
+  UNBLOCK_COMPANY: "bg-green-50 text-green-700",
 };
 
 function AdminActionsPage() {
@@ -122,12 +126,20 @@ function AdminActionsPage() {
                           )}
                         </p>
                       )}
+                      {row.target_company_id && (
+                        <Link
+                          to={`/admin/companies/${row.target_company_id}`}
+                          className="font-medium text-gray-900 hover:text-orange-600"
+                        >
+                          {row.company_name}
+                        </Link>
+                      )}
                       {row.target_user_id ? (
                         <Link to={`/admin/users/${row.target_user_id}`} className="text-gray-600 hover:text-orange-600">
                           {row.target_business_name || row.target_email}
                         </Link>
                       ) : (
-                        !row.announcement_title && <span className="text-gray-400">—</span>
+                        !row.announcement_title && !row.target_company_id && <span className="text-gray-400">—</span>
                       )}
                     </td>
                     <td className="hidden max-w-xs px-4 py-3 text-gray-600 lg:table-cell">{row.reason || "—"}</td>

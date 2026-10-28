@@ -23,7 +23,10 @@
     "adminAnnouncements": "Announcements",
     "credits": "Credits",
     "adminCredits": "Credits",
-    "adminCreditRequests": "Credit requests"
+    "adminCreditRequests": "Credit requests",
+    "adminCompanies": "Companies",
+    "companyOverview": "Overview",
+    "companyProfile": "Company profile"
   },
   "breadcrumbs": {
     "label": "Breadcrumb",
@@ -64,7 +67,8 @@
     "adminRole": "Administrator",
     "accountBlocked": "Your account is blocked.",
     "registrationClosed": "Store and restaurant accounts are created by the platform administrator. Contact us to get your login details.",
-    "accountByAdmin": "No account yet? Store and restaurant accounts are created by the platform administrator."
+    "accountByAdmin": "No account yet? Store and restaurant accounts are created by the platform administrator.",
+    "companyRole": "Company HQ"
   },
   "product": {
     "addTitle": "Add Product",
@@ -417,7 +421,8 @@
     "passwordMismatch": "The new passwords do not match.",
     "changePassword": "Change password",
     "passwordChanged": "Your password was changed.",
-    "passwordError": "The password was not changed. Please try again."
+    "passwordError": "The password was not changed. Please try again.",
+    "companyRole": "Company HQ"
   },
   "dashboard": {
     "appTitle": "Welcome to FoodWise",
@@ -824,7 +829,8 @@
     "roles": {
       "STORE": "Store",
       "RESTAURANT": "Restaurant",
-      "ADMIN": "Administrator"
+      "ADMIN": "Administrator",
+      "COMPANY": "Company HQ"
     },
     "actionTypes": {
       "CREATE_USER": "Account created",
@@ -839,7 +845,11 @@
       "END_ANNOUNCEMENT": "Announcement ended",
       "APPROVE_CREDIT_REQUEST": "Credit request approved",
       "REJECT_CREDIT_REQUEST": "Credit request rejected",
-      "ADJUST_CREDITS": "Credits adjusted"
+      "ADJUST_CREDITS": "Credits adjusted",
+      "CREATE_COMPANY": "Company created",
+      "UPDATE_COMPANY": "Company edited",
+      "BLOCK_COMPANY": "Company blocked",
+      "UNBLOCK_COMPANY": "Company unblocked"
     },
     "common": {
       "cancel": "Cancel",
@@ -856,7 +866,8 @@
       "incompleteProfile": "Profile not completed",
       "actionError": "The action failed. Please try again.",
       "remove": "Remove",
-      "pendingPassword": "Password change pending"
+      "pendingPassword": "Password change pending",
+      "companyBlocked": "Company blocked"
     },
     "dashboard": {
       "title": "Platform overview",
@@ -882,7 +893,8 @@
       "kpiSubscriptionsDetail": "{{percent}}% of businesses are subscribed",
       "kpiCreditsUsed": "Credits used",
       "kpiCreditsUsedDetail": "in {{month}}",
-      "kpiFoodSaved": "Food saved (picked up)",      "attentionTitle": "Needs attention",
+      "kpiFoodSaved": "Food saved (picked up)",
+      "attentionTitle": "Needs attention",
       "attention": {
         "pendingRequests_one": "{{count}} credit request waiting for approval",
         "pendingRequests_other": "{{count}} credit requests waiting for approval"
@@ -962,7 +974,8 @@
       "pickupHours": "Pickup hours",
       "description": "Description",
       "firstName": "First name",
-      "lastName": "Last name"
+      "lastName": "Last name",
+      "company": "Company"
     },
     "createUser": {
       "title": "New user",
@@ -971,7 +984,8 @@
       "roleDescriptions": {
         "STORE": "Sells products close to their expiry date.",
         "RESTAURANT": "Buys and picks up products.",
-        "ADMIN": "Manages the platform."
+        "ADMIN": "Manages the platform.",
+        "COMPANY": "Manages a chain of stores."
       },
       "credentialsSection": "Login details",
       "email": "Email",
@@ -1195,6 +1209,62 @@
         "RESERVATION_CHARGE": "Reservation",
         "RESERVATION_REFUND": "Reservation refund"
       }
+    },
+    "companies": {
+      "title": "Companies",
+      "subtitle": "Store chains. Each company has a headquarters login; branches are coming soon.",
+      "newCompany": "New company",
+      "search": "Company name or HQ email",
+      "columnCompany": "Company",
+      "columnBranches": "Branches",
+      "columnStatus": "Status",
+      "columnCreated": "Created",
+      "emptyTitle": "No companies yet",
+      "emptySubtitle": "Create the first company and its headquarters login.",
+      "noResultsTitle": "No companies match these filters",
+      "noResultsSubtitle": "Change the search or clear the filters.",
+      "count_one": "{{count}} company",
+      "count_other": "{{count}} companies"
+    },
+    "createCompany": {
+      "title": "New company",
+      "subtitle": "Create a company and its headquarters login.",
+      "companySection": "Company",
+      "name": "Company name",
+      "loginSection": "Headquarters login",
+      "email": "HQ email",
+      "password": "Temporary password",
+      "infoTitle": "What happens next",
+      "infoText": "Pass the email and password on to the headquarters. At the first login they choose their own password and enter a first name, last name and phone. Only an admin can change the company name later.",
+      "submit": "Create company",
+      "success": "Company created.",
+      "error": "The company was not created. Please try again."
+    },
+    "companyDetails": {
+      "back": "Back to companies",
+      "notFoundTitle": "Company not found",
+      "notFoundSubtitle": "It may have been deleted or the link is wrong.",
+      "name": "Company name",
+      "description": "Description",
+      "edit": "Edit company",
+      "editTitle": "Edit company",
+      "editText": "Change the details of {{name}}.",
+      "save": "Save",
+      "block": "Block company",
+      "unblock": "Unblock company",
+      "blockTitle": "Block the company?",
+      "blockText": "The headquarters and every branch of {{name}} are signed out at once and cannot sign in, and the branches' offers disappear for restaurants. Pending reservations are cancelled; accepted ones stay.",
+      "confirmBlock": "Block",
+      "unblockTitle": "Unblock the company?",
+      "unblockText": "The headquarters and branches of {{name}} can work again. A branch an admin blocked on its own stays blocked.",
+      "confirmUnblock": "Unblock",
+      "blockedSection": "The company is blocked",
+      "hqSection": "Headquarters login",
+      "profileNotFilled": "Profile not completed yet",
+      "branchesSection": "Branches",
+      "noBranchesTitle": "No branches yet",
+      "noBranchesSubtitle": "The company's branches will be added in the next step.",
+      "historySection": "Recent actions"
     }
   },
   "announcements": {
@@ -1342,6 +1412,26 @@
       "legendUnused": "Unused",
       "legendNone": "No subscription or future month",
       "noUsage": "No credits used in this year yet."
+    }
+  },
+  "company": {
+    "overview": {
+      "greeting": "Welcome, {{name}}",
+      "branchCount_one": "{{count}} branch",
+      "branchCount_other": "{{count}} branches",
+      "editProfile": "Company profile",
+      "branchesTitle": "Branches",
+      "noBranchesTitle": "You have no branches yet",
+      "noBranchesSubtitle": "Your company's branches will show here once an admin adds them."
+    },
+    "profile": {
+      "subtitle": "The description and logo appear on the company's pages.",
+      "companySection": "Company details",
+      "name": "Company name",
+      "nameNote": "An admin changes the company name. Contact an admin if it needs to change.",
+      "description": "Description",
+      "logoLabel": "Company logo",
+      "saveError": "The company profile was not saved. Please try again."
     }
   }
 }

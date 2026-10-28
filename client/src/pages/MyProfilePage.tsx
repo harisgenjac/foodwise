@@ -42,6 +42,7 @@ function MyProfilePage() {
   const [openingHours, setOpeningHours] = useState("");
   const [pickupHours, setPickupHours] = useState("");
   const [description, setDescription] = useState("");
+  const [companyName, setCompanyName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -64,6 +65,7 @@ function MyProfilePage() {
       setOpeningHours(data.opening_hours || "");
       setPickupHours(data.pickup_hours || "");
       setDescription(data.description || "");
+      setCompanyName(data.company_name || "");
       setLogoUrl(data.logo_url || "");
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -114,7 +116,11 @@ function MyProfilePage() {
     if (!validate()) return;
     setSaving(true);
     try {
-      await api.put("/users/me", isAdmin ? { first_name: firstName, last_name: lastName } : {
+      await api.put("/users/me", isAdmin ? { first_name: firstName, last_name: lastName } : isCompany ? {
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+      } : {
         first_name: firstName,
         last_name: lastName,
         business_name: businessName,
@@ -137,12 +143,26 @@ function MyProfilePage() {
   };
 
   const isStore = role === "STORE";
-  // An admin has no business profile or logo, only a name.
+  // An admin has no business profile or logo, only a name. A company headquarters login has a
+  // name and a phone; its company's data and logo are on the company profile page.
   const isAdmin = role === "ADMIN";
-  const RoleIcon = isAdmin ? ShieldCheck : isStore ? Store : UtensilsCrossed;
-  const roleLabel = isAdmin ? t("user.adminRole") : isStore ? t("user.storeRole") : t("user.restaurantRole");
+  const isCompany = role === "COMPANY";
+  const hasBusinessProfile = !isAdmin && !isCompany;
+  const RoleIcon = isAdmin ? ShieldCheck : isCompany ? Building2 : isStore ? Store : UtensilsCrossed;
+  const roleLabel = isAdmin
+    ? t("user.adminRole")
+    : isCompany
+      ? t("user.companyRole")
+      : isStore
+        ? t("user.storeRole")
+        : t("user.restaurantRole");
   // The server's required fields; an admin has only a name.
-  const requiredValues = { firstName, lastName, ...(!isAdmin && { businessName, city: cityId, phone, address }) };
+  const requiredValues = {
+    firstName,
+    lastName,
+    ...(isCompany && { phone }),
+    ...(hasBusinessProfile && { businessName, city: cityId, phone, address }),
+  };
   const { formRef, errorFor, blur, validate } = useFormValidation(
     Object.fromEntries(
       Object.entries(requiredValues).map(([field, value]) => [field, isBlank(value) ? REQUIRED : undefined]),
@@ -170,11 +190,11 @@ function MyProfilePage() {
                   {initials}
                 </span>
               )}
-              <span className={`absolute inset-0 ${isAdmin ? "hidden" : "flex"} flex-col items-center justify-center gap-1 bg-black/45 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100`}>
+              <span className={`absolute inset-0 ${hasBusinessProfile ? "flex" : "hidden"} flex-col items-center justify-center gap-1 bg-black/45 text-xs font-medium text-white opacity-0 transition-opacity group-hover:opacity-100`}>
                 <Camera className="h-5 w-5" />
                 {logoUrl ? t("user.changeLogo") : t("user.addLogoTitle")}
               </span>
-              <input type="file" accept="image/*" onChange={handleLogoChange} disabled={isAdmin} className="hidden" />
+              <input type="file" accept="image/*" onChange={handleLogoChange} disabled={!hasBusinessProfile} className="hidden" />
             </label>
           </div>
 
@@ -187,6 +207,12 @@ function MyProfilePage() {
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700">
                   <RoleIcon className="h-3.5 w-3.5" />
                   {roleLabel}
+                </span>
+              )}
+              {isCompany && companyName && (
+                <span className="inline-flex items-center gap-1.5">
+                  <Building2 className="h-4 w-4" />
+                  {companyName}
                 </span>
               )}
               <span className="inline-flex items-center gap-1.5">
@@ -221,7 +247,7 @@ function MyProfilePage() {
             </div>
           )}
         </div>
-        {!isAdmin && (
+        {hasBusinessProfile && (
           <p className="border-t border-gray-100 px-6 py-3 text-xs text-gray-400">{t("user.tooltipLogoText")}</p>
         )}
       </section>
@@ -248,6 +274,19 @@ function MyProfilePage() {
                   className={inputStyle}
                 />
               </FormField>
+              {isCompany && (
+                <div className="sm:col-span-2">
+                  <FormField label={t("user.phone")} icon={Phone} required error={errorFor("phone")}>
+                    <input
+                      type="text"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      onBlur={blur("phone")}
+                      className={inputStyle}
+                    />
+                  </FormField>
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <FormField label={t("user.email")} icon={Mail}>
                   <input type="email" value={email} disabled className={inputStyle} />
@@ -256,7 +295,7 @@ function MyProfilePage() {
             </div>
           </FormSection>
 
-          {!isAdmin && (
+          {hasBusinessProfile && (
           <>
           <FormSection title={t("user.businessSection")} icon={Building2}>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

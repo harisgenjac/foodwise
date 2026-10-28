@@ -31,10 +31,12 @@ type ProfileField =
   | "pickup_hours"
   | "description";
 
-// The admin corrects a user's profile; an admin account has only a name. The logo stays the user's.
+// The admin corrects a user's profile; an admin account has only a name, a company headquarters
+// login a name and a phone. The logo stays the user's.
 function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProps) {
   const { t } = useTranslation();
-  const isBusiness = user.role !== "ADMIN";
+  const isBusiness = user.role === "STORE" || user.role === "RESTAURANT";
+  const isCompany = user.role === "COMPANY";
   const [values, setValues] = useState<Record<ProfileField, string>>({
     first_name: user.first_name ?? "",
     last_name: user.last_name ?? "",
@@ -62,6 +64,9 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
           { field: "opening_hours" as const, label: t("admin.userDetails.openingHours"), icon: Clock },
           { field: "pickup_hours" as const, label: t("admin.userDetails.pickupHours"), icon: Truck },
         ]
+      : []),
+    ...(isCompany
+      ? [{ field: "phone" as const, label: t("admin.userDetails.phone"), icon: Phone, required: true }]
       : []),
   ];
 
