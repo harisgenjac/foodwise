@@ -46,6 +46,12 @@ export const NOTIFICATION_META: Record<NotificationType, { icon: LucideIcon; sty
   CREDIT_RENEWAL_CREATED: { icon: Coins, style: "bg-blue-50 text-blue-600" },
   CREDIT_REQUEST_EXPIRED: { icon: Coins, style: "bg-gray-100 text-gray-600" },
   CREDIT_RENEWAL_SKIPPED: { icon: Coins, style: "bg-amber-50 text-amber-600" },
+  BRANCH_TOPUP_REQUESTED: { icon: Coins, style: "bg-amber-50 text-amber-600" },
+  BRANCH_CREDIT_REQUEST_APPROVED: { icon: Coins, style: "bg-green-50 text-green-600" },
+  BRANCH_CREDIT_REQUEST_REJECTED: { icon: Coins, style: "bg-red-50 text-red-600" },
+  BRANCH_CREDIT_REQUEST_EXPIRED: { icon: Coins, style: "bg-gray-100 text-gray-600" },
+  CREDIT_TOPUP_COMPANY_APPROVED: { icon: Coins, style: "bg-blue-50 text-blue-600" },
+  CREDIT_TOPUP_COMPANY_REJECTED: { icon: Coins, style: "bg-red-50 text-red-600" },
 };
 
 // notifications.credits.<key> per credit notification type and request type.
@@ -56,6 +62,14 @@ const CREDIT_TEXT_KEYS: Partial<Record<NotificationType, { SUBSCRIPTION: string;
   // Renewals are always subscriptions.
   CREDIT_RENEWAL_CREATED: { SUBSCRIPTION: "renewalCreated", TOPUP: "renewalCreated" },
   CREDIT_REQUEST_EXPIRED: { SUBSCRIPTION: "subscriptionExpired", TOPUP: "topupExpired" },
+  // A branch's own top-up, decided by its headquarters (always a top-up).
+  CREDIT_TOPUP_COMPANY_APPROVED: { SUBSCRIPTION: "companyTopupApproved", TOPUP: "companyTopupApproved" },
+  CREDIT_TOPUP_COMPANY_REJECTED: { SUBSCRIPTION: "companyTopupRejected", TOPUP: "companyTopupRejected" },
+  // To a headquarters, about one of its branches.
+  BRANCH_TOPUP_REQUESTED: { SUBSCRIPTION: "branchTopupRequested", TOPUP: "branchTopupRequested" },
+  BRANCH_CREDIT_REQUEST_APPROVED: { SUBSCRIPTION: "branchSubscriptionApproved", TOPUP: "branchTopupApproved" },
+  BRANCH_CREDIT_REQUEST_REJECTED: { SUBSCRIPTION: "branchSubscriptionRejected", TOPUP: "branchTopupRejected" },
+  BRANCH_CREDIT_REQUEST_EXPIRED: { SUBSCRIPTION: "branchSubscriptionExpired", TOPUP: "branchTopupExpired" },
 };
 
 const DEFAULT_META = { icon: Bell, style: "bg-orange-50 text-orange-600" };
@@ -66,7 +80,9 @@ export const getNotificationMeta = (notification: Notification) =>
 // Reservation details first, then product details, then the donations page; untyped (older)
 // notifications go to the role's list.
 export const getNotificationLink = (notification: Notification, role: User["role"] | undefined) => {
-  // A headquarters' notification about one of its branches opens the branch page.
+  // A branch asking for credits waits on the headquarters' credits page; other notifications
+  // about one of its branches open the branch page.
+  if (notification.type === "BRANCH_TOPUP_REQUESTED") return "/company/credits";
   if (role === "COMPANY" && notification.branch_id) return `/company/branches/${notification.branch_id}`;
   if (notification.reservation_id) return `/reservation/${notification.reservation_id}`;
   if (notification.product_id) return `/products/${notification.product_id}`;
@@ -79,6 +95,9 @@ export const getNotificationLink = (notification: Notification, role: User["role
     return "/credits";
   }
   // Renewals and expired requests: My profile, where the user sees the request or picks a plan.
+  if (notification.type === "CREDIT_TOPUP_COMPANY_APPROVED" || notification.type === "CREDIT_TOPUP_COMPANY_REJECTED") {
+    return `/my-profile#${TOPUP_SECTION}`;
+  }
   if (notification.type === "CREDIT_REQUEST_EXPIRED" && notification.credit_request_type === "TOPUP") {
     return `/my-profile#${TOPUP_SECTION}`;
   }
@@ -103,13 +122,19 @@ export const getNotificationText = (notification: Notification, t: TFunction, la
   if (notification.type === "CREDIT_RENEWAL_SKIPPED") return t("notifications.types.CREDIT_RENEWAL_SKIPPED");
   const creditKeys = notification.type ? CREDIT_TEXT_KEYS[notification.type] : undefined;
   if (creditKeys) {
+    // A branch's request names its company: "Bingo d.o.o. → Bingo Tuzla".
+    const requester = notification.credit_company
+      ? `${notification.credit_company} → ${notification.credit_requester ?? ""}`
+      : (notification.credit_requester ?? "");
     // Without the joined request (deleted) the generic text of the type is used.
-    return notification.credit_request_type
+    const text = notification.credit_request_type
       ? t(`notifications.credits.${creditKeys[notification.credit_request_type]}`, {
           credits: notification.credit_amount ?? "",
-          requester: notification.credit_requester ?? "",
+          requester,
+          branch: notification.branch_name ?? notification.credit_requester ?? "",
         })
-      : t(`notifications.types.${notification.type}`);
+      : t(`notifications.types.${notification.type}`, { branch: notification.branch_name ?? "" });
+    return notification.details ? `${text} ${t("notifications.reason", { reason: notification.details })}` : text;
   }
   const text = notification.type?.startsWith("BRANCH_")
     ? t(`notifications.types.${notification.type}`, { branch: notification.branch_name ?? "" })

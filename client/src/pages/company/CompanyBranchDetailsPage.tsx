@@ -31,6 +31,7 @@ import DashboardReservationCard from "../../components/dashboard/DashboardReserv
 import ConfirmModal from "../../components/common/ConfirmModal.js";
 import SetPasswordModal from "../../components/admin/SetPasswordModal.js";
 import EditBranchModal from "../../components/company/EditBranchModal.js";
+import BranchCreditsCard from "../../components/company/BranchCreditsCard.js";
 import { FilterField } from "../../components/product/FilterBar.js";
 import { inputStyle } from "../../components/form/FormField.js";
 import LoadMore from "../../components/LoadMore.js";
@@ -288,6 +289,8 @@ function CompanyBranchDetailsPage() {
         </div>
       </section>
 
+      <BranchCreditsCard key={branch.status} branchId={branch.id} branchName={branch.business_name} deactivated={isDeactivated} />
+
       <section className="space-y-4">
         <div role="tablist" className="inline-flex w-fit flex-wrap rounded-full border border-gray-100 bg-white p-1 shadow-sm">
           {tabs.map(({ key, label, icon: Icon }) => (
@@ -340,6 +343,7 @@ function CompanyBranchDetailsPage() {
               <li>{t("company.branchDetails.deactivatePending")}</li>
               <li>{t("company.branchDetails.deactivateConfirmed")}</li>
               <li>{t("company.branchDetails.deactivateLogin")}</li>
+              <li>{t("company.branchDetails.deactivateCredits")}</li>
             </ul>
             <button
               type="button"

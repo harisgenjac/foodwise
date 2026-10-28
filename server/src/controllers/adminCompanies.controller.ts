@@ -437,9 +437,9 @@ const changeBranchActivation = async (req: Request, res: Response, deactivate: b
       await client.query("ROLLBACK");
       return res.status(404).json({ error: BRANCH_NOT_FOUND });
     }
-    let cancelledReservations = 0;
+    let closed = { cancelledReservations: 0, withdrawnRequests: 0 };
     if (deactivate) {
-      cancelledReservations = await deactivateBranch(client, branch, { actor: "ADMIN", userId: req.user!.id });
+      closed = await deactivateBranch(client, branch, { actor: "ADMIN", userId: req.user!.id });
     } else {
       await reactivateBranch(client, branch);
     }
@@ -453,7 +453,7 @@ const changeBranchActivation = async (req: Request, res: Response, deactivate: b
     await client.query("COMMIT");
     return res
       .status(200)
-      .json(deactivate ? { message: "Branch deactivated.", cancelledReservations } : { message: "Branch reactivated." });
+      .json(deactivate ? { message: "Branch deactivated.", ...closed } : { message: "Branch reactivated." });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
     if (error instanceof HttpError) {

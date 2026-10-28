@@ -29,6 +29,7 @@ export const getNotifications = async (req: Request, res: Response) => {
         credit_requests.request_type AS credit_request_type,
         credit_requests.credits AS credit_amount,
         COALESCE(requesters.business_name, requesters.email) AS credit_requester,
+        requester_companies.name AS credit_company,
         notifications.branch_id,
         branches.business_name AS branch_name
       FROM notifications
@@ -38,6 +39,7 @@ export const getNotifications = async (req: Request, res: Response) => {
       LEFT JOIN reservations ON notifications.reservation_id = reservations.id
       LEFT JOIN credit_requests ON notifications.credit_request_id = credit_requests.id
       LEFT JOIN users AS requesters ON credit_requests.user_id = requesters.id
+      LEFT JOIN companies AS requester_companies ON requesters.company_id = requester_companies.id
       LEFT JOIN users AS branches ON notifications.branch_id = branches.id
       WHERE notifications.user_id = $1
       ORDER BY notifications.created_at DESC, notifications.id DESC

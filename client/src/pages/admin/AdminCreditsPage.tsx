@@ -139,6 +139,7 @@ function AdminCreditsPage() {
               <thead className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
                 <tr>
                   <th className="px-4 py-3">{t("admin.credits.columnBusiness")}</th>
+                  <th className="hidden px-4 py-3 lg:table-cell">{t("admin.credits.columnCompany")}</th>
                   <th className="px-4 py-3">{t("admin.credits.columnPlan")}</th>
                   <SortableHeader label={t("admin.credits.columnUsed")} sortKey="used" {...sortProps} className="px-4 py-3 text-right" />
                   <SortableHeader
@@ -175,6 +176,7 @@ function AdminCreditsPage() {
                           {row.business_name && row.email}
                         </p>
                       </td>
+                      <td className="hidden px-4 py-3 text-teal-700 lg:table-cell">{row.company_name ?? ""}</td>
                       <td className="px-4 py-3">
                         {row.has_subscription ? (
                           <span className="font-medium text-gray-800">{row.plan_name}</span>

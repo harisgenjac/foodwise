@@ -12,6 +12,7 @@ import {
 import { storeDescription, storeLogo } from "../utils/branding.js";
 import { savedUnits } from "../controllers/dashboard.controller.js";
 import { cancelPendingReservations } from "../controllers/admin.controller.js";
+import { closeBranchCredits } from "./creditRequests.js";
 
 // Branches are STORE users with a company_id. Their headquarters (COMPANY) and admins create,
 // name, view, deactivate and reactivate them; the branch itself works like any store. These
@@ -164,7 +165,8 @@ export const setBranchPassword = async (db: Pool | PoolClient, branchId: number,
 // Deactivating closes a branch without losing its history: it is hidden from restaurants (its
 // products through the visibility condition, unchanged) and cannot sign in. Refused while
 // restaurants still wait to pick up accepted reservations; Pending ones are cancelled like a
-// block does (refund, notification without a reason). The branch row must be locked.
+// block does (refund, notification without a reason). Its open credit requests are withdrawn and
+// auto-renew is turned off (closeBranchCredits). The branch row must be locked.
 export const deactivateBranch = async (
   client: PoolClient,
   branch: BranchRow,
@@ -190,7 +192,8 @@ export const deactivateBranch = async (
     by.userId,
     branch.id,
   ]);
-  return cancelPendingReservations(
+  const withdrawnRequests = await closeBranchCredits(client, branch.id);
+  const cancelledReservations = await cancelPendingReservations(
     client,
     "products.store_id = $1",
     [branch.id],
@@ -198,6 +201,7 @@ export const deactivateBranch = async (
     by.userId,
     { actor: by.actor, storeClosed: true },
   );
+  return { cancelledReservations, withdrawnRequests };
 };
 
 // Its products that have not expired show again through the visibility condition.

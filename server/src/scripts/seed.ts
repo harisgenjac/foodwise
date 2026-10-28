@@ -160,6 +160,7 @@ interface NotificationLinks {
   donationId?: number;
   creditRequestId?: number;
   announcementId?: number;
+  branchId?: number;
   details?: string;
 }
 
@@ -176,8 +177,8 @@ const notify = async (
   await client.query(
     `INSERT INTO notifications
        (user_id, type, message, reservation_id, product_id, donation_id, credit_request_id, announcement_id, details,
-        is_read, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        is_read, created_at, branch_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
     [
       userId,
       type,
@@ -190,6 +191,7 @@ const notify = async (
       links.details ?? null,
       isRead,
       createdAt,
+      links.branchId ?? null,
     ],
   );
   counts.notifications++;
@@ -289,6 +291,8 @@ async function seed() {
     // Companies (store chains) with their headquarters login; the demo login has its profile
     // filled in and no temporary password, like the other demo accounts.
     const companyIds = new Map<string, number>();
+    // The headquarters login of each company, which asks and pays for its branches' credits.
+    const hqIds = new Map<string, number>();
     for (const [index, company] of COMPANIES.entries()) {
       const createdAt = at(startDay, 9 + index * 0.5);
       const companyRow = await client.query<{ id: number }>(
@@ -297,11 +301,12 @@ async function seed() {
       );
       const id = companyRow.rows[0]!.id;
       companyIds.set(company.name, id);
-      await client.query(
+      const hq = await client.query<{ id: number }>(
         `INSERT INTO users (first_name, last_name, phone, email, password_hash, role, company_id, created_at)
-         VALUES ($1, $2, $3, $4, $5, 'COMPANY', $6, $7)`,
+         VALUES ($1, $2, $3, $4, $5, 'COMPANY', $6, $7) RETURNING id`,
         [company.hq.first_name, company.hq.last_name, company.hq.phone, company.hq.email, passwordHash, id, createdAt],
       );
+      hqIds.set(company.name, hq.rows[0]!.id);
       await logAction(client, mainAdmin, "CREATE_COMPANY", createdAt, { companyId: id });
     }
     const anyAdmin = () => pick(admins);
@@ -367,18 +372,32 @@ async function seed() {
       autoRenew?: boolean;
       source?: "USER" | "AUTO_RENEW";
       createdAt: Date;
-      status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | "EXPIRED";
+      status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | "EXPIRED" | "COMPANY_REVIEW";
       reviewedAt?: Date;
       note?: string;
+      // A branch's own top-up: it asks its headquarters, which forwards it at this time (unset =
+      // still waiting for the headquarters).
+      fromBranch?: boolean;
+      companyApprovedAt?: Date;
     }
     // Mirrors the app: the user (or the renewal job) asks, the admins are told, an admin decides.
+    // A branch's requests are sent by its headquarters (source COMPANY), or asked by the branch
+    // and forwarded by the headquarters (source BRANCH); its headquarters hears of the decision too.
     const creditRequest = async (input: RequestInput) => {
       const reviewer = input.status === "APPROVED" || input.status === "REJECTED" ? anyAdmin() : null;
+      const company = input.user.store?.company;
+      const hqId = company === undefined ? undefined : hqIds.get(company);
+      let source: string = input.source ?? "USER";
+      let requestedBy: number | null = source === "AUTO_RENEW" ? null : input.user.id;
+      if (hqId !== undefined && source === "USER") {
+        source = input.fromBranch ? "BRANCH" : "COMPANY";
+        requestedBy = input.fromBranch && !input.companyApprovedAt ? input.user.id : hqId;
+      }
       const result = await client.query<{ id: number }>(
         `INSERT INTO credit_requests
            (user_id, request_type, plan_id, topup_package_id, period_month, auto_renew, status, admin_note,
-            created_at, reviewed_by, reviewed_at, source)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+            created_at, reviewed_by, reviewed_at, source, requested_by, company_reviewed_by, company_reviewed_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`,
         [
           input.user.id,
           input.type,
@@ -391,16 +410,31 @@ async function seed() {
           input.createdAt,
           reviewer?.id ?? null,
           reviewer ? (input.reviewedAt ?? null) : null,
-          input.source ?? "USER",
+          source,
+          requestedBy,
+          input.companyApprovedAt ? hqId : null,
+          input.companyApprovedAt ?? null,
         ],
       );
       const requestId = result.rows[0]!.id;
       const kind = input.type === "SUBSCRIPTION" ? "subscription" : "top-up";
+      let sentToAdminsAt = input.createdAt;
+      if (input.fromBranch && hqId !== undefined) {
+        await notify(client, hqId, "BRANCH_TOPUP_REQUESTED", "A branch asks for extra credits.", input.createdAt, {
+          creditRequestId: requestId,
+          branchId: input.user.id,
+        });
+        if (!input.companyApprovedAt) return requestId;
+        sentToAdminsAt = input.companyApprovedAt;
+        await notify(client, input.user.id, "CREDIT_TOPUP_COMPANY_APPROVED", "Your company sent your top-up request for approval.", sentToAdminsAt, {
+          creditRequestId: requestId,
+        });
+      }
       const createdMessage = input.source === "AUTO_RENEW"
         ? "New subscription renewal waiting for approval."
         : `New ${kind} request waiting for approval.`;
       for (const admin of admins) {
-        await notify(client, admin.id, "CREDIT_REQUEST_CREATED", createdMessage, input.createdAt, { creditRequestId: requestId });
+        await notify(client, admin.id, "CREDIT_REQUEST_CREATED", createdMessage, sentToAdminsAt, { creditRequestId: requestId });
       }
       if (!reviewer || !input.reviewedAt) return requestId;
 
@@ -438,6 +472,16 @@ async function seed() {
         input.reviewedAt,
         { creditRequestId: requestId },
       );
+      if (hqId !== undefined) {
+        await notify(
+          client,
+          hqId,
+          input.status === "APPROVED" ? "BRANCH_CREDIT_REQUEST_APPROVED" : "BRANCH_CREDIT_REQUEST_REJECTED",
+          `A branch ${kind} request was ${input.status === "APPROVED" ? "approved" : "rejected"}.`,
+          input.reviewedAt,
+          { creditRequestId: requestId, branchId: input.user.id },
+        );
+      }
       return requestId;
     };
 
@@ -950,6 +994,15 @@ async function seed() {
     await creditRequest({
       user: zeleniKutak, type: "TOPUP", credits: 10, periodMonth: creditMonth(now),
       createdAt: addHours(now, -1.5), status: "PENDING",
+    });
+    // Branch top-ups: one waiting for its headquarters, one the headquarters forwarded to the admin.
+    await creditRequest({
+      user: byEmail("bingo.zenica@demo.com"), type: "TOPUP", credits: 20, periodMonth: creditMonth(now),
+      createdAt: addHours(now, -3), status: "COMPANY_REVIEW", fromBranch: true,
+    });
+    await creditRequest({
+      user: byEmail("bingo.tuzla@demo.com"), type: "TOPUP", credits: 10, periodMonth: creditMonth(now),
+      createdAt: addHours(now, -5), status: "PENDING", fromBranch: true, companyApprovedAt: addHours(now, -4),
     });
 
     // ----- Final product statuses -----

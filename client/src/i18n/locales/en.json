@@ -27,7 +27,8 @@
     "adminCompanies": "Companies",
     "companyOverview": "Overview",
     "companyProfile": "Company profile",
-    "companyBranches": "Branches"
+    "companyBranches": "Branches",
+    "companyCredits": "Credits and plans"
   },
   "breadcrumbs": {
     "label": "Breadcrumb",
@@ -317,7 +318,13 @@
       "BRANCH_BLOCKED": "The platform administrator blocked the branch {{branch}}.",
       "BRANCH_UNBLOCKED": "The platform administrator unblocked the branch {{branch}}.",
       "BRANCH_DEACTIVATED": "The platform administrator deactivated the branch {{branch}}.",
-      "BRANCH_REACTIVATED": "The platform administrator reactivated the branch {{branch}}."
+      "BRANCH_REACTIVATED": "The platform administrator reactivated the branch {{branch}}.",
+      "BRANCH_TOPUP_REQUESTED": "Branch {{branch}} asks for extra credits.",
+      "BRANCH_CREDIT_REQUEST_APPROVED": "The request for branch {{branch}} was approved.",
+      "BRANCH_CREDIT_REQUEST_REJECTED": "The request for branch {{branch}} was rejected.",
+      "BRANCH_CREDIT_REQUEST_EXPIRED": "The request for branch {{branch}} expired.",
+      "CREDIT_TOPUP_COMPANY_APPROVED": "Your headquarters sent your extra credits request to an administrator.",
+      "CREDIT_TOPUP_COMPANY_REJECTED": "Your headquarters rejected your extra credits request."
     },
     "reason": "Reason: {{reason}}",
     "credits": {
@@ -329,7 +336,16 @@
       "topupRejected": "Your request for extra credits was rejected.",
       "renewalCreated": "Your subscription renewal request ({{credits}} credits) was sent for approval.",
       "subscriptionExpired": "Your subscription request expired before it was approved.",
-      "topupExpired": "Your request for extra credits expired before it was approved."
+      "topupExpired": "Your request for extra credits expired before it was approved.",
+      "companyTopupApproved": "Your headquarters sent your request for {{credits}} extra credits to an administrator for approval.",
+      "companyTopupRejected": "Your headquarters rejected your request for {{credits}} extra credits.",
+      "branchTopupRequested": "Branch {{branch}} asks for {{credits}} extra credits.",
+      "branchSubscriptionApproved": "The plan for branch {{branch}} ({{credits}} credits) was approved.",
+      "branchTopupApproved": "Extra credits for branch {{branch}} ({{credits}}) were approved.",
+      "branchSubscriptionRejected": "The plan request for branch {{branch}} was rejected.",
+      "branchTopupRejected": "The extra credits request for branch {{branch}} was rejected.",
+      "branchSubscriptionExpired": "The plan request for branch {{branch}} expired before it was approved.",
+      "branchTopupExpired": "The extra credits request for branch {{branch}} expired before it was approved."
     }
   },
   "store": {
@@ -1166,7 +1182,8 @@
       "columnPending": "Requests",
       "noPlan": "No subscription",
       "pendingCount_one": "{{count}} pending",
-      "pendingCount_other": "{{count}} pending"
+      "pendingCount_other": "{{count}} pending",
+      "columnCompany": "Company"
     },
     "creditRequests": {
       "title": "Credit requests",
@@ -1196,7 +1213,9 @@
       "approveText": "{{user}}: {{what}} for {{month}}. The credits are added right away.",
       "rejectText": "{{user}}: {{what}} for {{month}}. The user will be notified.",
       "note": "Internal note (optional)",
-      "noteHint": "The user never sees the note."
+      "noteHint": "The user never sees the note.",
+      "sentByCompany": "Requested by headquarters ({{email}})",
+      "sentByRenewal": "Sent by the renewal job"
     },
     "userCredits": {
       "title": "Credits",
@@ -1313,12 +1332,15 @@
       "noSubscription": "A subscription is required to publish products and make reservations.",
       "noCredits": "You have used up your credits for this month. You can buy extra credits.",
       "subscribeLink": "Choose a subscription",
-      "topUpLink": "Buy extra credits"
+      "topUpLink": "Buy extra credits",
+      "noCompanyPlan": "{{company}} has not chosen a plan for this month yet, so publishing products is not possible right now.",
+      "companyTopupLink": "Request extra credits from headquarters"
     },
     "hint": {
       "one": "This will use 1 credit ({{left}} left)",
       "perProduct": "Each product uses 1 credit ({{left}} left)",
-      "noSubscription": "This needs a subscription."
+      "noSubscription": "This needs a subscription.",
+      "noCompanyPlan": "{{company}} has not chosen a plan for this month yet."
     },
     "banner": {
       "none": "A subscription is required to publish products and make reservations.",
@@ -1330,7 +1352,11 @@
       "lowLink": "View credits",
       "pending": "Your subscription request is waiting for the administrator's approval.",
       "topupPending": "You have used all credits. Your request for extra credits is waiting for the administrator's approval.",
-      "pendingLink": "View request"
+      "pendingLink": "View request",
+      "companyNone": "{{company}} has not chosen a plan for this month yet.",
+      "companyEmpty": "You have used all credits for this month. Ask your headquarters for extra credits.",
+      "companyTopupLink": "Request extra credits from headquarters",
+      "companyTopupPending": "You have used all credits. Your extra credits request is waiting for your headquarters ({{company}}) or an administrator."
     },
     "requestTypes": {
       "SUBSCRIPTION": "Subscription",
@@ -1341,7 +1367,9 @@
       "APPROVED": "Approved",
       "REJECTED": "Rejected",
       "CANCELLED": "Withdrawn",
-      "EXPIRED": "Expired"
+      "EXPIRED": "Expired",
+      "COMPANY_REVIEW": "Waiting for HQ",
+      "COMPANY_REJECTED": "Rejected by HQ"
     },
     "profile": {
       "title": "Subscription and credits",
@@ -1384,13 +1412,28 @@
       "planCredits_one": "{{count}} credit per month",
       "planCredits_other": "{{count}} credits per month",
       "creditsCount_one": "{{count}} credit",
-      "creditsCount_other": "{{count}} credits"
+      "creditsCount_other": "{{count}} credits",
+      "paidByCompany": "Your plan is paid by {{company}}",
+      "companyManagesPlan": "{{company}} chooses and pays your branch's plan. If you need more credits this month, ask your headquarters below.",
+      "pendingAtCompany": "{{what}} for {{month}} is waiting for your headquarters.",
+      "pendingAtAdmin": "{{what}} for {{month}} is waiting for an administrator.",
+      "topupTitleCompany": "Request extra credits from headquarters",
+      "topupSubtitleCompany": "If you run out of credits before the month ends, {{company}} can approve extra ones.",
+      "topupNeedsCompanyPlan": "{{company}} has not chosen a plan for this month yet, so extra credits are not possible yet.",
+      "topupPendingAtCompany": "Your extra credits request is waiting for your headquarters ({{company}}).",
+      "requestTopupFromCompany": "Request extra credits from headquarters",
+      "topupSentToCompany": "Request sent to your headquarters.",
+      "companySource": "requested by {{company}}",
+      "companyNote": "Headquarters' note: {{note}}"
     },
     "topupModal": {
       "title": "Extra credits: +{{credits}}",
       "whatTitle": "What are extra credits?",
       "what": "A one-time top-up: the credits are added to this month's balance, next to your plan's credits, and are used the same way. Your plan and subscription stay the same.",
-      "expiry": "Extra credits are valid until {{date}} and do not carry over to next month."
+      "expiry": "Extra credits are valid until {{date}} and do not carry over to next month.",
+      "titleForBranch": "Extra credits for {{branch}}: +{{credits}}",
+      "titleToCompany": "Ask your headquarters: +{{credits}}",
+      "paymentByCompany": "Your headquarters ({{company}}) approves the request first, then an administrator once it is paid. Your headquarters pays for the credits."
     },
     "modal": {
       "title": "Subscription: {{plan}}",
@@ -1410,7 +1453,8 @@
       "payment": "Payment happens outside the app for now: an administrator approves the request once it is paid.",
       "cancel": "Cancel",
       "submit": "Send request",
-      "sent": "Request sent. An administrator will review it soon."
+      "sent": "Request sent. An administrator will review it soon.",
+      "titleForBranch": "Plan for {{branch}}: {{plan}}"
     },
     "page": {
       "title": "Credits",
@@ -1434,6 +1478,9 @@
       "legendUnused": "Unused",
       "legendNone": "No subscription or future month",
       "noUsage": "No credits used in this year yet."
+    },
+    "usage": {
+      "usedOfTotal": "{{used}} / {{total}}"
     }
   },
   "company": {
@@ -1535,7 +1582,54 @@
       "reactivateText": "After reactivation, its offers that have not expired show to restaurants again.",
       "reactivate": "Reactivate",
       "reactivateConfirmTitle": "Reactivate the branch?",
-      "reactivateConfirmText": "The branch {{name}} shows to restaurants again and its staff can sign in."
+      "reactivateConfirmText": "The branch {{name}} shows to restaurants again and its staff can sign in.",
+      "deactivateCredits": "Its open credit requests are withdrawn and its plan's auto-renew is turned off."
+    },
+    "credits": {
+      "title": "Credits and plans",
+      "subtitle": "Headquarters chooses and pays the plans and extra credits of its branches. Credits are used per branch.",
+      "monthTitle": "Total for {{month}}",
+      "period": "Period: {{from}} – {{to}}",
+      "totalCredits": "Total credits",
+      "usedCredits": "Used",
+      "availableCredits": "Available",
+      "branchesWithPlan": "Branches with a plan",
+      "withPlanValue": "{{withPlan}} of {{total}}",
+      "companyUsage": "Company credit usage",
+      "branchUsage": "Credit usage: {{branch}}",
+      "branchesTitle": "Branches",
+      "branchesSubtitle": "Each branch's plan, this month's usage, next month's plan and auto-renew.",
+      "noBranches": "The company has no branches yet.",
+      "columnBranch": "Branch",
+      "columnPlan": "Plan",
+      "columnUsage": "Used / total",
+      "columnNextMonth": "Next month",
+      "columnAutoRenew": "Auto-renew",
+      "autoRenewFor": "Auto-renew: {{branch}}",
+      "noPlan": "No plan",
+      "choosePlan": "Choose plan",
+      "addCredits": "Add credits",
+      "planWaiting": "A plan request is already waiting for approval.",
+      "topupWaiting": "An extra credits request is already waiting for approval.",
+      "pickPlanTitle": "Plan for {{branch}} ({{month}})",
+      "pickTopupTitle": "Extra credits for {{branch}}",
+      "branchRequestsTitle": "Branch requests",
+      "branchRequestsSubtitle": "Branches ask headquarters for extra credits. An approved request goes to an administrator, who approves it once it is paid.",
+      "noBranchRequests": "No branch requests are waiting for an answer.",
+      "approve": "Approve",
+      "reject": "Reject",
+      "approveTitle": "Approve the branch's request?",
+      "rejectTitle": "Reject the branch's request?",
+      "approveText": "{{branch}} asks for {{what}}. The request goes to an administrator and headquarters pays for the credits.",
+      "rejectText": "{{branch}} asks for {{what}}. The branch will see that the request was rejected.",
+      "note": "Note for the branch (optional)",
+      "noteHint": "The branch sees this note.",
+      "approved": "Request sent to an administrator.",
+      "rejected": "Request rejected.",
+      "actionError": "The action failed. Please try again.",
+      "historyTitle": "Request history",
+      "noHistory": "No requests for branches yet.",
+      "cardTitle": "Credits and plan"
     }
   }
 }

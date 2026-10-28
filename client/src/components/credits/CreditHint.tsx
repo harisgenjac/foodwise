@@ -10,7 +10,9 @@ function CreditHint({ perProduct = false, className = "" }: { perProduct?: boole
   if (!credits) return null;
 
   const text = !credits.hasActiveSubscription
-    ? t("credits.hint.noSubscription")
+    ? credits.managedByCompany
+      ? t("credits.hint.noCompanyPlan", { company: credits.companyName ?? "" })
+      : t("credits.hint.noSubscription")
     : t(perProduct ? "credits.hint.perProduct" : "credits.hint.one", { left: credits.available });
 
   return (

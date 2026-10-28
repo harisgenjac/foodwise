@@ -157,6 +157,16 @@ Bar color: green 0–70%, orange >70% (70.01%) to <90%, red ≥90%.
 - Manual credit adjustment (+/−) with required reason → ADMIN_ADJUSTMENT in the current month.
 - Per-user ledger view.
 
+## Companies and branches (step 2.3, implemented)
+A branch is a STORE that belongs to a company; the company's headquarters (COMPANY) asks and pays.
+- Credits stay per branch: its own ledger, balance, charges and refunds, with the rules above unchanged.
+- Plans and top-ups for a branch are requested by its headquarters (`credit_requests.requested_by` = the headquarters login, source `COMPANY`), with the same body, rules and messages as a store's own requests. The branch never sends a request to the admin: a plan request is refused ("Your company manages your plan."), so is its auto-renew switch.
+- A branch can ask its headquarters for a top-up: the request starts as `COMPANY_REVIEW` (source `BRANCH`); the headquarters approves it (it becomes a normal `PENDING` top-up, requested by the headquarters) or rejects it (`COMPANY_REJECTED`, with an optional note the branch sees). One open top-up per branch across both stages, enforced by the partial unique index `credit_requests_one_open_topup`; "top-ups need an active subscription this month" applies when the branch asks. Chosen over a separate table so one row carries the request from the branch to the admin (snapshot, notifications, expiry, history) and the one-open rule stays a single database constraint.
+- `requested_by` is the user for their own requests and null for the renewal job, which renews branches like any store and skips deactivated and blocked branches and branches of a blocked company.
+- Deactivating a branch withdraws its open requests and turns auto-renew off on its current and future subscriptions; reactivation does not turn it back on.
+- The admin sees a branch's requests with its company and sender, never one that is still at (or was stopped by) the headquarters; decisions notify the branch and its headquarters, never with the admin's note.
+- Out of scope: a shared company credit pool, invoices and card payments, headquarters statistics (step 2.4).
+
 ## Suggested phases
 - Phase 0: codebase review, conflict list, open questions, plan → stop for approval.
 - Phase 1: migrations + creditService + unit tests.

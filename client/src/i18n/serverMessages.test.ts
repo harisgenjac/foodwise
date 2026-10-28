@@ -73,6 +73,9 @@ describe("server texts", () => {
     /^Pickup of /,
     /^New .* request waiting for approval\.$/,
     /^Your .* request was /,
+    // Credit notifications about a branch (to its headquarters, and the headquarters' answer).
+    /^A branch /,
+    /^Your company (sent|rejected) your top-up request/,
     /^Reservation cancelled by the platform administrator: /,
     /^Reservation cancelled because the store is no longer active: /,
     /^Branch 7 by the platform administrator: /,

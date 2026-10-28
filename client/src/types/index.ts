@@ -471,7 +471,20 @@ export interface CreditSubscription {
 }
 
 export type CreditRequestType = "SUBSCRIPTION" | "TOPUP";
-export type CreditRequestStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | "EXPIRED";
+// COMPANY_REVIEW: a branch's top-up waiting for its headquarters; COMPANY_REJECTED: the
+// headquarters said no (with an optional company_note the branch sees).
+export type CreditRequestStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "CANCELLED"
+  | "EXPIRED"
+  | "COMPANY_REVIEW"
+  | "COMPANY_REJECTED";
+
+// USER: the user's own; AUTO_RENEW: the renewal job; COMPANY: the headquarters for its branch;
+// BRANCH: a branch asked its headquarters.
+export type CreditRequestSource = "USER" | "AUTO_RENEW" | "COMPANY" | "BRANCH";
 
 // A request as its user sees it (never with the admin's note).
 export interface CreditRequest {
@@ -483,12 +496,18 @@ export interface CreditRequest {
   period_month: string;
   auto_renew: boolean;
   status: CreditRequestStatus;
-  source: "USER" | "AUTO_RENEW";
+  source: CreditRequestSource;
   created_at: string;
   reviewed_at: string | null;
+  // Who sent it: the user, the headquarters for its branch, null for the renewal job.
+  requested_by: number | null;
+  company_note: string | null;
+  company_reviewed_at: string | null;
   plan_name: string | null;
   credits: number;
   price: string;
+  // Lists of the headquarters (all branches).
+  branch_name?: string;
 }
 
 export interface CreditSummary {
@@ -500,7 +519,34 @@ export interface CreditSummary {
   used: number;
   available: number;
   nextSubscription: CreditSubscription | null;
+  // Open requests: pending at the admin or (for a branch) waiting for its headquarters.
   pendingRequests: CreditRequest[];
+  // A branch: its company's headquarters chooses and pays its plan.
+  managedByCompany: boolean;
+  companyName: string | null;
+}
+
+// GET /company/credits: one row per branch for this month.
+export interface CompanyBranchCredits {
+  id: number;
+  business_name: string;
+  status: BranchStatus;
+  plan_name: string | null;
+  has_subscription: boolean;
+  auto_renew: boolean | null;
+  total: number;
+  used: number;
+  available: number;
+  next_plan_name: string | null;
+  next_auto_renew: boolean | null;
+  open_requests: CreditRequest[];
+}
+
+export interface CompanyCredits {
+  periodStart: string;
+  periodEnd: string;
+  totals: { total: number; used: number; available: number; branches: number; withPlan: number };
+  branches: CompanyBranchCredits[];
 }
 
 export interface CreditHistory {
@@ -515,6 +561,8 @@ export interface AdminCreditUser {
   role: Role;
   business_name: string | null;
   is_blocked: boolean;
+  // The company of a branch, null otherwise.
+  company_name: string | null;
   pending_requests: number;
   plan_name: string | null;
   has_subscription: boolean;
@@ -528,6 +576,10 @@ export interface AdminCreditRequest extends CreditRequest {
   user_email: string;
   user_business_name: string | null;
   user_role: Role;
+  company_name: string | null;
+  // Who sent it (null for the renewal job).
+  requested_by_email: string | null;
+  requested_by_role: Role | null;
   reviewed_by_email: string | null;
 }
 

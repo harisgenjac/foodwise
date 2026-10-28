@@ -138,13 +138,13 @@ export const STORES: SeedStore[] = [
   {
     first_name: "Mirza", last_name: "Hadžić", email: "bingo.visoko@demo.com", business_name: "Bingo Visoko",
     city: "Visoko", address: "Alije Izetbegovića 22", phone: "032400200", opening_hours: "07:00–21:00", pickup_hours: "16:00–19:00",
-    pickup: [16, 19], activity: 0.25, currentStock: 8, categories: ALL_CATEGORIES, plans: ["Standard"], autoRenew: true,
+    pickup: [16, 19], activity: 0.25, currentStock: 8, categories: ALL_CATEGORIES, plans: ["Standard"], autoRenew: false,
     company: "Bingo d.o.o.",
   },
   {
     first_name: "Edina", last_name: "Bešić", email: "bingo.kakanj@demo.com", business_name: "Bingo Kakanj",
     city: "Kakanj", address: "Alije Izetbegovića 5", phone: "032400300", opening_hours: "07:00–21:00", pickup_hours: "16:00–19:00",
-    pickup: [16, 19], activity: 0.2, currentStock: 7, categories: ALL_CATEGORIES, plans: ["Basic"], autoRenew: true,
+    pickup: [16, 19], activity: 0.2, currentStock: 7, categories: ALL_CATEGORIES, plans: ["Basic"], autoRenew: false,
     company: "Bingo d.o.o.",
   },
   {

@@ -33,7 +33,18 @@ export type NotificationType =
   // created because the plan is no longer offered.
   | "CREDIT_RENEWAL_CREATED"
   | "CREDIT_REQUEST_EXPIRED"
-  | "CREDIT_RENEWAL_SKIPPED";
+  | "CREDIT_RENEWAL_SKIPPED"
+  // A branch's credits are managed by its headquarters (notifyCompanyHqOfCredit), linked by
+  // credit_request_id and branch_id. To the headquarters: a branch asks for a top-up, an admin
+  // decided or the month ended on one of its branches' requests.
+  | "BRANCH_TOPUP_REQUESTED"
+  | "BRANCH_CREDIT_REQUEST_APPROVED"
+  | "BRANCH_CREDIT_REQUEST_REJECTED"
+  | "BRANCH_CREDIT_REQUEST_EXPIRED"
+  // To the branch: its headquarters forwarded its top-up request to the admin or rejected it
+  // (with the headquarters' note as details).
+  | "CREDIT_TOPUP_COMPANY_APPROVED"
+  | "CREDIT_TOPUP_COMPANY_REJECTED";
 
 interface NewNotification {
   userId: number;
@@ -98,6 +109,31 @@ export const notifyCompanyHq = async (
       details,
       branch.company_id,
     ],
+  );
+};
+
+// A credit request of a branch concerns its headquarters, which asks and pays for the branch's
+// credits: every unblocked headquarters login of the company is told. Nothing for a user without a
+// company. The admin's note never goes into these notifications.
+export const notifyCompanyHqOfCredit = async (
+  db: Pool | PoolClient,
+  requestId: number,
+  type:
+    | "BRANCH_TOPUP_REQUESTED"
+    | "BRANCH_CREDIT_REQUEST_APPROVED"
+    | "BRANCH_CREDIT_REQUEST_REJECTED"
+    | "BRANCH_CREDIT_REQUEST_EXPIRED",
+  message: string,
+) => {
+  await db.query(
+    `INSERT INTO notifications (user_id, type, message, credit_request_id, branch_id)
+     SELECT headquarters.id, $2, $3, credit_requests.id, branches.id
+     FROM credit_requests
+     JOIN users AS branches ON branches.id = credit_requests.user_id
+     JOIN users AS headquarters ON headquarters.company_id = branches.company_id
+     WHERE credit_requests.id = $1 AND branches.role = 'STORE'
+       AND headquarters.role = 'COMPANY' AND headquarters.is_blocked = false`,
+    [requestId, type, message],
   );
 };
 

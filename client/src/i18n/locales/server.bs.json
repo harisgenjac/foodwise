@@ -187,6 +187,7 @@
   "Only pending or accepted reservations can be cancelled.": "Mogu se otkazati samo rezervacije na čekanju ili prihvaćene rezervacije.",
   "Only pending requests can be approved or rejected.": "Samo zahtjevi na čekanju mogu se odobriti ili odbiti.",
   "Only pending requests can be withdrawn.": "Samo zahtjevi na čekanju mogu se povući.",
+  "Only requests waiting for your company can be approved or rejected.": "Odobriti ili odbiti se mogu samo zahtjevi koji čekaju centralu.",
   "Overdue reservation cancelled.": "Propuštena rezervacija je otkazana.",
   "Password changed successfully.": "Lozinka je uspješno promijenjena.",
   "Password changed.": "Lozinka je promijenjena.",
@@ -222,6 +223,7 @@
   "Request approved.": "Zahtjev je odobren.",
   "Request not found.": "Zahtjev nije pronađen.",
   "Request rejected.": "Zahtjev je odbijen.",
+  "Request sent to your company.": "Zahtjev je poslan centrali.",
   "Request sent.": "Zahtjev je poslan.",
   "Request type is not valid.": "Vrsta zahtjeva nije ispravna.",
   "Request withdrawn.": "Zahtjev je povučen.",
@@ -260,6 +262,8 @@
   "The CSV file does not contain any products.": "CSV datoteka ne sadrži nijedan proizvod.",
   "The CSV file is missing columns: {{columns}}.": "U CSV datoteci nedostaju kolone: {{columns}}.",
   "The balance cannot go below zero.": "Stanje ne može ići ispod nule.",
+  "The branch does not have an active subscription.": "Poslovnica nema aktivnu pretplatu.",
+  "The branch is deactivated.": "Poslovnica je deaktivirana.",
   "The branch still has accepted pickups ({{count}}). Wait until they are picked up or cancelled.": "Poslovnica još ima prihvaćena preuzimanja ({{count}}). Sačekajte da budu preuzeta ili otkazana.",
   "The file can be at most {{max}}MB.": "Datoteka može imati najviše {{max}} MB.",
   "The file is valid.": "Datoteka je ispravna.",
@@ -300,5 +304,6 @@
   "You must change your password before continuing.": "Morate promijeniti lozinku prije nastavka.",
   "Your account is blocked.": "Vaš nalog je blokiran.",
   "Your account is blocked. Reason: {{reason}}": "Vaš nalog je blokiran. Razlog: {{reason}}",
-  "Your company is blocked.": "Vaša firma je blokirana."
+  "Your company is blocked.": "Vaša firma je blokirana.",
+  "Your company manages your plan.": "Vašim paketom upravlja centrala."
 }

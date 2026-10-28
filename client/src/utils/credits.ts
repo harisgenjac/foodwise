@@ -1,6 +1,6 @@
 import axios from "axios";
 import type { TFunction } from "i18next";
-import type { CreditRequest, CreditRequestStatus } from "../types/index.js";
+import type { AdminCreditRequest, CreditRequest, CreditRequestStatus } from "../types/index.js";
 
 // "Standard · 40 credits" for a subscription, "+10 credits" for a top-up.
 export const describeCreditRequest = (request: CreditRequest, t: TFunction) =>
@@ -8,12 +8,30 @@ export const describeCreditRequest = (request: CreditRequest, t: TFunction) =>
     ? `${request.plan_name} · ${t("credits.profile.planCredits", { count: request.credits })}`
     : `+${t("credits.profile.creditsCount", { count: request.credits })}`;
 
+// Who a request is for, as the admin sees it: "Bingo d.o.o. → Bingo Tuzla" for a branch.
+export const creditRequestUser = (request: AdminCreditRequest) => {
+  const name = request.user_business_name || request.user_email;
+  return request.company_name ? `${request.company_name} → ${name}` : name;
+};
+
+// Who sent a request, for the admin: the headquarters for its branch or the renewal job; null
+// for a user's own request.
+export const creditRequestSender = (request: AdminCreditRequest, t: TFunction) => {
+  if (request.source === "AUTO_RENEW") return t("admin.creditRequests.sentByRenewal");
+  if (request.requested_by_role === "COMPANY") {
+    return t("admin.creditRequests.sentByCompany", { email: request.requested_by_email ?? "" });
+  }
+  return null;
+};
+
 export const CREDIT_REQUEST_STATUS_STYLES: Record<CreditRequestStatus, string> = {
   PENDING: "bg-amber-50 text-amber-700",
   APPROVED: "bg-green-50 text-green-700",
   REJECTED: "bg-red-50 text-red-700",
   CANCELLED: "bg-gray-100 text-gray-600",
   EXPIRED: "bg-gray-100 text-gray-600",
+  COMPANY_REVIEW: "bg-sky-50 text-sky-700",
+  COMPANY_REJECTED: "bg-red-50 text-red-700",
 };
 
 // The server's 402 when a product or reservation needs a credit the user does not have.

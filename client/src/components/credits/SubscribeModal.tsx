@@ -18,11 +18,24 @@ interface SubscribeModalProps {
   monthStarted: boolean;
   onClose: () => void;
   onSent: () => void;
+  // A headquarters choosing for its branch: where the request goes and the branch's name for the title.
+  endpoint?: string;
+  branchName?: string;
 }
 
-// Explains credits in plain words before the user sends a subscription request, and lets them
-// choose this month only or auto-renew.
-function SubscribeModal({ plan, role, period, month, monthStarted, onClose, onSent }: SubscribeModalProps) {
+// Explains credits in plain words before the user (or a headquarters for its branch) sends a
+// subscription request, and lets them choose this month only or auto-renew.
+function SubscribeModal({
+  plan,
+  role,
+  period,
+  month,
+  monthStarted,
+  onClose,
+  onSent,
+  endpoint = "/credits/requests",
+  branchName,
+}: SubscribeModalProps) {
   const { t } = useTranslation();
   const [autoRenew, setAutoRenew] = useState(false);
   const [sending, setSending] = useState(false);
@@ -33,7 +46,7 @@ function SubscribeModal({ plan, role, period, month, monthStarted, onClose, onSe
     if (sending) return;
     setSending(true);
     try {
-      await api.post("/credits/requests", {
+      await api.post(endpoint, {
         request_type: "SUBSCRIPTION",
         plan_id: plan.id,
         period,
@@ -51,7 +64,9 @@ function SubscribeModal({ plan, role, period, month, monthStarted, onClose, onSe
 
   return (
     <Modal onClose={onClose}>
-      <h3 className="text-lg font-bold text-gray-900">{t("credits.modal.title", { plan: plan.name })}</h3>
+      <h3 className="text-lg font-bold text-gray-900">{branchName
+          ? t("credits.modal.titleForBranch", { plan: plan.name, branch: branchName })
+          : t("credits.modal.title", { plan: plan.name })}</h3>
       <p className="mt-1 text-sm text-gray-500">
         {t("credits.profile.planCredits", { count: plan.credits_per_period })} · {plan.price} KM
       </p>

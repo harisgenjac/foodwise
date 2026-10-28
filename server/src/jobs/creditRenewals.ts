@@ -2,7 +2,7 @@ import cron from "node-cron";
 import type { PoolClient } from "pg";
 import pool from "../config/db.js";
 import { CREDIT_TIMEZONE, creditDay, creditMonth, nextMonth } from "../utils/creditTime.js";
-import { createNotification, notifyAdminsOfCreditRequest } from "../utils/notifications.js";
+import { createNotification, notifyAdminsOfCreditRequest, notifyCompanyHqOfCredit } from "../utils/notifications.js";
 import { notBlocked } from "../utils/visibility.js";
 
 // Renewal requests are created this many days before the new month starts, so an admin has
@@ -22,7 +22,8 @@ export const isRenewalWindow = (now: Date) => {
 // Creates next month's renewal requests (same plan, auto-renew on) for active subscriptions with
 // auto-renew, then tells the admins and each user. Skipped when the user already has next month's
 // subscription or a pending subscription request for it (e.g. a plan change), when an earlier
-// renewal for that month exists, for blocked users and for plans that are no longer offered (those
+// renewal for that month exists, for blocked users (also deactivated branches and branches of a
+// blocked company, see notBlocked) and for plans that are no longer offered (those
 // users are told instead).
 // - The job runs it for everyone; an earlier renewal in any status blocks a new one, so a renewal
 //   the user withdrew or the admin rejected is not created again.
@@ -110,7 +111,7 @@ export const runCreditRenewals = async (now = new Date()) => {
     await client.query("BEGIN");
     const expired = await client.query<{ id: number; user_id: number }>(
       `UPDATE credit_requests SET status = 'EXPIRED'
-       WHERE status = 'PENDING' AND period_month < $1
+       WHERE status IN ('PENDING', 'COMPANY_REVIEW') AND period_month < $1
        RETURNING id, user_id`,
       [creditMonth(now)],
     );
@@ -121,6 +122,13 @@ export const runCreditRenewals = async (now = new Date()) => {
         message: "Your credit request expired before it was approved.",
         creditRequestId: request.id,
       });
+      // A branch's headquarters asks and pays for its credits (nothing for other users).
+      await notifyCompanyHqOfCredit(
+        client,
+        request.id,
+        "BRANCH_CREDIT_REQUEST_EXPIRED",
+        "A branch credit request expired before it was approved.",
+      );
     }
 
     const created = isRenewalWindow(now) ? await createRenewals(client, now) : [];

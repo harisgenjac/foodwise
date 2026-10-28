@@ -11,6 +11,19 @@ import {
   setCompanyBranchPassword,
   updateCompanyBranch,
 } from "../controllers/companyBranches.controller.js";
+import {
+  approveBranchTopupRequest,
+  createBranchRequest,
+  getBranchCredits,
+  getBranchTopupRequestCount,
+  getBranchTopupRequests,
+  getCompanyCreditRequests,
+  getCompanyCredits,
+  rejectBranchTopupRequest,
+  setBranchAutoRenew,
+  withdrawBranchRequest,
+} from "../controllers/companyCredits.controller.js";
+import { getPlans, getTopupPackages } from "../controllers/credits.controller.js";
 import { uploadLogoFile } from "../middleware/upload.middleware.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
 
@@ -31,5 +44,17 @@ router.get("/branches/:id/reservations", getBranchReservations);
 router.patch("/branches/:id/password", setCompanyBranchPassword);
 router.post("/branches/:id/deactivate", deactivateCompanyBranch);
 router.post("/branches/:id/reactivate", reactivateCompanyBranch);
+router.get("/branches/:id/credits", getBranchCredits);
+router.post("/branches/:id/credits/requests", createBranchRequest);
+router.delete("/branches/:id/credits/requests/:requestId", withdrawBranchRequest);
+router.patch("/branches/:id/credits/auto-renew", setBranchAutoRenew);
+router.get("/credits", getCompanyCredits);
+router.get("/credits/plans", getPlans);
+router.get("/credits/topup-packages", getTopupPackages);
+router.get("/credits/requests", getCompanyCreditRequests);
+router.get("/credits/branch-requests", getBranchTopupRequests);
+router.get("/credits/branch-requests/count", getBranchTopupRequestCount);
+router.post("/credits/branch-requests/:id/approve", approveBranchTopupRequest);
+router.post("/credits/branch-requests/:id/reject", rejectBranchTopupRequest);
 
 export default router;

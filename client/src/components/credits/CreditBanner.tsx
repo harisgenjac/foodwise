@@ -13,6 +13,8 @@ const TONES = {
 // no subscription (link to the subscription section), no credits left (link to the top-up),
 // or 80% used (how many are left, link to the Credits page). Nothing otherwise. While a request
 // that would fix it already waits for an admin, the banner says so instead of asking again.
+// A branch's plan is chosen by its headquarters: without one the banner only says so (nothing to
+// buy), and the top-up links ask the headquarters for extra credits.
 function CreditBanner() {
   const { credits } = useCredits();
   const { t } = useTranslation();
@@ -23,8 +25,13 @@ function CreditBanner() {
       (request) => request.request_type === type && request.period_month === credits.periodStart,
     );
 
-  let banner: { tone: keyof typeof TONES; text: string; to: string; link: string } | null = null;
-  if (!credits.hasActiveSubscription) {
+  const managed = credits.managedByCompany;
+  const company = credits.companyName ?? "";
+  const topupLink = managed ? t("credits.banner.companyTopupLink") : t("credits.banner.emptyLink");
+  let banner: { tone: keyof typeof TONES; text: string; to: string | null; link: string } | null = null;
+  if (!credits.hasActiveSubscription && managed) {
+    banner = { tone: "amber", text: t("credits.banner.companyNone", { company }), to: null, link: "" };
+  } else if (!credits.hasActiveSubscription) {
     banner = waiting("SUBSCRIPTION")
       ? {
           tone: "amber",
@@ -42,23 +49,30 @@ function CreditBanner() {
     banner = waiting("TOPUP")
       ? {
           tone: "amber",
-          text: t("credits.banner.topupPending"),
+          text: managed ? t("credits.banner.companyTopupPending", { company }) : t("credits.banner.topupPending"),
           to: `/my-profile#${TOPUP_SECTION}`,
           link: t("credits.banner.pendingLink"),
         }
       : {
           tone: "red",
-          text: t("credits.banner.empty"),
+          text: t(managed ? "credits.banner.companyEmpty" : "credits.banner.empty"),
           to: `/my-profile#${TOPUP_SECTION}`,
-          link: t("credits.banner.emptyLink"),
+          link: topupLink,
         };
   } else if (usagePercent(credits.used, credits.total) >= LOW_CREDITS_PERCENT) {
-    banner = {
-      tone: "amber",
-      text: t("credits.banner.low", { count: credits.available }),
-      to: "/credits",
-      link: t("credits.banner.lowLink"),
-    };
+    banner = managed && !waiting("TOPUP")
+      ? {
+          tone: "amber",
+          text: t("credits.banner.low", { count: credits.available }),
+          to: `/my-profile#${TOPUP_SECTION}`,
+          link: topupLink,
+        }
+      : {
+          tone: "amber",
+          text: t("credits.banner.low", { count: credits.available }),
+          to: "/credits",
+          link: t("credits.banner.lowLink"),
+        };
   }
   if (!banner) return null;
 
@@ -71,10 +85,12 @@ function CreditBanner() {
         <Coins className="h-4 w-4 shrink-0" />
         {banner.text}
       </p>
-      <Link to={banner.to} className="inline-flex shrink-0 items-center gap-1 font-semibold text-orange-600 hover:text-orange-700">
-        {banner.link}
-        <ArrowRight className="h-4 w-4" />
-      </Link>
+      {banner.to && (
+        <Link to={banner.to} className="inline-flex shrink-0 items-center gap-1 font-semibold text-orange-600 hover:text-orange-700">
+          {banner.link}
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      )}
     </div>
   );
 }
