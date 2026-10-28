@@ -6,7 +6,7 @@ import { Check, X } from "lucide-react";
 import api from "../../api/axios.js";
 import Modal from "../product/Modal.js";
 import { inputStyle } from "../form/FormField.js";
-import { describeCreditRequest, formatCreditMonth } from "../../utils/credits.js";
+import { creditRequestSender, creditRequestUser, describeCreditRequest, formatCreditMonth } from "../../utils/credits.js";
 import type { AdminCreditRequest } from "../../types/index.js";
 
 const MAX_NOTE_LENGTH = 500;
@@ -78,11 +78,14 @@ function CreditRequestDecisionModal({ request, action, onClose, onDone }: Credit
       </h3>
       <p className="mt-2 text-sm text-gray-600">
         {t(approve ? "admin.creditRequests.approveText" : "admin.creditRequests.rejectText", {
-          user: request.user_business_name || request.user_email,
+          user: creditRequestUser(request),
           what: `${requestTypes[request.request_type]} (${describeCreditRequest(request, t)})`,
           month: formatCreditMonth(request.period_month, monthNames),
         })}
       </p>
+      {creditRequestSender(request, t) && (
+        <p className="mt-1 text-xs font-medium text-teal-700">{creditRequestSender(request, t)}</p>
+      )}
       <label className="mt-4 block text-sm font-medium text-gray-700">
         {t("admin.creditRequests.note")}
         <textarea

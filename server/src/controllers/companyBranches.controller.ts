@@ -28,7 +28,7 @@ import { listStoreReservations } from "./reservations.controller.js";
 // branch's products and reservations; the branch itself handles them.
 
 // The caller's company (a COMPANY user always has one, see the users_company_matches_role CHECK).
-const callerCompanyId = async (req: Request): Promise<number> => {
+export const callerCompanyId = async (req: Request): Promise<number> => {
   const result = await pool.query<{ company_id: number }>("SELECT users.company_id FROM users WHERE users.id = $1", [
     req.user!.id,
   ]);
@@ -36,7 +36,7 @@ const callerCompanyId = async (req: Request): Promise<number> => {
 };
 
 // Answers the HttpError a branch function threw, otherwise logs and answers 500.
-const fail = (res: Response, error: unknown, message: string) => {
+export const fail = (res: Response, error: unknown, message: string) => {
   if (error instanceof HttpError) {
     return res.status(error.status).json(error.body());
   }
@@ -46,11 +46,12 @@ const fail = (res: Response, error: unknown, message: string) => {
 
 // Runs `work` in a transaction on the caller's branch (locked), or answers 404. The answer is sent
 // after the commit, so a following request already sees the change.
-const withBranch = async (
+export const withBranch = async (
   req: Request,
   res: Response,
   work: (client: PoolClient, branch: BranchRow) => Promise<Record<string, unknown>>,
   message: string,
+  status = 200,
 ) => {
   let client;
   try {
@@ -64,7 +65,7 @@ const withBranch = async (
     }
     const body = await work(client, branch);
     await client.query("COMMIT");
-    return res.status(200).json(body);
+    return res.status(status).json(body);
   } catch (error) {
     if (client) await client.query("ROLLBACK");
     return fail(res, error, message);
@@ -212,8 +213,8 @@ export const deactivateCompanyBranch = (req: Request, res: Response) =>
     req,
     res,
     async (client, branch) => {
-      const cancelledReservations = await deactivateBranch(client, branch, { actor: "USER", userId: req.user!.id });
-      return { message: "Branch deactivated.", cancelledReservations };
+      const closed = await deactivateBranch(client, branch, { actor: "USER", userId: req.user!.id });
+      return { message: "Branch deactivated.", ...closed };
     },
     "An error occurred while deactivating the branch.",
   );

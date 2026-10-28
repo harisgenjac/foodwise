@@ -75,7 +75,12 @@ function CreditsPage() {
           {t(user?.role === "STORE" ? "credits.page.explanationStore" : "credits.page.explanationRestaurant")}
         </p>
 
-        {!credits.hasActiveSubscription && (
+        {!credits.hasActiveSubscription && credits.managedByCompany && (
+          <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {t("credits.banner.companyNone", { company: credits.companyName ?? "" })}
+          </p>
+        )}
+        {!credits.hasActiveSubscription && !credits.managedByCompany && (
           <p className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             {t("credits.page.noSubscription")}
             <Link

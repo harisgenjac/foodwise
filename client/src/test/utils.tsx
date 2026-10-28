@@ -200,5 +200,7 @@ export const makeCreditSummary = (overrides: Partial<CreditSummary> = {}): Credi
   available: 40,
   nextSubscription: null,
   pendingRequests: [],
+  managedByCompany: false,
+  companyName: null,
   ...overrides,
 });

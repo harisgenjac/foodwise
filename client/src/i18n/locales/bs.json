@@ -27,7 +27,8 @@
     "adminCompanies": "Firme",
     "companyOverview": "Pregled",
     "companyProfile": "Profil firme",
-    "companyBranches": "Poslovnice"
+    "companyBranches": "Poslovnice",
+    "companyCredits": "Krediti i pretplate"
   },
   "breadcrumbs": {
     "label": "Putanja",
@@ -327,7 +328,13 @@
       "BRANCH_BLOCKED": "Administrator je blokirao poslovnicu {{branch}}.",
       "BRANCH_UNBLOCKED": "Administrator je odblokirao poslovnicu {{branch}}.",
       "BRANCH_DEACTIVATED": "Administrator je deaktivirao poslovnicu {{branch}}.",
-      "BRANCH_REACTIVATED": "Administrator je ponovo aktivirao poslovnicu {{branch}}."
+      "BRANCH_REACTIVATED": "Administrator je ponovo aktivirao poslovnicu {{branch}}.",
+      "BRANCH_TOPUP_REQUESTED": "Poslovnica {{branch}} traži dodatne kredite.",
+      "BRANCH_CREDIT_REQUEST_APPROVED": "Zahtjev za poslovnicu {{branch}} je odobren.",
+      "BRANCH_CREDIT_REQUEST_REJECTED": "Zahtjev za poslovnicu {{branch}} je odbijen.",
+      "BRANCH_CREDIT_REQUEST_EXPIRED": "Zahtjev za poslovnicu {{branch}} je istekao.",
+      "CREDIT_TOPUP_COMPANY_APPROVED": "Centrala je proslijedila vaš zahtjev za dodatne kredite administratoru.",
+      "CREDIT_TOPUP_COMPANY_REJECTED": "Centrala je odbila vaš zahtjev za dodatne kredite."
     },
     "reason": "Razlog: {{reason}}",
     "credits": {
@@ -339,7 +346,16 @@
       "topupRejected": "Vaš zahtjev za dodatne kredite je odbijen.",
       "renewalCreated": "Zahtjev za obnovu pretplate ({{credits}} kredita) je poslan na odobrenje.",
       "subscriptionExpired": "Vaš zahtjev za pretplatu je istekao prije nego što je odobren.",
-      "topupExpired": "Vaš zahtjev za dodatne kredite je istekao prije nego što je odobren."
+      "topupExpired": "Vaš zahtjev za dodatne kredite je istekao prije nego što je odobren.",
+      "companyTopupApproved": "Centrala je proslijedila vaš zahtjev za {{credits}} dodatnih kredita administratoru na odobrenje.",
+      "companyTopupRejected": "Centrala je odbila vaš zahtjev za {{credits}} dodatnih kredita.",
+      "branchTopupRequested": "Poslovnica {{branch}} traži {{credits}} dodatnih kredita.",
+      "branchSubscriptionApproved": "Pretplata za poslovnicu {{branch}} ({{credits}} kredita) je odobrena.",
+      "branchTopupApproved": "Dodatni krediti za poslovnicu {{branch}} ({{credits}}) su odobreni.",
+      "branchSubscriptionRejected": "Zahtjev za pretplatu poslovnice {{branch}} je odbijen.",
+      "branchTopupRejected": "Zahtjev za dodatne kredite poslovnice {{branch}} je odbijen.",
+      "branchSubscriptionExpired": "Zahtjev za pretplatu poslovnice {{branch}} je istekao prije odobrenja.",
+      "branchTopupExpired": "Zahtjev za dodatne kredite poslovnice {{branch}} je istekao prije odobrenja."
     }
   },
   "store": {
@@ -1197,7 +1213,8 @@
       "noPlan": "Bez pretplate",
       "pendingCount_one": "{{count}} na čekanju",
       "pendingCount_few": "{{count}} na čekanju",
-      "pendingCount_other": "{{count}} na čekanju"
+      "pendingCount_other": "{{count}} na čekanju",
+      "columnCompany": "Firma"
     },
     "creditRequests": {
       "title": "Zahtjevi za kredite",
@@ -1228,7 +1245,9 @@
       "approveText": "{{user}}: {{what}} za {{month}}. Krediti se dodaju odmah.",
       "rejectText": "{{user}}: {{what}} za {{month}}. Korisnik će dobiti obavještenje.",
       "note": "Interna bilješka (neobavezno)",
-      "noteHint": "Korisnik ne vidi bilješku."
+      "noteHint": "Korisnik ne vidi bilješku.",
+      "sentByCompany": "Zatražila centrala ({{email}})",
+      "sentByRenewal": "Poslao sistem (automatska obnova)"
     },
     "userCredits": {
       "title": "Krediti",
@@ -1346,12 +1365,15 @@
       "noSubscription": "Za objavu proizvoda i rezervacije potrebna je pretplata.",
       "noCredits": "Potrošili ste kredite za ovaj mjesec. Možete kupiti dodatne kredite.",
       "subscribeLink": "Odaberi pretplatu",
-      "topUpLink": "Kupi dodatne kredite"
+      "topUpLink": "Kupi dodatne kredite",
+      "noCompanyPlan": "{{company}} još nije izabrala paket za ovaj mjesec, pa objava proizvoda trenutno nije moguća.",
+      "companyTopupLink": "Zatraži dodatne kredite od centrale"
     },
     "hint": {
       "one": "Ovo troši 1 kredit (preostalo: {{left}})",
       "perProduct": "Svaki proizvod troši 1 kredit (preostalo: {{left}})",
-      "noSubscription": "Za ovo je potrebna pretplata."
+      "noSubscription": "Za ovo je potrebna pretplata.",
+      "noCompanyPlan": "{{company}} još nije izabrala paket za ovaj mjesec."
     },
     "banner": {
       "none": "Za objavu proizvoda i rezervacije potrebna je pretplata.",
@@ -1364,7 +1386,11 @@
       "lowLink": "Pogledaj kredite",
       "pending": "Vaš zahtjev za pretplatu čeka odobrenje administratora.",
       "topupPending": "Potrošili ste sve kredite. Vaš zahtjev za dodatne kredite čeka odobrenje administratora.",
-      "pendingLink": "Pogledaj zahtjev"
+      "pendingLink": "Pogledaj zahtjev",
+      "companyNone": "{{company}} još nije izabrala paket za ovaj mjesec.",
+      "companyEmpty": "Potrošili ste sve kredite za ovaj mjesec. Zatražite dodatne kredite od centrale.",
+      "companyTopupLink": "Zatraži dodatne kredite od centrale",
+      "companyTopupPending": "Potrošili ste sve kredite. Vaš zahtjev za dodatne kredite čeka centralu ({{company}}) ili administratora."
     },
     "requestTypes": {
       "SUBSCRIPTION": "Pretplata",
@@ -1375,7 +1401,9 @@
       "APPROVED": "Odobreno",
       "REJECTED": "Odbijeno",
       "CANCELLED": "Povučeno",
-      "EXPIRED": "Isteklo"
+      "EXPIRED": "Isteklo",
+      "COMPANY_REVIEW": "Čeka centralu",
+      "COMPANY_REJECTED": "Centrala odbila"
     },
     "profile": {
       "title": "Pretplata i krediti",
@@ -1420,13 +1448,28 @@
       "planCredits_other": "{{count}} kredita mjesečno",
       "creditsCount_one": "{{count}} kredit",
       "creditsCount_few": "{{count}} kredita",
-      "creditsCount_other": "{{count}} kredita"
+      "creditsCount_other": "{{count}} kredita",
+      "paidByCompany": "Paket plaća {{company}}",
+      "companyManagesPlan": "Paket za vašu poslovnicu bira i plaća {{company}}. Ako vam zatreba više kredita ovaj mjesec, zatražite ih od centrale ispod.",
+      "pendingAtCompany": "{{what}} za {{month}} čeka odobrenje centrale.",
+      "pendingAtAdmin": "{{what}} za {{month}} čeka odobrenje administratora.",
+      "topupTitleCompany": "Zatraži dodatne kredite od centrale",
+      "topupSubtitleCompany": "Ako potrošite kredite prije kraja mjeseca, {{company}} može odobriti dodatne.",
+      "topupNeedsCompanyPlan": "{{company}} još nije izabrala paket za ovaj mjesec, pa dodatni krediti još nisu mogući.",
+      "topupPendingAtCompany": "Vaš zahtjev za dodatne kredite čeka odobrenje centrale ({{company}}).",
+      "requestTopupFromCompany": "Zatraži dodatne kredite od centrale",
+      "topupSentToCompany": "Zahtjev je poslan centrali.",
+      "companySource": "zatražila {{company}}",
+      "companyNote": "Napomena centrale: {{note}}"
     },
     "topupModal": {
       "title": "Dodatni krediti: +{{credits}}",
       "whatTitle": "Šta su dodatni krediti?",
       "what": "Jednokratna dopuna: krediti se dodaju na stanje ovog mjeseca, uz kredite iz vašeg plana, i troše se isto kao i oni. Vaš plan i pretplata se ne mijenjaju.",
-      "expiry": "Dodatni krediti važe do {{date}} i ne prenose se u sljedeći mjesec."
+      "expiry": "Dodatni krediti važe do {{date}} i ne prenose se u sljedeći mjesec.",
+      "titleForBranch": "Dodatni krediti za {{branch}}: +{{credits}}",
+      "titleToCompany": "Zatraži od centrale: +{{credits}}",
+      "paymentByCompany": "Zahtjev prvo odobrava centrala ({{company}}), a zatim administrator nakon uplate. Kredite plaća centrala."
     },
     "modal": {
       "title": "Pretplata: {{plan}}",
@@ -1446,7 +1489,8 @@
       "payment": "Plaćanje je za sada van aplikacije: administrator odobrava zahtjev nakon uplate.",
       "cancel": "Odustani",
       "submit": "Pošalji zahtjev",
-      "sent": "Zahtjev je poslan. Administrator će ga uskoro pregledati."
+      "sent": "Zahtjev je poslan. Administrator će ga uskoro pregledati.",
+      "titleForBranch": "Pretplata za {{branch}}: {{plan}}"
     },
     "page": {
       "title": "Krediti",
@@ -1470,6 +1514,9 @@
       "legendUnused": "Neiskorišteno",
       "legendNone": "Bez pretplate ili budući mjesec",
       "noUsage": "U ovoj godini još nema potrošenih kredita."
+    },
+    "usage": {
+      "usedOfTotal": "{{used}} / {{total}}"
     }
   },
   "company": {
@@ -1576,7 +1623,54 @@
       "reactivateText": "Nakon ponovnog aktiviranja, ponude koje nisu istekle ponovo se prikazuju restoranima.",
       "reactivate": "Ponovo aktiviraj",
       "reactivateConfirmTitle": "Ponovo aktivirati poslovnicu?",
-      "reactivateConfirmText": "Poslovnica {{name}} se ponovo prikazuje restoranima i osoblje se može prijaviti."
+      "reactivateConfirmText": "Poslovnica {{name}} se ponovo prikazuje restoranima i osoblje se može prijaviti.",
+      "deactivateCredits": "Njeni otvoreni zahtjevi za kredite se povlače, a automatska obnova paketa se isključuje."
+    },
+    "credits": {
+      "title": "Krediti i pretplate",
+      "subtitle": "Centrala bira i plaća pakete i dodatne kredite za svoje poslovnice. Krediti se troše po poslovnici.",
+      "monthTitle": "Ukupno za {{month}}",
+      "period": "Period: {{from}} – {{to}}",
+      "totalCredits": "Ukupno kredita",
+      "usedCredits": "Potrošeno",
+      "availableCredits": "Dostupno",
+      "branchesWithPlan": "Poslovnice s paketom",
+      "withPlanValue": "{{withPlan}} od {{total}}",
+      "companyUsage": "Potrošnja kredita firme",
+      "branchUsage": "Potrošnja kredita: {{branch}}",
+      "branchesTitle": "Poslovnice",
+      "branchesSubtitle": "Paket, potrošnja ovog mjeseca, paket za sljedeći mjesec i automatska obnova svake poslovnice.",
+      "noBranches": "Firma još nema poslovnica.",
+      "columnBranch": "Poslovnica",
+      "columnPlan": "Paket",
+      "columnUsage": "Potrošeno / ukupno",
+      "columnNextMonth": "Sljedeći mjesec",
+      "columnAutoRenew": "Automatska obnova",
+      "autoRenewFor": "Automatska obnova: {{branch}}",
+      "noPlan": "Bez paketa",
+      "choosePlan": "Izaberi paket",
+      "addCredits": "Dodaj kredite",
+      "planWaiting": "Zahtjev za paket već čeka odobrenje.",
+      "topupWaiting": "Zahtjev za dodatne kredite već čeka odobrenje.",
+      "pickPlanTitle": "Paket za {{branch}} ({{month}})",
+      "pickTopupTitle": "Dodatni krediti za {{branch}}",
+      "branchRequestsTitle": "Zahtjevi poslovnica",
+      "branchRequestsSubtitle": "Poslovnice traže dodatne kredite od centrale. Odobreni zahtjev ide administratoru, koji ga odobrava nakon uplate.",
+      "noBranchRequests": "Nema zahtjeva poslovnica koji čekaju odgovor.",
+      "approve": "Odobri",
+      "reject": "Odbij",
+      "approveTitle": "Odobriti zahtjev poslovnice?",
+      "rejectTitle": "Odbiti zahtjev poslovnice?",
+      "approveText": "{{branch}} traži {{what}}. Zahtjev se šalje administratoru, a kredite plaća centrala.",
+      "rejectText": "{{branch}} traži {{what}}. Poslovnica će vidjeti da je zahtjev odbijen.",
+      "note": "Napomena za poslovnicu (nije obavezna)",
+      "noteHint": "Poslovnica vidi ovu napomenu.",
+      "approved": "Zahtjev je poslan administratoru.",
+      "rejected": "Zahtjev je odbijen.",
+      "actionError": "Akcija nije uspjela. Pokušajte ponovo.",
+      "historyTitle": "Historija zahtjeva",
+      "noHistory": "Još nema zahtjeva za poslovnice.",
+      "cardTitle": "Krediti i paket"
     }
   }
 }

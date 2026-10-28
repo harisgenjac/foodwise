@@ -8,6 +8,7 @@ import {
   CalendarCheck,
   ClipboardList,
   Coins,
+  CreditCard,
   FileChartColumn,
   Handshake,
   HeartHandshake,
@@ -30,7 +31,8 @@ interface SidebarLink {
   to: string;
   label: string;
   icon: LucideIcon;
-  // A count shown next to the label (pending credit requests for admins).
+  // A count shown next to the label (pending credit requests for admins, branch top-ups waiting
+  // for a headquarters).
   badge?: number;
 }
 
@@ -40,6 +42,7 @@ function Sidebar({ isSidebarOpen, locked = false }: { isSidebarOpen: boolean; lo
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const isAdmin = user?.role === "ADMIN";
+  const isCompany = user?.role === "COMPANY";
   const [pendingRequests, setPendingRequests] = useState(0);
 
   // Admins see how many credit requests wait for a decision; reloaded on every page change.
@@ -50,6 +53,15 @@ function Sidebar({ isSidebarOpen, locked = false }: { isSidebarOpen: boolean; lo
       .then((response) => setPendingRequests(response.data.count))
       .catch((err) => console.error("Error loading pending credit requests:", err));
   }, [isAdmin, locked, pathname]);
+
+  // A headquarters sees how many of its branches' top-up requests wait for it.
+  useEffect(() => {
+    if (!isCompany || locked) return;
+    api
+      .get("/company/credits/branch-requests/count")
+      .then((response) => setPendingRequests(response.data.count))
+      .catch((err) => console.error("Error loading branch credit requests:", err));
+  }, [isCompany, locked, pathname]);
 
   const storeLinks: SidebarLink[] = [
     { to: "/dashboard", label: t("sidebar.dashboard"), icon: LayoutDashboard },
@@ -82,6 +94,7 @@ function Sidebar({ isSidebarOpen, locked = false }: { isSidebarOpen: boolean; lo
   const companyLinks: SidebarLink[] = [
     { to: "/dashboard", label: t("sidebar.companyOverview"), icon: LayoutDashboard },
     { to: "/company/branches", label: t("sidebar.companyBranches"), icon: Store },
+    { to: "/company/credits", label: t("sidebar.companyCredits"), icon: CreditCard, badge: pendingRequests },
     { to: "/company/profile", label: t("sidebar.companyProfile"), icon: Building2 },
     { to: "/my-profile", label: t("sidebar.myProfile"), icon: UserRound },
   ];
@@ -101,7 +114,6 @@ function Sidebar({ isSidebarOpen, locked = false }: { isSidebarOpen: boolean; lo
     { to: "/my-profile", label: t("sidebar.myProfile"), icon: UserRound },
   ];
 
-  const isCompany = user?.role === "COMPANY";
   const links = isAdmin
     ? adminLinks
     : isCompany

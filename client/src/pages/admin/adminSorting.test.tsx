@@ -39,6 +39,7 @@ const CREDIT_ROW: AdminCreditUser = {
   role: "STORE",
   business_name: "Market Centar",
   is_blocked: false,
+  company_name: null,
   pending_requests: 0,
   plan_name: "Standard",
   has_subscription: true,

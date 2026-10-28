@@ -21,6 +21,9 @@ const REQUEST: AdminCreditRequest = {
   source: "USER",
   created_at: "2030-01-02T09:00:00.000Z",
   reviewed_at: null,
+  requested_by: 3,
+  company_note: null,
+  company_reviewed_at: null,
   plan_name: "Standard",
   credits: 50,
   price: "30.00",
@@ -28,6 +31,9 @@ const REQUEST: AdminCreditRequest = {
   user_email: "store@demo.com",
   user_business_name: "Market Centar",
   user_role: "STORE",
+  company_name: null,
+  requested_by_email: "store@demo.com",
+  requested_by_role: "STORE",
   reviewed_by_email: null,
 };
 
@@ -91,7 +97,69 @@ describe("AdminCreditRequestsPage filters", () => {
   });
 });
 
+describe("a branch's request in the admin list", () => {
+  it("names the company and the branch and who sent it", async () => {
+    const branchRequest: AdminCreditRequest = {
+      ...REQUEST,
+      id: 6,
+      user_business_name: "Bingo Tuzla",
+      company_name: "Bingo d.o.o.",
+      source: "COMPANY",
+      requested_by_email: "bingo@demo.com",
+      requested_by_role: "COMPANY",
+    };
+    const renewal: AdminCreditRequest = {
+      ...REQUEST,
+      id: 7,
+      source: "AUTO_RENEW",
+      requested_by: null,
+      requested_by_email: null,
+      requested_by_role: null,
+    };
+    renderWithProviders(<AdminCreditRequestsPage />, {
+      route: "/admin/credit-requests",
+      path: "/admin/credit-requests",
+      user: admin,
+      get: { "/admin/credits/requests": { requests: [branchRequest, renewal], total: 2 } },
+    });
+
+    expect(await screen.findByRole("link", { name: "Bingo d.o.o. → Bingo Tuzla" })).toHaveAttribute("href", "/admin/users/3");
+    expect(screen.getByText(t("admin.creditRequests.sentByCompany", { email: "bingo@demo.com" }))).toBeInTheDocument();
+    expect(screen.getByText(t("admin.creditRequests.sentByRenewal"))).toBeInTheDocument();
+
+    await userEvent.click(screen.getAllByRole("button", { name: t("admin.creditRequests.approve") })[0]!);
+    expect(
+      within(screen.getByRole("dialog")).getByText(t("admin.creditRequests.sentByCompany", { email: "bingo@demo.com" })),
+    ).toBeInTheDocument();
+  });
+});
+
 describe("AdminCreditsPage", () => {
+  it("shows the company of a branch", async () => {
+    const branch: AdminCreditUser = {
+      id: 4,
+      email: "bingo.tuzla@demo.com",
+      role: "STORE",
+      business_name: "Bingo Tuzla",
+      is_blocked: false,
+      company_name: "Bingo d.o.o.",
+      pending_requests: 0,
+      plan_name: "Basic",
+      has_subscription: true,
+      total: 20,
+      used: 5,
+      available: 15,
+    };
+    renderWithProviders(<AdminCreditsPage />, {
+      route: "/admin/credits",
+      path: "/admin/credits",
+      user: admin,
+      get: { "/admin/credits/overview": { users: [branch], total: 1 }, "/admin/credits/plans": { plans: [] } },
+    });
+    expect(await screen.findByText("Bingo d.o.o.")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: t("admin.credits.columnCompany") })).toBeInTheDocument();
+  });
+
   it("lists balances and links pending requests", async () => {
     const row: AdminCreditUser = {
       id: 3,
@@ -99,6 +167,7 @@ describe("AdminCreditsPage", () => {
       role: "STORE",
       business_name: "Market Centar",
       is_blocked: false,
+      company_name: null,
       pending_requests: 1,
       plan_name: "Standard",
       has_subscription: true,

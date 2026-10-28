@@ -2,7 +2,7 @@ import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import { parseId, parseNumber } from "../utils/params.js";
 import { HttpError } from "../utils/httpError.js";
-import { createNotification } from "../utils/notifications.js";
+import { createNotification, notifyCompanyHqOfCredit } from "../utils/notifications.js";
 import { creditMonth, monthEnd } from "../utils/creditTime.js";
 import {
   BALANCE_SQL,
@@ -16,20 +16,21 @@ import {
 import { REASON_ERROR, logAdminAction, parseReason } from "./admin.controller.js";
 import { ADMIN_PAGE_SIZE, listPage, parsePage, parseSort } from "../utils/pagination.js";
 import {
+  ADMIN_REQUEST_STATUSES,
   CREDIT_REQUEST_COLUMNS,
   CREDIT_REQUEST_JOINS,
-  CREDIT_REQUEST_STATUSES,
   CREDIT_REQUEST_TYPES,
-} from "./credits.controller.js";
+  REACHED_ADMIN,
+} from "../services/creditRequests.js";
 
 // Admin side of credits: every business's balance, the requests waiting for approval, manual
 // adjustments and each user's ledger. Mounted under /api/admin/credits (admin only).
 
-const MAX_NOTE_LENGTH = 500;
+export const MAX_NOTE_LENGTH = 500;
 const BUSINESS_ROLES = ["STORE", "RESTAURANT"];
 
 // An optional internal note: trimmed, empty becomes null; undefined when it is too long or not text.
-const parseNote = (value: unknown): string | null | undefined => {
+export const parseNote = (value: unknown): string | null | undefined => {
   if (value === undefined || value === null) return null;
   if (typeof value !== "string") return undefined;
   const note = value.trim();
@@ -69,7 +70,9 @@ export const getCreditOverview = async (req: Request, res: Response) => {
   }
   const now = new Date();
   const periodMonth = creditMonth(now);
-  let from = `FROM users ${balanceJoins("$1")} WHERE users.role IN ('STORE', 'RESTAURANT')`;
+  let from = `FROM users ${balanceJoins("$1")}
+    LEFT JOIN companies ON companies.id = users.company_id
+    WHERE users.role IN ('STORE', 'RESTAURANT')`;
   const values: (string | number)[] = [periodMonth];
   if (role) {
     values.push(role as string);
@@ -88,7 +91,7 @@ export const getCreditOverview = async (req: Request, res: Response) => {
 
   try {
     const { rows: users, total } = await listPage(
-      `users.id, users.email, users.role, users.business_name, users.is_blocked,
+      `users.id, users.email, users.role, users.business_name, users.is_blocked, companies.name AS company_name,
        (SELECT COUNT(*) FROM credit_requests
         WHERE credit_requests.user_id = users.id AND credit_requests.status = 'PENDING')::int AS pending_requests,
        ${BALANCE_SQL.planName} AS plan_name, ${BALANCE_SQL.hasSubscription} AS has_subscription,
@@ -105,21 +108,26 @@ export const getCreditOverview = async (req: Request, res: Response) => {
   }
 };
 
-// Subscription and top-up requests, pending first. Filters: type, status, user_id.
+// Subscription and top-up requests, pending first. Filters: type, status, user_id. A branch's own
+// top-up shows only once its headquarters forwarded it (REACHED_ADMIN). Rows name the branch's
+// company and who sent the request (requested_by: the user, the headquarters, or null for the
+// renewal job).
 export const getCreditRequests = async (req: Request, res: Response) => {
   const { type, status, user_id } = req.query;
   const page = parsePage(req.query, ADMIN_PAGE_SIZE);
   if (
     !page ||
     (type && !CREDIT_REQUEST_TYPES.includes(type as string)) ||
-    (status && !CREDIT_REQUEST_STATUSES.includes(status as string))
+    (status && !ADMIN_REQUEST_STATUSES.includes(status as string))
   ) {
     return res.status(400).json({ error: "Invalid filter." });
   }
   let from = `FROM credit_requests ${CREDIT_REQUEST_JOINS}
     JOIN users AS requesters ON credit_requests.user_id = requesters.id
+    LEFT JOIN companies ON requesters.company_id = companies.id
+    LEFT JOIN users AS senders ON credit_requests.requested_by = senders.id
     LEFT JOIN users AS reviewers ON credit_requests.reviewed_by = reviewers.id
-    WHERE true`;
+    WHERE ${REACHED_ADMIN}`;
   const values: (string | number)[] = [];
   if (type) {
     values.push(type as string);
@@ -142,7 +150,9 @@ export const getCreditRequests = async (req: Request, res: Response) => {
     const { rows, total } = await listPage(
       `${CREDIT_REQUEST_COLUMNS}, credit_requests.admin_note,
        requesters.email AS user_email, requesters.business_name AS user_business_name,
-       requesters.role AS user_role, reviewers.email AS reviewed_by_email`,
+       requesters.role AS user_role, companies.name AS company_name,
+       senders.email AS requested_by_email, senders.role AS requested_by_role,
+       reviewers.email AS reviewed_by_email`,
       from,
       `CASE WHEN credit_requests.status = 'PENDING' THEN 0 ELSE 1 END,
        credit_requests.created_at DESC, credit_requests.id DESC`,
@@ -254,6 +264,13 @@ const decideRequest = (decision: "APPROVED" | "REJECTED") => async (req: Request
       message: `Your ${kind} request was ${decision === "APPROVED" ? "approved" : "rejected"}.`,
       creditRequestId: requestId,
     });
+    // A branch's headquarters asks and pays for its credits, so it is told too (nothing for others).
+    await notifyCompanyHqOfCredit(
+      client,
+      requestId,
+      decision === "APPROVED" ? "BRANCH_CREDIT_REQUEST_APPROVED" : "BRANCH_CREDIT_REQUEST_REJECTED",
+      `A branch ${kind} request was ${decision === "APPROVED" ? "approved" : "rejected"}.`,
+    );
     await client.query("COMMIT");
     return res.status(200).json({
       message: decision === "APPROVED" ? "Request approved." : "Request rejected.",

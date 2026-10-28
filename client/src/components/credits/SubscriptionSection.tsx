@@ -9,7 +9,7 @@ import { useCredits } from "../../context/CreditsContext.js";
 import SubscribeModal from "./SubscribeModal.js";
 import TopupModal from "./TopupModal.js";
 import ConfirmModal from "../common/ConfirmModal.js";
-import AutoRenewTooltip from "./AutoRenewTooltip.js";
+import AutoRenewSwitch from "./AutoRenewSwitch.js";
 import LoadMore from "../LoadMore.js";
 import { usePagedLimit } from "../../hooks/usePagedLimit.js";
 import { LIST_PAGE_SIZE } from "../../utils/pagination.js";
@@ -62,6 +62,8 @@ function ToggleButton({ open, controls, onClick, prominent = false, children }: 
 // With a subscription, next month's plans and the extra credits sit behind toggles that start
 // closed (extra credits open at 0 credits), open from #subscription / #topup links and close
 // again after a request is sent.
+// A branch (managedByCompany) does not choose its plan: its headquarters chooses and pays it, so
+// the plans and the auto-renew switch are left out and extra credits are asked from the headquarters.
 function SubscriptionSection({ role }: { role: Role }) {
   const { t } = useTranslation();
   const { credits, refresh } = useCredits();
@@ -129,6 +131,8 @@ function SubscriptionSection({ role }: { role: Role }) {
   };
 
   const subscription = credits.subscription;
+  const managed = credits.managedByCompany;
+  const company = credits.companyName ?? "";
   // Without a subscription the request is for this month; with one, a plan change for the next.
   const period = subscription ? "next" : "current";
   const requestMonth = period === "current" ? credits.periodStart : nextCreditMonth(credits.periodStart);
@@ -136,9 +140,11 @@ function SubscriptionSection({ role }: { role: Role }) {
     (request) => request.request_type === "SUBSCRIPTION" && request.period_month === requestMonth,
   );
   const pendingTopup = credits.pendingRequests.find((request) => request.request_type === "TOPUP");
-  const canChoosePlan = !pendingSubscription && !(period === "next" && credits.nextSubscription);
+  const canChoosePlan = !managed && !pendingSubscription && !(period === "next" && credits.nextSubscription);
   // Without a subscription the plans are the point of the card; with one they are optional.
   const planCollapsible = period === "next" && canChoosePlan;
+  // A branch withdraws only a top-up that still waits for its headquarters.
+  const canWithdraw = (request: CreditRequest) => !managed || request.status === "COMPANY_REVIEW";
   const showPlans = canChoosePlan && (!planCollapsible || planOpen);
   const showTopups = topupOpen ?? credits.available === 0;
 
@@ -206,7 +212,9 @@ function SubscriptionSection({ role }: { role: Role }) {
             </span>
             <div>
               <h2 className="text-lg font-bold text-gray-900">{t("credits.profile.title")}</h2>
-              <p className="text-sm text-gray-500">{t("credits.profile.subtitle")}</p>
+              <p className="text-sm text-gray-500">
+                {managed ? t("credits.profile.paidByCompany", { company }) : t("credits.profile.subtitle")}
+              </p>
             </div>
           </div>
           <Link to="/credits" className="inline-flex items-center gap-1 text-sm font-semibold text-orange-600 hover:text-orange-700">
@@ -245,21 +253,15 @@ function SubscriptionSection({ role }: { role: Role }) {
           </div>
         </dl>
 
-        {subscription && (
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-            <label className="flex cursor-pointer items-center gap-2 font-medium text-gray-800">
-              <input
-                type="checkbox"
-                role="switch"
-                checked={subscription.auto_renew}
-                onChange={toggleAutoRenew}
-                disabled={busy}
-                className="h-4 w-4 accent-orange-500"
-              />
-              {t("credits.profile.autoRenew")}
-            </label>
-            <AutoRenewTooltip />
+        {subscription && !managed && (
+          <div className="mt-4">
+            <AutoRenewSwitch checked={subscription.auto_renew} onChange={toggleAutoRenew} disabled={busy} />
           </div>
+        )}
+        {managed && (
+          <p className="mt-4 rounded-xl bg-teal-50 px-4 py-3 text-sm text-teal-800">
+            {t("credits.profile.companyManagesPlan", { company })}
+          </p>
         )}
         {credits.nextSubscription && (
           <p className="mt-3 text-sm text-gray-600">
@@ -278,19 +280,29 @@ function SubscriptionSection({ role }: { role: Role }) {
                 className="flex flex-col gap-2 rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
               >
                 <span className="text-amber-900">
-                  {t("credits.profile.pendingRequest", {
-                    what: requestLabel(request),
-                    month: formatCreditMonth(request.period_month, monthNames),
-                  })}
+                  {t(
+                    request.status === "COMPANY_REVIEW"
+                      ? "credits.profile.pendingAtCompany"
+                      : managed
+                        ? "credits.profile.pendingAtAdmin"
+                        : "credits.profile.pendingRequest",
+                    {
+                      what: requestLabel(request),
+                      month: formatCreditMonth(request.period_month, monthNames),
+                      company,
+                    },
+                  )}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => requestWithdraw(request)}
-                  disabled={busy}
-                  className="w-fit cursor-pointer rounded-lg px-3 py-1.5 font-medium text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-60"
-                >
-                  {t("credits.profile.withdraw")}
-                </button>
+                {canWithdraw(request) && (
+                  <button
+                    type="button"
+                    onClick={() => requestWithdraw(request)}
+                    disabled={busy}
+                    className="w-fit cursor-pointer rounded-lg px-3 py-1.5 font-medium text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-60"
+                  >
+                    {t("credits.profile.withdraw")}
+                  </button>
+                )}
               </li>
             ))}
           </ul>
@@ -317,7 +329,7 @@ function SubscriptionSection({ role }: { role: Role }) {
           </div>
         )}
 
-        {(!planCollapsible || planOpen) && (
+        {!managed && (!planCollapsible || planOpen) && (
           <h3 className="mt-6 text-sm font-semibold text-gray-900">
             {t(period === "current" ? "credits.profile.choosePlan" : "credits.profile.changePlan", {
               month: formatCreditMonth(requestMonth, monthNames),
@@ -343,7 +355,8 @@ function SubscriptionSection({ role }: { role: Role }) {
             ))}
           </div>
         ) : (
-          !canChoosePlan && (
+          !canChoosePlan &&
+          !managed && (
             <p className="mt-2 text-sm text-gray-500">
               {t(pendingSubscription ? "credits.profile.planPending" : "credits.profile.planDecided")}
             </p>
@@ -357,18 +370,30 @@ function SubscriptionSection({ role }: { role: Role }) {
             <PlusCircle className="h-5 w-5" strokeWidth={1.8} />
           </span>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">{t("credits.profile.topupTitle")}</h2>
-            <p className="text-sm text-gray-500">{t("credits.profile.topupSubtitle")}</p>
+            <h2 className="text-lg font-bold text-gray-900">
+              {t(managed ? "credits.profile.topupTitleCompany" : "credits.profile.topupTitle")}
+            </h2>
+            <p className="text-sm text-gray-500">
+              {managed ? t("credits.profile.topupSubtitleCompany", { company }) : t("credits.profile.topupSubtitle")}
+            </p>
           </div>
         </div>
         {!credits.hasActiveSubscription ? (
-          <p className="mt-4 text-sm text-gray-600">{t("credits.profile.topupNeedsSubscription")}</p>
+          <p className="mt-4 text-sm text-gray-600">
+            {managed
+              ? t("credits.profile.topupNeedsCompanyPlan", { company })
+              : t("credits.profile.topupNeedsSubscription")}
+          </p>
         ) : pendingTopup ? (
-          <p className="mt-4 text-sm text-gray-600">{t("credits.profile.topupPending")}</p>
+          <p className="mt-4 text-sm text-gray-600">
+            {pendingTopup.status === "COMPANY_REVIEW"
+              ? t("credits.profile.topupPendingAtCompany", { company })
+              : t("credits.profile.topupPending")}
+          </p>
         ) : (
           <div className="mt-4">
             <ToggleButton open={showTopups} controls={TOPUP_OPTIONS} onClick={() => setTopupOpen(!showTopups)}>
-              {t("credits.profile.buyTopup")}
+              {t(managed ? "credits.profile.requestTopupFromCompany" : "credits.profile.buyTopup")}
             </ToggleButton>
           </div>
         )}
@@ -400,6 +425,14 @@ function SubscriptionSection({ role }: { role: Role }) {
                     {requestLabel(request)} · {formatCreditMonth(request.period_month, monthNames)}
                     {request.source === "AUTO_RENEW" && (
                       <span className="ml-1 text-xs text-gray-400">({t("credits.profile.autoRenewSource")})</span>
+                    )}
+                    {managed && request.source === "COMPANY" && (
+                      <span className="ml-1 text-xs text-gray-400">({t("credits.profile.companySource", { company })})</span>
+                    )}
+                    {request.company_note && (
+                      <span className="block text-xs italic text-gray-500">
+                        {t("credits.profile.companyNote", { note: request.company_note })}
+                      </span>
                     )}
                   </span>
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${CREDIT_REQUEST_STATUS_STYLES[request.status]}`}>
@@ -442,6 +475,7 @@ function SubscriptionSection({ role }: { role: Role }) {
           topup={selectedTopup}
           role={role}
           periodEnd={credits.periodEnd}
+          toCompany={managed ? company : null}
           onClose={() => setSelectedTopup(null)}
           onSent={async () => {
             setSelectedTopup(null);

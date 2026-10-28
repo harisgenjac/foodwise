@@ -14,10 +14,25 @@ interface TopupModalProps {
   periodEnd: string;
   onClose: () => void;
   onSent: () => void;
+  // A headquarters adding credits for its branch: where the request goes and the branch's name.
+  endpoint?: string;
+  branchName?: string;
+  // A branch asking its headquarters, which approves it before an admin does.
+  toCompany?: string | null;
 }
 
-// Explains what extra credits are before the user sends a top-up request.
-function TopupModal({ topup, role, periodEnd, onClose, onSent }: TopupModalProps) {
+// Explains what extra credits are before the user sends a top-up request (a branch sends it to
+// its headquarters, a headquarters for one of its branches).
+function TopupModal({
+  topup,
+  role,
+  periodEnd,
+  onClose,
+  onSent,
+  endpoint = "/credits/requests",
+  branchName,
+  toCompany = null,
+}: TopupModalProps) {
   const { t } = useTranslation();
   const [sending, setSending] = useState(false);
 
@@ -25,8 +40,8 @@ function TopupModal({ topup, role, periodEnd, onClose, onSent }: TopupModalProps
     if (sending) return;
     setSending(true);
     try {
-      await api.post("/credits/requests", { request_type: "TOPUP", topup_package_id: topup.id });
-      toast.success(t("credits.profile.topupSent"));
+      await api.post(endpoint, { request_type: "TOPUP", topup_package_id: topup.id });
+      toast.success(t(toCompany ? "credits.profile.topupSentToCompany" : "credits.profile.topupSent"));
       onSent();
     } catch (err) {
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
@@ -39,7 +54,14 @@ function TopupModal({ topup, role, periodEnd, onClose, onSent }: TopupModalProps
   return (
     <Modal onClose={onClose}>
       <h3 className="text-lg font-bold text-gray-900">
-        {t("credits.topupModal.title", { credits: t("credits.profile.creditsCount", { count: topup.credits }) })}
+        {branchName
+          ? t("credits.topupModal.titleForBranch", {
+              credits: t("credits.profile.creditsCount", { count: topup.credits }),
+              branch: branchName,
+            })
+          : t(toCompany ? "credits.topupModal.titleToCompany" : "credits.topupModal.title", {
+              credits: t("credits.profile.creditsCount", { count: topup.credits }),
+            })}
       </h3>
       <p className="mt-1 text-sm text-gray-500">{t("credits.profile.price", { price: topup.price })}</p>
 
@@ -52,7 +74,9 @@ function TopupModal({ topup, role, periodEnd, onClose, onSent }: TopupModalProps
         <p>{t("credits.topupModal.expiry", { date: formatDisplayDate(periodEnd) })}</p>
       </div>
 
-      <p className="mt-4 text-xs text-gray-500">{t("credits.modal.payment")}</p>
+      <p className="mt-4 text-xs text-gray-500">
+        {toCompany ? t("credits.topupModal.paymentByCompany", { company: toCompany }) : t("credits.modal.payment")}
+      </p>
 
       <div className="mt-5 flex gap-2">
         <button

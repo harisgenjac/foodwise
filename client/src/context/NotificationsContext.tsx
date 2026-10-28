@@ -29,7 +29,14 @@ export type NotificationType =
   | "CREDIT_REQUEST_REJECTED"
   | "CREDIT_RENEWAL_CREATED"
   | "CREDIT_REQUEST_EXPIRED"
-  | "CREDIT_RENEWAL_SKIPPED";
+  | "CREDIT_RENEWAL_SKIPPED"
+  // A branch's credits, to its headquarters (linked to the branch) and to the branch.
+  | "BRANCH_TOPUP_REQUESTED"
+  | "BRANCH_CREDIT_REQUEST_APPROVED"
+  | "BRANCH_CREDIT_REQUEST_REJECTED"
+  | "BRANCH_CREDIT_REQUEST_EXPIRED"
+  | "CREDIT_TOPUP_COMPANY_APPROVED"
+  | "CREDIT_TOPUP_COMPANY_REJECTED";
 
 export interface Notification {
   id: number;
@@ -54,6 +61,8 @@ export interface Notification {
   credit_request_type?: "SUBSCRIPTION" | "TOPUP" | null;
   credit_amount?: number | null;
   credit_requester?: string | null;
+  // The requester's company (a branch), for "Bingo d.o.o. → Bingo Tuzla".
+  credit_company?: string | null;
   // A company headquarters' notifications about one of its branches: the branch and its name.
   branch_id?: number | null;
   branch_name?: string | null;

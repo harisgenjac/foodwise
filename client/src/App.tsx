@@ -42,6 +42,7 @@ import CompanyProfilePage from './pages/company/CompanyProfilePage.js';
 import CompanyBranchesPage from './pages/company/CompanyBranchesPage.js';
 import CompanyCreateBranchPage from './pages/company/CompanyCreateBranchPage.js';
 import CompanyBranchDetailsPage from './pages/company/CompanyBranchDetailsPage.js';
+import CompanyCreditsPage from './pages/company/CompanyCreditsPage.js';
 
 function App() {
   return (
@@ -90,6 +91,7 @@ function App() {
         <Route path="/company/branches" element={<ProtectedRoute role="COMPANY"><CompanyBranchesPage /></ProtectedRoute>} />
         <Route path="/company/branches/new" element={<ProtectedRoute role="COMPANY"><CompanyCreateBranchPage /></ProtectedRoute>} />
         <Route path="/company/branches/:id" element={<ProtectedRoute role="COMPANY"><CompanyBranchDetailsPage /></ProtectedRoute>} />
+        <Route path="/company/credits" element={<ProtectedRoute role="COMPANY"><CompanyCreditsPage /></ProtectedRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

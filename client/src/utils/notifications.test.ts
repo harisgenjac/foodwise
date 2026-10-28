@@ -194,3 +194,87 @@ describe("branch notifications", () => {
     );
   });
 });
+
+describe("branch credit notifications", () => {
+  const credit = (overrides: Partial<Notification>) =>
+    makeNotification({
+      reservation_id: null,
+      product_id: null,
+      product_name: null,
+      credit_request_id: 31,
+      credit_request_type: "TOPUP",
+      credit_amount: 20,
+      ...overrides,
+    });
+
+  it("names the company and the branch in the admin's new request", () => {
+    const created = credit({ type: "CREDIT_REQUEST_CREATED", credit_requester: "Bingo Tuzla", credit_company: "Bingo d.o.o." });
+    expect(getNotificationText(created, t)).toBe(
+      t("notifications.credits.topupCreated", { credits: 20, requester: "Bingo d.o.o. → Bingo Tuzla" }),
+    );
+  });
+
+  it("tells the headquarters about a branch's request and opens its credits page", () => {
+    const asked = credit({ type: "BRANCH_TOPUP_REQUESTED", branch_id: 22, branch_name: "Bingo Tuzla" });
+    expect(getNotificationText(asked, t)).toBe(
+      t("notifications.credits.branchTopupRequested", { credits: 20, branch: "Bingo Tuzla" }),
+    );
+    expect(getNotificationLink(asked, "COMPANY")).toBe("/company/credits");
+    const approved = credit({ type: "BRANCH_CREDIT_REQUEST_APPROVED", branch_id: 22, branch_name: "Bingo Tuzla" });
+    expect(getNotificationText(approved, t)).toBe(
+      t("notifications.credits.branchTopupApproved", { credits: 20, branch: "Bingo Tuzla" }),
+    );
+    expect(getNotificationLink(approved, "COMPANY")).toBe("/company/branches/22");
+  });
+
+  it("tells the branch its headquarters' answer, with the note, linking to the top-up section", () => {
+    const rejected = credit({ type: "CREDIT_TOPUP_COMPANY_REJECTED", details: "Ne sada." });
+    expect(getNotificationText(rejected, t)).toBe(
+      `${t("notifications.credits.companyTopupRejected", { credits: 20 })} ${t("notifications.reason", { reason: "Ne sada." })}`,
+    );
+    expect(getNotificationLink(rejected, "STORE")).toBe("/my-profile#topup");
+    expect(getNotificationLink(credit({ type: "CREDIT_TOPUP_COMPANY_APPROVED" }), "STORE")).toBe("/my-profile#topup");
+  });
+});
+
+describe("branch credit notifications", () => {
+  const credit = (overrides: Partial<Notification>) =>
+    makeNotification({
+      reservation_id: null,
+      product_id: null,
+      product_name: null,
+      credit_request_id: 31,
+      credit_request_type: "TOPUP",
+      credit_amount: 20,
+      ...overrides,
+    });
+
+  it("names the company and the branch in the admin's new request", () => {
+    const created = credit({ type: "CREDIT_REQUEST_CREATED", credit_requester: "Bingo Tuzla", credit_company: "Bingo d.o.o." });
+    expect(getNotificationText(created, t)).toBe(
+      t("notifications.credits.topupCreated", { credits: 20, requester: "Bingo d.o.o. → Bingo Tuzla" }),
+    );
+  });
+
+  it("tells the headquarters about a branch's request and opens its credits page", () => {
+    const asked = credit({ type: "BRANCH_TOPUP_REQUESTED", branch_id: 22, branch_name: "Bingo Tuzla" });
+    expect(getNotificationText(asked, t)).toBe(
+      t("notifications.credits.branchTopupRequested", { credits: 20, branch: "Bingo Tuzla" }),
+    );
+    expect(getNotificationLink(asked, "COMPANY")).toBe("/company/credits");
+    const approved = credit({ type: "BRANCH_CREDIT_REQUEST_APPROVED", branch_id: 22, branch_name: "Bingo Tuzla" });
+    expect(getNotificationText(approved, t)).toBe(
+      t("notifications.credits.branchTopupApproved", { credits: 20, branch: "Bingo Tuzla" }),
+    );
+    expect(getNotificationLink(approved, "COMPANY")).toBe("/company/branches/22");
+  });
+
+  it("tells the branch its headquarters' answer, with the note, linking to the top-up section", () => {
+    const rejected = credit({ type: "CREDIT_TOPUP_COMPANY_REJECTED", details: "Ne sada." });
+    expect(getNotificationText(rejected, t)).toBe(
+      `${t("notifications.credits.companyTopupRejected", { credits: 20 })} ${t("notifications.reason", { reason: "Ne sada." })}`,
+    );
+    expect(getNotificationLink(rejected, "STORE")).toBe("/my-profile#topup");
+    expect(getNotificationLink(credit({ type: "CREDIT_TOPUP_COMPANY_APPROVED" }), "STORE")).toBe("/my-profile#topup");
+  });
+});

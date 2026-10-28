@@ -328,7 +328,7 @@ describe("Branches", () => {
 
       const response = await hq.post(`/api/company/branches/${branchId}/deactivate`);
       expect(response.status).toBe(200);
-      expect(response.body).toEqual({ message: "Branch deactivated.", cancelledReservations: 1 });
+      expect(response.body).toEqual({ message: "Branch deactivated.", cancelledReservations: 1, withdrawnRequests: 0 });
       expect(await reservationStatus(pending)).toBe("Cancelled");
       expect(await notificationsOf(RESTAURANT)).toContainEqual(
         expect.objectContaining({ type: "RESERVATION_CANCELLED_STORE_CLOSED", reservation_id: pending, details: null }),

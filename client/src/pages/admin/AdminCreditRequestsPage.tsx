@@ -16,7 +16,13 @@ import CreditRequestDecisionModal, {
   type CreditRequestAction,
 } from "../../components/admin/CreditRequestDecisionModal.js";
 import { ADMIN_PAGE_SIZE, formatDateTime } from "../../utils/admin.js";
-import { CREDIT_REQUEST_STATUS_STYLES, describeCreditRequest, formatCreditMonth } from "../../utils/credits.js";
+import {
+  CREDIT_REQUEST_STATUS_STYLES,
+  creditRequestSender,
+  creditRequestUser,
+  describeCreditRequest,
+  formatCreditMonth,
+} from "../../utils/credits.js";
 import type { AdminCreditRequest } from "../../types/index.js";
 
 type Decision = { request: AdminCreditRequest; action: CreditRequestAction };
@@ -144,8 +150,11 @@ function AdminCreditRequestsPage() {
                   <tr key={request.id} className="align-top">
                     <td className="px-4 py-3">
                       <Link to={`/admin/users/${request.user_id}`} className="font-medium text-gray-900 hover:text-orange-600">
-                        {request.user_business_name || request.user_email}
+                        {creditRequestUser(request)}
                       </Link>
+                      {creditRequestSender(request, t) && (
+                        <p className="text-xs font-medium text-teal-700">{creditRequestSender(request, t)}</p>
+                      )}
                       <p className="text-xs text-gray-500">{formatDateTime(request.created_at)}</p>
                     </td>
                     <td className="px-4 py-3">
