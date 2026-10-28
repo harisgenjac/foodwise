@@ -8,6 +8,7 @@ import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import { HttpError } from "../utils/httpError.js";
 import { parseCityFilter } from "../utils/cities.js";
 import { chargeForReservation, refundForReservation } from "../services/creditService.js";
+import { visibleStore } from "../utils/visibility.js";
 
 export const RESERVATION_STATUSES = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
 
@@ -40,7 +41,7 @@ export const createReservation = async (req: Request, res: Response) => {
          $2::timestamp::date < CURRENT_DATE OR $2::timestamp::date > expiry_date AS pickup_out_of_range
        FROM products
        WHERE id = $1
-         AND store_id NOT IN (SELECT users.id FROM users WHERE users.is_blocked)
+         AND store_id IN (SELECT users.id FROM users WHERE ${visibleStore("users")})
        FOR UPDATE`,
       [productId, pickup_date],
     );

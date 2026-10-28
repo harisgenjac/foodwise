@@ -52,6 +52,15 @@ export const ADMINS = [
   { first_name: "Amra", last_name: "Admin", email: "admin2@demo.com" },
 ];
 
+// Store chains with their headquarters login (COMPANY role). Branches come with step 2.2.
+export const COMPANIES = [
+  {
+    name: "Bingo d.o.o.",
+    description: "Trgovački lanac s prodavnicama širom Bosne i Hercegovine.",
+    hq: { first_name: "Selma", last_name: "Bingo", phone: "035 000 111", email: "bingo@demo.com" },
+  },
+];
+
 const ALL_CATEGORIES = ["Meat", "Fish", "Dairy", "Vegetables", "Fruits", "Bakery", "Drinks", "Frozen Food", "Other"];
 
 export const STORES: SeedStore[] = [

@@ -2,12 +2,16 @@ import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import { parseId } from "../utils/params.js";
 
+// The audience a user belongs to: a company's headquarters gets the store announcements.
+const MEANT_FOR_USER = `(announcements.audience = 'ALL'
+  OR announcements.audience::text = CASE WHEN users.role = 'COMPANY' THEN 'STORE' ELSE users.role::text END)`;
+
 // An announcement is shown to a role when it targets everyone or that role, has not been ended or
 // expired, and was sent after the account existed (a new account does not get old news).
 const VISIBLE_TO_USER = `
   announcements.ended_at IS NULL
   AND (announcements.expires_at IS NULL OR announcements.expires_at > NOW())
-  AND (announcements.audience = 'ALL' OR announcements.audience::text = users.role::text)
+  AND ${MEANT_FOR_USER}
   AND announcements.created_at >= users.created_at`;
 
 export const getActiveAnnouncements = async (req: Request, res: Response) => {
@@ -43,7 +47,7 @@ export const dismissAnnouncement = async (req: Request, res: Response) => {
       `SELECT announcements.id FROM announcements
        JOIN users ON users.id = $2
        WHERE announcements.id = $1
-         AND (announcements.audience = 'ALL' OR announcements.audience::text = users.role::text)`,
+         AND ${MEANT_FOR_USER}`,
       [announcementId, req.user!.id],
     );
     if (visible.rows.length === 0) {

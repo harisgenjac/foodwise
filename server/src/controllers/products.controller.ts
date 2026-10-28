@@ -7,6 +7,7 @@ import { CARD_PAGE_SIZE, listPage, parsePage } from '../utils/pagination.js';
 import { HttpError } from '../utils/httpError.js';
 import { cityDistance, parseCityFilter, parseRadius, userCityId } from '../utils/cities.js';
 import { chargeForProduct, chargeForProducts, refundForProduct } from '../services/creditService.js';
+import { visibleStore } from '../utils/visibility.js';
 
 export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
 
@@ -188,8 +189,7 @@ export const getProducts = async (req: Request, res: Response) => {
       LEFT JOIN cities ON cities.id = users.city_id
       WHERE products.status = 'Available'
       AND products.expiry_date >= CURRENT_DATE
-      AND users.is_blocked = false
-      AND users.business_name IS NOT NULL
+      AND ${visibleStore("users")}
     `;
 
     if (category) {
@@ -289,7 +289,7 @@ export const getProductById = async (req: Request, res: Response) => {
    FROM products
    JOIN users ON products.store_id = users.id
    LEFT JOIN cities ON cities.id = users.city_id
-   WHERE products.id = $1 AND users.is_blocked = false`,
+   WHERE products.id = $1 AND ${visibleStore("users")}`,
       [productId],
     );
 

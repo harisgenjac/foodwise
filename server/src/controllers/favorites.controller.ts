@@ -1,6 +1,7 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import { parseId } from "../utils/params.js";
+import { visibleStore } from "../utils/visibility.js";
 
 export const addFavorite = async (req: Request, res: Response) => {
   try {
@@ -17,7 +18,7 @@ export const addFavorite = async (req: Request, res: Response) => {
     }
 
     const store = await pool.query(
-      `SELECT id FROM users WHERE id = $1 AND role = 'STORE' AND is_blocked = false`,
+      `SELECT users.id FROM users WHERE users.id = $1 AND users.role = 'STORE' AND ${visibleStore("users")}`,
       [storeId],
     );
     if (store.rows.length === 0) {
@@ -86,7 +87,7 @@ export const getFavorites = async (req: Request, res: Response) => {
         users.logo_url, users.description, users.opening_hours, users.pickup_hours, users.phone FROM favorites 
         JOIN users ON favorites.store_id = users.id
         LEFT JOIN cities ON cities.id = users.city_id
-        WHERE favorites.restaurant_id = $1 AND users.is_blocked = false`,
+        WHERE favorites.restaurant_id = $1 AND ${visibleStore("users")}`,
       [restaurant_id],
     );
     return res

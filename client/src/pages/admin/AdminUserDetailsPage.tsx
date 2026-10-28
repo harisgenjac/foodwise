@@ -121,7 +121,10 @@ function AdminUserDetailsPage() {
   const name = accountName(user);
   const fullName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
   const isOwnAccount = me?.id === user.id;
-  const isBusiness = user.role !== "ADMIN";
+  // Stores and restaurants have a business profile, activity and credits; a company
+  // headquarters login has a name and a phone and belongs to its company.
+  const isBusiness = user.role === "STORE" || user.role === "RESTAURANT";
+  const isCompany = user.role === "COMPANY";
 
   const secondaryButton =
     "inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50";
@@ -141,6 +144,10 @@ function AdminUserDetailsPage() {
               {user.is_blocked ? (
                 <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
                   {t("admin.common.blocked")}
+                </span>
+              ) : user.company_is_blocked ? (
+                <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                  {t("admin.common.companyBlocked")}
                 </span>
               ) : getAccountSetup(user).missingFields.length > 0 ? (
                 <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
@@ -210,6 +217,27 @@ function AdminUserDetailsPage() {
 
         <dl className="mt-6 grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2 lg:grid-cols-3">
           <DetailItem icon={UserRound} label={t("admin.userDetails.name")} value={fullName || "—"} />
+          {isCompany && (
+            <>
+              <DetailItem
+                icon={Building2}
+                label={t("admin.userDetails.company")}
+                value={
+                  user.company_id ? (
+                    <Link
+                      to={`/admin/companies/${user.company_id}`}
+                      className="text-orange-600 hover:text-orange-700 hover:underline"
+                    >
+                      {user.company_name}
+                    </Link>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
+              <DetailItem icon={Phone} label={t("admin.userDetails.phone")} value={user.phone || "—"} />
+            </>
+          )}
           {isBusiness && (
             <>
               <DetailItem icon={Building2} label={t("admin.userDetails.businessName")} value={user.business_name || "—"} />

@@ -1,9 +1,10 @@
+import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 
 interface DetailItemProps {
   icon: LucideIcon;
   label: string;
-  value: string;
+  value: ReactNode;
   valueClassName?: string;
 }
 

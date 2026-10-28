@@ -35,6 +35,10 @@ import AdminAnnouncementsPage from './pages/admin/AdminAnnouncementsPage.js';
 import AdminActionsPage from './pages/admin/AdminActionsPage.js';
 import AdminCreditsPage from './pages/admin/AdminCreditsPage.js';
 import AdminCreditRequestsPage from './pages/admin/AdminCreditRequestsPage.js';
+import AdminCompaniesPage from './pages/admin/AdminCompaniesPage.js';
+import AdminCreateCompanyPage from './pages/admin/AdminCreateCompanyPage.js';
+import AdminCompanyDetailsPage from './pages/admin/AdminCompanyDetailsPage.js';
+import CompanyProfilePage from './pages/company/CompanyProfilePage.js';
 
 function App() {
   return (
@@ -76,6 +80,10 @@ function App() {
         <Route path="/admin/actions" element={<ProtectedRoute role="ADMIN"><AdminActionsPage /></ProtectedRoute>} />
         <Route path="/admin/credits" element={<ProtectedRoute role="ADMIN"><AdminCreditsPage /></ProtectedRoute>} />
         <Route path="/admin/credit-requests" element={<ProtectedRoute role="ADMIN"><AdminCreditRequestsPage /></ProtectedRoute>} />
+        <Route path="/admin/companies" element={<ProtectedRoute role="ADMIN"><AdminCompaniesPage /></ProtectedRoute>} />
+        <Route path="/admin/companies/new" element={<ProtectedRoute role="ADMIN"><AdminCreateCompanyPage /></ProtectedRoute>} />
+        <Route path="/admin/companies/:id" element={<ProtectedRoute role="ADMIN"><AdminCompanyDetailsPage /></ProtectedRoute>} />
+        <Route path="/company/profile" element={<ProtectedRoute role="COMPANY"><CompanyProfilePage /></ProtectedRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -21,8 +21,12 @@ import { getPlatformUsage, refundForReservation } from "../services/creditServic
 import { getSavedTotals } from "../services/impactStats.js";
 import { creditMonth, nextMonth } from "../utils/creditTime.js";
 import type { Role } from "../types/auth.js";
+import { notBlocked } from "../utils/visibility.js";
 
-export const ROLES = ["STORE", "RESTAURANT", "ADMIN"];
+// Every role an admin can filter by. COMPANY accounts are created with their company
+// (POST /companies), never through POST /users.
+export const ROLES = ["STORE", "RESTAURANT", "ADMIN", "COMPANY"];
+const USER_CREATED_ROLES = ["STORE", "RESTAURANT", "ADMIN"];
 export const ADMIN_ACTIONS = [
   "CREATE_USER",
   "RESET_PASSWORD",
@@ -37,11 +41,15 @@ export const ADMIN_ACTIONS = [
   "APPROVE_CREDIT_REQUEST",
   "REJECT_CREDIT_REQUEST",
   "ADJUST_CREDITS",
+  "CREATE_COMPANY",
+  "UPDATE_COMPANY",
+  "BLOCK_COMPANY",
+  "UNBLOCK_COMPANY",
 ];
 export const ANNOUNCEMENT_AUDIENCES = ["ALL", "STORE", "RESTAURANT"];
 
 const MAX_REASON_LENGTH = 500;
-const RECENT_ACTIONS_LIMIT = 20;
+export const RECENT_ACTIONS_LIMIT = 20;
 
 // The sortable columns of each admin table (`?sort=<key>&dir=asc|desc`, see parseSort).
 const USER_SORTS = { created_at: "users.created_at" };
@@ -52,7 +60,11 @@ const DONATION_SORTS = { expiry_date: "donation_offers.expiry_date" };
 const USER_COLUMNS = `users.id, users.email, users.role, users.first_name, users.last_name,
   users.business_name, users.city_id, ${CITY_NAME}, users.address, users.phone, users.logo_url,
   users.opening_hours, users.pickup_hours, users.description,
-  users.is_blocked, users.blocked_at, users.blocked_reason, users.must_change_password, users.created_at`;
+  users.is_blocked, users.blocked_at, users.blocked_reason, users.must_change_password, users.created_at,
+  users.company_id,
+  (SELECT companies.name FROM companies WHERE companies.id = users.company_id) AS company_name,
+  COALESCE((SELECT companies.is_blocked FROM companies WHERE companies.id = users.company_id), false)
+    AS company_is_blocked`;
 
 interface AdminAction {
   adminId: number;
@@ -63,6 +75,7 @@ interface AdminAction {
   targetReservationId?: number | null;
   targetAnnouncementId?: number | null;
   targetCreditRequestId?: number | null;
+  targetCompanyId?: number | null;
   reason?: string | null;
 }
 
@@ -78,14 +91,15 @@ export const logAdminAction = async (
     targetReservationId = null,
     targetAnnouncementId = null,
     targetCreditRequestId = null,
+    targetCompanyId = null,
     reason = null,
   }: AdminAction,
 ) => {
   await db.query(
     `INSERT INTO admin_actions
        (admin_id, action, target_user_id, target_product_id, target_donation_id, target_reservation_id,
-        target_announcement_id, target_credit_request_id, reason)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        target_announcement_id, target_credit_request_id, target_company_id, reason)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
     [
       adminId,
       action,
@@ -95,6 +109,7 @@ export const logAdminAction = async (
       targetReservationId,
       targetAnnouncementId,
       targetCreditRequestId,
+      targetCompanyId,
       reason,
     ],
   );
@@ -115,7 +130,7 @@ export const getStats = async (req: Request, res: Response) => {
          COUNT(*) FILTER (WHERE users.role = 'STORE') AS stores,
          COUNT(*) FILTER (WHERE users.role = 'RESTAURANT') AS restaurants,
          COUNT(*) FILTER (WHERE users.role = 'ADMIN') AS admins,
-         COUNT(*) FILTER (WHERE users.is_blocked) AS blocked,
+         COUNT(*) FILTER (WHERE NOT ${notBlocked("users")}) AS blocked,
          COUNT(*) FILTER (WHERE users.role IN ('STORE', 'RESTAURANT') AND users.business_name IS NULL) AS incomplete_profiles
        FROM users`,
     );
@@ -163,7 +178,7 @@ export const getStats = async (req: Request, res: Response) => {
     const creditCounts = await pool.query(
       `SELECT
          (SELECT COUNT(*) FROM users
-          WHERE users.role IN ('STORE', 'RESTAURANT') AND users.is_blocked = false
+          WHERE users.role IN ('STORE', 'RESTAURANT') AND ${notBlocked("users")}
             AND NOT EXISTS (
               SELECT 1 FROM subscriptions
               WHERE subscriptions.user_id = users.id AND subscriptions.period_month = $1
@@ -225,13 +240,15 @@ export const getUsers = async (req: Request, res: Response) => {
     if (blocked !== "true" && blocked !== "false") {
       return res.status(400).json({ error: "Invalid filter." });
     }
-    values.push(blocked === "true");
-    from += ` AND users.is_blocked = $${values.length}`;
+    // Blocked on its own or through its company: the accounts that cannot log in.
+    from += blocked === "true" ? ` AND NOT ${notBlocked("users")}` : ` AND ${notBlocked("users")}`;
   }
   if (q) {
     values.push(`%${q}%`);
     from += ` AND (users.email ILIKE $${values.length} OR users.business_name ILIKE $${values.length}
-      OR users.first_name ILIKE $${values.length} OR users.last_name ILIKE $${values.length})`;
+      OR users.first_name ILIKE $${values.length} OR users.last_name ILIKE $${values.length}
+      OR EXISTS (SELECT 1 FROM companies
+                 WHERE companies.id = users.company_id AND companies.name ILIKE $${values.length}))`;
   }
 
   try {
@@ -327,7 +344,10 @@ export const createUser = async (req: Request, res: Response) => {
   if (!role || !email || !password) {
     return res.status(400).json({ error: "Email, password and role are required." });
   }
-  if (typeof role !== "string" || !ROLES.includes(role)) {
+  if (role === "COMPANY") {
+    return res.status(400).json({ error: "Company accounts are created on the Companies page." });
+  }
+  if (typeof role !== "string" || !USER_CREATED_ROLES.includes(role)) {
     return res.status(400).json({ error: "Role must be STORE, RESTAURANT or ADMIN." });
   }
   const credentialsError = validateEmail(email) ?? validatePassword(password);
@@ -400,7 +420,7 @@ export const resetPassword = async (req: Request, res: Response) => {
 
 // Cancels the Pending reservations of `where` (locked first) and notifies `recipient` of each.
 // Confirmed reservations are kept: the store already agreed to hand that food over.
-const cancelPendingReservations = async (
+export const cancelPendingReservations = async (
   client: PoolClient,
   where: string,
   values: number[],
@@ -565,7 +585,7 @@ export const getAdminProducts = async (req: Request, res: Response) => {
       `products.id, products.store_id, products.name, products.category, products.quantity,
        products.unit, products.original_price, products.discounted_price, products.expiry_date,
        products.status, products.created_at, users.business_name, users.email AS store_email,
-       users.is_blocked AS store_is_blocked`,
+       NOT ${notBlocked("users")} AS store_is_blocked`,
       from,
       orderBy,
       values,
@@ -776,6 +796,7 @@ export const getAdminActions = async (req: Request, res: Response) => {
     LEFT JOIN products ON admin_actions.target_product_id = products.id
     LEFT JOIN donation_offers ON admin_actions.target_donation_id = donation_offers.id
     LEFT JOIN announcements ON admin_actions.target_announcement_id = announcements.id
+    LEFT JOIN companies ON admin_actions.target_company_id = companies.id
     WHERE true`;
   const values: (string | number | boolean)[] = [];
   if (action) {
@@ -807,7 +828,8 @@ export const getAdminActions = async (req: Request, res: Response) => {
        admin_actions.target_donation_id, donation_offers.name AS donation_name,
        admin_actions.target_reservation_id,
        admin_actions.target_announcement_id, announcements.title_bs AS announcement_title,
-       admin_actions.target_credit_request_id`,
+       admin_actions.target_credit_request_id,
+       admin_actions.target_company_id, companies.name AS company_name`,
       from,
       "admin_actions.created_at DESC, admin_actions.id DESC",
       values,
@@ -1035,7 +1057,13 @@ export const createAnnouncement = async (req: Request, res: Response) => {
     return res.status(400).json({ error: parsed.error });
   }
   const fields = parsed.announcement;
-  const roles = fields.audience === "ALL" ? ["STORE", "RESTAURANT"] : [fields.audience];
+  // A company's headquarters belongs to the store side, so it gets store announcements too.
+  const roles =
+    fields.audience === "ALL"
+      ? ["STORE", "RESTAURANT", "COMPANY"]
+      : fields.audience === "STORE"
+        ? ["STORE", "COMPANY"]
+        : [fields.audience];
 
   let client;
   try {
@@ -1060,7 +1088,7 @@ export const createAnnouncement = async (req: Request, res: Response) => {
       `INSERT INTO notifications (user_id, type, message, announcement_id)
        SELECT users.id, $1, $2, $3
        FROM users
-       WHERE users.is_blocked = false AND users.role::text = ANY($4)`,
+       WHERE ${notBlocked("users")} AND users.role::text = ANY($4)`,
       [
         "PLATFORM_ANNOUNCEMENT",
         `Platform announcement: ${fields.title_en || fields.title_bs}`,

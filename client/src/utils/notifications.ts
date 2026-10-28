@@ -81,6 +81,7 @@ export const getNotificationLink = (notification: Notification, role: User["role
   ) {
     return `/my-profile#${SUBSCRIPTION_SECTION}`;
   }
+  if (role === "COMPANY") return "/dashboard";
   return role === "STORE" ? "/reservations" : "/my-reservations";
 };
 

@@ -5,7 +5,7 @@ import pool from "../src/config/db.js";
 import { creditMonth } from "../src/utils/creditTime.js";
 
 export type Agent = ReturnType<typeof request.agent>;
-export type Role = "STORE" | "RESTAURANT" | "ADMIN";
+export type Role = "STORE" | "RESTAURANT" | "ADMIN" | "COMPANY";
 
 export const PASSWORD = "test12345";
 
@@ -13,24 +13,45 @@ export const PASSWORD = "test12345";
 // account directly. Stores and restaurants get a business name, because the marketplace
 // hides stores whose profile is not filled in, and a subscription for the current month with
 // `credits` credits (null = none), so creating products and reservations is not limited by
-// credits unless a test wants that. Hashed once: bcrypt is slow.
+// credits unless a test wants that. Hashed once: bcrypt is slow. A COMPANY user (and a branch
+// store) needs `companyId`; company users have no business name and no credits.
 let passwordHash: Promise<string> | undefined;
 export const insertUser = async (
   email: string,
   role: Role,
   businessName: string | null = "Test Business",
   credits: number | null = 1000,
+  companyId: number | null = null,
 ) => {
   passwordHash ??= bcrypt.hash(PASSWORD, 10);
+  const isBusiness = role === "STORE" || role === "RESTAURANT";
   const result = await pool.query<{ id: number }>(
-    `INSERT INTO users (first_name, last_name, email, password_hash, role, business_name)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO users (first_name, last_name, email, password_hash, role, business_name, company_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING id`,
-    ["Test", "User", email, await passwordHash, role, role === "ADMIN" ? null : businessName],
+    ["Test", "User", email, await passwordHash, role, isBusiness ? businessName : null, companyId],
   );
-  if (role !== "ADMIN" && credits !== null) {
+  if (isBusiness && credits !== null) {
     await giveSubscription(result.rows[0]!.id, credits);
   }
+};
+
+// A company row straight in the database (POST /api/admin/companies is tested on its own).
+export const insertCompany = async (name: string): Promise<number> => {
+  const result = await pool.query<{ id: number }>("INSERT INTO companies (name) VALUES ($1) RETURNING id", [name]);
+  return result.rows[0]!.id;
+};
+
+// Run after cleanupUsers (users keep companies with RESTRICT). Matches names case-insensitively.
+export const cleanupCompanies = async (names: string[]) => {
+  await pool.query(
+    "DELETE FROM admin_actions WHERE target_company_id IN (SELECT id FROM companies WHERE LOWER(name) = ANY($1))",
+    [names.map((name) => name.toLowerCase())],
+  );
+  await pool.query("DELETE FROM users WHERE company_id IN (SELECT id FROM companies WHERE LOWER(name) = ANY($1))", [
+    names.map((name) => name.toLowerCase()),
+  ]);
+  await pool.query("DELETE FROM companies WHERE LOWER(name) = ANY($1)", [names.map((name) => name.toLowerCase())]);
 };
 
 // A subscription (Pro plan) for the credit month of `now`, whose grant holds `credits` credits.

@@ -4,6 +4,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import api from "../api/axios.js";
 import { useTranslation } from "react-i18next";
 import {
+  Building2,
   CalendarCheck,
   ClipboardList,
   Coins,
@@ -77,10 +78,18 @@ function Sidebar({ isSidebarOpen, locked = false }: { isSidebarOpen: boolean; lo
     { to: "/sponsor", label: t("sidebar.sponsor"), icon: Handshake },
   ];
 
+  // A company headquarters manages its chain only; it never acts as a store.
+  const companyLinks: SidebarLink[] = [
+    { to: "/dashboard", label: t("sidebar.companyOverview"), icon: LayoutDashboard },
+    { to: "/company/profile", label: t("sidebar.companyProfile"), icon: Building2 },
+    { to: "/my-profile", label: t("sidebar.myProfile"), icon: UserRound },
+  ];
+
   const adminLinks: SidebarLink[] = [
     { to: "/admin", label: t("sidebar.adminDashboard"), icon: ShieldCheck },
     { to: "/admin/users", label: t("sidebar.adminUsers"), icon: Users },
     { to: "/admin/users/new", label: t("sidebar.adminNewUser"), icon: UserPlus },
+    { to: "/admin/companies", label: t("sidebar.adminCompanies"), icon: Building2 },
     { to: "/admin/products", label: t("sidebar.adminProducts"), icon: Package },
     { to: "/admin/reservations", label: t("sidebar.adminReservations"), icon: CalendarCheck },
     { to: "/admin/donations", label: t("sidebar.adminDonations"), icon: HeartHandshake },
@@ -91,14 +100,21 @@ function Sidebar({ isSidebarOpen, locked = false }: { isSidebarOpen: boolean; lo
     { to: "/my-profile", label: t("sidebar.myProfile"), icon: UserRound },
   ];
 
-  const links = isAdmin ? adminLinks : user?.role === "STORE" ? storeLinks : restaurantLinks;
+  const isCompany = user?.role === "COMPANY";
+  const links = isAdmin
+    ? adminLinks
+    : isCompany
+      ? companyLinks
+      : user?.role === "STORE"
+        ? storeLinks
+        : restaurantLinks;
 
   const renderLink = ({ to, label, icon: Icon, badge }: SidebarLink) => (
     <li key={to}>
       <NavLink
         to={to}
-        // /admin and /admin/users would otherwise also be active on their sub-pages.
-        end={to === "/admin" || to === "/admin/users"}
+        // /admin, /admin/users and /admin/companies would otherwise also be active on their sub-pages.
+        end={to === "/admin" || to === "/admin/users" || to === "/admin/companies"}
         title={isSidebarOpen ? undefined : label}
         aria-label={label}
         className={({ isActive }) =>
@@ -144,7 +160,7 @@ function Sidebar({ isSidebarOpen, locked = false }: { isSidebarOpen: boolean; lo
       <nav className="px-3 py-4">
         <ul className="space-y-1">{links.map(renderLink)}</ul>
 
-        {!isAdmin && (
+        {!isAdmin && !isCompany && (
           <>
             <div className="my-4 border-t border-gray-100" />
             {isSidebarOpen && (

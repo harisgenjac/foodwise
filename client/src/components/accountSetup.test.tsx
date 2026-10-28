@@ -32,6 +32,13 @@ describe("getAccountSetup", () => {
     });
   });
 
+  it("asks a company headquarters only for a first name, last name and phone", () => {
+    const hq = makeUser({ role: "COMPANY", company_id: 3, first_name: null, phone: undefined });
+    expect(getAccountSetup(hq).missingFields).toEqual(["first_name", "phone"]);
+    // No business name, city or address: the company's data is on its own page.
+    expect(getAccountSetup({ ...hq, first_name: "Selma", phone: "035 000 111" }).locked).toBe(false);
+  });
+
   it("unlocks a complete profile without a temporary password", () => {
     expect(getAccountSetup(complete).locked).toBe(false);
     expect(getAccountSetup(null).locked).toBe(false);
@@ -63,6 +70,17 @@ describe("AccountSetupGate", () => {
     });
     expect(await screen.findByText(t("accountSetup.profileHint"))).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("lists the company headquarters' missing fields in the dialog", async () => {
+    renderWithProviders(<AccountSetupGate />, {
+      route: "/dashboard",
+      path: "/dashboard",
+      user: makeUser({ role: "COMPANY", company_id: 3, phone: undefined, must_change_password: true }),
+    });
+    const dialog = await screen.findByRole("dialog", { name: t("accountSetup.title") });
+    expect(dialog).toHaveTextContent(t("accountSetup.needsPassword"));
+    expect(dialog).toHaveTextContent(t("accountSetup.missingFields", { fields: t("user.phone") }));
   });
 
   it("shows nothing once the account is set up", async () => {

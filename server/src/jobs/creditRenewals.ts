@@ -3,6 +3,7 @@ import type { PoolClient } from "pg";
 import pool from "../config/db.js";
 import { CREDIT_TIMEZONE, creditDay, creditMonth, nextMonth } from "../utils/creditTime.js";
 import { createNotification, notifyAdminsOfCreditRequest } from "../utils/notifications.js";
+import { notBlocked } from "../utils/visibility.js";
 
 // Renewal requests are created this many days before the new month starts, so an admin has
 // time to approve them before the user's credits run out with the month.
@@ -46,7 +47,7 @@ export const createRenewals = async (
     WHERE subscriptions.period_month = $1
       AND subscriptions.status = 'ACTIVE'
       AND subscriptions.auto_renew
-      AND users.is_blocked = false
+      AND ${notBlocked("users")}
       AND ($3::int IS NULL OR subscriptions.user_id = $3)
       AND NOT EXISTS (
         SELECT 1 FROM subscriptions AS upcoming

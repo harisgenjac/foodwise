@@ -12,7 +12,8 @@ function AnnouncementBanner() {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const isBusiness = user?.role === "STORE" || user?.role === "RESTAURANT";
+  // A company headquarters gets the store announcements too.
+  const isBusiness = user?.role === "STORE" || user?.role === "RESTAURANT" || user?.role === "COMPANY";
 
   useEffect(() => {
     if (!isBusiness) return;

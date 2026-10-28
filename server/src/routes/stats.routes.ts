@@ -4,6 +4,6 @@ import { authenticate, authorize } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-router.get("/impact", authenticate, authorize("STORE", "RESTAURANT", "ADMIN"), getImpact);
+router.get("/impact", authenticate, authorize("STORE", "RESTAURANT", "ADMIN", "COMPANY"), getImpact);
 
 export default router;

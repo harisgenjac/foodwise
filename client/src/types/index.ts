@@ -62,7 +62,8 @@ export interface Reservation {
   party_pickup_hours?: string | null;
 }
 
-export type Role = "STORE" | "RESTAURANT" | "ADMIN";
+// COMPANY = a store chain's headquarters login (see Company).
+export type Role = "STORE" | "RESTAURANT" | "ADMIN" | "COMPANY";
 
 export interface User {
   id: number;
@@ -88,10 +89,49 @@ export interface User {
   active_products?: string;
   // Set while the user still has a temporary password from an admin.
   must_change_password?: boolean;
+  // The user's company: set for a COMPANY (headquarters) user, null otherwise for now.
+  company_id?: number | null;
+  company_name?: string | null;
+  // Only on GET /users/me: the company's logo, shown as a COMPANY user's avatar.
+  company_logo_url?: string | null;
   // Only on the admin endpoints.
   is_blocked?: boolean;
   blocked_at?: string | null;
   blocked_reason?: string | null;
+  // Only on the admin endpoints: the user's company is blocked (the user cannot sign in).
+  company_is_blocked?: boolean;
+}
+
+// A store chain (GET /company/me for its headquarters, the admin's company endpoints).
+export interface Company {
+  id: number;
+  name: string;
+  description: string | null;
+  logo_url: string | null;
+  branch_count: number;
+  // Only on the admin endpoints.
+  is_blocked?: boolean;
+  blocked_at?: string | null;
+  blocked_reason?: string | null;
+  created_at?: string;
+}
+
+// A row of GET /admin/companies.
+export interface AdminCompanyListItem {
+  id: number;
+  name: string;
+  hq_email: string | null;
+  branch_count: number;
+  is_blocked: boolean;
+  created_at: string;
+}
+
+// GET /admin/companies/:id. Branches come with the next step, so the list is empty for now.
+export interface AdminCompanyDetails {
+  company: Company;
+  hqUsers: Pick<User, "id" | "email" | "first_name" | "last_name" | "phone" | "is_blocked" | "must_change_password" | "created_at">[];
+  branches: { id: number; email: string; business_name: string | null; city: string | null; is_blocked: boolean; created_at: string }[];
+  actions: Pick<AdminAction, "id" | "action" | "reason" | "created_at" | "admin_email">[];
 }
 
 export interface Favorites {
@@ -228,7 +268,11 @@ export type AdminActionType =
   | "END_ANNOUNCEMENT"
   | "APPROVE_CREDIT_REQUEST"
   | "REJECT_CREDIT_REQUEST"
-  | "ADJUST_CREDITS";
+  | "ADJUST_CREDITS"
+  | "CREATE_COMPANY"
+  | "UPDATE_COMPANY"
+  | "BLOCK_COMPANY"
+  | "UNBLOCK_COMPANY";
 
 export interface AdminAction {
   id: number;
@@ -247,6 +291,8 @@ export interface AdminAction {
   target_reservation_id?: number | null;
   target_announcement_id?: number | null;
   announcement_title?: string | null;
+  target_company_id?: number | null;
+  company_name?: string | null;
 }
 
 export type AnnouncementAudience = "ALL" | "STORE" | "RESTAURANT";

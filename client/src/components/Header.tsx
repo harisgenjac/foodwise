@@ -72,9 +72,13 @@ function Header({ isSidebarOpen, onToggleSidebar, locked = false }: HeaderProps)
   const roleLabel =
     user?.role === "ADMIN"
       ? t("auth.adminRole")
-      : user?.role === "STORE"
-        ? t("auth.storeRole")
-        : t("auth.restaurantRole");
+      : user?.role === "COMPANY"
+        ? t("auth.companyRole")
+        : user?.role === "STORE"
+          ? t("auth.storeRole")
+          : t("auth.restaurantRole");
+  // A company headquarters login shows its company's logo.
+  const avatarUrl = user?.role === "COMPANY" ? user.company_logo_url : user?.logo_url;
   // Accounts created by an admin have no name until the profile is filled in.
   const fullName = `${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim();
   const displayName = fullName || user?.business_name || user?.email || "";
@@ -188,11 +192,11 @@ function Header({ isSidebarOpen, onToggleSidebar, locked = false }: HeaderProps)
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center gap-2 p-1 pr-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
           >
-            {user?.logo_url && failedLogo !== user.logo_url ? (
+            {avatarUrl && failedLogo !== avatarUrl ? (
               <img
-                src={assetUrl(user.logo_url)}
+                src={assetUrl(avatarUrl)}
                 alt={displayName}
-                onError={() => setFailedLogo(user.logo_url ?? null)}
+                onError={() => setFailedLogo(avatarUrl)}
                 className="w-9 h-9 rounded-full object-cover ring-1 ring-gray-200"
               />
             ) : (

@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
 import pool from "../config/db.js";
 import type { AuthUser, Role } from "../types/auth.js";
+import { notBlocked } from "../utils/visibility.js";
 
 // What a user with a temporary password (set by an admin) may still call: their profile, so they
 // can fill it in (with the city list), and the password change itself.
@@ -15,7 +16,8 @@ const ALLOWED_BEFORE_PASSWORD_CHANGE = new Set([
 ]);
 
 // The token proves who the caller is; the role and the blocked flag are read from the
-// database on every request, so blocking an account or changing its role applies at once.
+// database on every request, so blocking an account (or its company) or changing its role
+// applies at once.
 export const authenticate = async (
   req: Request,
   res: Response,
@@ -39,7 +41,8 @@ export const authenticate = async (
 
   try {
     const result = await pool.query<{ role: Role; is_blocked: boolean; must_change_password: boolean }>(
-      "SELECT users.role, users.is_blocked, users.must_change_password FROM users WHERE users.id = $1",
+      `SELECT users.role, NOT ${notBlocked("users")} AS is_blocked, users.must_change_password
+       FROM users WHERE users.id = $1`,
       [decoded.id],
     );
     const user = result.rows[0];
