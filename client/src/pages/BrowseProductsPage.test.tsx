@@ -80,7 +80,7 @@ describe("BrowseProductsPage", () => {
         city_id: "",
         expiryWithinDays: "",
         radius: "10",
-        sort: "distance",
+        sort: "newest",
         limit: 12,
       }),
     );
@@ -119,12 +119,16 @@ describe("BrowseProductsPage", () => {
   describe("sort", () => {
     const sortSelect = () => screen.getByLabelText(t("filters.sortBy"));
 
-    it("sorts nearest first by default", async () => {
+    it("sorts by newest by default", async () => {
       renderPage(() => [makeProduct({ id: 1, name: "Piletina" })]);
       await screen.findByText("Piletina");
-      expect(sortSelect()).toHaveValue("distance");
-      expect(sortSelect()).toHaveDisplayValue(t("filters.sortNearest"));
-      expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ sort: "distance" });
+      expect(sortSelect()).toHaveValue("newest");
+      expect(sortSelect()).toHaveDisplayValue(t("filters.sortNewest"));
+      expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ sort: "newest" });
+      expect(within(sortSelect()).getAllByRole("option").slice(0, 2).map((option) => option.textContent)).toEqual([
+        t("filters.sortNewest"),
+        t("filters.sortNearest"),
+      ]);
     });
 
     it.each([
@@ -236,7 +240,7 @@ describe("BrowseProductsPage distance", () => {
     renderNearby();
     expect(await screen.findByText("Hljeb")).toBeInTheDocument();
     expect(screen.getByLabelText(t("radius.label"))).toHaveDisplayValue("Do 10 km");
-    expect(lastParams()).toMatchObject({ radius: "10", sort: "distance" });
+    expect(lastParams()).toMatchObject({ radius: "10", sort: "newest" });
     expect(screen.getByText("· Visoko · u vašem gradu")).toBeInTheDocument();
   });
 

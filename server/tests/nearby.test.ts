@@ -53,8 +53,9 @@ describe("Nearby offers (radius and distance)", () => {
     await cleanupUsers(EMAILS);
   });
 
+  // Nearest first, so rows come in the order of STORES (the marketplace default is newest).
   const products = (query: Record<string, string | number> = {}) =>
-    restaurant.get("/api/products").query({ name: PRODUCT, ...query });
+    restaurant.get("/api/products").query({ name: PRODUCT, sort: "distance", ...query });
   const stores = (query: Record<string, string | number> = {}) =>
     restaurant.get("/api/users/stores").query({ business_name: STORE_PREFIX, ...query });
   const productCities = (rows: Row[]) => rows.map((row) => productCity[row.id]);
@@ -135,18 +136,21 @@ describe("Nearby offers (radius and distance)", () => {
     expect(list.body.outside_radius_count).toBe(0);
   });
 
-  it("sorts nearest first by default, newest first within the same city", async () => {
+  it("sorts nearest first on request, newest first within the same city", async () => {
     const newer = await createProduct(storeAgents.Breza!, { name: PRODUCT });
     productCity[newer.id] = "Breza";
     const response = await products({ radius: "all" });
     const ids = (response.body.products as Row[]).map((row) => row.id);
     expect(productCities(response.body.products)).toEqual(["Visoko", "Breza", "Breza", "Kakanj", "Sarajevo", "Zenica"]);
     expect(ids[1]).toBe(newer.id);
-
-    // The other sorts stay.
-    const newest = await products({ radius: "all", sort: "newest" });
-    expect((newest.body.products as Row[])[0]!.id).toBe(newer.id);
     expect((await products({ sort: "nearest" })).status).toBe(400);
+  });
+
+  it("keeps newest first as the marketplace default", async () => {
+    const newer = await createProduct(storeAgents.Zenica!, { name: PRODUCT });
+    const response = await restaurant.get("/api/products").query({ name: PRODUCT, radius: "all" });
+    expect((response.body.products as Row[])[0]!.id).toBe(newer.id);
+    expect((response.body.products as Row[])[0]!.distance_km).toBe(32);
   });
 
   it("sorts stores by name on request, and refuses an unknown store sort", async () => {

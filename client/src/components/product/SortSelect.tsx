@@ -24,10 +24,11 @@ export const STORE_PROFILE_SORT_OPTIONS = [
 
 export type StoreProfileSort = (typeof STORE_PROFILE_SORT_OPTIONS)[number]["value"];
 
-// The marketplace: nearest store first (the default), then the store profile's sorts.
+// The marketplace: the store profile's sorts (Newest, the default, first) plus nearest store first.
 export const MARKETPLACE_SORT_OPTIONS = [
+  STORE_PROFILE_SORT_OPTIONS[0],
   { value: "distance", label: "filters.sortNearest" },
-  ...STORE_PROFILE_SORT_OPTIONS,
+  ...STORE_PROFILE_SORT_OPTIONS.slice(1),
 ] as const satisfies readonly SortOption[];
 
 export type MarketplaceSort = (typeof MARKETPLACE_SORT_OPTIONS)[number]["value"];

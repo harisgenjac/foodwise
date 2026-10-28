@@ -14,7 +14,7 @@ export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
 // Each ends with id DESC so equal values keep one order across pages.
 const DISCOUNT = "(listed.original_price - listed.discounted_price) / listed.original_price";
 const SORT_ORDERS: Record<string, string> = {
-  // Nearest store first (the default), then newest; no distance (a store's or a city-less
+  // Nearest store first, then newest; no distance (a store's or a city-less
   // restaurant's request) sorts last.
   distance: "listed.distance_km ASC NULLS LAST, listed.created_at DESC, listed.id DESC",
   newest: "listed.created_at DESC, listed.id DESC",
@@ -232,7 +232,7 @@ export const getProducts = async (req: Request, res: Response) => {
     }
 
     const page = parsePage(req.query, CARD_PAGE_SIZE);
-    const sortKey = sort ?? "distance";
+    const sortKey = sort ?? "newest";
     if (!page || typeof sortKey !== "string" || !Object.hasOwn(SORT_ORDERS, sortKey)) {
       return res.status(400).json({ error: "Invalid filter." });
     }

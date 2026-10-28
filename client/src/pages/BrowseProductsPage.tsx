@@ -40,7 +40,7 @@ function BrowseProductsPage() {
   const [cityId, setCityId] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
   const [radius, setRadius] = useState<Radius>(DEFAULT_RADIUS);
-  const [sort, setSort] = useState<MarketplaceSort>("distance");
+  const [sort, setSort] = useState<MarketplaceSort>("newest");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { t } = useTranslation();
   const categories = t("categories", { returnObjects: true }) as Record<
