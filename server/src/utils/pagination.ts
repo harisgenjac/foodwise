@@ -48,7 +48,7 @@ export const listPage = async (
   columns: string,
   from: string,
   orderBy: string,
-  values: (string | number | boolean)[],
+  values: (string | number | boolean | null)[],
   page: Page,
 ) => {
   const total = await pool.query(`SELECT COUNT(*) AS total ${from}`, values);

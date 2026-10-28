@@ -25,6 +25,9 @@ import LoadErrorState from "../components/product/LoadErrorState.js";
 import ReserveProductModal from "../components/product/ReserveProductModal.js";
 import { inputStyle } from "../components/form/FormField.js";
 import CitySelect from "../components/form/CitySelect.js";
+import RadiusSelect from "../components/product/RadiusSelect.js";
+import OutsideRadiusHint from "../components/product/OutsideRadiusHint.js";
+import { DEFAULT_RADIUS, nextRadius, widenLabel, type Radius } from "../utils/radius.js";
 import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { usePagedLimit } from "../hooks/usePagedLimit.js";
@@ -36,7 +39,8 @@ function BrowseProductsPage() {
   const [name, setName] = useState("");
   const [cityId, setCityId] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
-  const [sort, setSort] = useState<MarketplaceSort>("newest");
+  const [radius, setRadius] = useState<Radius>(DEFAULT_RADIUS);
+  const [sort, setSort] = useState<MarketplaceSort>("distance");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { t } = useTranslation();
   const categories = t("categories", { returnObjects: true }) as Record<
@@ -45,12 +49,13 @@ function BrowseProductsPage() {
   >;
   // The server leaves out fully reserved products and pages the rest; "Load more" raises the
   // limit, and any filter or sort change starts again from the first page.
-  const filters = { category, name, city_id: cityId, expiryWithinDays };
+  const filters = { category, name, city_id: cityId, expiryWithinDays, radius };
   const query = { ...filters, sort };
   const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(query));
   const {
     data: visibleProducts,
     total,
+    meta,
     loading,
     fetching,
     error,
@@ -63,6 +68,7 @@ function BrowseProductsPage() {
     setCityId("");
     setCategory("");
     setExpiryWithinDays("");
+    setRadius(DEFAULT_RADIUS);
   };
 
   if (loading) {
@@ -70,7 +76,11 @@ function BrowseProductsPage() {
   }
 
   const totalCount = total ?? visibleProducts.length;
-  const hasActiveFilters = Boolean(name || cityId || category || expiryWithinDays);
+  const hasOtherFilters = Boolean(name || cityId || category || expiryWithinDays);
+  const hasActiveFilters = hasOtherFilters || radius !== DEFAULT_RADIUS;
+  // A chosen city is shown whatever the radius, so the radius only limits a search without one.
+  const radiusApplies = radius !== "all" && !cityId;
+  const outsideRadiusCount = Number(meta?.outside_radius_count ?? 0);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
@@ -80,7 +90,7 @@ function BrowseProductsPage() {
         icon={ShoppingBasket}
       />
 
-      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters}>
+      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={5}>
         <FilterField icon={Search}>
           <input
             type="text"
@@ -126,6 +136,7 @@ function BrowseProductsPage() {
             className={inputStyle}
           />
         </FilterField>
+        <RadiusSelect value={radius} onChange={setRadius} />
       </FilterBar>
 
       <ResultsBar count={t("product.offersCount", { count: totalCount })}>
@@ -135,7 +146,14 @@ function BrowseProductsPage() {
       {error && visibleProducts.length === 0 ? (
         <LoadErrorState />
       ) : visibleProducts.length === 0 ? (
-        hasActiveFilters ? (
+        radiusApplies ? (
+          <EmptyState
+            icon={hasOtherFilters ? SearchX : ShoppingBasket}
+            title={t(hasOtherFilters ? "myProducts.noResultsTitle" : "product.noAvailableProductsTitle")}
+            subtitle={t("radius.emptyOffers", { radius })}
+            secondaryAction={{ label: widenLabel(t, radius), onClick: () => setRadius(nextRadius(radius)) }}
+          />
+        ) : hasActiveFilters ? (
           <EmptyState
             icon={SearchX}
             title={t("myProducts.noResultsTitle")}
@@ -180,6 +198,10 @@ function BrowseProductsPage() {
       )}
 
       <LoadMore shown={visibleProducts.length} total={totalCount} fetching={fetching} onLoadMore={loadMore} />
+
+      {visibleProducts.length > 0 && radiusApplies && (
+        <OutsideRadiusHint count={outsideRadiusCount} radius={radius} kind="offers" onWiden={setRadius} />
+      )}
 
       {selectedProduct && (
         <ReserveProductModal

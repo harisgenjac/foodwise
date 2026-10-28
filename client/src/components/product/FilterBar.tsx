@@ -7,13 +7,13 @@ interface FilterBarProps {
   hasActiveFilters: boolean;
   onClear: () => void;
   // Number of filters per row on large screens.
-  columns?: 3 | 4;
+  columns?: 3 | 4 | 5;
   children: ReactNode;
 }
 
 function FilterBar({ hasActiveFilters, onClear, columns = 4, children }: FilterBarProps) {
   const { t } = useTranslation();
-  const columnsStyle = columns === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4";
+  const columnsStyle = { 3: "lg:grid-cols-3", 4: "lg:grid-cols-4", 5: "lg:grid-cols-5" }[columns];
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">

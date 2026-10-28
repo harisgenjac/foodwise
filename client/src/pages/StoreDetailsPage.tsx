@@ -26,7 +26,7 @@ import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import Breadcrumbs, { BreadcrumbPlaceholder } from "../components/Breadcrumbs.js";
 import EmptyState from "../components/product/EmptyState.js";
-import SortSelect, { MARKETPLACE_SORT_OPTIONS, type MarketplaceSort } from "../components/product/SortSelect.js";
+import SortSelect, { STORE_PROFILE_SORT_OPTIONS, type StoreProfileSort } from "../components/product/SortSelect.js";
 import DetailItem from "../components/product/DetailItem.js";
 import ReserveProductModal from "../components/product/ReserveProductModal.js";
 import StatCard from "../components/dashboard/StatCard.js";
@@ -57,7 +57,7 @@ function StoreDetailsPage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("products");
   const [reservationStatus, setReservationStatus] = useState("");
-  const [productSort, setProductSort] = useState<MarketplaceSort>("newest");
+  const [productSort, setProductSort] = useState<StoreProfileSort>("newest");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { t } = useTranslation();
   const reservationStatuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
@@ -287,7 +287,7 @@ function StoreDetailsPage() {
           ))}
         </div>
         {activeTab === "products" && activeProducts > 0 && (
-          <SortSelect value={productSort} onChange={setProductSort} options={MARKETPLACE_SORT_OPTIONS} />
+          <SortSelect value={productSort} onChange={setProductSort} options={STORE_PROFILE_SORT_OPTIONS} />
         )}
       </div>
 

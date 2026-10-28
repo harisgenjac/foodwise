@@ -225,6 +225,7 @@
     "within7Days": "Within 7 days",
     "clear": "Clear filters",
     "sortBy": "Sort by",
+    "sortNearest": "Nearest first",
     "sortNewest": "Newest",
     "sortExpiry": "Expiry soonest",
     "sortPriceAsc": "Lowest price",
@@ -236,6 +237,21 @@
     "label": "City",
     "choose": "Choose a city",
     "all": "-- All cities --"
+  },
+  "radius": {
+    "label": "Distance",
+    "upTo": "Up to {{km}} km",
+    "all": "All cities",
+    "km": "{{km}} km",
+    "inYourCity": "in your city",
+    "moreOffers_one": "{{count}} more offer is further than {{radius}} km.",
+    "moreOffers_other": "{{count}} more offers are further than {{radius}} km.",
+    "moreStores_one": "{{count}} more store is further than {{radius}} km.",
+    "moreStores_other": "{{count}} more stores are further than {{radius}} km.",
+    "showUpTo": "Show up to {{km}} km",
+    "showAll": "Show all cities",
+    "emptyOffers": "No offers within {{radius}} km of your city. Widen the distance or choose a city.",
+    "emptyStores": "No stores within {{radius}} km of your city. Widen the distance or choose a city."
   },
   "notifications": {
     "title": "Notifications",

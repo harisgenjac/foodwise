@@ -229,6 +229,7 @@
     "within7Days": "Unutar 7 dana",
     "clear": "Očisti filtere",
     "sortBy": "Sortiraj po",
+    "sortNearest": "Najbliže prvo",
     "sortNewest": "Najnovije",
     "sortExpiry": "Najskoriji rok",
     "sortPriceAsc": "Najniža cijena",
@@ -240,6 +241,23 @@
     "label": "Grad",
     "choose": "Izaberite grad",
     "all": "-- Svi gradovi --"
+  },
+  "radius": {
+    "label": "Udaljenost",
+    "upTo": "Do {{km}} km",
+    "all": "Svi gradovi",
+    "km": "{{km}} km",
+    "inYourCity": "u vašem gradu",
+    "moreOffers_one": "Još {{count}} ponuda je dalje od {{radius}} km.",
+    "moreOffers_few": "Još {{count}} ponude su dalje od {{radius}} km.",
+    "moreOffers_other": "Još {{count}} ponuda je dalje od {{radius}} km.",
+    "moreStores_one": "Još {{count}} prodavnica je dalje od {{radius}} km.",
+    "moreStores_few": "Još {{count}} prodavnice su dalje od {{radius}} km.",
+    "moreStores_other": "Još {{count}} prodavnica je dalje od {{radius}} km.",
+    "showUpTo": "Prikaži do {{km}} km",
+    "showAll": "Prikaži sve gradove",
+    "emptyOffers": "Nema ponuda do {{radius}} km od vašeg grada. Proširite udaljenost ili izaberite grad.",
+    "emptyStores": "Nema prodavnica do {{radius}} km od vašeg grada. Proširite udaljenost ili izaberite grad."
   },
   "notifications": {
     "title": "Notifikacije",

@@ -14,6 +14,8 @@ export interface Product {
   updated_at: string;
   available_quantity?: string;
   days_until_expiry?: number;
+  // For a restaurant: straight-line km from its city to the store's (null without a city on either side).
+  distance_km?: number | null;
   business_name?: string;
   city?: string;
   // Only on GET /products/:id.
@@ -75,6 +77,8 @@ export interface User {
   // The city's name (for display) and its id in the city list (for forms and filters).
   city?: string;
   city_id?: number | null;
+  // On GET /users/stores: km from the restaurant's city.
+  distance_km?: number | null;
   opening_hours?: string;
   pickup_hours?: string;
   description?: string;

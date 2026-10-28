@@ -16,6 +16,9 @@ import LoadErrorState from "../components/product/LoadErrorState.js";
 import StoreCard from "../components/store/StoreCard.js";
 import { inputStyle } from "../components/form/FormField.js";
 import CitySelect from "../components/form/CitySelect.js";
+import RadiusSelect from "../components/product/RadiusSelect.js";
+import OutsideRadiusHint from "../components/product/OutsideRadiusHint.js";
+import { DEFAULT_RADIUS, nextRadius, widenLabel, type Radius } from "../utils/radius.js";
 import type { Favorites, User } from "../types/index.js";
 
 function StoresPage() {
@@ -23,14 +26,21 @@ function StoresPage() {
   const [businessName, setBusinessName] = useState("");
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [radius, setRadius] = useState<Radius>(DEFAULT_RADIUS);
   const { t } = useTranslation();
   // "Favorites only" is filtered on the server, so the list and its count cover every store.
-  // 12 at a time; a filter change starts again from the first page.
-  const filters = { city_id: cityId, business_name: businessName, favorites: showFavoritesOnly ? "true" : "" };
+  // 12 at a time; a filter change starts again from the first page. Nearest first (the server's default).
+  const filters = {
+    city_id: cityId,
+    business_name: businessName,
+    favorites: showFavoritesOnly ? "true" : "",
+    radius,
+  };
   const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, JSON.stringify(filters));
   const {
     data: storesList,
     total,
+    meta,
     loading,
     fetching,
     error,
@@ -70,6 +80,7 @@ function StoresPage() {
     setCityId("");
     setBusinessName("");
     setShowFavoritesOnly(false);
+    setRadius(DEFAULT_RADIUS);
   };
 
   useEffect(() => {
@@ -80,7 +91,10 @@ function StoresPage() {
     return <LoadingSpinner />;
   }
 
-  const hasActiveFilters = Boolean(cityId || businessName || showFavoritesOnly);
+  const hasActiveFilters = Boolean(cityId || businessName || showFavoritesOnly || radius !== DEFAULT_RADIUS);
+  // A chosen city and the favorites are shown whatever the radius.
+  const radiusApplies = radius !== "all" && !cityId && !showFavoritesOnly;
+  const outsideRadiusCount = Number(meta?.outside_radius_count ?? 0);
 
   const renderEmptyState = () => {
     if (showFavoritesOnly && !cityId && !businessName) {
@@ -89,6 +103,16 @@ function StoresPage() {
           icon={HeartOff}
           title={t("store.noFavoritesTitle")}
           subtitle={t("store.noFavoritesSubtitle")}
+        />
+      );
+    }
+    if (radiusApplies) {
+      return (
+        <EmptyState
+          icon={businessName ? SearchX : Store}
+          title={t(businessName ? "store.noResultsTitle" : "store.noStoresTitle")}
+          subtitle={t("radius.emptyStores", { radius })}
+          secondaryAction={{ label: widenLabel(t, radius), onClick: () => setRadius(nextRadius(radius)) }}
         />
       );
     }
@@ -115,7 +139,7 @@ function StoresPage() {
         count={t("store.count", { count: total ?? storesList.length })}
       />
 
-      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={3}>
+      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={4}>
         <FilterField icon={Search}>
           <input
             type="text"
@@ -134,6 +158,7 @@ function StoresPage() {
             className={inputStyle}
           />
         </FilterField>
+        <RadiusSelect value={radius} onChange={setRadius} />
         <button
           type="button"
           onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
@@ -181,6 +206,10 @@ function StoresPage() {
         fetching={fetching}
         onLoadMore={loadMore}
       />
+
+      {storesList.length > 0 && radiusApplies && (
+        <OutsideRadiusHint count={outsideRadiusCount} radius={radius} kind="stores" onWiden={setRadius} />
+      )}
     </div>
   );
 }

@@ -79,7 +79,8 @@ describe("BrowseProductsPage", () => {
         name: "mlijeko",
         city_id: "",
         expiryWithinDays: "",
-        sort: "newest",
+        radius: "10",
+        sort: "distance",
         limit: 12,
       }),
     );
@@ -118,11 +119,12 @@ describe("BrowseProductsPage", () => {
   describe("sort", () => {
     const sortSelect = () => screen.getByLabelText(t("filters.sortBy"));
 
-    it("sorts by newest by default", async () => {
+    it("sorts nearest first by default", async () => {
       renderPage(() => [makeProduct({ id: 1, name: "Piletina" })]);
       await screen.findByText("Piletina");
-      expect(sortSelect()).toHaveValue("newest");
-      expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ sort: "newest" });
+      expect(sortSelect()).toHaveValue("distance");
+      expect(sortSelect()).toHaveDisplayValue(t("filters.sortNearest"));
+      expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ sort: "distance" });
     });
 
     it.each([
@@ -132,11 +134,12 @@ describe("BrowseProductsPage", () => {
       ["filters.sortDiscountDesc", "discount_desc"],
       ["filters.sortDiscountAsc", "discount_asc"],
       ["filters.sortNewest", "newest"],
+      ["filters.sortNearest", "distance"],
     ])("sends the sort for %s", async (label, sort) => {
       renderPage(() => [makeProduct({ id: 1, name: "Piletina" })]);
       await screen.findByText("Piletina");
-      // Start from another sort, so picking "Newest" is a change as well.
-      await userEvent.selectOptions(sortSelect(), sort === "newest" ? "price_asc" : "newest");
+      // Start from another sort, so picking the default is a change as well.
+      await userEvent.selectOptions(sortSelect(), sort === "price_asc" ? "newest" : "price_asc");
       await userEvent.selectOptions(sortSelect(), t(label));
       await waitFor(() => expect(productCalls().at(-1)?.[1]?.params).toMatchObject({ sort }));
     });
@@ -197,5 +200,87 @@ describe("BrowseProductsPage", () => {
     renderPage(() => [makeProduct({ id: 42 })]);
     const link = await screen.findByRole("link", { name: new RegExp(t("dashboard.detailsButton")) });
     expect(link).toHaveAttribute("href", "/products/42");
+  });
+});
+
+describe("BrowseProductsPage distance", () => {
+  // The server's answer per radius: offers within it, and how many lie beyond.
+  const NEARBY: Record<string, { products: Product[]; outside: number }> = {
+    "5": { products: [], outside: 3 },
+    "10": { products: [makeProduct({ id: 1, name: "Hljeb", city: "Visoko", distance_km: 0 })], outside: 2 },
+    "20": {
+      products: [
+        makeProduct({ id: 1, name: "Hljeb", city: "Visoko", distance_km: 0 }),
+        makeProduct({ id: 2, name: "Mlijeko", city: "Kakanj", distance_km: 16 }),
+      ],
+      outside: 1,
+    },
+    "50": { products: [], outside: 0 },
+    all: { products: [], outside: 0 },
+  };
+  const renderNearby = () =>
+    renderWithProviders(<BrowseProductsPage />, {
+      route: "/browse-products",
+      path: "/browse-products",
+      user: makeUser(),
+      get: {
+        "/products": ({ radius }: { radius: string }) => {
+          const { products, outside } = NEARBY[radius]!;
+          return { products, total: products.length, outside_radius_count: outside };
+        },
+      },
+    });
+  const lastParams = () => productCalls().at(-1)?.[1]?.params;
+
+  it("asks for 10 km by default and shows the distance on each card", async () => {
+    renderNearby();
+    expect(await screen.findByText("Hljeb")).toBeInTheDocument();
+    expect(screen.getByLabelText(t("radius.label"))).toHaveDisplayValue("Do 10 km");
+    expect(lastParams()).toMatchObject({ radius: "10", sort: "distance" });
+    expect(screen.getByText("· Visoko · u vašem gradu")).toBeInTheDocument();
+  });
+
+  it("tells how many offers lie further away and widens step by step", async () => {
+    renderNearby();
+    expect(await screen.findByText("Još 2 ponude su dalje od 10 km.")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Prikaži do 20 km" }));
+    expect(await screen.findByText("Mlijeko")).toBeInTheDocument();
+    expect(screen.getByText("· Kakanj · 16 km")).toBeInTheDocument();
+    expect(screen.getByLabelText(t("radius.label"))).toHaveDisplayValue("Do 20 km");
+    expect(lastParams()).toMatchObject({ radius: "20" });
+    expect(screen.getByText("Još 1 ponuda je dalje od 20 km.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Prikaži do 50 km" })).toBeInTheDocument();
+  });
+
+  it("explains an empty result with the radius and offers the next step", async () => {
+    renderNearby();
+    await screen.findByText("Hljeb");
+    await userEvent.selectOptions(screen.getByLabelText(t("radius.label")), "Do 5 km");
+
+    expect(await screen.findByText(t("radius.emptyOffers", { radius: "5" }))).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Prikaži do 10 km" }));
+    expect(await screen.findByText("Hljeb")).toBeInTheDocument();
+  });
+
+  it("counts a changed radius as a filter and resets it to 10 km on clear", async () => {
+    renderNearby();
+    await screen.findByText("Hljeb");
+    expect(screen.queryByRole("button", { name: t("filters.clear") })).not.toBeInTheDocument();
+
+    await userEvent.selectOptions(screen.getByLabelText(t("radius.label")), "Do 20 km");
+    await screen.findByText("Mlijeko");
+    await userEvent.click(screen.getByRole("button", { name: t("filters.clear") }));
+    expect(screen.getByLabelText(t("radius.label"))).toHaveDisplayValue("Do 10 km");
+    await waitFor(() => expect(lastParams()).toMatchObject({ radius: "10" }));
+  });
+
+  it("shows no hint and no radius empty state with all cities", async () => {
+    renderNearby();
+    await screen.findByText("Hljeb");
+    await userEvent.selectOptions(screen.getByLabelText(t("radius.label")), "Svi gradovi");
+    expect(await screen.findByText(t("myProducts.noResultsTitle"))).toBeInTheDocument();
+    expect(screen.queryByText(t("radius.emptyOffers", { radius: "all" }))).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Prikaži/ })).not.toBeInTheDocument();
   });
 });

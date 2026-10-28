@@ -5,7 +5,7 @@ import { parseId, parseNonNegativeInt } from '../utils/params.js';
 import { parseProductCsv } from '../utils/productCsv.js';
 import { CARD_PAGE_SIZE, listPage, parsePage } from '../utils/pagination.js';
 import { HttpError } from '../utils/httpError.js';
-import { parseCityFilter } from '../utils/cities.js';
+import { cityDistance, parseCityFilter, parseRadius, userCityId } from '../utils/cities.js';
 import { chargeForProduct, chargeForProducts, refundForProduct } from '../services/creditService.js';
 
 export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
@@ -14,6 +14,9 @@ export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
 // Each ends with id DESC so equal values keep one order across pages.
 const DISCOUNT = "(listed.original_price - listed.discounted_price) / listed.original_price";
 const SORT_ORDERS: Record<string, string> = {
+  // Nearest store first (the default), then newest; no distance (a store's or a city-less
+  // restaurant's request) sorts last.
+  distance: "listed.distance_km ASC NULLS LAST, listed.created_at DESC, listed.id DESC",
   newest: "listed.created_at DESC, listed.id DESC",
   expiry: "listed.expiry_date ASC, listed.id DESC",
   price_asc: "listed.discounted_price ASC, listed.id DESC",
@@ -157,14 +160,22 @@ export const importProducts = async (req: Request, res: Response) => {
 export const getProducts = async (req: Request, res: Response) => {
   try {
     const { category, expiryWithinDays, name, city_id, sort, store_id } = req.query;
+    const radiusFilter = parseRadius(req.query.radius);
+    if ("invalid" in radiusFilter) {
+      return res.status(400).json({ error: "Invalid filter." });
+    }
+    // Distances start at a restaurant's city; a store browsing gets none.
+    const fromCity = req.user!.role === "RESTAURANT" ? await userCityId(pool, req.user!.id) : null;
+    let values: (string | number | null)[] = [fromCity];
 
-    // Inner query: marketplace products with their remaining quantity; the outer queries
-    // drop fully reserved ones, count the rest and return one page.
+    // Inner query: marketplace products with their remaining quantity and distance; the outer
+    // queries drop fully reserved ones, apply the radius, count the rest and return one page.
     let query = `
       SELECT
         products.*,
         users.business_name,
         cities.name AS city,
+        ${cityDistance("$1::integer", "users.city_id")} AS distance_km,
         products.quantity - COALESCE(
           (SELECT SUM(quantity) FROM reservations
            WHERE reservations.product_id = products.id
@@ -180,7 +191,6 @@ export const getProducts = async (req: Request, res: Response) => {
       AND users.is_blocked = false
       AND users.business_name IS NOT NULL
     `;
-    let values: (string | number)[] = [];
 
     if (category) {
       values.push(category as string);
@@ -222,20 +232,30 @@ export const getProducts = async (req: Request, res: Response) => {
     }
 
     const page = parsePage(req.query, CARD_PAGE_SIZE);
-    const sortKey = sort ?? "newest";
+    const sortKey = sort ?? "distance";
     if (!page || typeof sortKey !== "string" || !Object.hasOwn(SORT_ORDERS, sortKey)) {
       return res.status(400).json({ error: "Invalid filter." });
     }
 
-    const { rows, total } = await listPage(
-      "listed.*",
-      `FROM (${query}) AS listed WHERE listed.available_quantity > 0`,
-      SORT_ORDERS[sortKey]!,
-      values,
-      page,
-    );
+    // The radius limits a restaurant's search unless it chose a city or a store itself.
+    const radius =
+      fromCity !== null && cityFilter.cityId === null && !store_id ? radiusFilter.radius : null;
+    const listed = `FROM (${query}) AS listed WHERE listed.available_quantity > 0`;
+    let from = listed;
+    let outsideRadiusCount = 0;
+    if (radius !== null) {
+      values.push(radius);
+      from += ` AND listed.distance_km <= $${values.length}`;
+      const outside = await pool.query<{ count: string }>(
+        `SELECT COUNT(*) AS count ${listed} AND listed.distance_km > $${values.length}`,
+        values,
+      );
+      outsideRadiusCount = Number(outside.rows[0]!.count);
+    }
 
-    return res.status(200).json({ products: rows, total });
+    const { rows, total } = await listPage("listed.*", from, SORT_ORDERS[sortKey]!, values, page);
+
+    return res.status(200).json({ products: rows, total, outside_radius_count: outsideRadiusCount });
   } catch (error) {
     console.error("Error while fetching products:", error);
     return res

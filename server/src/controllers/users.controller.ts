@@ -8,7 +8,7 @@ import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import type { Role } from "../types/auth.js";
 import bcrypt from "bcrypt";
 import { hashPassword, validatePassword } from "../utils/accounts.js";
-import { CITY_NAME, cityExists, parseCityFilter } from "../utils/cities.js";
+import { CITY_NAME, cityDistance, cityExists, parseCityFilter, parseRadius, userCityId } from "../utils/cities.js";
 
 const LOGO_URL_PREFIX = "/uploads/logos/";
 
@@ -202,27 +202,41 @@ export const changePassword = async (req: Request, res: Response) => {
   }
 };
 
+// The store list's `sort` values; {distance} is the distance expression from the caller's city.
+// Nearest first is the default, a store without a distance (no city on either side) comes last.
+const STORE_SORTS: Record<string, string> = {
+  distance: "{distance} ASC NULLS LAST, users.business_name ASC, users.id DESC",
+  name: "users.business_name ASC, users.id DESC",
+};
+
 export const getStores = async (req: Request, res: Response) => {
   try {
     const { city_id, business_name, favorites } = req.query;
     const page = parsePage(req.query, CARD_PAGE_SIZE);
-    if (!page) {
+    const radiusFilter = parseRadius(req.query.radius);
+    const sortKey = req.query.sort === undefined || req.query.sort === "" ? "distance" : req.query.sort;
+    if (!page || "invalid" in radiusFilter || typeof sortKey !== "string" || !Object.hasOwn(STORE_SORTS, sortKey)) {
       return res.status(400).json({ error: "Invalid filter." });
     }
-    const columns = `users.id, users.business_name, users.city_id, cities.name AS city, users.address, users.logo_url,
-     users.description, users.opening_hours, users.pickup_hours, users.phone,
+    // Distances start at the restaurant's city ($1, joined as `from_city` so every query, the counts too, uses it).
+    const fromCity = await userCityId(pool, req.user!.id);
+    const distance = cityDistance("from_city.id", "users.city_id");
+    const columns = `users.id, users.business_name, users.city_id, cities.name AS city, ${distance} AS distance_km,
+     users.address, users.logo_url, users.description, users.opening_hours, users.pickup_hours, users.phone,
      (SELECT COUNT(*) FROM products
       WHERE products.store_id = users.id
         AND products.status = 'Available'
         AND products.expiry_date >= CURRENT_DATE) AS active_products`;
     let query = `FROM users
      LEFT JOIN cities ON cities.id = users.city_id
+     LEFT JOIN cities AS from_city ON from_city.id = $1::integer
      WHERE users.role = 'STORE' AND users.is_blocked = false AND users.business_name IS NOT NULL`;
 
-    let values: (string | number)[] = [];
+    const values: (string | number | null)[] = [fromCity];
 
     // "Favorites only" on the store list: the caller's favorite stores.
-    if (favorites !== undefined && favorites !== "") {
+    const favoritesOnly = favorites !== undefined && favorites !== "";
+    if (favoritesOnly) {
       if (favorites !== "true") {
         return res.status(400).json({ error: "Invalid filter." });
       }
@@ -244,17 +258,29 @@ export const getStores = async (req: Request, res: Response) => {
       query += ` AND users.business_name ILIKE $${values.length}`;
     }
 
-    const { rows, total } = await listPage(
-      columns,
-      query,
-      "users.business_name ASC, users.id DESC",
-      values,
-      page,
-    );
+    // The radius limits the list unless the restaurant chose a city or its favorites.
+    const radius =
+      fromCity !== null && cityFilter.cityId === null && !favoritesOnly ? radiusFilter.radius : null;
+    let outsideRadiusCount = 0;
+    if (radius !== null) {
+      values.push(radius);
+      const outside = await pool.query<{ count: string }>(
+        `SELECT COUNT(*) AS count ${query} AND ${distance} > $${values.length}`,
+        values,
+      );
+      outsideRadiusCount = Number(outside.rows[0]!.count);
+      query += ` AND ${distance} <= $${values.length}`;
+    }
 
-    return res
-      .status(200)
-      .json({ message: "Stores fetched successfully", stores: rows, total });
+    const orderBy = STORE_SORTS[sortKey]!.replace("{distance}", distance);
+    const { rows, total } = await listPage(columns, query, orderBy, values, page);
+
+    return res.status(200).json({
+      message: "Stores fetched successfully",
+      stores: rows,
+      total,
+      outside_radius_count: outsideRadiusCount,
+    });
   } catch (error) {
     console.error("Error while fetching stores:", error);
     return res

@@ -11,15 +11,23 @@ export interface SortOption<T extends string = string> {
   label: string;
 }
 
-// The `GET /products` sorts, used by the marketplace and the store profile. Prices are per unit,
-// as the cards show.
-export const MARKETPLACE_SORT_OPTIONS = [
+// The `GET /products` sorts on a store's profile (one store, so no distance). Prices are per
+// unit, as the cards show.
+export const STORE_PROFILE_SORT_OPTIONS = [
   { value: "newest", label: "filters.sortNewest" },
   { value: "expiry", label: "filters.sortExpiry" },
   { value: "price_asc", label: "filters.sortPriceAsc" },
   { value: "price_desc", label: "filters.sortPriceDesc" },
   { value: "discount_desc", label: "filters.sortDiscountDesc" },
   { value: "discount_asc", label: "filters.sortDiscountAsc" },
+] as const satisfies readonly SortOption[];
+
+export type StoreProfileSort = (typeof STORE_PROFILE_SORT_OPTIONS)[number]["value"];
+
+// The marketplace: nearest store first (the default), then the store profile's sorts.
+export const MARKETPLACE_SORT_OPTIONS = [
+  { value: "distance", label: "filters.sortNearest" },
+  ...STORE_PROFILE_SORT_OPTIONS,
 ] as const satisfies readonly SortOption[];
 
 export type MarketplaceSort = (typeof MARKETPLACE_SORT_OPTIONS)[number]["value"];
