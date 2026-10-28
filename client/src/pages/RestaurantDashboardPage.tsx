@@ -15,12 +15,13 @@ import StatCard from "../components/dashboard/StatCard.js";
 import SectionCard from "../components/dashboard/SectionCard.js";
 import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
 import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.js";
+import { DEFAULT_RADIUS, nextRadius, type Radius } from "../utils/radius.js";
 import type { Reservation, Product, RestaurantDashboardStats } from "../types/index.js";
 
 const SECTION_SIZE = 3;
 
 const RestaurantDashboardPage = () => {
-  // The three offers closest to expiry, and how many offers the marketplace has in total.
+  // The three offers closest to expiry nearby, and how many offers that radius has.
   const [bestOffers, setBestOffers] = useState<Product[]>([]);
   const [offersCount, setOffersCount] = useState(0);
   const [reservationsList, setReservationsList] = useState<Reservation[]>([]);
@@ -39,11 +40,26 @@ const RestaurantDashboardPage = () => {
     }
   };
 
+  // The soonest-expiring offers within 10 km. When there are fewer than three, the list is filled
+  // from 20 km, then 50 km, then all cities: closer offers stay first and each wider request adds
+  // the next ones by expiry (its result includes the closer ones, skipped by id). The count is the
+  // widest radius asked for, so it never shows 0 next to offers from further away.
   const fetchProducts = async () => {
     try {
-      const response = await api.get("/products", { params: { sort: "expiry", limit: SECTION_SIZE } });
-      setBestOffers(response.data.products);
-      setOffersCount(response.data.total);
+      let offers: Product[] = [];
+      let radius: Radius = DEFAULT_RADIUS;
+      for (;;) {
+        const response = await api.get("/products", {
+          params: { sort: "expiry", radius, limit: SECTION_SIZE + offers.length },
+        });
+        const shownIds = new Set(offers.map((offer) => offer.id));
+        const added = (response.data.products as Product[]).filter((product) => !shownIds.has(product.id));
+        offers = [...offers, ...added].slice(0, SECTION_SIZE);
+        setOffersCount(response.data.total);
+        if (offers.length >= SECTION_SIZE || radius === "all" || !response.data.outside_radius_count) break;
+        radius = nextRadius(radius);
+      }
+      setBestOffers(offers);
     } catch (err) {
       console.error("Error fetching products:", err);
     }
