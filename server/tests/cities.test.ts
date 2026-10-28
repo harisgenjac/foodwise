@@ -1,11 +1,21 @@
 import request from "supertest";
 import app from "../src/app.js";
 import pool from "../src/config/db.js";
-import { cleanupUsers, registerAndLogin, type Role } from "./helpers.js";
+import {
+  cleanupCompanies,
+  cleanupUsers,
+  insertCompany,
+  insertUser,
+  login,
+  registerAndLogin,
+  type Role,
+} from "./helpers.js";
 
 const STORE = "cities-store@test.com";
 const RESTAURANT = "cities-restaurant@test.com";
 const ADMIN = "cities-admin@test.com";
+const HQ = "cities-hq@test.com";
+const COMPANY = "Cities Test Chain";
 
 // The migration's list, in Bosnian alphabetical order (Č, Ć, Đ, Š, Ž after their base letter).
 const CITIES_IN_ORDER = [
@@ -36,7 +46,8 @@ const CITIES_IN_ORDER = [
 
 describe("GET /api/cities", () => {
   afterEach(async () => {
-    await cleanupUsers([STORE, RESTAURANT, ADMIN]);
+    await cleanupUsers([STORE, RESTAURANT, ADMIN, HQ]);
+    await cleanupCompanies([COMPANY]);
   });
 
   it("returns 401 without a token", async () => {
@@ -47,8 +58,12 @@ describe("GET /api/cities", () => {
     [STORE, "STORE"],
     [RESTAURANT, "RESTAURANT"],
     [ADMIN, "ADMIN"],
+    [HQ, "COMPANY"],
   ])("returns every city with its id, sorted by name, to a %s", async (email, role) => {
-    const agent = await registerAndLogin(email, role);
+    // A company headquarters picks its branches' cities; its login needs a company.
+    const agent = role === "COMPANY"
+      ? await insertUser(email, role, null, null, await insertCompany(COMPANY)).then(() => login(email))
+      : await registerAndLogin(email, role);
     const response = await agent.get("/api/cities");
     expect(response.status).toBe(200);
     expect(response.body.message).toBe("Cities fetched successfully.");

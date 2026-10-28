@@ -56,7 +56,7 @@ Order: `cors({ origin: CLIENT_ORIGIN, credentials: true })` → `express.json()`
 
 Routers: `/api/auth`, `/api/products`, `/api/reservations`, `/api/users`, `/api/notifications`, `/api/favorites`, `/api/product-templates`, `/api/reports`, `/api/donations`, `/api/admin`, `/api/announcements`, `/api/credits`, `/api/dashboard`, `/api/stats`, `/api/cities`, `/api/company`
 
-Routes chain `authenticate` → `authorize('<ROLE>', ...)` (one or more allowed roles) → controller. Every store/restaurant route names its roles (`authorize('STORE', 'RESTAURANT')` where both are allowed), so an `ADMIN` reaches only `/api/admin`, `/api/notifications`, `GET`/`PUT /api/users/me` and `/api/auth`. The admin router applies `authenticate, authorize('ADMIN')` to all of its routes with `router.use`. A `COMPANY` (headquarters) user reaches only `/api/auth`, `GET`/`PUT /api/users/me`, `PUT /api/users/me/password`, `/api/notifications`, `/api/announcements`, `GET /api/stats/impact` and `/api/company`; every store, restaurant, admin and `/api/credits` route rejects it with 403 through its `authorize` list (its branches' credits are under `/api/company`).
+Routes chain `authenticate` → `authorize('<ROLE>', ...)` (one or more allowed roles) → controller. Every store/restaurant route names its roles (`authorize('STORE', 'RESTAURANT')` where both are allowed), so an `ADMIN` reaches only `/api/admin`, `/api/notifications`, `GET`/`PUT /api/users/me` and `/api/auth`. The admin router applies `authenticate, authorize('ADMIN')` to all of its routes with `router.use`. A `COMPANY` (headquarters) user reaches only `/api/auth`, `GET`/`PUT /api/users/me`, `PUT /api/users/me/password`, `/api/notifications`, `/api/announcements`, `GET /api/stats/impact`, `GET /api/cities` (its branches' cities) and `/api/company`; every store, restaurant, admin and `/api/credits` route rejects it with 403 through its `authorize` list (its branches' credits are under `/api/company`).
 
 ## Auth
 
@@ -178,7 +178,7 @@ Unknown `status` filter values or a non-numeric `store_id` are 400 `"Invalid fil
 ### Stats `/api/stats` (STORE, RESTAURANT, ADMIN, COMPANY)
 `GET /impact` (`stats.controller.ts`): `{ message, kg }`, the platform-wide food saved in kg for the footer's counter. It is `getSavedTotals().kg` (`services/impactStats.ts`), the same query as the admin stats' `saved`: `Completed` reservations only, kg + g/1000 (l, ml, kom and pak are left out). Not rounded; the client rounds. 401 without a session; 403 while a temporary password is set (like every route outside the allow-list).
 
-### Cities `/api/cities` (STORE, RESTAURANT, ADMIN)
+### Cities `/api/cities` (STORE, RESTAURANT, ADMIN, COMPANY)
 `GET /` (`cities.controller.ts`): `{ message: "Cities fetched successfully.", cities: [{ id, name }] }`, the whole list, sorted with `ORDER BY cities.name COLLATE "bs-x-icu"` so Č, Ć, Đ, Š and Ž follow their base letter (the ICU collation ships with PostgreSQL builds that have ICU, which the Windows and Docker images do). It is on the temporary-password allow-list, because the profile form needs it. Coordinates are not returned; distances are computed in SQL (below).
 
 ### Nearby offers (radius and distance)
