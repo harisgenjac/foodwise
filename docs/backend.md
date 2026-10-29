@@ -477,6 +477,9 @@ GitHub Actions, `.github/workflows/ci.yml`. Runs on every pull request to `main`
 - `Frontend` (`client/`): Node 24, `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (same reporters), `npm run build`.
 - `CI passed` runs always and fails if any job above failed or was cancelled (skipped is fine). It is the only check required by the `main` branch rules, so its name must not change.
 - A failed run: `gh pr checks` shows which job failed, `gh run view <run-id> --log-failed` prints only the failed steps' logs.
+- Lint: only `client/` has ESLint (`eslint.config.js`), and the `Frontend` job runs it. The server has no linter; its checks are the strict typecheck and the tests.
+- Dependabot (`.github/dependabot.yml`): npm in `/`, `/server` and `/client`, plus `github-actions`, every Monday at 07:00 Europe/Sarajevo. Minor and patch updates come as one grouped PR per folder/ecosystem, majors as separate PRs; at most 5 open PRs per entry, commit messages prefixed `deps`. Its PRs go through CI like any other (a root lock change runs both jobs). It also bumps the SHA-pinned `dorny/paths-filter`.
+- PR template (`.github/pull_request_template.md`): what and why, how it was tested, and a checklist (tests, i18n keys in `bs` and `en`, docs, safe migration, screenshots for UI changes).
 
 ## Seed
 
