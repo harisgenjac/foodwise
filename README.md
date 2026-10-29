@@ -170,7 +170,7 @@ foodwise/
 
 ## CI
 
-GitHub Actions (`.github/workflows/ci.yml`) runs the typecheck, tests and build of the changed side (server, client or both) on every pull request to `main` and every push to `main`. The `CI passed` check sums up the run. Details: the CI section in [`docs/backend.md`](docs/backend.md).
+GitHub Actions (`.github/workflows/ci.yml`) runs the typecheck, tests and build of the changed side (server, client or both) on every pull request to `main` and every push to `main`. The `CI passed` check sums up the run. Dependabot opens weekly dependency update PRs (minor and patch grouped), and new PRs start from a template with a checklist. Details: the CI section in [`docs/backend.md`](docs/backend.md).
 
 ## Known limitations
 
