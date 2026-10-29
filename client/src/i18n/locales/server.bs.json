@@ -305,5 +305,7 @@
   "Your account is blocked.": "Vaš nalog je blokiran.",
   "Your account is blocked. Reason: {{reason}}": "Vaš nalog je blokiran. Razlog: {{reason}}",
   "Your company is blocked.": "Vaša firma je blokirana.",
-  "Your company manages your plan.": "Vašim paketom upravlja centrala."
+  "Your company manages your plan.": "Vašim paketom upravlja centrala.",
+  "Dashboard fetched successfully.": "Pregled je učitan.",
+  "An error occurred while fetching the dashboard.": "Došlo je do greške pri učitavanju pregleda."
 }

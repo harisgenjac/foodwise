@@ -52,7 +52,14 @@ const details = (overrides: Partial<BranchDetails["branch"]> = {}): BranchDetail
     created_at: "2026-10-01T10:00:00.000Z",
     ...overrides,
   },
-  stats: { active_products: 4, pending_reservations: 1, completed_this_month: 7, saved_this_month: { kg: 12.5, l: 0, pieces: 3 } },
+  stats: {
+    active_products: 4,
+    pending_reservations: 1,
+    reservations_this_month: 9,
+    completed_this_month: 7,
+    saved_this_month: { kg: 12.5, l: 0, pieces: 3 },
+    value_this_month: 40,
+  },
 });
 
 describe("CompanyBranchesPage", () => {

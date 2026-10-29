@@ -63,6 +63,9 @@ export const usagePercent = (used: number, total: number) =>
 export const usageBarColor = (percent: number) =>
   percent >= 90 ? "bg-red-500" : percent > 70 ? "bg-orange-500" : "bg-green-500";
 
+// The same thresholds as a StatCard tone.
+export const usageTone = (percent: number) => (percent >= 90 ? "red" : percent > 70 ? "orange" : "green");
+
 // From this share of used credits on, the banner tells the user how many are left.
 export const LOW_CREDITS_PERCENT = 80;
 

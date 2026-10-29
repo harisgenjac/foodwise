@@ -164,8 +164,10 @@ export interface BranchDetails {
   stats: {
     active_products: number;
     pending_reservations: number;
+    reservations_this_month: number;
     completed_this_month: number;
     saved_this_month: { kg: number; l: number; pieces: number };
+    value_this_month: number;
   };
 }
 
@@ -547,6 +549,52 @@ export interface CompanyCredits {
   periodEnd: string;
   totals: { total: number; used: number; available: number; branches: number; withPlan: number };
   branches: CompanyBranchCredits[];
+}
+
+// GET /company/dashboard: what waits for the headquarters, its totals and a row per branch.
+export type CompanyDecision =
+  | { type: "TOPUP_REVIEW"; branch_id: number; branch_name: string; request: CreditRequest }
+  | { type: "NO_PLAN"; branch_id: number; branch_name: string }
+  | { type: "RENEWAL"; branch_id: number; branch_name: string }
+  | { type: "LOW_CREDITS"; branch_id: number; branch_name: string; used: number; total: number };
+
+export interface CompanyDashboardBranch {
+  id: number;
+  name: string;
+  city: string | null;
+  status: BranchStatus;
+  plan_name: string | null;
+  has_subscription: boolean;
+  next_plan_name: string | null;
+  has_next_subscription: boolean;
+  used: number;
+  total: number;
+  available: number;
+  open_requests: CreditRequest[];
+  active_products: number;
+  pending_reservations: number;
+  reservations_this_month: number;
+  completed_this_month: number;
+  saved_this_month: { kg: number; l: number; pieces: number };
+  value_this_month: number;
+}
+
+export interface CompanyDashboard {
+  company: { id: number; name: string };
+  // The credit month (YYYY-MM-01), its last day and the next month; renewalWindow while next
+  // month's plans are being renewed.
+  periodStart: string;
+  periodEnd: string;
+  nextPeriodStart: string;
+  renewalWindow: boolean;
+  decisions: CompanyDecision[];
+  totals: {
+    branches: { active: number; all: number; deactivated: number };
+    credits: { used: number; total: number };
+    reservations: { total: number; picked_up: number; pending: number };
+    saved: { kg: number; l: number; pieces: number; value: number };
+  };
+  branches: CompanyDashboardBranch[];
 }
 
 export interface CreditHistory {

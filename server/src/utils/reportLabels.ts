@@ -90,3 +90,25 @@ export const impactHeaders = (lang: ReportLanguage, role: Role): string[] =>
         "Vrijednost (KM)",
         "Ušteda (KM)",
       ];
+
+// Company (headquarters) reports cover several branches, so they name the branch.
+const branchLabel = (lang: ReportLanguage) => (lang === "en" ? "Branch" : "Poslovnica");
+
+export const companySalesHeaders = (lang: ReportLanguage): string[] => [branchLabel(lang), ...salesHeaders(lang, "STORE")];
+
+export const companyImpactHeaders = (lang: ReportLanguage): string[] => impactHeaders(lang, "STORE");
+
+// One row per branch: the impact columns without the month, after the branch and its status.
+export const branchesHeaders = (lang: ReportLanguage): string[] => [
+  branchLabel(lang),
+  "Status",
+  ...impactHeaders(lang, "STORE").slice(1),
+];
+
+const BRANCH_STATUS_LABELS: Record<ReportLanguage, Record<string, string>> = {
+  bs: { active: "Aktivna", deactivated: "Deaktivirana", blocked: "Blokirana" },
+  en: { active: "Active", deactivated: "Deactivated", blocked: "Blocked" },
+};
+
+export const branchStatusLabel = (lang: ReportLanguage, status: string): string =>
+  BRANCH_STATUS_LABELS[lang][status] ?? status;
