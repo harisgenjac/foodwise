@@ -29,11 +29,17 @@ reviews:
         reservation statuses, credit charges and refunds (each charge refunded at
         most once), visibility of blocked and deactivated stores (use the shared
         visibility condition), company/branch rules.
-        Every route must check role AND ownership (store, restaurant, company HQ,
-        admin); data from another user or company must never leak; admin_note is
-        never returned to users.
+        Every authenticated route must check role AND ownership (store,
+        restaurant, company HQ, admin). Public auth routes (e.g. login) are
+        intentionally unauthenticated; do not flag them for missing role checks.
+        Data from another user or company must never leak; admin_note is never
+        returned to users.
         SQL must be parameterized. Several related writes belong in one
-        transaction. Business dates use APP_TIMEZONE, not the server time zone.
+        transaction.
+        Time zones: business dates (expiry, "today", the midnight expiry job, the
+        07:00 reminders) use APP_TIMEZONE. Credit days and months intentionally
+        change at 00:00 Europe/London (see credits-spec.md); do not suggest
+        APP_TIMEZONE for credit periods, refunds or subscriptions.
         Error messages are English.
     - path: "server/**/migrations/**"
       instructions: |
@@ -44,9 +50,13 @@ reviews:
         Every UI text goes through i18n with keys in BOTH bs and en; flag
         hard-coded user-facing text. No dangerouslySetInnerHTML; no user input in
         href/src. Inputs need labels and buttons accessible names. Reuse the
-        existing components (StatCard, FilterBar, CitySelect, ...). Filters live in
-        component state, not in the URL. Pages for a role must be guarded for that
-        role.
+        existing components (StatCard, FilterBar, CitySelect, ...).
+        Filters usually live in component state. Some pages intentionally keep
+        filters or sorting in the URL because other pages link to them (e.g.
+        AdminCreditsPage ?plan=, admin list sorting); do not flag existing
+        URL-backed filters. Only question new URL state that has no linking or
+        navigation reason.
+        Pages for a role must be guarded for that role.
     - path: "**/*.test.{ts,tsx}"
       instructions: |
         Tests should check behaviour, not implementation details. Flag fixed
