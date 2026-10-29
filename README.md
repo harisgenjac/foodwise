@@ -37,7 +37,7 @@ cd foodwise
 npm run install:all
 ```
 
-`install:all` installs the dependencies in the root, `server/` and `client/`.
+`install:all` installs the dependencies in the root, `server/`, `client/` and `e2e/`.
 
 ### 2. Create the databases
 
@@ -111,7 +111,7 @@ This builds the server once, then runs the backend and frontend together:
 |---|---|
 | `npm run dev` | Builds the server, then runs the server and client dev servers together |
 | `npm run build` | Builds the server and then the client |
-| `npm run install:all` | Installs dependencies in the root, `server/` and `client/` |
+| `npm run install:all` | Installs dependencies in the root, `server/`, `client/` and `e2e/` |
 
 ### Server (`cd server`)
 
@@ -160,7 +160,8 @@ foodwise/
 ├── package.json     root scripts (dev, build, install:all)
 ├── docs/            detailed documentation
 ├── server/          Express API (src/, migrations/, tests/, uploads/)
-└── client/          React app (src/)
+├── client/          React app (src/)
+└── e2e/             Playwright end-to-end tests
 ```
 
 ## Documentation
@@ -168,10 +169,15 @@ foodwise/
 - [`docs/product.md`](docs/product.md): users and roles, business rules, roadmap
 - [`docs/backend.md`](docs/backend.md): API endpoints, database schema, auth, tests
 - [`docs/frontend.md`](docs/frontend.md): routes, components, hooks, i18n, UI conventions
+- [`docs/e2e.md`](docs/e2e.md): end-to-end tests (Playwright), their database and seed, CI traces
+
+## E2E tests
+
+Playwright tests in `e2e/` run the built frontend in Chromium against the real API, on a separate database `food_saver_e2e_db` that is emptied and seeded on every run. One-time setup: create that database and `e2e/.env.e2e` (contents in [`docs/e2e.md`](docs/e2e.md)), then `cd e2e && npx playwright install chromium`. Run one file with `npm run e2e -- tests/<file>.spec.ts` or open the UI mode with `npm run e2e:ui`. The full suite runs in CI.
 
 ## CI
 
-GitHub Actions (`.github/workflows/ci.yml`) runs the typecheck, tests and build of the changed side (server, client or both) on every pull request to `main` and every push to `main`. The `CI passed` check sums up the run. Dependabot opens weekly dependency update PRs (minor and patch grouped), and new PRs start from a template with a checklist. Details: the CI section in [`docs/backend.md`](docs/backend.md).
+GitHub Actions (`.github/workflows/ci.yml`) runs the typecheck, tests and build of the changed side (server, client or both) and the Playwright e2e suite on every pull request to `main` and every push to `main`. The `CI passed` check sums up the run. Dependabot opens weekly dependency update PRs (minor and patch grouped), and new PRs start from a template with a checklist. Details: the CI section in [`docs/backend.md`](docs/backend.md).
 
 ## Known limitations
 

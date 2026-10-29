@@ -27,7 +27,7 @@ function DashboardProductCard({ product, showStore = false, actions }: Dashboard
     getDaysUntilExpiry(product) <= 3 ? "text-red-600" : "text-gray-800";
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+    <div data-testid="product-card" className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
       <div className="relative h-36 overflow-hidden">
         <img
           src={CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES.Other}

@@ -9,3 +9,8 @@ dist/
 !.vscode/extensions.json
 .idea/
 .claude/settings.local.json
+dist-e2e/
+e2e/.auth/
+e2e/playwright-report/
+e2e/test-results/
+e2e/blob-report/

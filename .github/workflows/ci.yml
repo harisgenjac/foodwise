@@ -26,6 +26,7 @@ jobs:
     outputs:
       backend: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.backend == 'true' || steps.filter.outputs.shared == 'true' }}
       frontend: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.frontend == 'true' || steps.filter.outputs.shared == 'true' }}
+      e2e: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.e2e == 'true' || steps.filter.outputs.shared == 'true' }}
     steps:
       - uses: actions/checkout@v7
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
@@ -43,6 +44,8 @@ jobs:
             frontend:
               - 'client/**'
               - 'server/src/**'
+            e2e:
+              - 'e2e/**'
 
   backend:
     name: Backend
@@ -112,10 +115,93 @@ jobs:
       - run: npm test -- --reporter=default --reporter=github-actions
       - run: npm run build
 
+  # Playwright against the built frontend and the real API, with its own database and seed
+  # (e2e/global-setup.ts). The web servers are built, migrated and started by `npm run e2e`.
+  e2e:
+    name: E2E
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true' || needs.changes.outputs.e2e == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      TZ: Europe/Sarajevo
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: food_saver_e2e_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            server/package-lock.json
+            client/package-lock.json
+            e2e/package-lock.json
+      - run: npm ci
+        working-directory: server
+      - run: npm ci
+        working-directory: client
+      - run: npm ci
+        working-directory: e2e
+      - name: Write .env.e2e (test-only values)
+        working-directory: e2e
+        run: |
+          cat > .env.e2e <<'EOF'
+          DATABASE_URL=postgres://postgres:postgres@localhost:5432/food_saver_e2e_db
+          JWT_SECRET=ci-e2e-secret-not-a-real-secret
+          PORT=3100
+          CLIENT_ORIGIN=http://localhost:4173
+          TRUST_PROXY=0
+          DISABLE_RATE_LIMITS=true
+          EOF
+      - name: Read the Playwright version
+        id: playwright
+        working-directory: e2e
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache the Playwright browsers
+        id: browser-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: Install Chromium with its system dependencies
+        if: steps.browser-cache.outputs.cache-hit != 'true'
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+      - name: Install Chromium's system dependencies (browser cached)
+        if: steps.browser-cache.outputs.cache-hit == 'true'
+        working-directory: e2e
+        run: npx playwright install-deps chromium
+      - run: npm run typecheck
+        working-directory: e2e
+      - run: npm run e2e
+        working-directory: e2e
+      - name: Upload the report and traces
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: e2e-report
+          path: |
+            e2e/playwright-report/
+            e2e/test-results/
+          retention-days: 14
+
   # The only required check in the branch rules: keep this job name stable.
   ci-passed:
     name: CI passed
-    needs: [changes, backend, frontend]
+    needs: [changes, backend, frontend, e2e]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -123,6 +209,6 @@ jobs:
       - name: Fail if a job failed or was cancelled (skipped is fine)
         if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
         run: |
-          echo "changes=${{ needs.changes.result }} backend=${{ needs.backend.result }} frontend=${{ needs.frontend.result }}"
+          echo "changes=${{ needs.changes.result }} backend=${{ needs.backend.result }} frontend=${{ needs.frontend.result }} e2e=${{ needs.e2e.result }}"
           exit 1
       - run: echo "All required jobs passed or were skipped."
