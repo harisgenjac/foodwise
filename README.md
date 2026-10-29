@@ -122,7 +122,7 @@ This builds the server once, then runs the backend and frontend together:
 | `npm start` | Runs the compiled server |
 | `npm run migrate up` / `down` | Applies or rolls back migrations |
 | `npm run migrate create <name>` | Creates a new migration |
-| `npm test` | Runs the tests against the test database (apply its schema first with `npx dotenv -e .env.test -- node-pg-migrate up`) |
+| `npm test` | Runs the tests against the test database (apply its schema first with `npx dotenv run -q -f .env.test -- node-pg-migrate up`) |
 | `npm run test:watch` | Runs the tests in watch mode |
 | `npm run typecheck` | Type-checks the source and the tests |
 | `npm run seed` | Builds, then replaces all data with demo data that simulates two months of use |
