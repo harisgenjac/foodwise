@@ -21,3 +21,6 @@ export const storageState = (role: SeededRole) => fileURLToPath(new URL(`../.aut
 
 // A short id per test, appended to every name or email the test creates, so runs never collide.
 export const runId = () => Date.now().toString(36);
+
+// "<prefix> <runId>", e.g. uniqueName("E2E Mlijeko") → "E2E Mlijeko mh3k2x9a".
+export const uniqueName = (prefix: string) => `${prefix} ${runId()}`;
