@@ -1,5 +1,7 @@
 // The accounts the e2e seed creates (support/seed.ts) and where the setup project saves their
 // sessions (tests/auth.setup.ts). Every seeded account uses PASSWORD.
+import { fileURLToPath } from "node:url";
+
 export const PASSWORD = "E2e-pass-123";
 
 export const API_URL = "http://localhost:3100";
@@ -13,7 +15,9 @@ export const ACCOUNTS = {
 
 export type SeededRole = keyof typeof ACCOUNTS;
 
-export const storageState = (role: SeededRole) => `.auth/${role}.json`;
+// e2e/.auth/<role>.json, whatever the working directory (the VS Code extension runs from the
+// workspace root).
+export const storageState = (role: SeededRole) => fileURLToPath(new URL(`../.auth/${role}.json`, import.meta.url));
 
 // A short id per test, appended to every name or email the test creates, so runs never collide.
 export const runId = () => Date.now().toString(36);

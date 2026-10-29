@@ -61,6 +61,7 @@ Config:
 
 ## Writing tests
 
+- Wait until a page has loaded its data before typing into a form it fills from the API. `MyProfilePage` overwrites its fields when `GET /users/me` answers, so the test first waits for the read-only Email field to have its value.
 - Each test creates its own data with a unique suffix (`runId()`, e.g. product `E2E Mlijeko <id>`, email `e2e-rest-<id>@foodwise.test`). Tests never depend on each other or on order. The seeded accounts are shared, so never change their profile or password.
 - **Locators:**
   - Use `getByRole`, `getByLabel`, `getByText` and `getByPlaceholder` (the filter inputs have no label) with the Bosnian UI. The language is fixed to `bs`.
@@ -94,6 +95,8 @@ npx playwright show-report           # the last run's HTML report
 ```
 
 Ports 3100 and 4173 must be free, but the normal dev servers can keep running.
+
+**VS Code:** the Playwright Test for VS Code extension finds `e2e/playwright.config.ts` by itself. The tests appear in the Testing view, and a test run from there also runs the `setup` project it depends on. Chromium must be installed once (`npx playwright install chromium` in `e2e/`). The extension loads the config from the workspace root, so the config resolves `.env.e2e` and the `.auth/` sessions from its own folder (`import.meta.url`), never from the working directory. Keep it that way for any new file path. Each run builds both sides and reseeds the database, so expect about 15–20 s before the first test starts.
 
 ## CI and failed runs
 

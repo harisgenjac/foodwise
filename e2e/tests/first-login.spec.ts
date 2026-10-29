@@ -52,6 +52,9 @@ test("a new restaurant changes its temporary password and fills in its profile b
   await expect(gate.getByText(/Popunite obavezne podatke/)).toBeVisible();
   await gate.getByRole("link", { name: "Idi na Moj profil" }).click();
 
+  // The page fills the form from GET /users/me when it opens; typing before that answer arrives
+  // gets overwritten. The read-only Email field is filled only by that answer.
+  await expect(page.getByLabel("Email")).toHaveValue(email);
   await page.getByLabel("Ime", { exact: true }).fill(firstName);
   await page.getByLabel("Prezime").fill("Testić");
   await page.getByLabel("Naziv biznisa").fill(`E2E Restoran ${id}`);
