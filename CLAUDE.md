@@ -53,6 +53,10 @@ More commands (tests, seed, lint, type-check) are in the two technical docs.
 - **Postgres types:** `DECIMAL`/`NUMERIC` and `COUNT(*)` arrive as `string`; `INTEGER`/`SERIAL` ids arrive as `number`.
 - **Secrets and artifacts:** never commit `.env*`, `dist/`, `node_modules/` or `server/uploads/*` (only `uploads/logos/.gitkeep`). Do not read or print `.env` files.
 - **Git:** non-trivial work goes on a feature branch and a PR. Check the current branch and `git remote -v` before pushing.
+- **Tests and CI:**
+  - Before committing, run the typecheck of the package you changed (`npm run typecheck`) and only the test files for what you changed: `npx vitest run --reporter=dot <files>` (in `server/`: `npx dotenv -e .env.test -- vitest run --reporter=dot <files>`).
+  - Never run the full test suites locally; CI (GitHub Actions, `.github/workflows/ci.yml`) runs them on every PR.
+  - When CI fails, read only the failed logs with the GitHub CLI (`gh pr checks`, `gh run view <id> --log-failed`) and fix from there.
 - **Docs stay current.** At the end of every task, check whether it changed anything the docs describe and update them in the same change:
   - `docs/backend.md`: endpoints, schema or migrations, auth, business logic, conventions, tests, env vars
   - `docs/frontend.md`: routes, components, hooks, types, i18n structure, UI conventions

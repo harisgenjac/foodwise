@@ -1,0 +1,128 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One run per PR (or branch); a new push cancels the run still in progress.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      backend: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.backend == 'true' || steps.filter.outputs.shared == 'true' }}
+      frontend: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.frontend == 'true' || steps.filter.outputs.shared == 'true' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        if: github.event_name != 'workflow_dispatch'
+        with:
+          filters: |
+            shared:
+              - '.github/workflows/**'
+              - 'package.json'
+              - 'package-lock.json'
+            backend:
+              - 'server/**'
+            # The client tests read server/src to check that every server message has a translation.
+            frontend:
+              - 'client/**'
+              - 'server/src/**'
+
+  backend:
+    name: Backend
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: server
+    env:
+      # Test helpers build dates from the process's local day; keep it the same as APP_TIMEZONE.
+      TZ: Europe/Sarajevo
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: food_saver_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - name: Write .env.test (test-only values)
+        run: |
+          cat > .env.test <<'EOF'
+          DATABASE_URL=postgres://postgres:postgres@localhost:5432/food_saver_test_db
+          JWT_SECRET=ci-test-secret-not-a-real-secret
+          EOF
+      - name: Migrate the test database
+        run: npx dotenv -e .env.test -- node-pg-migrate up
+      - run: npm run typecheck
+      - run: npm test -- --reporter=default --reporter=github-actions
+      - run: npm run build
+
+  frontend:
+    name: Frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test -- --reporter=default --reporter=github-actions
+      - run: npm run build
+
+  # The only required check in the branch rules: keep this job name stable.
+  ci-passed:
+    name: CI passed
+    needs: [changes, backend, frontend]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail if a job failed or was cancelled (skipped is fine)
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: |
+          echo "changes=${{ needs.changes.result }} backend=${{ needs.backend.result }} frontend=${{ needs.frontend.result }}"
+          exit 1
+      - run: echo "All required jobs passed or were skipped."
