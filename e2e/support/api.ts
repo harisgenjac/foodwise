@@ -57,6 +57,26 @@ export const createProduct = async (api: APIRequestContext, product: NewProduct)
   return created;
 };
 
+// The logged-in account's own id.
+export const myId = async (api: APIRequestContext) => {
+  const { user } = await ok<{ user: { id: number } }>(await api.get("/api/users/me"));
+  return user.id;
+};
+
+// Reserves as a restaurant (costs it 1 credit); pickup tomorrow unless a date is given.
+export const reserve = async (api: APIRequestContext, productId: number, quantity: number, pickupDate = isoDate(1)) => {
+  const { reservation } = await ok<{ reservation: { id: number } }>(
+    await api.post("/api/reservations", { data: { product_id: productId, quantity, pickup_date: pickupDate } }),
+  );
+  return reservation;
+};
+
+// The store's side of a reservation: accept it, or mark it picked up.
+export const acceptReservation = async (api: APIRequestContext, reservationId: number) =>
+  ok(await api.patch(`/api/reservations/${reservationId}/accept`));
+export const completeReservation = async (api: APIRequestContext, reservationId: number) =>
+  ok(await api.patch(`/api/reservations/${reservationId}/complete`));
+
 // A new store in Visoko with a complete profile, its own password set and no plan, logged in.
 // For tests that need a state the shared seeded accounts lose after one run (here: no plan yet),
 // so the test survives retries and --repeat-each.

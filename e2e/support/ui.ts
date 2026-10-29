@@ -2,17 +2,14 @@
 import { expect, type Page } from "@playwright/test";
 
 // Toasts are role="status", and so is the credit banner, so they are told apart by text.
-export const toast = (page: Page, text: string) => page.getByRole("status").filter({ hasText: text });
+export const toast = (page: Page, text: string | RegExp) => page.getByRole("status").filter({ hasText: text });
 
 // A dialog by its text, for the dialogs that have no accessible name (SubscribeModal,
 // CreditRequestDecisionModal, the reserve dialog).
 export const dialogWith = (page: Page, text: string) => page.getByRole("dialog").filter({ hasText: text });
 
 export const loginViaForm = async (page: Page, email: string, password: string) => {
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Lozinka").fill(password);
-  await page.getByRole("button", { name: "Prijavi se" }).click();
+  await submitLoginForm(page, email, password);
   await expect(page).toHaveURL(/\/dashboard$/);
 };
 
@@ -24,6 +21,30 @@ export const changeTemporaryPassword = async (page: Page, temporaryPassword: str
   await page.getByLabel("Ponovite novu lozinku").fill(newPassword);
   await page.getByRole("button", { name: "Promijeni lozinku" }).click();
   await expect(toast(page, "Lozinka je promijenjena.")).toBeVisible();
+};
+
+// Searches the marketplace by (part of) a product name and returns the matching cards. The search
+// is debounced, so assert on the result (toHaveCount, toBeVisible), never read it right away.
+export const searchMarketplace = async (page: Page, name: string) => {
+  await page.goto("/browse-products");
+  await page.getByPlaceholder("Pretraga po imenu").fill(name);
+  return page.getByTestId("product-card").filter({ hasText: name });
+};
+
+// The product is not offered. The page keeps the previous list until the filtered answer arrives,
+// so waiting for the empty state (rather than toHaveCount(0)) proves the search really ran.
+export const expectNotInMarketplace = async (page: Page, name: string) => {
+  const cards = await searchMarketplace(page, name);
+  await expect(page.getByText("Nema rezultata", { exact: true })).toBeVisible();
+  await expect(cards).toHaveCount(0);
+};
+
+// Submits the login form and stays wherever the app lands (a refused login stays on /login).
+export const submitLoginForm = async (page: Page, email: string, password: string) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Lozinka").fill(password);
+  await page.getByRole("button", { name: "Prijavi se" }).click();
 };
 
 // The Add product form with fixed values (bakery, 3 → 1.5 KM, 20 pieces, expiring tomorrow), for
