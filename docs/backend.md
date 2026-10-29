@@ -42,7 +42,7 @@ server/
 - `npm run dev`: `concurrently "tsc --watch" "node --watch dist/server.js"`. The server runs the compiled `dist/`, so run `npm run build` once on a fresh clone.
 - `npm run build` (`tsc`), `npm start` (`node dist/server.js`)
 - `npm run migrate up|down`, `npm run migrate create <name>` (uses `.env` through dotenv-cli)
-- `npm test` (Vitest + supertest, `.env.test`, files run one at a time). Single file: `npm test -- tests/products.test.ts`. Single test: `npm test -- -t "name"`. Watch mode: `npm run test:watch`.
+- `npm test` (Vitest + supertest, `.env.test`, files run one at a time; the full suite runs in CI, see CI below). Single file: `npm test -- tests/products.test.ts`. Single test: `npm test -- -t "name"`. Watch mode: `npm run test:watch`.
 - `npm run typecheck`: `tsc --noEmit -p tsconfig.test.json` (source and tests).
 - `npm run seed` (destructive reset, see Seed); builds first and runs from `dist/`.
 - `npm run create-admin -- <email> <password> [first name] [last name]`: builds, then inserts an `ADMIN` account (same email and password rules as the API; a duplicate email is refused). Used for the first admin; later accounts are created in the app.
@@ -467,6 +467,16 @@ CSV reports over the company's branches (`controllers/companyReports.controller.
   - `reports`: period validation (missing, invalid, reversed, longer than 366 days; a full leap year and a single day pass), CSV headers and file names, rows and totals for both roles (only Completed, in the period, own data), English headers, the formula guard, empty periods, impact per month with unit conversion; `csv` (unit tests for `toCsv`)
 - Rows the API cannot create (past expiry dates, chosen statuses) are inserted with `pool.query`; reservations inserted that way need a `unit_price`. Use obviously nonexistent ids (`999999`) for 404 cases.
 - Race condition test: two restaurants reserve 8 of 10 at the same time with `Promise.all`; the sorted statuses must equal `[201, 400]`.
+
+## CI
+
+GitHub Actions, `.github/workflows/ci.yml`. Runs on every pull request to `main`, every push to `main` and by hand (`workflow_dispatch`, which runs everything). A new commit on the same PR/branch cancels the run in progress.
+
+- `Detect changes` (`dorny/paths-filter`, pinned to a commit SHA) decides what runs: `server/**` → Backend; `client/**` and `server/src/**` → Frontend (the client test `serverMessages.test.ts` reads the server sources); `.github/workflows/**`, the root `package.json` or `package-lock.json` → both.
+- `Backend` (`server/`): Node 24, `npm ci`, a `postgres:15` service container (same major as local development) with database `food_saver_test_db`, a `.env.test` written by the workflow with test-only values (`DATABASE_URL`, `JWT_SECRET`), migrations with `npx dotenv -e .env.test -- node-pg-migrate up`, `npm run typecheck`, `npm test` (default + `github-actions` reporters, so failures show as PR annotations), `npm run build`. `TZ=Europe/Sarajevo`, because the test helpers build dates from the process's local day and must agree with `APP_TIMEZONE`.
+- `Frontend` (`client/`): Node 24, `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (same reporters), `npm run build`.
+- `CI passed` runs always and fails if any job above failed or was cancelled (skipped is fine). It is the only check required by the `main` branch rules, so its name must not change.
+- A failed run: `gh pr checks` shows which job failed, `gh run view <run-id> --log-failed` prints only the failed steps' logs.
 
 ## Seed
 

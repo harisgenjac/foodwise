@@ -1,5 +1,7 @@
 # FoodWise (Još vrijedi)
 
+[![CI](https://github.com/harisgenjac/foodwise/actions/workflows/ci.yml/badge.svg)](https://github.com/harisgenjac/foodwise/actions/workflows/ci.yml)
+
 A B2B marketplace where **stores** sell food that is close to its expiry date at a discount to **restaurants**. Stores recover some revenue, restaurants get cheaper ingredients, and less food is thrown away. A humanitarian donation module is planned.
 
 ## Features
@@ -165,6 +167,10 @@ foodwise/
 - [`docs/product.md`](docs/product.md): users and roles, business rules, roadmap
 - [`docs/backend.md`](docs/backend.md): API endpoints, database schema, auth, tests
 - [`docs/frontend.md`](docs/frontend.md): routes, components, hooks, i18n, UI conventions
+
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs the typecheck, tests and build of the changed side (server, client or both) on every pull request to `main` and every push to `main`. The `CI passed` check sums up the run. Details: the CI section in [`docs/backend.md`](docs/backend.md).
 
 ## Known limitations
 

@@ -218,6 +218,7 @@ Every form with input follows the same rules for required fields and errors.
 
 ## Testing
 
+- CI runs typecheck, lint, the full test suite and the build on every PR that touches `client/` or `server/src/` (see CI in `docs/backend.md`).
 - Vitest + Testing Library (`@testing-library/react`, `user-event`, `jest-dom`) in `jsdom`. Test files sit next to the code as `*.test.ts(x)`; `globals: true`, so `describe`/`it`/`expect`/`vi` need no import.
 - `src/test/setup.ts` runs before every file:
   - It mocks `api/axios.js` for all tests (`get`, `post`, `put`, `patch`, `delete` and `interceptors.response.use/eject` are `vi.fn()`; `API_ORIGIN` and `assetUrl` are plain values), so no test reaches the server.
