@@ -53,6 +53,7 @@ app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/stats', statsRoutes)
 app.use('/api/cities', citiesRoutes)
 app.use('/api/company', companyRoutes)
+// CI check: test PR, not meant to be merged.
 // nosniff: browsers must not treat an uploaded file as anything but its declared type.
 app.use('/uploads', express.static('uploads', {
   setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
