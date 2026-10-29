@@ -21,7 +21,7 @@ server/
 │   ├── app.ts               builds and exports the Express app (no listen, so supertest can import it)
 │   ├── config/db.ts         exports the shared pg Pool (DATABASE_URL)
 │   ├── controllers/         auth, products, reservations, notifications, favorites, users, productTemplates, reports, donations, admin, credits (user side), adminCredits (admin side, `/api/admin/credits`), companyCredits (the headquarters' credits for its branches, `/api/company/credits` and `/api/company/branches/:id/credits`), adminCompanies (admin side, `/api/admin/companies`), company (the headquarters' own company, `/api/company`), companyBranches (the headquarters' branches, `/api/company/branches`), dashboard (stat cards), stats (footer impact counter), cities (the city list)
-│   ├── middleware/          auth.middleware.ts (authenticate, authorize), upload.middleware.ts (multer, `uploadLogoFile`, `uploadCsvFile`)
+│   ├── middleware/          auth.middleware.ts (authenticate, authorize), upload.middleware.ts (multer, `uploadLogoFile`, `uploadCsvFile`), origin.middleware.ts (`allowedOrigins`, `checkOrigin`)
 │   ├── routes/              one router per resource, mounted in app.ts
 │   ├── services/            branches.ts (branch create, edit, password, deactivate/reactivate, stats; shared by the headquarters and admin endpoints), creditService.ts (all credit logic: balance, charges, refunds, grants, adjustments; see Credits), creditRequests.ts (subscription and top-up requests shared by the user and headquarters endpoints: `createCreditRequest`, `applyAutoRenew`, `creditSummary`, `getManagingCompany`, `closeBranchCredits`, the request columns and statuses, `REACHED_ADMIN`), impactStats.ts (`getSavedTotals`: platform-wide food saved, shared by admin stats and `/api/stats/impact`)
 │   ├── jobs/                expireProducts.ts, notificationReminders.ts, creditRenewals.ts
@@ -46,13 +46,15 @@ server/
 - `npm run typecheck`: `tsc --noEmit -p tsconfig.test.json` (source and tests).
 - `npm run seed` (destructive reset, see Seed); builds first and runs from `dist/`.
 - `npm run create-admin -- <email> <password> [first name] [last name]`: builds, then inserts an `ADMIN` account (same email and password rules as the API; a duplicate email is refused). Used for the first admin; later accounts are created in the app.
-- Env: `DATABASE_URL`, `JWT_SECRET`, optional `PORT`, `NODE_ENV`, `CLIENT_ORIGIN` (CORS origin, default `http://localhost:5173`), `APP_TIMEZONE` (business time zone for `CURRENT_DATE` and cron, default `Europe/Sarajevo`). `.env.test` points at the separate database `food_saver_test_db`.
+- Env: `DATABASE_URL`, `JWT_SECRET`, optional `PORT`, `NODE_ENV`, `CLIENT_ORIGIN` (allowed frontend origin for CORS and the origin check, default `http://localhost:5173`; a comma-separated list is allowed), `APP_TIMEZONE` (business time zone for `CURRENT_DATE` and cron, default `Europe/Sarajevo`). `.env.test` points at the separate database `food_saver_test_db`.
 
 `tsconfig.json`: `strict`, `module/moduleResolution nodenext`, `target esnext`, `rootDir ./src`, `outDir ./dist`, `types: ["node"]`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, `isolatedModules`, `declaration`, `sourceMap`, `include: ["src"]`. Migrations and tests live outside `src/`, so the build never emits them. `tsconfig.test.json` extends it with `rootDir: "."`, `noEmit`, `types: ["node", "vitest/globals"]` and includes `tests/`, so the tests are type-checked with the same strict options.
 
 ## Request pipeline (`app.ts`)
 
-Order: `cors({ origin: CLIENT_ORIGIN, credentials: true })` → `express.json()` → `req.body ??= {}` (Express 5 leaves it undefined for requests without a body; controllers destructure it) → `cookieParser()` → routers → `/uploads` static (with `X-Content-Type-Options: nosniff`) → JSON 404 for any unknown path (`"Route not found."`) → error handler (see Business logic).
+Order: `cors({ origin: allowedOrigins, credentials: true })` → `checkOrigin` → `express.json()` → `req.body ??= {}` (Express 5 leaves it undefined for requests without a body; controllers destructure it) → `cookieParser()` → routers → `/uploads` static (with `X-Content-Type-Options: nosniff`) → JSON 404 for any unknown path (`"Route not found."`) → error handler (see Business logic).
+
+Origin check (`middleware/origin.middleware.ts`), defence in depth against CSRF next to the `sameSite: "strict"` cookie: `allowedOrigins` is `CLIENT_ORIGIN` split on commas, parsed once at startup and shared with `cors()`. For `POST`, `PUT`, `PATCH` and `DELETE`, the `Origin` header (or, when it is missing, the origin of the `Referer`) must be one of them, otherwise 403 `"Request origin not allowed."` (an unparseable `Referer` is refused too). A request with neither header (non-browser clients, supertest) passes; `GET`, `HEAD` and `OPTIONS` are not checked. No CSRF token library is used.
 
 Routers: `/api/auth`, `/api/products`, `/api/reservations`, `/api/users`, `/api/notifications`, `/api/favorites`, `/api/product-templates`, `/api/reports`, `/api/donations`, `/api/admin`, `/api/announcements`, `/api/credits`, `/api/dashboard`, `/api/stats`, `/api/cities`, `/api/company`
 
@@ -435,6 +437,7 @@ CSV reports over the company's branches (`controllers/companyReports.controller.
 - Each file uses its own email prefix (`products-store-a@test.com`, ...) and calls `cleanupUsers` in `afterEach`.
 - Files:
   - `app`: 401, JSON 404, malformed JSON, missing body, `/uploads` static
+  - `origin`: foreign `Origin` → 403 (POST, PUT, PATCH, DELETE), `CLIENT_ORIGIN` passes, no `Origin`/`Referer` passes, `Referer` fallback (foreign → 403, own → passes, unparseable → 403), `GET` with a foreign `Origin` is not checked
   - `auth` (register closed for every existing role, login incl. blocked accounts), `middleware` (missing, malformed, foreign-secret and expired tokens, a deleted user's token, the role read from the database; both roles)
   - `password`: changing it (the new one logs in, the old one not; every validation message; admins too; 401 without a session), the temporary password from an admin (login flag, 403 on other routes while `/users/me` GET/PUT and the change work, unlocked afterwards, set again by an admin reset with the existing session held back, never set for self-chosen passwords)
   - `announcements`: audience (only the chosen roles, never blocked users or admins), ALL and the titles in the notification list, validation messages, expiry and ending, per-user idempotent dismissal, no old announcements for new accounts, the admin list counts and audit rows
@@ -496,7 +499,7 @@ Random choices use a fixed seed (mulberry32), so every run gives the same data r
 
 ## Pending and known limitations
 
-- **Deployment:** `sameSite: "strict"` breaks cookie auth when the frontend and backend are on different domains (needs `none` + `secure`, or a shared domain); set `CLIENT_ORIGIN` to the deployed frontend; logo uploads on local disk are lost on Render restarts (needs cloud storage; Cloudinary is not available in the owner's country, so evaluate alternatives). With more than one server instance the cron jobs would run once per instance (they are idempotent, but a lock or a separate worker is cleaner).
+- **Deployment:** the auth cookie is `sameSite: "strict"`, so the frontend and the API must be served from the same site (the same domain, or subdomains of one domain such as `app.example.com` and `api.example.com`). Do not switch to `sameSite: "none"` without real CSRF protection: the origin check is only a second layer. Set `CLIENT_ORIGIN` to the deployed frontend origin(s); logo uploads on local disk are lost on Render restarts (needs cloud storage; Cloudinary is not available in the owner's country, so evaluate alternatives). With more than one server instance the cron jobs would run once per instance (they are idempotent, but a lock or a separate worker is cleaner).
 - Server messages should become error keys translated on the client.
 - `PUT /users/me`: replace `COALESCE` with a real PATCH that can clear optional fields.
 - Migrations are still JavaScript. They have already run, so they stay as they are; a new migration can be written in TypeScript once `node-pg-migrate` runs with a TS loader (for example `tsx`).

@@ -19,15 +19,17 @@ import statsRoutes from './routes/stats.routes.js'
 import citiesRoutes from './routes/cities.routes.js'
 import companyRoutes from './routes/company.routes.js'
 import { HttpError } from "./utils/httpError.js";
+import { allowedOrigins, checkOrigin } from "./middleware/origin.middleware.js";
 
 const app = express();
 
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+    origin: allowedOrigins,
     credentials: true,
   }),
 );
+app.use(checkOrigin);
 app.use(express.json());
 // Express 5 leaves req.body undefined when a request has no body; controllers destructure it.
 app.use((req: Request, res: Response, next: NextFunction) => {
