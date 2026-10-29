@@ -69,3 +69,13 @@ More commands (tests, seed, lint, type-check) are in the two technical docs.
 
 
   
+## CodeRabbit review comments
+
+When I ask you to handle the CodeRabbit review on a PR:
+- Read the summary with `gh pr view <number> --comments`.
+- Read the line comments with `gh api repos/harisgenjac/foodwise/pulls/<number>/comments`
+  (or the GraphQL reviewThreads query to get only unresolved threads).
+- Use each comment's "Prompt for AI Agents" section when present.
+- For each comment, tell me in one line whether you agree and why. Fix only the
+  ones I confirm, run the affected tests and the typecheck, then push to the same
+  branch. Do not resolve threads yourself; I resolve them on GitHub.
