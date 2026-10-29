@@ -413,6 +413,7 @@
     "addedLogoSuccess": "Image uploaded successfully.",
     "editedSuccess": "Profile updated successfully.",
     "editError": "Error updating profile.",
+    "invalidImageType": "Only JPEG, PNG and WEBP images are allowed.",
     "uploadError": "Error uploading image.",
     "addLogoTitle": "Add Logo",
     "tooltipLogoText": "Square image, minimum 200x200px. JPEG, PNG or WEBP, up to 5MB.",

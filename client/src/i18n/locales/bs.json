@@ -425,6 +425,7 @@
     "addedLogoSuccess": "Slika uspješno postavljena.",
     "editedSuccess": "Profil uspješno ažuriran.",
     "editError": "Greška prilikom ažuriranja profila.",
+    "invalidImageType": "Dozvoljene su samo JPEG, PNG i WEBP slike.",
     "uploadError": "Greška prilikom uploada slike.",
     "addLogoTitle": "Dodaj logo",
     "tooltipLogoText": "Kvadratna slika, minimalno 200x200px. JPEG, PNG ili WEBP, do 5MB.",
