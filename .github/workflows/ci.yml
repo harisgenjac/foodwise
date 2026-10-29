@@ -85,7 +85,7 @@ jobs:
           JWT_SECRET=ci-test-secret-not-a-real-secret
           EOF
       - name: Migrate the test database
-        run: npx dotenv -e .env.test -- node-pg-migrate up
+        run: npx dotenv run -q -f .env.test -- node-pg-migrate up
       - run: npm run typecheck
       - run: npm test -- --reporter=default --reporter=github-actions
       - run: npm run build

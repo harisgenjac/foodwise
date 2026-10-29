@@ -41,7 +41,8 @@ server/
 
 - `npm run dev`: `concurrently "tsc --watch" "node --watch dist/server.js"`. The server runs the compiled `dist/`, so run `npm run build` once on a fresh clone.
 - `npm run build` (`tsc`), `npm start` (`node dist/server.js`)
-- `npm run migrate up|down`, `npm run migrate create <name>` (uses `.env` through dotenv-cli)
+- `npm run migrate up|down`, `npm run migrate create <name>` (loads `.env` with `dotenv run`, the CLI of the `dotenv` package)
+- Env files: the npm scripts load them with `dotenv run -q -f <file> --` (the CLI of `dotenv` 18; `dotenv-cli` was removed because both packages install a `dotenv` binary). Variables already set in the environment win and `${VAR}` references are not expanded. At runtime `server.ts`, `seed` and `create-admin` load `.env` with `import "dotenv/config"` (quiet since dotenv 18, existing variables win), so on a host the dashboard's variables are used.
 - `npm test` (Vitest + supertest, `.env.test`, files run one at a time; the full suite runs in CI, see CI below). Single file: `npm test -- tests/products.test.ts`. Single test: `npm test -- -t "name"`. Watch mode: `npm run test:watch`.
 - `npm run typecheck`: `tsc --noEmit -p tsconfig.test.json` (source and tests).
 - `npm run seed` (destructive reset, see Seed); builds first and runs from `dist/`.
@@ -437,7 +438,7 @@ CSV reports over the company's branches (`controllers/companyReports.controller.
 
 ## Testing
 
-- Vitest + supertest against a real PostgreSQL database (`food_saver_test_db`, schema applied with `npx dotenv -e .env.test -- node-pg-migrate up`). Tests are TypeScript and import the `.ts` sources directly (Vitest resolves the `.js` import paths), so no build is needed.
+- Vitest + supertest against a real PostgreSQL database (`food_saver_test_db`, schema applied with `npx dotenv run -q -f .env.test -- node-pg-migrate up`). Tests are TypeScript and import the `.ts` sources directly (Vitest resolves the `.js` import paths), so no build is needed.
 - `vitest.config.ts`: `globals: true` (`describe`/`it`/`expect`/`vi` without imports), `fileParallelism: false` because every file shares the one test database, `setupFiles: ["tests/setup.ts"]`. Each file runs in its own module graph with its own pool; `setup.ts` closes it in `afterAll`.
 - `tests/helpers.ts`:
   - `insertCompany(name)` inserts a company row; `insertUser(email, role, businessName?, credits?, companyId?)` takes the company of a `COMPANY` user or a branch store (company users get no business name and no credits). `cleanupCompanies(names)` (after `cleanupUsers`) deletes the companies, their users and the admin actions about them.
@@ -490,7 +491,7 @@ CSV reports over the company's branches (`controllers/companyReports.controller.
 GitHub Actions, `.github/workflows/ci.yml`. Runs on every pull request to `main`, every push to `main` and by hand (`workflow_dispatch`, which runs everything). A new commit on the same PR/branch cancels the run in progress.
 
 - `Detect changes` (`dorny/paths-filter`, pinned to a commit SHA) decides what runs: `server/**` → Backend; `client/**` and `server/src/**` → Frontend (the client test `serverMessages.test.ts` reads the server sources); `.github/workflows/**`, the root `package.json` or `package-lock.json` → both.
-- `Backend` (`server/`): Node 24, `npm ci`, a `postgres:15` service container (same major as local development) with database `food_saver_test_db`, a `.env.test` written by the workflow with test-only values (`DATABASE_URL`, `JWT_SECRET`), migrations with `npx dotenv -e .env.test -- node-pg-migrate up`, `npm run typecheck`, `npm test` (default + `github-actions` reporters, so failures show as PR annotations), `npm run build`. `TZ=Europe/Sarajevo`, because the test helpers build dates from the process's local day and must agree with `APP_TIMEZONE`.
+- `Backend` (`server/`): Node 24, `npm ci`, a `postgres:15` service container (same major as local development) with database `food_saver_test_db`, a `.env.test` written by the workflow with test-only values (`DATABASE_URL`, `JWT_SECRET`), migrations with `npx dotenv run -q -f .env.test -- node-pg-migrate up`, `npm run typecheck`, `npm test` (default + `github-actions` reporters, so failures show as PR annotations), `npm run build`. `TZ=Europe/Sarajevo`, because the test helpers build dates from the process's local day and must agree with `APP_TIMEZONE`.
 - `Frontend` (`client/`): Node 24, `npm ci`, `npm run typecheck`, `npm run lint`, `npm test` (same reporters), `npm run build`.
 - `CI passed` runs always and fails if any job above failed or was cancelled (skipped is fine). It is the only check required by the `main` branch rules, so its name must not change.
 - A failed run: `gh pr checks` shows which job failed, `gh run view <run-id> --log-failed` prints only the failed steps' logs.
