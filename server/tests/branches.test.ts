@@ -168,19 +168,22 @@ describe("Branches", () => {
       const otherCompany = await insertCompany(OTHER_COMPANY);
       await insertUser(OTHER_HQ, "COMPANY", null, null, otherCompany);
       const other = await login(OTHER_HQ);
+      const restaurantId = await userId(RESTAURANT);
+      // One request at a time: firing them all at once has reset connections on the CI runner.
       const calls = [
-        other.get(`/api/company/branches/${branchId}`),
-        other.put(`/api/company/branches/${branchId}`).send({}),
-        other.get(`/api/company/branches/${branchId}/products`),
-        other.get(`/api/company/branches/${branchId}/reservations`),
-        other.patch(`/api/company/branches/${branchId}/password`).send({ password: "lozinka123" }),
-        other.post(`/api/company/branches/${branchId}/deactivate`),
-        other.post(`/api/company/branches/${branchId}/reactivate`),
+        () => other.get(`/api/company/branches/${branchId}`),
+        () => other.put(`/api/company/branches/${branchId}`).send({}),
+        () => other.get(`/api/company/branches/${branchId}/products`),
+        () => other.get(`/api/company/branches/${branchId}/reservations`),
+        () => other.patch(`/api/company/branches/${branchId}/password`).send({ password: "lozinka123" }),
+        () => other.post(`/api/company/branches/${branchId}/deactivate`),
+        () => other.post(`/api/company/branches/${branchId}/reactivate`),
         // A user that is not a branch at all looks the same.
-        hq.get(`/api/company/branches/${await userId(RESTAURANT)}`),
-        hq.get("/api/company/branches/999999"),
+        () => hq.get(`/api/company/branches/${restaurantId}`),
+        () => hq.get("/api/company/branches/999999"),
       ];
-      for (const response of await Promise.all(calls)) {
+      for (const call of calls) {
+        const response = await call();
         expect(response.status).toBe(404);
         expect(response.body.error).toBe("Branch not found.");
       }

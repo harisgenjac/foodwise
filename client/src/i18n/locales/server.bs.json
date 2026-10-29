@@ -308,5 +308,6 @@
   "Your company manages your plan.": "Vašim paketom upravlja centrala.",
   "Dashboard fetched successfully.": "Pregled je učitan.",
   "An error occurred while fetching the dashboard.": "Došlo je do greške pri učitavanju pregleda.",
-  "Request origin not allowed.": "Zahtjev s ove adrese nije dozvoljen."
+  "Request origin not allowed.": "Zahtjev s ove adrese nije dozvoljen.",
+  "Too many requests. Please try again later.": "Previše zahtjeva. Pokušajte ponovo kasnije."
 }

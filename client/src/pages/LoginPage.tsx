@@ -36,9 +36,12 @@ function LoginPage() {
       await login(email, password);
       navigate("/dashboard");
     } catch (err) {
-      // A blocked account gets the server's message with the admin's reason.
-      const blocked = axios.isAxiosError(err) && err.response?.status === 403;
-      setError(blocked ? err.response?.data?.error || t("auth.accountBlocked") : t("auth.loginError"));
+      // A blocked account gets the server's message with the admin's reason, and too many failed
+      // attempts (429) the server's "try again later".
+      const response = axios.isAxiosError(err) ? err.response : undefined;
+      if (response?.status === 403) setError(response.data?.error || t("auth.accountBlocked"));
+      else if (response?.status === 429) setError(response.data?.error || t("auth.loginError"));
+      else setError(t("auth.loginError"));
     }
   };
 

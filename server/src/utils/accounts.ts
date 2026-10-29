@@ -1,16 +1,25 @@
 import bcrypt from "bcrypt";
 
-export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const MAX_EMAIL_LENGTH = 254;
 export const MIN_PASSWORD_LENGTH = 8;
 const SALT_ROUNDS = 10;
 
 // Emails are compared case-insensitively, so they are stored and looked up in lowercase.
 export const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
+// local@domain.tld: one "@", no whitespace, a non-empty local part and a domain with a dot that is
+// neither its first nor its last character. Checked without a backtracking regex (ReDoS) and
+// capped at 254 characters, the longest address SMTP allows.
+export const isValidEmail = (email: string) => {
+  if (email.length > MAX_EMAIL_LENGTH || /\s/.test(email)) return false;
+  const parts = email.split("@");
+  if (parts.length !== 2) return false;
+  const [local, domain] = parts as [string, string];
+  return local.length > 0 && domain.slice(1, -1).includes(".");
+};
+
 export const validateEmail = (email: unknown) =>
-  typeof email !== "string" || !EMAIL_PATTERN.test(normalizeEmail(email))
-    ? "Email is not valid."
-    : null;
+  typeof email !== "string" || !isValidEmail(normalizeEmail(email)) ? "Email is not valid." : null;
 
 export const validatePassword = (password: unknown) =>
   typeof password !== "string" || password.length < MIN_PASSWORD_LENGTH

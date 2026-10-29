@@ -32,6 +32,7 @@ import {
 import { getPlans, getTopupPackages } from "../controllers/credits.controller.js";
 import { uploadLogoFile } from "../middleware/upload.middleware.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
+import { rateLimiters } from "../middleware/rateLimit.middleware.js";
 
 // The headquarters' own company. Every other store, restaurant and admin endpoint keeps
 // rejecting the COMPANY role through its authorize list.
@@ -41,14 +42,14 @@ router.use(authenticate, authorize("COMPANY"));
 router.get("/dashboard", getCompanyDashboard);
 router.get("/me", getMyCompany);
 router.put("/me", updateMyCompany);
-router.post("/me/logo", uploadLogoFile, uploadCompanyLogo);
+router.post("/me/logo", rateLimiters.upload, uploadLogoFile, uploadCompanyLogo);
 router.get("/branches", getBranches);
 router.post("/branches", createCompanyBranch);
 router.get("/branches/:id", getBranchDetails);
 router.put("/branches/:id", updateCompanyBranch);
 router.get("/branches/:id/products", getBranchProducts);
 router.get("/branches/:id/reservations", getBranchReservations);
-router.patch("/branches/:id/password", setCompanyBranchPassword);
+router.patch("/branches/:id/password", rateLimiters.password, setCompanyBranchPassword);
 router.post("/branches/:id/deactivate", deactivateCompanyBranch);
 router.post("/branches/:id/reactivate", reactivateCompanyBranch);
 router.get("/branches/:id/credits", getBranchCredits);
