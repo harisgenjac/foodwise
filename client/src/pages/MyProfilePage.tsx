@@ -24,6 +24,7 @@ import FormField, { inputStyle } from "../components/form/FormField.js";
 import RequiredHint from "../components/form/RequiredHint.js";
 import { useFormValidation } from "../hooks/useFormValidation.js";
 import { useCities } from "../hooks/useCities.js";
+import { LOGO_ACCEPT, useLogoPreview } from "../hooks/useLogoPreview.js";
 import CitySelect from "../components/form/CitySelect.js";
 import { isBlank, REQUIRED } from "../utils/validation.js";
 import ChangePasswordForm from "../components/profile/ChangePasswordForm.js";
@@ -47,8 +48,7 @@ function MyProfilePage() {
   const [companyLogoUrl, setCompanyLogoUrl] = useState("");
   const [companyDescription, setCompanyDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const { file: logoFile, preview: logoPreview, select: selectLogo, clear: clearLogo } = useLogoPreview();
   const [saving, setSaving] = useState(false);
   const { t } = useTranslation();
   const { cities } = useCities();
@@ -83,17 +83,11 @@ function MyProfilePage() {
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file));
-    }
+    if (file && !selectLogo(file)) toast.error(t("user.invalidImageType"));
     e.target.value = "";
   };
 
-  const handleLogoCancel = () => {
-    setLogoFile(null);
-    setLogoPreview(null);
-  };
+  const handleLogoCancel = clearLogo;
 
   const handleLogoUpload = async () => {
     if (!logoFile) return;
@@ -105,8 +99,7 @@ function MyProfilePage() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setLogoUrl(response.data.logo_url);
-      setLogoFile(null);
-      setLogoPreview(null);
+      clearLogo();
       refreshUser().catch((err) => console.error("Error refreshing user:", err));
       toast.success(t("user.addedLogoSuccess"));
     } catch (err) {
@@ -218,7 +211,7 @@ function MyProfilePage() {
                 <Camera className="h-5 w-5" />
                 {logoUrl ? t("user.changeLogo") : t("user.addLogoTitle")}
               </span>
-              <input type="file" accept="image/*" onChange={handleLogoChange} disabled={!hasBusinessProfile} className="hidden" />
+              <input type="file" accept={LOGO_ACCEPT} onChange={handleLogoChange} disabled={!hasBusinessProfile} className="hidden" />
             </label>
           </div>
 

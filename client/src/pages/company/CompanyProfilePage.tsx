@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Building2, Camera, FileText, Info } from "lucide-react";
 import api, { assetUrl } from "../../api/axios.js";
 import { useAuth } from "../../context/AuthContext.js";
+import { LOGO_ACCEPT, useLogoPreview } from "../../hooks/useLogoPreview.js";
 import FormSection from "../../components/form/FormSection.js";
 import FormField, { inputStyle } from "../../components/form/FormField.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
@@ -22,8 +23,7 @@ function CompanyProfilePage() {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const { file: logoFile, preview: logoPreview, select: selectLogo, clear: clearLogo } = useLogoPreview();
 
   useEffect(() => {
     api
@@ -38,17 +38,11 @@ function CompanyProfilePage() {
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file));
-    }
+    if (file && !selectLogo(file)) toast.error(t("user.invalidImageType"));
     e.target.value = "";
   };
 
-  const handleLogoCancel = () => {
-    setLogoFile(null);
-    setLogoPreview(null);
-  };
+  const handleLogoCancel = clearLogo;
 
   const handleLogoUpload = async () => {
     if (!logoFile || !company) return;
@@ -112,7 +106,7 @@ function CompanyProfilePage() {
               </span>
               <input
                 type="file"
-                accept="image/*"
+                accept={LOGO_ACCEPT}
                 onChange={handleLogoChange}
                 aria-label={t("company.profile.logoLabel")}
                 className="hidden"

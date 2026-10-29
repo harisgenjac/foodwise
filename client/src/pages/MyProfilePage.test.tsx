@@ -80,7 +80,7 @@ describe("MyProfilePage feedback", () => {
   });
 
   const chooseLogo = async (container: HTMLElement) => {
-    vi.stubGlobal("URL", { ...URL, createObjectURL: () => "blob:logo" });
+    vi.stubGlobal("URL", { ...URL, createObjectURL: () => "blob:logo", revokeObjectURL: vi.fn() });
     const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
     await userEvent.upload(input, new File(["logo"], "logo.png", { type: "image/png" }));
     await userEvent.click(screen.getByRole("button", { name: t("user.saveImage") }));
@@ -108,6 +108,24 @@ describe("MyProfilePage feedback", () => {
 
     await chooseLogo(container);
     await waitFor(() => expect(errorToast).toHaveBeenCalledWith("Only image files are allowed."));
+  });
+
+  it("offers only the server's image types and refuses any other file before the preview", async () => {
+    const createObjectURL = vi.fn(() => "blob:logo");
+    vi.stubGlobal("URL", { ...URL, createObjectURL, revokeObjectURL: vi.fn() });
+    const errorToast = vi.spyOn(toast, "error");
+    const { container } = renderPage();
+    expect(await screen.findByDisplayValue("Bistro Most")).toBeInTheDocument();
+
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    expect(input).toHaveAttribute("accept", "image/jpeg,image/png,image/webp");
+    // The accept attribute is only a hint to the file picker, so the page checks the type itself.
+    const user = userEvent.setup({ applyAccept: false });
+    await user.upload(input, new File(["<svg onload=alert(1)>"], "logo.svg", { type: "image/svg+xml" }));
+
+    expect(errorToast).toHaveBeenCalledWith(t("user.invalidImageType"));
+    expect(createObjectURL).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: t("user.saveImage") })).not.toBeInTheDocument();
   });
 });
 
