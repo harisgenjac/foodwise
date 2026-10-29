@@ -7,11 +7,12 @@ import { ACCOUNTS, PASSWORD } from "./accounts.js";
 // Reference data filled by the migrations; everything else is emptied.
 const KEPT_TABLES = ["pgmigrations", "cities", "plans", "topup_packages"];
 
-// TRUNCATE on the wrong database would wipe it, so only a database named *_e2e_db is accepted.
-const assertE2eDatabase = (databaseUrl: string) => {
+// Migrations and TRUNCATE on the wrong database would change or wipe it, so only a database named
+// *_e2e_db is accepted: checked by the config before the web servers start, and again here.
+export const assertE2eDatabase = (databaseUrl: string) => {
   const name = new URL(databaseUrl).pathname.slice(1);
   if (!name.endsWith("_e2e_db")) {
-    throw new Error(`Refusing to seed "${name}": the e2e database name must end in _e2e_db.`);
+    throw new Error(`Refusing to run the e2e tests against "${name}": the database name must end in _e2e_db.`);
   }
 };
 

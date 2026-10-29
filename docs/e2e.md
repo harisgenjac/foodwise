@@ -23,7 +23,7 @@ Scripts (in `e2e/`): `npm run e2e` (headless), `npm run e2e:ui` (Playwright UI m
 
 ## Database and environment
 
-The tests use a separate database, `food_saver_e2e_db`. The seed refuses any database whose name does not end in `_e2e_db`, because it empties every table. Configuration lives in `e2e/.env.e2e`. Like every `.env*` file it is never committed. Contents:
+The tests use a separate database, `food_saver_e2e_db`. Any database whose name does not end in `_e2e_db` is refused, because the run migrates it and empties every table: `playwright.config.ts` checks it before the web servers start, and the seed checks again. Configuration lives in `e2e/.env.e2e`. Like every `.env*` file it is never committed. Contents:
 
 ```
 DATABASE_URL=postgres://<user>:<password>@localhost:5432/food_saver_e2e_db
@@ -83,7 +83,8 @@ Once:
 ```bash
 psql -U postgres -c "CREATE DATABASE food_saver_e2e_db;"
 # create e2e/.env.e2e (see above)
-cd e2e && npm install && npx playwright install chromium
+npm run install:all          # root: dependencies of the root, server/, client/ and e2e/
+cd e2e && npx playwright install chromium
 ```
 
 Run a single file (the whole suite runs in CI):

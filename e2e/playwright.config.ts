@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
 import { config as loadEnv } from "dotenv";
 import { API_URL, APP_URL } from "./support/accounts.js";
+import { assertE2eDatabase } from "./support/seed.js";
 
 // .env.e2e: DATABASE_URL (a *_e2e_db database), JWT_SECRET, PORT=3100,
 // CLIENT_ORIGIN=http://localhost:4173, TRUST_PROXY=0, DISABLE_RATE_LIMITS=true. See docs/e2e.md.
@@ -12,6 +13,8 @@ loadEnv({ path: envFile, quiet: true });
 if (!process.env.DATABASE_URL) {
   throw new Error(`${envFile} with DATABASE_URL is missing (see docs/e2e.md).`);
 }
+// Before the web servers start: the backend command runs the migrations on this database.
+assertE2eDatabase(process.env.DATABASE_URL);
 
 const CI = !!process.env.CI;
 
