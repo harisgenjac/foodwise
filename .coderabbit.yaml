@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+
+reviews:
+  profile: chill            # fewer, more important comments; "assertive" = stricter
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+    ignore_usernames:
+      - "dependabot[bot]"
+    ignore_title_keywords:
+      - "wip"
+
+  path_filters:
+    - "!**/package-lock.json"
+    - "!**/dist/**"
+    - "!**/coverage/**"
+    - "!**/playwright-report/**"
+
+  path_instructions:
+    - path: "server/src/**"
+      instructions: |
+        Check against the business rules in docs/product.md and credits-spec.md:
+        reservation statuses, credit charges and refunds (each charge refunded at
+        most once), visibility of blocked and deactivated stores (use the shared
+        visibility condition), company/branch rules.
+        Every authenticated route must check role AND ownership (store,
+        restaurant, company HQ, admin). Public auth routes (e.g. login) are
+        intentionally unauthenticated; do not flag them for missing role checks.
+        Data from another user or company must never leak; admin_note is never
+        returned to users.
+        SQL must be parameterized. Several related writes belong in one
+        transaction.
+        Time zones: business dates (expiry, "today", the midnight expiry job, the
+        07:00 reminders) use APP_TIMEZONE. Credit days and months intentionally
+        change at 00:00 Europe/London (see credits-spec.md); do not suggest
+        APP_TIMEZONE for credit periods, refunds or subscriptions.
+        Error messages are English.
+    - path: "server/**/migrations/**"
+      instructions: |
+        Migrations must be safe for existing data, have a working down step, and
+        add indexes for new foreign keys. Flag anything destructive.
+    - path: "client/src/**"
+      instructions: |
+        Every UI text goes through i18n with keys in BOTH bs and en; flag
+        hard-coded user-facing text. No dangerouslySetInnerHTML; no user input in
+        href/src. Inputs need labels and buttons accessible names. Reuse the
+        existing components (StatCard, FilterBar, CitySelect, ...).
+        Filters usually live in component state. Some pages intentionally keep
+        filters or sorting in the URL because other pages link to them (e.g.
+        AdminCreditsPage ?plan=, admin list sorting); do not flag existing
+        URL-backed filters. Only question new URL state that has no linking or
+        navigation reason.
+        Pages for a role must be guarded for that role.
+    - path: "**/*.test.{ts,tsx}"
+      instructions: |
+        Tests should check behaviour, not implementation details. Flag fixed
+        sleeps/timeouts and tests that depend on each other.
+    - path: "e2e/**"
+      instructions: |
+        Use role/label locators, unique test data per test, no waitForTimeout,
+        no dependence on test order.
