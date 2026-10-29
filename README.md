@@ -66,7 +66,7 @@ Create `server/.env.test` with the same variables, pointing `DATABASE_URL` at `f
 | `JWT_SECRET` | yes | Secret used to sign auth tokens |
 | `PORT` | no | API port, default `3000` |
 | `NODE_ENV` | no | `production` makes the auth cookie `secure` |
-| `CLIENT_ORIGIN` | no | Frontend origin allowed by CORS, default `http://localhost:5173` |
+| `CLIENT_ORIGIN` | no | Frontend origin(s) allowed by CORS and the origin check (comma-separated list allowed), default `http://localhost:5173` |
 | `APP_TIMEZONE` | no | Business time zone for expiry dates and the scheduled jobs, default `Europe/Sarajevo` |
 
 The client reads an optional `VITE_API_URL` (backend origin without `/api`, default `http://localhost:3000`), for example from `client/.env.local`.
