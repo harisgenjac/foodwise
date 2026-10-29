@@ -44,12 +44,17 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Excel rewrites dates in the regional format when it saves a CSV: "31. 12. 2026.", "31.12.26",
 // "12/31/2026", "2026-12-31 00:00:00" or, for a cell formatted as a number, a serial like 46387.
+// A longer cell is never a date; it is returned as is (the validator rejects it) before the
+// unanchored patterns below, which backtrack quadratically on long input (ReDoS).
+const MAX_DATE_LENGTH = 40;
 const cleanDate = (value: string) =>
-  value
-    .replace(/T.*$/, "")
-    .replace(/\s+\d{1,2}:\d{2}(:\d{2})?(\s*[AP]M)?$/i, "")
-    .replace(/\s+/g, "")
-    .replace(/\.$/, "");
+  value.length > MAX_DATE_LENGTH
+    ? value
+    : value
+        .replace(/T.*$/, "")
+        .replace(/\s+\d{1,2}:\d{2}(:\d{2})?(\s*[AP]M)?$/i, "")
+        .replace(/\s+/g, "")
+        .replace(/\.$/, "");
 
 const toIsoDate = (year: string, month: string, day: string) =>
   `${year.length === 2 ? `20${year}` : year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;

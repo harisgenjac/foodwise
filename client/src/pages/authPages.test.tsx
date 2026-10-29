@@ -65,6 +65,15 @@ describe("LoginPage", () => {
     expect(await screen.findByText("Your account is blocked. Reason: Kršenje pravila")).toBeInTheDocument();
   });
 
+  it("shows the server's message after too many failed attempts", async () => {
+    apiMock.post.mockRejectedValue(axiosError(429, "Too many requests. Please try again later."));
+    renderLogin();
+
+    await submit("amir@test.com", "test12345");
+    expect(await screen.findByText("Too many requests. Please try again later.")).toBeInTheDocument();
+    expect(screen.queryByText(t("auth.loginError"))).not.toBeInTheDocument();
+  });
+
   it("does not offer registration, since an admin creates business accounts", () => {
     renderLogin();
     expect(screen.queryByRole("link", { name: t("auth.registerLink") })).not.toBeInTheDocument();

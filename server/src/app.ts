@@ -20,8 +20,14 @@ import citiesRoutes from './routes/cities.routes.js'
 import companyRoutes from './routes/company.routes.js'
 import { HttpError } from "./utils/httpError.js";
 import { allowedOrigins, checkOrigin } from "./middleware/origin.middleware.js";
+import { rateLimiters } from "./middleware/rateLimit.middleware.js";
 
 const app = express();
+
+// Behind a proxy (Render: TRUST_PROXY=1) req.ip must be the client's address, not the proxy's,
+// or every user would share one rate limit. Off by default (local development).
+const trustProxyHops = Number(process.env.TRUST_PROXY);
+app.set("trust proxy", Number.isInteger(trustProxyHops) && trustProxyHops > 0 ? trustProxyHops : false);
 
 app.use(
   cors({
@@ -30,6 +36,7 @@ app.use(
   }),
 );
 app.use(checkOrigin);
+app.use("/api", rateLimiters.api);
 app.use(express.json());
 // Express 5 leaves req.body undefined when a request has no body; controllers destructure it.
 app.use((req: Request, res: Response, next: NextFunction) => {

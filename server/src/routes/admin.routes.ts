@@ -41,6 +41,7 @@ import {
 } from "../controllers/adminCompanies.controller.js";
 import { getPlans } from "../controllers/credits.controller.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
+import { rateLimiters } from "../middleware/rateLimit.middleware.js";
 
 const router = express.Router();
 router.use(authenticate, authorize("ADMIN"));
@@ -49,7 +50,7 @@ router.get("/stats", getStats);
 router.get("/users", getUsers);
 router.post("/users", createUser);
 router.get("/users/:id", getUserDetails);
-router.patch("/users/:id/password", resetPassword);
+router.patch("/users/:id/password", rateLimiters.password, resetPassword);
 router.put("/users/:id/profile", updateUserProfile);
 router.post("/users/:id/block", blockUser);
 router.post("/users/:id/unblock", unblockUser);
