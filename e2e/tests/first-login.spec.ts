@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ACCOUNTS, runId, storageState } from "../support/accounts.js";
+import { toast } from "../support/ui.js";
 
 test.use({ storageState: storageState("admin") });
 
@@ -10,7 +11,6 @@ test("a new restaurant changes its temporary password and fills in its profile b
   const newPassword = `Nova-lozinka-${id}`;
   const firstName = `Amra${id}`;
   const gate = page.getByRole("dialog", { name: "Dovršite podešavanje naloga" });
-  const toast = (text: string) => page.getByRole("status").filter({ hasText: text });
 
   // The admin creates the restaurant account.
   await page.goto("/admin/users/new");
@@ -18,7 +18,7 @@ test("a new restaurant changes its temporary password and fills in its profile b
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Lozinka").fill(temporaryPassword);
   await page.getByRole("button", { name: "Kreiraj nalog" }).click();
-  await expect(toast("Nalog je kreiran.")).toBeVisible();
+  await expect(toast(page, "Nalog je kreiran.")).toBeVisible();
   await expect(page.getByRole("heading", { level: 1, name: email })).toBeVisible();
   await expect(page.getByText("Čeka promjenu lozinke")).toBeVisible();
 
@@ -43,7 +43,7 @@ test("a new restaurant changes its temporary password and fills in its profile b
   await page.getByLabel("Nova lozinka", { exact: true }).fill(newPassword);
   await page.getByLabel("Ponovite novu lozinku").fill(newPassword);
   await page.getByRole("button", { name: "Promijeni lozinku" }).click();
-  await expect(toast("Lozinka je promijenjena.")).toBeVisible();
+  await expect(toast(page, "Lozinka je promijenjena.")).toBeVisible();
 
   // The profile gate still blocks the app until the required fields are saved.
   await expect(page.getByText(/Popunite obavezne podatke: Ime, Prezime/)).toBeVisible();
@@ -64,7 +64,7 @@ test("a new restaurant changes its temporary password and fills in its profile b
   await page.getByLabel("Telefon").fill("061 111 222");
   await page.getByLabel("Adresa").fill("Musala 5");
   await page.getByRole("button", { name: "Sačuvaj" }).click();
-  await expect(toast("Profil uspješno ažuriran.")).toBeVisible();
+  await expect(toast(page, "Profil uspješno ažuriran.")).toBeVisible();
 
   // The dashboard is usable.
   await page.locator("aside").getByRole("link", { name: "Početna" }).click();

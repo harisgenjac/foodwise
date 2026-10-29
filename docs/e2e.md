@@ -10,13 +10,18 @@ e2e/
 ├── playwright.config.ts  projects, web servers, reporters
 ├── global-setup.ts       empties the database and seeds it (support/seed.ts)
 ├── support/
-│   ├── accounts.ts       seeded accounts, password, URLs, storageState paths, runId()
+│   ├── accounts.ts       seeded accounts, password, URLs, storageState paths, runId(), uniqueName(prefix)
+│   ├── api.ts            API clients and arrange helpers (apiAs, apiLogin, createProduct, cityId, createStoreWithoutPlan)
+│   ├── ui.ts             UI helpers (toast, dialogWith, loginViaForm, changeTemporaryPassword, fillProductForm, credits)
 │   ├── seed.ts           the e2e seed
-│   └── dates.ts          sarajevoDate(days) → dd/mm/yyyy in Europe/Sarajevo
+│   └── dates.ts          sarajevoDate(days) → dd/mm/yyyy (UI), isoDate(days) → yyyy-mm-dd (API), both in Europe/Sarajevo
 └── tests/
-    ├── auth.setup.ts            logs the seeded roles in through the API once, saves .auth/<role>.json
-    ├── first-login.spec.ts      admin creates a restaurant → temporary password → password change → profile gate → dashboard
-    └── reservation-flow.spec.ts store publishes → restaurant reserves for tomorrow → store accepts → Pickups → picked up → "Preuzeto" + notification
+    ├── auth.setup.ts                  logs the seeded roles in through the API once, saves .auth/<role>.json
+    ├── first-login.spec.ts            admin creates a restaurant → temporary password → password change → profile gate → dashboard
+    ├── reservation-flow.spec.ts       store publishes → restaurant reserves for tomorrow → store accepts → Pickups → picked up → "Preuzeto" + notification
+    ├── reservation-reject.spec.ts     restaurant reserves (−1 credit) → store rejects → "Odbijeno" + notification → credit back, full quantity offered again
+    ├── credits-first-product.spec.ts  store without a plan is stopped on Add product → requests a plan → admin approves → notification, 50 credits → publishes (49)
+    └── store-chain.spec.ts            admin creates a company → HQ first login → branch in Breza + plan → admin approves → branch first login (name and city locked) → product → restaurant in Visoko sees "dio <company>"
 ```
 
 Scripts (in `e2e/`): `npm run e2e` (headless), `npm run e2e:ui` (Playwright UI mode), `npm run typecheck`.
@@ -50,7 +55,7 @@ DISABLE_RATE_LIMITS=true
      - A store `e2e-store@foodwise.test` ("E2E Prodavnica") and a restaurant `e2e-restaurant@foodwise.test` ("E2E Restoran"). Both are in Visoko with complete profiles.
    - Every seeded account uses the password `E2e-pass-123` (`support/accounts.ts`).
    - The store and the restaurant each get an approved Standard plan for the current credit month: an `APPROVED` request, the subscription and the `PLAN_GRANT`, with auto-renew off. The cities, plans and packages come from the migrations, and every date is relative to today.
-3. **`setup` project** (`tests/auth.setup.ts`): logs each seeded role in through `POST /api/auth/login` and saves its cookie to `e2e/.auth/<role>.json`. Tests start from these sessions with `test.use({ storageState: storageState("store") })`, or `browser.newContext({ storageState })` when a test needs two roles. Only `first-login.spec.ts` uses the login form.
+3. **`setup` project** (`tests/auth.setup.ts`): logs each seeded role in through `POST /api/auth/login` and saves its cookie to `e2e/.auth/<role>.json`. Tests start from these sessions with `test.use({ storageState: storageState("store") })`, or `browser.newContext({ storageState })` when a test needs two roles. The login form is used only where logging in is part of the flow (`first-login.spec.ts`, `store-chain.spec.ts`, through `loginViaForm`).
 4. **`chromium` project:** the specs, one worker.
 
 Config:
@@ -61,11 +66,24 @@ Config:
 
 ## Writing tests
 
+### Arrange through the API, act through the UI
+
+- Data a test needs but does not test (a product to reserve, a fresh account) is created through the API with the helpers in `support/api.ts`. The behaviour under test is clicked through the UI.
+  - `apiAs(role)` is an API client with a seeded role's session; `apiLogin(email, password)` logs any account in.
+  - An `APIRequestContext` sends no `Origin` or `Referer`, so the server's origin check lets its writes through. If you ever add an `Origin` header, it must be exactly `http://localhost:4173`.
+  - The API takes dates as `yyyy-mm-dd` (`isoDate(days)`); the UI's `DateInput` takes `dd/mm/yyyy` (`sarajevoDate(days)`).
+- Keep helpers small and shared (`support/api.ts`, `support/ui.ts`, `uniqueName(prefix)`), not a page-object layer.
+- Long flows wrap their parts in `test.step()` with short Bosnian names (e.g. `"Prodavnica odbija zahtjev"`), so the report shows where a test failed.
+- Credit balances are asserted through the UI, never the database: `availableCredits(page)` and `expectAvailableCredits(page, n)` read "Dostupno" on the Credits page, and the dialogs show `Ovo troši 1 kredit (preostalo: N)`. Read the starting number at run time; the seeded accounts' balances change with every test.
+- A test that needs a state the shared seeded accounts lose after one run creates its own account instead. For example, `credits-first-product.spec.ts` needs a store with no plan and gives it one, so it uses `createStoreWithoutPlan()` (a Visoko store with a complete profile and its password changed) rather than a seeded store. The seed runs once per `playwright test`, so a seeded account like that would fail the CI retry and `--repeat-each`.
+
+### General
+
 - Wait until a page has loaded its data before typing into a form it fills from the API. `MyProfilePage` overwrites its fields when `GET /users/me` answers, so the test first waits for the read-only Email field to have its value.
 - Each test creates its own data with a unique suffix (`runId()`, e.g. product `E2E Mlijeko <id>`, email `e2e-rest-<id>@foodwise.test`). Tests never depend on each other or on order. The seeded accounts are shared, so never change their profile or password.
 - **Locators:**
   - Use `getByRole`, `getByLabel`, `getByText` and `getByPlaceholder` (the filter inputs have no label) with the Bosnian UI. The language is fixed to `bs`.
-  - Scope repeated controls: dialogs by `getByRole('dialog', { name })`, pickup cards by `getByRole('article').filter({ has: heading })`, header and sidebar by `locator('header')` / `locator('aside')`.
+  - Scope repeated controls: dialogs by `getByRole('dialog', { name })` (or `dialogWith(page, text)` for the dialogs without an accessible name: the reserve dialog, `SubscribeModal`, `CreditRequestDecisionModal`), pickup cards by `getByRole('article').filter({ has: heading })`, header and sidebar by `locator('header')` / `locator('aside')`.
   - Toasts are `role="status"` (so is the credit banner), so filter by text: `getByRole('status').filter({ hasText })`.
   - Use `exact: true` when a label is a substring of another (`Ime` / `Prezime`, `Nova lozinka` / `Ponovite novu lozinku`).
 - **`data-testid` only where roles are ambiguous.** There are two, because these cards are plain `div`s with the same buttons on every card:
@@ -87,10 +105,11 @@ npm run install:all          # root: dependencies of the root, server/, client/ 
 cd e2e && npx playwright install chromium
 ```
 
-Run a single file (the whole suite runs in CI):
+Run a single file (the whole suite runs in CI). Check a new test for flakiness with `--repeat-each=3` before pushing:
 ```bash
 cd e2e
 npm run e2e -- tests/reservation-flow.spec.ts
+npm run e2e -- tests/store-chain.spec.ts --repeat-each=3
 npm run e2e:ui                       # UI mode, pick tests interactively
 npx playwright show-report           # the last run's HTML report
 ```

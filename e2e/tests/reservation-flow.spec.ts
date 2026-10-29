@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { ACCOUNTS, runId, storageState } from "../support/accounts.js";
 import { sarajevoDate } from "../support/dates.js";
+import { toast } from "../support/ui.js";
 
-const toast = (page: Page, text: string) => page.getByRole("status").filter({ hasText: text });
 const pickupCard = (page: Page, productName: string) =>
   page.getByRole("article").filter({ has: page.getByRole("heading", { name: productName }) });
 
