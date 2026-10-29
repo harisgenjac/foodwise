@@ -9,6 +9,7 @@ FoodWise ("Još vrijedi") is a B2B marketplace where stores sell near-expiry foo
 | Server code: API endpoints, DB schema, migrations, auth, reservation logic, cron, uploads, backend tests, seed | `docs/backend.md` |
 | Client code: pages, components, hooks, routing, i18n, styling, types | `docs/frontend.md` |
 | Product intent: users and roles, business rules, roadmap, humanitarian module, naming and tone | `docs/product.md` |
+| E2E tests: Playwright, the e2e database and seed, locators, the CI job and traces | `docs/e2e.md` |
 
 Do not load all three by default. A feature that spans both sides (for example a new endpoint plus a page) needs `backend.md` and `frontend.md`. Open `product.md` when a business rule or priority is unclear. These docs were written from the code: if the code and a doc disagree, trust the code and fix the doc in the same change.
 
@@ -19,15 +20,16 @@ food-saver-app/
 ├── CLAUDE.md
 ├── README.md        setup and run instructions for humans (keep in sync with scripts and env vars)
 ├── package.json     root scripts only (dev/build/install:all for both sides)
-├── docs/            backend.md, frontend.md, product.md
+├── docs/            backend.md, frontend.md, product.md, e2e.md
 ├── server/          Express 5 + TypeScript + PostgreSQL (src/, migrations/, tests/, uploads/)
-└── client/          React 19 + Vite + TypeScript + Tailwind + react-i18next (src/)
+├── client/          React 19 + Vite + TypeScript + Tailwind + react-i18next (src/)
+└── e2e/             Playwright end-to-end tests (own package, own database)
 ```
 
-The root `package.json` only holds convenience scripts (it has `concurrently` as its only dependency). The app's dependencies and all other commands (tests, migrations, seed, lint) live in `server/` and `client/`.
+The root `package.json` only holds convenience scripts (it has `concurrently` as its only dependency). The app's dependencies and all other commands (tests, migrations, seed, lint) live in `server/`, `client/` and `e2e/`.
 
 Root scripts:
-- `npm run install:all`: installs dependencies in the root, `server/` and `client/`.
+- `npm run install:all`: installs dependencies in the root, `server/`, `client/` and `e2e/`.
 - `npm run dev`: builds the server once (`predev`), then runs the server and client dev servers together, with output prefixed `[server]` / `[client]`.
 - `npm run build`: builds the server and then the client.
 
@@ -56,6 +58,7 @@ More commands (tests, seed, lint, type-check) are in the two technical docs.
 - **Tests and CI:**
   - Before committing, run the typecheck of the package you changed (`npm run typecheck`) and only the test files for what you changed: `npx vitest run --reporter=dot <files>` (in `server/`: `npx dotenv run -q -f .env.test -- vitest run --reporter=dot <files>`).
   - Never run the full test suites locally; CI (GitHub Actions, `.github/workflows/ci.yml`) runs them on every PR.
+  - Do not run the whole e2e suite locally unless the user asks; CI runs it. When writing a new e2e test, run only that test file (`cd e2e && npm run e2e -- tests/<file>.spec.ts`); a change in `e2e/` also needs `npm run typecheck` there.
   - When CI fails, read only the failed logs with the GitHub CLI (`gh pr checks`, `gh run view <id> --log-failed`) and fix from there.
 - **Docs stay current.** At the end of every task, check whether it changed anything the docs describe and update them in the same change:
   - `docs/backend.md`: endpoints, schema or migrations, auth, business logic, conventions, tests, env vars

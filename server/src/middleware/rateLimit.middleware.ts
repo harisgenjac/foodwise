@@ -61,5 +61,13 @@ export const createRateLimiters = (limits: RateLimits, enabled: boolean) => {
 };
 
 // The limits are off under Vitest (NODE_ENV=test), so the other test files never hit them;
-// tests/rateLimit.test.ts swaps in low, enabled limiters.
-export const rateLimiters = createRateLimiters(DEFAULT_RATE_LIMITS, process.env.NODE_ENV !== "test");
+// tests/rateLimit.test.ts swaps in low, enabled limiters. The e2e server turns them off with
+// DISABLE_RATE_LIMITS=true; never set it on a real deployment.
+const disabledByEnv = process.env.DISABLE_RATE_LIMITS === "true";
+if (disabledByEnv && process.env.NODE_ENV !== "test") {
+  console.warn("Rate limits are disabled (DISABLE_RATE_LIMITS=true).");
+}
+export const rateLimiters = createRateLimiters(
+  DEFAULT_RATE_LIMITS,
+  process.env.NODE_ENV !== "test" && !disabledByEnv,
+);

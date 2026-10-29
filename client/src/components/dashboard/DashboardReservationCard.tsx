@@ -28,7 +28,7 @@ function DashboardReservationCard({ reservation, partyLabel, actions, showCreate
     (reservation.category && CATEGORY_IMAGES[reservation.category]) || CATEGORY_IMAGES.Other;
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+    <div data-testid="reservation-card" className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
       <div className="relative h-36 overflow-hidden">
         <img src={image} alt={reservation.product_name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
         <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/25 via-transparent to-transparent" />
