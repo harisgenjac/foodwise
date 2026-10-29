@@ -28,7 +28,8 @@
     "companyOverview": "Pregled",
     "companyProfile": "Profil firme",
     "companyBranches": "Poslovnice",
-    "companyCredits": "Krediti i pretplate"
+    "companyCredits": "Krediti i pretplate",
+    "companyReports": "Izvještaji"
   },
   "breadcrumbs": {
     "label": "Putanja",
@@ -1522,17 +1523,37 @@
   "company": {
     "overview": {
       "greeting": "Dobro došli, {{name}}",
-      "branchCount_one": "{{count}} poslovnica",
-      "branchCount_few": "{{count}} poslovnice",
-      "branchCount_other": "{{count}} poslovnica",
-      "editProfile": "Profil firme",
-      "branchesTitle": "Poslovnice",
+      "subtitle": "Pregled svih poslovnica u ovom mjesecu.",
       "noBranchesTitle": "Još nemate poslovnica",
       "noBranchesSubtitle": "Dodajte prvu poslovnicu; ona zatim sama objavljuje ponude i vodi rezervacije.",
-      "activeBranches_one": "aktivna poslovnica",
-      "activeBranches_few": "aktivne poslovnice",
-      "activeBranches_other": "aktivnih poslovnica",
-      "viewBranches": "Sve poslovnice"
+      "decisionsTitle": "Čeka vašu odluku",
+      "decisionsSubtitle": "Zahtjevi poslovnica i paketi o kojima odlučuje centrala.",
+      "topupRequested": "Traži dodatne kredite: {{credits}} · {{price}}",
+      "noPlan": "Nema paket za ovaj mjesec",
+      "renewal": "Nema paket za {{month}}",
+      "lowCredits": "Potrošeno {{used}} od {{total}} kredita",
+      "statBranches": "Aktivne poslovnice",
+      "branchesValue": "{{active}} / {{all}}",
+      "deactivated_one": "{{count}} deaktivirana",
+      "deactivated_few": "{{count}} deaktivirane",
+      "deactivated_other": "{{count}} deaktiviranih",
+      "statCredits": "Krediti ovog mjeseca",
+      "creditsValue": "{{used}} / {{total}}",
+      "creditsUsage": "Potrošnja kredita firme",
+      "statReservations": "Rezervacije ovog mjeseca",
+      "reservationsDetail": "{{pickedUp}} preuzeto · {{pending}} na čekanju",
+      "statSaved": "Spašeno hrane ovog mjeseca",
+      "savedValue": "{{value}} KM",
+      "branchesTitle": "Poslovnice",
+      "viewBranches": "Sve poslovnice",
+      "columnBranch": "Poslovnica",
+      "columnCity": "Grad",
+      "columnStatus": "Status",
+      "columnPlan": "Paket",
+      "columnCredits": "Krediti",
+      "columnOffers": "Aktivne ponude",
+      "columnPending": "Na čekanju",
+      "columnPickedUp": "Preuzeto ovog mjeseca"
     },
     "profile": {
       "subtitle": "Opis i logo vide se na stranicama firme.",
@@ -1671,6 +1692,34 @@
       "historyTitle": "Historija zahtjeva",
       "noHistory": "Još nema zahtjeva za poslovnice.",
       "cardTitle": "Krediti i paket"
+    },
+    "reports": {
+      "title": "Izvještaji",
+      "subtitle": "Prodaja, spašena hrana i poređenje poslovnica za izabrani period, kao CSV za Excel.",
+      "branch": "Poslovnica",
+      "allBranches": "Sve poslovnice",
+      "items": {
+        "sales": {
+          "title": "Prodaja poslovnica",
+          "description": "Svaka preuzeta rezervacija, s poslovnicom koja ju je prodala.",
+          "columns": "Poslovnica, datum preuzimanja, broj rezervacije, proizvod, kategorija, restoran, grad, količina, jedinica, cijene, ukupno, ušteda"
+        },
+        "impact": {
+          "title": "Uticaj firme",
+          "description": "Spašena hrana po mjesecima za cijelu firmu ili izabranu poslovnicu.",
+          "columns": "Mjesec, broj preuzimanja, broj restorana, spašena hrana (kg, l, kom), vrijednost, ušteda"
+        },
+        "branches": {
+          "title": "Poređenje poslovnica",
+          "description": "Jedan red po poslovnici, i deaktiviranoj, s ukupnim zbirom.",
+          "columns": "Poslovnica, status, broj preuzimanja, broj restorana, spašena hrana (kg, l, kom), vrijednost, ušteda"
+        }
+      },
+      "fileNames": {
+        "sales": "prodaja-firma",
+        "impact": "uticaj-firma",
+        "branches": "poslovnice"
+      }
     }
   }
 }

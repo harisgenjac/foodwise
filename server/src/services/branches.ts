@@ -231,27 +231,55 @@ export const getBranchProfile = async (db: Pool | PoolClient, branchId: number) 
   return result.rows[0];
 };
 
-// Numbers for the branch page; "this month" is the local calendar month (APP_TIMEZONE).
-export const getBranchStats = async (db: Pool | PoolClient, branchId: number) => {
+export interface BranchStats {
+  active_products: number;
+  pending_reservations: number;
+  reservations_this_month: number;
+  completed_this_month: number;
+  saved_this_month: { kg: number; l: number; pieces: number };
+  value_this_month: number;
+}
+
+// Numbers for the branch page and the headquarters' dashboard, per branch. This month is the
+// local calendar month (APP_TIMEZONE), like the store dashboard. Pending reservations are the ones
+// open now; picked-up ones, food saved and its value count only Completed reservations.
+export const getBranchesStats = async (
+  db: Pool | PoolClient,
+  branchIds: number[],
+): Promise<Map<number, BranchStats>> => {
   const thisMonth = "reservations.status = 'Completed' AND reservations.picked_up_at >= date_trunc('month', CURRENT_DATE)";
   const result = await db.query(
-    `SELECT
+    `SELECT branches.id,
        (SELECT COUNT(*) FROM products
-        WHERE products.store_id = $1 AND products.status = 'Available'
+        WHERE products.store_id = branches.id AND products.status = 'Available'
           AND products.expiry_date >= CURRENT_DATE) AS active_products,
-       COUNT(*) FILTER (WHERE reservations.status = 'Pending') AS pending_reservations,
-       COUNT(*) FILTER (WHERE ${thisMonth}) AS completed_this_month,
-       ${savedUnits(thisMonth)}
-     FROM reservations
-     JOIN products ON reservations.product_id = products.id
-     WHERE products.store_id = $1`,
-    [branchId],
+       COUNT(reservations.id) FILTER (WHERE reservations.status = 'Pending') AS pending_reservations,
+       COUNT(reservations.id) FILTER (WHERE reservations.created_at >= date_trunc('month', CURRENT_DATE))
+         AS reservations_this_month,
+       COUNT(reservations.id) FILTER (WHERE ${thisMonth}) AS completed_this_month,
+       ${savedUnits(thisMonth)},
+       COALESCE(ROUND(SUM(reservations.unit_price * reservations.quantity) FILTER (WHERE ${thisMonth}), 2), 0)
+         AS value_this_month
+     FROM unnest($1::int[]) AS branches(id)
+     LEFT JOIN products ON products.store_id = branches.id
+     LEFT JOIN reservations ON reservations.product_id = products.id
+     GROUP BY branches.id`,
+    [branchIds],
   );
-  const row = result.rows[0];
-  return {
-    active_products: Number(row.active_products),
-    pending_reservations: Number(row.pending_reservations),
-    completed_this_month: Number(row.completed_this_month),
-    saved_this_month: { kg: Number(row.kg), l: Number(row.l), pieces: Number(row.pieces) },
-  };
+  return new Map(
+    result.rows.map((row) => [
+      row.id as number,
+      {
+        active_products: Number(row.active_products),
+        pending_reservations: Number(row.pending_reservations),
+        reservations_this_month: Number(row.reservations_this_month),
+        completed_this_month: Number(row.completed_this_month),
+        saved_this_month: { kg: Number(row.kg), l: Number(row.l), pieces: Number(row.pieces) },
+        value_this_month: Number(row.value_this_month),
+      },
+    ]),
+  );
 };
+
+export const getBranchStats = async (db: Pool | PoolClient, branchId: number): Promise<BranchStats> =>
+  (await getBranchesStats(db, [branchId])).get(branchId)!;

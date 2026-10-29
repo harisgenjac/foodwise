@@ -95,6 +95,7 @@ function Sidebar({ isSidebarOpen, locked = false }: { isSidebarOpen: boolean; lo
     { to: "/dashboard", label: t("sidebar.companyOverview"), icon: LayoutDashboard },
     { to: "/company/branches", label: t("sidebar.companyBranches"), icon: Store },
     { to: "/company/credits", label: t("sidebar.companyCredits"), icon: CreditCard, badge: pendingRequests },
+    { to: "/company/reports", label: t("sidebar.companyReports"), icon: FileChartColumn },
     { to: "/company/profile", label: t("sidebar.companyProfile"), icon: Building2 },
     { to: "/my-profile", label: t("sidebar.myProfile"), icon: UserRound },
   ];

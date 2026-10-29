@@ -240,8 +240,10 @@ describe("Branches", () => {
       expect(details.body.stats).toEqual({
         active_products: 1,
         pending_reservations: 1,
+        reservations_this_month: 1,
         completed_this_month: 0,
         saved_this_month: { kg: 0, l: 0, pieces: 0 },
+        value_this_month: 0,
       });
 
       // The headquarters cannot act as the store.

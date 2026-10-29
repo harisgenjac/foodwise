@@ -19,10 +19,10 @@ const links = () =>
     .map((link) => link.getAttribute("href"));
 
 describe("Sidebar", () => {
-  it("shows a company headquarters only its overview, branches, credits, company profile and own profile", async () => {
+  it("shows a company headquarters only its overview, branches, credits, reports, company profile and own profile", async () => {
     renderSidebar(makeUser({ role: "COMPANY", company_id: 3, phone: "035 000 111" }));
     expect(await screen.findByRole("link", { name: t("sidebar.companyOverview") })).toHaveAttribute("href", "/dashboard");
-    expect(links()).toEqual(["/dashboard", "/company/branches", "/company/credits", "/company/profile", "/my-profile"]);
+    expect(links()).toEqual(["/dashboard", "/company/branches", "/company/credits", "/company/reports", "/company/profile", "/my-profile"]);
     // No marketplace, store pages or donations.
     expect(screen.queryByText(t("sidebar.humanitarian"))).not.toBeInTheDocument();
   });

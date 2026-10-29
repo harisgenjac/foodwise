@@ -25,6 +25,8 @@ interface BranchCreditActionsProps {
   periodEnd: string;
   onChanged: () => void;
   compact?: boolean;
+  // Only one of the two actions (the dashboard asks for one decision at a time).
+  only?: "plan" | "topup";
 }
 
 const optionButton =
@@ -34,7 +36,14 @@ const optionButton =
 // for itself (the branch named in the title): "Choose plan" (this month while there is none,
 // otherwise next month's) and "Add credits" (only with this month's plan). Each action first
 // lists the plans or packages, then opens the explanation dialog that sends the request.
-function BranchCreditActions({ branch, periodStart, periodEnd, onChanged, compact = false }: BranchCreditActionsProps) {
+function BranchCreditActions({
+  branch,
+  periodStart,
+  periodEnd,
+  onChanged,
+  compact = false,
+  only,
+}: BranchCreditActionsProps) {
   const { t } = useTranslation();
   const [picker, setPicker] = useState<"plan" | "topup" | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -75,26 +84,30 @@ function BranchCreditActions({ branch, periodStart, periodEnd, onChanged, compac
   return (
     <>
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setPicker("plan")}
-          disabled={!canChoosePlan}
-          title={planWaiting ? t("company.credits.planWaiting") : undefined}
-          className={`${button} bg-orange-500 text-white hover:bg-orange-600`}
-        >
-          <Wallet className="h-4 w-4" />
-          {t("company.credits.choosePlan")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setPicker("topup")}
-          disabled={!canTopup}
-          title={topupWaiting ? t("company.credits.topupWaiting") : undefined}
-          className={`${button} border border-gray-200 bg-white text-gray-700 hover:bg-gray-50`}
-        >
-          <PlusCircle className="h-4 w-4" />
-          {t("company.credits.addCredits")}
-        </button>
+        {only !== "topup" && (
+          <button
+            type="button"
+            onClick={() => setPicker("plan")}
+            disabled={!canChoosePlan}
+            title={planWaiting ? t("company.credits.planWaiting") : undefined}
+            className={`${button} bg-orange-500 text-white hover:bg-orange-600`}
+          >
+            <Wallet className="h-4 w-4" />
+            {t("company.credits.choosePlan")}
+          </button>
+        )}
+        {only !== "plan" && (
+          <button
+            type="button"
+            onClick={() => setPicker("topup")}
+            disabled={!canTopup}
+            title={topupWaiting ? t("company.credits.topupWaiting") : undefined}
+            className={`${button} border border-gray-200 bg-white text-gray-700 hover:bg-gray-50`}
+          >
+            <PlusCircle className="h-4 w-4" />
+            {t("company.credits.addCredits")}
+          </button>
+        )}
       </div>
 
       {picker === "plan" && (

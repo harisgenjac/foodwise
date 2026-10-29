@@ -3,21 +3,25 @@ import type { Request, Response } from "express";
 import { parseId, parseNonNegativeInt } from "../utils/params.js";
 import { TABLE_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import { HttpError } from "../utils/httpError.js";
-import { creditMonth, monthEnd, nextMonth } from "../utils/creditTime.js";
+import { creditMonth } from "../utils/creditTime.js";
 import { createNotification, notifyAdminsOfCreditRequest } from "../utils/notifications.js";
-import { BALANCE_SQL, balanceJoins, getUsageHistory } from "../services/creditService.js";
+import { getUsageHistory } from "../services/creditService.js";
+import {
+  BRANCH_REQUESTS_FROM,
+  listBranchTopupRequests,
+  listCompanyBranchCredits,
+} from "../services/companyCredits.js";
 import {
   CREDIT_REQUEST_COLUMNS,
   CREDIT_REQUEST_JOINS,
   CREDIT_REQUEST_STATUSES,
   CREDIT_REQUEST_TYPES,
-  OPEN_REQUEST_STATUSES,
   applyAutoRenew,
   createCreditRequest,
   creditSummary,
   findRequest,
 } from "../services/creditRequests.js";
-import { BRANCH_NOT_FOUND, BRANCH_STATUS, findCompanyBranch } from "../services/branches.js";
+import { BRANCH_NOT_FOUND, findCompanyBranch } from "../services/branches.js";
 import { MAX_NOTE_LENGTH, parseNote } from "./adminCredits.controller.js";
 import { callerCompanyId, fail, withBranch } from "./companyBranches.controller.js";
 
@@ -30,46 +34,10 @@ import { callerCompanyId, fail, withBranch } from "./companyBranches.controller.
 const parseYear = (value: unknown) =>
   value === undefined ? Number(creditMonth(new Date()).slice(0, 4)) : parseNonNegativeInt(value);
 
-// This month's credits of every branch (all statuses, by name; a chain has tens of branches, so
-// the list is not paged) with next month's plan and the open requests, plus the company's totals.
+// This month's credits of every branch with the company's totals (see listCompanyBranchCredits).
 export const getCompanyCredits = async (req: Request, res: Response) => {
   try {
-    const companyId = await callerCompanyId(req);
-    const periodMonth = creditMonth(new Date());
-    const result = await pool.query(
-      `SELECT users.id, users.business_name, ${BRANCH_STATUS} AS status,
-         ${BALANCE_SQL.planName} AS plan_name, ${BALANCE_SQL.hasSubscription} AS has_subscription,
-         balance_subscriptions.auto_renew AS auto_renew,
-         ${BALANCE_SQL.total} AS total, ${BALANCE_SQL.used} AS used, ${BALANCE_SQL.available} AS available,
-         next_plans.name AS next_plan_name, next_subscriptions.auto_renew AS next_auto_renew
-       FROM users ${balanceJoins("$1")}
-       LEFT JOIN subscriptions AS next_subscriptions
-         ON next_subscriptions.user_id = users.id AND next_subscriptions.period_month = $2
-         AND next_subscriptions.status = 'ACTIVE'
-       LEFT JOIN plans AS next_plans ON next_plans.id = next_subscriptions.plan_id
-       WHERE users.company_id = $3 AND users.role = 'STORE'
-       ORDER BY users.business_name ASC, users.id DESC`,
-      [periodMonth, nextMonth(periodMonth), companyId],
-    );
-    const ids = result.rows.map((row) => row.id as number);
-    const open = await pool.query(
-      `SELECT ${CREDIT_REQUEST_COLUMNS} FROM credit_requests ${CREDIT_REQUEST_JOINS}
-       WHERE credit_requests.user_id = ANY($1::int[]) AND credit_requests.status IN ${OPEN_REQUEST_STATUSES}
-       ORDER BY credit_requests.created_at DESC, credit_requests.id DESC`,
-      [ids],
-    );
-    const branches = result.rows.map((row) => ({
-      ...row,
-      open_requests: open.rows.filter((request) => request.user_id === row.id),
-    }));
-    const totals = {
-      total: branches.reduce((sum, row) => sum + row.total, 0),
-      used: branches.reduce((sum, row) => sum + row.used, 0),
-      available: branches.reduce((sum, row) => sum + row.available, 0),
-      branches: branches.length,
-      withPlan: branches.filter((row) => row.has_subscription).length,
-    };
-    return res.status(200).json({ periodStart: periodMonth, periodEnd: monthEnd(periodMonth), totals, branches });
+    return res.status(200).json(await listCompanyBranchCredits(pool, await callerCompanyId(req)));
   } catch (error) {
     return fail(res, error, "An error occurred while fetching credits.");
   }
@@ -181,21 +149,10 @@ export const setBranchAutoRenew = (req: Request, res: Response) => {
   );
 };
 
-const BRANCH_REQUESTS_FROM = `FROM credit_requests ${CREDIT_REQUEST_JOINS}
-  JOIN users AS branches ON branches.id = credit_requests.user_id
-  WHERE branches.company_id = $1 AND branches.role = 'STORE'`;
-
-// The top-ups the branches asked for that wait for the headquarters, oldest first. A branch has at
-// most one open top-up, so the list is short and not paged.
+// The top-ups the branches asked for that wait for the headquarters (see listBranchTopupRequests).
 export const getBranchTopupRequests = async (req: Request, res: Response) => {
   try {
-    const result = await pool.query(
-      `SELECT ${CREDIT_REQUEST_COLUMNS}, branches.business_name AS branch_name
-       ${BRANCH_REQUESTS_FROM} AND credit_requests.status = 'COMPANY_REVIEW'
-       ORDER BY credit_requests.created_at ASC, credit_requests.id ASC`,
-      [await callerCompanyId(req)],
-    );
-    return res.status(200).json({ requests: result.rows });
+    return res.status(200).json({ requests: await listBranchTopupRequests(pool, await callerCompanyId(req)) });
   } catch (error) {
     return fail(res, error, "An error occurred while fetching credit requests.");
   }

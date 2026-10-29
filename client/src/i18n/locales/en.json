@@ -28,7 +28,8 @@
     "companyOverview": "Overview",
     "companyProfile": "Company profile",
     "companyBranches": "Branches",
-    "companyCredits": "Credits and plans"
+    "companyCredits": "Credits and plans",
+    "companyReports": "Reports"
   },
   "breadcrumbs": {
     "label": "Breadcrumb",
@@ -1486,15 +1487,36 @@
   "company": {
     "overview": {
       "greeting": "Welcome, {{name}}",
-      "branchCount_one": "{{count}} branch",
-      "branchCount_other": "{{count}} branches",
-      "editProfile": "Company profile",
-      "branchesTitle": "Branches",
+      "subtitle": "An overview of all branches this month.",
       "noBranchesTitle": "You have no branches yet",
       "noBranchesSubtitle": "Add your first branch; it then publishes offers and handles reservations itself.",
-      "activeBranches_one": "active branch",
-      "activeBranches_other": "active branches",
-      "viewBranches": "All branches"
+      "decisionsTitle": "Waiting for your decision",
+      "decisionsSubtitle": "Branch requests and plans the headquarters decides on.",
+      "topupRequested": "Asks for extra credits: {{credits}} · {{price}}",
+      "noPlan": "No plan for this month",
+      "renewal": "No plan for {{month}}",
+      "lowCredits": "Used {{used}} of {{total}} credits",
+      "statBranches": "Active branches",
+      "branchesValue": "{{active}} / {{all}}",
+      "deactivated_one": "{{count}} deactivated",
+      "deactivated_other": "{{count}} deactivated",
+      "statCredits": "Credits this month",
+      "creditsValue": "{{used}} / {{total}}",
+      "creditsUsage": "Company credit usage",
+      "statReservations": "Reservations this month",
+      "reservationsDetail": "{{pickedUp}} picked up · {{pending}} pending",
+      "statSaved": "Food saved this month",
+      "savedValue": "{{value}} KM",
+      "branchesTitle": "Branches",
+      "viewBranches": "All branches",
+      "columnBranch": "Branch",
+      "columnCity": "City",
+      "columnStatus": "Status",
+      "columnPlan": "Plan",
+      "columnCredits": "Credits",
+      "columnOffers": "Active offers",
+      "columnPending": "Pending",
+      "columnPickedUp": "Picked up this month"
     },
     "profile": {
       "subtitle": "The description and logo appear on the company's pages.",
@@ -1630,6 +1652,34 @@
       "historyTitle": "Request history",
       "noHistory": "No requests for branches yet.",
       "cardTitle": "Credits and plan"
+    },
+    "reports": {
+      "title": "Reports",
+      "subtitle": "Sales, food saved and a branch comparison for the chosen period, as CSV for Excel.",
+      "branch": "Branch",
+      "allBranches": "All branches",
+      "items": {
+        "sales": {
+          "title": "Branch sales",
+          "description": "Every picked-up reservation, with the branch that sold it.",
+          "columns": "Branch, pickup date, reservation no., product, category, restaurant, city, quantity, unit, prices, total, savings"
+        },
+        "impact": {
+          "title": "Company impact",
+          "description": "Food saved per month for the whole company or the chosen branch.",
+          "columns": "Month, pickups, restaurants, food saved (kg, l, pcs), value, savings"
+        },
+        "branches": {
+          "title": "Branch comparison",
+          "description": "One row per branch, deactivated ones too, with a total.",
+          "columns": "Branch, status, pickups, restaurants, food saved (kg, l, pcs), value, savings"
+        }
+      },
+      "fileNames": {
+        "sales": "company-sales",
+        "impact": "company-impact",
+        "branches": "branches"
+      }
     }
   }
 }

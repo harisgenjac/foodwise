@@ -23,6 +23,12 @@ import {
   setBranchAutoRenew,
   withdrawBranchRequest,
 } from "../controllers/companyCredits.controller.js";
+import { getCompanyDashboard } from "../controllers/companyDashboard.controller.js";
+import {
+  getCompanyBranchesReport,
+  getCompanyImpactReport,
+  getCompanySalesReport,
+} from "../controllers/companyReports.controller.js";
 import { getPlans, getTopupPackages } from "../controllers/credits.controller.js";
 import { uploadLogoFile } from "../middleware/upload.middleware.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
@@ -32,6 +38,7 @@ import { authenticate, authorize } from "../middleware/auth.middleware.js";
 const router = express.Router();
 router.use(authenticate, authorize("COMPANY"));
 
+router.get("/dashboard", getCompanyDashboard);
 router.get("/me", getMyCompany);
 router.put("/me", updateMyCompany);
 router.post("/me/logo", uploadLogoFile, uploadCompanyLogo);
@@ -56,5 +63,8 @@ router.get("/credits/branch-requests", getBranchTopupRequests);
 router.get("/credits/branch-requests/count", getBranchTopupRequestCount);
 router.post("/credits/branch-requests/:id/approve", approveBranchTopupRequest);
 router.post("/credits/branch-requests/:id/reject", rejectBranchTopupRequest);
+router.get("/reports/sales", getCompanySalesReport);
+router.get("/reports/impact", getCompanyImpactReport);
+router.get("/reports/branches", getCompanyBranchesReport);
 
 export default router;

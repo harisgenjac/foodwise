@@ -29,19 +29,31 @@ const company: Company = {
 };
 
 describe("Company headquarters", () => {
-  it("lands on the overview with the company and an empty branch list", async () => {
+  it("lands on the overview (Pregled) of its company", async () => {
     renderWithProviders(<DashboardPage />, {
       route: "/dashboard",
       path: "/dashboard",
       user: hq,
-      get: { "/company/me": { company } },
+      get: {
+        "/company/dashboard": {
+          company: { id: 3, name: "Bingo d.o.o." },
+          periodStart: "2030-01-01",
+          periodEnd: "2030-01-31",
+          nextPeriodStart: "2030-02-01",
+          renewalWindow: false,
+          decisions: [],
+          totals: {
+            branches: { active: 0, all: 0, deactivated: 0 },
+            credits: { used: 0, total: 0 },
+            reservations: { total: 0, picked_up: 0, pending: 0 },
+            saved: { kg: 0, l: 0, pieces: 0, value: 0 },
+          },
+          branches: [],
+        },
+      },
     });
     expect(await screen.findByRole("heading", { level: 1, name: "Bingo d.o.o." })).toBeInTheDocument();
     expect(screen.getByText(t("company.overview.noBranchesTitle"))).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: t("company.overview.editProfile") })).toHaveAttribute(
-      "href",
-      "/company/profile",
-    );
   });
 
   it("edits the description with the name read-only", async () => {

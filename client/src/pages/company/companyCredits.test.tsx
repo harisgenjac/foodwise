@@ -208,7 +208,14 @@ describe("the branch page's credits card", () => {
       must_change_password: false,
       created_at: "2026-10-01T10:00:00.000Z",
     },
-    stats: { active_products: 0, pending_reservations: 0, completed_this_month: 0, saved_this_month: { kg: 0, l: 0, pieces: 0 } },
+    stats: {
+      active_products: 0,
+      pending_reservations: 0,
+      reservations_this_month: 0,
+      completed_this_month: 0,
+      saved_this_month: { kg: 0, l: 0, pieces: 0 },
+      value_this_month: 0,
+    },
   };
 
   it("shows the branch's plan and balance with the same actions", async () => {
