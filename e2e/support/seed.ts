@@ -16,6 +16,8 @@ export const assertE2eDatabase = (databaseUrl: string) => {
   }
 };
 
+type Business = { email: string; firstName: string; lastName: string; businessName: string };
+
 export const seedE2e = async (databaseUrl: string) => {
   assertE2eDatabase(databaseUrl);
   const client = new pg.Client({ connectionString: databaseUrl });
@@ -32,11 +34,17 @@ export const seedE2e = async (databaseUrl: string) => {
     await client.query(`TRUNCATE ${list} RESTART IDENTITY CASCADE`);
 
     const hash = await bcrypt.hash(PASSWORD, 10);
-    const city = await client.query<{ id: number }>("SELECT id FROM cities WHERE name = 'Visoko'");
-    const visokoId = city.rows[0]?.id;
-    if (visokoId === undefined) throw new Error("City Visoko is missing; run the migrations first.");
+    const cities = await client.query<{ id: number; name: string }>(
+      "SELECT id, name FROM cities WHERE name = ANY($1)",
+      [["Visoko", "Breza", "Tuzla"]],
+    );
+    const cityId = (name: string) => {
+      const city = cities.rows.find((row) => row.name === name);
+      if (!city) throw new Error(`City ${name} is missing; run the migrations first.`);
+      return city.id;
+    };
 
-    const { admin, store, restaurant } = ACCOUNTS;
+    const { admin, store, restaurant, brezaStore, tuzlaStore, blockStore, hq, branch } = ACCOUNTS;
     const adminRow = await client.query<{ id: number }>(
       `INSERT INTO users (first_name, last_name, email, password_hash, role)
        VALUES ($1, $2, $3, $4, 'ADMIN') RETURNING id`,
@@ -44,23 +52,29 @@ export const seedE2e = async (databaseUrl: string) => {
     );
     const adminId = adminRow.rows[0]!.id;
 
-    for (const [account, role, address] of [
-      [store, "STORE", "Alije Izetbegovića 1"],
-      [restaurant, "RESTAURANT", "Branilaca 2"],
-    ] as const) {
+    // A store or restaurant with a complete profile (a branch when companyId is set).
+    const insertBusiness = async (
+      account: Business,
+      role: "STORE" | "RESTAURANT",
+      city: string,
+      address: string,
+      companyId: number | null = null,
+    ) => {
       const user = await client.query<{ id: number }>(
         `INSERT INTO users
            (first_name, last_name, email, password_hash, role, business_name, city_id, address, phone,
-            opening_hours, pickup_hours)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, '061 000 000', '08:00 - 20:00', '10:00 - 18:00')
+            opening_hours, pickup_hours, company_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, '061 000 000', '08:00 - 20:00', '10:00 - 18:00', $9)
          RETURNING id`,
-        [account.firstName, account.lastName, account.email, hash, role, account.businessName, visokoId, address],
+        [account.firstName, account.lastName, account.email, hash, role, account.businessName, cityId(city), address, companyId],
       );
-      const userId = user.rows[0]!.id;
+      return user.rows[0]!.id;
+    };
 
-      // An approved Standard plan for the current credit month (months change at midnight
-      // Europe/London, like creditMonth), granted the way grantPlan does it. No auto-renew, so
-      // the renewal job leaves it alone. The trigger fills the request's credits and price.
+    // An approved Standard plan for the current credit month (months change at midnight
+    // Europe/London, like creditMonth), granted the way grantPlan does it. No auto-renew, so
+    // the renewal job leaves it alone. The trigger fills the request's credits and price.
+    const grantPlan = async (userId: number) => {
       const request = await client.query<{ id: number; credits: number; period_month: string }>(
         `INSERT INTO credit_requests
            (user_id, request_type, plan_id, period_month, auto_renew, status, source, requested_by,
@@ -84,6 +98,29 @@ export const seedE2e = async (databaseUrl: string) => {
          VALUES ($1, $2, $3, $4, 'PLAN_GRANT', 'credit_request', $5, 'ADMIN', $6)`,
         [userId, subscription.rows[0]!.id, periodMonth, credits, requestId, adminId],
       );
+    };
+
+    // The company: its headquarters login (no credits of its own) and one branch in Visoko.
+    const company = await client.query<{ id: number }>("INSERT INTO companies (name) VALUES ($1) RETURNING id", [
+      hq.company,
+    ]);
+    const companyId = company.rows[0]!.id;
+    await client.query(
+      `INSERT INTO users (first_name, last_name, email, password_hash, role, phone, company_id)
+       VALUES ($1, $2, $3, $4, 'COMPANY', '061 000 001', $5)`,
+      [hq.firstName, hq.lastName, hq.email, hash, companyId],
+    );
+
+    const businesses: [Business, "STORE" | "RESTAURANT", string, string, number | null][] = [
+      [store, "STORE", "Visoko", "Alije Izetbegovića 1", null],
+      [restaurant, "RESTAURANT", "Visoko", "Branilaca 2", null],
+      [brezaStore, "STORE", "Breza", "Bosanska 10", null],
+      [tuzlaStore, "STORE", "Tuzla", "Turalibegova 5", null],
+      [blockStore, "STORE", "Visoko", "Musala 9", null],
+      [branch, "STORE", "Visoko", "Kakanjska 4", companyId],
+    ];
+    for (const [account, role, city, address, branchOf] of businesses) {
+      await grantPlan(await insertBusiness(account, role, city, address, branchOf));
     }
 
     await client.query("COMMIT");

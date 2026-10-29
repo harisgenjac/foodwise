@@ -33,7 +33,10 @@ function DonationCard({ donation, actions }: DonationCardProps) {
     donation.status === "Available" && Boolean(donation.expiry_date) && daysFromToday(donation.expiry_date.slice(0, 10)) <= 1;
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+    <div
+      data-testid="donation-card"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+    >
       <div className="relative h-36 overflow-hidden">
         <img
           src={getDonationImage(donation.category)}

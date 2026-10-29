@@ -11,8 +11,10 @@ e2e/
 ├── global-setup.ts       empties the database and seeds it (support/seed.ts)
 ├── support/
 │   ├── accounts.ts       seeded accounts, password, URLs, storageState paths, runId(), uniqueName(prefix)
-│   ├── api.ts            API clients and arrange helpers (apiAs, apiLogin, createProduct, cityId, createStoreWithoutPlan)
-│   ├── ui.ts             UI helpers (toast, dialogWith, loginViaForm, changeTemporaryPassword, fillProductForm, credits)
+│   ├── api.ts            API clients and arrange helpers (apiAs, apiLogin, myId, createProduct, cityId, reserve,
+│   │                     acceptReservation, completeReservation, createStoreWithoutPlan)
+│   ├── ui.ts             UI helpers (toast, dialogWith, loginViaForm, submitLoginForm, changeTemporaryPassword,
+│   │                     fillProductForm, searchMarketplace, expectNotInMarketplace, credits)
 │   ├── seed.ts           the e2e seed
 │   └── dates.ts          sarajevoDate(days) → dd/mm/yyyy (UI), isoDate(days) → yyyy-mm-dd (API), both in Europe/Sarajevo
 └── tests/
@@ -21,7 +23,12 @@ e2e/
     ├── reservation-flow.spec.ts       store publishes → restaurant reserves for tomorrow → store accepts → Pickups → picked up → "Preuzeto" + notification
     ├── reservation-reject.spec.ts     restaurant reserves (−1 credit) → store rejects → "Odbijeno" + notification → credit back, full quantity offered again
     ├── credits-first-product.spec.ts  store without a plan is stopped on Add product → requests a plan → admin approves → notification, 50 credits → publishes (49)
-    └── store-chain.spec.ts            admin creates a company → HQ first login → branch in Breza + plan → admin approves → branch first login (name and city locked) → product → restaurant in Visoko sees "dio <company>"
+    ├── store-chain.spec.ts            admin creates a company → HQ first login → branch in Breza + plan → admin approves → branch first login (name and city locked) → product → restaurant in Visoko sees "dio <company>"
+    ├── nearby-offers.spec.ts          Breza (7 km) and Tuzla (73 km) products → default 10 km shows Breza + "more further away" hint → "Svi gradovi" shows Tuzla → city Tuzla shows it at 5 km
+    ├── csv-import.spec.ts             store imports a 3-row CSV → My products, −3 credits → a CSV with an invalid row shows the row error, imports nothing, credits unchanged
+    ├── block-store.spec.ts            admin blocks blockStore with a reason → its session ends, login shows the reason → offer hidden → unblock → offer back
+    ├── donations.spec.ts              store moves a product's free quantity to donations → shown on "Doniraj hranu", gone from the marketplace → removed and returned to the offer
+    └── branch-deactivation.spec.ts    HQ can't deactivate the branch with an accepted pickup → picked up (API) → deactivated: offer hidden, branch login refused → reactivated: offer back
 ```
 
 Scripts (in `e2e/`): `npm run e2e` (headless), `npm run e2e:ui` (Playwright UI mode), `npm run typecheck`.
@@ -52,10 +59,21 @@ DISABLE_RATE_LIMITS=true
    - It truncates every `public` table except `pgmigrations`, `cities`, `plans` and `topup_packages` (`RESTART IDENTITY CASCADE`).
    - It then creates, in one transaction:
      - An admin `e2e-admin@foodwise.test`.
-     - A store `e2e-store@foodwise.test` ("E2E Prodavnica") and a restaurant `e2e-restaurant@foodwise.test` ("E2E Restoran"). Both are in Visoko with complete profiles.
-   - Every seeded account uses the password `E2e-pass-123` (`support/accounts.ts`).
-   - The store and the restaurant each get an approved Standard plan for the current credit month: an `APPROVED` request, the subscription and the `PLAN_GRANT`, with auto-renew off. The cities, plans and packages come from the migrations, and every date is relative to today.
-3. **`setup` project** (`tests/auth.setup.ts`): logs each seeded role in through `POST /api/auth/login` and saves its cookie to `e2e/.auth/<role>.json`. Tests start from these sessions with `test.use({ storageState: storageState("store") })`, or `browser.newContext({ storageState })` when a test needs two roles. The login form is used only where logging in is part of the flow (`first-login.spec.ts`, `store-chain.spec.ts`, through `loginViaForm`).
+     - Stores and restaurants with complete profiles (key in `ACCOUNTS` → account):
+
+       | Key | Email | Business | City | Used by |
+       |---|---|---|---|---|
+       | `store` | `e2e-store@` | E2E Prodavnica | Visoko | shared by most tests |
+       | `restaurant` | `e2e-restaurant@` | E2E Restoran | Visoko | shared by most tests |
+       | `brezaStore` | `e2e-breza@` | E2E Breza Market | Breza (7 km) | `nearby-offers` |
+       | `tuzlaStore` | `e2e-tuzla@` | E2E Tuzla Market | Tuzla (73 km) | `nearby-offers` |
+       | `blockStore` | `e2e-block@` | E2E Blokada | Visoko | only `block-store` (blocked there) |
+       | `branch` | `e2e-branch@` | E2E Lanac Visoko | Visoko | only `branch-deactivation` (deactivated there) |
+
+     - The company "E2E Lanac": its headquarters login `hq` (`e2e-hq@`, role `COMPANY`, name and phone filled) and the `branch` above.
+   - All emails end in `@foodwise.test`. Every seeded account uses the password `E2e-pass-123` (`support/accounts.ts`).
+   - Every store and restaurant (the branch too, not the HQ) gets an approved Standard plan (50 credits) for the current credit month: an `APPROVED` request, the subscription and the `PLAN_GRANT`, with auto-renew off. The cities, plans and packages come from the migrations, and every date is relative to today.
+3. **`setup` project** (`tests/auth.setup.ts`): logs each seeded role in through `POST /api/auth/login` and saves its cookie to `e2e/.auth/<role>.json`. Tests start from these sessions with `test.use({ storageState: storageState("store") })`, or `browser.newContext({ storageState })` when a test needs two roles. The login form is used only where logging in is part of the flow: `loginViaForm` in `first-login.spec.ts` and `store-chain.spec.ts`, and `submitLoginForm` for the refused logins in `block-store.spec.ts` and `branch-deactivation.spec.ts`.
 4. **`chromium` project:** the specs, one worker.
 
 Config:
@@ -76,23 +94,27 @@ Config:
 - Long flows wrap their parts in `test.step()` with short Bosnian names (e.g. `"Prodavnica odbija zahtjev"`), so the report shows where a test failed.
 - Credit balances are asserted through the UI, never the database: `availableCredits(page)` and `expectAvailableCredits(page, n)` read "Dostupno" on the Credits page, and the dialogs show `Ovo troši 1 kredit (preostalo: N)`. Read the starting number at run time; the seeded accounts' balances change with every test.
 - A test that needs a state the shared seeded accounts lose after one run creates its own account instead. For example, `credits-first-product.spec.ts` needs a store with no plan and gives it one, so it uses `createStoreWithoutPlan()` (a Visoko store with a complete profile and its password changed) rather than a seeded store. The seed runs once per `playwright test`, so a seeded account like that would fail the CI retry and `--repeat-each`.
+- A test that blocks or deactivates an account uses its own seeded account (`blockStore`, `branch`), never the shared store and restaurant, and restores it in `test.afterEach` through the API (unblock, reactivate, and complete the accepted pickup it created), so it ends restored even when it fails. The saved sessions work again after a restore, because the block is checked in the database on every request.
+- Products get unique names (`uniqueName(prefix)`), and a marketplace search filters by that name, so products from other tests never interfere. CSV fixtures and expiry dates are built at run time relative to today.
 
 ### General
 
 - Wait until a page has loaded its data before typing into a form it fills from the API. `MyProfilePage` overwrites its fields when `GET /users/me` answers, so the test first waits for the read-only Email field to have its value.
-- Each test creates its own data with a unique suffix (`runId()`, e.g. product `E2E Mlijeko <id>`, email `e2e-rest-<id>@foodwise.test`). Tests never depend on each other or on order. The seeded accounts are shared, so never change their profile or password.
+- Each test creates its own data with a unique suffix (`runId()`, e.g. product `E2E Mlijeko <id>`, email `e2e-rest-<id>@foodwise.test`). Tests never depend on each other or on order. The shared seeded accounts (`store`, `restaurant`) are never blocked and never get a changed profile or password.
 - **Locators:**
   - Use `getByRole`, `getByLabel`, `getByText` and `getByPlaceholder` (the filter inputs have no label) with the Bosnian UI. The language is fixed to `bs`.
   - Scope repeated controls: dialogs by `getByRole('dialog', { name })` (or `dialogWith(page, text)` for the dialogs without an accessible name: the reserve dialog, `SubscribeModal`, `CreditRequestDecisionModal`), pickup cards by `getByRole('article').filter({ has: heading })`, header and sidebar by `locator('header')` / `locator('aside')`.
   - Toasts are `role="status"` (so is the credit banner), so filter by text: `getByRole('status').filter({ hasText })`.
   - Use `exact: true` when a label is a substring of another (`Ime` / `Prezime`, `Nova lozinka` / `Ponovite novu lozinku`).
-- **`data-testid` only where roles are ambiguous.** There are two, because these cards are plain `div`s with the same buttons on every card:
-  - `product-card` on `DashboardProductCard` (marketplace and dashboard).
+- **`data-testid` only where roles are ambiguous.** There are three, because these cards are plain `div`s with the same buttons on every card:
+  - `product-card` on `DashboardProductCard` (marketplace, dashboard and My products).
   - `reservation-card` on `DashboardReservationCard` (the store's reservations).
+  - `donation-card` on `DonationCard` ("Doniraj hranu").
   - Use them as `getByTestId('product-card').filter({ has: getByRole('heading', { name }) })`.
 - **Waiting:**
   - Never use `waitForTimeout`. Rely on auto-waiting and web-first assertions (`toBeVisible`, `toHaveURL`, `toHaveCount`).
   - Notifications poll every 50 s, so load the page that shows them (`goto`, `reload`) instead of waiting.
+  - The list filters (name search, radius, city) are debounced by 500 ms, and the list keeps the previous results until the new answer arrives. To check that something is absent, wait for the empty state ("Nema rezultata", see `expectNotInMarketplace`). A bare `toHaveCount(0)` can pass before the search has run.
 - **Dates:** `DateInput` fields take `dd/mm/yyyy`. Use `sarajevoDate(days)` and press Enter to commit the value. The product form's expiry has shortcut buttons ("Sutra", "Za 3 dana").
 
 ## Running locally
