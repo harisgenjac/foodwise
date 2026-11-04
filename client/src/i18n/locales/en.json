@@ -586,6 +586,13 @@
     "confirmButton_one": "Import {{count}} product",
     "confirmButton_other": "Import {{count}} products"
   },
+  "notFound": {
+    "code": "Error 404",
+    "title": "Page not found",
+    "text": "The address you opened does not exist or has changed.",
+    "toDashboard": "Go to the dashboard",
+    "toLogin": "Go to login"
+  },
   "comingSoon": {
     "badge": "Coming soon",
     "sponsorTitle": "Become a sponsor",

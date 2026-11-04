@@ -603,6 +603,13 @@
     "confirmButton_few": "Uvezi {{count}} proizvoda",
     "confirmButton_other": "Uvezi {{count}} proizvoda"
   },
+  "notFound": {
+    "code": "Greška 404",
+    "title": "Stranica nije pronađena",
+    "text": "Adresa koju ste otvorili ne postoji ili je promijenjena.",
+    "toDashboard": "Na početnu stranicu",
+    "toLogin": "Na prijavu"
+  },
   "comingSoon": {
     "badge": "Uskoro dostupno",
     "sponsorTitle": "Budi sponzor",
