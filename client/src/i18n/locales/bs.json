@@ -620,6 +620,11 @@
       "Dugoročna partnerstva"
     ]
   },
+  "table": {
+    "sortDefault": "Zadani redoslijed",
+    "sortAscending": "{{column}}: od najmanjeg",
+    "sortDescending": "{{column}}: od najvećeg"
+  },
   "common": {
     "loading": "Učitavanje...",
     "loadErrorTitle": "Podaci se nisu mogli učitati",
@@ -1268,7 +1273,8 @@
       "note": "Interna bilješka (neobavezno)",
       "noteHint": "Korisnik ne vidi bilješku.",
       "sentByCompany": "Zatražila centrala ({{email}})",
-      "sentByRenewal": "Poslao sistem (automatska obnova)"
+      "sentByRenewal": "Poslao sistem (automatska obnova)",
+      "reviewed": "Pregledano"
     },
     "userCredits": {
       "title": "Krediti",

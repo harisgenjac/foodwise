@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { runId, storageState, type SeededRole } from "../support/accounts.js";
-import { apiAs, createDonation, createProduct, createStoreWithoutPlan, myId, reserve } from "../support/api.js";
+import { apiAs, createDonation, createProduct, createStoreWithoutPlan, myId, requestSubscription, reserve } from "../support/api.js";
 
 // Phone width: every store and restaurant page fits the screen, with the bottom bar instead of the
 // sidebar (docs/mobile-review.md, the navigation shell).
@@ -166,6 +166,55 @@ test.describe("dialogs at 375×667", () => {
       await expect(dialog.getByRole("button", { name: "Sačuvaj profil" })).toBeInViewport({ ratio: 1 });
       await expect(dialog.getByRole("heading", { name: "Uredi profil korisnika" })).toBeInViewport({ ratio: 1 });
     });
+  });
+});
+
+// The admin's credit lists are cards below md: nothing wider than the screen, and the approve and
+// reject buttons of a pending request reachable without scrolling sideways.
+test.describe("admin", () => {
+  test.use({ storageState: storageState("admin") });
+  let businessName: string;
+
+  test.beforeAll(async () => {
+    const account = await createStoreWithoutPlan();
+    businessName = account.businessName;
+    await requestSubscription(account.storageState);
+  });
+
+  const expectFits = async (page: Page, path: string) => {
+    await page.goto(path);
+    await page.waitForLoadState("networkidle");
+    const { scrollWidth, innerWidth } = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+    }));
+    expect(scrollWidth, `${path} is wider than the screen`).toBeLessThanOrEqual(innerWidth);
+    // Cards, not the table.
+    await expect(page.getByRole("table"), path).toBeHidden();
+    await expect(page.getByTestId("data-card").first(), path).toBeVisible();
+  };
+
+  test("the credit requests and credits pages fit a 375 px screen", async ({ page }) => {
+    await expectFits(page, "/admin/credit-requests");
+    await expectFits(page, "/admin/credits");
+    await expect(page.getByRole("combobox", { name: "Sortiraj po" })).toBeVisible();
+  });
+
+  test("a pending request's approve and reject buttons are on screen without sideways scrolling", async ({ page }) => {
+    await page.goto("/admin/credit-requests?status=PENDING");
+    const card = page.getByTestId("data-card").filter({ hasText: businessName });
+    for (const name of ["Odobri", "Odbij"]) {
+      const button = card.getByRole("button", { name, exact: true });
+      await button.scrollIntoViewIfNeeded();
+      await expect(button, name).toBeInViewport({ ratio: 1 });
+      const box = (await button.boundingBox())!;
+      expect(box.x, name).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width, name).toBeLessThanOrEqual(375);
+      expect(box.height, name).toBeGreaterThanOrEqual(44);
+    }
+    expect(await page.evaluate(() => window.scrollX)).toBe(0);
+    await card.getByRole("button", { name: "Odobri", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "Odobriti zahtjev?" })).toBeVisible();
   });
 });
 

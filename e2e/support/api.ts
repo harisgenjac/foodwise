@@ -96,23 +96,23 @@ export const acceptReservation = async (api: APIRequestContext, reservationId: n
 export const completeReservation = async (api: APIRequestContext, reservationId: number) =>
   ok(await api.patch(`/api/reservations/${reservationId}/complete`));
 
-// A new store in Visoko with a complete profile, its own password set and no plan, logged in.
-// For tests that need a state the shared seeded accounts lose after one run (here: no plan yet),
-// so the test survives retries and --repeat-each.
-export const createStoreWithoutPlan = async () => {
+// A new store (or restaurant) in Visoko with a complete profile, its own password set and no plan,
+// logged in. For tests that need a state the shared seeded accounts lose after one run (here: no
+// plan yet), so the test survives retries and --repeat-each.
+export const createStoreWithoutPlan = async (role: "STORE" | "RESTAURANT" = "STORE") => {
   const id = runId();
   const store = {
-    email: `e2e-store-${id}@foodwise.test`,
+    email: `e2e-${role.toLowerCase()}-${id}@foodwise.test`,
     firstName: "Lejla",
     lastName: "Prodavac",
-    businessName: `E2E Market ${id}`,
+    businessName: `${role === "STORE" ? "E2E Market" : "E2E Bistro"} ${id}`,
   };
   const temporaryPassword = `Privremena-${id}`;
 
   const admin = await apiAs("admin");
   const { user } = await ok<{ user: { id: number } }>(
     await admin.post("/api/admin/users", {
-      data: { role: "STORE", email: store.email, password: temporaryPassword },
+      data: { role, email: store.email, password: temporaryPassword },
     }),
   );
   await ok(
@@ -138,4 +138,20 @@ export const createStoreWithoutPlan = async () => {
   const session = await api.storageState();
   await api.dispose();
   return { ...store, storageState: session };
+};
+
+// A pending subscription request for this month (plan Standard) from an account made by
+// createStoreWithoutPlan, for the admin's credit request list.
+export const requestSubscription = async (session: Awaited<ReturnType<typeof createStoreWithoutPlan>>["storageState"]) => {
+  const api = await request.newContext({ baseURL: API_URL, storageState: session });
+  const { plans } = await ok<{ plans: { id: number; name: string }[] }>(await api.get("/api/credits/plans"));
+  const standard = plans.find((plan) => plan.name === "Standard");
+  expect(standard, "plan Standard").toBeDefined();
+  const { request: created } = await ok<{ request: { id: number } }>(
+    await api.post("/api/credits/requests", {
+      data: { request_type: "SUBSCRIPTION", plan_id: standard!.id, period: "current", auto_renew: false },
+    }),
+  );
+  await api.dispose();
+  return created;
 };

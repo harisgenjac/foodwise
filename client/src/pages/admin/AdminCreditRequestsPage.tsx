@@ -11,6 +11,7 @@ import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
+import DataTable, { type DataColumn } from "../../components/admin/DataTable.js";
 import CreditRequestDecisionModal, {
   CreditRequestDecisionButtons,
   type CreditRequestAction,
@@ -49,6 +50,97 @@ function AdminCreditRequestsPage() {
   const requestStatuses = t("credits.requestStatuses", { returnObjects: true }) as Record<string, string>;
   const monthNames = t("dashboard.months", { returnObjects: true }) as string[];
   const hasActiveFilters = Boolean(type || status);
+
+  const statusPill = (request: AdminCreditRequest) => (
+    <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${CREDIT_REQUEST_STATUS_STYLES[request.status]}`}>
+      {requestStatuses[request.status] || request.status}
+    </span>
+  );
+  const review = (request: AdminCreditRequest) =>
+    (request.reviewed_at || request.admin_note) && (
+      <>
+        {request.reviewed_at && (
+          <p className="mt-1 text-xs text-gray-500">
+            {request.reviewed_by_email} · {formatDateTime(request.reviewed_at)}
+          </p>
+        )}
+        {request.admin_note && <p className="mt-1 text-xs italic text-gray-500">{request.admin_note}</p>}
+      </>
+    );
+  const columns: DataColumn<AdminCreditRequest>[] = [
+    {
+      id: "user",
+      header: t("admin.creditRequests.columnUser"),
+      card: "title",
+      cell: (request) => (
+        <>
+          <Link to={`/admin/users/${request.user_id}`} className="font-medium text-gray-900 hover:text-orange-600">
+            {creditRequestUser(request)}
+          </Link>
+          {creditRequestSender(request, t) && (
+            <p className="text-xs font-medium text-teal-700">{creditRequestSender(request, t)}</p>
+          )}
+          <p className="text-xs text-gray-500">{formatDateTime(request.created_at)}</p>
+        </>
+      ),
+    },
+    {
+      id: "request",
+      header: t("admin.creditRequests.columnRequest"),
+      cell: (request) => (
+        <>
+          <p className="font-medium text-gray-800">{requestTypes[request.request_type]}</p>
+          <p className="text-xs text-gray-500">
+            {describeCreditRequest(request, t)} · {request.price} KM
+          </p>
+          {(request.auto_renew || request.source === "AUTO_RENEW") && (
+            <span className="mt-1 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+              {t(request.source === "AUTO_RENEW" ? "admin.creditRequests.renewal" : "admin.creditRequests.autoRenew")}
+            </span>
+          )}
+        </>
+      ),
+    },
+    {
+      id: "month",
+      header: t("admin.creditRequests.columnMonth"),
+      className: "hidden md:table-cell",
+      cellClassName: "whitespace-nowrap text-gray-600",
+      cell: (request) => formatCreditMonth(request.period_month, monthNames),
+    },
+    {
+      id: "status",
+      header: t("admin.creditRequests.columnStatus"),
+      card: "status",
+      cell: (request) => (
+        <>
+          {statusPill(request)}
+          {review(request)}
+        </>
+      ),
+      cardCell: statusPill,
+    },
+    {
+      id: "reviewed",
+      header: t("admin.creditRequests.reviewed"),
+      cardOnly: true,
+      cell: review,
+    },
+    {
+      id: "actions",
+      header: "",
+      card: "actions",
+      cellClassName: "whitespace-nowrap text-right",
+      cell: (request) =>
+        request.status === "PENDING" && (
+          <CreditRequestDecisionButtons onDecide={(action) => setDecision({ request, action })} />
+        ),
+      cardCell: (request) =>
+        request.status === "PENDING" && (
+          <CreditRequestDecisionButtons card onDecide={(action) => setDecision({ request, action })} />
+        ),
+    },
+  ];
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
@@ -134,64 +226,13 @@ function AdminCreditRequestsPage() {
         />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                <tr>
-                  <th className="px-4 py-3">{t("admin.creditRequests.columnUser")}</th>
-                  <th className="px-4 py-3">{t("admin.creditRequests.columnRequest")}</th>
-                  <th className="hidden px-4 py-3 md:table-cell">{t("admin.creditRequests.columnMonth")}</th>
-                  <th className="px-4 py-3">{t("admin.creditRequests.columnStatus")}</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {requests.map((request) => (
-                  <tr key={request.id} className="align-top">
-                    <td className="px-4 py-3">
-                      <Link to={`/admin/users/${request.user_id}`} className="font-medium text-gray-900 hover:text-orange-600">
-                        {creditRequestUser(request)}
-                      </Link>
-                      {creditRequestSender(request, t) && (
-                        <p className="text-xs font-medium text-teal-700">{creditRequestSender(request, t)}</p>
-                      )}
-                      <p className="text-xs text-gray-500">{formatDateTime(request.created_at)}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-gray-800">{requestTypes[request.request_type]}</p>
-                      <p className="text-xs text-gray-500">
-                        {describeCreditRequest(request, t)} · {request.price} KM
-                      </p>
-                      {(request.auto_renew || request.source === "AUTO_RENEW") && (
-                        <span className="mt-1 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                          {t(request.source === "AUTO_RENEW" ? "admin.creditRequests.renewal" : "admin.creditRequests.autoRenew")}
-                        </span>
-                      )}
-                    </td>
-                    <td className="hidden whitespace-nowrap px-4 py-3 text-gray-600 md:table-cell">
-                      {formatCreditMonth(request.period_month, monthNames)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${CREDIT_REQUEST_STATUS_STYLES[request.status]}`}>
-                        {requestStatuses[request.status] || request.status}
-                      </span>
-                      {request.reviewed_at && (
-                        <p className="mt-1 text-xs text-gray-500">
-                          {request.reviewed_by_email} · {formatDateTime(request.reviewed_at)}
-                        </p>
-                      )}
-                      {request.admin_note && <p className="mt-1 text-xs italic text-gray-500">{request.admin_note}</p>}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right">
-                      {request.status === "PENDING" && (
-                        <CreditRequestDecisionButtons onDecide={(action) => setDecision({ request, action })} />
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            label={t("admin.creditRequests.title")}
+            rows={requests}
+            rowKey={(request) => request.id}
+            rowClassName="align-top"
+            columns={columns}
+          />
           <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={(next) => setPage(next / ADMIN_PAGE_SIZE + 1)} />
         </>
       )}

@@ -13,15 +13,25 @@ const MAX_NOTE_LENGTH = 500;
 
 export type CreditRequestAction = "approve" | "reject";
 
-// The approve and reject buttons of a pending request; each opens the decision modal.
-export function CreditRequestDecisionButtons({ onDecide }: { onDecide: (action: CreditRequestAction) => void }) {
+// The approve and reject buttons of a pending request; each opens the decision modal. In a phone
+// card (`card`) they are two full-width 44 px buttons (DataTable's actions).
+export function CreditRequestDecisionButtons({
+  onDecide,
+  card = false,
+}: {
+  onDecide: (action: CreditRequestAction) => void;
+  card?: boolean;
+}) {
   const { t } = useTranslation();
+  const base = card
+    ? "inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border text-sm font-semibold transition-colors"
+    : "inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors";
   return (
-    <div className="flex justify-end gap-1">
+    <div className={card ? "flex gap-2" : "flex justify-end gap-1"}>
       <button
         type="button"
         onClick={() => onDecide("approve")}
-        className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-green-700 transition-colors hover:bg-green-50"
+        className={`${base} text-green-700 hover:bg-green-50 ${card ? "border-green-200" : ""}`}
       >
         <Check className="h-4 w-4" />
         {t("admin.creditRequests.approve")}
@@ -29,7 +39,7 @@ export function CreditRequestDecisionButtons({ onDecide }: { onDecide: (action: 
       <button
         type="button"
         onClick={() => onDecide("reject")}
-        className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+        className={`${base} text-red-600 hover:bg-red-50 ${card ? "border-red-200" : ""}`}
       >
         <X className="h-4 w-4" />
         {t("admin.creditRequests.reject")}

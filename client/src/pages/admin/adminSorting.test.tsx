@@ -219,7 +219,7 @@ describe("sortable admin tables", () => {
 describe("admin credits sorting and plan filter", () => {
   it("sorts by used, available, total and usage", async () => {
     renderCredits();
-    await screen.findByText("Market Centar");
+    await screen.findByRole("table");
     for (const [label, key] of [
       ["admin.credits.columnUsed", "used"],
       ["admin.credits.columnAvailable", "available"],
@@ -236,7 +236,7 @@ describe("admin credits sorting and plan filter", () => {
 
   it("filters by plan through the URL, with every active plan and No subscription", async () => {
     renderCredits("/admin/credits?page=2&sort=used&dir=desc");
-    await screen.findByText("Market Centar");
+    await screen.findByRole("table");
     const select = screen.getByLabelText(t("admin.credits.columnPlan"));
     await waitFor(() => expect(within(select).getAllByRole("option")).toHaveLength(4));
     expect(within(select).getAllByRole("option").map((option) => option.textContent)).toEqual([
@@ -260,7 +260,7 @@ describe("admin credits sorting and plan filter", () => {
 
   it("opens with the plan from the URL (the dashboard's ?plan=none)", async () => {
     renderCredits("/admin/credits?plan=none");
-    await screen.findByText("Market Centar");
+    await screen.findByRole("table");
     expect(lastParams("/admin/credits/overview")).toMatchObject({ plan: "none" });
     await waitFor(() => expect(screen.getByLabelText(t("admin.credits.columnPlan"))).toHaveValue("none"));
   });

@@ -603,6 +603,11 @@
       "Long-term partnerships"
     ]
   },
+  "table": {
+    "sortDefault": "Default order",
+    "sortAscending": "{{column}}: lowest first",
+    "sortDescending": "{{column}}: highest first"
+  },
   "common": {
     "loading": "Loading...",
     "loadErrorTitle": "Could not load the data",
@@ -1236,6 +1241,7 @@
       "note": "Internal note (optional)",
       "noteHint": "The user never sees the note.",
       "sentByCompany": "Requested by headquarters ({{email}})",
+      "reviewed": "Reviewed",
       "sentByRenewal": "Sent by the renewal job"
     },
     "userCredits": {
