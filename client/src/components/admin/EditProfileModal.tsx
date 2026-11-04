@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
 import { AlertCircle, Building2, Clock, FileText, MapPin, Phone, Truck, UserRound } from "lucide-react";
 import api from "../../api/axios.js";
-import Modal from "../product/Modal.js";
+import Modal, { ModalBody, ModalFooter, ModalHeader, modalFormStyle } from "../product/Modal.js";
 import FormField, { inputStyle } from "../form/FormField.js";
 import RequiredHint from "../form/RequiredHint.js";
 import CitySelect from "../form/CitySelect.js";
@@ -35,6 +35,7 @@ type ProfileField =
 // login a name and a phone. The logo stays the user's.
 function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProps) {
   const { t } = useTranslation();
+  const titleId = useId();
   const isBusiness = user.role === "STORE" || user.role === "RESTAURANT";
   const isCompany = user.role === "COMPANY";
   const [values, setValues] = useState<Record<ProfileField, string>>({
@@ -93,80 +94,79 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
   };
 
   return (
-    <Modal onClose={onClose}>
-      <form ref={formRef} noValidate onSubmit={handleSubmit} className="max-h-[80vh] space-y-4 overflow-y-auto">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">{t("admin.userDetails.editProfileTitle")}</h2>
-          <p className="mt-1 text-sm text-gray-600">{t("admin.userDetails.editProfileText", { name })}</p>
-        </div>
+    <Modal onClose={onClose} labelledBy={titleId}>
+      <ModalHeader>
+        <h2 id={titleId} className="text-lg font-semibold text-gray-900">{t("admin.userDetails.editProfileTitle")}</h2>
+        <p className="mt-1 text-sm text-gray-600">{t("admin.userDetails.editProfileText", { name })}</p>
+      </ModalHeader>
+      <form ref={formRef} noValidate onSubmit={handleSubmit} className={modalFormStyle}>
+        <ModalBody className="space-y-4">
+          {error && (
+            <p className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {error}
+            </p>
+          )}
 
-        {error && (
-          <p className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            {error}
-          </p>
-        )}
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {fields.map(({ field, label, icon, wide, required }) => {
-            const setValue = (value: string) => setValues((current) => ({ ...current, [field]: value }));
-            return (
-              <div key={field} className={wide ? "sm:col-span-2" : undefined}>
-                <FormField label={label} icon={icon} required={required ?? false} error={errorFor(field)}>
-                  {field === "city_id" ? (
-                    <CitySelect
-                      value={values.city_id}
-                      onChange={setValue}
-                      emptyLabel={t("cities.choose")}
-                      onBlur={blur(field)}
-                      className={inputStyle}
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      value={values[field]}
-                      onChange={(e) => setValue(e.target.value)}
-                      onBlur={blur(field)}
-                      className={inputStyle}
-                    />
-                  )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {fields.map(({ field, label, icon, wide, required }) => {
+              const setValue = (value: string) => setValues((current) => ({ ...current, [field]: value }));
+              return (
+                <div key={field} className={wide ? "sm:col-span-2" : undefined}>
+                  <FormField label={label} icon={icon} required={required ?? false} error={errorFor(field)}>
+                    {field === "city_id" ? (
+                      <CitySelect
+                        value={values.city_id}
+                        onChange={setValue}
+                        emptyLabel={t("cities.choose")}
+                        onBlur={blur(field)}
+                        className={inputStyle}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={values[field]}
+                        onChange={(e) => setValue(e.target.value)}
+                        onBlur={blur(field)}
+                        className={inputStyle}
+                      />
+                    )}
+                  </FormField>
+                </div>
+              );
+            })}
+            {isBusiness && (
+              <div className="sm:col-span-2">
+                <FormField label={t("admin.userDetails.description")} icon={FileText}>
+                  <textarea
+                    value={values.description}
+                    onChange={(e) => setValues((current) => ({ ...current, description: e.target.value }))}
+                    rows={3}
+                    className={`${inputStyle} resize-none`}
+                  />
                 </FormField>
               </div>
-            );
-          })}
-          {isBusiness && (
-            <div className="sm:col-span-2">
-              <FormField label={t("admin.userDetails.description")} icon={FileText}>
-                <textarea
-                  value={values.description}
-                  onChange={(e) => setValues((current) => ({ ...current, description: e.target.value }))}
-                  rows={3}
-                  className={`${inputStyle} resize-none`}
-                />
-              </FormField>
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <RequiredHint />
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-            >
-              {t("admin.common.cancel")}
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="cursor-pointer rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-60"
-            >
-              {t("admin.userDetails.saveProfile")}
-            </button>
+            )}
           </div>
-        </div>
+          <RequiredHint />
+        </ModalBody>
+
+        <ModalFooter className="justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          >
+            {t("admin.common.cancel")}
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="cursor-pointer rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-60"
+          >
+            {t("admin.userDetails.saveProfile")}
+          </button>
+        </ModalFooter>
       </form>
     </Modal>
   );

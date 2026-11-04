@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { Clock, Scale } from "lucide-react";
 import api from "../../api/axios.js";
-import Modal from "./Modal.js";
+import Modal, { ModalBody, ModalFooter, ModalHeader, modalFormStyle } from "./Modal.js";
 import FormField, { inputStyle } from "../form/FormField.js";
 import RequiredHint from "../form/RequiredHint.js";
 import DateInput from "../form/DateInput.js";
@@ -33,6 +33,7 @@ interface ReserveProductModalProps {
 // Reservation form used by BrowseProducts, ProductDetails and StoreDetails.
 function ReserveProductModal({ product, storeLine, onClose, onReserved }: ReserveProductModalProps) {
   const { t } = useTranslation();
+  const titleId = useId();
   const [quantity, setQuantity] = useState("");
   // YYYY-MM-DD, and the time text (masked as HH:MM while typing, completed on blur).
   const [pickupDate, setPickupDate] = useState("");
@@ -108,90 +109,94 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
   };
 
   return (
-    <Modal onClose={onClose}>
-      <h3 className="mb-4 text-lg font-bold text-gray-900">
-        {t("myReservations.reservePopupTitle")}
-      </h3>
+    <Modal onClose={onClose} labelledBy={titleId}>
+      <ModalHeader>
+        <h3 id={titleId} className="text-lg font-bold text-gray-900">
+          {t("myReservations.reservePopupTitle")}
+        </h3>
+      </ModalHeader>
 
-      <div className="mb-5 flex items-center gap-3 rounded-xl bg-gray-50 p-3">
-        <img
-          src={CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES.Other}
-          alt={product.name}
-          className="h-14 w-14 shrink-0 rounded-lg object-cover"
-        />
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold text-gray-900">{product.name}</p>
-          {subtitle && <p className="truncate text-xs text-gray-500">{subtitle}</p>}
-          <p className="mt-0.5 text-sm">
-            <span className="font-semibold text-green-600">{product.discounted_price} KM</span>
-            <span className="text-gray-400"> · </span>
-            <span className="text-gray-600">
-              {t("product.available")}: {parseFloat(available)} {unit}
-            </span>
-          </p>
-        </div>
-      </div>
-
-      <form ref={formRef} noValidate onSubmit={handleReservation}>
-        <div className="space-y-4">
-          {/* First, so the calendar opening under the date does not cover the buttons. */}
-          <div className="grid grid-cols-2 gap-3">
-            <DateInput
-              label={t("myReservations.pickupDate")}
-              value={pickupDate}
-              onChange={setPickupDate}
-              min={minPickup}
-              max={maxPickup}
-              required
-              error={errorFor("pickupDate")}
-              onBlur={blur("pickupDate")}
+      <form ref={formRef} noValidate onSubmit={handleReservation} className={modalFormStyle}>
+        <ModalBody>
+          <div className="mb-5 flex items-center gap-3 rounded-xl bg-gray-50 p-3">
+            <img
+              src={CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES.Other}
+              alt={product.name}
+              className="h-14 w-14 shrink-0 rounded-lg object-cover"
             />
-            <FormField label={t("myReservations.pickupTime")} icon={Clock} required error={errorFor("pickupTime")}>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder={t("myReservations.timePlaceholder")}
-                maxLength={5}
-                value={pickupTime}
-                onChange={(e) => setPickupTime(formatTimeTyping(e.target.value, pickupTime))}
-                onBlur={() => {
-                  normalizeTime();
-                  blur("pickupTime")();
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    normalizeTime();
-                  }
-                }}
-                className={inputStyle}
-              />
-            </FormField>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-semibold text-gray-900">{product.name}</p>
+              {subtitle && <p className="truncate text-xs text-gray-500">{subtitle}</p>}
+              <p className="mt-0.5 text-sm">
+                <span className="font-semibold text-green-600">{product.discounted_price} KM</span>
+                <span className="text-gray-400"> · </span>
+                <span className="text-gray-600">
+                  {t("product.available")}: {parseFloat(available)} {unit}
+                </span>
+              </p>
+            </div>
           </div>
-          <FormField label={t("dashboard.quantity")} icon={Scale} suffix={unit} required error={errorFor("quantity")}>
-            <input
-              type="number"
-              inputMode="decimal"
-              min="0.01"
-              step="any"
-              max={available}
-              placeholder={`${t("myReservations.placeholderMax")}: ${parseFloat(available)}`}
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              onBlur={blur("quantity")}
-              className={`${inputStyle} pr-14`}
-            />
-          </FormField>
-          <RequiredHint />
-        </div>
 
-        {creditError ? (
-          <InsufficientCreditsNotice error={creditError} className="mt-4" />
-        ) : (
-          <CreditHint className="mt-4" />
-        )}
+            <div className="space-y-4">
+              {/* First, so the calendar opening under the date does not cover the buttons. */}
+              <div className="grid grid-cols-2 gap-3">
+                <DateInput
+                  label={t("myReservations.pickupDate")}
+                  value={pickupDate}
+                  onChange={setPickupDate}
+                  min={minPickup}
+                  max={maxPickup}
+                  required
+                  error={errorFor("pickupDate")}
+                  onBlur={blur("pickupDate")}
+                />
+                <FormField label={t("myReservations.pickupTime")} icon={Clock} required error={errorFor("pickupTime")}>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder={t("myReservations.timePlaceholder")}
+                    maxLength={5}
+                    value={pickupTime}
+                    onChange={(e) => setPickupTime(formatTimeTyping(e.target.value, pickupTime))}
+                    onBlur={() => {
+                      normalizeTime();
+                      blur("pickupTime")();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        normalizeTime();
+                      }
+                    }}
+                    className={inputStyle}
+                  />
+                </FormField>
+              </div>
+              <FormField label={t("dashboard.quantity")} icon={Scale} suffix={unit} required error={errorFor("quantity")}>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0.01"
+                  step="any"
+                  max={available}
+                  placeholder={`${t("myReservations.placeholderMax")}: ${parseFloat(available)}`}
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  onBlur={blur("quantity")}
+                  className={`${inputStyle} pr-14`}
+                />
+              </FormField>
+              <RequiredHint />
+            </div>
 
-        <div className="mt-6 flex gap-2">
+            {creditError ? (
+              <InsufficientCreditsNotice error={creditError} className="mt-4" />
+            ) : (
+              <CreditHint className="mt-4" />
+            )}
+        </ModalBody>
+
+        <ModalFooter className="pt-6">
           <button
             type="button"
             onClick={onClose}
@@ -206,7 +211,7 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
           >
             {t("myReservations.confirmButton")}
           </button>
-        </div>
+        </ModalFooter>
       </form>
     </Modal>
   );

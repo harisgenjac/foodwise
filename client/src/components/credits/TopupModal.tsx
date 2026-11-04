@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import api from "../../api/axios.js";
-import Modal from "../product/Modal.js";
+import Modal, { ModalBody, ModalFooter, ModalHeader } from "../product/Modal.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
 import type { Role, TopupPackage } from "../../types/index.js";
 
@@ -34,6 +34,7 @@ function TopupModal({
   toCompany = null,
 }: TopupModalProps) {
   const { t } = useTranslation();
+  const titleId = useId();
   const [sending, setSending] = useState(false);
 
   const send = async () => {
@@ -52,33 +53,37 @@ function TopupModal({
   };
 
   return (
-    <Modal onClose={onClose}>
-      <h3 className="text-lg font-bold text-gray-900">
-        {branchName
-          ? t("credits.topupModal.titleForBranch", {
-              credits: t("credits.profile.creditsCount", { count: topup.credits }),
-              branch: branchName,
-            })
-          : t(toCompany ? "credits.topupModal.titleToCompany" : "credits.topupModal.title", {
-              credits: t("credits.profile.creditsCount", { count: topup.credits }),
-            })}
-      </h3>
-      <p className="mt-1 text-sm text-gray-500">{t("credits.profile.price", { price: topup.price })}</p>
+    <Modal onClose={onClose} labelledBy={titleId}>
+      <ModalHeader>
+        <h3 id={titleId} className="text-lg font-bold text-gray-900">
+          {branchName
+            ? t("credits.topupModal.titleForBranch", {
+                credits: t("credits.profile.creditsCount", { count: topup.credits }),
+                branch: branchName,
+              })
+            : t(toCompany ? "credits.topupModal.titleToCompany" : "credits.topupModal.title", {
+                credits: t("credits.profile.creditsCount", { count: topup.credits }),
+              })}
+        </h3>
+        <p className="mt-1 text-sm text-gray-500">{t("credits.profile.price", { price: topup.price })}</p>
+      </ModalHeader>
 
-      <div className="mt-4 space-y-3 rounded-xl bg-gray-50 p-4 text-sm text-gray-700">
-        <div>
-          <p className="font-semibold text-gray-900">{t("credits.topupModal.whatTitle")}</p>
-          <p>{t("credits.topupModal.what")}</p>
+      <ModalBody>
+        <div className="space-y-3 rounded-xl bg-gray-50 p-4 text-sm text-gray-700">
+          <div>
+            <p className="font-semibold text-gray-900">{t("credits.topupModal.whatTitle")}</p>
+            <p>{t("credits.topupModal.what")}</p>
+          </div>
+          <p>{t(role === "STORE" ? "credits.modal.chargeStore" : "credits.modal.chargeRestaurant")}</p>
+          <p>{t("credits.topupModal.expiry", { date: formatDisplayDate(periodEnd) })}</p>
         </div>
-        <p>{t(role === "STORE" ? "credits.modal.chargeStore" : "credits.modal.chargeRestaurant")}</p>
-        <p>{t("credits.topupModal.expiry", { date: formatDisplayDate(periodEnd) })}</p>
-      </div>
 
-      <p className="mt-4 text-xs text-gray-500">
-        {toCompany ? t("credits.topupModal.paymentByCompany", { company: toCompany }) : t("credits.modal.payment")}
-      </p>
+        <p className="mt-4 text-xs text-gray-500">
+          {toCompany ? t("credits.topupModal.paymentByCompany", { company: toCompany }) : t("credits.modal.payment")}
+        </p>
+      </ModalBody>
 
-      <div className="mt-5 flex gap-2">
+      <ModalFooter>
         <button
           type="button"
           onClick={onClose}
@@ -94,7 +99,7 @@ function TopupModal({
         >
           {t("credits.modal.submit")}
         </button>
-      </div>
+      </ModalFooter>
     </Modal>
   );
 }

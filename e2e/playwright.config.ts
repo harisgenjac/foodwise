@@ -42,6 +42,14 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
       dependencies: ["setup"],
     },
+    // Safari on an iPhone (WebKit with the iPhone's user agent, touch and mobile viewport rules),
+    // for the phone layout only. The spec sets its own viewport sizes.
+    {
+      name: "webkit-iphone",
+      use: { ...devices["iPhone 13"] },
+      testMatch: /mobile-layout\.spec\.ts/,
+      dependencies: ["setup"],
+    },
   ],
   // Playwright starts these before globalSetup, so the backend migrates before it starts and
   // globalSetup seeds afterwards. Both are built fresh every run on their own ports (dev uses

@@ -174,7 +174,7 @@ foodwise/
 
 ## E2E tests
 
-Playwright tests in `e2e/` run the built frontend in Chromium against the real API, on a separate database `food_saver_e2e_db` that is emptied and seeded on every run. One-time setup: create that database and `e2e/.env.e2e` (contents in [`docs/e2e.md`](docs/e2e.md)), then `cd e2e && npx playwright install chromium`. Run one file with `npm run e2e -- tests/<file>.spec.ts` or open the UI mode with `npm run e2e:ui`. The full suite runs in CI.
+Playwright tests in `e2e/` run the built frontend in Chromium (and the phone layout spec also in WebKit with iPhone emulation) against the real API, on a separate database `food_saver_e2e_db` that is emptied and seeded on every run. One-time setup: create that database and `e2e/.env.e2e` (contents in [`docs/e2e.md`](docs/e2e.md)), then `cd e2e && npx playwright install chromium webkit`. Run one file with `npm run e2e -- tests/<file>.spec.ts` or open the UI mode with `npm run e2e:ui`. The full suite runs in CI.
 
 ## CI
 

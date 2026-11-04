@@ -1,1 +1,12 @@
 @import "tailwindcss";
+
+/* A scrolling area that shows a soft shadow at an edge while there is more content past it
+   (ModalBody). The white covers scroll with the content (local) and hide the shadows (scroll)
+   once an end is reached. */
+@utility scroll-shadows {
+  background:
+    linear-gradient(white 30%, rgb(255 255 255 / 0)) center top / 100% 2.5rem no-repeat local,
+    linear-gradient(rgb(255 255 255 / 0), white 70%) center bottom / 100% 2.5rem no-repeat local,
+    radial-gradient(farthest-side at 50% 0, rgb(0 0 0 / 0.12), rgb(0 0 0 / 0)) center top / 100% 0.75rem no-repeat scroll,
+    radial-gradient(farthest-side at 50% 100%, rgb(0 0 0 / 0.12), rgb(0 0 0 / 0)) center bottom / 100% 0.75rem no-repeat scroll;
+}

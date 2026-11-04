@@ -136,6 +136,11 @@ describe("SubscriptionSection", () => {
 
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveTextContent(t("credits.modal.chargeStore"));
+    // The explanation scrolls in the shared body (no inner scroll box of its own); the buttons stay outside it.
+    const body = within(dialog).getByTestId("modal-body");
+    expect(body).toHaveTextContent(t("credits.modal.chargeStore"));
+    expect(dialog.querySelector(".max-h-64")).toBeNull();
+    expect(body).not.toContainElement(within(dialog).getByRole("button", { name: t("credits.modal.submit") }));
     expect(within(dialog).getByRole("button", { name: t("credits.profile.autoRenewTooltip") })).toBeInTheDocument();
     await userEvent.click(within(dialog).getByLabelText(t("credits.modal.autoRenew")));
     await userEvent.click(within(dialog).getByRole("button", { name: t("credits.modal.submit") }));

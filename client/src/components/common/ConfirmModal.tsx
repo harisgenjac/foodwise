@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import Modal from "../product/Modal.js";
+import Modal, { ModalBody, ModalFooter, ModalHeader, modalFormStyle } from "../product/Modal.js";
 import FormField from "../form/FormField.js";
 import RequiredHint from "../form/RequiredHint.js";
 import { useFormValidation } from "../../hooks/useFormValidation.js";
@@ -72,38 +72,40 @@ function ConfirmModal({
 
   return (
     <Modal onClose={onClose} labelledBy={titleId}>
-      <form ref={formRef} noValidate onSubmit={handleSubmit}>
-        <div className="flex flex-col items-center text-center">
-          <span className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${styles.icon}`}>
-            <Icon className="h-6 w-6" strokeWidth={1.8} />
-          </span>
-          <h3 id={titleId} className="text-lg font-bold text-gray-900">
-            {title}
-          </h3>
-          <div className="mt-1 text-sm text-gray-500">{message}</div>
-        </div>
+      <ModalHeader className="flex flex-col items-center text-center">
+        <span className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${styles.icon}`}>
+          <Icon className="h-6 w-6" strokeWidth={1.8} />
+        </span>
+        <h3 id={titleId} className="text-lg font-bold text-gray-900">
+          {title}
+        </h3>
+      </ModalHeader>
+      <form ref={formRef} noValidate onSubmit={handleSubmit} className={modalFormStyle}>
+        <ModalBody className="pt-1">
+          <div className="text-center text-sm text-gray-500">{message}</div>
 
-        {children}
+          {children}
 
-        {askReason && (
-          <div className="mt-5">
-            <FormField label={t("admin.common.reasonLabel")} required error={reasonError}>
-              <textarea
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                onBlur={blur("reason")}
-                maxLength={MAX_REASON_LENGTH}
-                rows={3}
-                placeholder={t("admin.common.reasonPlaceholder")}
-                className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-base text-gray-900 sm:text-sm placeholder:text-gray-400 focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100"
-              />
-            </FormField>
-            {!reasonError && <p className="mt-1 text-xs text-gray-500">{t("admin.common.reasonHint")}</p>}
-            <RequiredHint className="mt-1" />
-          </div>
-        )}
+          {askReason && (
+            <div className="mt-5">
+              <FormField label={t("admin.common.reasonLabel")} required error={reasonError}>
+                <textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  onBlur={blur("reason")}
+                  maxLength={MAX_REASON_LENGTH}
+                  rows={3}
+                  placeholder={t("admin.common.reasonPlaceholder")}
+                  className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-base text-gray-900 sm:text-sm placeholder:text-gray-400 focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100"
+                />
+              </FormField>
+              {!reasonError && <p className="mt-1 text-xs text-gray-500">{t("admin.common.reasonHint")}</p>}
+              <RequiredHint className="mt-1" />
+            </div>
+          )}
+        </ModalBody>
 
-        <div className="mt-6 flex gap-2">
+        <ModalFooter className="pt-6">
           <button
             type="button"
             onClick={onClose}
@@ -120,7 +122,7 @@ function ConfirmModal({
           >
             {confirmLabel}
           </button>
-        </div>
+        </ModalFooter>
       </form>
     </Modal>
   );

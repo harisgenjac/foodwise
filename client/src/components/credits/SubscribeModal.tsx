@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import api from "../../api/axios.js";
-import Modal from "../product/Modal.js";
+import Modal, { ModalBody, ModalFooter, ModalHeader } from "../product/Modal.js";
 import AutoRenewTooltip from "./AutoRenewTooltip.js";
 import { formatCreditMonth } from "../../utils/credits.js";
 import type { Plan, Role } from "../../types/index.js";
@@ -37,6 +37,7 @@ function SubscribeModal({
   branchName,
 }: SubscribeModalProps) {
   const { t } = useTranslation();
+  const titleId = useId();
   const [autoRenew, setAutoRenew] = useState(false);
   const [sending, setSending] = useState(false);
   const monthNames = t("dashboard.months", { returnObjects: true }) as string[];
@@ -63,54 +64,60 @@ function SubscribeModal({
   };
 
   return (
-    <Modal onClose={onClose}>
-      <h3 className="text-lg font-bold text-gray-900">{branchName
-          ? t("credits.modal.titleForBranch", { plan: plan.name, branch: branchName })
-          : t("credits.modal.title", { plan: plan.name })}</h3>
-      <p className="mt-1 text-sm text-gray-500">
-        {t("credits.profile.planCredits", { count: plan.credits_per_period })} · {plan.price} KM
-      </p>
+    <Modal onClose={onClose} labelledBy={titleId}>
+      <ModalHeader>
+        <h3 id={titleId} className="text-lg font-bold text-gray-900">
+          {branchName
+            ? t("credits.modal.titleForBranch", { plan: plan.name, branch: branchName })
+            : t("credits.modal.title", { plan: plan.name })}
+        </h3>
+        <p className="mt-1 text-sm text-gray-500">
+          {t("credits.profile.planCredits", { count: plan.credits_per_period })} · {plan.price} KM
+        </p>
+      </ModalHeader>
 
-      <div className="mt-4 max-h-64 space-y-3 overflow-y-auto rounded-xl bg-gray-50 p-4 text-sm text-gray-700">
-        <div>
-          <p className="font-semibold text-gray-900">{t("credits.modal.whatTitle")}</p>
-          <p>{t(isStore ? "credits.modal.chargeStore" : "credits.modal.chargeRestaurant")}</p>
+      <ModalBody>
+        <div className="space-y-3 rounded-xl bg-gray-50 p-4 text-sm text-gray-700">
+          <div>
+            <p className="font-semibold text-gray-900">{t("credits.modal.whatTitle")}</p>
+            <p>{t(isStore ? "credits.modal.chargeStore" : "credits.modal.chargeRestaurant")}</p>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900">{t("credits.modal.refundTitle")}</p>
+            <p>{t(isStore ? "credits.modal.refundStore" : "credits.modal.refundRestaurant")}</p>
+          </div>
+          <p>{t("credits.modal.expiry")}</p>
+          <p>{t("credits.modal.balance")}</p>
         </div>
-        <div>
-          <p className="font-semibold text-gray-900">{t("credits.modal.refundTitle")}</p>
-          <p>{t(isStore ? "credits.modal.refundStore" : "credits.modal.refundRestaurant")}</p>
-        </div>
-        <p>{t("credits.modal.expiry")}</p>
-        <p>{t("credits.modal.balance")}</p>
-      </div>
 
-      <p className="mt-4 text-sm text-gray-700">
-        {t(period === "current" ? "credits.modal.forCurrent" : "credits.modal.forNext", {
-          month: formatCreditMonth(month, monthNames),
-        })}
-      </p>
-      {period === "current" && monthStarted && (
-        <p className="mt-1 text-xs text-amber-700">{t("credits.modal.smallerPlanHint")}</p>
-      )}
+        <p className="mt-4 text-sm text-gray-700">
+          {t(period === "current" ? "credits.modal.forCurrent" : "credits.modal.forNext", {
+            month: formatCreditMonth(month, monthNames),
+          })}
+        </p>
+        {period === "current" && monthStarted && (
+          <p className="mt-1 text-xs text-amber-700">{t("credits.modal.smallerPlanHint")}</p>
+        )}
 
-      <fieldset className="mt-3 space-y-2">
-        <legend className="sr-only">{t("credits.profile.autoRenew")}</legend>
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-800">
-          <input type="radio" name="renewal" checked={!autoRenew} onChange={() => setAutoRenew(false)} />
-          {t("credits.modal.thisMonthOnly")}
-        </label>
-        <div className="flex items-center gap-2">
+        <fieldset className="mt-3 space-y-2">
+          <legend className="sr-only">{t("credits.profile.autoRenew")}</legend>
           <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-800">
-            <input type="radio" name="renewal" checked={autoRenew} onChange={() => setAutoRenew(true)} />
-            {t("credits.modal.autoRenew")}
+            <input type="radio" name="renewal" checked={!autoRenew} onChange={() => setAutoRenew(false)} />
+            {t("credits.modal.thisMonthOnly")}
           </label>
-          <AutoRenewTooltip />
-        </div>
-      </fieldset>
+          <div className="flex items-center gap-2">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-800">
+              <input type="radio" name="renewal" checked={autoRenew} onChange={() => setAutoRenew(true)} />
+              {t("credits.modal.autoRenew")}
+            </label>
+            <AutoRenewTooltip />
+          </div>
+        </fieldset>
 
-      <p className="mt-4 text-xs text-gray-500">{t("credits.modal.payment")}</p>
+        <p className="mt-4 text-xs text-gray-500">{t("credits.modal.payment")}</p>
+      </ModalBody>
 
-      <div className="mt-5 flex gap-2">
+      <ModalFooter>
         <button
           type="button"
           onClick={onClose}
@@ -126,7 +133,7 @@ function SubscribeModal({
         >
           {t("credits.modal.submit")}
         </button>
-      </div>
+      </ModalFooter>
     </Modal>
   );
 }

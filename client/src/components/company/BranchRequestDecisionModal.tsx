@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import api from "../../api/axios.js";
-import Modal from "../product/Modal.js";
+import Modal, { ModalBody, ModalFooter, ModalHeader } from "../product/Modal.js";
 import { inputStyle } from "../form/FormField.js";
 import { describeCreditRequest } from "../../utils/credits.js";
 import type { CreditRequest } from "../../types/index.js";
@@ -43,31 +43,35 @@ function BranchRequestDecisionModal({ request, action, onClose, onDone }: Branch
 
   return (
     <Modal onClose={onClose} labelledBy="branch-request-decision">
-      <h3 id="branch-request-decision" className="text-lg font-bold text-gray-900">
-        {t(approve ? "company.credits.approveTitle" : "company.credits.rejectTitle")}
-      </h3>
-      <p className="mt-2 text-sm text-gray-600">
-        {t(approve ? "company.credits.approveText" : "company.credits.rejectText", {
-          branch: request.branch_name ?? "",
-          what: `${describeCreditRequest(request, t)} · ${t("credits.profile.price", { price: request.price })}`,
-        })}
-      </p>
-      {!approve && (
-        <>
-          <label className="mt-4 block text-sm font-medium text-gray-700">
-            {t("company.credits.note")}
-            <textarea
-              rows={3}
-              maxLength={MAX_NOTE_LENGTH}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className={`${inputStyle} mt-1.5 resize-none`}
-            />
-          </label>
-          <p className="mt-1 text-xs text-gray-500">{t("company.credits.noteHint")}</p>
-        </>
-      )}
-      <div className="mt-5 flex gap-2">
+      <ModalHeader>
+        <h3 id="branch-request-decision" className="text-lg font-bold text-gray-900">
+          {t(approve ? "company.credits.approveTitle" : "company.credits.rejectTitle")}
+        </h3>
+      </ModalHeader>
+      <ModalBody className="pt-2">
+        <p className="text-sm text-gray-600">
+          {t(approve ? "company.credits.approveText" : "company.credits.rejectText", {
+            branch: request.branch_name ?? "",
+            what: `${describeCreditRequest(request, t)} · ${t("credits.profile.price", { price: request.price })}`,
+          })}
+        </p>
+        {!approve && (
+          <>
+            <label className="mt-4 block text-sm font-medium text-gray-700">
+              {t("company.credits.note")}
+              <textarea
+                rows={3}
+                maxLength={MAX_NOTE_LENGTH}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className={`${inputStyle} mt-1.5 resize-none`}
+              />
+            </label>
+            <p className="mt-1 text-xs text-gray-500">{t("company.credits.noteHint")}</p>
+          </>
+        )}
+      </ModalBody>
+      <ModalFooter>
         <button
           type="button"
           onClick={onClose}
@@ -85,7 +89,7 @@ function BranchRequestDecisionModal({ request, action, onClose, onDone }: Branch
         >
           {t(approve ? "company.credits.approve" : "company.credits.reject")}
         </button>
-      </div>
+      </ModalFooter>
     </Modal>
   );
 }
