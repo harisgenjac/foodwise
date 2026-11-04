@@ -154,11 +154,28 @@ describe("CompanyCreditsPage", () => {
   it("turns a branch's auto-renew off", async () => {
     apiMock.patch.mockResolvedValue({ data: { message: "Auto-renew turned off." } });
     renderPage();
-    const toggle = await screen.findByRole("switch", { name: t("company.credits.autoRenewFor", { branch: "Bingo Visoko" }) });
+    // jsdom renders both the table (md up) and the phone cards; this uses the table.
+    const table = await screen.findByRole("table", { name: t("company.credits.branchesTitle") });
+    const toggle = within(table).getByRole("switch", { name: t("company.credits.autoRenewFor", { branch: "Bingo Visoko" }) });
     expect(toggle).toBeChecked();
-    expect(screen.getByRole("switch", { name: t("company.credits.autoRenewFor", { branch: "Bingo Kakanj" }) })).toBeDisabled();
+    expect(within(table).getByRole("switch", { name: t("company.credits.autoRenewFor", { branch: "Bingo Kakanj" }) })).toBeDisabled();
     await userEvent.click(toggle);
     expect(apiMock.patch).toHaveBeenCalledWith("/company/branches/21/credits/auto-renew", { auto_renew: false });
+  });
+
+  it("shows each branch as a card on phones, with the plan, usage, auto-renew and full-width actions", async () => {
+    renderPage();
+    const card = within((await screen.findAllByTestId("data-card"))[0]!);
+    expect(card.getByRole("link", { name: "Bingo Visoko" })).toHaveAttribute("href", "/company/branches/21");
+    expect(card.getAllByRole("term").map((term) => term.textContent)).toEqual([
+      t("company.credits.columnPlan"),
+      t("company.credits.columnUsage"),
+      t("company.credits.columnNextMonth"),
+      t("company.credits.columnAutoRenew"),
+    ]);
+    expect(card.getByRole("switch", { name: t("company.credits.autoRenewFor", { branch: "Bingo Visoko" }) })).toBeChecked();
+    expect(card.getByRole("button", { name: t("company.credits.choosePlan") })).toHaveClass("min-h-11", "flex-1");
+    expect(card.getByRole("button", { name: t("company.credits.addCredits") })).toHaveClass("min-h-11", "flex-1");
   });
 
   it("approves and rejects the branches' top-up requests", async () => {

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowUpDown } from "lucide-react";
-import SortableHeader from "./SortableHeader.js";
+import SortableHeader from "../admin/SortableHeader.js";
 import { FilterField } from "../product/FilterBar.js";
 import { inputStyle } from "../form/FormField.js";
 import type { SortDir } from "../../hooks/useAdminPage.js";
@@ -31,6 +31,8 @@ export interface DataColumn<T> {
   cardCell?: (row: T) => ReactNode;
   // Not a column of the table, only part of the card.
   cardOnly?: boolean;
+  // A field whose value needs the card's width (a usage bar, a list): the label above the value.
+  cardStacked?: boolean;
 }
 
 export interface DataTableSort {
@@ -52,6 +54,17 @@ interface DataTableProps<T> {
   rowClassName?: string;
   // Names the table and the card list for screen readers and tests.
   label: string;
+  // Classes of the outer element (e.g. its margin).
+  className?: string;
+  // Inside a white section card (company pages, UserCreditsPanel): the table has no frame of its own,
+  // and the phone cards are lighter (no shadow). The table classes below then follow the page.
+  embedded?: boolean;
+  // The table's classes, when the page's table differs from the admin lists.
+  theadClassName?: string;
+  headCellClassName?: string;
+  bodyCellClassName?: string;
+  // data-testid of each table row and card (the row's own id, for tests).
+  rowTestId?: (row: T) => string;
 }
 
 const isEmpty = (content: ReactNode) => content === null || content === undefined || content === false || content === "";
@@ -60,7 +73,23 @@ const isEmpty = (content: ReactNode) => content === null || content === undefine
 // (the title, a status pill top right, label/value rows and full-width action buttons), so no column
 // hides off-screen on a phone. A sortable table also gets a "Sort by" select above the cards, using
 // the same URL params as the header buttons. Pagination stays the page's own, under this.
-function DataTable<T>({ rows, columns, rowKey, sort, rowHref, rowClassName = "", label }: DataTableProps<T>) {
+function DataTable<T>({
+  rows,
+  columns,
+  rowKey,
+  sort,
+  rowHref,
+  rowClassName = "",
+  label,
+  className = "",
+  embedded = false,
+  theadClassName = embedded
+    ? "border-b border-gray-100 text-xs font-semibold uppercase tracking-wider text-gray-500"
+    : "border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500",
+  headCellClassName = embedded ? "px-3 py-2" : "px-4 py-3",
+  bodyCellClassName = embedded ? "px-3 py-3" : "px-4 py-3",
+  rowTestId,
+}: DataTableProps<T>) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const tableColumns = columns.filter((column) => !column.cardOnly);
@@ -69,11 +98,13 @@ function DataTable<T>({ rows, columns, rowKey, sort, rowHref, rowClassName = "",
   const cardContent = (column: DataColumn<T>, row: T) => (column.cardCell ?? column.cell)(row);
 
   return (
-    <>
+    <div className={className}>
       {/* From md up: the table. */}
-      <div className="hidden overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm md:block">
+      <div
+        className={`hidden overflow-x-auto md:block ${embedded ? "" : "rounded-2xl border border-gray-100 bg-white shadow-sm"}`}
+      >
         <table aria-label={label} className="w-full text-left text-sm">
-          <thead className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
+          <thead className={theadClassName}>
             <tr>
               {tableColumns.map((column) =>
                 column.sortKey && sort ? (
@@ -84,10 +115,10 @@ function DataTable<T>({ rows, columns, rowKey, sort, rowHref, rowClassName = "",
                     sort={sort.sort}
                     dir={sort.dir}
                     onSort={sort.onSort}
-                    className={`px-4 py-3 ${column.className ?? ""}`}
+                    className={`${headCellClassName} ${column.className ?? ""}`}
                   />
                 ) : (
-                  <th key={column.id} className={`px-4 py-3 ${column.className ?? ""}`}>
+                  <th key={column.id} className={`${headCellClassName} ${column.className ?? ""}`}>
                     {column.header}
                   </th>
                 ),
@@ -98,11 +129,12 @@ function DataTable<T>({ rows, columns, rowKey, sort, rowHref, rowClassName = "",
             {rows.map((row) => (
               <tr
                 key={rowKey(row)}
+                data-testid={rowTestId?.(row)}
                 onClick={rowHref ? () => navigate(rowHref(row)) : undefined}
                 className={`${rowHref ? "cursor-pointer transition-colors hover:bg-gray-50" : ""} ${rowClassName}`}
               >
                 {tableColumns.map((column) => (
-                  <td key={column.id} className={`px-4 py-3 ${column.className ?? ""} ${column.cellClassName ?? ""}`}>
+                  <td key={column.id} className={`${bodyCellClassName} ${column.className ?? ""} ${column.cellClassName ?? ""}`}>
                     {column.cell(row)}
                   </td>
                 ))}
@@ -153,11 +185,12 @@ function DataTable<T>({ rows, columns, rowKey, sort, rowHref, rowClassName = "",
               .map((column) => ({ column, content: cardContent(column, row) }))
               .filter(({ content }) => !isEmpty(content));
             const href = rowHref?.(row);
+            const statusContent = status ? cardContent(status, row) : null;
             return (
               <li
                 key={rowKey(row)}
                 data-testid="data-card"
-                className={`relative rounded-2xl border border-gray-100 bg-white p-4 shadow-sm ${href ? "transition-colors hover:bg-gray-50" : ""}`}
+                className={`relative rounded-2xl border border-gray-100 bg-white p-4 ${embedded ? "" : "shadow-sm"} ${href ? "transition-colors hover:bg-gray-50" : ""}`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1 text-sm">
@@ -171,16 +204,23 @@ function DataTable<T>({ rows, columns, rowKey, sort, rowHref, rowClassName = "",
                         cardContent(title, row)
                       ))}
                   </div>
-                  {status && <div className="relative shrink-0">{cardContent(status, row)}</div>}
+                  {!isEmpty(statusContent) && <div className="relative shrink-0">{statusContent}</div>}
                 </div>
                 {fields.length > 0 && (
                   <dl className="mt-3 space-y-1.5 border-t border-gray-100 pt-3 text-sm">
-                    {fields.map(({ column, content }) => (
-                      <div key={column.id} className="flex items-baseline justify-between gap-3">
-                        <dt className="shrink-0 text-gray-500">{column.header}</dt>
-                        <dd className="relative min-w-0 text-right text-gray-800">{content}</dd>
-                      </div>
-                    ))}
+                    {fields.map(({ column, content }) =>
+                      column.cardStacked ? (
+                        <div key={column.id}>
+                          <dt className="text-gray-500">{column.header}</dt>
+                          <dd className="relative mt-1 text-gray-800">{content}</dd>
+                        </div>
+                      ) : (
+                        <div key={column.id} className="flex items-baseline justify-between gap-3">
+                          <dt className="shrink-0 text-gray-500">{column.header}</dt>
+                          <dd className="relative min-w-0 text-right text-gray-800">{content}</dd>
+                        </div>
+                      ),
+                    )}
                   </dl>
                 )}
                 {actions.length > 0 && (
@@ -195,7 +235,7 @@ function DataTable<T>({ rows, columns, rowKey, sort, rowHref, rowClassName = "",
           })}
         </ul>
       </div>
-    </>
+    </div>
   );
 }
 

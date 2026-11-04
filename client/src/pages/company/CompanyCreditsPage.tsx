@@ -12,6 +12,7 @@ import LoadMore from "../../components/LoadMore.js";
 import UsageBar from "../../components/credits/UsageBar.js";
 import AutoRenewSwitch from "../../components/credits/AutoRenewSwitch.js";
 import BranchCreditActions from "../../components/company/BranchCreditActions.js";
+import DataTable, { type DataColumn } from "../../components/common/DataTable.js";
 import BranchRequestDecisionModal from "../../components/company/BranchRequestDecisionModal.js";
 import { usePagedLimit } from "../../hooks/usePagedLimit.js";
 import { LIST_PAGE_SIZE } from "../../utils/pagination.js";
@@ -132,6 +133,125 @@ function CompanyCreditsPage() {
   }
 
   const { totals } = overview;
+  type Branch = (typeof overview.branches)[number];
+  const statusPill = (branch: Branch, extra = "") =>
+    branch.status !== "active" && (
+      <span className={`${extra}rounded-full px-2 py-0.5 text-xs font-semibold ${BRANCH_STATUS_STYLES[branch.status]}`}>
+        {t(`company.branchStatus.${branch.status}`)}
+      </span>
+    );
+  const openRequests = (branch: Branch) =>
+    branch.open_requests.length > 0 &&
+    branch.open_requests.map((request) => (
+      <p key={request.id} className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+        <span className={`rounded-full px-2 py-0.5 font-semibold ${CREDIT_REQUEST_STATUS_STYLES[request.status]}`}>
+          {requestStatuses[request.status] || request.status}
+        </span>
+        {requestTypes[request.request_type]} · {describeCreditRequest(request, t)} ·{" "}
+        {formatCreditMonth(request.period_month, monthNames)}
+        {request.status === "PENDING" && (
+          <button
+            type="button"
+            onClick={() => withdraw(request)}
+            disabled={busy}
+            className="cursor-pointer font-medium text-amber-800 hover:underline disabled:opacity-60"
+          >
+            {t("credits.profile.withdraw")}
+          </button>
+        )}
+      </p>
+    ));
+  const branchLink = (branch: Branch) => (
+    <Link to={`/company/branches/${branch.id}`} className="font-medium text-gray-900 hover:text-orange-600">
+      {branch.business_name}
+    </Link>
+  );
+  const actions = (branch: Branch, card: boolean) => (
+    <BranchCreditActions
+      compact={!card}
+      card={card}
+      branch={{
+        id: branch.id,
+        name: branch.business_name,
+        deactivated: branch.status === "deactivated",
+        hasSubscription: branch.has_subscription,
+        hasNextSubscription: branch.next_plan_name !== null,
+        openRequests: branch.open_requests,
+      }}
+      periodStart={overview.periodStart}
+      periodEnd={overview.periodEnd}
+      onChanged={reload}
+    />
+  );
+  // Phone cards: the branch, its status when it is not active, the plan, the usage, next month's
+  // plan, auto-renew and the open requests, with Choose plan and Add credits at the bottom.
+  const columns: DataColumn<Branch>[] = [
+    {
+      id: "branch",
+      header: t("company.credits.columnBranch"),
+      card: "title",
+      cell: (branch) => (
+        <>
+          {branchLink(branch)}
+          {statusPill(branch, "ml-2 ")}
+          {openRequests(branch)}
+        </>
+      ),
+      cardCell: branchLink,
+    },
+    { id: "status", header: "", cardOnly: true, card: "status", cell: (branch) => statusPill(branch) },
+    {
+      id: "plan",
+      header: t("company.credits.columnPlan"),
+      cell: (branch) =>
+        branch.has_subscription ? (
+          <span className="font-medium text-gray-800">{branch.plan_name}</span>
+        ) : (
+          <span className="text-gray-400">{t("company.credits.noPlan")}</span>
+        ),
+    },
+    {
+      id: "usage",
+      header: t("company.credits.columnUsage"),
+      cellClassName: "min-w-40",
+      cardStacked: true,
+      cell: (branch) => (
+        <UsageBar
+          used={branch.used}
+          total={branch.total}
+          label={t("company.credits.branchUsage", { branch: branch.business_name })}
+        />
+      ),
+    },
+    {
+      id: "next",
+      header: t("company.credits.columnNextMonth"),
+      className: "hidden md:table-cell",
+      cellClassName: "text-gray-700",
+      cell: (branch) => branch.next_plan_name ?? <span className="text-gray-400">{t("company.credits.noPlan")}</span>,
+    },
+    {
+      id: "autoRenew",
+      header: t("company.credits.columnAutoRenew"),
+      cell: (branch) => (
+        <AutoRenewSwitch
+          checked={Boolean(branch.auto_renew)}
+          onChange={() => toggleAutoRenew(branch)}
+          disabled={busy || !branch.has_subscription || branch.status === "deactivated"}
+          label={t("company.credits.autoRenewFor", { branch: branch.business_name })}
+          hideLabel
+        />
+      ),
+    },
+    {
+      id: "requests",
+      header: t("company.credits.columnRequests"),
+      cardOnly: true,
+      cardStacked: true,
+      cell: openRequests,
+    },
+    { id: "actions", header: "", card: "actions", cell: (branch) => actions(branch, false), cardCell: (branch) => actions(branch, true) },
+  ];
   const tiles = [
     [t("company.credits.totalCredits"), String(totals.total)],
     [t("company.credits.usedCredits"), String(totals.used)],
@@ -177,97 +297,16 @@ function CompanyCreditsPage() {
         {overview.branches.length === 0 ? (
           <p className="mt-4 text-sm text-gray-500">{t("company.credits.noBranches")}</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-gray-100 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                <tr>
-                  <th className="px-3 py-2">{t("company.credits.columnBranch")}</th>
-                  <th className="px-3 py-2">{t("company.credits.columnPlan")}</th>
-                  <th className="px-3 py-2">{t("company.credits.columnUsage")}</th>
-                  <th className="hidden px-3 py-2 md:table-cell">{t("company.credits.columnNextMonth")}</th>
-                  <th className="px-3 py-2">{t("company.credits.columnAutoRenew")}</th>
-                  <th className="px-3 py-2" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {overview.branches.map((branch) => (
-                  <tr key={branch.id} className="align-top" data-testid={`branch-credits-${branch.id}`}>
-                    <td className="px-3 py-3">
-                      <Link to={`/company/branches/${branch.id}`} className="font-medium text-gray-900 hover:text-orange-600">
-                        {branch.business_name}
-                      </Link>
-                      {branch.status !== "active" && (
-                        <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-semibold ${BRANCH_STATUS_STYLES[branch.status]}`}>
-                          {t(`company.branchStatus.${branch.status}`)}
-                        </span>
-                      )}
-                      {branch.open_requests.map((request) => (
-                        <p key={request.id} className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                          <span className={`rounded-full px-2 py-0.5 font-semibold ${CREDIT_REQUEST_STATUS_STYLES[request.status]}`}>
-                            {requestStatuses[request.status] || request.status}
-                          </span>
-                          {requestTypes[request.request_type]} · {describeCreditRequest(request, t)} ·{" "}
-                          {formatCreditMonth(request.period_month, monthNames)}
-                          {request.status === "PENDING" && (
-                            <button
-                              type="button"
-                              onClick={() => withdraw(request)}
-                              disabled={busy}
-                              className="cursor-pointer font-medium text-amber-800 hover:underline disabled:opacity-60"
-                            >
-                              {t("credits.profile.withdraw")}
-                            </button>
-                          )}
-                        </p>
-                      ))}
-                    </td>
-                    <td className="px-3 py-3">
-                      {branch.has_subscription ? (
-                        <span className="font-medium text-gray-800">{branch.plan_name}</span>
-                      ) : (
-                        <span className="text-gray-400">{t("company.credits.noPlan")}</span>
-                      )}
-                    </td>
-                    <td className="min-w-40 px-3 py-3">
-                      <UsageBar
-                        used={branch.used}
-                        total={branch.total}
-                        label={t("company.credits.branchUsage", { branch: branch.business_name })}
-                      />
-                    </td>
-                    <td className="hidden px-3 py-3 text-gray-700 md:table-cell">
-                      {branch.next_plan_name ?? <span className="text-gray-400">{t("company.credits.noPlan")}</span>}
-                    </td>
-                    <td className="px-3 py-3">
-                      <AutoRenewSwitch
-                        checked={Boolean(branch.auto_renew)}
-                        onChange={() => toggleAutoRenew(branch)}
-                        disabled={busy || !branch.has_subscription || branch.status === "deactivated"}
-                        label={t("company.credits.autoRenewFor", { branch: branch.business_name })}
-                        hideLabel
-                      />
-                    </td>
-                    <td className="px-3 py-3">
-                      <BranchCreditActions
-                        compact
-                        branch={{
-                          id: branch.id,
-                          name: branch.business_name,
-                          deactivated: branch.status === "deactivated",
-                          hasSubscription: branch.has_subscription,
-                          hasNextSubscription: branch.next_plan_name !== null,
-                          openRequests: branch.open_requests,
-                        }}
-                        periodStart={overview.periodStart}
-                        periodEnd={overview.periodEnd}
-                        onChanged={reload}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            embedded
+            className="mt-4"
+            label={t("company.credits.branchesTitle")}
+            rows={overview.branches}
+            rowKey={(branch) => branch.id}
+            rowClassName="align-top"
+            rowTestId={(branch) => `branch-credits-${branch.id}`}
+            columns={columns}
+          />
         )}
       </section>
 

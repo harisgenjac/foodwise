@@ -25,6 +25,8 @@ interface BranchCreditActionsProps {
   periodEnd: string;
   onChanged: () => void;
   compact?: boolean;
+  // In a phone card: two full-width 44 px buttons.
+  card?: boolean;
   // Only one of the two actions (the dashboard asks for one decision at a time).
   only?: "plan" | "topup";
 }
@@ -42,6 +44,7 @@ function BranchCreditActions({
   periodEnd,
   onChanged,
   compact = false,
+  card = false,
   only,
 }: BranchCreditActionsProps) {
   const { t } = useTranslation();
@@ -72,7 +75,7 @@ function BranchCreditActions({
   const canTopup = !branch.deactivated && branch.hasSubscription && !topupWaiting;
   const endpoint = `/company/branches/${branch.id}/credits/requests`;
   const button = `inline-flex cursor-pointer items-center gap-1.5 rounded-lg font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-    compact ? "px-2.5 py-1.5 text-xs" : "px-4 py-2 text-sm"
+    card ? "min-h-11 flex-1 justify-center rounded-xl px-3 text-sm" : compact ? "px-2.5 py-1.5 text-xs" : "px-4 py-2 text-sm"
   }`;
 
   const sent = () => {
@@ -83,7 +86,7 @@ function BranchCreditActions({
 
   return (
     <>
-      <div className="flex flex-wrap gap-2">
+      <div className={card ? "flex gap-2" : "flex flex-wrap gap-2"}>
         {only !== "topup" && (
           <button
             type="button"
