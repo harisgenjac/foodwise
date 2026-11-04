@@ -174,8 +174,8 @@ describe("CompanyCreditsPage", () => {
       t("company.credits.columnAutoRenew"),
     ]);
     expect(card.getByRole("switch", { name: t("company.credits.autoRenewFor", { branch: "Bingo Visoko" }) })).toBeChecked();
-    expect(card.getByRole("button", { name: t("company.credits.choosePlan") })).toHaveClass("min-h-11", "flex-1");
-    expect(card.getByRole("button", { name: t("company.credits.addCredits") })).toHaveClass("min-h-11", "flex-1");
+    expect(card.getByRole("button", { name: t("company.credits.choosePlan") })).toHaveClass("min-h-11", "w-full");
+    expect(card.getByRole("button", { name: t("company.credits.addCredits") })).toHaveClass("min-h-11", "w-full");
   });
 
   it("approves and rejects the branches' top-up requests", async () => {

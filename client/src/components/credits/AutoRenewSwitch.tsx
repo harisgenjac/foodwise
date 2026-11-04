@@ -28,7 +28,7 @@ function AutoRenewSwitch({ checked, disabled = false, onChange, label, hideLabel
         />
         {!hideLabel && t("credits.profile.autoRenew")}
       </label>
-      <AutoRenewTooltip />
+      <AutoRenewTooltip endOnPhones={hideLabel} />
     </div>
   );
 }

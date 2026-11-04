@@ -169,35 +169,101 @@ test.describe("dialogs at 375×667", () => {
   });
 });
 
-// The admin's credit lists are cards below md: nothing wider than the screen, and the approve and
-// reject buttons of a pending request reachable without scrolling sideways.
+// No page wider than the screen, and every button and link of every card fully on screen (no
+// sideways scrolling). Lists show cards below md, not their table.
+const expectPhonePage = async (page: Page, path: string, { cards = false } = {}) => {
+  await page.goto(path);
+  await page.waitForLoadState("networkidle");
+  const { scrollWidth, innerWidth } = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    innerWidth: window.innerWidth,
+  }));
+  expect(scrollWidth, `${path} is wider than the screen`).toBeLessThanOrEqual(innerWidth);
+  if (!cards) return;
+  await expect(page.getByTestId("data-card").first(), path).toBeVisible();
+  for (const table of await page.getByRole("table").all()) await expect(table, path).toBeHidden();
+  const outside = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('[data-testid="data-card"] :is(button, a)')]
+      .filter((element) => element.getClientRects().length > 0)
+      .map((element) => ({ text: element.textContent?.trim(), box: element.getBoundingClientRect() }))
+      .filter(({ box }) => box.left < 0 || box.right > window.innerWidth)
+      .map(({ text, box }) => `${text} (${Math.round(box.left)}..${Math.round(box.right)})`),
+  );
+  expect(outside, `${path}: card actions off screen`).toEqual([]);
+};
+
+// The admin's lists are cards below md: nothing wider than the screen, and every row action
+// (approve, reject, remove, cancel, end) reachable without scrolling sideways.
 test.describe("admin", () => {
   test.use({ storageState: storageState("admin") });
   let businessName: string;
+  let announcementId: number;
+  let companyId: number;
 
   test.beforeAll(async () => {
     const account = await createStoreWithoutPlan();
     businessName = account.businessName;
     await requestSubscription(account.storageState);
+    const admin = await apiAs("admin");
+    // An active announcement, so the list has its End action; ended again after these tests.
+    const created = await admin.post("/api/admin/announcements", {
+      data: { audience: "STORE", title_bs: `E2E Mobilno obavještenje ${runId()}`, body_bs: "Provjera kartica na telefonu." },
+    });
+    announcementId = (await created.json()).announcement.id;
+    const { companies } = await (await admin.get("/api/admin/companies", { params: { q: "E2E Lanac" } })).json();
+    companyId = companies[0].id;
+    await admin.dispose();
   });
 
-  const expectFits = async (page: Page, path: string) => {
-    await page.goto(path);
-    await page.waitForLoadState("networkidle");
-    const { scrollWidth, innerWidth } = await page.evaluate(() => ({
-      scrollWidth: document.documentElement.scrollWidth,
-      innerWidth: window.innerWidth,
-    }));
-    expect(scrollWidth, `${path} is wider than the screen`).toBeLessThanOrEqual(innerWidth);
-    // Cards, not the table.
-    await expect(page.getByRole("table"), path).toBeHidden();
-    await expect(page.getByTestId("data-card").first(), path).toBeVisible();
-  };
+  test.afterAll(async () => {
+    const admin = await apiAs("admin");
+    await admin.post(`/api/admin/announcements/${announcementId}/end`);
+    await admin.dispose();
+  });
 
-  test("the credit requests and credits pages fit a 375 px screen", async ({ page }) => {
-    await expectFits(page, "/admin/credit-requests");
-    await expectFits(page, "/admin/credits");
+  test("every admin list shows cards with all row actions on a 375 px screen", async ({ page }) => {
+    for (const path of [
+      "/admin/users",
+      "/admin/products",
+      "/admin/donations",
+      "/admin/reservations",
+      "/admin/actions",
+      "/admin/announcements",
+      "/admin/companies",
+      "/admin/credits",
+      "/admin/credit-requests",
+    ]) {
+      await expectPhonePage(page, path, { cards: true });
+    }
+    await expect(page.getByRole("combobox", { name: "Sortiraj po" })).toHaveCount(0);
+    await page.goto("/admin/credits");
     await expect(page.getByRole("combobox", { name: "Sortiraj po" })).toBeVisible();
+  });
+
+  test("the admin's other pages fit a 375 px screen", async ({ page }) => {
+    for (const path of ["/admin", "/admin/users/new", "/admin/companies/new", `/admin/users/${storeId}`, `/admin/companies/${companyId}`]) {
+      await expectPhonePage(page, path);
+    }
+    // The branch list on a company and its deactivate buttons.
+    const deactivate = page.getByRole("button", { name: "Deaktiviraj", exact: true }).first();
+    await deactivate.scrollIntoViewIfNeeded();
+    await expect(deactivate).toBeInViewport({ ratio: 1 });
+    expect(await page.evaluate(() => window.scrollX)).toBe(0);
+  });
+
+  test("the remove, cancel and end actions are full-width buttons on the cards", async ({ page }) => {
+    for (const [path, name] of [
+      ["/admin/products", "Ukloni"],
+      ["/admin/donations", "Ukloni"],
+      ["/admin/reservations", "Otkaži"],
+      ["/admin/announcements", "Završi"],
+    ] as const) {
+      await page.goto(path);
+      const button = page.getByTestId("data-card").getByRole("button", { name, exact: true }).first();
+      await button.scrollIntoViewIfNeeded();
+      await expect(button, path).toBeInViewport({ ratio: 1 });
+      expect((await button.boundingBox())!.height, path).toBeGreaterThanOrEqual(44);
+    }
   });
 
   test("a pending request's approve and reject buttons are on screen without sideways scrolling", async ({ page }) => {
@@ -215,6 +281,40 @@ test.describe("admin", () => {
     expect(await page.evaluate(() => window.scrollX)).toBe(0);
     await card.getByRole("button", { name: "Odobri", exact: true }).click();
     await expect(page.getByRole("dialog", { name: "Odobriti zahtjev?" })).toBeVisible();
+  });
+});
+
+// The company headquarters' pages: the branch tables and the reports are cards below md.
+test.describe("company headquarters", () => {
+  test.use({ storageState: storageState("hq") });
+  let branchId: number;
+
+  test.beforeAll(async () => {
+    const hq = await apiAs("hq");
+    const { branches } = await (await hq.get("/api/company/branches")).json();
+    branchId = branches[0].id;
+    await hq.dispose();
+  });
+
+  test("the overview, credits and reports show cards with all actions on a 375 px screen", async ({ page }) => {
+    for (const path of ["/dashboard", "/company/credits", "/company/reports"]) {
+      await expectPhonePage(page, path, { cards: true });
+    }
+    // Choose plan and Add credits on the branch card.
+    await page.goto("/company/credits");
+    const card = page.getByTestId("data-card").first();
+    for (const name of ["Izaberi paket", "Dodaj kredite"]) {
+      const button = card.getByRole("button", { name, exact: true });
+      await button.scrollIntoViewIfNeeded();
+      await expect(button, name).toBeInViewport({ ratio: 1 });
+      expect((await button.boundingBox())!.height, name).toBeGreaterThanOrEqual(44);
+    }
+  });
+
+  test("the headquarters' other pages fit a 375 px screen", async ({ page }) => {
+    for (const path of ["/company/branches", `/company/branches/${branchId}`, "/company/profile", "/my-profile", "/notifications"]) {
+      await expectPhonePage(page, path);
+    }
   });
 });
 

@@ -82,7 +82,7 @@ Pages that "Orders and delivery" Phase 1 rebuilds are marked **(P1)**. For those
 | `/admin/credit-requests` | Table 609 px wide: approve/reject sit off-screen. | medium |
 | `/admin/reservations` **(P1, adapted in Phase 1)** | Table rows; only the shared table pattern is missing. | — |
 | `/admin/users/:id` | The details card stacks well. Action buttons are full-size. `UserCreditsPanel` has a table (credit history) with the same sideways scroll. | low |
-| `/admin/companies/:id` | Fine apart from its branch list table (shared). | low |
+| `/admin/companies/:id` | Fine apart from its branch list table (shared). (Later found to be a list, not a table: it already stacks below `sm` and fits at 375 px, so it was left as it is.) | low |
 | `/admin/users/new`, `/admin/companies/new`, `/admin/announcements` (form) | Fine apart from shared field sizes. The side info box stacks under the form. | low |
 
 ### Company headquarters (extra)
