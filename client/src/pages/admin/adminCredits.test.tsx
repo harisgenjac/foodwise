@@ -346,8 +346,14 @@ describe("UserCreditsPanel", () => {
     apiMock.post.mockResolvedValue({ data: {} });
     renderPanel(() => ({ requests: [], total: 0 }));
 
-    expect(await screen.findByText(t("admin.userCredits.types.PRODUCT_CHARGE"))).toBeInTheDocument();
-    expect(screen.getByText("-1")).toBeInTheDocument();
+    // jsdom renders both the table (md up) and the phone cards; this checks the table.
+    const ledger = await screen.findByRole("table", { name: t("admin.userCredits.ledgerTitle") });
+    expect(within(ledger).getByText(t("admin.userCredits.types.PRODUCT_CHARGE"))).toBeInTheDocument();
+    expect(within(ledger).getByText("-1")).toBeInTheDocument();
+    // The phone card: the type as the title and the amount top right.
+    const card = within(screen.getByRole("list", { name: t("admin.userCredits.ledgerTitle") })).getAllByTestId("data-card")[0]!;
+    expect(within(card).getByText(t("admin.userCredits.types.PRODUCT_CHARGE"))).toBeInTheDocument();
+    expect(within(card).getByText("-1")).toHaveClass("text-red-600");
     // Nothing waits: no pending block.
     expect(screen.queryByText(t("admin.userCredits.pendingTitle"))).not.toBeInTheDocument();
 

@@ -64,7 +64,9 @@ interface DataTableProps<T> {
   // and the phone cards are lighter (no shadow). The table classes below then follow the page.
   embedded?: boolean;
   // The table's classes, when the page's table differs from the admin lists.
+  tableWrapperClassName?: string;
   theadClassName?: string;
+  tbodyClassName?: string;
   headCellClassName?: string;
   bodyCellClassName?: string;
   // data-testid of each table row and card (the row's own id, for tests).
@@ -93,6 +95,8 @@ function DataTable<T>({
   headCellClassName = embedded ? "px-3 py-2" : "px-4 py-3",
   bodyCellClassName = embedded ? "px-3 py-3" : "px-4 py-3",
   rowTestId,
+  tableWrapperClassName = embedded ? "" : "rounded-2xl border border-gray-100 bg-white shadow-sm",
+  tbodyClassName = "divide-y divide-gray-100",
 }: DataTableProps<T>) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -105,7 +109,7 @@ function DataTable<T>({
     <div className={className}>
       {/* From md up: the table. */}
       <div
-        className={`hidden overflow-x-auto md:block ${embedded ? "" : "rounded-2xl border border-gray-100 bg-white shadow-sm"}`}
+        className={`hidden overflow-x-auto md:block ${tableWrapperClassName}`}
       >
         <table aria-label={label} className="w-full text-left text-sm">
           <thead className={theadClassName}>
@@ -129,7 +133,7 @@ function DataTable<T>({
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className={tbodyClassName}>
             {rows.map((row) => (
               <tr
                 key={rowKey(row)}

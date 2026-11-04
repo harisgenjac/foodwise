@@ -13,6 +13,7 @@ import { CATEGORY_LABELS } from "../utils/categories.js";
 import { UNIT_LABELS } from "../utils/units.js";
 import { dateInDays } from "../utils/expiry.js";
 import type { CsvRowError } from "../types/index.js";
+import DataTable, { type DataColumn } from "../components/common/DataTable.js";
 import InsufficientCreditsNotice from "../components/credits/InsufficientCreditsNotice.js";
 import CreditHint from "../components/credits/CreditHint.js";
 import { getCreditError, type CreditError } from "../utils/credits.js";
@@ -127,6 +128,31 @@ function ImportProductsPage() {
     setConfirmCount(count);
   };
 
+  // Phone cards: "Row 5" as the title and the problem under it.
+  const errorColumns: DataColumn<CsvRowError>[] = [
+    {
+      id: "row",
+      header: t("importProducts.row"),
+      headerClassName: "w-24 font-semibold",
+      cellClassName: "font-medium text-gray-900",
+      card: "title",
+      cell: (rowError) => rowError.row,
+      cardCell: (rowError) => (
+        <p className="font-semibold text-red-700">
+          {t("importProducts.row")} {rowError.row}
+        </p>
+      ),
+    },
+    {
+      id: "problem",
+      header: t("importProducts.problem"),
+      headerClassName: "font-semibold",
+      cellClassName: "text-gray-700",
+      cardStacked: true,
+      cell: (rowError) => rowError.error,
+    },
+  ];
+
   return (
     <div className="max-w-6xl mx-auto pb-16">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -178,24 +204,18 @@ function ImportProductsPage() {
               {creditError && <InsufficientCreditsNotice error={creditError} />}
 
               {rowErrors.length > 0 && (
-                <div className="overflow-hidden rounded-xl border border-red-100">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-red-50 text-xs uppercase tracking-wide text-red-700">
-                      <tr>
-                        <th className="w-24 px-4 py-2 font-semibold">{t("importProducts.row")}</th>
-                        <th className="px-4 py-2 font-semibold">{t("importProducts.problem")}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-red-50">
-                      {rowErrors.map((rowError) => (
-                        <tr key={rowError.row}>
-                          <td className="px-4 py-2 font-medium text-gray-900">{rowError.row}</td>
-                          <td className="px-4 py-2 text-gray-700">{rowError.error}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <DataTable
+                  embedded
+                  label={t("importProducts.problem")}
+                  rows={rowErrors}
+                  rowKey={(rowError) => rowError.row}
+                  tableWrapperClassName="overflow-hidden rounded-xl border border-red-100"
+                  theadClassName="bg-red-50 text-xs uppercase tracking-wide text-red-700"
+                  tbodyClassName="divide-y divide-red-50"
+                  headCellClassName="px-4 py-2"
+                  bodyCellClassName="px-4 py-2"
+                  columns={errorColumns}
+                />
               )}
 
               <div className="flex flex-col gap-3 sm:flex-row">

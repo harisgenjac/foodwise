@@ -7,6 +7,7 @@ import api from "../../api/axios.js";
 import Pagination from "./Pagination.js";
 import CreditRequestDecisionModal, { CreditRequestDecisionButtons, type CreditRequestAction } from "./CreditRequestDecisionModal.js";
 import AdjustCreditsModal from "./AdjustCreditsModal.js";
+import DataTable, { type DataColumn } from "../common/DataTable.js";
 import { ADMIN_PAGE_SIZE, formatDateTime } from "../../utils/admin.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
 import { describeCreditRequest, formatCreditMonth } from "../../utils/credits.js";
@@ -95,6 +96,61 @@ function UserCreditsPanel({ userId }: { userId: number }) {
 
   if (!balance) return null;
 
+  const details = (transaction: CreditTransaction) =>
+    [
+      transaction.reason,
+      transaction.category && (categories[transaction.category] || transaction.category),
+      transaction.related_entity_id && transaction.related_entity_type !== "credit_request" && `#${transaction.related_entity_id}`,
+      transaction.created_by_email,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  // Phone cards: the type with the amount top right, the date, the month and the details.
+  const ledgerColumns: DataColumn<CreditTransaction>[] = [
+    {
+      id: "date",
+      header: t("admin.userCredits.columnDate"),
+      className: "pr-3",
+      cellClassName: "whitespace-nowrap text-gray-600",
+      cell: (transaction) => formatDateTime(transaction.created_at),
+    },
+    {
+      id: "type",
+      header: t("admin.userCredits.columnType"),
+      className: "pr-3",
+      cellClassName: "text-gray-800",
+      card: "title",
+      cell: (transaction) => types[transaction.type] || transaction.type,
+      cardCell: (transaction) => <p className="font-medium text-gray-900">{types[transaction.type] || transaction.type}</p>,
+    },
+    {
+      id: "amount",
+      header: t("admin.userCredits.columnAmount"),
+      className: "pr-3 text-right",
+      card: "status",
+      cell: (transaction) => (
+        <span className={`font-semibold tabular-nums ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}>
+          {transaction.amount > 0 ? `+${transaction.amount}` : transaction.amount}
+        </span>
+      ),
+    },
+    {
+      id: "month",
+      header: t("admin.userCredits.columnMonth"),
+      className: "hidden pr-3 md:table-cell",
+      cellClassName: "whitespace-nowrap text-gray-600",
+      cell: (transaction) => formatCreditMonth(transaction.period_month, monthNames),
+    },
+    {
+      id: "details",
+      header: t("admin.userCredits.columnDetails"),
+      className: "hidden md:table-cell",
+      cellClassName: "text-gray-500",
+      cardStacked: true,
+      cell: details,
+    },
+  ];
+
   return (
     <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -160,49 +216,16 @@ function UserCreditsPanel({ userId }: { userId: number }) {
         <p className="text-sm text-gray-500">{t("admin.userCredits.empty")}</p>
       ) : (
         <>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                <tr>
-                  <th className="py-2 pr-3">{t("admin.userCredits.columnDate")}</th>
-                  <th className="py-2 pr-3">{t("admin.userCredits.columnType")}</th>
-                  <th className="py-2 pr-3 text-right">{t("admin.userCredits.columnAmount")}</th>
-                  <th className="hidden py-2 pr-3 md:table-cell">{t("admin.userCredits.columnMonth")}</th>
-                  <th className="hidden py-2 md:table-cell">{t("admin.userCredits.columnDetails")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {transactions.map((transaction) => (
-                  <tr key={transaction.id}>
-                    <td className="whitespace-nowrap py-2 pr-3 text-gray-600">{formatDateTime(transaction.created_at)}</td>
-                    <td className="py-2 pr-3 text-gray-800">{types[transaction.type] || transaction.type}</td>
-                    <td
-                      className={`py-2 pr-3 text-right font-semibold tabular-nums ${
-                        transaction.amount > 0 ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {transaction.amount > 0 ? `+${transaction.amount}` : transaction.amount}
-                    </td>
-                    <td className="hidden whitespace-nowrap py-2 pr-3 text-gray-600 md:table-cell">
-                      {formatCreditMonth(transaction.period_month, monthNames)}
-                    </td>
-                    <td className="hidden py-2 text-gray-500 md:table-cell">
-                      {[
-                        transaction.reason,
-                        transaction.category && (categories[transaction.category] || transaction.category),
-                        transaction.related_entity_id &&
-                          transaction.related_entity_type !== "credit_request" &&
-                          `#${transaction.related_entity_id}`,
-                        transaction.created_by_email,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            embedded
+            label={t("admin.userCredits.ledgerTitle")}
+            rows={transactions}
+            rowKey={(transaction) => transaction.id}
+            theadClassName="text-xs font-semibold uppercase tracking-wider text-gray-500"
+            headCellClassName="py-2"
+            bodyCellClassName="py-2"
+            columns={ledgerColumns}
+          />
           <Pagination total={total} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={setOffset} />
         </>
       )}
