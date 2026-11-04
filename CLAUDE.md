@@ -8,10 +8,21 @@ FoodWise ("Još vrijedi") is a B2B marketplace where stores sell near-expiry foo
 |---|---|
 | Server code: API endpoints, DB schema, migrations, auth, reservation logic, cron, uploads, backend tests, seed | `docs/backend.md` |
 | Client code: pages, components, hooks, routing, i18n, styling, types | `docs/frontend.md` |
-| Product intent: users and roles, business rules, roadmap, humanitarian module, naming and tone | `docs/product.md` |
+| The app as it is today: users and roles, how it behaves, business rules, the humanitarian purpose, naming and tone | `docs/product.md` |
+| The future: planned features, phases, ideas backlog, decided-against items, open questions | `docs/development-plan.md` |
 | E2E tests: Playwright, the e2e database and seed, locators, the CI job and traces | `docs/e2e.md` |
 
-Do not load all three by default. A feature that spans both sides (for example a new endpoint plus a page) needs `backend.md` and `frontend.md`. Open `product.md` when a business rule or priority is unclear. These docs were written from the code: if the code and a doc disagree, trust the code and fix the doc in the same change.
+Do not load them all by default. A feature that spans both sides (for example a new endpoint plus a page) needs `backend.md` and `frontend.md`. Open `product.md` when a business rule is unclear, and `development-plan.md` for priorities and planned work. These docs were written from the code: if the code and a doc disagree, trust the code and fix the doc in the same change.
+
+## Development plan (`docs/development-plan.md`)
+
+Everything in the future: the agreed rules and tasks (as checkboxes) for orders and delivery (Korpa), new roles, organization verification, emails, mobile layout and sponsorship, plus the ideas backlog, decided-against items and open questions. `docs/product.md` describes only the current app; never put roadmap items there, at most a one-line "not built yet, see the development plan" pointer.
+
+- The user's prompts decide what to work on, not the order in the plan. Do not start, suggest or add tasks the user did not ask for.
+- Before designing or building a task, read the plan sections that touch it and follow the agreed rules there (e.g. one store per order, stores pay only credits, restaurants pay no credits, cash to the courier, accepting per item, `DeliveryProvider` interface).
+- If the task depends on something in the plan that is not built yet, or conflicts with the plan, say so before starting and ask how to proceed.
+- If we decide something different from the plan, say so and update the plan so it stays true.
+- When a plan task is done, in the same change describe the new behaviour in `docs/product.md` and tick the task's checkbox in the plan. Do not rewrite or reorder the rest of the plan.
 
 ## Repo layout
 
@@ -20,7 +31,7 @@ food-saver-app/
 ├── CLAUDE.md
 ├── README.md        setup and run instructions for humans (keep in sync with scripts and env vars)
 ├── package.json     root scripts only (dev/build/install:all for both sides)
-├── docs/            backend.md, frontend.md, product.md, e2e.md
+├── docs/            backend.md, frontend.md, product.md, e2e.md, development-plan.md
 ├── server/          Express 5 + TypeScript + PostgreSQL (src/, migrations/, tests/, uploads/)
 ├── client/          React 19 + Vite + TypeScript + Tailwind + react-i18next (src/)
 └── e2e/             Playwright end-to-end tests (own package, own database)
@@ -63,7 +74,8 @@ More commands (tests, seed, lint, type-check) are in the two technical docs.
 - **Docs stay current.** At the end of every task, check whether it changed anything the docs describe and update them in the same change:
   - `docs/backend.md`: endpoints, schema or migrations, auth, business logic, conventions, tests, env vars
   - `docs/frontend.md`: routes, components, hooks, types, i18n structure, UI conventions
-  - `docs/product.md`: new or finished features, changed business rules, roadmap and product decisions
+  - `docs/product.md`: finished features and changed business rules (the current app only)
+  - `docs/development-plan.md`: tick finished tasks; record changed plans, new ideas and product decisions
   If a doc and the code disagree, trust the code and fix the doc. Do not leave known-wrong text behind.
 
 

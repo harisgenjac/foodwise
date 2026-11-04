@@ -166,7 +166,8 @@ foodwise/
 
 ## Documentation
 
-- [`docs/product.md`](docs/product.md): users and roles, business rules, roadmap
+- [`docs/product.md`](docs/product.md): the app today: users and roles, business rules
+- [`docs/development-plan.md`](docs/development-plan.md): roadmap, ideas backlog, open questions
 - [`docs/backend.md`](docs/backend.md): API endpoints, database schema, auth, tests
 - [`docs/frontend.md`](docs/frontend.md): routes, components, hooks, i18n, UI conventions
 - [`docs/e2e.md`](docs/e2e.md): end-to-end tests (Playwright), their database and seed, CI traces
