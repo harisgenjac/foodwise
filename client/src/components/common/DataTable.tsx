@@ -20,6 +20,8 @@ export interface DataColumn<T> {
   cell: (row: T) => ReactNode;
   // Extra classes for the th and the td (alignment, `hidden lg:table-cell`); `px-4 py-3` is added.
   className?: string;
+  // Extra classes for the th only.
+  headerClassName?: string;
   // Extra classes for the td only.
   cellClassName?: string;
   // Sortable by the server under this key (the header button and the phone "Sort by" select).
@@ -33,6 +35,8 @@ export interface DataColumn<T> {
   cardOnly?: boolean;
   // A field whose value needs the card's width (a usage bar, a list): the label above the value.
   cardStacked?: boolean;
+  // The table header is only for screen readers (an action column).
+  srOnlyHeader?: boolean;
 }
 
 export interface DataTableSort {
@@ -69,7 +73,7 @@ interface DataTableProps<T> {
 
 const isEmpty = (content: ReactNode) => content === null || content === undefined || content === false || content === "";
 
-// An admin list defined once by its columns: a table from md up, and below md one card per row
+// A list defined once by its columns: a table from md up, and below md one card per row
 // (the title, a status pill top right, label/value rows and full-width action buttons), so no column
 // hides off-screen on a phone. A sortable table also gets a "Sort by" select above the cards, using
 // the same URL params as the header buttons. Pagination stays the page's own, under this.
@@ -115,11 +119,11 @@ function DataTable<T>({
                     sort={sort.sort}
                     dir={sort.dir}
                     onSort={sort.onSort}
-                    className={`${headCellClassName} ${column.className ?? ""}`}
+                    className={`${headCellClassName} ${column.className ?? ""} ${column.headerClassName ?? ""}`}
                   />
                 ) : (
-                  <th key={column.id} className={`${headCellClassName} ${column.className ?? ""}`}>
-                    {column.header}
+                  <th key={column.id} className={`${headCellClassName} ${column.className ?? ""} ${column.headerClassName ?? ""}`}>
+                    {column.srOnlyHeader ? <span className="sr-only">{column.header}</span> : column.header}
                   </th>
                 ),
               )}

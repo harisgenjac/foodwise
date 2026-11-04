@@ -140,6 +140,45 @@ describe("DataTable", () => {
     expect(sort.setSort).toHaveBeenLastCalledWith("", "asc");
   });
 
+  it("follows the page's own table classes, and is lighter inside a section card", () => {
+    const columns: DataColumn<Row>[] = [
+      { id: "name", header: "Korisnik", card: "title", headerClassName: "font-semibold", cell: (row) => row.name },
+      { id: "status", header: "Status", card: "status", cell: (row) => (row.id === 1 ? row.status : null) },
+      { id: "bar", header: "Potrošnja", cardStacked: true, cell: () => <div data-testid="wide" /> },
+      { id: "go", header: "Preuzmi", srOnlyHeader: true, card: "none", cell: () => null },
+    ];
+    render(
+      <MemoryRouter>
+        <DataTable
+          embedded
+          className="mt-4"
+          label="Lista"
+          rows={ROWS}
+          columns={columns}
+          rowKey={(row) => row.id}
+          rowTestId={(row) => `row-${row.id}`}
+          bodyCellClassName="px-5 py-4"
+        />
+      </MemoryRouter>,
+    );
+    const table = screen.getByRole("table");
+    // Embedded: no frame of its own, and the section's thead and header cells.
+    expect(table.parentElement).not.toHaveClass("rounded-2xl", "shadow-sm");
+    expect(table.parentElement!.parentElement).toHaveClass("mt-4");
+    expect(within(table).getByRole("columnheader", { name: "Korisnik" })).toHaveClass("px-3", "py-2", "font-semibold");
+    expect(within(table).getByRole("columnheader", { name: "Preuzmi" }).firstElementChild).toHaveClass("sr-only");
+    expect(within(screen.getByTestId("row-1")).getAllByRole("cell")[0]).toHaveClass("px-5", "py-4");
+    expect(within(screen.getByTestId("row-1")).getAllByRole("cell")[0]).not.toHaveClass("font-semibold");
+
+    const [first, second] = cards();
+    expect(first).not.toHaveClass("shadow-sm");
+    // A stacked field puts its value under the label, at the card's width.
+    expect(within(first!).getByTestId("wide").parentElement).toHaveClass("mt-1");
+    expect(within(first!).getByText("Na čekanju")).toBeInTheDocument();
+    // No status pill when the status column has nothing for the row.
+    expect(within(second!).queryByText("Odobreno")).not.toBeInTheDocument();
+  });
+
   it("has no Sort by select without sorting", () => {
     renderTable();
     expect(screen.queryByRole("combobox", { name: t("filters.sortBy") })).not.toBeInTheDocument();

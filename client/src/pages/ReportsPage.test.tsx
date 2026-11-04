@@ -30,13 +30,29 @@ describe("ReportsPage", () => {
 
   it("lists the reports as table rows, the sales report for a store", async () => {
     renderPage("STORE");
-    await screen.findByText(t("reports.items.sales.store.title"));
+    // jsdom renders both the table (md up) and the phone cards; these checks use the table.
+    const table = await screen.findByRole("table");
+    expect(within(table).getByText(t("reports.items.sales.store.title"))).toBeInTheDocument();
 
-    const [, sales, impact] = screen.getAllByRole("row");
+    const [, sales, impact] = within(table).getAllByRole("row");
     expect(within(sales!).getByText(t("reports.items.sales.store.title"))).toBeInTheDocument();
     expect(within(sales!).getByRole("button", { name: t("reports.download") })).toBeInTheDocument();
     expect(within(impact!).getByText(t("reports.items.impact.store.title"))).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: t("reports.table.report") })).toBeInTheDocument();
+  });
+
+  it("shows each report as a card on phones: title, description, format and a full-width Download", async () => {
+    renderPage("STORE");
+    const [sales] = await screen.findAllByTestId("data-card");
+    const card = within(sales!);
+    expect(card.getByText(t("reports.items.sales.store.title"))).toBeInTheDocument();
+    expect(card.getByText(t("reports.items.sales.store.description"))).toBeInTheDocument();
+    expect(card.getByText("CSV")).toBeInTheDocument();
+    // The column list stays in the table only.
+    expect(card.queryByText(t("reports.items.sales.store.columns"))).not.toBeInTheDocument();
+    const download = card.getByRole("button", { name: t("reports.download") });
+    expect(download).toHaveClass("min-h-11", "justify-center");
+    expect(download.parentElement).toHaveClass("*:flex-1");
   });
 
   it("shows the default period as dd/mm/yyyy", async () => {
@@ -48,7 +64,7 @@ describe("ReportsPage", () => {
 
   it("names the purchases report for a restaurant", async () => {
     renderPage("RESTAURANT");
-    expect(await screen.findByText(t("reports.items.sales.restaurant.title"))).toBeInTheDocument();
+    expect(within(await screen.findByRole("table")).getByText(t("reports.items.sales.restaurant.title"))).toBeInTheDocument();
   });
 
   it("downloads the report for this month by default as a CSV blob", async () => {

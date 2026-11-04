@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import toast from "react-hot-toast";
 import { AxiosError, AxiosHeaders } from "axios";
@@ -49,9 +49,10 @@ describe("CompanyReportsPage", () => {
   it("lists the three reports and downloads one for all branches", async () => {
     renderPage();
     const { from, to } = presetPeriod("thisMonth");
-    expect(await screen.findByText(t("company.reports.items.sales.title"))).toBeInTheDocument();
-    expect(screen.getByText(t("company.reports.items.impact.title"))).toBeInTheDocument();
-    expect(screen.getByText(t("company.reports.items.branches.title"))).toBeInTheDocument();
+    const table = await screen.findByRole("table");
+    expect(within(table).getByText(t("company.reports.items.sales.title"))).toBeInTheDocument();
+    expect(within(table).getByText(t("company.reports.items.impact.title"))).toBeInTheDocument();
+    expect(within(table).getByText(t("company.reports.items.branches.title"))).toBeInTheDocument();
     expect(screen.getByLabelText(t("company.reports.branch"))).toHaveValue("");
 
     await userEvent.click(screen.getAllByRole("button", { name: t("reports.download") })[2]!);
