@@ -29,7 +29,9 @@
     "companyProfile": "Company profile",
     "companyBranches": "Branches",
     "companyCredits": "Credits and plans",
-    "companyReports": "Reports"
+    "companyReports": "Reports",
+    "menu": "Menu",
+    "closeMenu": "Close menu"
   },
   "breadcrumbs": {
     "label": "Breadcrumb",
@@ -44,7 +46,17 @@
     "collapseSidebar": "Collapse menu",
     "expandSidebar": "Expand menu",
     "logoutError": "Logging out failed. Please try again.",
-    "branchOf": "{{branch}} · part of {{company}}"
+    "branchOf": "{{branch}} · part of {{company}}",
+    "openMenu": "Open menu"
+  },
+  "bottomNav": {
+    "label": "Main navigation",
+    "dashboard": "Home",
+    "myProducts": "Products",
+    "browseProducts": "Offers",
+    "reservations": "Reservations",
+    "pickups": "Pickups",
+    "more": "More"
   },
   "auth": {
     "welcomeBack": "Welcome back",

@@ -21,7 +21,7 @@ export function useFormValidation<F extends string>(errors: FieldErrors<F>) {
     const invalid = formRef.current?.querySelector<HTMLElement>("[data-invalid]");
     if (!invalid) return;
     const target = invalid.matches(FOCUSABLE) ? invalid : invalid.querySelector<HTMLElement>(FOCUSABLE);
-    // <main> is the scroll container; scrollIntoView scrolls it (jsdom has no scrollIntoView).
+    // Scrolls the window (or a scrolling modal body) to the field (jsdom has no scrollIntoView).
     invalid.scrollIntoView?.({ block: "center", behavior: "smooth" });
     target?.focus({ preventScroll: true });
   }, [focusRequest]);

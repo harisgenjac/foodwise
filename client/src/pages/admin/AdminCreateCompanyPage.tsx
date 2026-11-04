@@ -95,7 +95,7 @@ function AdminCreateCompanyPage() {
           </FormSection>
         </div>
 
-        <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+        <div className="space-y-4 lg:sticky lg:top-22 lg:self-start">
           <div className="rounded-2xl border border-orange-100 bg-orange-50/60 p-5 text-sm text-orange-900">
             <p className="flex items-center gap-2 font-semibold">
               <Info className="h-4 w-4" />

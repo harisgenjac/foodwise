@@ -68,6 +68,7 @@ More commands (tests, seed, lint, type-check) are in the two technical docs.
 - **Git:** non-trivial work goes on a feature branch and a PR. Check the current branch and `git remote -v` before pushing.
 - **Tests and CI:**
   - Before committing, run the typecheck of the package you changed (`npm run typecheck`) and only the test files for what you changed: `npx vitest run --reporter=dot <files>` (in `server/`: `npx dotenv run -q -f .env.test -- vitest run --reporter=dot <files>`).
+  - Run lint, typecheck and tests without piping their output (no `| tail`, `| head` or `| grep`, which hide the exit code), check that each one exits with 0, and never commit or push while any of them fails.
   - Never run the full test suites locally; CI (GitHub Actions, `.github/workflows/ci.yml`) runs them on every PR.
   - Do not run the whole e2e suite locally unless the user asks; CI runs it. When writing a new e2e test, run only that test file (`cd e2e && npm run e2e -- tests/<file>.spec.ts`); a change in `e2e/` also needs `npm run typecheck` there.
   - When CI fails, read only the failed logs with the GitHub CLI (`gh pr checks`, `gh run view <id> --log-failed`) and fix from there.

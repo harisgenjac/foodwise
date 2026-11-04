@@ -176,7 +176,7 @@ function AddProductPage() {
           />
         </div>
 
-        <aside className="lg:sticky lg:top-0 lg:self-start space-y-4">
+        <aside className="lg:sticky lg:top-22 lg:self-start space-y-4">
           <ProductPreview values={form} />
 
           <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-colors hover:border-orange-200">

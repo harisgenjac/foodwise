@@ -11,7 +11,7 @@ e2e/
 ├── global-setup.ts       empties the database and seeds it (support/seed.ts)
 ├── support/
 │   ├── accounts.ts       seeded accounts, password, URLs, storageState paths, runId(), uniqueName(prefix)
-│   ├── api.ts            API clients and arrange helpers (apiAs, apiLogin, myId, createProduct, cityId, reserve,
+│   ├── api.ts            API clients and arrange helpers (apiAs, apiLogin, myId, createProduct, createDonation, cityId, reserve,
 │   │                     acceptReservation, completeReservation, createStoreWithoutPlan)
 │   ├── ui.ts             UI helpers (toast, dialogWith, loginViaForm, submitLoginForm, changeTemporaryPassword,
 │   │                     fillProductForm, searchMarketplace, expectNotInMarketplace, credits)
@@ -28,7 +28,8 @@ e2e/
     ├── csv-import.spec.ts             store imports a 3-row CSV → My products, −3 credits → a CSV with an invalid row shows the row error, imports nothing, credits unchanged
     ├── block-store.spec.ts            admin blocks blockStore with a reason → its session ends, login shows the reason → offer hidden → unblock → offer back
     ├── donations.spec.ts              store moves a product's free quantity to donations → shown on "Doniraj hranu", gone from the marketplace → removed and returned to the offer
-    └── branch-deactivation.spec.ts    HQ can't deactivate the branch with an accepted pickup → picked up (API) → deactivated: offer hidden, branch login refused → reactivated: offer back
+    ├── branch-deactivation.spec.ts    HQ can't deactivate the branch with an accepted pickup → picked up (API) → deactivated: offer hidden, branch login refused → reactivated: offer back
+    └── mobile-layout.spec.ts          at 375 px every store and restaurant page (lists, details, donation edit) is no wider than the screen, shows the bottom bar and no sidebar; More opens the drawer, Escape closes it
 ```
 
 Scripts (in `e2e/`): `npm run e2e` (headless), `npm run e2e:ui` (Playwright UI mode), `npm run typecheck`.

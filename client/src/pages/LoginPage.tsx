@@ -46,7 +46,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-dvh flex">
       <div
         className="relative hidden lg:flex lg:w-1/2 bg-cover bg-center"
         style={{

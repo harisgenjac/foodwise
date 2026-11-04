@@ -29,7 +29,9 @@
     "companyProfile": "Profil firme",
     "companyBranches": "Poslovnice",
     "companyCredits": "Krediti i pretplate",
-    "companyReports": "Izvještaji"
+    "companyReports": "Izvještaji",
+    "menu": "Meni",
+    "closeMenu": "Zatvori meni"
   },
   "breadcrumbs": {
     "label": "Putanja",
@@ -44,7 +46,17 @@
     "collapseSidebar": "Sakrij meni",
     "expandSidebar": "Prikaži meni",
     "logoutError": "Odjava nije uspjela. Pokušajte ponovo.",
-    "branchOf": "{{branch}} · dio {{company}}"
+    "branchOf": "{{branch}} · dio {{company}}",
+    "openMenu": "Otvori meni"
+  },
+  "bottomNav": {
+    "label": "Glavna navigacija",
+    "dashboard": "Početna",
+    "myProducts": "Proizvodi",
+    "browseProducts": "Ponude",
+    "reservations": "Rezervacije",
+    "pickups": "Preuzimanja",
+    "more": "Više"
   },
   "auth": {
     "welcomeBack": "Dobrodošli nazad",
