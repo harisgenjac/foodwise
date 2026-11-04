@@ -1365,7 +1365,9 @@
   "announcements": {
     "label": "Obavještenje platforme",
     "dismiss": "Zatvori obavještenje",
-    "dismissError": "Obavještenje nije zatvoreno. Pojavit će se ponovo nakon osvježavanja."
+    "dismissError": "Obavještenje nije zatvoreno. Pojavit će se ponovo nakon osvježavanja.",
+    "showMore": "Prikaži cijelo",
+    "showLess": "Prikaži manje"
   },
   "accountSetup": {
     "title": "Dovršite podešavanje naloga",

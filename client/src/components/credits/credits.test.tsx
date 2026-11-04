@@ -104,6 +104,13 @@ describe("CreditBanner", () => {
     expect(within(banner).getByRole("link")).toHaveAttribute("href", "/credits");
   });
 
+  it("is compact on phones, with the link as a 44 px button next to the text", async () => {
+    renderWithCredits(<CreditBanner />, makeCreditSummary({ used: 50, available: 0 }));
+    const banner = await screen.findByRole("status");
+    expect(banner).toHaveClass("px-3", "py-2", "mb-3", "sm:px-4", "sm:py-3", "sm:mb-6");
+    expect(within(banner).getByRole("link")).toHaveClass("min-h-11", "sm:min-h-0");
+  });
+
   it("stays hidden below 80%", async () => {
     renderWithCredits(
       <>

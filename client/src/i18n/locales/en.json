@@ -1332,7 +1332,9 @@
   "announcements": {
     "label": "Platform announcement",
     "dismiss": "Dismiss announcement",
-    "dismissError": "The announcement was not dismissed. It will show again after a refresh."
+    "dismissError": "The announcement was not dismissed. It will show again after a refresh.",
+    "showMore": "Show all",
+    "showLess": "Show less"
   },
   "accountSetup": {
     "title": "Finish setting up your account",
