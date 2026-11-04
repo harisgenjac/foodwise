@@ -1,5 +1,5 @@
 // components/LanguageSwitcher.tsx
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface Language {
@@ -16,9 +16,30 @@ const LANGUAGES: Language[] = [
 function LanguageSwitcher() {
   const { i18n } = useTranslation();
   const [isLangOpen, setIsLangOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const currentLanguage =
     LANGUAGES.find((lang) => lang.code === i18n.language) || LANGUAGES[0];
+
+  // Like the header's other dropdowns: an outside tap or Escape closes it.
+  useEffect(() => {
+    if (!isLangOpen) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setIsLangOpen(false);
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setIsLangOpen(false);
+      buttonRef.current?.focus();
+    };
+    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isLangOpen]);
 
   const handleLanguageChange = (code: string) => {
     i18n.changeLanguage(code);
@@ -26,10 +47,13 @@ function LanguageSwitcher() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={rootRef}>
       <button
+        ref={buttonRef}
         onClick={() => setIsLangOpen(!isLangOpen)}
-        className="flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-gray-100 text-sm font-medium"
+        aria-expanded={isLangOpen}
+        // 44 px high touch target below md.
+        className="flex min-h-11 items-center gap-1 px-2 py-2 rounded-lg hover:bg-gray-100 text-sm font-medium md:min-h-0 md:px-3"
       >
         <img src={currentLanguage.flag} alt={currentLanguage.label} className="w-5 h-4 object-cover rounded-sm" />
         <span>{currentLanguage.code.toUpperCase()}</span>
@@ -41,7 +65,7 @@ function LanguageSwitcher() {
             <button
               key={lang.code}
               onClick={() => handleLanguageChange(lang.code)}
-              className={`w-full flex items-center gap-2 px-4 py-2 text-left hover:bg-gray-100 ${
+              className={`w-full flex min-h-11 items-center gap-2 px-4 py-2 text-left hover:bg-gray-100 md:min-h-0 ${
                 lang.code === i18n.language ? "bg-orange-50 text-orange-600" : ""
               }`}
             >

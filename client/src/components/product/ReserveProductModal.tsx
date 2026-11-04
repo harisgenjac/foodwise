@@ -171,6 +171,7 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
           <FormField label={t("dashboard.quantity")} icon={Scale} suffix={unit} required error={errorFor("quantity")}>
             <input
               type="number"
+              inputMode="decimal"
               min="0.01"
               step="any"
               max={available}

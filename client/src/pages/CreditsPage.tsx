@@ -139,7 +139,7 @@ function CreditsPage() {
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
               aria-label={t("credits.page.year")}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm"
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-base sm:py-2 sm:text-sm"
             >
               {years.map((option) => (
                 <option key={option} value={option}>

@@ -1,6 +1,7 @@
 import {
   dateInDays,
   daysFromToday,
+  formatDateTyping,
   formatDisplayDate,
   formatTimeTyping,
   getDaysUntilExpiry,
@@ -41,6 +42,9 @@ describe("expiry utils", () => {
     expect(parseDisplayDate("5.3.2026")).toBe("2026-03-05");
     expect(parseDisplayDate("29-02-2028")).toBe("2028-02-29");
     expect(parseDisplayDate(formatDisplayDate("2026-12-31"))).toBe("2026-12-31");
+    // Eight digits typed on a phone's number pad.
+    expect(parseDisplayDate("05112026")).toBe("2026-11-05");
+    expect(parseDisplayDate("31022026")).toBeNull();
   });
 
   it("rejects impossible dates and other text", () => {
@@ -62,6 +66,38 @@ describe("expiry utils", () => {
   it("falls back to the expiry date", () => {
     const { days_until_expiry: _unused, ...product } = makeProduct({ expiry_date: "2026-10-22" });
     expect(getDaysUntilExpiry(product)).toBe(2);
+  });
+
+  it("masks typed digits as dd/mm/yyyy", () => {
+    // [next text, previous text, shown text]
+    const typing: [string, string, string][] = [
+      ["0", "", "0"],
+      ["05", "0", "05/"],
+      ["05/1", "05/", "05/1"],
+      ["05/11", "05/1", "05/11/"],
+      ["05/11/2026", "05/11/202", "05/11/2026"],
+      ["05/11/20267", "05/11/2026", "05/11/2026"],
+      ["05112026", "", "05/11/2026"],
+      ["5/", "5", "05/"],
+      ["05/3/", "05/3", "05/03/"],
+    ];
+    for (const [next, previous, shown] of typing) {
+      expect(formatDateTyping(next, previous)).toBe(shown);
+    }
+  });
+
+  it("does not add a slash back while deleting", () => {
+    expect(formatDateTyping("05", "05/")).toBe("05");
+    expect(formatDateTyping("05/11", "05/11/")).toBe("05/11");
+    expect(formatDateTyping("05/1", "05/11")).toBe("05/1");
+    expect(formatDateTyping("", "0")).toBe("");
+  });
+
+  it("reads dots and dashes as slashes, and leaves other text as typed", () => {
+    expect(formatDateTyping("5.11.2026", "")).toBe("05/11/2026");
+    expect(formatDateTyping("31/.", "31/")).toBe("31/");
+    expect(formatDateTyping("5-11", "5-1")).toBe("05/11/");
+    expect(formatDateTyping("5a", "5")).toBe("5a");
   });
 
   it("reads a typed 24-hour time as HH:MM", () => {

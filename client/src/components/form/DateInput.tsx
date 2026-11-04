@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { CalendarDays } from "lucide-react";
 import { inputStyle, invalidStyle, requiredMark } from "./FormField.js";
 import FieldError from "./FieldError.js";
-import { formatDisplayDate, parseDisplayDate } from "../../utils/expiry.js";
+import { formatDateTyping, formatDisplayDate, parseDisplayDate } from "../../utils/expiry.js";
 
 interface DateInputProps {
   label: string;
@@ -28,7 +28,9 @@ function DateInput({ label, value, onChange, min, max, required = false, error, 
   const pickerRef = useRef<HTMLInputElement>(null);
   // What the user is typing; null shows the current value.
   const [draft, setDraft] = useState<string | null>(null);
-  const textStyle = `${inputStyle.replace("pl-10", "pl-3")} pr-10`;
+  // min-h-11 and pr-12 leave room for the 44 px calendar button at every width.
+  const textStyle = `${inputStyle.replace("pl-10", "pl-3").replace("pr-3", "pr-12")} min-h-11`;
+  const shown = draft ?? formatDisplayDate(value);
 
   const commit = () => {
     if (draft === null) return;
@@ -60,8 +62,9 @@ function DateInput({ label, value, onChange, min, max, required = false, error, 
           type="text"
           inputMode="numeric"
           placeholder={t("common.datePlaceholder")}
-          value={draft ?? formatDisplayDate(value)}
-          onChange={(e) => setDraft(e.target.value)}
+          value={shown}
+          // The number pad has no "/": typed digits are shown as dd/mm/yyyy.
+          onChange={(e) => setDraft(formatDateTyping(e.target.value, shown))}
           onBlur={() => {
             commit();
             onBlur?.();
@@ -80,7 +83,8 @@ function DateInput({ label, value, onChange, min, max, required = false, error, 
           type="button"
           onClick={openPicker}
           aria-label={t("common.pickDate")}
-          className="absolute right-1.5 top-1.5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-orange-50 hover:text-orange-600"
+          // A 44 px wide touch target over the field's full height (at least 44 px).
+          className="absolute inset-y-0 right-0 flex w-11 cursor-pointer items-center justify-center rounded-r-xl text-gray-400 transition-colors hover:bg-orange-50 hover:text-orange-600"
         >
           <CalendarDays className="h-4 w-4" strokeWidth={1.8} />
         </button>

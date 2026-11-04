@@ -95,7 +95,7 @@ function ConfirmModal({
                 maxLength={MAX_REASON_LENGTH}
                 rows={3}
                 placeholder={t("admin.common.reasonPlaceholder")}
-                className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100"
+                className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-base text-gray-900 sm:text-sm placeholder:text-gray-400 focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100"
               />
             </FormField>
             {!reasonError && <p className="mt-1 text-xs text-gray-500">{t("admin.common.reasonHint")}</p>}

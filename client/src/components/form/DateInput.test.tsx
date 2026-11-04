@@ -26,6 +26,34 @@ describe("DateInput", () => {
     expect(onChange).toHaveBeenCalledWith("2026-12-01");
   });
 
+  it("adds the slashes while digits are typed on a number pad", async () => {
+    const { input, onChange } = renderInput();
+    expect(input).toHaveAttribute("inputmode", "numeric");
+    await userEvent.clear(input);
+    await userEvent.type(input, "0511");
+    expect(input).toHaveValue("05/11/");
+    await userEvent.type(input, "2026");
+    expect(input).toHaveValue("05/11/2026");
+
+    await userEvent.tab();
+    expect(onChange).toHaveBeenCalledWith("2026-11-05");
+  });
+
+  it("removes a slash with backspace instead of adding it back", async () => {
+    const { input } = renderInput();
+    await userEvent.clear(input);
+    await userEvent.type(input, "05");
+    expect(input).toHaveValue("05/");
+    await userEvent.type(input, "{Backspace}");
+    expect(input).toHaveValue("05");
+  });
+
+  it("has a calendar button 44 px wide over the field's full height", () => {
+    const { input } = renderInput();
+    expect(screen.getByRole("button", { name: t("common.pickDate") })).toHaveClass("inset-y-0", "right-0", "w-11");
+    expect(input).toHaveClass("min-h-11", "pr-12", "text-base", "sm:text-sm");
+  });
+
   it("sends a typed date on Enter", async () => {
     const { input, onChange } = renderInput();
     await userEvent.clear(input);

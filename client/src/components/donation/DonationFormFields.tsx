@@ -147,14 +147,14 @@ function DonationFormFields({
                     type="button"
                     onClick={() => onChange("category", key)}
                     aria-pressed={selected}
-                    className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-colors cursor-pointer ${
+                    className={`flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-colors cursor-pointer ${
                       selected
                         ? "border-orange-400 bg-orange-50 text-orange-700 ring-4 ring-orange-100"
                         : "border-gray-200 bg-white text-gray-700 hover:border-orange-200 hover:bg-orange-50/50"
                     }`}
                   >
                     <Icon className={`h-4 w-4 shrink-0 ${selected ? "text-orange-600" : "text-gray-400"}`} strokeWidth={1.8} />
-                    <span className="truncate">{label}</span>
+                    <span className="min-w-0 break-words leading-tight">{label}</span>
                   </button>
                 );
               })}
@@ -216,6 +216,7 @@ function DonationFormFields({
           <FormField label={t("donations.form.originalPrice")} icon={Tag} suffix="KM" required error={errorFor("original_price")}>
             <input
               type="number"
+              inputMode="decimal"
               min="0"
               step="0.01"
               placeholder="0.00"
@@ -229,6 +230,7 @@ function DonationFormFields({
             <FormField label={t("donations.form.donationPrice")} icon={HandCoins} suffix="KM" required error={donationPriceError}>
               <input
                 type="number"
+                inputMode="decimal"
                 min="0"
                 step="0.01"
                 placeholder="0.00"
@@ -259,6 +261,7 @@ function DonationFormFields({
           <FormField label={t("donations.form.quantity")} icon={Package} required error={errorFor("quantity")}>
             <input
               type="number"
+              inputMode="decimal"
               min="0"
               step="any"
               placeholder="0"

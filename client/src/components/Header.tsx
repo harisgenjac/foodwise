@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { assetUrl } from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.js";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import {
@@ -44,8 +44,31 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
   const [failedLogo, setFailedLogo] = useState<string | null>(null);
   const { notifications, unreadCount, markAllAsRead } = useNotifications();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const notifRef = useRef<HTMLDivElement>(null);
+  const bellRef = useRef<HTMLButtonElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
+
+  // A page change closes both dropdowns (the bottom bar and links outside the header navigate too).
+  useEffect(() => {
+    setIsNotifOpen(false);
+    setIsDropdownOpen(false);
+  }, [pathname]);
+
+  // Escape closes an open dropdown and gives focus back to its button.
+  useEffect(() => {
+    if (!isNotifOpen && !isDropdownOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (isNotifOpen) bellRef.current?.focus();
+      if (isDropdownOpen) profileButtonRef.current?.focus();
+      setIsNotifOpen(false);
+      setIsDropdownOpen(false);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isNotifOpen, isDropdownOpen]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -98,7 +121,7 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between h-16 px-4 bg-white/90 backdrop-blur border-b border-gray-200">
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         {/* Phones open the drawer; from md up the same place collapses the rail. */}
         <button
           type="button"
@@ -108,7 +131,7 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
           aria-haspopup="dialog"
           aria-expanded={isMenuOpen}
           aria-controls={isMenuOpen ? MOBILE_DRAWER_ID : undefined}
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent md:hidden"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent md:hidden"
         >
           <Menu className="h-5 w-5" strokeWidth={1.8} />
         </button>
@@ -127,22 +150,25 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
           tabIndex={locked ? -1 : undefined}
           className={`flex items-center gap-2 ${locked ? "pointer-events-none" : ""}`}
         >
-          <img src={logo} alt="FoodWise" className="h-10 w-10 object-contain" />
-          <span className="text-xl font-bold tracking-tight text-gray-900">
+          <img src={logo} alt="FoodWise" className="h-9 w-9 object-contain sm:h-10 sm:w-10" />
+          <span className="text-lg font-bold tracking-tight text-gray-900 sm:text-xl">
             Food<span className="text-orange-600">Wise</span>
           </span>
         </Link>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center sm:gap-1">
         <LanguageSwitcher />
 
         <div className="relative" ref={notifRef}>
           <button
+            ref={bellRef}
             onClick={() => setIsNotifOpen(!isNotifOpen)}
             disabled={locked}
             aria-label={t("header.notificationsLabel")}
-            className="relative p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+            aria-expanded={isNotifOpen}
+            // 44 px touch target below md; the icon keeps its size.
+            className="relative flex h-11 w-11 items-center justify-center md:h-auto md:w-auto md:p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
           >
             <Bell className="h-5 w-5" strokeWidth={1.8} />
             {unreadCount > 0 && (
@@ -154,7 +180,12 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
 
           {isNotifOpen && (
             // Header and footer stay fixed; only the list scrolls, so "view all" is always visible.
-            <div className="absolute right-0 top-full mt-2 flex w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl z-50">
+            // Below sm a full-width panel fixed under the header (the dropdown would be cut off at the
+            // left edge); from sm up a dropdown under the bell.
+            <div
+              data-testid="notifications-panel"
+              className="fixed inset-x-0 top-16 z-50 flex max-h-[calc(100dvh-4rem)] flex-col overflow-hidden border-y border-gray-100 bg-white pb-[env(safe-area-inset-bottom)] shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:max-h-none sm:w-96 sm:rounded-2xl sm:border sm:pb-0"
+            >
               <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-3">
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="font-semibold text-gray-900">
@@ -186,7 +217,7 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
                   <p className="text-sm text-gray-500">{t("header.noNotifications")}</p>
                 </div>
               ) : (
-                <div className="max-h-[22rem] divide-y divide-gray-50 overflow-y-auto">
+                <div data-testid="notifications-list" className="min-h-0 flex-1 divide-y divide-gray-50 overflow-y-auto sm:max-h-[22rem] sm:flex-none">
                   {notifications.slice(0, DROPDOWN_LIMIT).map((notification) => (
                     <NotificationItem
                       key={notification.id}
@@ -210,10 +241,13 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
           )}
         </div>
 
-        <div className="relative ml-1" ref={profileRef}>
+        <div className="relative sm:ml-1" ref={profileRef}>
           <button
+            ref={profileButtonRef}
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 p-1 pr-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+            aria-expanded={isDropdownOpen}
+            // Below md only the 36 px avatar shows, so p-1 makes it a 44 px target.
+            className="flex items-center gap-2 p-1 md:pr-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
           >
             {avatarUrl && failedLogo !== avatarUrl ? (
               <img
@@ -246,7 +280,7 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
               </div>
               <Link
                 to="/my-profile"
-                className="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                className="flex min-h-11 items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 md:min-h-0"
                 onClick={() => setIsDropdownOpen(false)}
               >
                 <UserRound className="h-4 w-4" />
@@ -254,7 +288,7 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
               </Link>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 cursor-pointer"
+                className="w-full flex min-h-11 items-center gap-2 text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 cursor-pointer md:min-h-0"
               >
                 <LogOut className="h-4 w-4" />
                 {t("header.logout")}

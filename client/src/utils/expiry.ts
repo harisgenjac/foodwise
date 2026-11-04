@@ -40,15 +40,37 @@ export function formatDisplayDate(iso: string): string {
   return year && month && day ? `${day}/${month}/${year}` : '';
 }
 
-// dd/mm/yyyy (also d/m/yyyy, with "/", "." or "-") as YYYY-MM-DD, or null for anything
-// that is not a real date (31/02/2026).
+// dd/mm/yyyy (also d/m/yyyy, with "/", "." or "-", or eight bare digits ddmmyyyy) as YYYY-MM-DD,
+// or null for anything that is not a real date (31/02/2026).
 export function parseDisplayDate(text: string): string | null {
-  const match = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(text.trim());
+  const value = text.trim();
+  const match = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(value) ?? /^(\d{2})(\d{2})(\d{4})$/.exec(value);
   if (!match) return null;
   const [, day, month, year] = match.map(Number) as [number, number, number, number];
   const date = new Date(year, month - 1, day);
   if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
   return toDateInput(date);
+}
+
+// The text of a date field while it is typed in. A phone's number pad has no "/", so digits are
+// shown as dd/mm/yyyy (at most eight), with the slash added after the day and the month ("05" is
+// "05/", "0511" is "05/11/"). A one-digit day or month closed with a slash gets its zero ("5/" is
+// "05/"). "." and "-" count as slashes ("5.11.2026" is "05/11/2026"). While deleting (`next` shorter
+// than `previous`) no slash is added back, so it can be removed. Text with any other character is
+// left as typed, for parseDisplayDate to reject.
+export function formatDateTyping(next: string, previous: string): string {
+  if (/[^\d/.-]/.test(next)) return next;
+  const deleting = next.length < previous.length;
+  const segments = next.replace(/[.-]/g, '/').split('/');
+  const digits = segments
+    .map((segment, index) => (index < 2 && index < segments.length - 1 && segment.length === 1 ? `0${segment}` : segment))
+    .join('')
+    .slice(0, 8);
+  const slashAfter = (length: number) => digits.length > length || (digits.length === length && !deleting);
+  let shown = digits.slice(0, 2);
+  if (slashAfter(2)) shown += `/${digits.slice(2, 4)}`;
+  if (slashAfter(4)) shown += `/${digits.slice(4)}`;
+  return shown;
 }
 
 // A typed 24-hour time as HH:MM, or null for anything outside 00:00–23:59. Accepts "14:30", "14.30",

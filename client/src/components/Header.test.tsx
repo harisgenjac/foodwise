@@ -1,9 +1,10 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 import Header from "./Header.js";
 import { NotificationsProvider } from "../context/NotificationsContext.js";
-import { apiMock, axiosError, makeUser, renderWithProviders, t } from "../test/utils.js";
+import { LocationDisplay, apiMock, axiosError, makeNotification, makeUser, renderWithProviders, t } from "../test/utils.js";
 
 const user = makeUser({ role: "STORE" });
 
@@ -41,6 +42,63 @@ describe("Header logout", () => {
     await logOut();
     await waitFor(() => expect(errorToast).toHaveBeenCalledWith(t("header.logoutError")));
     expect(screen.queryByTestId("location")).not.toBeInTheDocument();
+  });
+});
+
+describe("Header on phones", () => {
+  // Header plus a link outside it, mounted on every path so a page change keeps it rendered.
+  const renderWithLink = () =>
+    renderWithProviders(
+      <NotificationsProvider enabled>
+        <Header isSidebarOpen onToggleSidebar={() => {}} />
+        <Link to="/other">{"elsewhere"}</Link>
+        <LocationDisplay />
+      </NotificationsProvider>,
+      {
+        route: "/dashboard",
+        path: "*",
+        user,
+        get: { "/notifications": { notifications: [makeNotification()], unreadCount: 1 } },
+      },
+    );
+
+  const bell = () => screen.getByRole("button", { name: t("header.notificationsLabel") });
+
+  it("gives the bell and the profile button 44 px touch targets below md", async () => {
+    renderHeader();
+    expect(bell()).toHaveClass("h-11", "w-11", "md:h-auto", "md:w-auto");
+    expect(await screen.findByRole("button", { name: /Amir Hodžić/ })).toHaveClass("p-1", "md:pr-2");
+  });
+
+  it("opens the notifications as a full-width panel under the header below sm, with a scrolling list", async () => {
+    renderWithLink();
+    await userEvent.click(bell());
+    const panel = await screen.findByTestId("notifications-panel");
+    expect(panel).toHaveClass("fixed", "inset-x-0", "top-16", "max-h-[calc(100dvh-4rem)]");
+    // From sm up it is the dropdown under the bell, as before.
+    expect(panel).toHaveClass("sm:absolute", "sm:right-0", "sm:top-full", "sm:w-96");
+    expect(await within(panel).findByTestId("notifications-list")).toHaveClass("min-h-0", "flex-1", "overflow-y-auto");
+    expect(bell()).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("closes the panel on Escape and gives focus back to the bell", async () => {
+    renderWithLink();
+    await userEvent.click(bell());
+    await screen.findByTestId("notifications-panel");
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByTestId("notifications-panel")).not.toBeInTheDocument();
+    expect(bell()).toHaveFocus();
+  });
+
+  it("closes the panel when the page changes", async () => {
+    renderWithLink();
+    await userEvent.click(bell());
+    await screen.findByTestId("notifications-panel");
+    // A keyboard press, not a click: a click outside closes it on its own.
+    screen.getByRole("link", { name: "elsewhere" }).focus();
+    await userEvent.keyboard("{Enter}");
+    expect(screen.getByTestId("location")).toHaveTextContent("/other");
+    await waitFor(() => expect(screen.queryByTestId("notifications-panel")).not.toBeInTheDocument());
   });
 });
 

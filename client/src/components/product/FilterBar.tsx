@@ -43,7 +43,7 @@ interface FilterFieldProps {
 export function FilterField({ icon: Icon, children }: FilterFieldProps) {
   return (
     <span className="relative block">
-      <Icon className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-gray-400" strokeWidth={1.8} />
+      <Icon className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-gray-400 sm:top-3" strokeWidth={1.8} />
       {children}
     </span>
   );

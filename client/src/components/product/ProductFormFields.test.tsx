@@ -29,6 +29,22 @@ describe("ProductFormFields", () => {
     expect(screen.getByLabelText(t("product.name"))).toBeEnabled();
   });
 
+  it("opens the decimal keyboard for prices and the quantity", () => {
+    renderFields();
+    // The price labels also hold the "KM" suffix, so they are matched by their start.
+    for (const label of [t("product.originalPrice"), t("product.discountedPrice"), t("product.quantity")]) {
+      expect(screen.getByLabelText(new RegExp(`^${label}`))).toHaveAttribute("inputmode", "decimal");
+    }
+  });
+
+  it("wraps long category names instead of cutting them off", () => {
+    renderFields();
+    const label = screen.getByText(t("categories.Dairy"));
+    expect(label).not.toHaveClass("truncate");
+    expect(label).toHaveClass("break-words");
+    expect(label.closest("button")).toHaveClass("min-h-11");
+  });
+
   it("reports text, number and select changes by field", async () => {
     const onChange = renderFields();
 
