@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { AlertCircle, Search, Store } from "lucide-react";
 import api from "../../api/axios.js";
-import Modal from "../product/Modal.js";
+import Modal, { ModalBody, ModalFooter, ModalHeader } from "../product/Modal.js";
 import { inputStyle } from "../form/FormField.js";
 import { FilterField } from "../product/FilterBar.js";
 import { useFetch } from "../../hooks/useFetch.js";
@@ -21,6 +21,7 @@ interface AttachStoreModalProps {
 // attaches one without a company to this company. There is no detach.
 function AttachStoreModal({ companyId, companyName, onClose, onAttached }: AttachStoreModalProps) {
   const { t } = useTranslation();
+  const titleId = useId();
   const [q, setQ] = useState("");
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -43,10 +44,11 @@ function AttachStoreModal({ companyId, companyName, onClose, onAttached }: Attac
   };
 
   return (
-    <Modal onClose={onClose}>
-      <div className="space-y-4">
+    <Modal onClose={onClose} labelledBy={titleId}>
+      {/* The search stays above the scrolling list. */}
+      <ModalHeader className="space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">{t("admin.companyDetails.attachTitle")}</h2>
+          <h2 id={titleId} className="text-lg font-semibold text-gray-900">{t("admin.companyDetails.attachTitle")}</h2>
           <p className="mt-1 text-sm text-gray-600">{t("admin.companyDetails.attachText", { name: companyName })}</p>
         </div>
         {error && (
@@ -65,10 +67,12 @@ function AttachStoreModal({ companyId, companyName, onClose, onAttached }: Attac
             className={inputStyle}
           />
         </FilterField>
+      </ModalHeader>
+      <ModalBody className="pt-2">
         {loading ? null : candidates.length === 0 ? (
-          <p className="text-sm text-gray-500">{t("admin.companyDetails.attachNone")}</p>
+          <p className="pt-2 text-sm text-gray-500">{t("admin.companyDetails.attachNone")}</p>
         ) : (
-          <ul className="max-h-72 divide-y divide-gray-100 overflow-y-auto">
+          <ul className="divide-y divide-gray-100">
             {candidates.map((store) => (
               <li key={store.id} className="flex items-center justify-between gap-3 py-2.5">
                 <div className="min-w-0">
@@ -88,16 +92,16 @@ function AttachStoreModal({ companyId, companyName, onClose, onAttached }: Attac
             ))}
           </ul>
         )}
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-          >
-            {t("admin.common.cancel")}
-          </button>
-        </div>
-      </div>
+      </ModalBody>
+      <ModalFooter className="justify-end">
+        <button
+          type="button"
+          onClick={onClose}
+          className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+        >
+          {t("admin.common.cancel")}
+        </button>
+      </ModalFooter>
     </Modal>
   );
 }

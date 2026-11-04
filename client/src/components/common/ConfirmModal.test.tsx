@@ -32,6 +32,17 @@ describe("ConfirmModal", () => {
     expect(cancelButton()).toBeInTheDocument();
   });
 
+  it("scrolls the message and the reason field, keeping the title and the buttons outside", () => {
+    renderModal({ reason: true });
+    const body = screen.getByTestId("modal-body");
+    expect(body).toHaveClass("overflow-y-auto");
+    expect(body).toContainElement(screen.getByRole("textbox", { name: new RegExp(t("admin.common.reasonLabel")) }));
+    expect(body).toHaveTextContent("Proizvod će biti trajno obrisan.");
+    expect(body).not.toContainElement(screen.getByRole("heading", { name: "Obrisati proizvod?" }));
+    expect(body).not.toContainElement(confirmButton());
+    expect(body).not.toContainElement(cancelButton());
+  });
+
   it("colors the confirm button by variant", () => {
     const { unmount } = render(
       <ConfirmModal title="A" message="m" confirmLabel="Prihvati" variant="success" busy={false} onConfirm={vi.fn()} onClose={vi.fn()} />,

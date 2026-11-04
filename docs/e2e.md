@@ -29,7 +29,7 @@ e2e/
     ├── block-store.spec.ts            admin blocks blockStore with a reason → its session ends, login shows the reason → offer hidden → unblock → offer back
     ├── donations.spec.ts              store moves a product's free quantity to donations → shown on "Doniraj hranu", gone from the marketplace → removed and returned to the offer
     ├── branch-deactivation.spec.ts    HQ can't deactivate the branch with an accepted pickup → picked up (API) → deactivated: offer hidden, branch login refused → reactivated: offer back
-    └── mobile-layout.spec.ts          at 375 px every store and restaurant page (lists, details, donation edit) is no wider than the screen, shows the bottom bar and no sidebar; More opens the drawer, Escape closes it
+    └── mobile-layout.spec.ts          at 375 px every store and restaurant page (lists, details, donation edit) is no wider than the screen, shows the bottom bar and no sidebar; More opens the drawer, Escape closes it; field text at least 16 px; the notification panel inside the screen; at 375×667 the reserve, subscribe (a fresh store without a plan) and confirm-with-reason dialogs show their buttons without scrolling the page, Back closes the reserve dialog on the same page, and the admin's edit profile dialog scrolls to its last field. Runs in the `chromium` and `webkit-iphone` projects
 ```
 
 Scripts (in `e2e/`): `npm run e2e` (headless), `npm run e2e:ui` (Playwright UI mode), `npm run typecheck`.
@@ -75,7 +75,7 @@ DISABLE_RATE_LIMITS=true
    - All emails end in `@foodwise.test`. Every seeded account uses the password `E2e-pass-123` (`support/accounts.ts`).
    - Every store and restaurant (the branch too, not the HQ) gets an approved Standard plan (50 credits) for the current credit month: an `APPROVED` request, the subscription and the `PLAN_GRANT`, with auto-renew off. The cities, plans and packages come from the migrations, and every date is relative to today.
 3. **`setup` project** (`tests/auth.setup.ts`): logs each seeded role in through `POST /api/auth/login` and saves its cookie to `e2e/.auth/<role>.json`. Tests start from these sessions with `test.use({ storageState: storageState("store") })`, or `browser.newContext({ storageState })` when a test needs two roles. The login form is used only where logging in is part of the flow: `loginViaForm` in `first-login.spec.ts` and `store-chain.spec.ts`, and `submitLoginForm` for the refused logins in `block-store.spec.ts` and `branch-deactivation.spec.ts`.
-4. **`chromium` project:** the specs, one worker.
+4. **`chromium` project:** the specs, one worker. **`webkit-iphone` project:** `mobile-layout.spec.ts` again in WebKit with `devices["iPhone 13"]` (Safari's engine, user agent, touch and mobile viewport), so iOS layout fixes are checked without an iPhone. It is still an emulation: the real iOS toolbar and keyboard are not reproduced.
 
 Config:
 - Retries: 1 on CI, 0 locally.
@@ -125,7 +125,7 @@ Once:
 psql -U postgres -c "CREATE DATABASE food_saver_e2e_db;"
 # create e2e/.env.e2e (see above)
 npm run install:all          # root: dependencies of the root, server/, client/ and e2e/
-cd e2e && npx playwright install chromium
+cd e2e && npx playwright install chromium webkit
 ```
 
 Run a single file (the whole suite runs in CI). Check a new test for flakiness with `--repeat-each=3` before pushing:
@@ -139,7 +139,7 @@ npx playwright show-report           # the last run's HTML report
 
 Ports 3100 and 4173 must be free, but the normal dev servers can keep running.
 
-**VS Code:** the Playwright Test for VS Code extension finds `e2e/playwright.config.ts` by itself. The tests appear in the Testing view, and a test run from there also runs the `setup` project it depends on. Chromium must be installed once (`npx playwright install chromium` in `e2e/`). The extension loads the config from the workspace root, so the config resolves `.env.e2e` and the `.auth/` sessions from its own folder (`import.meta.url`), never from the working directory. Keep it that way for any new file path. Each run builds both sides and reseeds the database, so expect about 15–20 s before the first test starts.
+**VS Code:** the Playwright Test for VS Code extension finds `e2e/playwright.config.ts` by itself. The tests appear in the Testing view, and a test run from there also runs the `setup` project it depends on. Chromium and WebKit must be installed once (`npx playwright install chromium webkit` in `e2e/`). The extension loads the config from the workspace root, so the config resolves `.env.e2e` and the `.auth/` sessions from its own folder (`import.meta.url`), never from the working directory. Keep it that way for any new file path. Each run builds both sides and reseeds the database, so expect about 15–20 s before the first test starts.
 
 ## CI and failed runs
 

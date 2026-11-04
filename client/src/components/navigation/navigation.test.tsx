@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 import Layout from "../Layout.js";
@@ -47,7 +47,12 @@ beforeEach(() => {
   vi.spyOn(window, "scrollTo").mockImplementation(() => {});
 });
 
-afterEach(() => localStorage.clear());
+afterEach(async () => {
+  localStorage.clear();
+  // A closed drawer goes back over its history entry asynchronously; the next test starts after it.
+  cleanup();
+  await waitFor(() => expect(window.history.state?.overlayDepth).toBeUndefined());
+});
 
 describe("MobileDrawer", () => {
   it("starts closed whatever the desktop rail's stored state, and opens with the role's links", async () => {
@@ -92,6 +97,19 @@ describe("MobileDrawer", () => {
     await userEvent.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(button).toHaveFocus();
+  });
+
+  it("closes on Back (the Android back button) and stays on the page", async () => {
+    renderLayout(store);
+    const button = await menuButton();
+    await userEvent.click(button);
+    expect(window.history.state).toMatchObject({ overlayDepth: 1 });
+
+    window.history.back();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByTestId("location")).toHaveTextContent("/dashboard");
+    expect(document.documentElement.style.overflow).toBe("");
+    await waitFor(() => expect(button).toHaveFocus());
   });
 
   it("keeps Tab inside the drawer", async () => {

@@ -169,7 +169,7 @@ The review and its findings per page are in `docs/mobile-review.md`, the referen
 - [x] Navigation shell: a drawer below md for every role, and bottom navigation for stores and restaurants instead of the sidebar for the most used pages (store: Dashboard, My products, Reservations, Pickups, More; restaurant: Dashboard, Browse products, My reservations, Pickups, More); the window scrolls instead of the page area, 16 px side padding below sm.
 - [x] Header on phones: 44 px buttons, the notification dropdown as a full-width panel.
 - [x] Form controls: larger touch targets (at least 44 px) and phone-friendly forms: 16 px text and 44 px fields below sm, a numeric keyboard and a 44 px calendar button in the date input, category labels that wrap.
-- [ ] Modal: a maximum height with a scrolling body and buttons that stay visible.
+- [x] Modal: a maximum height with a scrolling body and buttons that stay visible.
 - [ ] Banners: compact announcement and credit banners on phones, a 44 px close button.
 - [ ] Tables become cards below md (orders, products, admin lists): one shared pattern, admin credit requests and credits first.
 - [ ] Filters on phones: the search stays, the other filters go behind a "Filters" button.

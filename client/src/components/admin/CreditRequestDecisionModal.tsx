@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { Check, X } from "lucide-react";
 import api from "../../api/axios.js";
-import Modal from "../product/Modal.js";
+import Modal, { ModalBody, ModalFooter, ModalHeader } from "../product/Modal.js";
 import { inputStyle } from "../form/FormField.js";
 import { creditRequestSender, creditRequestUser, describeCreditRequest, formatCreditMonth } from "../../utils/credits.js";
 import type { AdminCreditRequest } from "../../types/index.js";
@@ -49,6 +49,7 @@ interface CreditRequestDecisionModalProps {
 // Approves or rejects a pending credit request, with an internal note the user never sees.
 function CreditRequestDecisionModal({ request, action, onClose, onDone }: CreditRequestDecisionModalProps) {
   const { t } = useTranslation();
+  const titleId = useId();
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const requestTypes = t("credits.requestTypes", { returnObjects: true }) as Record<string, string>;
@@ -72,32 +73,36 @@ function CreditRequestDecisionModal({ request, action, onClose, onDone }: Credit
   };
 
   return (
-    <Modal onClose={onClose}>
-      <h3 className="text-lg font-bold text-gray-900">
-        {t(approve ? "admin.creditRequests.approveTitle" : "admin.creditRequests.rejectTitle")}
-      </h3>
-      <p className="mt-2 text-sm text-gray-600">
-        {t(approve ? "admin.creditRequests.approveText" : "admin.creditRequests.rejectText", {
-          user: creditRequestUser(request),
-          what: `${requestTypes[request.request_type]} (${describeCreditRequest(request, t)})`,
-          month: formatCreditMonth(request.period_month, monthNames),
-        })}
-      </p>
-      {creditRequestSender(request, t) && (
-        <p className="mt-1 text-xs font-medium text-teal-700">{creditRequestSender(request, t)}</p>
-      )}
-      <label className="mt-4 block text-sm font-medium text-gray-700">
-        {t("admin.creditRequests.note")}
-        <textarea
-          rows={3}
-          maxLength={MAX_NOTE_LENGTH}
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          className={`${inputStyle} mt-1.5 resize-none`}
-        />
-      </label>
-      <p className="mt-1 text-xs text-gray-500">{t("admin.creditRequests.noteHint")}</p>
-      <div className="mt-5 flex gap-2">
+    <Modal onClose={onClose} labelledBy={titleId}>
+      <ModalHeader>
+        <h3 id={titleId} className="text-lg font-bold text-gray-900">
+          {t(approve ? "admin.creditRequests.approveTitle" : "admin.creditRequests.rejectTitle")}
+        </h3>
+      </ModalHeader>
+      <ModalBody className="pt-2">
+        <p className="text-sm text-gray-600">
+          {t(approve ? "admin.creditRequests.approveText" : "admin.creditRequests.rejectText", {
+            user: creditRequestUser(request),
+            what: `${requestTypes[request.request_type]} (${describeCreditRequest(request, t)})`,
+            month: formatCreditMonth(request.period_month, monthNames),
+          })}
+        </p>
+        {creditRequestSender(request, t) && (
+          <p className="mt-1 text-xs font-medium text-teal-700">{creditRequestSender(request, t)}</p>
+        )}
+        <label className="mt-4 block text-sm font-medium text-gray-700">
+          {t("admin.creditRequests.note")}
+          <textarea
+            rows={3}
+            maxLength={MAX_NOTE_LENGTH}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            className={`${inputStyle} mt-1.5 resize-none`}
+          />
+        </label>
+        <p className="mt-1 text-xs text-gray-500">{t("admin.creditRequests.noteHint")}</p>
+      </ModalBody>
+      <ModalFooter>
         <button
           type="button"
           onClick={onClose}
@@ -115,7 +120,7 @@ function CreditRequestDecisionModal({ request, action, onClose, onDone }: Credit
         >
           {t(approve ? "admin.creditRequests.approve" : "admin.creditRequests.reject")}
         </button>
-      </div>
+      </ModalFooter>
     </Modal>
   );
 }

@@ -1,6 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { runId, storageState, type SeededRole } from "../support/accounts.js";
-import { apiAs, createDonation, createProduct, myId, reserve } from "../support/api.js";
+import { apiAs, createDonation, createProduct, createStoreWithoutPlan, myId, reserve } from "../support/api.js";
 
 // Phone width: every store and restaurant page fits the screen, with the bottom bar instead of the
 // sidebar (docs/mobile-review.md, the navigation shell).
@@ -42,6 +42,7 @@ const expectNoSmallFieldText = async (page: Page, path: string) => {
 let productId: number;
 let reservationId: number;
 let storeId: number;
+let restaurantId: number;
 const donationIds: Partial<Record<SeededRole, number>> = {};
 
 test.beforeAll(async () => {
@@ -49,6 +50,7 @@ test.beforeAll(async () => {
   const restaurantApi = await apiAs("restaurant");
   productId = (await createProduct(storeApi, { name: `E2E Mobilni ${runId()}` })).id;
   storeId = await myId(storeApi);
+  restaurantId = await myId(restaurantApi);
   reservationId = (await reserve(restaurantApi, productId, 1)).id;
   donationIds.store = (await createDonation(storeApi, `E2E Mobilna donacija ${runId()}`)).id;
   donationIds.restaurant = (await createDonation(restaurantApi, `E2E Mobilni obrok ${runId()}`)).id;
@@ -80,6 +82,90 @@ test.describe("store", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
     await page.keyboard.press("Escape");
     await expect(panel).toBeHidden();
+  });
+});
+
+// Dialogs on a short phone (iPhone SE, 667 px): the title and the buttons are on screen as soon as
+// the dialog opens, only the dialog body scrolls, and the page behind stays still.
+test.describe("dialogs at 375×667", () => {
+  test.use({ viewport: { width: 375, height: 667 } });
+
+  const expectButtonsOnScreen = async (page: Page, dialog: Locator, buttons: string[]) => {
+    const scrollBefore = await page.evaluate(() => window.scrollY);
+    for (const name of buttons) {
+      await expect(dialog.getByRole("button", { name, exact: true }), name).toBeInViewport({ ratio: 1 });
+    }
+    // The dialog fits the screen and the page underneath is locked, not scrolled.
+    const box = (await dialog.boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(667);
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe("hidden");
+    expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
+  };
+
+  test.describe("restaurant", () => {
+    test.use({ storageState: storageState("restaurant") });
+
+    test("the reserve dialog shows its buttons, and Back closes it on the same page", async ({ page }) => {
+      await page.goto(`/products/${productId}`);
+      await page.getByRole("button", { name: "Rezerviši" }).click();
+      const dialog = page.getByRole("dialog", { name: "Rezerviši" });
+      await expectButtonsOnScreen(page, dialog, ["Otkaži", "Potvrdi"]);
+
+      // The Android back button: the dialog closes and the page stays.
+      await page.goBack();
+      await expect(dialog).toBeHidden();
+      await expect(page).toHaveURL(new RegExp(`/products/${productId}$`));
+      expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).not.toBe("hidden");
+    });
+  });
+
+  test.describe("store without a plan", () => {
+    // A fresh store each run, so the plans are offered right away (the seeded store has one).
+    test.use({
+      storageState: async ({}, use) => {
+        await use((await createStoreWithoutPlan()).storageState);
+      },
+    });
+
+    test("the subscribe dialog shows its buttons", async ({ page }) => {
+      await page.goto("/my-profile#subscription");
+      const standard = page.locator("#plan-options > div").filter({ has: page.getByText("Standard", { exact: true }) });
+      await standard.getByRole("button", { name: "Odaberi" }).click();
+      await expectButtonsOnScreen(page, page.getByRole("dialog", { name: "Pretplata: Standard" }), ["Odustani", "Pošalji zahtjev"]);
+    });
+  });
+
+  test.describe("admin", () => {
+    test.use({ storageState: storageState("admin") });
+
+    test("the confirm dialog with a reason shows its buttons", async ({ page }) => {
+      await page.goto(`/admin/users/${restaurantId}`);
+      await page.getByRole("button", { name: "Blokiraj nalog" }).click();
+      const dialog = page.getByRole("dialog", { name: "Blokirati nalog?" });
+      await dialog.getByLabel("Razlog").focus();
+      await expectButtonsOnScreen(page, dialog, ["Odustani", "Blokiraj"]);
+      await page.keyboard.press("Escape");
+      await expect(dialog).toBeHidden();
+    });
+
+    test("the edit profile dialog scrolls to its last field, with the buttons in view", async ({ page }) => {
+      await page.goto(`/admin/users/${storeId}`);
+      await page.getByRole("button", { name: "Uredi profil" }).click();
+      const dialog = page.getByRole("dialog", { name: "Uredi profil korisnika" });
+      await expectButtonsOnScreen(page, dialog, ["Odustani", "Sačuvaj profil"]);
+
+      // Taller than the screen: the body scrolls inside the dialog.
+      const body = dialog.getByTestId("modal-body");
+      const { scrollHeight, clientHeight } = await body.evaluate((el) => ({ scrollHeight: el.scrollHeight, clientHeight: el.clientHeight }));
+      expect(scrollHeight).toBeGreaterThan(clientHeight);
+      const lastField = dialog.getByLabel("Opis");
+      await expect(lastField).not.toBeInViewport();
+      await body.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+      await expect(lastField).toBeInViewport({ ratio: 1 });
+      await expect(dialog.getByRole("button", { name: "Sačuvaj profil" })).toBeInViewport({ ratio: 1 });
+      await expect(dialog.getByRole("heading", { name: "Uredi profil korisnika" })).toBeInViewport({ ratio: 1 });
+    });
   });
 });
 

@@ -4,39 +4,31 @@ import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import logo from "../../assets/logoApp.png";
 import SidebarNav from "./SidebarNav.js";
+import { useOverlay } from "../../hooks/useOverlay.js";
 
 export const MOBILE_DRAWER_ID = "mobile-drawer";
 
 // From md up the rail takes over; an open drawer then closes.
 const DESKTOP_QUERY = "(min-width: 48rem)";
 
-const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
 // The phone navigation (below md): every link of the role in a panel over the page. Rendered only
-// while open. Closes on a link, the backdrop, the close button, Escape and any page change; focus
-// moves into it and goes back to the button that opened it (the header menu button or "More").
+// while open. Closes on a link, the backdrop, the close button, Escape, Back and any page change;
+// focus moves into it and goes back to the button that opened it (the header menu button or
+// "More"). Links replace the drawer's history entry, so Back then leaves the new page.
 function MobileDrawer({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const openedOn = useRef(pathname);
+  useOverlay({ onClose, containerRef: panelRef });
 
   useEffect(() => {
     if (pathname !== openedOn.current) onClose();
   }, [pathname, onClose]);
 
-  // Focus in on open, back to the opener on close; the page underneath does not scroll meanwhile.
   useEffect(() => {
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const root = document.documentElement;
-    const previousOverflow = root.style.overflow;
-    root.style.overflow = "hidden";
     closeRef.current?.focus();
-    return () => {
-      root.style.overflow = previousOverflow;
-      opener?.focus();
-    };
   }, []);
 
   useEffect(() => {
@@ -49,28 +41,8 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
     return () => media.removeEventListener("change", onChange);
   }, [onClose]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
-      e.stopPropagation();
-      onClose();
-      return;
-    }
-    if (e.key !== "Tab" || !panelRef.current) return;
-    // Keep Tab inside the panel.
-    const focusable = [...panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)];
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last?.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first?.focus();
-    }
-  };
-
   return (
-    <div className="fixed inset-0 z-50 md:hidden" onKeyDown={handleKeyDown}>
+    <div className="fixed inset-0 z-50 md:hidden">
       <div data-testid="mobile-drawer-backdrop" className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div
         ref={panelRef}
@@ -78,10 +50,11 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
         role="dialog"
         aria-modal="true"
         aria-label={t("sidebar.menu")}
-        className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-xl"
+        tabIndex={-1}
+        className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-xl outline-none"
       >
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 px-4">
-          <Link to="/dashboard" onClick={onClose} className="flex items-center gap-2">
+          <Link to="/dashboard" replace onClick={onClose} className="flex items-center gap-2">
             <img src={logo} alt="FoodWise" className="h-10 w-10 object-contain" />
             <span className="text-xl font-bold tracking-tight text-gray-900">
               Food<span className="text-orange-600">Wise</span>
@@ -97,8 +70,8 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
             <X className="h-5 w-5" strokeWidth={1.8} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
-          <SidebarNav expanded onNavigate={onClose} />
+        <div className="flex-1 overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]">
+          <SidebarNav expanded onNavigate={onClose} replace />
         </div>
       </div>
     </div>

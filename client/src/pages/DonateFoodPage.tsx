@@ -23,7 +23,7 @@ import ProductPageHeader from "../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../components/product/FilterBar.js";
 import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
-import Modal from "../components/product/Modal.js";
+import Modal, { ModalBody, ModalFooter, ModalHeader } from "../components/product/Modal.js";
 import DonationCard from "../components/donation/DonationCard.js";
 import { inputStyle } from "../components/form/FormField.js";
 import LoadMore from "../components/LoadMore.js";
@@ -243,48 +243,52 @@ function DonateFoodPage() {
       />
 
       {selectedDonation && (
-        <Modal onClose={() => setSelectedDonation(null)}>
-          <div className="flex flex-col items-center text-center">
+        <Modal onClose={() => setSelectedDonation(null)} labelledBy="delete-donation-title">
+          <ModalHeader className="flex flex-col items-center text-center">
             <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
               <AlertTriangle className="h-6 w-6" strokeWidth={1.8} />
             </span>
-            <h3 className="text-lg font-bold text-gray-900">
+            <h3 id="delete-donation-title" className="text-lg font-bold text-gray-900">
               {canReturn ? t("donations.delete.returnTitle") : t("donations.delete.title")}
             </h3>
-            <p className="mt-1 text-sm text-gray-500">
+          </ModalHeader>
+          <ModalBody className="pt-1">
+            <p className="text-center text-sm text-gray-500">
               {canReturn
                 ? t("donations.delete.returnText", { name: selectedDonation.name })
                 : t("donations.delete.text", { name: selectedDonation.name })}
             </p>
-          </div>
-          {canReturn && (
-            <button
-              type="button"
-              onClick={() => handleReturn(selectedDonation)}
-              disabled={deleting}
-              className="mt-6 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-wait disabled:opacity-60"
-            >
-              <Undo2 className="h-4 w-4" />
-              {t("donations.delete.returnButton")}
-            </button>
-          )}
-          <div className={`${canReturn ? "mt-2" : "mt-6"} flex gap-2`}>
-            <button
-              type="button"
-              onClick={() => setSelectedDonation(null)}
-              className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
-            >
-              {t("donations.delete.cancel")}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDelete(selectedDonation)}
-              disabled={deleting}
-              className="flex-1 cursor-pointer rounded-xl bg-red-600 py-2.5 font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-wait disabled:opacity-60"
-            >
-              {canReturn ? t("donations.delete.deleteForGood") : t("donations.delete.confirm")}
-            </button>
-          </div>
+          </ModalBody>
+          <ModalFooter className="flex-col pt-6">
+            {canReturn && (
+              <button
+                type="button"
+                onClick={() => handleReturn(selectedDonation)}
+                disabled={deleting}
+                className="inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-wait disabled:opacity-60"
+              >
+                <Undo2 className="h-4 w-4" />
+                {t("donations.delete.returnButton")}
+              </button>
+            )}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedDonation(null)}
+                className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+              >
+                {t("donations.delete.cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(selectedDonation)}
+                disabled={deleting}
+                className="flex-1 cursor-pointer rounded-xl bg-red-600 py-2.5 font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-wait disabled:opacity-60"
+              >
+                {canReturn ? t("donations.delete.deleteForGood") : t("donations.delete.confirm")}
+              </button>
+            </div>
+          </ModalFooter>
         </Modal>
       )}
     </div>

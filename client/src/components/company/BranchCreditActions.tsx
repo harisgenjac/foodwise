@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PlusCircle, Wallet } from "lucide-react";
 import api from "../../api/axios.js";
-import Modal from "../product/Modal.js";
+import Modal, { ModalBody, ModalHeader } from "../product/Modal.js";
 import SubscribeModal from "../credits/SubscribeModal.js";
 import TopupModal from "../credits/TopupModal.js";
 import { formatCreditMonth, nextCreditMonth } from "../../utils/credits.js";
@@ -112,10 +112,12 @@ function BranchCreditActions({
 
       {picker === "plan" && (
         <Modal onClose={() => setPicker(null)} labelledBy={`branch-plan-${branch.id}`}>
-          <h3 id={`branch-plan-${branch.id}`} className="text-lg font-bold text-gray-900">
-            {t("company.credits.pickPlanTitle", { branch: branch.name, month: formatCreditMonth(month, monthNames) })}
-          </h3>
-          <div className="mt-4 grid gap-2">
+          <ModalHeader>
+            <h3 id={`branch-plan-${branch.id}`} className="text-lg font-bold text-gray-900">
+              {t("company.credits.pickPlanTitle", { branch: branch.name, month: formatCreditMonth(month, monthNames) })}
+            </h3>
+          </ModalHeader>
+          <ModalBody className="grid gap-2 pb-6">
             {plans.map((plan) => (
               <button
                 key={plan.id}
@@ -133,15 +135,17 @@ function BranchCreditActions({
                 </span>
               </button>
             ))}
-          </div>
+          </ModalBody>
         </Modal>
       )}
       {picker === "topup" && (
         <Modal onClose={() => setPicker(null)} labelledBy={`branch-topup-${branch.id}`}>
-          <h3 id={`branch-topup-${branch.id}`} className="text-lg font-bold text-gray-900">
-            {t("company.credits.pickTopupTitle", { branch: branch.name })}
-          </h3>
-          <div className="mt-4 grid gap-2">
+          <ModalHeader>
+            <h3 id={`branch-topup-${branch.id}`} className="text-lg font-bold text-gray-900">
+              {t("company.credits.pickTopupTitle", { branch: branch.name })}
+            </h3>
+          </ModalHeader>
+          <ModalBody className="grid gap-2 pb-6">
             {packages.map((topup) => (
               <button
                 key={topup.id}
@@ -158,7 +162,7 @@ function BranchCreditActions({
                 <span className="text-sm text-green-600">{t("credits.profile.price", { price: topup.price })}</span>
               </button>
             ))}
-          </div>
+          </ModalBody>
         </Modal>
       )}
       {selectedPlan && (

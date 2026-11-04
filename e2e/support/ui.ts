@@ -4,8 +4,8 @@ import { expect, type Page } from "@playwright/test";
 // Toasts are role="status", and so is the credit banner, so they are told apart by text.
 export const toast = (page: Page, text: string | RegExp) => page.getByRole("status").filter({ hasText: text });
 
-// A dialog by its text, for the dialogs that have no accessible name (SubscribeModal,
-// CreditRequestDecisionModal, the reserve dialog).
+// A dialog by its text. Every dialog is named by its title now (getByRole("dialog", { name })),
+// so this is for matching on text further down in it.
 export const dialogWith = (page: Page, text: string) => page.getByRole("dialog").filter({ hasText: text });
 
 export const loginViaForm = async (page: Page, email: string, password: string) => {

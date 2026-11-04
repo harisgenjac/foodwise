@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import Modal from "../product/Modal.js";
+import Modal, { ModalBody, ModalFooter, ModalHeader, modalFormStyle } from "../product/Modal.js";
 import FormField, { inputStyle } from "../form/FormField.js";
 import RequiredHint from "../form/RequiredHint.js";
 import { useFormValidation } from "../../hooks/useFormValidation.js";
@@ -18,6 +18,7 @@ interface AdjustCreditsModalProps {
 // A manual +/− credit correction; the server requires a whole number other than zero and a reason.
 function AdjustCreditsModal({ busy, onConfirm, onClose }: AdjustCreditsModalProps) {
   const { t } = useTranslation();
+  const titleId = useId();
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const { formRef, errorFor, blur, validate } = useFormValidation({
@@ -32,11 +33,13 @@ function AdjustCreditsModal({ busy, onConfirm, onClose }: AdjustCreditsModalProp
   };
 
   return (
-    <Modal onClose={onClose}>
-      <form ref={formRef} noValidate onSubmit={handleSubmit}>
-        <h3 className="text-lg font-bold text-gray-900">{t("admin.userCredits.adjustTitle")}</h3>
+    <Modal onClose={onClose} labelledBy={titleId}>
+      <ModalHeader>
+        <h3 id={titleId} className="text-lg font-bold text-gray-900">{t("admin.userCredits.adjustTitle")}</h3>
         <p className="mt-2 text-sm text-gray-600">{t("admin.userCredits.adjustText")}</p>
-        <div className="mt-4 space-y-3">
+      </ModalHeader>
+      <form ref={formRef} noValidate onSubmit={handleSubmit} className={modalFormStyle}>
+        <ModalBody className="space-y-3">
           <FormField label={t("admin.userCredits.amount")} required error={errorFor("amount")}>
             <input
               type="number"
@@ -59,8 +62,8 @@ function AdjustCreditsModal({ busy, onConfirm, onClose }: AdjustCreditsModalProp
             />
           </FormField>
           <RequiredHint />
-        </div>
-        <div className="mt-5 flex gap-2">
+        </ModalBody>
+        <ModalFooter>
           <button
             type="button"
             onClick={onClose}
@@ -75,7 +78,7 @@ function AdjustCreditsModal({ busy, onConfirm, onClose }: AdjustCreditsModalProp
           >
             {t("admin.userCredits.save")}
           </button>
-        </div>
+        </ModalFooter>
       </form>
     </Modal>
   );

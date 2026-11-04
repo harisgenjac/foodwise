@@ -43,10 +43,13 @@ interface SidebarNavProps {
   locked?: boolean;
   // Called after a link is followed (the drawer closes).
   onNavigate?: () => void;
+  // The links replace the current history entry. The drawer passes it: that entry is the drawer's
+  // own (useOverlay), so Back after following a link goes to the page before, not the same page.
+  replace?: boolean;
 }
 
 // The role's links, shared by the desktop rail (Sidebar) and the phone drawer (MobileDrawer).
-function SidebarNav({ expanded, locked = false, onNavigate }: SidebarNavProps) {
+function SidebarNav({ expanded, locked = false, onNavigate, replace = false }: SidebarNavProps) {
   const { user } = useAuth();
   const { t } = useTranslation();
   const { pathname } = useLocation();
@@ -141,6 +144,7 @@ function SidebarNav({ expanded, locked = false, onNavigate }: SidebarNavProps) {
         title={expanded ? undefined : label}
         aria-label={label}
         onClick={onNavigate}
+        replace={replace}
         className={({ isActive }) =>
           `relative flex items-center gap-3 rounded-lg py-2.5 text-sm transition-colors ${
             expanded ? "px-3" : "justify-center px-0"
