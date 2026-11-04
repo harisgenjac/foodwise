@@ -20,8 +20,11 @@ describe("App routes", () => {
 
   it("sends the bare address to the login page when nobody is logged in (it used to stay blank)", async () => {
     openApp("/");
-    await waitFor(() => expect(window.location.pathname).toBe("/login"));
-    expect(document.querySelector("form")).toBeInTheDocument();
+    // The URL changes before the login form has rendered, so wait for both.
+    await waitFor(() => {
+      expect(window.location.pathname).toBe("/login");
+      expect(document.querySelector("form")).toBeInTheDocument();
+    });
   });
 
   it("shows a page-not-found page for an unknown address, with a link to the login page", async () => {
