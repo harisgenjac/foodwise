@@ -9,6 +9,9 @@ import AdminReservationsPage from "./AdminReservationsPage.js";
 import { apiMock, axiosError, makeUser, renderWithProviders, t } from "../../test/utils.js";
 import type { AdminProduct, AdminReservation, User } from "../../types/index.js";
 
+// jsdom renders both the table (md up) and the phone cards (DataTable); list checks use the table.
+const findInTable = async (text: string) => within(await screen.findByRole("table")).getByText(text);
+
 const admin = makeUser({ id: 1, role: "ADMIN", email: "admin@test.com" });
 
 const store = makeUser({
@@ -44,19 +47,19 @@ describe("AdminUsersPage", () => {
     const blocked = makeUser({ id: 7, email: "blok@test.com", business_name: "Restoran", is_blocked: true });
     renderPage(() => ({ users: [store, newStore, blocked], total: 3 }));
 
-    expect(await screen.findByText("Market Centar")).toBeInTheDocument();
+    expect(await findInTable("Market Centar")).toBeInTheDocument();
     expect(screen.getByText(t("admin.users.count", { count: 3 }))).toBeInTheDocument();
     // An account created by an admin has only an email until the profile is filled in.
     const incomplete = screen.getAllByText("novi@test.com")[0]!.closest("tr")!;
     expect(within(incomplete).getByText(t("admin.common.incompleteProfile"))).toBeInTheDocument();
-    const blockedRow = screen.getByText("blok@test.com").closest("tr")!;
+    const blockedRow = within(screen.getByRole("table")).getByText("blok@test.com").closest("tr")!;
     expect(within(blockedRow).getByText(t("admin.common.blocked"))).toBeInTheDocument();
   });
 
   it("sends the filters and pages through the list", async () => {
     const respond = vi.fn(() => ({ users: [store], total: 60 }));
     renderPage(respond);
-    await screen.findByText("Market Centar");
+    await findInTable("Market Centar");
 
     await userEvent.selectOptions(screen.getByLabelText(t("admin.users.columnRole")), "STORE");
     await waitFor(() => expect(respond).toHaveBeenLastCalledWith(expect.objectContaining({ role: "STORE", offset: 0 })));
@@ -78,8 +81,25 @@ describe("AdminUsersPage", () => {
 
   it("opens a user", async () => {
     renderPage(() => ({ users: [store], total: 1 }));
-    await userEvent.click(await screen.findByText("Market Centar"));
+    await userEvent.click(await findInTable("Market Centar"));
     expect(screen.getByTestId("location")).toHaveTextContent("/admin/users/5");
+  });
+});
+
+describe("AdminUsersPage on phones (cards)", () => {
+  it("shows each user as a card with the status, role, city and creation date, sorted by a select", async () => {
+    const respond = vi.fn(() => ({ users: [store], total: 1 }));
+    renderWithProviders(<AdminUsersPage />, { route: "/admin/users", path: "/admin/users", user: admin, get: { "/admin/users": respond } });
+    const card = within((await screen.findAllByTestId("data-card"))[0]!);
+    expect(card.getByRole("link", { name: /Market Centar/ })).toHaveAttribute("href", "/admin/users/5");
+    expect(card.getByText(t("admin.roles.STORE"))).toBeInTheDocument();
+    expect(card.getAllByRole("term").map((term) => term.textContent)).toEqual([
+      t("admin.users.columnRole"),
+      t("admin.users.columnCity"),
+      t("admin.users.columnCreated"),
+    ]);
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: t("filters.sortBy") }), "created_at:desc");
+    await waitFor(() => expect(respond).toHaveBeenLastCalledWith(expect.objectContaining({ sort: "created_at", dir: "desc", offset: 0 })));
   });
 });
 
@@ -222,16 +242,55 @@ describe("AdminProductsPage", () => {
       get: { "/admin/products": respond },
     });
 
-    expect(await screen.findByText("Piletina")).toBeInTheDocument();
+    expect(await findInTable("Piletina")).toBeInTheDocument();
     expect(respond).toHaveBeenCalledWith(expect.objectContaining({ store_id: "5" }));
     expect(screen.getByText(t("admin.products.filteredByUser"))).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: t("admin.common.remove") }));
+    await userEvent.click(within(screen.getByRole("table")).getByRole("button", { name: t("admin.common.remove") }));
     const dialog = screen.getByRole("dialog");
     await userEvent.type(within(dialog).getByLabelText(t("admin.common.reasonLabel")), "Neispravan opis");
     await userEvent.click(within(dialog).getByRole("button", { name: t("admin.common.remove") }));
     expect(apiMock.delete).toHaveBeenCalledWith("/admin/products/10", { data: { reason: "Neispravan opis" } });
     await waitFor(() => expect(respond).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe("AdminProductsPage on phones (cards)", () => {
+  it("puts Remove on the card as a full-width button that opens the reason dialog", async () => {
+    const product: AdminProduct = {
+      id: 10,
+      store_id: 5,
+      name: "Piletina",
+      category: "Meat",
+      quantity: "8",
+      unit: "kg",
+      original_price: "10.00",
+      discounted_price: "5.00",
+      expiry_date: "2030-01-01",
+      status: "Available",
+      created_at: "2026-10-01T10:00:00.000Z",
+      business_name: "Market Centar",
+      store_email: "market@test.com",
+      store_is_blocked: false,
+    };
+    renderWithProviders(<AdminProductsPage />, {
+      route: "/admin/products",
+      path: "/admin/products",
+      user: admin,
+      get: { "/admin/products": { products: [product, { ...product, id: 11, name: "Uklonjeno", status: "Removed" }], total: 2 } },
+    });
+    const [available, removed] = await screen.findAllByTestId("data-card");
+    expect(within(available!).getAllByRole("term").map((term) => term.textContent)).toEqual([
+      t("admin.products.columnStore"),
+      t("admin.products.columnPrice"),
+      t("admin.products.columnExpiry"),
+    ]);
+    const remove = within(available!).getByRole("button", { name: t("admin.common.remove") });
+    expect(remove).toHaveClass("min-h-11");
+    expect(remove.parentElement).toHaveClass("*:flex-1");
+    expect(within(removed!).queryByRole("button")).not.toBeInTheDocument();
+    await userEvent.click(remove);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });
 
@@ -273,10 +332,10 @@ describe("AdminReservationsPage", () => {
       get: { "/admin/reservations": respond },
     });
 
-    expect(await screen.findByText("Piletina")).toBeInTheDocument();
+    expect(await findInTable("Piletina")).toBeInTheDocument();
     expect(respond).toHaveBeenCalledWith(expect.objectContaining({ user_id: "5" }));
-    expect(screen.getByText(t("admin.reservations.late"))).toBeInTheDocument();
-    const cancelButtons = screen.getAllByRole("button", { name: t("admin.reservations.cancel") });
+    expect(within(screen.getByRole("table")).getByText(t("admin.reservations.late"))).toBeInTheDocument();
+    const cancelButtons = within(screen.getByRole("table")).getAllByRole("button", { name: t("admin.reservations.cancel") });
     expect(cancelButtons).toHaveLength(1);
 
     await userEvent.click(cancelButtons[0]!);

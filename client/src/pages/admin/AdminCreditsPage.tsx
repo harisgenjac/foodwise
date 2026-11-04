@@ -244,6 +244,7 @@ function AdminCreditsPage() {
             rows={users}
             rowKey={(row) => row.id}
             rowHref={(row) => `/admin/users/${row.id}`}
+            rowClassName="hover:bg-gray-50"
             sort={{ sort, dir, onSort: toggleSort, setSort }}
             columns={columns}
           />

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { MapPin, Search, ShieldCheck, ToggleLeft, UserPlus, Users } from "lucide-react";
 import { useFetch } from "../../hooks/useFetch.js";
@@ -12,7 +11,7 @@ import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
-import SortableHeader from "../../components/admin/SortableHeader.js";
+import DataTable, { type DataColumn } from "../../components/common/DataTable.js";
 import {
   ADMIN_PAGE_SIZE,
   ROLES,
@@ -29,13 +28,12 @@ const SORT_KEYS = ["created_at"];
 
 function AdminUsersPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [role, setRole] = useState("");
   const [blocked, setBlocked] = useState("");
   const [cityId, setCityId] = useState("");
   const { page, offset, setPage } = useAdminPage();
-  const { sort, dir, toggleSort } = useAdminSort(SORT_KEYS);
+  const { sort, dir, toggleSort, setSort } = useAdminSort(SORT_KEYS);
 
   const { data: users, total, loading, error } = useFetch<User>("/admin/users", "users", {
     q,
@@ -63,6 +61,71 @@ function AdminUsersPage() {
     setCityId("");
     setPage(1);
   };
+
+  // Phone cards: the account (name, email, company) and its status, the role, city and creation date.
+  const columns: DataColumn<User>[] = [
+    {
+      id: "user",
+      header: t("admin.users.columnUser"),
+      card: "title",
+      cell: (user) => (
+        <>
+          <p className="font-medium text-gray-900">{accountName(user)}</p>
+          <p className="text-xs text-gray-500">{user.email}</p>
+          {user.company_name && <p className="text-xs text-teal-700">{user.company_name}</p>}
+        </>
+      ),
+    },
+    {
+      id: "role",
+      header: t("admin.users.columnRole"),
+      cell: (user) => (
+        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${ROLE_STYLES[user.role]}`}>{roles[user.role]}</span>
+      ),
+    },
+    {
+      id: "city",
+      header: t("admin.users.columnCity"),
+      className: "hidden md:table-cell",
+      cellClassName: "text-gray-600",
+      cell: (user) => user.city || "—",
+    },
+    {
+      id: "status",
+      header: t("admin.users.columnStatus"),
+      card: "status",
+      cell: (user) => (
+        <>
+          {user.deactivated_at && !isEffectivelyBlocked(user) ? (
+            <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
+              {t("company.branchStatus.deactivated")}
+            </span>
+          ) : isEffectivelyBlocked(user) ? (
+            <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">{t("admin.common.blocked")}</span>
+          ) : getAccountSetup(user).missingFields.length > 0 ? (
+            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+              {t("admin.common.incompleteProfile")}
+            </span>
+          ) : (
+            <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">{t("admin.common.active")}</span>
+          )}
+          {user.must_change_password && (
+            <span className="mt-1 block w-fit rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+              {t("admin.common.pendingPassword")}
+            </span>
+          )}
+        </>
+      ),
+    },
+    {
+      id: "created",
+      header: t("admin.users.columnCreated"),
+      sortKey: "created_at",
+      className: "hidden md:table-cell",
+      cellClassName: "text-gray-500",
+      cell: (user) => (user.created_at ? formatDateTime(user.created_at) : ""),
+    },
+  ];
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
@@ -140,76 +203,15 @@ function AdminUsersPage() {
         )
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                <tr>
-                  <th className="px-4 py-3">{t("admin.users.columnUser")}</th>
-                  <th className="px-4 py-3">{t("admin.users.columnRole")}</th>
-                  <th className="hidden px-4 py-3 md:table-cell">{t("admin.users.columnCity")}</th>
-                  <th className="px-4 py-3">{t("admin.users.columnStatus")}</th>
-                  <SortableHeader
-                    label={t("admin.users.columnCreated")}
-                    sortKey="created_at"
-                    sort={sort}
-                    dir={dir}
-                    onSort={toggleSort}
-                    className="hidden px-4 py-3 md:table-cell"
-                  />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {users.map((user) => (
-                  <tr
-                    key={user.id}
-                    onClick={() => navigate(`/admin/users/${user.id}`)}
-                    className="cursor-pointer transition-colors hover:bg-orange-50/40"
-                  >
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{accountName(user)}</p>
-                      <p className="text-xs text-gray-500">{user.email}</p>
-                      {user.company_name && (
-                        <p className="text-xs text-teal-700">{user.company_name}</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${ROLE_STYLES[user.role]}`}>
-                        {roles[user.role]}
-                      </span>
-                    </td>
-                    <td className="hidden px-4 py-3 text-gray-600 md:table-cell">{user.city || "—"}</td>
-                    <td className="px-4 py-3">
-                      {user.deactivated_at && !isEffectivelyBlocked(user) ? (
-                        <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
-                          {t("company.branchStatus.deactivated")}
-                        </span>
-                      ) : isEffectivelyBlocked(user) ? (
-                        <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
-                          {t("admin.common.blocked")}
-                        </span>
-                      ) : getAccountSetup(user).missingFields.length > 0 ? (
-                        <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
-                          {t("admin.common.incompleteProfile")}
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
-                          {t("admin.common.active")}
-                        </span>
-                      )}
-                      {user.must_change_password && (
-                        <span className="mt-1 block w-fit rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-                          {t("admin.common.pendingPassword")}
-                        </span>
-                      )}
-                    </td>
-                    <td className="hidden px-4 py-3 text-gray-500 md:table-cell">
-                      {user.created_at ? formatDateTime(user.created_at) : ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            label={t("admin.users.title")}
+            rows={users}
+            rowKey={(user) => user.id}
+            rowHref={(user) => `/admin/users/${user.id}`}
+            rowClassName="hover:bg-orange-50/40"
+            sort={{ sort, dir, onSort: toggleSort, setSort }}
+            columns={columns}
+          />
           <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={(next) => setPage(next / ADMIN_PAGE_SIZE + 1)} />
         </>
       )}

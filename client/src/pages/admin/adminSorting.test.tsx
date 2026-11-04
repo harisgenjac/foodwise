@@ -9,6 +9,9 @@ import AdminDonationsPage from "./AdminDonationsPage.js";
 import { apiMock, makeDonation, makeUser, renderWithProviders, t } from "../../test/utils.js";
 import type { AdminCreditUser, AdminDonation, AdminProduct, AdminReservation, Plan } from "../../types/index.js";
 
+// jsdom renders both the table (md up) and the phone cards (DataTable); list checks use the table.
+const findInTable = async (text: string) => within(await screen.findByRole("table")).getByText(text);
+
 const admin = makeUser({ id: 1, role: "ADMIN", email: "admin@test.com" });
 
 // The query string of the current URL, where the admin pages keep ?sort=, ?dir= and ?page=.
@@ -120,7 +123,7 @@ const icon = (cell: HTMLElement) => cell.querySelector("svg")!;
 describe("sortable admin tables", () => {
   it("cycles a column through unsorted, ascending, descending and unsorted with matching icons", async () => {
     renderProducts();
-    await screen.findByText("Piletina");
+    await findInTable("Piletina");
     const price = t("admin.products.columnPrice");
 
     expect(header(price)).toHaveAttribute("aria-sort", "none");
@@ -148,7 +151,7 @@ describe("sortable admin tables", () => {
 
   it("sorts one column at a time", async () => {
     renderProducts("/admin/products?sort=discounted_price&dir=desc");
-    await screen.findByText("Piletina");
+    await findInTable("Piletina");
     const price = t("admin.products.columnPrice");
     const expiry = t("admin.products.columnExpiry");
 
@@ -161,7 +164,7 @@ describe("sortable admin tables", () => {
 
   it("reads the sort from the URL and goes back to page 1 when it changes", async () => {
     renderProducts("/admin/products?sort=expiry_date&dir=desc&page=3");
-    await screen.findByText("Piletina");
+    await findInTable("Piletina");
     expect(lastParams("/admin/products")).toMatchObject({ sort: "expiry_date", dir: "desc", offset: 40 });
     expect(header(t("admin.products.columnExpiry"))).toHaveAttribute("aria-sort", "descending");
 
@@ -172,7 +175,7 @@ describe("sortable admin tables", () => {
 
   it("keeps the sort when the page changes", async () => {
     renderProducts("/admin/products?sort=expiry_date&dir=asc");
-    await screen.findByText("Piletina");
+    await findInTable("Piletina");
     await userEvent.click(screen.getByRole("button", { name: t("admin.common.next") }));
     expect(screen.getByTestId("search")).toHaveTextContent("?sort=expiry_date&dir=asc&page=2");
     await waitFor(() => expect(lastParams("/admin/products")).toMatchObject({ sort: "expiry_date", offset: 20 }));
@@ -180,13 +183,13 @@ describe("sortable admin tables", () => {
 
   it("ignores a column in the URL that the table cannot sort by", async () => {
     renderProducts("/admin/products?sort=name&dir=asc");
-    await screen.findByText("Piletina");
+    await findInTable("Piletina");
     expect(lastParams("/admin/products")).toMatchObject({ sort: "", dir: "" });
   });
 
   it("sorts with the keyboard", async () => {
     renderProducts();
-    await screen.findByText("Piletina");
+    await findInTable("Piletina");
     sortButton(t("admin.products.columnExpiry")).focus();
     await userEvent.keyboard("{Enter}");
     expect(screen.getByTestId("search")).toHaveTextContent("?sort=expiry_date&dir=asc");

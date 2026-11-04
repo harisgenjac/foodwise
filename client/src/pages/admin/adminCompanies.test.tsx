@@ -9,6 +9,9 @@ import AdminActionsPage from "./AdminActionsPage.js";
 import { apiMock, axiosError, makeUser, renderWithProviders, t } from "../../test/utils.js";
 import type { AdminCompanyDetails, AdminCompanyListItem } from "../../types/index.js";
 
+// jsdom renders both the table (md up) and the phone cards (DataTable); list checks use the table.
+const findInTable = async (text: string) => within(await screen.findByRole("table")).getByText(text);
+
 const admin = makeUser({ id: 1, role: "ADMIN", email: "admin@test.com" });
 
 const bingo: AdminCompanyListItem = {
@@ -64,10 +67,10 @@ describe("AdminCompaniesPage", () => {
     const blocked = { ...bingo, id: 4, name: "Konzum", hq_email: "konzum@test.com", is_blocked: true, branch_count: 2 };
     renderPage(() => ({ companies: [bingo, blocked], total: 2 }));
 
-    const row = (await screen.findByText("Bingo d.o.o.")).closest("tr")!;
+    const row = (await findInTable("Bingo d.o.o.")).closest("tr")!;
     expect(within(row).getByText("bingo@test.com")).toBeInTheDocument();
     expect(within(row).getByText(t("admin.common.active"))).toBeInTheDocument();
-    const blockedRow = screen.getByText("Konzum").closest("tr")!;
+    const blockedRow = within(screen.getByRole("table")).getByText("Konzum").closest("tr")!;
     expect(within(blockedRow).getByText(t("admin.common.blocked"))).toBeInTheDocument();
     expect(within(blockedRow).getByText("2")).toBeInTheDocument();
     expect(screen.getByText(t("admin.companies.count", { count: 2 }))).toBeInTheDocument();
@@ -80,14 +83,14 @@ describe("AdminCompaniesPage", () => {
   it("sends the search and the blocked filter, then opens a company", async () => {
     const respond = vi.fn(() => ({ companies: [bingo], total: 1 }));
     renderPage(respond);
-    await screen.findByText("Bingo d.o.o.");
+    await findInTable("Bingo d.o.o.");
 
     await userEvent.type(screen.getByLabelText(t("admin.companies.search")), "bingo");
     await waitFor(() => expect(respond).toHaveBeenLastCalledWith(expect.objectContaining({ q: "bingo", offset: 0 })));
     await userEvent.selectOptions(screen.getByLabelText(t("admin.companies.columnStatus")), "true");
     await waitFor(() => expect(respond).toHaveBeenLastCalledWith(expect.objectContaining({ blocked: "true" })));
 
-    await userEvent.click(screen.getByText("Bingo d.o.o."));
+    await userEvent.click(within(screen.getByRole("table")).getByText("Bingo d.o.o."));
     expect(screen.getByTestId("location")).toHaveTextContent("/admin/companies/3");
   });
 
@@ -232,7 +235,7 @@ describe("Company HQ accounts in the other admin pages", () => {
       user: admin,
       get: { "/admin/users": () => ({ users: [hq], total: 1 }) },
     });
-    const row = (await screen.findByText("bingo@test.com")).closest("tr")!;
+    const row = (await findInTable("bingo@test.com")).closest("tr")!;
     expect(within(row).getByText(t("admin.roles.COMPANY"))).toBeInTheDocument();
     expect(within(row).getByText("Bingo d.o.o.")).toBeInTheDocument();
     expect(within(row).getByText(t("admin.common.active"))).toBeInTheDocument();
@@ -266,7 +269,7 @@ describe("Company HQ accounts in the other admin pages", () => {
         }),
       },
     });
-    expect(await screen.findByRole("link", { name: "Bingo d.o.o." })).toHaveAttribute("href", "/admin/companies/3");
+    expect(within(await screen.findByRole("table")).getByRole("link", { name: "Bingo d.o.o." })).toHaveAttribute("href", "/admin/companies/3");
     expect(screen.getAllByText(t("admin.actionTypes.BLOCK_COMPANY")).length).toBeGreaterThan(0);
   });
 });

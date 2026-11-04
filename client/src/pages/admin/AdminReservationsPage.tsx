@@ -14,7 +14,7 @@ import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
-import SortableHeader from "../../components/admin/SortableHeader.js";
+import DataTable, { type DataColumn } from "../../components/common/DataTable.js";
 import ConfirmModal from "../../components/common/ConfirmModal.js";
 import { RESERVATION_STATUS_STYLES } from "../../utils/reservationStatus.js";
 import { ADMIN_PAGE_SIZE, formatDateTime } from "../../utils/admin.js";
@@ -34,7 +34,7 @@ function AdminReservationsPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const { page, offset, setPage } = useAdminPage();
-  const { sort, dir, toggleSort } = useAdminSort(SORT_KEYS);
+  const { sort, dir, toggleSort, setSort } = useAdminSort(SORT_KEYS);
   const [selected, setSelected] = useState<AdminReservation | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -64,6 +64,97 @@ function AdminReservationsPage() {
       setBusy(false);
     }
   };
+
+  const cancelButton = (reservation: AdminReservation, card: boolean) =>
+    CANCELLABLE.includes(reservation.status) && (
+      <button
+        type="button"
+        onClick={() => setSelected(reservation)}
+        className={
+          card
+            ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+            : "inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+        }
+      >
+        <Ban className="h-4 w-4" />
+        {t("admin.reservations.cancel")}
+      </button>
+    );
+  // Phone cards: the product (quantity, number) and its status, the store, the restaurant and the
+  // pickup time, and Cancel as a full-width button.
+  const columns: DataColumn<AdminReservation>[] = [
+    {
+      id: "product",
+      header: t("admin.reservations.columnProduct"),
+      card: "title",
+      cell: (reservation) => (
+        <>
+          <p className="font-medium text-gray-900">{reservation.product_name}</p>
+          <p className="text-xs text-gray-500">
+            {parseFloat(reservation.quantity)} {units[reservation.unit] || reservation.unit}
+            {" · "}#{reservation.id}
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "store",
+      header: t("admin.reservations.columnStore"),
+      className: "hidden md:table-cell",
+      cell: (reservation) => (
+        <Link to={`/admin/users/${reservation.store_id}`} className="text-gray-700 hover:text-orange-600">
+          {reservation.store_name || reservation.store_email}
+        </Link>
+      ),
+    },
+    {
+      id: "restaurant",
+      header: t("admin.reservations.columnRestaurant"),
+      className: "hidden md:table-cell",
+      cell: (reservation) => (
+        <Link to={`/admin/users/${reservation.restaurant_id}`} className="text-gray-700 hover:text-orange-600">
+          {reservation.restaurant_name || reservation.restaurant_email}
+        </Link>
+      ),
+    },
+    {
+      id: "pickup",
+      header: t("admin.reservations.columnPickup"),
+      sortKey: "pickup_date",
+      className: "hidden lg:table-cell",
+      cellClassName: "whitespace-nowrap text-gray-600",
+      cell: (reservation) => (
+        <>
+          {formatDateTime(reservation.pickup_date)}
+          {reservation.is_overdue && (
+            <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600">
+              {t("admin.reservations.late")}
+            </span>
+          )}
+        </>
+      ),
+    },
+    {
+      id: "status",
+      header: t("admin.reservations.columnStatus"),
+      card: "status",
+      cell: (reservation) => (
+        <span
+          className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${RESERVATION_STATUS_STYLES[reservation.status]}`}
+        >
+          {statuses[reservation.status] || reservation.status}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      card: "actions",
+      cellClassName: "text-right",
+      cell: (reservation) => cancelButton(reservation, false),
+      cardCell: (reservation) => cancelButton(reservation, true),
+    },
+  ];
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
@@ -148,75 +239,13 @@ function AdminReservationsPage() {
         )
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                <tr>
-                  <th className="px-4 py-3">{t("admin.reservations.columnProduct")}</th>
-                  <th className="hidden px-4 py-3 md:table-cell">{t("admin.reservations.columnStore")}</th>
-                  <th className="hidden px-4 py-3 md:table-cell">{t("admin.reservations.columnRestaurant")}</th>
-                  <SortableHeader
-                    label={t("admin.reservations.columnPickup")}
-                    sortKey="pickup_date"
-                    sort={sort}
-                    dir={dir}
-                    onSort={toggleSort}
-                    className="hidden px-4 py-3 lg:table-cell"
-                  />
-                  <th className="px-4 py-3">{t("admin.reservations.columnStatus")}</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {reservations.map((reservation) => (
-                  <tr key={reservation.id}>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{reservation.product_name}</p>
-                      <p className="text-xs text-gray-500">
-                        {parseFloat(reservation.quantity)} {units[reservation.unit] || reservation.unit}
-                        {" · "}#{reservation.id}
-                      </p>
-                    </td>
-                    <td className="hidden px-4 py-3 md:table-cell">
-                      <Link to={`/admin/users/${reservation.store_id}`} className="text-gray-700 hover:text-orange-600">
-                        {reservation.store_name || reservation.store_email}
-                      </Link>
-                    </td>
-                    <td className="hidden px-4 py-3 md:table-cell">
-                      <Link to={`/admin/users/${reservation.restaurant_id}`} className="text-gray-700 hover:text-orange-600">
-                        {reservation.restaurant_name || reservation.restaurant_email}
-                      </Link>
-                    </td>
-                    <td className="hidden whitespace-nowrap px-4 py-3 text-gray-600 lg:table-cell">
-                      {formatDateTime(reservation.pickup_date)}
-                      {reservation.is_overdue && (
-                        <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600">
-                          {t("admin.reservations.late")}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${RESERVATION_STATUS_STYLES[reservation.status]}`}>
-                        {statuses[reservation.status] || reservation.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {CANCELLABLE.includes(reservation.status) && (
-                        <button
-                          type="button"
-                          onClick={() => setSelected(reservation)}
-                          className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
-                        >
-                          <Ban className="h-4 w-4" />
-                          {t("admin.reservations.cancel")}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            label={t("admin.reservations.title")}
+            rows={reservations}
+            rowKey={(reservation) => reservation.id}
+            sort={{ sort, dir, onSort: toggleSort, setSort }}
+            columns={columns}
+          />
           <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={(next) => setPage(next / ADMIN_PAGE_SIZE + 1)} />
         </>
       )}

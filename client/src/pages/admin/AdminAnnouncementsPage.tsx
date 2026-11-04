@@ -22,6 +22,7 @@ import Pagination from "../../components/admin/Pagination.js";
 import { ADMIN_PAGE_SIZE, formatDateTime } from "../../utils/admin.js";
 import { toDateInput } from "../../utils/expiry.js";
 import type { AdminAnnouncement, AnnouncementAudience } from "../../types/index.js";
+import DataTable, { type DataColumn } from "../../components/common/DataTable.js";
 
 const AUDIENCES: { code: AnnouncementAudience; icon: LucideIcon }[] = [
   { code: "ALL", icon: Users },
@@ -141,6 +142,94 @@ function AdminAnnouncementsPage() {
     </FormField>
   );
 
+  const endButton = (announcement: AdminAnnouncement, card: boolean) =>
+    announcement.is_active && (
+      <button
+        type="button"
+        onClick={() => setEnding(announcement)}
+        className={
+          card
+            ? "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-red-200 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+            : "cursor-pointer rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+        }
+      >
+        {t("admin.announcements.end")}
+      </button>
+    );
+  // Phone cards: the title and text with the status, the audience, when and by whom it was sent and
+  // its reach, and End as a full-width button.
+  const columns: DataColumn<AdminAnnouncement>[] = [
+    {
+      id: "announcement",
+      header: t("admin.announcements.columnAnnouncement"),
+      card: "title",
+      cellClassName: "max-w-xs",
+      cell: (announcement) => (
+        <>
+          <p className="font-medium text-gray-900">{announcement.title_bs}</p>
+          <p className="line-clamp-2 text-xs text-gray-500">{announcement.body_bs}</p>
+        </>
+      ),
+    },
+    {
+      id: "audience",
+      header: t("admin.announcements.columnAudience"),
+      cellClassName: "whitespace-nowrap text-gray-700",
+      cell: (announcement) => audiences[announcement.audience],
+    },
+    {
+      id: "sent",
+      header: t("admin.announcements.columnSent"),
+      className: "hidden md:table-cell",
+      cellClassName: "whitespace-nowrap text-gray-500",
+      cell: (announcement) => (
+        <>
+          {formatDateTime(announcement.created_at)}
+          <br />
+          <span className="text-xs">{announcement.admin_email}</span>
+        </>
+      ),
+    },
+    {
+      id: "reach",
+      header: t("admin.announcements.columnReach"),
+      className: "hidden md:table-cell",
+      cellClassName: "text-gray-600",
+      cell: (announcement) => `${announcement.recipients} / ${announcement.dismissed}`,
+    },
+    {
+      id: "status",
+      header: t("admin.announcements.columnStatus"),
+      card: "status",
+      cell: (announcement) => (
+        <>
+          {announcement.is_active ? (
+            <span className="whitespace-nowrap rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
+              {t("admin.announcements.statusActive")}
+            </span>
+          ) : (
+            <span className="whitespace-nowrap rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
+              {t("admin.announcements.statusEnded")}
+            </span>
+          )}
+          {announcement.is_active && announcement.expires_at && (
+            <p className="mt-1 text-xs text-gray-500">
+              {t("admin.announcements.until", { date: formatDateTime(announcement.expires_at) })}
+            </p>
+          )}
+        </>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      card: "actions",
+      cellClassName: "text-right",
+      cell: (announcement) => endButton(announcement, false),
+      cardCell: (announcement) => endButton(announcement, true),
+    },
+  ];
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
       <ProductPageHeader title={t("admin.announcements.title")} subtitle={t("admin.announcements.subtitle")} icon={Megaphone} />
@@ -242,66 +331,13 @@ function AdminAnnouncementsPage() {
           <EmptyState icon={Megaphone} title={t("admin.announcements.emptyTitle")} subtitle={t("admin.announcements.emptySubtitle")} />
         ) : (
           <>
-            <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  <tr>
-                    <th className="px-4 py-3">{t("admin.announcements.columnAnnouncement")}</th>
-                    <th className="px-4 py-3">{t("admin.announcements.columnAudience")}</th>
-                    <th className="hidden px-4 py-3 md:table-cell">{t("admin.announcements.columnSent")}</th>
-                    <th className="hidden px-4 py-3 md:table-cell">{t("admin.announcements.columnReach")}</th>
-                    <th className="px-4 py-3">{t("admin.announcements.columnStatus")}</th>
-                    <th className="px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {announcements.map((announcement) => (
-                    <tr key={announcement.id} className="align-top">
-                      <td className="max-w-xs px-4 py-3">
-                        <p className="font-medium text-gray-900">{announcement.title_bs}</p>
-                        <p className="line-clamp-2 text-xs text-gray-500">{announcement.body_bs}</p>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-700">{audiences[announcement.audience]}</td>
-                      <td className="hidden whitespace-nowrap px-4 py-3 text-gray-500 md:table-cell">
-                        {formatDateTime(announcement.created_at)}
-                        <br />
-                        <span className="text-xs">{announcement.admin_email}</span>
-                      </td>
-                      <td className="hidden px-4 py-3 text-gray-600 md:table-cell">
-                        {announcement.recipients} / {announcement.dismissed}
-                      </td>
-                      <td className="px-4 py-3">
-                        {announcement.is_active ? (
-                          <span className="whitespace-nowrap rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
-                            {t("admin.announcements.statusActive")}
-                          </span>
-                        ) : (
-                          <span className="whitespace-nowrap rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
-                            {t("admin.announcements.statusEnded")}
-                          </span>
-                        )}
-                        {announcement.is_active && announcement.expires_at && (
-                          <p className="mt-1 text-xs text-gray-500">
-                            {t("admin.announcements.until", { date: formatDateTime(announcement.expires_at) })}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        {announcement.is_active && (
-                          <button
-                            type="button"
-                            onClick={() => setEnding(announcement)}
-                            className="cursor-pointer rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
-                          >
-                            {t("admin.announcements.end")}
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              label={t("admin.announcements.title")}
+              rows={announcements}
+              rowKey={(announcement) => announcement.id}
+              rowClassName="align-top"
+              columns={columns}
+            />
             <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={(next) => setPage(next / ADMIN_PAGE_SIZE + 1)} />
           </>
         )}

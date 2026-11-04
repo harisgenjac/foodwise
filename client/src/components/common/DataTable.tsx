@@ -54,7 +54,7 @@ interface DataTableProps<T> {
   sort?: DataTableSort;
   // Opens the row's page: a click on the table row, and the card's title as a link covering the card.
   rowHref?: (row: T) => string;
-  // Extra classes for each tr (e.g. `align-top`).
+  // Extra classes for each tr (e.g. `align-top`, the hover colour of a linked row).
   rowClassName?: string;
   // Names the table and the card list for screen readers and tests.
   label: string;
@@ -135,7 +135,7 @@ function DataTable<T>({
                 key={rowKey(row)}
                 data-testid={rowTestId?.(row)}
                 onClick={rowHref ? () => navigate(rowHref(row)) : undefined}
-                className={`${rowHref ? "cursor-pointer transition-colors hover:bg-gray-50" : ""} ${rowClassName}`}
+                className={`${rowHref ? "cursor-pointer transition-colors" : ""} ${rowClassName}`}
               >
                 {tableColumns.map((column) => (
                   <td key={column.id} className={`${bodyCellClassName} ${column.className ?? ""} ${column.cellClassName ?? ""}`}>

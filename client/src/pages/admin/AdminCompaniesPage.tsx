@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Building2, Search, ToggleLeft } from "lucide-react";
 import { useFetch } from "../../hooks/useFetch.js";
@@ -13,11 +12,11 @@ import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
 import { ADMIN_PAGE_SIZE, formatDateTime } from "../../utils/admin.js";
 import type { AdminCompanyListItem } from "../../types/index.js";
+import DataTable, { type DataColumn } from "../../components/common/DataTable.js";
 
 // Store chains: each company has a headquarters login and (from the next step) its branches.
 function AdminCompaniesPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [blocked, setBlocked] = useState("");
   const { page, offset, setPage } = useAdminPage();
@@ -41,6 +40,46 @@ function AdminCompaniesPage() {
     setPage(1);
   };
   const newCompany = { to: "/admin/companies/new", label: t("admin.companies.newCompany") };
+
+  // Phone cards: the company and its headquarters email with the status, the number of branches and
+  // the creation date; the card opens the company.
+  const columns: DataColumn<AdminCompanyListItem>[] = [
+    {
+      id: "company",
+      header: t("admin.companies.columnCompany"),
+      card: "title",
+      cell: (company) => (
+        <>
+          <p className="font-medium text-gray-900">{company.name}</p>
+          <p className="text-xs text-gray-500">{company.hq_email ?? "—"}</p>
+        </>
+      ),
+    },
+    {
+      id: "branches",
+      header: t("admin.companies.columnBranches"),
+      cellClassName: "text-gray-600",
+      cell: (company) => company.branch_count,
+    },
+    {
+      id: "status",
+      header: t("admin.companies.columnStatus"),
+      card: "status",
+      cell: (company) =>
+        company.is_blocked ? (
+          <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">{t("admin.common.blocked")}</span>
+        ) : (
+          <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">{t("admin.common.active")}</span>
+        ),
+    },
+    {
+      id: "created",
+      header: t("admin.companies.columnCreated"),
+      className: "hidden md:table-cell",
+      cellClassName: "text-gray-500",
+      cell: (company) => formatDateTime(company.created_at),
+    },
+  ];
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
@@ -98,45 +137,14 @@ function AdminCompaniesPage() {
         )
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                <tr>
-                  <th className="px-4 py-3">{t("admin.companies.columnCompany")}</th>
-                  <th className="px-4 py-3">{t("admin.companies.columnBranches")}</th>
-                  <th className="px-4 py-3">{t("admin.companies.columnStatus")}</th>
-                  <th className="hidden px-4 py-3 md:table-cell">{t("admin.companies.columnCreated")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {companies.map((company) => (
-                  <tr
-                    key={company.id}
-                    onClick={() => navigate(`/admin/companies/${company.id}`)}
-                    className="cursor-pointer transition-colors hover:bg-orange-50/40"
-                  >
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{company.name}</p>
-                      <p className="text-xs text-gray-500">{company.hq_email ?? "—"}</p>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{company.branch_count}</td>
-                    <td className="px-4 py-3">
-                      {company.is_blocked ? (
-                        <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
-                          {t("admin.common.blocked")}
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
-                          {t("admin.common.active")}
-                        </span>
-                      )}
-                    </td>
-                    <td className="hidden px-4 py-3 text-gray-500 md:table-cell">{formatDateTime(company.created_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            label={t("admin.companies.title")}
+            rows={companies}
+            rowKey={(company) => company.id}
+            rowHref={(company) => `/admin/companies/${company.id}`}
+            rowClassName="hover:bg-orange-50/40"
+            columns={columns}
+          />
           <Pagination
             total={total ?? 0}
             limit={ADMIN_PAGE_SIZE}

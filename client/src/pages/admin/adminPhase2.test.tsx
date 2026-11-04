@@ -9,6 +9,9 @@ import { getNotificationText } from "../../utils/notifications.js";
 import { apiMock, axiosError, makeNotification, makeUser, renderWithProviders, t } from "../../test/utils.js";
 import type { AdminAnnouncement, Announcement } from "../../types/index.js";
 
+// jsdom renders both the table (md up) and the phone cards (DataTable); list checks use the table.
+const findInTable = async (text: string) => within(await screen.findByRole("table")).getByText(text);
+
 const admin = makeUser({ id: 1, role: "ADMIN", email: "admin@test.com" });
 const store = makeUser({
   id: 5,
@@ -166,9 +169,9 @@ describe("AdminAnnouncementsPage", () => {
     apiMock.post.mockResolvedValue({ data: { message: "Announcement ended." } });
     renderPage();
 
-    expect(await screen.findByText("Novi rok")).toBeInTheDocument();
-    expect(screen.getByText("12 / 2")).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: t("admin.announcements.end") }));
+    expect(await findInTable("Novi rok")).toBeInTheDocument();
+    expect(within(screen.getByRole("table")).getByText("12 / 2")).toBeInTheDocument();
+    await userEvent.click(within(screen.getByRole("table")).getByRole("button", { name: t("admin.announcements.end") }));
     await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: t("admin.announcements.end") }));
     expect(apiMock.post).toHaveBeenCalledWith("/admin/announcements/3/end");
   });
