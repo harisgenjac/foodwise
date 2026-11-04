@@ -37,13 +37,13 @@ function ProductTemplatesPanel({ templates, appliedId, onApply, onDelete }: Prod
         </div>
         {templates.length > SEARCH_THRESHOLD && (
           <label className="relative w-full sm:w-56">
-            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-gray-400 sm:top-2.5" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("templates.search")}
-              className="w-full rounded-xl border border-gray-200 py-2 pl-9 pr-3 text-sm focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100"
+              className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-3 text-base sm:py-2 sm:text-sm focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100"
             />
           </label>
         )}

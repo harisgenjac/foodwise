@@ -24,6 +24,21 @@ const expectPhoneLayout = async (page: Page, path: string) => {
   expect(scrollWidth, `${path} is wider than the screen`).toBeLessThanOrEqual(innerWidth);
 };
 
+// iOS zooms into a focused field whose text is under 16 px; every visible text field on the page
+// must be at least that large.
+const expectNoSmallFieldText = async (page: Page, path: string) => {
+  await page.goto(path);
+  await page.waitForLoadState("networkidle");
+  const small = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea")]
+      .filter((field) => !["checkbox", "radio", "file", "hidden"].includes(field.type))
+      .filter((field) => field.getBoundingClientRect().width > 0 && getComputedStyle(field).visibility !== "hidden")
+      .filter((field) => parseFloat(getComputedStyle(field).fontSize) < 16)
+      .map((field) => `${field.tagName.toLowerCase()} "${field.getAttribute("placeholder") ?? field.getAttribute("aria-label") ?? field.name}" ${getComputedStyle(field).fontSize}`),
+  );
+  expect(small, `${path}: fields under 16 px`).toEqual([]);
+};
+
 let productId: number;
 let reservationId: number;
 let storeId: number;
@@ -49,6 +64,10 @@ test.describe("store", () => {
     for (const path of [...STORE_PAGES, ...SHARED_PAGES, ...details]) await expectPhoneLayout(page, path);
   });
 
+  test("form fields use at least 16 px text on My profile, Add product and New donation", async ({ page }) => {
+    for (const path of ["/my-profile", "/add-product", "/donate-food/new"]) await expectNoSmallFieldText(page, path);
+  });
+
   test("the notification panel fits the screen and closes on Escape", async ({ page }) => {
     await page.goto("/dashboard");
     await page.getByRole("button", { name: "Notifikacije" }).click();
@@ -70,6 +89,11 @@ test.describe("restaurant", () => {
   test("every page fits a 375 px screen", async ({ page }) => {
     const details = [`/stores/${storeId}`, `/products/${productId}`, `/reservation/${reservationId}`, `/donate-food/${donationIds.restaurant}/edit`];
     for (const path of [...RESTAURANT_PAGES, ...SHARED_PAGES, ...details]) await expectPhoneLayout(page, path);
+  });
+
+  test("the meal donation form uses at least 16 px text", async ({ page }) => {
+    // A restaurant's form starts on meals, with the allergen and serving fields.
+    await expectNoSmallFieldText(page, "/donate-food/new");
   });
 
   test("More opens the menu drawer and Escape closes it", async ({ page }) => {

@@ -141,6 +141,7 @@ function DonateProductModal({ product, onClose, onDonated }: DonateProductModalP
             >
               <input
                 type="number"
+                inputMode="decimal"
                 min="0.01"
                 step="any"
                 max={available}
@@ -161,6 +162,7 @@ function DonateProductModal({ product, onClose, onDonated }: DonateProductModalP
                 >
                   <input
                     type="number"
+                    inputMode="decimal"
                     min="0"
                     step="0.01"
                     placeholder="0.00"

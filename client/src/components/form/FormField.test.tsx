@@ -3,6 +3,16 @@ import { Mail } from "lucide-react";
 import FormField, { inputStyle } from "./FormField.js";
 
 describe("FormField", () => {
+  it("uses 16 px text below sm, so iOS does not zoom into the field, and 14 px from sm up", () => {
+    render(
+      <FormField label="Email" icon={Mail}>
+        <input className={inputStyle} />
+      </FormField>,
+    );
+    expect(screen.getByLabelText("Email")).toHaveClass("text-base", "sm:text-sm", "py-2.5");
+    expect(inputStyle).not.toMatch(/(^|\s)text-sm(\s|$)/);
+  });
+
   it("marks a required field without adding the asterisk to its name", () => {
     render(
       <FormField label="Email" icon={Mail} required>
