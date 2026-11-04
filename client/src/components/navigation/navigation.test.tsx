@@ -14,7 +14,7 @@ const store = makeUser({
 });
 const restaurant = { ...store, role: "RESTAURANT" as const, business_name: "Ukus" };
 // No business name: the account setup is unfinished, so the navigation is locked.
-const lockedStore = { ...store, business_name: null };
+const lockedStore = { ...store, business_name: "" };
 
 // Layout with every page rendered as the current path, so it stays mounted while navigating.
 const renderLayout = (user: ReturnType<typeof makeUser>, route = "/dashboard") =>
