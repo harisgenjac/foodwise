@@ -44,6 +44,7 @@ import CompanyCreateBranchPage from './pages/company/CompanyCreateBranchPage.js'
 import CompanyBranchDetailsPage from './pages/company/CompanyBranchDetailsPage.js';
 import CompanyCreditsPage from './pages/company/CompanyCreditsPage.js';
 import CompanyReportsPage from './pages/company/CompanyReportsPage.js';
+import NotFoundPage from './pages/NotFoundPage.js';
 
 function App() {
   return (
@@ -52,9 +53,9 @@ function App() {
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         {/* Store and restaurant accounts are created by an admin. RegisterPage stays for the planned public roles. */}
         <Route path="/register" element={<Navigate to="/login" replace state={{ registrationClosed: true }} />} />
-        {/* The bare address and unknown paths go to the dashboard; ProtectedRoute sends a visitor who is not logged in on to /login. */}
+        {/* The bare address goes to the dashboard; ProtectedRoute sends a visitor who is not logged in on to /login. */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/add-product" element={<ProtectedRoute role="STORE"><AddProductPage /></ProtectedRoute>} />

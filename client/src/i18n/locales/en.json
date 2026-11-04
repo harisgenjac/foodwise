@@ -586,6 +586,13 @@
     "confirmButton_one": "Import {{count}} product",
     "confirmButton_other": "Import {{count}} products"
   },
+  "notFound": {
+    "code": "Error 404",
+    "title": "Page not found",
+    "text": "The address you opened does not exist or has changed.",
+    "toDashboard": "Go to the dashboard",
+    "toLogin": "Go to login"
+  },
   "comingSoon": {
     "badge": "Coming soon",
     "sponsorTitle": "Become a sponsor",
@@ -595,6 +602,11 @@
       "Local events",
       "Long-term partnerships"
     ]
+  },
+  "table": {
+    "sortDefault": "Default order",
+    "sortAscending": "{{column}}: lowest first",
+    "sortDescending": "{{column}}: highest first"
   },
   "common": {
     "loading": "Loading...",
@@ -1229,6 +1241,7 @@
       "note": "Internal note (optional)",
       "noteHint": "The user never sees the note.",
       "sentByCompany": "Requested by headquarters ({{email}})",
+      "reviewed": "Reviewed",
       "sentByRenewal": "Sent by the renewal job"
     },
     "userCredits": {
@@ -1325,7 +1338,9 @@
   "announcements": {
     "label": "Platform announcement",
     "dismiss": "Dismiss announcement",
-    "dismissError": "The announcement was not dismissed. It will show again after a refresh."
+    "dismissError": "The announcement was not dismissed. It will show again after a refresh.",
+    "showMore": "Show all",
+    "showLess": "Show less"
   },
   "accountSetup": {
     "title": "Finish setting up your account",

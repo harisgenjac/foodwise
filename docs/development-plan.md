@@ -170,7 +170,7 @@ The review and its findings per page are in `docs/mobile-review.md`, the referen
 - [x] Header on phones: 44 px buttons, the notification dropdown as a full-width panel.
 - [x] Form controls: larger touch targets (at least 44 px) and phone-friendly forms: 16 px text and 44 px fields below sm, a numeric keyboard and a 44 px calendar button in the date input, category labels that wrap.
 - [x] Modal: a maximum height with a scrolling body and buttons that stay visible.
-- [ ] Banners: compact announcement and credit banners on phones, a 44 px close button.
+- [x] Banners: compact announcement and credit banners on phones, a 44 px close button.
 - [ ] Tables become cards below md (orders, products, admin lists): one shared pattern, admin credit requests and credits first.
 - [ ] Filters on phones: the search stays, the other filters go behind a "Filters" button.
 - [ ] Small parts: dashboard stat labels, pagination and chip sizes, footer links (44 px targets).

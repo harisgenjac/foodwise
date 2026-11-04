@@ -59,7 +59,27 @@ export function useAdminSort(keys: readonly string[]) {
     [sort, dir, setSearchParams],
   );
 
-  return { sort, dir, toggleSort };
+  // Sets the sort directly (the "Sort by" select above the phone cards); "" is unsorted. Same URL
+  // params as the headers, and back to page 1.
+  const setSort = useCallback(
+    (key: string, nextDir: SortDir) => {
+      setSearchParams((current) => {
+        const params = new URLSearchParams(current);
+        params.delete("page");
+        if (key) {
+          params.set("sort", key);
+          params.set("dir", nextDir);
+        } else {
+          params.delete("sort");
+          params.delete("dir");
+        }
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
+
+  return { sort, dir, toggleSort, setSort };
 }
 
 // After an action empties the last page (or a link names a page that no longer exists), go back

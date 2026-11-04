@@ -77,18 +77,23 @@ function CreditBanner() {
   if (!banner) return null;
 
   return (
+    // Below sm the text and the link share one row, and the link is a 44 px button; from sm up the
+    // link is a text link at the end of the row.
     <div
       role="status"
-      className={`mx-auto mb-6 flex max-w-5xl flex-col gap-2 rounded-2xl border px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between ${TONES[banner.tone]}`}
+      className={`mx-auto mb-3 flex max-w-5xl items-center gap-3 rounded-2xl border px-3 py-2 text-sm sm:mb-6 sm:justify-between sm:gap-2 sm:px-4 sm:py-3 ${TONES[banner.tone]}`}
     >
-      <p className="flex items-center gap-2 font-medium">
+      <p className="flex min-w-0 flex-1 items-center gap-2 font-medium leading-snug sm:flex-none sm:leading-normal">
         <Coins className="h-4 w-4 shrink-0" />
         {banner.text}
       </p>
       {banner.to && (
-        <Link to={banner.to} className="inline-flex shrink-0 items-center gap-1 font-semibold text-orange-600 hover:text-orange-700">
+        <Link
+          to={banner.to}
+          className="inline-flex min-h-11 max-w-[45%] shrink-0 items-center justify-center gap-1 rounded-xl border border-orange-200 bg-white px-3 text-center font-semibold leading-tight text-orange-600 hover:text-orange-700 sm:min-h-0 sm:max-w-none sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0"
+        >
           {banner.link}
-          <ArrowRight className="h-4 w-4" />
+          <ArrowRight className="hidden h-4 w-4 shrink-0 sm:block" />
         </Link>
       )}
     </div>

@@ -48,9 +48,11 @@ describe("AdminCreditRequestsPage", () => {
       get: { "/admin/credits/requests": { requests: [REQUEST], total: 1 } },
     });
 
-    expect(await screen.findByText("Market Centar")).toBeInTheDocument();
-    expect(screen.getByText(t("admin.creditRequests.autoRenew"))).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: t("admin.creditRequests.approve") }));
+    // jsdom renders both the table (md up) and the phone cards; these checks use the table.
+    const table = await screen.findByRole("table");
+    expect(within(table).getByText("Market Centar")).toBeInTheDocument();
+    expect(within(table).getByText(t("admin.creditRequests.autoRenew"))).toBeInTheDocument();
+    await userEvent.click(within(table).getByRole("button", { name: t("admin.creditRequests.approve") }));
 
     const dialog = screen.getByRole("dialog");
     await userEvent.type(within(dialog).getByLabelText(t("admin.creditRequests.note")), "Paid in cash");
@@ -73,8 +75,49 @@ describe("AdminCreditRequestsPage", () => {
       },
     });
 
-    expect(await screen.findByText("No payment")).toBeInTheDocument();
+    expect(within(await screen.findByRole("table")).getByText("No payment")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: t("admin.creditRequests.approve") })).not.toBeInTheDocument();
+  });
+});
+
+describe("AdminCreditRequestsPage on phones (cards)", () => {
+  it("shows each request as a card with the status and full-width approve and reject buttons", async () => {
+    apiMock.post.mockResolvedValue({ data: {} });
+    renderWithProviders(<AdminCreditRequestsPage />, {
+      route: "/admin/credit-requests",
+      path: "/admin/credit-requests",
+      user: admin,
+      get: { "/admin/credits/requests": { requests: [REQUEST], total: 1 } },
+    });
+    const card = (await screen.findAllByTestId("data-card"))[0]!;
+    expect(within(card).getByRole("link", { name: "Market Centar" })).toHaveAttribute("href", "/admin/users/3");
+    expect(within(card).getByText(t("credits.requestStatuses.PENDING"))).toBeInTheDocument();
+    expect(within(card).getByText(t("admin.creditRequests.columnMonth"))).toBeInTheDocument();
+    const approve = within(card).getByRole("button", { name: t("admin.creditRequests.approve") });
+    const reject = within(card).getByRole("button", { name: t("admin.creditRequests.reject") });
+    expect(approve).toHaveClass("min-h-11", "flex-1");
+    expect(reject).toHaveClass("min-h-11", "flex-1");
+
+    await userEvent.click(reject);
+    expect(screen.getByRole("dialog", { name: t("admin.creditRequests.rejectTitle") })).toBeInTheDocument();
+  });
+
+  it("shows who decided and the note under Reviewed, with no buttons", async () => {
+    renderWithProviders(<AdminCreditRequestsPage />, {
+      route: "/admin/credit-requests",
+      path: "/admin/credit-requests",
+      user: admin,
+      get: {
+        "/admin/credits/requests": {
+          requests: [{ ...REQUEST, status: "APPROVED", admin_note: "Plaćeno", reviewed_at: "2030-01-03T10:00:00.000Z", reviewed_by_email: "admin@demo.com" }],
+          total: 1,
+        },
+      },
+    });
+    const card = (await screen.findAllByTestId("data-card"))[0]!;
+    expect(within(card).getByText(t("admin.creditRequests.reviewed"))).toBeInTheDocument();
+    expect(within(card).getByText("Plaćeno")).toBeInTheDocument();
+    expect(within(card).queryByRole("button")).not.toBeInTheDocument();
   });
 });
 
@@ -92,7 +135,7 @@ describe("AdminCreditRequestsPage filters", () => {
         },
       },
     });
-    expect(await screen.findByText("Market Centar")).toBeInTheDocument();
+    expect(within(await screen.findByRole("table")).getByText("Market Centar")).toBeInTheDocument();
     expect(params[0]).toMatchObject({ status: "PENDING", type: "", user_id: "" });
   });
 });
@@ -123,9 +166,10 @@ describe("a branch's request in the admin list", () => {
       get: { "/admin/credits/requests": { requests: [branchRequest, renewal], total: 2 } },
     });
 
-    expect(await screen.findByRole("link", { name: "Bingo d.o.o. → Bingo Tuzla" })).toHaveAttribute("href", "/admin/users/3");
-    expect(screen.getByText(t("admin.creditRequests.sentByCompany", { email: "bingo@demo.com" }))).toBeInTheDocument();
-    expect(screen.getByText(t("admin.creditRequests.sentByRenewal"))).toBeInTheDocument();
+    const table = await screen.findByRole("table");
+    expect(within(table).getByRole("link", { name: "Bingo d.o.o. → Bingo Tuzla" })).toHaveAttribute("href", "/admin/users/3");
+    expect(within(table).getByText(t("admin.creditRequests.sentByCompany", { email: "bingo@demo.com" }))).toBeInTheDocument();
+    expect(within(table).getByText(t("admin.creditRequests.sentByRenewal"))).toBeInTheDocument();
 
     await userEvent.click(screen.getAllByRole("button", { name: t("admin.creditRequests.approve") })[0]!);
     expect(
@@ -156,7 +200,7 @@ describe("AdminCreditsPage", () => {
       user: admin,
       get: { "/admin/credits/overview": { users: [branch], total: 1 }, "/admin/credits/plans": { plans: [] } },
     });
-    expect(await screen.findByText("Bingo d.o.o.")).toBeInTheDocument();
+    expect(within(await screen.findByRole("table")).getByText("Bingo d.o.o.")).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: t("admin.credits.columnCompany") })).toBeInTheDocument();
   });
 
@@ -182,13 +226,90 @@ describe("AdminCreditsPage", () => {
       get: { "/admin/credits/overview": { users: [row], total: 1 }, "/admin/credits/plans": { plans: [] } },
     });
 
-    expect(await screen.findByText("Market Centar")).toBeInTheDocument();
-    expect(screen.getByText("Standard")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: t("admin.credits.pendingCount", { count: 1 }) })).toHaveAttribute(
+    const table = await screen.findByRole("table");
+    expect(within(table).getByText("Market Centar")).toBeInTheDocument();
+    expect(within(table).getByText("Standard")).toBeInTheDocument();
+    expect(within(table).getByRole("link", { name: t("admin.credits.pendingCount", { count: 1 }) })).toHaveAttribute(
       "href",
       "/admin/credit-requests?user_id=3",
     );
   });
+});
+
+describe("AdminCreditsPage on phones (cards)", () => {
+  it("shows the plan, the balances and the pending requests as a button, and the card opens the user", async () => {
+    const row: AdminCreditUser = {
+      id: 3,
+      email: "store@demo.com",
+      role: "STORE",
+      business_name: "Market Centar",
+      is_blocked: false,
+      company_name: null,
+      pending_requests: 2,
+      plan_name: "Standard",
+      has_subscription: true,
+      total: 50,
+      used: 48,
+      available: 2,
+    };
+    renderWithProviders(<AdminCreditsPage />, {
+      route: "/admin/credits",
+      path: "/admin/credits",
+      user: admin,
+      get: { "/admin/credits/overview": { users: [row], total: 1 }, "/admin/credits/plans": { plans: [] } },
+    });
+    const card = (await screen.findAllByTestId("data-card"))[0]!;
+    expect(within(card).getByRole("link", { name: /Market Centar/ })).toHaveAttribute("href", "/admin/users/3");
+    expect(within(card).getByText("Standard")).toHaveClass("rounded-full");
+    const values = Object.fromEntries(
+      within(card)
+        .getAllByRole("term")
+        .map((term) => [term.textContent, term.nextElementSibling?.textContent]),
+    );
+    expect(values).toEqual({
+      [t("admin.credits.columnUsed")]: "48",
+      [t("admin.credits.columnAvailable")]: "2",
+      [t("admin.credits.columnTotal")]: "50",
+    });
+    const pending = within(card).getByRole("link", { name: t("admin.credits.pendingCount", { count: 2 }) });
+    expect(pending).toHaveAttribute("href", "/admin/credit-requests?user_id=3");
+    expect(pending).toHaveClass("min-h-11");
+  });
+
+  it("sorts the cards from the Sort by select with the same URL params as the headers", async () => {
+    renderWithProviders(<AdminCreditsPage />, {
+      route: "/admin/credits?page=2",
+      path: "/admin/credits",
+      user: admin,
+      get: { "/admin/credits/overview": { users: [{ ...makeCreditRow() }], total: 1 }, "/admin/credits/plans": { plans: [] } },
+    });
+    await screen.findAllByTestId("data-card");
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: t("filters.sortBy") }),
+      "available:desc",
+    );
+    // Back to page 1 (offset 0), sorted like a header click would.
+    await waitFor(() =>
+      expect(
+        apiMock.get.mock.calls.filter(([url]) => url === "/admin/credits/overview").at(-1)?.[1]?.params,
+      ).toMatchObject({ sort: "available", dir: "desc", offset: 0 }),
+    );
+  });
+});
+
+const makeCreditRow = (): AdminCreditUser => ({
+  id: 9,
+  email: "r@demo.com",
+  role: "RESTAURANT",
+  business_name: "Ukus",
+  is_blocked: false,
+  company_name: null,
+  pending_requests: 0,
+  plan_name: null,
+  has_subscription: false,
+  total: 0,
+  used: 0,
+  available: 0,
 });
 
 describe("UserCreditsPanel", () => {

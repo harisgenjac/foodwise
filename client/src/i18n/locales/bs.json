@@ -603,6 +603,13 @@
     "confirmButton_few": "Uvezi {{count}} proizvoda",
     "confirmButton_other": "Uvezi {{count}} proizvoda"
   },
+  "notFound": {
+    "code": "Greška 404",
+    "title": "Stranica nije pronađena",
+    "text": "Adresa koju ste otvorili ne postoji ili je promijenjena.",
+    "toDashboard": "Na početnu stranicu",
+    "toLogin": "Na prijavu"
+  },
   "comingSoon": {
     "badge": "Uskoro dostupno",
     "sponsorTitle": "Budi sponzor",
@@ -612,6 +619,11 @@
       "Lokalni događaji",
       "Dugoročna partnerstva"
     ]
+  },
+  "table": {
+    "sortDefault": "Zadani redoslijed",
+    "sortAscending": "{{column}}: od najmanjeg",
+    "sortDescending": "{{column}}: od najvećeg"
   },
   "common": {
     "loading": "Učitavanje...",
@@ -1261,7 +1273,8 @@
       "note": "Interna bilješka (neobavezno)",
       "noteHint": "Korisnik ne vidi bilješku.",
       "sentByCompany": "Zatražila centrala ({{email}})",
-      "sentByRenewal": "Poslao sistem (automatska obnova)"
+      "sentByRenewal": "Poslao sistem (automatska obnova)",
+      "reviewed": "Pregledano"
     },
     "userCredits": {
       "title": "Krediti",
@@ -1358,7 +1371,9 @@
   "announcements": {
     "label": "Obavještenje platforme",
     "dismiss": "Zatvori obavještenje",
-    "dismissError": "Obavještenje nije zatvoreno. Pojavit će se ponovo nakon osvježavanja."
+    "dismissError": "Obavještenje nije zatvoreno. Pojavit će se ponovo nakon osvježavanja.",
+    "showMore": "Prikaži cijelo",
+    "showLess": "Prikaži manje"
   },
   "accountSetup": {
     "title": "Dovršite podešavanje naloga",

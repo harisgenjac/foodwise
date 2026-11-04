@@ -251,6 +251,35 @@ describe("AnnouncementBanner", () => {
     await waitFor(() => expect(errorToast).toHaveBeenCalledWith(t("announcements.dismissError")));
   });
 
+  it("is compact on phones: a 44 px close button, the title on one line and the text cut to two lines", async () => {
+    renderBanner([announcement]);
+    const close = await screen.findByRole("button", { name: t("announcements.dismiss") });
+    expect(close).toHaveClass("h-11", "w-11", "sm:h-auto", "sm:w-auto");
+    expect(screen.getByText("Održavanje")).toHaveClass("truncate", "sm:whitespace-normal");
+    expect(screen.getByText("Večeras od 22h.")).toHaveClass("line-clamp-2", "sm:line-clamp-none");
+    // The label stays for screen readers below sm.
+    expect(screen.getByText(t("announcements.label"))).toHaveClass("sr-only", "sm:not-sr-only");
+  });
+
+  it("offers the whole text when two lines cut it", async () => {
+    // jsdom has no layout: the text reports more height than it shows.
+    vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(120);
+    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(40);
+    renderBanner([announcement]);
+    const more = await screen.findByRole("button", { name: t("announcements.showMore") });
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    expect(more).toHaveClass("h-11", "w-11", "sm:hidden");
+    await userEvent.click(more);
+    expect(screen.getByText("Večeras od 22h.")).not.toHaveClass("line-clamp-2");
+    expect(screen.getByRole("button", { name: t("announcements.showLess") })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("does not offer the whole text when it fits", async () => {
+    renderBanner([announcement]);
+    await screen.findByText("Održavanje");
+    expect(screen.queryByRole("button", { name: t("announcements.showMore") })).not.toBeInTheDocument();
+  });
+
   it("does not load announcements for an admin", async () => {
     renderBanner([announcement], "ADMIN");
     await waitFor(() => expect(apiMock.get).toHaveBeenCalledWith("/users/me"));
