@@ -18,4 +18,26 @@ describe("LanguageSwitcher", () => {
     expect(screen.getByRole("button", { name: /EN/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Bosanski/ })).not.toBeInTheDocument();
   });
+
+  it("is a 44 px touch target below md and closes on Escape or an outside tap", async () => {
+    const user = userEvent.setup();
+    render(
+      <div>
+        <LanguageSwitcher />
+        <p>outside</p>
+      </div>,
+    );
+    const button = screen.getByRole("button", { name: /BS/ });
+    expect(button).toHaveClass("min-h-11", "md:min-h-0");
+
+    await user.click(button);
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("button", { name: /English/ })).not.toBeInTheDocument();
+    expect(button).toHaveFocus();
+
+    await user.click(button);
+    await user.click(screen.getByText("outside"));
+    expect(screen.queryByRole("button", { name: /English/ })).not.toBeInTheDocument();
+  });
 });

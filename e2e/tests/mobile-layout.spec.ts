@@ -48,6 +48,20 @@ test.describe("store", () => {
     const details = [`/products/${productId}`, `/edit-product/${productId}`, `/reservation/${reservationId}`, `/donate-food/${donationIds.store}/edit`];
     for (const path of [...STORE_PAGES, ...SHARED_PAGES, ...details]) await expectPhoneLayout(page, path);
   });
+
+  test("the notification panel fits the screen and closes on Escape", async ({ page }) => {
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: "Notifikacije" }).click();
+    const panel = page.getByTestId("notifications-panel");
+    await expect(panel).toBeVisible();
+    const box = (await panel.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(375);
+    expect(box.y + box.height).toBeLessThanOrEqual(812);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+    await page.keyboard.press("Escape");
+    await expect(panel).toBeHidden();
+  });
 });
 
 test.describe("restaurant", () => {
