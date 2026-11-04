@@ -108,7 +108,7 @@ function CompanyCreateBranchPage() {
           </FormSection>
         </div>
 
-        <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+        <div className="space-y-4 lg:sticky lg:top-22 lg:self-start">
           <div>
             <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500">
               <Eye className="h-3.5 w-3.5" />

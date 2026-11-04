@@ -166,7 +166,7 @@ First a web app that looks and works well on a phone, then a PWA that can be ins
 The review and its findings per page are in `docs/mobile-review.md`, the reference for this step.
 
 - [x] Review every page at phone width (about 375 px) and list the problems.
-- [ ] Navigation shell: a drawer below md for every role, and bottom navigation for stores and restaurants instead of the sidebar for the most used pages (store: Dashboard, My products, Reservations, Pickups, More; restaurant: Dashboard, Browse products, My reservations, Pickups, More); the window scrolls instead of the page area, 16 px side padding below sm.
+- [x] Navigation shell: a drawer below md for every role, and bottom navigation for stores and restaurants instead of the sidebar for the most used pages (store: Dashboard, My products, Reservations, Pickups, More; restaurant: Dashboard, Browse products, My reservations, Pickups, More); the window scrolls instead of the page area, 16 px side padding below sm.
 - [ ] Header on phones: 44 px buttons, the notification dropdown as a full-width panel.
 - [ ] Form controls: larger touch targets (at least 44 px) and phone-friendly forms: 16 px text and 44 px fields below sm, a numeric keyboard and a 44 px calendar button in the date input, category labels that wrap.
 - [ ] Modal: a maximum height with a scrolling body and buttons that stay visible.

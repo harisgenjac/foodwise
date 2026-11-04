@@ -132,7 +132,7 @@ function EditProductPage() {
           <ProductFormFields values={form} onChange={updateField} stockLocked errorFor={errorFor} onBlur={blur} />
         </div>
 
-        <aside className="lg:sticky lg:top-0 lg:self-start space-y-4">
+        <aside className="lg:sticky lg:top-22 lg:self-start space-y-4">
           <ProductPreview values={form} />
 
           <button

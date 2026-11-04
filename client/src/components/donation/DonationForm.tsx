@@ -96,7 +96,7 @@ function DonationForm({
           />
         </div>
 
-        <aside className="lg:sticky lg:top-0 lg:self-start space-y-4">
+        <aside className="lg:sticky lg:top-22 lg:self-start space-y-4">
           <p className="text-sm font-semibold text-gray-700">{t("donations.form.preview")}</p>
           <DonationCard donation={preview} />
 

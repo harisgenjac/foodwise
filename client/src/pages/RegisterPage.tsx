@@ -44,7 +44,7 @@ function RegisterPage() {
     "border-gray-200 text-gray-600 hover:border-orange-300 hover:bg-orange-50";
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-dvh flex">
       <div
         className="relative hidden lg:flex lg:w-1/2 bg-cover bg-center"
         style={{

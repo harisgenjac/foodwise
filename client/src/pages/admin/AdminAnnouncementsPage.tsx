@@ -190,7 +190,7 @@ function AdminAnnouncementsPage() {
           </FormSection>
         </div>
 
-        <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+        <div className="space-y-4 lg:sticky lg:top-22 lg:self-start">
           <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
             <DateInput
               label={t("admin.announcements.expiresLabel")}

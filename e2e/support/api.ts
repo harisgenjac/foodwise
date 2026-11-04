@@ -57,6 +57,25 @@ export const createProduct = async (api: APIRequestContext, product: NewProduct)
   return created;
 };
 
+// Publishes a free donation as a store or restaurant (donations cost no credits). Defaults: Dairy,
+// 5 kg worth 4 KM each, last day in 3 days.
+export const createDonation = async (api: APIRequestContext, name: string) => {
+  const { donation } = await ok<{ donation: { id: number } }>(
+    await api.post("/api/donations", {
+      data: {
+        donation_type: "FREE",
+        name,
+        category: "Dairy",
+        quantity: 5,
+        unit: "kg",
+        original_price: 4,
+        expiry_date: isoDate(3),
+      },
+    }),
+  );
+  return donation;
+};
+
 // The logged-in account's own id.
 export const myId = async (api: APIRequestContext) => {
   const { user } = await ok<{ user: { id: number } }>(await api.get("/api/users/me"));

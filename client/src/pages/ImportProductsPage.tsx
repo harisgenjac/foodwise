@@ -220,7 +220,7 @@ function ImportProductsPage() {
           </FormSection>
         </div>
 
-        <aside className="lg:sticky lg:top-0 lg:self-start">
+        <aside className="lg:sticky lg:top-22 lg:self-start">
           <FormSection title={t("importProducts.formatTitle")} icon={ListChecks}>
             <ul className="list-disc space-y-1.5 pl-4 text-sm text-gray-600">
               <li>{t("importProducts.formatColumns")}</li>

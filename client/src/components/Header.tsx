@@ -11,6 +11,7 @@ import {
   CheckCheck,
   ChevronDown,
   LogOut,
+  Menu,
   PanelLeftClose,
   PanelLeftOpen,
   UserRound,
@@ -19,17 +20,22 @@ import logo from "../assets/logoApp.png";
 import { useNotifications } from "../context/NotificationsContext.js";
 import LanguageSwitcher from "./LanguageSwitcher.js";
 import NotificationItem from "./notifications/NotificationItem.js";
+import { MOBILE_DRAWER_ID } from "./navigation/MobileDrawer.js";
 
 const DROPDOWN_LIMIT = 8;
 
 interface HeaderProps {
+  // The desktop rail (md and up).
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
+  // The phone drawer (below md).
+  isMenuOpen?: boolean;
+  onOpenMenu?: () => void;
   // While the account setup is unfinished only the profile menu (and the language) can be used.
   locked?: boolean;
 }
 
-function Header({ isSidebarOpen, onToggleSidebar, locked = false }: HeaderProps) {
+function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu, locked = false }: HeaderProps) {
   const { user, logout } = useAuth();
   const { t } = useTranslation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -93,12 +99,25 @@ function Header({ isSidebarOpen, onToggleSidebar, locked = false }: HeaderProps)
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between h-16 px-4 bg-white/90 backdrop-blur border-b border-gray-200">
       <div className="flex items-center gap-3">
+        {/* Phones open the drawer; from md up the same place collapses the rail. */}
+        <button
+          type="button"
+          onClick={onOpenMenu}
+          disabled={locked}
+          aria-label={t("header.openMenu")}
+          aria-haspopup="dialog"
+          aria-expanded={isMenuOpen}
+          aria-controls={isMenuOpen ? MOBILE_DRAWER_ID : undefined}
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent md:hidden"
+        >
+          <Menu className="h-5 w-5" strokeWidth={1.8} />
+        </button>
         <button
           onClick={onToggleSidebar}
           disabled={locked}
           aria-label={toggleLabel}
           title={toggleLabel}
-          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+          className="hidden md:inline-flex p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
         >
           <ToggleIcon className="h-5 w-5" strokeWidth={1.8} />
         </button>
