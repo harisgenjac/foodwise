@@ -114,7 +114,7 @@ Config:
   - Use `getByRole`, `getByLabel`, `getByText` and `getByPlaceholder` (the filter inputs have no label) with the Bosnian UI. The language is fixed to `bs`.
   - Scope repeated controls: dialogs by `getByRole('dialog', { name })` (or `dialogWith(page, text)` for the dialogs without an accessible name: the reserve dialog, `SubscribeModal`, `CreditRequestDecisionModal`), pickup cards by `getByRole('article').filter({ has: heading })`, header and sidebar by `locator('header')` / `locator('aside')`.
   - Toasts are `role="status"` (so is the credit banner), so filter by text: `getByRole('status').filter({ hasText })`.
-  - Use `exact: true` when a label is a substring of another (`Ime` / `Prezime`, `Nova lozinka` / `Ponovite novu lozinku`).
+  - Use `exact: true` when a label is a substring of another (`Ime` / `Prezime`, `Nova lozinka` / `Ponovite novu lozinku`, `Email` / the `Obavijesti emailom` switch on My profile; label matching ignores case).
 - **`data-testid` only where roles are ambiguous.** There are three, because these cards are plain `div`s with the same buttons on every card:
   - `product-card` on `DashboardProductCard` (marketplace, dashboard and My products).
   - `reservation-card` on `DashboardReservationCard` (the store's reservations).

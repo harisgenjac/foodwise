@@ -42,7 +42,7 @@ export const expectNotInMarketplace = async (page: Page, name: string) => {
 // Submits the login form and stays wherever the app lands (a refused login stays on /login).
 export const submitLoginForm = async (page: Page, email: string, password: string) => {
   await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Lozinka").fill(password);
   await page.getByRole("button", { name: "Prijavi se" }).click();
 };

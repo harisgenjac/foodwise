@@ -122,17 +122,21 @@ export const processEmailQueue = async ({
     [now, MAX_EMAIL_ATTEMPTS, STALE_SENDING_MINUTES],
   );
 
-  // SKIP LOCKED: several server instances never claim the same row.
+  // SKIP LOCKED: several server instances never claim the same row. The due rows are picked in a
+  // CTE, which runs exactly once; as an `IN (subquery)` the planner may run the subquery again and
+  // claim more than LIMIT rows.
   const claimed = await db.query<ClaimedEmail>(
-    `UPDATE email_queue
-     SET status = 'SENDING', attempts = email_queue.attempts + 1, locked_at = $1
-     WHERE email_queue.id IN (
+    `WITH due AS (
        SELECT email_queue.id FROM email_queue
        WHERE email_queue.status = 'PENDING' AND email_queue.next_attempt_at <= $1
        ORDER BY email_queue.next_attempt_at, email_queue.id
        LIMIT $2
        FOR UPDATE SKIP LOCKED
      )
+     UPDATE email_queue
+     SET status = 'SENDING', attempts = email_queue.attempts + 1, locked_at = $1
+     FROM due
+     WHERE email_queue.id = due.id
      RETURNING email_queue.id, email_queue.recipient, email_queue.template, email_queue.data,
                email_queue.language, email_queue.attempts,
                (SELECT users.email_notifications FROM users WHERE users.id = email_queue.user_id)
