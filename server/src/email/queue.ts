@@ -25,8 +25,9 @@ const MAX_ERROR_LENGTH = 1000;
 // same db (the caller's transaction, when there is one), so the emails are stored exactly when the
 // notifications are. One INSERT ... SELECT for any number of notifications (an announcement reaches
 // every store and restaurant): the template is the notification's type and the data is the
-// snapshot of NOTIFICATION_EMAIL_DATA. Untyped notifications and blocked recipients (also a blocked
-// company or a deactivated branch) get no email. Returns the number of emails queued.
+// snapshot of NOTIFICATION_EMAIL_DATA. Untyped notifications, blocked recipients (also a blocked
+// company or a deactivated branch) and recipients who turned email notifications off get no email
+// (notification emails are never system emails). Returns the number of emails queued.
 export const enqueueNotificationEmails = async (db: Queryable, notificationIds: number[]): Promise<number> => {
   if (notificationIds.length === 0) return 0;
   const result = await db.query(
@@ -34,11 +35,31 @@ export const enqueueNotificationEmails = async (db: Queryable, notificationIds: 
      SELECT recipients.id, recipients.email, notifications.type, ${NOTIFICATION_EMAIL_DATA}, $2
      FROM ${NOTIFICATION_EMAIL_FROM}
      WHERE notifications.id = ANY($1::int[]) AND notifications.type IS NOT NULL
-       AND ${notBlocked("recipients")}
+       AND ${notBlocked("recipients")} AND recipients.email_notifications
      ORDER BY notifications.id`,
     [notificationIds, DEFAULT_EMAIL_LANGUAGE],
   );
   return result.rowCount ?? 0;
+};
+
+// Queues one email that is not a notification's (e.g. the coming system emails: password reset,
+// email confirmation, login details) to a user. A system template (`system: true`) ignores the
+// user's email notifications switch; any other one follows it. Never for a blocked user. Returns
+// whether the email was queued.
+export const enqueueEmail = async (
+  db: Queryable,
+  { userId, template: name, data }: { userId: number; template: string; data: object },
+): Promise<boolean> => {
+  const template = emailTemplate(name);
+  if (!template) throw new Error(`Unknown email template: ${name}`);
+  const result = await db.query(
+    `INSERT INTO email_queue (user_id, recipient, template, data, language)
+     SELECT users.id, users.email, $2, $3, $4
+     FROM users
+     WHERE users.id = $1 AND ${notBlocked("users")} AND ($5 OR users.email_notifications)`,
+    [userId, name, JSON.stringify(data), DEFAULT_EMAIL_LANGUAGE, template.system === true],
+  );
+  return (result.rowCount ?? 0) > 0;
 };
 
 // The ids of an INSERT INTO notifications ... RETURNING notifications.id.
@@ -57,6 +78,9 @@ interface ClaimedEmail {
   data: unknown;
   language: string;
   attempts: number;
+  // The recipient now: null when the email has no user.
+  email_notifications: boolean | null;
+  recipient_active: boolean | null;
 }
 
 export interface ProcessOptions {
@@ -71,10 +95,12 @@ export interface ProcessResult {
   sent: number;
   retrying: number;
   failed: number;
+  skipped: number;
 }
 
 // One pass of the worker: claims the due emails, renders and sends each one, and records the
-// outcome. A failed send waits for its next attempt (see RETRY_DELAYS_SECONDS) until
+// outcome. An email whose recipient was blocked, or (unless it is a system email) turned email
+// notifications off, since it was queued is SKIPPED instead of sent. A failed send waits for its next attempt (see RETRY_DELAYS_SECONDS) until
 // MAX_EMAIL_ATTEMPTS, then the row is FAILED. Errors stay in the queue; they never reach the
 // action that queued the email.
 export const processEmailQueue = async ({
@@ -84,7 +110,7 @@ export const processEmailQueue = async ({
   batchSize = EMAIL_BATCH_SIZE,
   db = pool,
 }: ProcessOptions): Promise<ProcessResult> => {
-  const result: ProcessResult = { sent: 0, retrying: 0, failed: 0 };
+  const result: ProcessResult = { sent: 0, retrying: 0, failed: 0, skipped: 0 };
 
   // A worker that stopped mid-send left its rows SENDING: give them their next attempt.
   await db.query(
@@ -108,7 +134,11 @@ export const processEmailQueue = async ({
        FOR UPDATE SKIP LOCKED
      )
      RETURNING email_queue.id, email_queue.recipient, email_queue.template, email_queue.data,
-               email_queue.language, email_queue.attempts`,
+               email_queue.language, email_queue.attempts,
+               (SELECT users.email_notifications FROM users WHERE users.id = email_queue.user_id)
+                 AS email_notifications,
+               (SELECT ${notBlocked("users")} FROM users WHERE users.id = email_queue.user_id)
+                 AS recipient_active`,
     [now, batchSize],
   );
 
@@ -123,8 +153,24 @@ export const processEmailQueue = async ({
     );
   };
 
+  const markSkipped = async (email: ClaimedEmail, reason: string) => {
+    await db.query(`UPDATE email_queue SET status = 'SKIPPED', locked_at = NULL, last_error = $2 WHERE id = $1`, [
+      email.id,
+      reason,
+    ]);
+    result.skipped += 1;
+  };
+
   for (const email of claimed.rows) {
     const template = emailTemplate(email.template);
+    if (email.recipient_active === false) {
+      await markSkipped(email, "The recipient is blocked.");
+      continue;
+    }
+    if (template && !template.system && email.email_notifications === false) {
+      await markSkipped(email, "The recipient turned email notifications off.");
+      continue;
+    }
     let rendered;
     try {
       if (!template) throw new InvalidEmailDataError(email.template);

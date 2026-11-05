@@ -91,6 +91,8 @@ export interface User {
   active_products?: string;
   // Set while the user still has a temporary password from an admin.
   must_change_password?: boolean;
+  // The "Email notifications" switch on My profile (GET /users/me).
+  email_notifications?: boolean;
   // The user's company: set for a COMPANY (headquarters) user, null otherwise for now.
   company_id?: number | null;
   company_name?: string | null;

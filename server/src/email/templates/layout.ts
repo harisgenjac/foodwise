@@ -21,18 +21,26 @@ export interface EmailContent {
   // Paragraphs after the details.
   outro?: string[];
   button: { label: string; url: string };
+  // Notification emails: the footer links to the "Email notifications" switch on My profile.
+  // System emails leave it out (they cannot be turned off).
+  settingsUrl?: string;
 }
 
-const FOOTER: Record<EmailLanguage, { reason: string; tagline: string }> = {
+const FOOTER: Record<EmailLanguage, { reason: string; tagline: string; turnOff: string }> = {
   bs: {
     reason: "Ovu poruku ste dobili jer imate račun na platformi FoodWise.",
     tagline: "FoodWise – Još vrijedi",
+    turnOff: "Isključite email obavijesti",
   },
   en: {
     reason: "You received this email because you have a FoodWise account.",
     tagline: "FoodWise – Još vrijedi",
+    turnOff: "Turn off email notifications",
   },
 };
+
+// Where the footer's link points: the switch on My profile.
+export const EMAIL_SETTINGS_PATH = "/my-profile#email-notifications";
 
 const ORANGE = "#ea580c";
 
@@ -83,7 +91,11 @@ ${outro.map(paragraph).join("\n")}
 </td></tr></table>
 </td></tr>
 <tr><td style="padding:16px 24px 24px;border-top:1px solid #f3f4f6;font-size:12px;line-height:18px;color:#6b7280;">
-${escapeHtml(footer.reason)}<br>${escapeHtml(footer.tagline)}
+${escapeHtml(footer.reason)}<br>${escapeHtml(footer.tagline)}${
+    content.settingsUrl
+      ? `<br><a href="${escapeHtml(content.settingsUrl)}" style="color:#6b7280;text-decoration:underline;">${escapeHtml(footer.turnOff)}</a>`
+      : ""
+  }
 </td></tr>
 </table>
 </td></tr>
@@ -105,6 +117,7 @@ ${escapeHtml(footer.reason)}<br>${escapeHtml(footer.tagline)}
     "--",
     footer.reason,
     footer.tagline,
+    ...(content.settingsUrl ? [`${footer.turnOff}: ${content.settingsUrl}`] : []),
     "",
   ].join("\n");
 

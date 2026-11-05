@@ -1,6 +1,6 @@
 import type { NotificationType } from "../../utils/notifications.js";
 import { formatPickup, formatQuantity, unitLabel } from "./format.js";
-import { renderLayout, type EmailLanguage } from "./layout.js";
+import { EMAIL_SETTINGS_PATH, renderLayout, type EmailLanguage } from "./layout.js";
 import { parseNotificationData, type NotificationEmailData } from "./notificationData.js";
 import type { EmailTemplate } from "./types.js";
 
@@ -622,12 +622,13 @@ const renderNotificationEmail = (type: NotificationType) => (raw: unknown, lang:
   };
   const link = notificationLink(type, d);
   const button = { label: BUTTONS[lang][link.kind], url: `${appUrl}${link.path}` };
+  const settingsUrl = `${appUrl}${EMAIL_SETTINGS_PATH}`;
 
   if (type === "PLATFORM_ANNOUNCEMENT") {
     // The announcement's own title and text, in English when the admin wrote one.
     const { title, body } = announcement(d, lang);
     const subject = lang === "en" ? `Platform announcement: ${title}` : `Obavještenje platforme: ${title}`;
-    return renderLayout({ lang, subject, heading: title, intro: paragraphs(body), button });
+    return renderLayout({ lang, subject, heading: title, intro: paragraphs(body), button, settingsUrl });
   }
   const copy = COPY[lang][type](values, d);
   return renderLayout({
@@ -638,6 +639,7 @@ const renderNotificationEmail = (type: NotificationType) => (raw: unknown, lang:
     details: detailRows(type, d, lang, amount),
     ...(copy.outro ? { outro: copy.outro } : {}),
     button,
+    settingsUrl,
   });
 };
 

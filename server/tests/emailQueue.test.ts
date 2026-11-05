@@ -171,7 +171,7 @@ describe("sending", () => {
     const { transport, sent, send } = fakeTransport();
     const now = new Date();
 
-    expect(await processEmailQueue({ transport, config: CONFIG, now })).toEqual({ sent: 1, retrying: 0, failed: 0 });
+    expect(await processEmailQueue({ transport, config: CONFIG, now })).toEqual({ sent: 1, retrying: 0, failed: 0, skipped: 0 });
 
     expect(sent).toHaveLength(1);
     expect(sent[0]).toMatchObject({
@@ -187,7 +187,7 @@ describe("sending", () => {
     expect(row!.sent_at?.getTime()).toBe(now.getTime());
 
     // Nothing is sent twice.
-    expect(await processEmailQueue({ transport, config: CONFIG })).toEqual({ sent: 0, retrying: 0, failed: 0 });
+    expect(await processEmailQueue({ transport, config: CONFIG })).toEqual({ sent: 0, retrying: 0, failed: 0, skipped: 0 });
     expect(sent).toHaveLength(1);
   });
 
@@ -242,7 +242,7 @@ describe("retries", () => {
     let now = new Date();
 
     for (let attempt = 1; attempt < MAX_EMAIL_ATTEMPTS; attempt += 1) {
-      expect(await processEmailQueue({ transport, config: CONFIG, now })).toEqual({ sent: 0, retrying: 1, failed: 0 });
+      expect(await processEmailQueue({ transport, config: CONFIG, now })).toEqual({ sent: 0, retrying: 1, failed: 0, skipped: 0 });
       const [row] = await queueRows();
       const delay = RETRY_DELAYS_SECONDS[attempt - 1]!;
       expect(row).toMatchObject({
@@ -259,7 +259,7 @@ describe("retries", () => {
       now = secondsLater(now, delay);
     }
 
-    expect(await processEmailQueue({ transport, config: CONFIG, now })).toEqual({ sent: 0, retrying: 0, failed: 1 });
+    expect(await processEmailQueue({ transport, config: CONFIG, now })).toEqual({ sent: 0, retrying: 0, failed: 1, skipped: 0 });
     const [row] = await queueRows();
     expect(row).toMatchObject({ status: "FAILED", attempts: MAX_EMAIL_ATTEMPTS, sent_at: null });
     expect(send).toHaveBeenCalledTimes(MAX_EMAIL_ATTEMPTS);
@@ -291,7 +291,7 @@ describe("retries", () => {
     await pool.query("UPDATE email_queue SET template = 'NO_SUCH_TEMPLATE' WHERE id = $1", [first!.id]);
     await pool.query(`UPDATE email_queue SET data = '{"reservationId": "x"}' WHERE id = $1`, [second!.id]);
     const { transport, send } = fakeTransport();
-    expect(await processEmailQueue({ transport, config: CONFIG })).toEqual({ sent: 0, retrying: 0, failed: 2 });
+    expect(await processEmailQueue({ transport, config: CONFIG })).toEqual({ sent: 0, retrying: 0, failed: 2, skipped: 0 });
     expect(send).not.toHaveBeenCalled();
     const rows = await queueRows();
     expect(rows.map((row) => [row.status, row.attempts])).toEqual([

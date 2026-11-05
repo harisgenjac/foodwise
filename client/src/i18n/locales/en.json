@@ -464,6 +464,15 @@
     "changePassword": "Change password",
     "passwordChanged": "Your password was changed.",
     "passwordError": "The password was not changed. Please try again.",
+    "emailNotifications": {
+      "title": "Email notifications",
+      "label": "Notifications by email",
+      "onHint": "You get an email for every notification in the app. System messages (e.g. a new password) always arrive.",
+      "offHint": "You get no emails for notifications. System messages (e.g. a new password) always arrive.",
+      "turnedOn": "Email notifications are on.",
+      "turnedOff": "Email notifications are off.",
+      "error": "The setting was not saved. Please try again."
+    },
     "companyRole": "Company HQ",
     "managedByCompany": "Managed by your company",
     "usesCompanyLogo": "Your company's logo is shown until you set your own.",

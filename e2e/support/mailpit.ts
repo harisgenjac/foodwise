@@ -25,6 +25,12 @@ const mailpit = async <T>(path: string): Promise<T> => {
   return (await response.json()) as T;
 };
 
+// How many emails match a Mailpit search right now.
+export const countEmails = async (query: string): Promise<number> => {
+  const { messages } = await mailpit<{ messages: unknown[] }>(`/api/v1/search?query=${encodeURIComponent(query)}`);
+  return messages.length;
+};
+
 // Waits for exactly one email matching a Mailpit search (e.g. `to:x@y subject:"Nova rezervacija"`)
 // and returns it in full. The server's email worker sends every 5 seconds.
 export const waitForEmail = async (query: string): Promise<MailpitMessage> => {
