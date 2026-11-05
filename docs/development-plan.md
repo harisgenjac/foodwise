@@ -160,8 +160,8 @@ Every existing in-app notification can also go out by email, in the user's langu
 - [x] Local testing with Mailpit, so nothing reaches real people during development.
 - [x] Sending queue with retries and a log.
 - [x] The first email: a new reservation to the store, with a link to it.
-- [ ] Templates for existing notifications (new order, accepted, rejected, cancelled, picked up, expiry, reminders, credits, admin announcements).
-- [ ] Settings on My profile: on/off per kind and the daily digest.
+- [x] Templates for existing notifications (new order, accepted, rejected, cancelled, picked up, expiry, reminders, credits, admin announcements). All 32 notification types have an email (Nov 5, 2026).
+- [x] One "Email notifications" switch on My profile for every user (on by default; off = no notification emails, queued ones skipped; system emails ignore it), linked from every notification email's footer.
 - [ ] System emails that cannot be turned off: email confirmation, forgot password, login details for a new user (already on the roadmap).
 - [ ] Emails for the new roles, verification and delivery.
 
@@ -245,6 +245,11 @@ Older ideas moved here from `product.md`. Agreed as possible directions, not pla
 - [ ] Public launch (deploy) with proper image storage.
 - [ ] Help, Terms of use and Privacy pages (the footer links are placeholders today).
 - [ ] Real product photos instead of category images.
+
+### Emails
+
+- [ ] Email settings per kind of notification (on/off for each), instead of the one switch.
+- [ ] A daily digest for the less urgent emails.
 
 ### Marketplace and nearby offers
 

@@ -477,6 +477,15 @@
     "changePassword": "Promijeni lozinku",
     "passwordChanged": "Lozinka je promijenjena.",
     "passwordError": "Lozinka nije promijenjena. Pokušajte ponovo.",
+    "emailNotifications": {
+      "title": "Email obavijesti",
+      "label": "Obavijesti emailom",
+      "onHint": "Dobijate email za svaku obavijest u aplikaciji. Sistemske poruke (npr. nova lozinka) stižu uvijek.",
+      "offHint": "Ne dobijate emailove za obavijesti. Sistemske poruke (npr. nova lozinka) stižu uvijek.",
+      "turnedOn": "Email obavijesti su uključene.",
+      "turnedOff": "Email obavijesti su isključene.",
+      "error": "Postavka nije spremljena. Pokušajte ponovo."
+    },
     "companyRole": "Centrala",
     "managedByCompany": "Mijenja centrala",
     "usesCompanyLogo": "Prikazuje se logo firme dok ne postavite svoj.",

@@ -29,6 +29,7 @@ import CitySelect from "../components/form/CitySelect.js";
 import { isBlank, REQUIRED } from "../utils/validation.js";
 import ChangePasswordForm from "../components/profile/ChangePasswordForm.js";
 import SubscriptionSection from "../components/credits/SubscriptionSection.js";
+import EmailNotificationsSection from "../components/profile/EmailNotificationsSection.js";
 
 function MyProfilePage() {
   const { user, refreshUser } = useAuth();
@@ -48,6 +49,8 @@ function MyProfilePage() {
   const [companyLogoUrl, setCompanyLogoUrl] = useState("");
   const [companyDescription, setCompanyDescription] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  // Null until the profile is loaded, so the switch starts from the saved value.
+  const [emailNotifications, setEmailNotifications] = useState<boolean | null>(null);
   const { file: logoFile, preview: logoPreview, select: selectLogo, clear: clearLogo } = useLogoPreview();
   const [saving, setSaving] = useState(false);
   const { t } = useTranslation();
@@ -72,6 +75,7 @@ function MyProfilePage() {
       setCompanyLogoUrl(data.company_logo_url || "");
       setCompanyDescription(data.company_description || "");
       setLogoUrl(data.logo_url || "");
+      setEmailNotifications(data.email_notifications ?? true);
     } catch (err) {
       console.error("Error fetching profile:", err);
     }
@@ -420,6 +424,8 @@ function MyProfilePage() {
           </button>
         </div>
       </form>
+
+      {emailNotifications !== null && <EmailNotificationsSection initial={emailNotifications} />}
 
       {/* Plans, top-ups and requests for stores and restaurants; shown once credits are loaded. */}
       {(role === "STORE" || role === "RESTAURANT") && <SubscriptionSection role={role} />}

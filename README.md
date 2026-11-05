@@ -124,7 +124,7 @@ No real email is ever sent from development or tests. Without any email variable
 3. Restart the server (`npm run dev`); it logs `Emails: smtp`.
 4. Make a reservation as a restaurant and open the inbox at http://localhost:8025: the store's "Nova rezervacija" email is there within a few seconds.
 
-Emails go through a queue in the database (`email_queue`), sent by a background worker every 5 seconds with retries, so a failing email service never breaks a reservation. Today only the store's "new reservation" email exists, and it is in Bosnian.
+Emails go through a queue in the database (`email_queue`), sent by a background worker every 5 seconds with retries, so a failing email service never breaks a reservation. Every in-app notification also creates an email (all in Bosnian for now).
 
 ## Enabling Resend later
 

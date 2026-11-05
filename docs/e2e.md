@@ -17,12 +17,13 @@ e2e/
 │   │                     fillProductForm, searchMarketplace, expectNotInMarketplace, credits)
 │   ├── seed.ts           the e2e seed
 │   ├── dates.ts          sarajevoDate(days) → dd/mm/yyyy (UI), isoDate(days) → yyyy-mm-dd (API), both in Europe/Sarajevo
-│   └── mailpit.ts        MAILPIT_URL, waitForEmail(query): polls Mailpit's search API until exactly one email matches, returns it in full
+│   └── mailpit.ts        MAILPIT_URL, waitForEmail(query): polls Mailpit's search API until exactly one email matches, returns it in full; countEmails(query)
 └── tests/
     ├── auth.setup.ts                  logs the seeded roles in through the API once, saves .auth/<role>.json
     ├── first-login.spec.ts            admin creates a restaurant → temporary password → password change → profile gate → dashboard
     ├── reservation-flow.spec.ts       store publishes → restaurant reserves for tomorrow → store accepts → Pickups → picked up → "Preuzeto" + notification
     ├── reservation-reject.spec.ts     restaurant reserves (−1 credit) → store rejects → "Odbijeno" + notification → credit back, full quantity offered again
+    ├── email-settings.spec.ts         brezaStore turns email notifications off on My profile (toast, still off after a reload) → a reservation (API) → on again → another reservation → Mailpit has the second email (with the footer's turn-off link) and none for the first; at 375 px `/my-profile#email-notifications` shows the switch on screen, at least 44 px high. brezaStore is switched back on in afterEach. Skipped locally without MAILPIT_URL
     ├── reservation-email.spec.ts      restaurant reserves 2,5 kg for tomorrow 12:00 → the store's "Nova rezervacija" email in Mailpit (recipient, subject, details, HTML and text) → its link opens the reservation for the store. Skipped locally without MAILPIT_URL, required in CI
     ├── credits-first-product.spec.ts  store without a plan is stopped on Add product → requests a plan → admin approves → notification, 50 credits → publishes (49)
     ├── store-chain.spec.ts            admin creates a company → HQ first login → branch in Breza + plan → admin approves → branch first login (name and city locked) → product → restaurant in Visoko sees "dio <company>"
@@ -113,7 +114,7 @@ Config:
   - Use `getByRole`, `getByLabel`, `getByText` and `getByPlaceholder` (the filter inputs have no label) with the Bosnian UI. The language is fixed to `bs`.
   - Scope repeated controls: dialogs by `getByRole('dialog', { name })` (or `dialogWith(page, text)` for the dialogs without an accessible name: the reserve dialog, `SubscribeModal`, `CreditRequestDecisionModal`), pickup cards by `getByRole('article').filter({ has: heading })`, header and sidebar by `locator('header')` / `locator('aside')`.
   - Toasts are `role="status"` (so is the credit banner), so filter by text: `getByRole('status').filter({ hasText })`.
-  - Use `exact: true` when a label is a substring of another (`Ime` / `Prezime`, `Nova lozinka` / `Ponovite novu lozinku`).
+  - Use `exact: true` when a label is a substring of another (`Ime` / `Prezime`, `Nova lozinka` / `Ponovite novu lozinku`, `Email` / the `Obavijesti emailom` switch on My profile; label matching ignores case).
 - **`data-testid` only where roles are ambiguous.** There are three, because these cards are plain `div`s with the same buttons on every card:
   - `product-card` on `DashboardProductCard` (marketplace, dashboard and My products).
   - `reservation-card` on `DashboardReservationCard` (the store's reservations).

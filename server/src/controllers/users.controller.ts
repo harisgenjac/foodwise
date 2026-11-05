@@ -33,7 +33,8 @@ export const getUser = async (req: Request, res: Response) => {
     const result = await pool.query(
       `SELECT users.id, users.first_name, users.last_name, users.email, users.role, users.business_name,
          users.logo_url, users.address, users.city_id, cities.name AS city, users.opening_hours,
-         users.pickup_hours, users.description, users.phone, users.must_change_password, users.created_at,
+         users.pickup_hours, users.description, users.phone, users.must_change_password, users.email_notifications,
+         users.created_at,
          users.company_id, companies.name AS company_name, companies.logo_url AS company_logo_url,
          companies.description AS company_description
        FROM users
@@ -48,6 +49,28 @@ export const getUser = async (req: Request, res: Response) => {
     return res
       .status(500)
       .json({ error: "An error occurred while fetching users." });
+  }
+};
+
+// The email notifications switch on My profile (every role). Off: no notification emails are
+// queued for the user, and queued ones are skipped; system emails still go out.
+export const updateEmailNotifications = async (req: Request, res: Response) => {
+  const { enabled } = req.body;
+  if (typeof enabled !== "boolean") {
+    return res.status(400).json({ error: "Email notifications must be turned on or off." });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE users SET email_notifications = $2 WHERE users.id = $1 RETURNING users.email_notifications`,
+      [req.user!.id, enabled],
+    );
+    return res.status(200).json({
+      message: enabled ? "Email notifications turned on." : "Email notifications turned off.",
+      email_notifications: result.rows[0].email_notifications,
+    });
+  } catch (error) {
+    console.error("Error while updating email notifications:", error);
+    return res.status(500).json({ error: "An error occurred while updating email notifications." });
   }
 };
 

@@ -15,7 +15,7 @@ test("a new restaurant changes its temporary password and fills in its profile b
   // The admin creates the restaurant account.
   await page.goto("/admin/users/new");
   await page.getByRole("radio", { name: "Restoran" }).click();
-  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Lozinka").fill(temporaryPassword);
   await page.getByRole("button", { name: "Kreiraj nalog" }).click();
   await expect(toast(page, "Nalog je kreiran.")).toBeVisible();
@@ -29,7 +29,7 @@ test("a new restaurant changes its temporary password and fills in its profile b
   await expect(page).toHaveURL(/\/login$/);
 
   // Log in with the temporary password: the app is locked behind the setup gate.
-  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Lozinka").fill(temporaryPassword);
   await page.getByRole("button", { name: "Prijavi se" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
@@ -54,7 +54,7 @@ test("a new restaurant changes its temporary password and fills in its profile b
 
   // The page fills the form from GET /users/me when it opens; typing before that answer arrives
   // gets overwritten. The read-only Email field is filled only by that answer.
-  await expect(page.getByLabel("Email")).toHaveValue(email);
+  await expect(page.getByLabel("Email", { exact: true })).toHaveValue(email);
   await page.getByLabel("Ime", { exact: true }).fill(firstName);
   await page.getByLabel("Prezime").fill("Testić");
   await page.getByLabel("Naziv biznisa").fill(`E2E Restoran ${id}`);

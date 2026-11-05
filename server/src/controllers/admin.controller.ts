@@ -1,7 +1,7 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import type { Pool, PoolClient } from "pg";
-import { createNotification, notifyCompanyHq } from "../utils/notifications.js";
+import { createNotification, notifyAnnouncement, notifyCompanyHq } from "../utils/notifications.js";
 import { parseId } from "../utils/params.js";
 import { ADMIN_PAGE_SIZE, listPage, parsePage, parseSort } from "../utils/pagination.js";
 import {
@@ -1098,17 +1098,11 @@ export const createAnnouncement = async (req: Request, res: Response) => {
       ],
     );
     const announcement = result.rows[0];
-    const sent = await client.query(
-      `INSERT INTO notifications (user_id, type, message, announcement_id)
-       SELECT users.id, $1, $2, $3
-       FROM users
-       WHERE ${notBlocked("users")} AND users.role::text = ANY($4)`,
-      [
-        "PLATFORM_ANNOUNCEMENT",
-        `Platform announcement: ${fields.title_en || fields.title_bs}`,
-        announcement.id,
-        roles,
-      ],
+    const recipients = await notifyAnnouncement(
+      client,
+      announcement.id,
+      `Platform announcement: ${fields.title_en || fields.title_bs}`,
+      roles,
     );
     await logAdminAction(client, {
       adminId: req.user!.id,
@@ -1118,7 +1112,7 @@ export const createAnnouncement = async (req: Request, res: Response) => {
     await client.query("COMMIT");
     return res
       .status(201)
-      .json({ message: "Announcement sent.", announcement, recipients: sent.rowCount ?? 0 });
+      .json({ message: "Announcement sent.", announcement, recipients });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
     console.error("Error while sending announcement:", error);

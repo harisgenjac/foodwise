@@ -1,13 +1,9 @@
-import type { NotificationType } from "../../utils/notifications.js";
-import { reservationCreated } from "./reservationCreated.js";
+import { NOTIFICATION_TEMPLATES } from "./notificationEmails.js";
 import type { EmailTemplate } from "./types.js";
 
-// Which notifications also go out by email. A notification type with a template here gets an
-// email from createNotification; adding an email for another type means adding its template.
-// The template name stored in email_queue is the notification type.
-export const EMAIL_TEMPLATES: Partial<Record<NotificationType, EmailTemplate>> = {
-  RESERVATION_CREATED: reservationCreated,
-};
+// Every email the queue can send, by the template name stored in email_queue.template. A
+// notification's template is named after its type (notificationEmails.ts).
+export const EMAIL_TEMPLATES: Record<string, EmailTemplate> = { ...NOTIFICATION_TEMPLATES };
 
 export const emailTemplate = (name: string): EmailTemplate | undefined =>
-  Object.hasOwn(EMAIL_TEMPLATES, name) ? EMAIL_TEMPLATES[name as NotificationType] : undefined;
+  Object.hasOwn(EMAIL_TEMPLATES, name) ? EMAIL_TEMPLATES[name] : undefined;

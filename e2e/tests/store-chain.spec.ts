@@ -38,7 +38,7 @@ test("a chain's branch in Breza publishes a product that a restaurant in Visoko 
     await expect(gate(hqPage).getByText(/Popunite obavezne podatke: Ime, Prezime, Telefon\./)).toBeVisible();
     await changeTemporaryPassword(hqPage, hq.temporaryPassword, PASSWORD);
     // The form is filled from GET /users/me when the page opens; wait for it before typing.
-    await expect(hqPage.getByLabel("Email")).toHaveValue(hq.email);
+    await expect(hqPage.getByLabel("Email", { exact: true })).toHaveValue(hq.email);
     await hqPage.getByLabel("Ime", { exact: true }).fill("Centrala");
     await hqPage.getByLabel("Prezime").fill("Lanac");
     await hqPage.getByLabel("Telefon").fill("061 333 444");
@@ -84,7 +84,7 @@ test("a chain's branch in Breza publishes a product that a restaurant in Visoko 
     await loginViaForm(branchPage, branchLogin.email, branchLogin.temporaryPassword);
     await expect(gate(branchPage).getByText(/Popunite obavezne podatke: Ime, Prezime\./)).toBeVisible();
     await changeTemporaryPassword(branchPage, branchLogin.temporaryPassword, PASSWORD);
-    await expect(branchPage.getByLabel("Email")).toHaveValue(branchLogin.email);
+    await expect(branchPage.getByLabel("Email", { exact: true })).toHaveValue(branchLogin.email);
     await expect(branchPage.getByLabel("Naziv biznisa")).toHaveValue(branch);
     await expect(branchPage.getByLabel("Naziv biznisa")).toBeDisabled();
     await expect(branchPage.getByLabel("Grad")).toBeDisabled();
