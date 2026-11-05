@@ -1,6 +1,8 @@
 import express from "express";
 import {
   blockUser,
+  resendInvitation,
+  sendResetLink,
   cancelReservation,
   createAnnouncement,
   endAnnouncement,
@@ -51,6 +53,10 @@ router.get("/users", getUsers);
 router.post("/users", createUser);
 router.get("/users/:id", getUserDetails);
 router.patch("/users/:id/password", rateLimiters.password, resetPassword);
+// Emailed links (see password.controller.ts): a new invitation while the user never logged in,
+// or a password reset link.
+router.post("/users/:id/invitation", resendInvitation);
+router.post("/users/:id/password-reset-link", sendResetLink);
 router.put("/users/:id/profile", updateUserProfile);
 router.post("/users/:id/block", blockUser);
 router.post("/users/:id/unblock", unblockUser);

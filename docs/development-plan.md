@@ -164,7 +164,7 @@ Every existing in-app notification can also go out by email, in the user's langu
 - [x] One "Email notifications" switch on My profile for every user (on by default; off = no notification emails, queued ones skipped; system emails ignore it), linked from every notification email's footer.
 - System emails that cannot be turned off (template property `system`):
   - [x] Forgot password: a link valid for 1 hour, once, the same answer for every email, a limit per email and per IP, every session signed out after the reset (Nov 5, 2026).
-  - [ ] Login details for a new user: an invitation email instead of a temporary password.
+  - [x] Login details for a new user: an invitation email (72 hours) instead of a temporary password, which stays as an option; resend while the user never logged in, and a reset link sent by an admin (Nov 5, 2026).
   - [ ] Email confirmation (with public registration, see New roles).
 - [ ] Emails for the new roles, verification and delivery.
 

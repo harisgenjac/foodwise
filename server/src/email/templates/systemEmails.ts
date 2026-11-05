@@ -40,7 +40,31 @@ const RESET_COPY: Record<EmailLanguage, { subject: string; intro: string; outro:
   },
 };
 
+const INVITATION_COPY: Record<EmailLanguage, { subject: string; intro: string; outro: string[]; button: string }> = {
+  bs: {
+    subject: "Pozivnica za FoodWise",
+    intro:
+      "Administrator platforme FoodWise vam je otvorio račun. Kliknite dugme da postavite svoju lozinku, a zatim popunite profil.",
+    outro: [
+      "Link vrijedi 72 sata i može se iskoristiti jednom. Ako je istekao, zatražite novi od administratora ili na stranici za prijavu (Zaboravili ste lozinku?).",
+      "Ako ne očekujete ovaj email, zanemarite ga.",
+    ],
+    button: "Postavi lozinku",
+  },
+  en: {
+    subject: "Your FoodWise invitation",
+    intro:
+      "The FoodWise platform administrator opened an account for you. Click the button to set your password, then fill in your profile.",
+    outro: [
+      "The link is valid for 72 hours and can be used once. If it has expired, ask the administrator for a new one or use Forgot password? on the login page.",
+      "If you did not expect this email, ignore it.",
+    ],
+    button: "Set your password",
+  },
+};
+
 export const PASSWORD_RESET_PAGE = "/reset-password";
+export const INVITATION_PAGE = "/set-password";
 
 export const SYSTEM_TEMPLATES: Record<string, EmailTemplate> = {
   PASSWORD_RESET: {
@@ -55,6 +79,21 @@ export const SYSTEM_TEMPLATES: Record<string, EmailTemplate> = {
         intro: [copy.intro],
         outro: copy.outro,
         button: { label: copy.button, url: link(appUrl, PASSWORD_RESET_PAGE, token) },
+      });
+    },
+  },
+  INVITATION: {
+    system: true,
+    render: (data, lang, appUrl) => {
+      const { token } = parseToken(data, "INVITATION");
+      const copy = INVITATION_COPY[lang];
+      return renderLayout({
+        lang,
+        subject: copy.subject,
+        heading: copy.subject,
+        intro: [copy.intro],
+        outro: copy.outro,
+        button: { label: copy.button, url: link(appUrl, INVITATION_PAGE, token) },
       });
     },
   },

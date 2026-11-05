@@ -16,6 +16,8 @@ test("a new restaurant changes its temporary password and fills in its profile b
   await page.goto("/admin/users/new");
   await page.getByRole("radio", { name: "Restoran" }).click();
   await page.getByLabel("Email", { exact: true }).fill(email);
+  // An invitation is the default; this restaurant gets a temporary password instead.
+  await page.getByRole("radio", { name: /Postavi privremenu lozinku/ }).click();
   await page.getByLabel("Lozinka").fill(temporaryPassword);
   await page.getByRole("button", { name: "Kreiraj nalog" }).click();
   await expect(toast(page, "Nalog je kreiran.")).toBeVisible();

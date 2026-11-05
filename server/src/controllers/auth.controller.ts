@@ -129,6 +129,8 @@ export const login = async (req: Request, res: Response) => {
     if (user.deactivated_at) {
       return res.status(403).json({ error: "This branch has been deactivated. Contact your company." });
     }
+    // Null until the first login: while it is, an admin can resend the invitation.
+    await pool.query("UPDATE users SET last_login_at = NOW() WHERE users.id = $1", [user.id]);
     setSessionCookie(res, user);
 
     return res.status(200).json({

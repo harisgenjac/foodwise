@@ -2,7 +2,7 @@ import type { Pool, PoolClient } from "pg";
 
 // What users do to their own account without an admin (admin_actions keeps only admin actions).
 // The admin's user page lists them as the account's activity.
-export type AccountEvent = "PASSWORD_RESET_REQUESTED" | "PASSWORD_RESET";
+export type AccountEvent = "PASSWORD_RESET_REQUESTED" | "PASSWORD_RESET" | "INVITATION_ACCEPTED";
 
 export const logAccountEvent = async (
   db: Pool | PoolClient,

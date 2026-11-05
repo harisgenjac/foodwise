@@ -103,6 +103,12 @@
       "invalidTitle": "Link više ne vrijedi",
       "invalidText": "Ovaj link je istekao, već je iskorišten ili je poslan noviji. Zatražite novi link.",
       "newLink": "Zatraži novi link"
+    },
+    "invite": {
+      "title": "Postavite svoju lozinku",
+      "subtitle": "Dobrodošli na FoodWise! Unesite lozinku dva puta, a zatim popunite profil.",
+      "submit": "Postavi lozinku",
+      "invalidText": "Ova pozivnica je istekla, već je iskorištena ili je poslana novija. Zatražite novi link ili se javite administratoru."
     }
   },
   "product": {
@@ -962,11 +968,15 @@
       "UNBLOCK_COMPANY": "Firma odblokirana",
       "DEACTIVATE_BRANCH": "Poslovnica deaktivirana",
       "REACTIVATE_BRANCH": "Poslovnica ponovo aktivirana",
-      "ATTACH_BRANCH": "Prodavnica pripojena firmi"
+      "ATTACH_BRANCH": "Prodavnica pripojena firmi",
+      "SEND_INVITATION": "Poslana pozivnica",
+      "RESEND_INVITATION": "Ponovo poslana pozivnica",
+      "SEND_PASSWORD_RESET_LINK": "Poslan link za novu lozinku"
     },
     "accountEvents": {
       "PASSWORD_RESET_REQUESTED": "Zatražen link za novu lozinku",
-      "PASSWORD_RESET": "Lozinka promijenjena putem linka"
+      "PASSWORD_RESET": "Lozinka promijenjena putem linka",
+      "INVITATION_ACCEPTED": "Prihvaćena pozivnica (postavljena lozinka)"
     },
     "common": {
       "cancel": "Odustani",
@@ -1099,7 +1109,15 @@
       "company": "Firma",
       "activitySection": "Aktivnost računa",
       "noActivity": "Korisnik još nije sam mijenjao račun.",
-      "fromIp": "IP: {{ip}}"
+      "fromIp": "IP: {{ip}}",
+      "neverLoggedIn": "Još se nije prijavio",
+      "sendResetLink": "Pošalji link za novu lozinku",
+      "sendResetLinkTitle": "Poslati link za novu lozinku?",
+      "sendResetLinkText": "Na {{email}} šaljemo link (vrijedi 1 sat) kojim korisnik sam postavlja novu lozinku. Raniji linkovi prestaju vrijediti.",
+      "resendInvitation": "Pošalji ponovo pozivnicu",
+      "resendInvitationTitle": "Poslati pozivnicu ponovo?",
+      "resendInvitationText": "Na {{email}} šaljemo novu pozivnicu (vrijedi 72 sata). Ranija pozivnica prestaje vrijediti.",
+      "confirmSend": "Pošalji"
     },
     "createUser": {
       "title": "Novi korisnik",
@@ -1119,7 +1137,20 @@
       "infoText": "Korisnik se prijavljuje ovim podacima, a zatim mora postaviti svoju lozinku i popuniti obavezne podatke profila (ime, prezime, naziv, grad, telefon, adresa). Do tada ne može koristiti ostatak aplikacije.",
       "submit": "Kreiraj nalog",
       "success": "Nalog je kreiran.",
-      "error": "Nalog nije kreiran. Pokušajte ponovo."
+      "successInvite": "Nalog je kreiran i pozivnica je poslana.",
+      "error": "Nalog nije kreiran. Pokušajte ponovo.",
+      "methodSection": "Kako se korisnik prijavljuje",
+      "methods": {
+        "INVITE": {
+          "title": "Pošalji pozivnicu emailom",
+          "description": "Korisnik dobija link (vrijedi 72 sata) i sam postavlja lozinku."
+        },
+        "PASSWORD": {
+          "title": "Postavi privremenu lozinku",
+          "description": "Za korisnike bez pristupa emailu: lozinku im prenosite vi."
+        }
+      },
+      "infoTextInvite": "Korisnik dobija email s linkom za postavljanje lozinke, a zatim mora popuniti obavezne podatke profila (ime, prezime, naziv, grad, telefon, adresa). Ako link istekne, pozivnicu možete ponovo poslati na stranici korisnika."
     },
     "products": {
       "title": "Proizvodi",

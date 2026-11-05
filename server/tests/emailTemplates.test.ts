@@ -120,8 +120,8 @@ describe("RESERVATION_CREATED email", () => {
     expect(emailTemplate("RESERVATION_CREATED")).toBe(reservationCreated);
     expect(emailTemplate("NO_SUCH_TEMPLATE")).toBeUndefined();
     expect(emailTemplate("toString")).toBeUndefined();
-    // 33 notification types and the system email PASSWORD_RESET.
-    expect(Object.keys(EMAIL_TEMPLATES)).toHaveLength(34);
+    // 33 notification types and the system emails PASSWORD_RESET and INVITATION.
+    expect(Object.keys(EMAIL_TEMPLATES)).toHaveLength(35);
   });
 });
 

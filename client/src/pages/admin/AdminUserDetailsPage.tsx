@@ -12,9 +12,11 @@ import {
   HeartHandshake,
   History,
   KeyRound,
+  Link2,
   PencilLine,
   Lock,
   Mail,
+  MailPlus,
   MapPin,
   Package,
   PackageCheck,
@@ -38,7 +40,7 @@ import { ROLE_STYLES, accountName, formatDateTime } from "../../utils/admin.js";
 import { getAccountSetup } from "../../utils/accountSetup.js";
 import type { AccountEvent, AdminAction, AdminUserCounts, User } from "../../types/index.js";
 
-type Dialog = "block" | "unblock" | "password" | "profile" | null;
+type Dialog = "block" | "unblock" | "password" | "profile" | "invitation" | "resetLink" | null;
 
 const errorMessage = (err: unknown) => (axios.isAxiosError(err) ? err.response?.data?.error : null);
 
@@ -128,6 +130,9 @@ function AdminUserDetailsPage() {
   // headquarters login has a name and a phone and belongs to its company.
   const isBusiness = user.role === "STORE" || user.role === "RESTAURANT";
   const isCompany = user.role === "COMPANY";
+  // An emailed link only helps an account that can sign in; an invitation only before the first login.
+  const canGetLink = !user.is_blocked && !user.company_is_blocked && !user.deactivated_at;
+  const neverLoggedIn = !user.last_login_at;
 
   const secondaryButton =
     "inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50";
@@ -161,6 +166,11 @@ function AdminUserDetailsPage() {
                   {t("admin.common.incompleteProfile")}
                 </span>
               ) : null}
+              {neverLoggedIn && (
+                <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                  {t("admin.userDetails.neverLoggedIn")}
+                </span>
+              )}
               {user.must_change_password && (
                 <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
                   {t("admin.common.pendingPassword")}
@@ -182,6 +192,18 @@ function AdminUserDetailsPage() {
               <KeyRound className="h-4 w-4" />
               {t("admin.userDetails.setPassword")}
             </button>
+            {canGetLink && (
+              <button type="button" onClick={() => setDialog("resetLink")} className={secondaryButton}>
+                <Link2 className="h-4 w-4" />
+                {t("admin.userDetails.sendResetLink")}
+              </button>
+            )}
+            {canGetLink && neverLoggedIn && (
+              <button type="button" onClick={() => setDialog("invitation")} className={secondaryButton}>
+                <MailPlus className="h-4 w-4" />
+                {t("admin.userDetails.resendInvitation")}
+              </button>
+            )}
             {user.is_blocked ? (
               <button
                 type="button"
@@ -395,6 +417,34 @@ function AdminUserDetailsPage() {
           cancelLabel={t("admin.common.cancel")}
           busy={busy}
           onConfirm={() => run(() => api.post(`/admin/users/${id}/unblock`))}
+          onClose={closeDialog}
+        />
+      )}
+
+      {dialog === "invitation" && (
+        <ConfirmModal
+          variant="success"
+          icon={MailPlus}
+          title={t("admin.userDetails.resendInvitationTitle")}
+          message={t("admin.userDetails.resendInvitationText", { email: user.email })}
+          confirmLabel={t("admin.userDetails.confirmSend")}
+          cancelLabel={t("admin.common.cancel")}
+          busy={busy}
+          onConfirm={() => run(() => api.post(`/admin/users/${id}/invitation`))}
+          onClose={closeDialog}
+        />
+      )}
+
+      {dialog === "resetLink" && (
+        <ConfirmModal
+          variant="success"
+          icon={Link2}
+          title={t("admin.userDetails.sendResetLinkTitle")}
+          message={t("admin.userDetails.sendResetLinkText", { email: user.email })}
+          confirmLabel={t("admin.userDetails.confirmSend")}
+          cancelLabel={t("admin.common.cancel")}
+          busy={busy}
+          onConfirm={() => run(() => api.post(`/admin/users/${id}/password-reset-link`))}
           onClose={closeDialog}
         />
       )}

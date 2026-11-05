@@ -93,6 +93,24 @@ describe("ResetPasswordPage", () => {
     expect(await screen.findByTestId("location")).toHaveTextContent("/login");
   });
 
+  it("words an invitation for a first password and goes on to My profile, signed in", async () => {
+    apiMock.post
+      .mockResolvedValueOnce({ data: { purpose: "INVITATION" } })
+      .mockResolvedValueOnce({ data: { purpose: "INVITATION", message: "ok", user: { id: 3 } } });
+    renderWithProviders(<ResetPasswordPage />, { route: "/set-password?token=abc", path: "/set-password" });
+    expect(await screen.findByRole("heading", { name: t("auth.invite.title") })).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText(t("user.newPassword")), "moja-lozinka-1");
+    await userEvent.type(screen.getByLabelText(t("user.repeatPassword")), "moja-lozinka-1");
+    await userEvent.click(screen.getByRole("button", { name: t("auth.invite.submit") }));
+    expect(await screen.findByTestId("location")).toHaveTextContent("/my-profile");
+  });
+
+  it("words an expired invitation", async () => {
+    apiMock.post.mockRejectedValue(axiosError(400, INVALID.error));
+    renderWithProviders(<ResetPasswordPage />, { route: "/set-password?token=abc", path: "/set-password" });
+    expect(await screen.findByText(t("auth.invite.invalidText"))).toBeInTheDocument();
+  });
+
   it("shows the password rule from the server and keeps the form", async () => {
     apiMock.post
       .mockResolvedValueOnce({ data: { purpose: "PASSWORD_RESET" } })

@@ -210,7 +210,7 @@ describe("setting the new password", () => {
 
     const response = await reset(await requestToken());
     expect(response.status).toBe(200);
-    expect(response.body).toEqual({ message: "Your password was changed. You can log in now." });
+    expect(response.body).toEqual({ message: "Your password was changed. You can log in now.", purpose: "PASSWORD_RESET" });
 
     for (const session of [phone, laptop]) {
       const me = await session.get("/api/users/me");

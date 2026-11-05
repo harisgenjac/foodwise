@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Lock, TriangleAlert } from "lucide-react";
@@ -14,14 +14,18 @@ import type { LoginState } from "./LoginPage.js";
 
 type LinkState = "checking" | "valid" | "invalid";
 
-// Opened from the emailed link (/reset-password?token=...): checks the link first, then asks for
-// the new password twice. Afterwards every session of the account is signed out, and the user
-// logs in again.
+// Opened from an emailed link: /reset-password?token=... (forgot password, or a link an admin sent)
+// or /set-password?token=... (an invitation to a new account). Checks the link first, then asks for
+// the password twice. After a reset every session is signed out and the user logs in again; after
+// an invitation the server signs the user in and they go on to fill in My profile.
 function ResetPasswordPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
   const [params] = useSearchParams();
+  const invitation = useLocation().pathname === "/set-password";
+  // auth.reset.* or auth.invite.*, which use the same keys.
+  const texts = invitation ? "auth.invite" : "auth.reset";
   const token = params.get("token") ?? "";
   const [linkState, setLinkState] = useState<LinkState>("checking");
   const [values, setValues] = useState({ next: "", repeat: "" });
@@ -49,7 +53,13 @@ function ResetPasswordPage() {
     setSaving(true);
     setError("");
     try {
-      await api.post("/auth/reset-password", { token, password: values.next });
+      const response = await api.post("/auth/reset-password", { token, password: values.next });
+      if (response.data?.purpose === "INVITATION") {
+        // The server signed the new user in: load the profile, which they fill in next.
+        await refreshUser().catch(() => undefined);
+        navigate("/my-profile", { replace: true });
+        return;
+      }
       // The server ended every session, this browser's too: forget the user here as well.
       await refreshUser().catch(() => undefined);
       navigate("/login", { replace: true, state: { passwordReset: true } satisfies LoginState });
@@ -67,7 +77,7 @@ function ResetPasswordPage() {
 
   if (linkState === "checking") {
     return (
-      <AuthLayout title={t("auth.reset.title")}>
+      <AuthLayout title={t(`${texts}.title`)}>
         <LoadingSpinner />
       </AuthLayout>
     );
@@ -78,7 +88,7 @@ function ResetPasswordPage() {
       <AuthLayout title={t("auth.reset.invalidTitle")}>
         <p role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-          {t("auth.reset.invalidText")}
+          {t(`${texts}.invalidText`)}
         </p>
         <Link
           to="/forgot-password"
@@ -98,7 +108,7 @@ function ResetPasswordPage() {
   }
 
   return (
-    <AuthLayout title={t("auth.reset.title")} subtitle={t("auth.reset.subtitle")}>
+    <AuthLayout title={t(`${texts}.title`)} subtitle={t(`${texts}.subtitle`)}>
       {error && (
         <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
       )}
@@ -129,7 +139,7 @@ function ResetPasswordPage() {
           disabled={saving}
           className="mt-2 inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 disabled:opacity-60"
         >
-          {t("auth.reset.submit")}
+          {t(`${texts}.submit`)}
         </button>
       </form>
     </AuthLayout>

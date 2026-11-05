@@ -103,6 +103,12 @@
       "invalidTitle": "This link no longer works",
       "invalidText": "This link has expired, was already used, or a newer one was sent. Ask for a new link.",
       "newLink": "Ask for a new link"
+    },
+    "invite": {
+      "title": "Set your password",
+      "subtitle": "Welcome to FoodWise! Enter your password twice, then fill in your profile.",
+      "submit": "Set password",
+      "invalidText": "This invitation has expired, was already used, or a newer one was sent. Ask for a new link or contact the administrator."
     }
   },
   "product": {
@@ -941,11 +947,15 @@
       "UNBLOCK_COMPANY": "Company unblocked",
       "DEACTIVATE_BRANCH": "Branch deactivated",
       "REACTIVATE_BRANCH": "Branch reactivated",
-      "ATTACH_BRANCH": "Store attached to a company"
+      "ATTACH_BRANCH": "Store attached to a company",
+      "SEND_INVITATION": "Invitation sent",
+      "RESEND_INVITATION": "Invitation sent again",
+      "SEND_PASSWORD_RESET_LINK": "Password reset link sent"
     },
     "accountEvents": {
       "PASSWORD_RESET_REQUESTED": "Asked for a password reset link",
-      "PASSWORD_RESET": "Password changed with a reset link"
+      "PASSWORD_RESET": "Password changed with a reset link",
+      "INVITATION_ACCEPTED": "Accepted the invitation (password set)"
     },
     "common": {
       "cancel": "Cancel",
@@ -1074,7 +1084,15 @@
       "company": "Company",
       "activitySection": "Account activity",
       "noActivity": "The user has not changed their account themselves yet.",
-      "fromIp": "IP: {{ip}}"
+      "fromIp": "IP: {{ip}}",
+      "neverLoggedIn": "Never logged in",
+      "sendResetLink": "Send password reset link",
+      "sendResetLinkTitle": "Send a password reset link?",
+      "sendResetLinkText": "We send a link (valid for 1 hour) to {{email}} with which the user sets a new password. Earlier links stop working.",
+      "resendInvitation": "Resend invitation",
+      "resendInvitationTitle": "Send the invitation again?",
+      "resendInvitationText": "We send a new invitation (valid for 72 hours) to {{email}}. The earlier invitation stops working.",
+      "confirmSend": "Send"
     },
     "createUser": {
       "title": "New user",
@@ -1094,7 +1112,20 @@
       "infoText": "The user logs in with these details, then must set their own password and fill in the required profile details (first and last name, business name, city, phone, address). Until then they cannot use the rest of the app.",
       "submit": "Create account",
       "success": "The account was created.",
-      "error": "The account was not created. Please try again."
+      "successInvite": "The account was created and the invitation sent.",
+      "error": "The account was not created. Please try again.",
+      "methodSection": "How the user signs in",
+      "methods": {
+        "INVITE": {
+          "title": "Send an invitation email",
+          "description": "The user gets a link (valid for 72 hours) and sets their own password."
+        },
+        "PASSWORD": {
+          "title": "Set a temporary password",
+          "description": "For users without email access: you pass the password on."
+        }
+      },
+      "infoTextInvite": "The user gets an email with a link to set their password, then must fill in the required profile details (first and last name, business name, city, phone, address). If the link expires, you can send the invitation again on the user's page."
     },
     "products": {
       "title": "Products",

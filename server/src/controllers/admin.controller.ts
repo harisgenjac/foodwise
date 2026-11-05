@@ -22,6 +22,8 @@ import { getSavedTotals } from "../services/impactStats.js";
 import { creditMonth, nextMonth } from "../utils/creditTime.js";
 import type { Role } from "../types/auth.js";
 import { notBlocked } from "../utils/visibility.js";
+import { sendInvitation, sendPasswordResetLink } from "../services/accountEmails.js";
+import { randomBytes } from "node:crypto";
 
 // Every role an admin can filter by. COMPANY accounts are created with their company
 // (POST /companies), never through POST /users.
@@ -29,6 +31,9 @@ export const ROLES = ["STORE", "RESTAURANT", "ADMIN", "COMPANY"];
 const USER_CREATED_ROLES = ["STORE", "RESTAURANT", "ADMIN"];
 export const ADMIN_ACTIONS = [
   "CREATE_USER",
+  "SEND_INVITATION",
+  "RESEND_INVITATION",
+  "SEND_PASSWORD_RESET_LINK",
   "RESET_PASSWORD",
   "BLOCK_USER",
   "UNBLOCK_USER",
@@ -64,6 +69,7 @@ const USER_COLUMNS = `users.id, users.email, users.role, users.first_name, users
   users.business_name, users.city_id, ${CITY_NAME}, users.address, users.phone, users.logo_url,
   users.opening_hours, users.pickup_hours, users.description,
   users.is_blocked, users.blocked_at, users.blocked_reason, users.must_change_password, users.created_at,
+  users.last_login_at,
   users.company_id, users.deactivated_at,
   (SELECT companies.name FROM companies WHERE companies.id = users.company_id) AS company_name,
   COALESCE((SELECT companies.is_blocked FROM companies WHERE companies.id = users.company_id), false)
@@ -350,12 +356,19 @@ export const getUserDetails = async (req: Request, res: Response) => {
   }
 };
 
-// An admin creates store, restaurant and admin accounts with only an email and a password.
-// The user fills in the name and business data on the profile page after the first login.
+// An admin creates store, restaurant and admin accounts with only an email (and a temporary
+// password, or an invitation). The user fills in the name and business data on the profile page.
+// How the new user gets in: an invitation email with a link to set their own password (the
+// default), or a temporary password the admin passes on (for users without email access), which
+// they must replace at the first login.
+const CREATE_METHODS = ["INVITE", "PASSWORD"];
+
 export const createUser = async (req: Request, res: Response) => {
   const { role, email, password } = req.body;
-  if (!role || !email || !password) {
-    return res.status(400).json({ error: "Email, password and role are required." });
+  // Without a method, a password means a temporary password (as before invitations existed).
+  const method = req.body.method ?? (password ? "PASSWORD" : "INVITE");
+  if (!role || !email) {
+    return res.status(400).json({ error: "Email and role are required." });
   }
   if (role === "COMPANY") {
     return res.status(400).json({ error: "Company accounts are created on the Companies page." });
@@ -363,7 +376,11 @@ export const createUser = async (req: Request, res: Response) => {
   if (typeof role !== "string" || !USER_CREATED_ROLES.includes(role)) {
     return res.status(400).json({ error: "Role must be STORE, RESTAURANT or ADMIN." });
   }
-  const credentialsError = validateEmail(email) ?? validatePassword(password);
+  if (!CREATE_METHODS.includes(method)) {
+    return res.status(400).json({ error: "Choose an invitation or a temporary password." });
+  }
+  const invite = method === "INVITE";
+  const credentialsError = validateEmail(email) ?? (invite ? null : validatePassword(password));
   if (credentialsError) {
     return res.status(400).json({ error: credentialsError });
   }
@@ -371,19 +388,26 @@ export const createUser = async (req: Request, res: Response) => {
   let client;
   try {
     const normalized = normalizeEmail(email);
-    const passwordHash = await hashPassword(password);
+    // An invited user has no password until they set one: the hash of a random value nobody knows.
+    const passwordHash = await hashPassword(invite ? randomBytes(32).toString("base64url") : password);
     client = await pool.connect();
     await client.query("BEGIN");
     const result = await client.query(
-      // The admin chose this password, so the user must replace it at the first login.
-      `INSERT INTO users (email, password_hash, role, must_change_password) VALUES ($1, $2, $3, true)
+      // A temporary password was chosen by the admin, so the user must replace it at the first login.
+      `INSERT INTO users (email, password_hash, role, must_change_password) VALUES ($1, $2, $3, $4)
        RETURNING ${USER_COLUMNS}`,
-      [normalized, passwordHash, role],
+      [normalized, passwordHash, role, !invite],
     );
     const user = result.rows[0];
     await logAdminAction(client, { adminId: req.user!.id, action: "CREATE_USER", targetUserId: user.id });
+    if (invite) {
+      await sendInvitation(client, user.id, req.user!.id);
+      await logAdminAction(client, { adminId: req.user!.id, action: "SEND_INVITATION", targetUserId: user.id });
+    }
     await client.query("COMMIT");
-    return res.status(201).json({ message: "User created successfully.", user });
+    return res
+      .status(201)
+      .json({ message: invite ? "User created and invitation sent." : "User created successfully.", user });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
     if (isUniqueViolation(error)) {
@@ -391,6 +415,66 @@ export const createUser = async (req: Request, res: Response) => {
     }
     console.error("Error while creating user:", error);
     return res.status(500).json({ error: "An error occurred while creating the user." });
+  } finally {
+    if (client) client.release();
+  }
+};
+
+// The target of an emailed link sent by an admin: it must exist and not be blocked (also through
+// its company, or a deactivated branch), since a blocked account cannot use a link.
+const lockLinkTarget = async (client: PoolClient, targetId: number) => {
+  const result = await client.query<{ id: number; last_login_at: string | null; blocked: boolean }>(
+    `SELECT users.id, users.last_login_at, NOT ${notBlocked("users")} AS blocked
+     FROM users WHERE users.id = $1 FOR UPDATE OF users`,
+    [targetId],
+  );
+  return result.rows[0] ?? null;
+};
+
+// POST /admin/users/:id/invitation: a new invitation link while the user has never logged in (the
+// old link stops working).
+export const resendInvitation = (req: Request, res: Response) =>
+  sendAccountLink(req, res, "invitation");
+
+// POST /admin/users/:id/password-reset-link: emails the user a link to set a new password, like
+// the forgot password page (an alternative to setting a temporary password).
+export const sendResetLink = (req: Request, res: Response) => sendAccountLink(req, res, "reset");
+
+const sendAccountLink = async (req: Request, res: Response, kind: "invitation" | "reset") => {
+  const targetId = parseId(req.params.id);
+  if (targetId === null) {
+    return res.status(404).json({ error: "User not found." });
+  }
+  let client;
+  try {
+    client = await pool.connect();
+    await client.query("BEGIN");
+    const target = await lockLinkTarget(client, targetId);
+    if (!target) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "User not found." });
+    }
+    if (target.blocked) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "A blocked account cannot get a link." });
+    }
+    if (kind === "invitation" && target.last_login_at !== null) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "The user has already logged in." });
+    }
+    if (kind === "invitation") await sendInvitation(client, targetId, req.user!.id);
+    else await sendPasswordResetLink(client, targetId, req.user!.id);
+    await logAdminAction(client, {
+      adminId: req.user!.id,
+      action: kind === "invitation" ? "RESEND_INVITATION" : "SEND_PASSWORD_RESET_LINK",
+      targetUserId: targetId,
+    });
+    await client.query("COMMIT");
+    return res.status(200).json({ message: kind === "invitation" ? "Invitation sent." : "Password reset link sent." });
+  } catch (error) {
+    if (client) await client.query("ROLLBACK");
+    console.error("Error while sending an account link:", error);
+    return res.status(500).json({ error: "An error occurred while sending the link." });
   } finally {
     if (client) client.release();
   }

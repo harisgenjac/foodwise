@@ -93,6 +93,8 @@ export interface User {
   must_change_password?: boolean;
   // The "Email notifications" switch on My profile (GET /users/me).
   email_notifications?: boolean;
+  // The last successful login; null = never logged in (admin user responses).
+  last_login_at?: string | null;
   // The user's company: set for a COMPANY (headquarters) user, null otherwise for now.
   company_id?: number | null;
   company_name?: string | null;
@@ -342,7 +344,10 @@ export type AdminActionType =
   | "UNBLOCK_COMPANY"
   | "DEACTIVATE_BRANCH"
   | "REACTIVATE_BRANCH"
-  | "ATTACH_BRANCH";
+  | "ATTACH_BRANCH"
+  | "SEND_INVITATION"
+  | "RESEND_INVITATION"
+  | "SEND_PASSWORD_RESET_LINK";
 
 export interface AdminAction {
   id: number;
@@ -366,7 +371,7 @@ export interface AdminAction {
 }
 
 // What a user did to their own account, without an admin (GET /admin/users/:id `events`).
-export type AccountEventType = "PASSWORD_RESET_REQUESTED" | "PASSWORD_RESET";
+export type AccountEventType = "PASSWORD_RESET_REQUESTED" | "PASSWORD_RESET" | "INVITATION_ACCEPTED";
 
 export interface AccountEvent {
   id: number;

@@ -2,19 +2,16 @@ import { createHash, randomBytes } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { notBlocked } from "../utils/visibility.js";
 
-// One-time links sent by email (password reset). The raw token exists only in the email: the
-// database keeps its SHA-256 hash. A token is valid until it expires, can be used once, and a new
-// token for the same user revokes every older open one.
+// One-time links sent by email: a password reset, or an invitation to set the first password.
+// The raw token exists only in the email: the database keeps its SHA-256 hash. A token is valid
+// until it expires, can be used once, and a new token for the same user revokes every older open
+// one.
 
-export type TokenPurpose = "PASSWORD_RESET";
+export type TokenPurpose = "PASSWORD_RESET" | "INVITATION";
 
 export const TOKEN_LIFETIME_MINUTES: Record<TokenPurpose, number> = {
   PASSWORD_RESET: 60,
-};
-
-// Where each link points on the frontend (the token goes in the query string).
-export const TOKEN_PAGES: Record<TokenPurpose, string> = {
-  PASSWORD_RESET: "/reset-password",
+  INVITATION: 72 * 60,
 };
 
 type Db = Pool | PoolClient;
