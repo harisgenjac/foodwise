@@ -31,6 +31,7 @@ food-saver-app/
 ├── CLAUDE.md
 ├── README.md        setup and run instructions for humans (keep in sync with scripts and env vars)
 ├── package.json     root scripts only (dev/build/install:all for both sides)
+├── docker-compose.yml  Mailpit (catches local and e2e emails)
 ├── docs/            backend.md, frontend.md, product.md, e2e.md, development-plan.md
 ├── server/          Express 5 + TypeScript + PostgreSQL (src/, migrations/, tests/, uploads/)
 ├── client/          React 19 + Vite + TypeScript + Tailwind + react-i18next (src/)
