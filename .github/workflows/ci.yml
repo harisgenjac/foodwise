@@ -139,6 +139,12 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      # Catches every email the e2e server sends (SMTP on 1025); the tests read them through its API (8025).
+      mailpit:
+        image: axllent/mailpit:v1.32.0
+        ports:
+          - 1025:1025
+          - 8025:8025
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -165,6 +171,10 @@ jobs:
           CLIENT_ORIGIN=http://localhost:4173
           TRUST_PROXY=0
           DISABLE_RATE_LIMITS=true
+          EMAIL_PROVIDER=smtp
+          SMTP_HOST=localhost
+          SMTP_PORT=1025
+          MAILPIT_URL=http://localhost:8025
           EOF
       - name: Read the Playwright version
         id: playwright
