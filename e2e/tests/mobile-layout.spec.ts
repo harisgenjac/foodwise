@@ -4,7 +4,9 @@ import { apiAs, createDonation, createProduct, createStoreWithoutPlan, myId, req
 
 // Phone width: every store and restaurant page fits the screen, with the bottom bar instead of the
 // sidebar (docs/mobile-review.md, the navigation shell).
-test.use({ viewport: { width: 375, height: 812 }, hasTouch: true });
+// 375 px by default; MOBILE_WIDTH=390 runs the same checks on a wider phone (docs/e2e.md).
+const WIDTH = Number(process.env.MOBILE_WIDTH ?? 375);
+test.use({ viewport: { width: WIDTH, height: 812 }, hasTouch: true });
 
 const STORE_PAGES = ["/dashboard", "/my-products", "/add-product", "/import-products", "/reservations"];
 const RESTAURANT_PAGES = ["/dashboard", "/browse-products", "/stores", "/my-reservations"];
@@ -87,7 +89,7 @@ const expectFilterPanel = async (page: Page, path: string, search: string) => {
   await category.selectOption("Dairy");
   await expect(button, path).toHaveAccessibleName(/^Filteri\s*1$/);
   await expectTapTargets(bar, path);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth), path).toBeLessThanOrEqual(375);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth), path).toBeLessThanOrEqual(WIDTH);
 
   await bar.getByRole("button", { name: /^Prikaži \d+ rezultat/ }).click();
   await expect(category, path).toBeHidden();
@@ -122,7 +124,7 @@ test.beforeAll(async () => {
 test.describe("store", () => {
   test.use({ storageState: storageState("store") });
 
-  test("every page fits a 375 px screen", async ({ page }) => {
+  test("every page fits a phone screen", async ({ page }) => {
     const details = [`/products/${productId}`, `/edit-product/${productId}`, `/reservation/${reservationId}`, `/donate-food/${donationIds.store}/edit`];
     for (const path of [...STORE_PAGES, ...SHARED_PAGES, ...details]) await expectPhoneLayout(page, path);
   });
@@ -196,9 +198,9 @@ test.describe("store", () => {
     await expect(panel).toBeVisible();
     const box = (await panel.boundingBox())!;
     expect(box.x).toBeGreaterThanOrEqual(0);
-    expect(box.x + box.width).toBeLessThanOrEqual(375);
+    expect(box.x + box.width).toBeLessThanOrEqual(WIDTH);
     expect(box.y + box.height).toBeLessThanOrEqual(812);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(WIDTH);
     await page.keyboard.press("Escape");
     await expect(panel).toBeHidden();
   });
@@ -206,8 +208,8 @@ test.describe("store", () => {
 
 // Dialogs on a short phone (iPhone SE, 667 px): the title and the buttons are on screen as soon as
 // the dialog opens, only the dialog body scrolls, and the page behind stays still.
-test.describe("dialogs at 375×667", () => {
-  test.use({ viewport: { width: 375, height: 667 } });
+test.describe("dialogs on a short phone (667 px)", () => {
+  test.use({ viewport: { width: WIDTH, height: 667 } });
 
   const expectButtonsOnScreen = async (page: Page, dialog: Locator, buttons: string[]) => {
     const scrollBefore = await page.evaluate(() => window.scrollY);
@@ -340,7 +342,7 @@ test.describe("admin", () => {
     await admin.dispose();
   });
 
-  test("every admin list shows cards with all row actions on a 375 px screen", async ({ page }) => {
+  test("every admin list shows cards with all row actions on a phone screen", async ({ page }) => {
     for (const path of [
       "/admin/users",
       "/admin/products",
@@ -376,10 +378,10 @@ test.describe("admin", () => {
     const buttons = pagination.getByRole("button").filter({ visible: true });
     const tops = await buttons.evaluateAll((all) => all.map((button) => Math.round(button.getBoundingClientRect().top)));
     expect(new Set(tops).size, "pagination buttons on one row").toBe(1);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(WIDTH);
   });
 
-  test("the admin's other pages fit a 375 px screen", async ({ page }) => {
+  test("the admin's other pages fit a phone screen", async ({ page }) => {
     for (const path of ["/admin", "/admin/users/new", "/admin/companies/new", `/admin/users/${storeId}`, `/admin/companies/${companyId}`]) {
       await expectPhonePage(page, path);
     }
@@ -414,7 +416,7 @@ test.describe("admin", () => {
       await expect(button, name).toBeInViewport({ ratio: 1 });
       const box = (await button.boundingBox())!;
       expect(box.x, name).toBeGreaterThanOrEqual(0);
-      expect(box.x + box.width, name).toBeLessThanOrEqual(375);
+      expect(box.x + box.width, name).toBeLessThanOrEqual(WIDTH);
       expect(box.height, name).toBeGreaterThanOrEqual(44);
     }
     expect(await page.evaluate(() => window.scrollX)).toBe(0);
@@ -435,7 +437,7 @@ test.describe("company headquarters", () => {
     await hq.dispose();
   });
 
-  test("the overview, credits and reports show cards with all actions on a 375 px screen", async ({ page }) => {
+  test("the overview, credits and reports show cards with all actions on a phone screen", async ({ page }) => {
     for (const path of ["/dashboard", "/company/credits", "/company/reports"]) {
       await expectPhonePage(page, path, { cards: true });
     }
@@ -450,7 +452,7 @@ test.describe("company headquarters", () => {
     }
   });
 
-  test("the headquarters' other pages fit a 375 px screen", async ({ page }) => {
+  test("the headquarters' other pages fit a phone screen", async ({ page }) => {
     for (const path of ["/company/branches", `/company/branches/${branchId}`, "/company/profile", "/my-profile", "/notifications"]) {
       await expectPhonePage(page, path);
     }
@@ -460,7 +462,7 @@ test.describe("company headquarters", () => {
 test.describe("restaurant", () => {
   test.use({ storageState: storageState("restaurant") });
 
-  test("every page fits a 375 px screen", async ({ page }) => {
+  test("every page fits a phone screen", async ({ page }) => {
     const details = [`/stores/${storeId}`, `/products/${productId}`, `/reservation/${reservationId}`, `/donate-food/${donationIds.restaurant}/edit`];
     for (const path of [...RESTAURANT_PAGES, ...SHARED_PAGES, ...details]) await expectPhoneLayout(page, path);
   });

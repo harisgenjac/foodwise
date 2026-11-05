@@ -2,6 +2,27 @@
 
 Review for "Mobile layout and mobile app", step 1, first task in `development-plan.md`: every page at phone width and the problems found. No code was changed. Written Nov 4, 2026.
 
+## Result (Nov 5, 2026)
+
+Tasks 1–9 of the split below are done. The whole `mobile-layout.spec.ts` passes in Chromium and in WebKit (iPhone 13) at 375 and 390 px.
+
+Fixed:
+- **Navigation:** a drawer below `md` for every role, a bottom bar for stores and restaurants, the window scrolls instead of the page area, 16 px side padding.
+- **Header:** 44 px buttons, and the notification dropdown is a full-width panel.
+- **Forms:** 16 px text and 44 px fields below `sm`, number pads, a 44 px calendar button, category labels that wrap.
+- **Dialogs:** limited to the screen height, the body scrolls and the buttons stay visible; Back closes them.
+- **Banners:** compact on phones, with a 44 px close button.
+- **Tables:** every admin, headquarters, reports, credit history and import error table is cards below `md`.
+- **Filters:** the search stays and the other filters sit behind a "Filters" button with a count, in a panel under the bar (every `FilterBar` page).
+- **Small parts:** stat labels wrap, and pagination, tabs, chips, presets and footer links are 44 px. The Pickups tabs share one row.
+- **Add product:** the templates are collapsed into one row below `lg`.
+
+Left for later:
+- **My products cards (low):** the edit, donate and delete icon buttons are 40×40, and a card is about 460 px high (one product per screen).
+- **Pages Orders phase 1 rebuilds:** Browse products (the truncated store and chain label, tall cards), the reservations and pickup cards, and the reserve dialog, which becomes the cart as a bottom sheet. They should be built mobile-first in that phase.
+- **Main flows in a phone viewport:** the reservation, CSV import and donation specs still run only on desktop Chromium. Only `mobile-layout.spec.ts` runs on phones.
+- **Real devices:** iOS Safari's toolbar, keyboard and `100vh` behaviour are emulated, not checked on a device.
+
 ## How it was checked
 
 - Playwright (headless Chromium with mobile emulation and touch) logged in with the seed accounts (`market.centar@demo.com` store, `restoran.ukus@demo.com` restaurant, `admin@demo.com` admin, and `bingo@demo.com` headquarters as an extra) and opened every route in `App.tsx` at 375×812 and 390×812, plus the login page. Detail pages used the first link found on the list pages.
