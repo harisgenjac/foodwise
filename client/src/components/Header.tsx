@@ -201,7 +201,7 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
                   <button
                     type="button"
                     onClick={markAllAsRead}
-                    className="inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium text-orange-600 transition-colors hover:bg-orange-50"
+                    className="inline-flex min-h-11 sm:min-h-0 shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium text-orange-600 transition-colors hover:bg-orange-50"
                   >
                     <CheckCheck className="h-3.5 w-3.5" />
                     {t("notifications.markAllReadShort")}

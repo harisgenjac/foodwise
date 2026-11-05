@@ -6,11 +6,11 @@ import type { RestaurantDashboardStats, StoreDashboardStats } from "../types/ind
 
 // The value printed under a stat card's label (the label is the card's first, truncated line).
 const statValue = (label: string) =>
-  screen.getByText(label, { selector: "p.truncate" }).nextElementSibling?.textContent;
+  screen.getByText(label, { selector: '[data-testid="stat-label"]' }).nextElementSibling?.textContent;
 
 // The unit chips under a stat card's value (the shared UnitChips component).
 const chipsOf = (label: string) => {
-  const card = screen.getByText(label, { selector: "p.truncate" }).parentElement!;
+  const card = screen.getByText(label, { selector: '[data-testid="stat-label"]' }).parentElement!;
   return within(within(card).getByTestId("unit-chips")).getAllByRole("listitem").map((chip) => chip.textContent);
 };
 
@@ -51,6 +51,10 @@ describe("StoreDashboardPage", () => {
     expect(statValue(t("dashboard.statConfirmed"))).toBe("25");
     expect(statValue(t("dashboard.statSavedFood"))).toBe("12.5 kg");
     expect(chipsOf(t("dashboard.statSavedFood"))).toEqual(["3 l", `8 ${t("dashboard.piecesShort")}`]);
+    // In two columns on a phone the labels wrap instead of being cut off.
+    const label = screen.getByText(t("dashboard.statPending"), { selector: '[data-testid="stat-label"]' });
+    expect(label).toHaveClass("break-words");
+    expect(label).not.toHaveClass("truncate");
   });
 
   it("shows the other non-zero units of food saved as chips", async () => {

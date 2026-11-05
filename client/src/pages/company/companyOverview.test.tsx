@@ -90,7 +90,7 @@ const decisionsSection = async () =>
   (await screen.findByRole("heading", { name: t("company.overview.decisionsTitle") })).closest("section")!;
 
 // The value of a stat card, found by its label.
-const statCard = (label: string) => screen.getByText(label, { selector: "p.truncate" }).parentElement!;
+const statCard = (label: string) => screen.getByText(label, { selector: '[data-testid="stat-label"]' }).parentElement!;
 const dashboardCalls = () => apiMock.get.mock.calls.filter(([url]) => url === "/company/dashboard");
 
 describe("CompanyOverviewPage", () => {

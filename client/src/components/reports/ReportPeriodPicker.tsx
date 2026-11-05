@@ -51,7 +51,7 @@ function ReportPeriodPicker({ state, children }: ReportPeriodPickerProps) {
             type="button"
             aria-pressed={preset === key}
             onClick={() => choosePreset(key)}
-            className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+            className={`min-h-11 sm:min-h-0 cursor-pointer rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
               preset === key
                 ? "border-orange-500 bg-orange-500 text-white shadow-sm"
                 : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
