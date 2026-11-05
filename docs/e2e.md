@@ -16,12 +16,14 @@ e2e/
 │   ├── ui.ts             UI helpers (toast, dialogWith, loginViaForm, submitLoginForm, changeTemporaryPassword,
 │   │                     fillProductForm, searchMarketplace, expectNotInMarketplace, credits)
 │   ├── seed.ts           the e2e seed
-│   └── dates.ts          sarajevoDate(days) → dd/mm/yyyy (UI), isoDate(days) → yyyy-mm-dd (API), both in Europe/Sarajevo
+│   ├── dates.ts          sarajevoDate(days) → dd/mm/yyyy (UI), isoDate(days) → yyyy-mm-dd (API), both in Europe/Sarajevo
+│   └── mailpit.ts        MAILPIT_URL, waitForEmail(query): polls Mailpit's search API until exactly one email matches, returns it in full
 └── tests/
     ├── auth.setup.ts                  logs the seeded roles in through the API once, saves .auth/<role>.json
     ├── first-login.spec.ts            admin creates a restaurant → temporary password → password change → profile gate → dashboard
     ├── reservation-flow.spec.ts       store publishes → restaurant reserves for tomorrow → store accepts → Pickups → picked up → "Preuzeto" + notification
     ├── reservation-reject.spec.ts     restaurant reserves (−1 credit) → store rejects → "Odbijeno" + notification → credit back, full quantity offered again
+    ├── reservation-email.spec.ts      restaurant reserves 2,5 kg for tomorrow 12:00 → the store's "Nova rezervacija" email in Mailpit (recipient, subject, details, HTML and text) → its link opens the reservation for the store. Skipped locally without MAILPIT_URL, required in CI
     ├── credits-first-product.spec.ts  store without a plan is stopped on Add product → requests a plan → admin approves → notification, 50 credits → publishes (49)
     ├── store-chain.spec.ts            admin creates a company → HQ first login → branch in Breza + plan → admin approves → branch first login (name and city locked) → product → restaurant in Visoko sees "dio <company>"
     ├── nearby-offers.spec.ts          Breza (7 km) and Tuzla (73 km) products → default 10 km shows Breza + "more further away" hint → "Svi gradovi" shows Tuzla → city Tuzla shows it at 5 km
@@ -45,11 +47,16 @@ PORT=3100
 CLIENT_ORIGIN=http://localhost:4173
 TRUST_PROXY=0
 DISABLE_RATE_LIMITS=true
+EMAIL_PROVIDER=smtp
+SMTP_HOST=localhost
+SMTP_PORT=1025
+MAILPIT_URL=http://localhost:8025
 ```
 
 - `CLIENT_ORIGIN` must be the preview server's origin. The origin check refuses writes from any other origin.
 - The frontend and the API both run on `localhost`, so the `sameSite: "strict"` cookie is sent. Don't mix in `127.0.0.1`.
 - `DISABLE_RATE_LIMITS=true` turns the server's rate limiters off, as Vitest does with `NODE_ENV=test`. The server logs a warning when it is set. Never set it on a deployment.
+- The email lines make the e2e server send every email to Mailpit (SMTP on 1025), and `MAILPIT_URL` is where the tests read them (`support/mailpit.ts`). Mailpit must be running: `docker compose up -d mailpit` from the root, or the `mailpit` binary (see the README). Without the email lines the server falls back to the `log` transport and `reservation-email.spec.ts` is skipped; the other tests do not need Mailpit. CI runs Mailpit as a service container (`axllent/mailpit:v1.32.0`). Other specs that reserve also send emails to Mailpit; the email test finds its own by the unique product name in the subject.
 
 ## What a run does
 

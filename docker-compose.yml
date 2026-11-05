@@ -1,0 +1,10 @@
+# Local development services. Only Mailpit for now: it catches every email the server sends,
+# so nothing reaches a real inbox. Start it with `docker compose up -d mailpit` and open
+# http://localhost:8025. See README.md ("Emails in development") for the steps without Docker.
+services:
+  mailpit:
+    image: axllent/mailpit:v1.32.0
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP: set SMTP_HOST=localhost, SMTP_PORT=1025 in server/.env
+      - "8025:8025" # web inbox and REST API

@@ -146,12 +146,20 @@ Every existing in-app notification can also go out by email, in the user's langu
 - Every email links to the order, product or donation, and to the email settings.
 - Bosnian and English templates, following the user's language.
 - Urgent emails (new order, rejected order, failed delivery) go out at once; the rest can go as a daily digest.
+- Decided Nov 5, 2026 (the foundation):
+  - For now emails are only tested; no real email is sent. Without settings the server only logs each email (`log`); development and e2e use Mailpit (`smtp`).
+  - The service is Resend, through its HTTP API (some hosts block SMTP ports). Its transport is built and tested with a mocked client but not configured until there is a domain.
+  - `EMAIL_REDIRECT_TO` sends every email to one inbox with `[to: real@address]` in the subject; outside production the server refuses to start with Resend unless it is set.
+  - Going live only changes environment variables (`EMAIL_PROVIDER`, `EMAIL_FROM`, `RESEND_API_KEY`, removing `EMAIL_REDIRECT_TO`), never code. Steps: "Enabling Resend later" in the README.
+  - The users' language is not stored yet, so every email is in Bosnian until it is (both languages are written and tested; the queue keeps a language per email).
+  - Emails hook into `createNotification`: a notification type with an email template gets its email queued in the same transaction.
 
 ### Tasks
 
-- [ ] Choose an email service (e.g. Resend, Postmark, Brevo) and a domain with SPF and DKIM records.
-- [ ] Local testing with Mailpit, so nothing reaches real people during development.
-- [ ] Sending queue with retries and a log.
+- [ ] Choose an email service (e.g. Resend, Postmark, Brevo) and a domain with SPF and DKIM records. Resend is chosen and built in; the domain and its DNS records are still to do.
+- [x] Local testing with Mailpit, so nothing reaches real people during development.
+- [x] Sending queue with retries and a log.
+- [x] The first email: a new reservation to the store, with a link to it.
 - [ ] Templates for existing notifications (new order, accepted, rejected, cancelled, picked up, expiry, reminders, credits, admin announcements).
 - [ ] Settings on My profile: on/off per kind and the daily digest.
 - [ ] System emails that cannot be turned off: email confirmation, forgot password, login details for a new user (already on the roadmap).
@@ -226,7 +234,7 @@ The "Become a sponsor" page becomes real: campaigns with a goal and a progress b
 - [ ] Who pays for delivering a donation to an organization: the donor, a sponsor or the organization?
 - [ ] Do public kitchens need something humanitarian organizations do not (e.g. standing donations), or is an organization type enough?
 - [ ] Can an organization also buy food from the marketplace, or only claim donations?
-- [ ] Which email service to use (price, free plan limit, domain)?
+- [ ] Which email service to use (price, free plan limit, domain)? Resend was chosen (Nov 5, 2026); its plan limit and the domain are still open.
 
 ## Ideas backlog (not scheduled)
 

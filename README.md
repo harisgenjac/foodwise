@@ -69,6 +69,13 @@ Create `server/.env.test` with the same variables, pointing `DATABASE_URL` at `f
 | `CLIENT_ORIGIN` | no | Frontend origin(s) allowed by CORS and the origin check (comma-separated list allowed), default `http://localhost:5173` |
 | `TRUST_PROXY` | no | Number of proxies in front of the server, so rate limits see the client's IP; off by default, `1` on Render |
 | `APP_TIMEZONE` | no | Business time zone for expiry dates and the scheduled jobs, default `Europe/Sarajevo` |
+| `EMAIL_PROVIDER` | no | `log` (default: emails are only written to the console), `smtp` (Mailpit locally) or `resend` |
+| `EMAIL_FROM` | for `resend` | Sender, e.g. `FoodWise <no-reply@example.com>`; default `FoodWise <no-reply@foodwise.local>` |
+| `EMAIL_REDIRECT_TO` | for `resend` outside production | Sends every email to this address instead, with `[to: real@address]` in front of the subject |
+| `RESEND_API_KEY` | for `resend` | Resend API key |
+| `SMTP_HOST` / `SMTP_PORT` | no | SMTP server for `smtp`, default `localhost` / `1025` (Mailpit) |
+
+`server/.env.example` lists every variable with comments. A wrong email setting stops the server at startup with `Email configuration error: ...`.
 
 The client reads an optional `VITE_API_URL` (backend origin without `/api`, default `http://localhost:3000`), for example from `client/.env.local`.
 
@@ -102,6 +109,39 @@ This builds the server once, then runs the backend and frontend together:
 
 - Frontend: http://localhost:5173
 - API: http://localhost:3000/api
+
+## Emails in development
+
+No real email is ever sent from development or tests. Without any email variables the server uses the `log` transport and only prints each email to its console. To see the emails as they would look, run [Mailpit](https://mailpit.axllent.org), which catches every email:
+
+1. Start Mailpit, either with Docker: `docker compose up -d mailpit` (from the root, see `docker-compose.yml`), or without Docker: install it (`winget install axllent.mailpit` on Windows, `brew install mailpit` on macOS, or download a binary from its releases page) and run `mailpit`.
+2. Add to `server/.env`:
+   ```env
+   EMAIL_PROVIDER=smtp
+   SMTP_HOST=localhost
+   SMTP_PORT=1025
+   ```
+3. Restart the server (`npm run dev`); it logs `Emails: smtp`.
+4. Make a reservation as a restaurant and open the inbox at http://localhost:8025: the store's "Nova rezervacija" email is there within a few seconds.
+
+Emails go through a queue in the database (`email_queue`), sent by a background worker every 5 seconds with retries, so a failing email service never breaks a reservation. Today only the store's "new reservation" email exists, and it is in Bosnian.
+
+## Enabling Resend later
+
+The Resend transport is built and tested but not configured. Going live is a change of environment variables only:
+
+1. **Domain:** in the Resend dashboard, Domains → Add domain (a domain or subdomain you own, e.g. `mail.example.com`; the EU region is closest).
+2. **DNS:** add the records Resend shows at your DNS provider: the DKIM `TXT` record (`resend._domainkey`), the SPF `MX` and `TXT` records on the `send` subdomain, and the recommended DMARC `TXT` record (`_dmarc`, e.g. `v=DMARC1; p=none;`). Wait until Resend shows the domain as Verified.
+3. **API key:** API Keys → Create API key with "Sending access" limited to that domain. Store it only in the host's environment variables (never in a file in the repository).
+4. **Try it first with the safety redirect** (locally or on a staging server):
+   ```env
+   EMAIL_PROVIDER=resend
+   EMAIL_FROM=FoodWise <no-reply@mail.example.com>
+   RESEND_API_KEY=re_...
+   EMAIL_REDIRECT_TO=you@example.com
+   ```
+   Every email then goes to `you@example.com`, its subject starting with `[to: <real recipient>]`. Outside production the server refuses to start with `resend` unless `EMAIL_REDIRECT_TO` is set.
+5. **Production:** on the host set `NODE_ENV=production`, `EMAIL_PROVIDER=resend`, `EMAIL_FROM`, `RESEND_API_KEY` and `CLIENT_ORIGIN` (the deployed frontend, used for the links in emails), and remove `EMAIL_REDIRECT_TO`. After a restart the server logs `Emails: resend` with no redirect.
 
 ## Scripts
 
@@ -158,6 +198,7 @@ The seed deletes all existing data and rebuilds the last two months of activity:
 ```
 foodwise/
 ├── package.json     root scripts (dev, build, install:all)
+├── docker-compose.yml  Mailpit for local emails
 ├── docs/            detailed documentation
 ├── server/          Express API (src/, migrations/, tests/, uploads/)
 ├── client/          React app (src/)
@@ -174,7 +215,7 @@ foodwise/
 
 ## E2E tests
 
-Playwright tests in `e2e/` run the built frontend in Chromium (and the phone layout spec also in WebKit with iPhone emulation) against the real API, on a separate database `food_saver_e2e_db` that is emptied and seeded on every run. One-time setup: create that database and `e2e/.env.e2e` (contents in [`docs/e2e.md`](docs/e2e.md)), then `cd e2e && npx playwright install chromium webkit`. Run one file with `npm run e2e -- tests/<file>.spec.ts` or open the UI mode with `npm run e2e:ui`. The full suite runs in CI.
+Playwright tests in `e2e/` run the built frontend in Chromium (and the phone layout spec also in WebKit with iPhone emulation) against the real API, on a separate database `food_saver_e2e_db` that is emptied and seeded on every run. One-time setup: create that database and `e2e/.env.e2e` (contents in [`docs/e2e.md`](docs/e2e.md)), start Mailpit for the email test (it is skipped locally without `MAILPIT_URL`), then `cd e2e && npx playwright install chromium webkit`. Run one file with `npm run e2e -- tests/<file>.spec.ts` or open the UI mode with `npm run e2e:ui`. The full suite runs in CI.
 
 ## CI
 

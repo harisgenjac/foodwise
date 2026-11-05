@@ -1,4 +1,5 @@
 import type { Pool, PoolClient } from "pg";
+import { enqueueNotificationEmail } from "../email/queue.js";
 
 // The client translates notifications by `type`; `message` is the English fallback.
 export type NotificationType =
@@ -60,6 +61,9 @@ interface NewNotification {
 }
 
 // Accepts the pool or a transaction client, so the insert can join the caller's transaction.
+// The notification's email (when its type has a template, see email/templates/index.ts) is queued
+// in the same transaction: both are stored or neither is, and the queue worker sends it later, so
+// a failing email service never breaks the action.
 export const createNotification = async (
   db: Pool | PoolClient,
   {
@@ -80,6 +84,16 @@ export const createNotification = async (
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [userId, type, message, reservationId, productId, donationId, creditRequestId, branchId, details],
   );
+  await enqueueNotificationEmail(db, {
+    userId,
+    type,
+    reservationId,
+    productId,
+    donationId,
+    creditRequestId,
+    branchId,
+    details,
+  });
 };
 
 // An admin acted on a branch: every headquarters login of its company is told (the only
