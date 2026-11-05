@@ -1,16 +1,22 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext.js";
 import { useTranslation } from "react-i18next";
-import LanguageSwitcher from "../components/LanguageSwitcher.js";
-import Footer from "../components/Footer.js";
-import { Info, Lock, Mail } from "lucide-react";
-import logo from "../assets/logoApp.png";
+import { CircleCheck, Info, Lock, Mail } from "lucide-react";
+import AuthLayout from "../components/AuthLayout.js";
 import FormField, { inputStyle } from "../components/form/FormField.js";
 import RequiredHint from "../components/form/RequiredHint.js";
 import { useFormValidation } from "../hooks/useFormValidation.js";
 import { isBlank, REQUIRED } from "../utils/validation.js";
+
+// What another page can pass to the login page in the navigation state.
+export interface LoginState {
+  // Someone opened /register, which is closed for store and restaurant accounts.
+  registrationClosed?: boolean;
+  // The password was just set with an emailed link.
+  passwordReset?: boolean;
+}
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -24,10 +30,7 @@ function LoginPage() {
     email: isBlank(email) ? REQUIRED : undefined,
     password: password ? undefined : REQUIRED,
   });
-  // Set when someone opened /register, which is closed for store and restaurant accounts.
-  const registrationClosed = Boolean(
-    (location.state as { registrationClosed?: boolean } | null)?.registrationClosed,
-  );
+  const state = (location.state as LoginState | null) ?? {};
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -46,106 +49,75 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-dvh flex">
-      <div
-        className="relative hidden lg:flex lg:w-1/2 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1542838132-92c53300491e?w=1200')",
-        }}
-      >
-        <div className="absolute inset-0 bg-black/50" />
-        <div className="relative z-10 flex flex-col justify-center px-16 text-white">
-          <div className="flex items-center gap-3 mb-8">
-            <img src={logo} alt="Logo" className="h-20 w-20" />
-            <span className="font-bold text-3xl">FoodWise</span>
-          </div>
-          <h2 className="text-4xl font-bold leading-tight">
-            {t("dashboard.appTitle")}
-          </h2>
-          <p className="mt-4 text-lg text-white/80">
-            {t("dashboard.appSubtitle")}
-          </p>
-        </div>
-      </div>
+    <AuthLayout title={t("auth.welcomeBack")} subtitle={t("auth.loginSubtitle")}>
+      {state.registrationClosed && (
+        <p className="mb-4 flex items-start gap-2 rounded-xl border border-orange-100 bg-orange-50 px-3 py-2 text-sm text-orange-800">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" />
+          {t("auth.registrationClosed")}
+        </p>
+      )}
 
-      <div className="relative flex flex-1 flex-col bg-gray-50 px-4 pt-12 pb-6">
-        <div className="absolute top-4 right-4">
-          <LanguageSwitcher />
-        </div>
+      {state.passwordReset && !error && (
+        <p role="status" className="mb-4 flex items-start gap-2 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+          <CircleCheck className="mt-0.5 h-4 w-4 shrink-0" />
+          {t("auth.reset.done")}
+        </p>
+      )}
 
-        <div className="flex flex-1 items-center justify-center pb-12">
-          <div className="w-full max-w-md">
-            <div className="flex items-center justify-center gap-2 mb-6 lg:hidden">
-              <img src={logo} alt="Logo" className="h-14 w-14" />
-              <span className="font-bold text-2xl">FoodWise</span>
-            </div>
+      {error && (
+        <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+          {error}
+        </p>
+      )}
 
-            <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-              <h1 className="text-2xl font-bold text-gray-800 mb-1">
-                {t("auth.welcomeBack")}
-              </h1>
-              <p className="text-sm text-gray-500 mb-6">
-                {t("auth.loginSubtitle")}
-              </p>
-
-              {registrationClosed && (
-                <p className="mb-4 flex items-start gap-2 rounded-xl border border-orange-100 bg-orange-50 px-3 py-2 text-sm text-orange-800">
-                  <Info className="mt-0.5 h-4 w-4 shrink-0" />
-                  {t("auth.registrationClosed")}
-                </p>
-              )}
-
-              {error && (
-                <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
-                  {error}
-                </p>
-              )}
-
-              <form ref={formRef} noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <FormField label={t("auth.email")} icon={Mail} required error={errorFor("email")}>
-                  <input
-                    id="email"
-                    type="email"
-                    name="email"
-                    autoComplete="username"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onBlur={blur("email")}
-                    className={inputStyle}
-                  />
-                </FormField>
-                <FormField label={t("auth.password")} icon={Lock} required error={errorFor("password")}>
-                  <input
-                    id="password"
-                    type="password"
-                    name="password"
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onBlur={blur("password")}
-                    className={inputStyle}
-                  />
-                </FormField>
-                <button
-                  type="submit"
-                  className="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
-                >
-                  {t("auth.loginButton")}
-                </button>
-                <RequiredHint className="text-center" />
-              </form>
-
-              <p className="text-sm text-gray-500 text-center mt-6">{t("auth.accountByAdmin")}</p>
-            </div>
+      <form ref={formRef} noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <FormField label={t("auth.email")} icon={Mail} required error={errorFor("email")}>
+          <input
+            id="email"
+            type="email"
+            name="email"
+            autoComplete="username"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onBlur={blur("email")}
+            className={inputStyle}
+          />
+        </FormField>
+        <div>
+          <FormField label={t("auth.password")} icon={Lock} required error={errorFor("password")}>
+            <input
+              id="password"
+              type="password"
+              name="password"
+              autoComplete="current-password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onBlur={blur("password")}
+              className={inputStyle}
+            />
+          </FormField>
+          <div className="mt-1 flex justify-end">
+            {/* 44 px high on phones, so it is easy to tap. */}
+            <Link
+              to="/forgot-password"
+              className="inline-flex min-h-11 items-center text-sm font-medium text-orange-600 hover:text-orange-700 hover:underline md:min-h-0"
+            >
+              {t("auth.forgot.link")}
+            </Link>
           </div>
         </div>
+        <button
+          type="submit"
+          className="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
+        >
+          {t("auth.loginButton")}
+        </button>
+        <RequiredHint className="text-center" />
+      </form>
 
-        {/* The impact counter needs a login. */}
-        <Footer showImpact={false} />
-      </div>
-    </div>
+      <p className="text-sm text-gray-500 text-center mt-6">{t("auth.accountByAdmin")}</p>
+    </AuthLayout>
   );
 }
 

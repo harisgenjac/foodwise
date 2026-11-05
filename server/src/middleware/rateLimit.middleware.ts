@@ -7,11 +7,12 @@ export type RateLimits = {
   login: number; // failed logins per IP and email, every 15 minutes
   password: number; // password changes and resets per user, every 15 minutes
   upload: number; // logo uploads and CSV imports per user, every hour
+  forgotPassword: number; // reset link requests per IP, every hour
 };
 
 // The app polls notifications every 50 s and a page loads several endpoints at once, so the
 // general limit stays far above normal use.
-export const DEFAULT_RATE_LIMITS: RateLimits = { api: 1000, login: 10, password: 10, upload: 30 };
+export const DEFAULT_RATE_LIMITS: RateLimits = { api: 1000, login: 10, password: 10, upload: 30, forgotPassword: 10 };
 
 const ip = (req: Request) => ipKeyGenerator(req.ip ?? "");
 // Behind authenticate, so the user is known; the IP is only a fallback.
@@ -24,6 +25,13 @@ const loginKey = (req: Request) => {
 const tooMany = (_req: Request, res: Response) =>
   res.status(429).json({ error: "Too many requests. Please try again later." });
 
+// Over the forgot password limit the answer is the normal one and nothing is sent, so the limit
+// tells nobody anything about the account.
+export const FORGOT_PASSWORD_MESSAGE =
+  "If an account exists for this email, we sent a link to set a new password.";
+const sameAsForgotPassword = (_req: Request, res: Response) =>
+  res.status(200).json({ message: FORGOT_PASSWORD_MESSAGE });
+
 // The stores are kept, so tests can start every case with empty counters.
 export const createRateLimiters = (limits: RateLimits, enabled: boolean) => {
   const stores: MemoryStore[] = [];
@@ -33,6 +41,7 @@ export const createRateLimiters = (limits: RateLimits, enabled: boolean) => {
     limit: number,
     keyGenerator: (req: Request) => string,
     skipSuccessfulRequests = false,
+    handler = tooMany,
   ) => {
     const store = new MemoryStore();
     stores.push(store);
@@ -45,7 +54,7 @@ export const createRateLimiters = (limits: RateLimits, enabled: boolean) => {
       identifier,
       standardHeaders: "draft-8",
       legacyHeaders: false,
-      handler: tooMany,
+      handler,
       skip: () => !enabled,
     });
   };
@@ -56,6 +65,7 @@ export const createRateLimiters = (limits: RateLimits, enabled: boolean) => {
     login: limiter("login", 15 * MINUTE, limits.login, loginKey, true),
     password: limiter("password", 15 * MINUTE, limits.password, userKey),
     upload: limiter("upload", HOUR, limits.upload, userKey),
+    forgotPassword: limiter("forgotPassword", HOUR, limits.forgotPassword, ip, false, sameAsForgotPassword),
     reset: () => Promise.all(stores.map((store) => store.resetAll())),
   };
 };

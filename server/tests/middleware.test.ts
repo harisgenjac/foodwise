@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import request from "supertest";
 import app from "../src/app.js";
+import pool from "../src/config/db.js";
 import { cleanupUsers, createProduct, futurePickup, registerAndLogin, userId } from "./helpers.js";
 
 const STORE = "middleware-store@test.com";
@@ -59,6 +60,23 @@ describe("authenticate middleware", () => {
     const response = await request(app).get("/api/auth/me").set("Cookie", [`token=${token}`]);
     expect(response.status).toBe(401);
     expect(response.body.error).toBe("Token is invalid or has expired.");
+  });
+
+  it("checks the session version in the token against the user's", async () => {
+    await registerAndLogin(STORE, "STORE");
+    const id = await userId(STORE);
+    const me = (sv?: number) =>
+      request(app)
+        .get("/api/users/me")
+        .set("Cookie", [`token=${jwt.sign(sv === undefined ? { id, role: "STORE" } : { id, role: "STORE", sv }, process.env.JWT_SECRET!)}`]);
+    // A token from before session versions (no sv) counts as version 0.
+    expect((await me()).status).toBe(200);
+    expect((await me(0)).status).toBe(200);
+    expect((await me(1)).status).toBe(401);
+    // A password reset raises the user's version: version 0 tokens stop working.
+    await pool.query("UPDATE users SET session_version = 1 WHERE id = $1", [id]);
+    expect((await me()).status).toBe(401);
+    expect((await me(1)).status).toBe(200);
   });
 });
 

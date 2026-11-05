@@ -9,6 +9,7 @@ import {
   Megaphone,
   Clock,
   Hourglass,
+  KeyRound,
   PackageCheck,
   ShieldAlert,
   ShoppingBag,
@@ -52,6 +53,7 @@ export const NOTIFICATION_META: Record<NotificationType, { icon: LucideIcon; sty
   BRANCH_CREDIT_REQUEST_EXPIRED: { icon: Coins, style: "bg-gray-100 text-gray-600" },
   CREDIT_TOPUP_COMPANY_APPROVED: { icon: Coins, style: "bg-blue-50 text-blue-600" },
   CREDIT_TOPUP_COMPANY_REJECTED: { icon: Coins, style: "bg-red-50 text-red-600" },
+  PASSWORD_CHANGED: { icon: KeyRound, style: "bg-blue-50 text-blue-600" },
 };
 
 // notifications.credits.<key> per credit notification type and request type.
@@ -83,6 +85,7 @@ export const getNotificationLink = (notification: Notification, role: User["role
   // A branch asking for credits waits on the headquarters' credits page; other notifications
   // about one of its branches open the branch page.
   if (notification.type === "BRANCH_TOPUP_REQUESTED") return "/company/credits";
+  if (notification.type === "PASSWORD_CHANGED") return "/my-profile";
   if (role === "COMPANY" && notification.branch_id) return `/company/branches/${notification.branch_id}`;
   if (notification.reservation_id) return `/reservation/${notification.reservation_id}`;
   if (notification.product_id) return `/products/${notification.product_id}`;
@@ -120,6 +123,7 @@ export const getNotificationText = (notification: Notification, t: TFunction, la
   }
   // No request was created, so there is nothing to join: the type says it all.
   if (notification.type === "CREDIT_RENEWAL_SKIPPED") return t("notifications.types.CREDIT_RENEWAL_SKIPPED");
+  if (notification.type === "PASSWORD_CHANGED") return t("notifications.types.PASSWORD_CHANGED");
   const creditKeys = notification.type ? CREDIT_TEXT_KEYS[notification.type] : undefined;
   if (creditKeys) {
     // A branch's request names its company: "Bingo d.o.o. → Bingo Tuzla".

@@ -46,7 +46,10 @@ export type NotificationType =
   // To the branch: its headquarters forwarded its top-up request to the admin or rejected it
   // (with the headquarters' note as details).
   | "CREDIT_TOPUP_COMPANY_APPROVED"
-  | "CREDIT_TOPUP_COMPANY_REJECTED";
+  | "CREDIT_TOPUP_COMPANY_REJECTED"
+  // To the user, when they reset their password with an emailed link. Its email is a system email
+  // (sent even with email notifications off).
+  | "PASSWORD_CHANGED";
 
 interface NewNotification {
   userId: number;

@@ -132,6 +132,56 @@ describe("AdminUserDetailsPage", () => {
     await waitFor(() => expect(success).toHaveBeenCalledWith("Account blocked."));
   });
 
+  it("resends the invitation only while the user never logged in", async () => {
+    apiMock.post.mockResolvedValue({ data: { message: "Pozivnica je poslana." } });
+    const success = vi.spyOn(toast, "success");
+    renderPage({ ...store, last_login_at: null });
+
+    expect(await screen.findByText(t("admin.userDetails.neverLoggedIn"))).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: t("admin.userDetails.resendInvitation") }));
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveTextContent(store.email);
+    await userEvent.click(within(dialog).getByRole("button", { name: t("admin.userDetails.confirmSend") }));
+    expect(apiMock.post).toHaveBeenCalledWith("/admin/users/5/invitation");
+    await waitFor(() => expect(success).toHaveBeenCalledWith("Pozivnica je poslana."));
+  });
+
+  it("sends a password reset link, and no invitation after the first login", async () => {
+    apiMock.post.mockResolvedValue({ data: { message: "Link za novu lozinku je poslan." } });
+    renderPage({ ...store, last_login_at: "2026-11-01T10:00:00Z" });
+
+    await userEvent.click(await screen.findByRole("button", { name: t("admin.userDetails.sendResetLink") }));
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: t("admin.userDetails.confirmSend") }));
+    expect(apiMock.post).toHaveBeenCalledWith("/admin/users/5/password-reset-link");
+    expect(screen.queryByRole("button", { name: t("admin.userDetails.resendInvitation") })).not.toBeInTheDocument();
+    expect(screen.queryByText(t("admin.userDetails.neverLoggedIn"))).not.toBeInTheDocument();
+  });
+
+  it("offers no emailed links for a blocked account", async () => {
+    renderPage({ ...store, is_blocked: true, blocked_reason: "Spam", last_login_at: null });
+    expect(await screen.findByRole("button", { name: t("admin.userDetails.unblock") })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t("admin.userDetails.sendResetLink") })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t("admin.userDetails.resendInvitation") })).not.toBeInTheDocument();
+  });
+
+  it("shows the account activity", async () => {
+    renderWithProviders(<AdminUserDetailsPage />, {
+      route: `/admin/users/${store.id}`,
+      path: "/admin/users/:id",
+      user: admin,
+      get: {
+        [`/admin/users/${store.id}`]: {
+          user: store,
+          counts,
+          actions: [],
+          events: [{ id: 1, event: "PASSWORD_RESET", ip: "10.0.0.1", created_at: "2026-11-05T10:00:00Z" }],
+        },
+      },
+    });
+    expect(await screen.findByText(t("admin.accountEvents.PASSWORD_RESET"))).toBeInTheDocument();
+    expect(screen.getByText(t("admin.userDetails.fromIp", { ip: "10.0.0.1" }), { exact: false })).toBeInTheDocument();
+  });
+
   it("shows the block reason and offers unblocking", async () => {
     apiMock.post.mockResolvedValue({ data: { message: "Account unblocked." } });
     renderPage({ ...store, is_blocked: true, blocked_reason: "Kršenje pravila", blocked_at: "2026-10-20T08:00:00.000Z" });
@@ -183,14 +233,38 @@ describe("AdminCreateUserPage", () => {
   const renderPage = () =>
     renderWithProviders(<AdminCreateUserPage />, { route: "/admin/users/new", path: "/admin/users/new", user: admin });
 
+  const methodRadio = (method: "INVITE" | "PASSWORD") =>
+    screen.getByRole("radio", { name: new RegExp(t(`admin.createUser.methods.${method}.title`)) });
+
+  // A restaurant with a temporary password (the invitation is the default).
   const fill = async () => {
     await userEvent.click(await screen.findByRole("radio", { name: new RegExp(t("admin.roles.RESTAURANT")) }));
     await userEvent.type(screen.getByLabelText(t("admin.createUser.email")), "novi@test.com");
+    await userEvent.click(methodRadio("PASSWORD"));
     await userEvent.type(screen.getByLabelText(t("admin.createUser.password")), "lozinka123");
     await userEvent.click(screen.getByRole("button", { name: t("admin.createUser.submit") }));
   };
 
-  it("creates an account with only the role, email and password", async () => {
+  it("sends an invitation by default, without a password field", async () => {
+    apiMock.post.mockResolvedValue({ data: { message: "Nalog je kreiran i pozivnica je poslana.", user: { id: 9 } } });
+    const success = vi.spyOn(toast, "success");
+    renderPage();
+
+    expect(await screen.findByRole("radio", { name: new RegExp(t("admin.createUser.methods.INVITE.title")) })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.queryByLabelText(t("admin.createUser.password"))).not.toBeInTheDocument();
+    expect(screen.getByText(t("admin.createUser.infoTextInvite"))).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText(t("admin.createUser.email")), "novi@test.com");
+    await userEvent.click(screen.getByRole("button", { name: t("admin.createUser.submit") }));
+
+    expect(apiMock.post).toHaveBeenCalledWith("/admin/users", { role: "STORE", email: "novi@test.com", method: "INVITE" });
+    await waitFor(() => expect(success).toHaveBeenCalledWith(t("admin.createUser.successInvite")));
+    expect(await screen.findByTestId("location")).toHaveTextContent("/admin/users/9");
+  });
+
+  it("creates an account with a temporary password when chosen", async () => {
     apiMock.post.mockResolvedValue({ data: { message: "User created successfully.", user: { id: 9 } } });
     renderPage();
 
@@ -198,9 +272,19 @@ describe("AdminCreateUserPage", () => {
     expect(apiMock.post).toHaveBeenCalledWith("/admin/users", {
       role: "RESTAURANT",
       email: "novi@test.com",
+      method: "PASSWORD",
       password: "lozinka123",
     });
     expect(await screen.findByTestId("location")).toHaveTextContent("/admin/users/9");
+  });
+
+  it("asks for the temporary password only when that is chosen", async () => {
+    renderPage();
+    await userEvent.type(await screen.findByLabelText(t("admin.createUser.email")), "novi@test.com");
+    await userEvent.click(methodRadio("PASSWORD"));
+    await userEvent.click(screen.getByRole("button", { name: t("admin.createUser.submit") }));
+    expect(apiMock.post).not.toHaveBeenCalled();
+    expect(screen.getByLabelText(t("admin.createUser.password"))).toHaveAccessibleDescription(t("common.fieldRequired"));
   });
 
   it("shows the server's reason in a toast when the account is not created", async () => {

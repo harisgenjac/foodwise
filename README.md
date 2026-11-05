@@ -95,7 +95,7 @@ cd server
 npm run create-admin -- <email> <password> [first name] [last name]
 ```
 
-Stores, restaurants and further admins are then created by an admin in the app (**Novi korisnik** / **New user**), with only an email and a password. The user fills in the rest of the profile after the first login.
+Stores, restaurants and further admins are then created by an admin in the app (**Novi korisnik** / **New user**), with only an email: by default the user gets an invitation email with a link to set their own password (with Mailpit running locally the email is at http://localhost:8025), or the admin sets a temporary password instead. The user fills in the rest of the profile after the first login.
 
 ### 6. Start the app
 

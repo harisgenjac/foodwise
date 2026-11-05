@@ -120,7 +120,8 @@ describe("RESERVATION_CREATED email", () => {
     expect(emailTemplate("RESERVATION_CREATED")).toBe(reservationCreated);
     expect(emailTemplate("NO_SUCH_TEMPLATE")).toBeUndefined();
     expect(emailTemplate("toString")).toBeUndefined();
-    expect(Object.keys(EMAIL_TEMPLATES)).toHaveLength(32);
+    // 33 notification types and the system emails PASSWORD_RESET and INVITATION.
+    expect(Object.keys(EMAIL_TEMPLATES)).toHaveLength(35);
   });
 });
 
@@ -187,6 +188,7 @@ const FULL: Record<NotificationType, NotificationEmailData> = (() => {
     BRANCH_CREDIT_REQUEST_EXPIRED: branchCredit,
     CREDIT_TOPUP_COMPANY_APPROVED: { ...credit, recipientRole: "STORE" },
     CREDIT_TOPUP_COMPANY_REJECTED: { ...credit, recipientRole: "STORE", details: "Nema budžeta" },
+    PASSWORD_CHANGED: { ...EMPTY, recipientRole: "RESTAURANT" },
   };
 })();
 

@@ -36,7 +36,8 @@ export type NotificationType =
   | "BRANCH_CREDIT_REQUEST_REJECTED"
   | "BRANCH_CREDIT_REQUEST_EXPIRED"
   | "CREDIT_TOPUP_COMPANY_APPROVED"
-  | "CREDIT_TOPUP_COMPANY_REJECTED";
+  | "CREDIT_TOPUP_COMPANY_REJECTED"
+  | "PASSWORD_CHANGED";
 
 export interface Notification {
   id: number;

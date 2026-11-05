@@ -5,6 +5,7 @@ import { applyRedirect } from "./redirect.js";
 import { emailTemplate } from "./templates/index.js";
 import type { EmailLanguage } from "./templates/layout.js";
 import { NOTIFICATION_EMAIL_DATA, NOTIFICATION_EMAIL_FROM } from "./templates/notificationData.js";
+import { SYSTEM_NOTIFICATION_TYPES } from "./templates/notificationEmails.js";
 import { InvalidEmailDataError, type Queryable } from "./templates/types.js";
 import { createEmailTransport, type EmailTransport } from "./transports.js";
 
@@ -20,14 +21,18 @@ export const STALE_SENDING_MINUTES = 10;
 export const EMAIL_BATCH_SIZE = 50;
 export const EMAIL_POLL_INTERVAL_MS = 5_000;
 const MAX_ERROR_LENGTH = 1000;
+// A finished email (sent, failed or skipped) keeps no one-time token: system emails carry the raw
+// token of their link in `data` only until then.
+const WITHOUT_TOKEN = "email_queue.data - 'token'";
 
 // Queues one email per notification, called right after the notifications are inserted, with the
 // same db (the caller's transaction, when there is one), so the emails are stored exactly when the
 // notifications are. One INSERT ... SELECT for any number of notifications (an announcement reaches
 // every store and restaurant): the template is the notification's type and the data is the
 // snapshot of NOTIFICATION_EMAIL_DATA. Untyped notifications, blocked recipients (also a blocked
-// company or a deactivated branch) and recipients who turned email notifications off get no email
-// (notification emails are never system emails). Returns the number of emails queued.
+// company or a deactivated branch) and recipients who turned email notifications off get no email,
+// except for the system notification types (SYSTEM_NOTIFICATION_TYPES, e.g. PASSWORD_CHANGED),
+// which ignore the switch. Returns the number of emails queued.
 export const enqueueNotificationEmails = async (db: Queryable, notificationIds: number[]): Promise<number> => {
   if (notificationIds.length === 0) return 0;
   const result = await db.query(
@@ -35,9 +40,10 @@ export const enqueueNotificationEmails = async (db: Queryable, notificationIds: 
      SELECT recipients.id, recipients.email, notifications.type, ${NOTIFICATION_EMAIL_DATA}, $2
      FROM ${NOTIFICATION_EMAIL_FROM}
      WHERE notifications.id = ANY($1::int[]) AND notifications.type IS NOT NULL
-       AND ${notBlocked("recipients")} AND recipients.email_notifications
+       AND ${notBlocked("recipients")}
+       AND (recipients.email_notifications OR notifications.type = ANY($3::text[]))
      ORDER BY notifications.id`,
-    [notificationIds, DEFAULT_EMAIL_LANGUAGE],
+    [notificationIds, DEFAULT_EMAIL_LANGUAGE, SYSTEM_NOTIFICATION_TYPES],
   );
   return result.rowCount ?? 0;
 };
@@ -148,7 +154,7 @@ export const processEmailQueue = async ({
 
   const markFailed = async (email: ClaimedEmail, error: unknown) => {
     await db.query(
-      `UPDATE email_queue SET status = 'FAILED', locked_at = NULL, last_error = $2 WHERE id = $1`,
+      `UPDATE email_queue SET status = 'FAILED', locked_at = NULL, last_error = $2, data = ${WITHOUT_TOKEN} WHERE id = $1`,
       [email.id, errorText(error)],
     );
     result.failed += 1;
@@ -158,7 +164,7 @@ export const processEmailQueue = async ({
   };
 
   const markSkipped = async (email: ClaimedEmail, reason: string) => {
-    await db.query(`UPDATE email_queue SET status = 'SKIPPED', locked_at = NULL, last_error = $2 WHERE id = $1`, [
+    await db.query(`UPDATE email_queue SET status = 'SKIPPED', locked_at = NULL, last_error = $2, data = ${WITHOUT_TOKEN} WHERE id = $1`, [
       email.id,
       reason,
     ]);
@@ -190,7 +196,8 @@ export const processEmailQueue = async ({
     try {
       await transport.send(message, { idempotencyKey: `foodwise-email-${email.id}` });
       await db.query(
-        `UPDATE email_queue SET status = 'SENT', sent_at = $2, locked_at = NULL, last_error = NULL WHERE id = $1`,
+        `UPDATE email_queue SET status = 'SENT', sent_at = $2, locked_at = NULL, last_error = NULL, data = ${WITHOUT_TOKEN}
+         WHERE id = $1`,
         [email.id, now],
       );
       result.sent += 1;

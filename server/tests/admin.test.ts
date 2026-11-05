@@ -138,7 +138,7 @@ describe("Admin", () => {
     });
 
     it.each([
-      [{ email: NEW_USER, password: PASSWORD }, "Email, password and role are required."],
+      [{ email: NEW_USER, password: PASSWORD }, "Email and role are required."],
       [{ role: "CHARITY", email: NEW_USER, password: PASSWORD }, "Role must be STORE, RESTAURANT or ADMIN."],
       [{ role: "STORE", email: "not-an-email", password: PASSWORD }, "Email is not valid."],
       [{ role: "STORE", email: NEW_USER, password: "kratka" }, "Password must be at least 8 characters long."],

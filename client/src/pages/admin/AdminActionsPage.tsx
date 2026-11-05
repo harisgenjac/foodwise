@@ -36,6 +36,9 @@ const ACTION_STYLES: Record<AdminAction["action"], string> = {
   DEACTIVATE_BRANCH: "bg-gray-100 text-gray-700",
   REACTIVATE_BRANCH: "bg-green-50 text-green-700",
   ATTACH_BRANCH: "bg-blue-50 text-blue-700",
+  SEND_INVITATION: "bg-blue-50 text-blue-700",
+  RESEND_INVITATION: "bg-blue-50 text-blue-700",
+  SEND_PASSWORD_RESET_LINK: "bg-blue-50 text-blue-700",
 };
 
 function AdminActionsPage() {
