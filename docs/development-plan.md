@@ -160,7 +160,7 @@ Every existing in-app notification can also go out by email, in the user's langu
 - [x] Local testing with Mailpit, so nothing reaches real people during development.
 - [x] Sending queue with retries and a log.
 - [x] The first email: a new reservation to the store, with a link to it.
-- [ ] Templates for existing notifications (new order, accepted, rejected, cancelled, picked up, expiry, reminders, credits, admin announcements).
+- [x] Templates for existing notifications (new order, accepted, rejected, cancelled, picked up, expiry, reminders, credits, admin announcements). All 32 notification types have an email (Nov 5, 2026).
 - [ ] Settings on My profile: on/off per kind and the daily digest.
 - [ ] System emails that cannot be turned off: email confirmation, forgot password, login details for a new user (already on the roadmap).
 - [ ] Emails for the new roles, verification and delivery.

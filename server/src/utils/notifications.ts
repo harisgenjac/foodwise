@@ -1,5 +1,6 @@
 import type { Pool, PoolClient } from "pg";
-import { enqueueNotificationEmail } from "../email/queue.js";
+import { enqueueNotificationEmails, insertedIds } from "../email/queue.js";
+import { notBlocked } from "./visibility.js";
 
 // The client translates notifications by `type`; `message` is the English fallback.
 export type NotificationType =
@@ -60,10 +61,12 @@ interface NewNotification {
   details?: string | null;
 }
 
+// Every function here that inserts notifications also queues their emails
+// (enqueueNotificationEmails) with the same db, so inside a transaction both are stored or neither
+// is; the queue worker sends them later, so a failing email service never breaks the action. A new
+// place that inserts notifications must do the same.
+
 // Accepts the pool or a transaction client, so the insert can join the caller's transaction.
-// The notification's email (when its type has a template, see email/templates/index.ts) is queued
-// in the same transaction: both are stored or neither is, and the queue worker sends it later, so
-// a failing email service never breaks the action.
 export const createNotification = async (
   db: Pool | PoolClient,
   {
@@ -78,22 +81,14 @@ export const createNotification = async (
     details = null,
   }: NewNotification,
 ) => {
-  await db.query(
+  const inserted = await db.query<{ id: number }>(
     `INSERT INTO notifications
        (user_id, type, message, reservation_id, product_id, donation_id, credit_request_id, branch_id, details)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     RETURNING notifications.id`,
     [userId, type, message, reservationId, productId, donationId, creditRequestId, branchId, details],
   );
-  await enqueueNotificationEmail(db, {
-    userId,
-    type,
-    reservationId,
-    productId,
-    donationId,
-    creditRequestId,
-    branchId,
-    details,
-  });
+  await enqueueNotificationEmails(db, insertedIds(inserted));
 };
 
 // An admin acted on a branch: every headquarters login of its company is told (the only
@@ -111,11 +106,12 @@ export const notifyCompanyHq = async (
     BRANCH_DEACTIVATED: "deactivated",
     BRANCH_REACTIVATED: "reactivated",
   };
-  await db.query(
+  const inserted = await db.query<{ id: number }>(
     `INSERT INTO notifications (user_id, type, message, branch_id, details)
      SELECT users.id, $1, $2, $3, $4
      FROM users
-     WHERE users.role = 'COMPANY' AND users.company_id = $5 AND users.is_blocked = false`,
+     WHERE users.role = 'COMPANY' AND users.company_id = $5 AND users.is_blocked = false
+     RETURNING notifications.id`,
     [
       type,
       `Branch ${verbs[type]} by the platform administrator: ${branch.business_name ?? ""}`,
@@ -124,6 +120,7 @@ export const notifyCompanyHq = async (
       branch.company_id,
     ],
   );
+  await enqueueNotificationEmails(db, insertedIds(inserted));
 };
 
 // A credit request of a branch concerns its headquarters, which asks and pays for the branch's
@@ -139,25 +136,49 @@ export const notifyCompanyHqOfCredit = async (
     | "BRANCH_CREDIT_REQUEST_EXPIRED",
   message: string,
 ) => {
-  await db.query(
+  const inserted = await db.query<{ id: number }>(
     `INSERT INTO notifications (user_id, type, message, credit_request_id, branch_id)
      SELECT headquarters.id, $2, $3, credit_requests.id, branches.id
      FROM credit_requests
      JOIN users AS branches ON branches.id = credit_requests.user_id
      JOIN users AS headquarters ON headquarters.company_id = branches.company_id
      WHERE credit_requests.id = $1 AND branches.role = 'STORE'
-       AND headquarters.role = 'COMPANY' AND headquarters.is_blocked = false`,
+       AND headquarters.role = 'COMPANY' AND headquarters.is_blocked = false
+     RETURNING notifications.id`,
     [requestId, type, message],
   );
+  await enqueueNotificationEmails(db, insertedIds(inserted));
 };
 
 // A new pending credit request needs an admin's decision, so every active admin is told.
 export const notifyAdminsOfCreditRequest = async (db: Pool | PoolClient, requestId: number, message: string) => {
-  await db.query(
+  const inserted = await db.query<{ id: number }>(
     `INSERT INTO notifications (user_id, type, message, credit_request_id)
      SELECT users.id, 'CREDIT_REQUEST_CREATED', $2, $1
      FROM users
-     WHERE users.role = 'ADMIN' AND users.is_blocked = false`,
+     WHERE users.role = 'ADMIN' AND users.is_blocked = false
+     RETURNING notifications.id`,
     [requestId, message],
   );
+  await enqueueNotificationEmails(db, insertedIds(inserted));
+};
+
+// A platform announcement: one notification for every unblocked user of the given roles (stores,
+// restaurants, headquarters). Returns how many were sent.
+export const notifyAnnouncement = async (
+  db: Pool | PoolClient,
+  announcementId: number,
+  message: string,
+  roles: string[],
+) => {
+  const inserted = await db.query<{ id: number }>(
+    `INSERT INTO notifications (user_id, type, message, announcement_id)
+     SELECT users.id, 'PLATFORM_ANNOUNCEMENT', $1, $2
+     FROM users
+     WHERE ${notBlocked("users")} AND users.role::text = ANY($3)
+     RETURNING notifications.id`,
+    [message, announcementId, roles],
+  );
+  await enqueueNotificationEmails(db, insertedIds(inserted));
+  return inserted.rowCount ?? 0;
 };

@@ -1,19 +1,54 @@
 import { formatPickup, formatQuantity, unitLabel } from "../src/email/templates/format.js";
 import { emailTemplate, EMAIL_TEMPLATES } from "../src/email/templates/index.js";
 import { escapeHtml, renderLayout } from "../src/email/templates/layout.js";
-import { reservationCreated, type ReservationCreatedData } from "../src/email/templates/reservationCreated.js";
+import type { NotificationEmailData } from "../src/email/templates/notificationData.js";
+import { NOTIFICATION_TEMPLATES, notificationLink } from "../src/email/templates/notificationEmails.js";
 import { InvalidEmailDataError } from "../src/email/templates/types.js";
+import type { NotificationType } from "../src/utils/notifications.js";
 
 const APP_URL = "https://app.example.com";
 
-const DATA: ReservationCreatedData = {
+// Nothing linked; each case fills in what its notification links to.
+const EMPTY: NotificationEmailData = {
+  recipientRole: "STORE",
+  reservationId: null,
+  productId: null,
+  donationId: null,
+  creditRequestId: null,
+  branchId: null,
+  announcementId: null,
+  productName: null,
+  unit: null,
+  quantity: null,
+  pickupAt: null,
+  restaurantName: null,
+  storeName: null,
+  details: null,
+  announcementTitleBs: null,
+  announcementBodyBs: null,
+  announcementTitleEn: null,
+  announcementBodyEn: null,
+  creditRequestType: null,
+  credits: null,
+  creditRequester: null,
+  creditCompany: null,
+  branchName: null,
+};
+
+// A store's new reservation.
+const DATA: NotificationEmailData = {
+  ...EMPTY,
   reservationId: 42,
+  productId: 7,
   productName: "Piletina <svježa>",
   quantity: "2.50",
   unit: "kg",
   restaurantName: "Restoran Ćevap & Co",
+  storeName: "Market Centar",
   pickupAt: "2026-11-06T14:30",
 };
+
+const reservationCreated = NOTIFICATION_TEMPLATES.RESERVATION_CREATED;
 
 describe("RESERVATION_CREATED email", () => {
   it("is in Bosnian", () => {
@@ -67,22 +102,165 @@ describe("RESERVATION_CREATED email", () => {
     expect(reservationCreated.render(DATA, "bs", APP_URL).html).toContain("Restoran Ćevap &amp; Co");
   });
 
-  it("shows a dash for a restaurant without a business name", () => {
-    expect(reservationCreated.render({ ...DATA, restaurantName: null }, "bs", APP_URL).text).toContain("Restoran: –");
+  it("leaves out the restaurant row when it has no business name", () => {
+    expect(reservationCreated.render({ ...DATA, restaurantName: null }, "bs", APP_URL).text).not.toContain("Restoran:");
   });
 
   it("refuses stored data that does not fit", () => {
-    expect(() => reservationCreated.render({ reservationId: "42" }, "bs", APP_URL)).toThrow(InvalidEmailDataError);
+    expect(() => reservationCreated.render({ ...DATA, reservationId: "42" }, "bs", APP_URL)).toThrow(InvalidEmailDataError);
+    expect(() => reservationCreated.render({ ...DATA, recipientRole: undefined }, "bs", APP_URL)).toThrow(
+      InvalidEmailDataError,
+    );
     expect(() => reservationCreated.render(null, "bs", APP_URL)).toThrow(
       "The stored data does not match the RESERVATION_CREATED email template.",
     );
   });
 
-  it("is the only notification with an email so far", () => {
-    expect(Object.keys(EMAIL_TEMPLATES)).toEqual(["RESERVATION_CREATED"]);
+  it("is listed under its notification type", () => {
     expect(emailTemplate("RESERVATION_CREATED")).toBe(reservationCreated);
-    expect(emailTemplate("RESERVATION_ACCEPTED")).toBeUndefined();
+    expect(emailTemplate("NO_SUCH_TEMPLATE")).toBeUndefined();
     expect(emailTemplate("toString")).toBeUndefined();
+    expect(Object.keys(EMAIL_TEMPLATES)).toHaveLength(32);
+  });
+});
+
+
+// Data for every type, as the queue would store it: a store's reservation, a donation, credit
+// requests, a branch and an announcement.
+const FULL: Record<NotificationType, NotificationEmailData> = (() => {
+  const reservation = { ...DATA, recipientRole: "RESTAURANT" };
+  const product = { ...EMPTY, productId: 7, productName: "Jogurt", unit: "kom" };
+  const credit = {
+    ...EMPTY,
+    recipientRole: "RESTAURANT",
+    creditRequestId: 3,
+    creditRequestType: "TOPUP" as const,
+    credits: 20,
+    creditRequester: "Bistro",
+  };
+  const branchCredit = {
+    ...credit,
+    recipientRole: "COMPANY",
+    branchId: 9,
+    branchName: "Bingo Tuzla",
+    creditRequester: "Bingo Tuzla",
+    creditCompany: "Bingo d.o.o.",
+  };
+  const branch = { ...EMPTY, recipientRole: "COMPANY", branchId: 9, branchName: "Bingo Tuzla", details: "Kasni" };
+  return {
+    RESERVATION_CREATED: DATA,
+    RESERVATION_ACCEPTED: reservation,
+    RESERVATION_REJECTED: reservation,
+    RESERVATION_CANCELLED: DATA,
+    RESERVATION_EXPIRED: reservation,
+    PRODUCT_EXPIRED: product,
+    PRODUCT_SOLD_OUT: product,
+    PRODUCT_EXPIRING_SOON: product,
+    PICKUP_TODAY: reservation,
+    RESERVATION_COMPLETED: reservation,
+    PICKUP_MISSED: reservation,
+    PRODUCT_REMOVED_BY_ADMIN: { ...product, details: "Neispravan opis" },
+    DONATION_REMOVED_BY_ADMIN: { ...EMPTY, donationId: 5, productName: "Hljeb", unit: "kom", details: "Duplikat" },
+    RESERVATION_CANCELLED_BY_ADMIN: { ...reservation, details: "Spor" },
+    RESERVATION_CANCELLED_STORE_CLOSED: reservation,
+    BRANCH_BLOCKED: branch,
+    BRANCH_UNBLOCKED: branch,
+    BRANCH_DEACTIVATED: branch,
+    BRANCH_REACTIVATED: branch,
+    PLATFORM_ANNOUNCEMENT: {
+      ...EMPTY,
+      announcementId: 1,
+      announcementTitleBs: "Novi rok",
+      announcementBodyBs: "Preuzimanje do 20h.",
+      announcementTitleEn: "New deadline",
+      announcementBodyEn: "Pickups until 8pm.",
+    },
+    CREDIT_REQUEST_CREATED: { ...credit, recipientRole: "ADMIN" },
+    CREDIT_REQUEST_APPROVED: credit,
+    CREDIT_REQUEST_REJECTED: credit,
+    CREDIT_RENEWAL_CREATED: { ...credit, creditRequestType: "SUBSCRIPTION", credits: 50 },
+    CREDIT_REQUEST_EXPIRED: credit,
+    CREDIT_RENEWAL_SKIPPED: { ...EMPTY, recipientRole: "RESTAURANT" },
+    BRANCH_TOPUP_REQUESTED: branchCredit,
+    BRANCH_CREDIT_REQUEST_APPROVED: branchCredit,
+    BRANCH_CREDIT_REQUEST_REJECTED: branchCredit,
+    BRANCH_CREDIT_REQUEST_EXPIRED: branchCredit,
+    CREDIT_TOPUP_COMPANY_APPROVED: { ...credit, recipientRole: "STORE" },
+    CREDIT_TOPUP_COMPANY_REJECTED: { ...credit, recipientRole: "STORE", details: "Nema budžeta" },
+  };
+})();
+
+describe("every notification email", () => {
+  it.each(Object.keys(FULL) as NotificationType[])("%s renders in Bosnian and English", (type) => {
+    const template = NOTIFICATION_TEMPLATES[type];
+    const bs = template.render(FULL[type], "bs", APP_URL);
+    const en = template.render(FULL[type], "en", APP_URL);
+    for (const email of [bs, en]) {
+      expect(email.subject.length).toBeGreaterThan(0);
+      expect(email.html).toContain(`href="${APP_URL}/`);
+      expect(email.text).toContain(`${APP_URL}/`);
+      // No unfilled values.
+      expect(email.text).not.toMatch(/undefined|null|\{\{/);
+    }
+    expect(bs.subject).not.toBe(en.subject);
+    expect(bs.html).toContain('<html lang="bs">');
+    expect(en.html).toContain('<html lang="en">');
+  });
+
+  it("words subscriptions and top-ups differently", () => {
+    const approved = NOTIFICATION_TEMPLATES.CREDIT_REQUEST_APPROVED;
+    expect(approved.render(FULL.CREDIT_REQUEST_APPROVED, "bs", APP_URL).text).toContain(
+      "Dodatni krediti (20) su odobreni i dodani ovom mjesecu.",
+    );
+    const subscription = { ...FULL.CREDIT_REQUEST_APPROVED, creditRequestType: "SUBSCRIPTION" as const, credits: 50 };
+    expect(approved.render(subscription, "en", APP_URL).text).toContain("Your subscription (50 credits) was approved.");
+  });
+
+  it("shows the reason or note, the other party and the requester", () => {
+    const removed = NOTIFICATION_TEMPLATES.PRODUCT_REMOVED_BY_ADMIN.render(FULL.PRODUCT_REMOVED_BY_ADMIN, "bs", APP_URL);
+    expect(removed.text).toContain("Razlog: Neispravan opis");
+    const note = NOTIFICATION_TEMPLATES.CREDIT_TOPUP_COMPANY_REJECTED.render(
+      FULL.CREDIT_TOPUP_COMPANY_REJECTED,
+      "en",
+      APP_URL,
+    );
+    expect(note.text).toContain("Headquarters' note: Nema budžeta");
+    const accepted = NOTIFICATION_TEMPLATES.RESERVATION_ACCEPTED.render(FULL.RESERVATION_ACCEPTED, "bs", APP_URL);
+    expect(accepted.text).toContain("Prodavnica: Market Centar");
+    expect(accepted.text).not.toContain("Restoran: ");
+    const created = NOTIFICATION_TEMPLATES.CREDIT_REQUEST_CREATED.render(
+      { ...FULL.CREDIT_REQUEST_CREATED, creditCompany: "Bingo d.o.o." },
+      "bs",
+      APP_URL,
+    );
+    expect(created.text).toContain("Podnosilac: Bingo d.o.o. → Bistro");
+  });
+
+  it("uses the English announcement when there is one, else the Bosnian", () => {
+    const template = NOTIFICATION_TEMPLATES.PLATFORM_ANNOUNCEMENT;
+    expect(template.render(FULL.PLATFORM_ANNOUNCEMENT, "en", APP_URL).text).toContain("Pickups until 8pm.");
+    const bosnianOnly = { ...FULL.PLATFORM_ANNOUNCEMENT, announcementTitleEn: null, announcementBodyEn: null };
+    const email = template.render(bosnianOnly, "en", APP_URL);
+    expect(email.subject).toBe("Platform announcement: Novi rok");
+    expect(email.text).toContain("Preuzimanje do 20h.");
+  });
+
+  it("links like the notification does in the app", () => {
+    const link = (type: NotificationType, data: Partial<NotificationEmailData> = {}) =>
+      notificationLink(type, { ...FULL[type], ...data }).path;
+    expect(link("RESERVATION_CREATED")).toBe("/reservation/42");
+    expect(link("PRODUCT_EXPIRED")).toBe("/products/7");
+    expect(link("DONATION_REMOVED_BY_ADMIN")).toBe("/donate-food");
+    expect(link("PLATFORM_ANNOUNCEMENT")).toBe("/dashboard");
+    expect(link("CREDIT_REQUEST_CREATED")).toBe("/admin/credit-requests");
+    expect(link("CREDIT_REQUEST_APPROVED")).toBe("/credits");
+    expect(link("CREDIT_REQUEST_EXPIRED")).toBe("/my-profile#topup");
+    expect(link("CREDIT_REQUEST_EXPIRED", { creditRequestType: "SUBSCRIPTION" })).toBe("/my-profile#subscription");
+    expect(link("CREDIT_RENEWAL_SKIPPED")).toBe("/my-profile#subscription");
+    expect(link("CREDIT_TOPUP_COMPANY_REJECTED")).toBe("/my-profile#topup");
+    expect(link("BRANCH_TOPUP_REQUESTED")).toBe("/company/credits");
+    expect(link("BRANCH_BLOCKED")).toBe("/company/branches/9");
+    expect(link("BRANCH_CREDIT_REQUEST_APPROVED")).toBe("/company/branches/9");
   });
 });
 

@@ -2,9 +2,10 @@ import pool from "../config/db.js";
 import { notBlocked } from "../utils/visibility.js";
 import type { EmailConfig } from "./config.js";
 import { applyRedirect } from "./redirect.js";
-import { emailTemplate, EMAIL_TEMPLATES } from "./templates/index.js";
+import { emailTemplate } from "./templates/index.js";
 import type { EmailLanguage } from "./templates/layout.js";
-import { InvalidEmailDataError, type NotificationEvent, type Queryable } from "./templates/types.js";
+import { NOTIFICATION_EMAIL_DATA, NOTIFICATION_EMAIL_FROM } from "./templates/notificationData.js";
+import { InvalidEmailDataError, type Queryable } from "./templates/types.js";
 import { createEmailTransport, type EmailTransport } from "./transports.js";
 
 // The users' language is not stored yet (the switcher only changes the open page), so every
@@ -20,23 +21,28 @@ export const EMAIL_BATCH_SIZE = 50;
 export const EMAIL_POLL_INTERVAL_MS = 5_000;
 const MAX_ERROR_LENGTH = 1000;
 
-// Called by createNotification in the notification's own transaction, so the email is queued
-// exactly when the notification is stored. Returns whether an email was queued: only types with
-// a template, and never for a blocked user (also a blocked company or a deactivated branch).
-export const enqueueNotificationEmail = async (db: Queryable, event: NotificationEvent): Promise<boolean> => {
-  const template = EMAIL_TEMPLATES[event.type];
-  if (!template) return false;
-  const data = await template.load(db, event);
-  if (data === null) return false;
+// Queues one email per notification, called right after the notifications are inserted, with the
+// same db (the caller's transaction, when there is one), so the emails are stored exactly when the
+// notifications are. One INSERT ... SELECT for any number of notifications (an announcement reaches
+// every store and restaurant): the template is the notification's type and the data is the
+// snapshot of NOTIFICATION_EMAIL_DATA. Untyped notifications and blocked recipients (also a blocked
+// company or a deactivated branch) get no email. Returns the number of emails queued.
+export const enqueueNotificationEmails = async (db: Queryable, notificationIds: number[]): Promise<number> => {
+  if (notificationIds.length === 0) return 0;
   const result = await db.query(
     `INSERT INTO email_queue (user_id, recipient, template, data, language)
-     SELECT users.id, users.email, $2, $3, $4
-     FROM users
-     WHERE users.id = $1 AND ${notBlocked("users")}`,
-    [event.userId, event.type, JSON.stringify(data), DEFAULT_EMAIL_LANGUAGE],
+     SELECT recipients.id, recipients.email, notifications.type, ${NOTIFICATION_EMAIL_DATA}, $2
+     FROM ${NOTIFICATION_EMAIL_FROM}
+     WHERE notifications.id = ANY($1::int[]) AND notifications.type IS NOT NULL
+       AND ${notBlocked("recipients")}
+     ORDER BY notifications.id`,
+    [notificationIds, DEFAULT_EMAIL_LANGUAGE],
   );
-  return (result.rowCount ?? 0) > 0;
+  return result.rowCount ?? 0;
 };
+
+// The ids of an INSERT INTO notifications ... RETURNING notifications.id.
+export const insertedIds = (result: { rows: { id: number }[] }) => result.rows.map((row) => row.id);
 
 export const retryDelaySeconds = (attempts: number) =>
   RETRY_DELAYS_SECONDS[Math.min(attempts, RETRY_DELAYS_SECONDS.length) - 1] ?? RETRY_DELAYS_SECONDS[0];

@@ -1,6 +1,6 @@
 import pool from "../src/config/db.js";
 import {
-  enqueueNotificationEmail,
+  enqueueNotificationEmails,
   MAX_EMAIL_ATTEMPTS,
   processEmailQueue,
   RETRY_DELAYS_SECONDS,
@@ -8,6 +8,7 @@ import {
   startEmailWorker,
 } from "../src/email/queue.js";
 import { loadEmailConfig } from "../src/email/config.js";
+import { createNotification } from "../src/utils/notifications.js";
 import type { EmailMessage, EmailTransport } from "../src/email/transports.js";
 import {
   cleanupUsers,
@@ -85,7 +86,7 @@ const reserveChicken = async (quantity = 4) => {
 
 describe("queueing", () => {
   it("queues one email to the store with the reservation, in the same transaction as the notification", async () => {
-    const { reservationId } = await reserveChicken();
+    const { product, reservationId } = await reserveChicken();
     const rows = await queueRows();
     expect(rows).toHaveLength(1);
     const pickupDay = futurePickup().slice(0, 10);
@@ -99,12 +100,18 @@ describe("queueing", () => {
       last_error: null,
       sent_at: null,
       data: {
+        recipientRole: "STORE",
         reservationId,
+        productId: product.id,
+        donationId: null,
+        creditRequestId: null,
         productName: "Piletina",
         quantity: "4",
         unit: "kg",
         restaurantName: "Test Business",
+        storeName: "Test Business",
         pickupAt: `${pickupDay}T10:00`,
+        details: null,
       },
     });
     const notification = await pool.query(
@@ -125,34 +132,35 @@ describe("queueing", () => {
     expect(await queueRows()).toEqual([]);
   });
 
-  it("queues nothing for notifications without a template", async () => {
+  it("queues the email of every later notification too", async () => {
     const { reservationId } = await reserveChicken();
     expect((await store.patch(`/api/reservations/${reservationId}/accept`)).status).toBe(200);
     const rows = await queueRows();
-    expect(rows.map((row) => row.template)).toEqual(["RESERVATION_CREATED"]);
+    expect(rows.map((row) => [row.template, row.recipient])).toEqual([
+      ["RESERVATION_CREATED", STORE],
+      ["RESERVATION_ACCEPTED", RESTAURANT],
+    ]);
   });
 
-  it("queues nothing for a blocked user or a reservation that does not exist", async () => {
+  it("queues nothing for a blocked user, an untyped notification or no notifications", async () => {
     const { reservationId } = await reserveChicken();
     await pool.query("DELETE FROM email_queue");
     await insertUser(BLOCKED_STORE, "STORE", "Blocked Store");
     const blockedId = await userId(BLOCKED_STORE);
     await pool.query("UPDATE users SET is_blocked = true WHERE id = $1", [blockedId]);
-    const event = {
-      type: "RESERVATION_CREATED" as const,
-      productId: null,
-      donationId: null,
-      creditRequestId: null,
-      branchId: null,
-      details: null,
-    };
-    expect(await enqueueNotificationEmail(pool, { ...event, userId: blockedId, reservationId })).toBe(false);
-    expect(await enqueueNotificationEmail(pool, { ...event, userId: await userId(STORE), reservationId: 999999 })).toBe(
-      false,
+    await createNotification(pool, {
+      userId: blockedId,
+      type: "RESERVATION_CREATED",
+      message: "New reservation request",
+      reservationId,
+    });
+    // Rows from before notification types existed have no type.
+    const untyped = await pool.query<{ id: number }>(
+      "INSERT INTO notifications (user_id, message) VALUES ($1, 'Stara obavijest') RETURNING id",
+      [await userId(STORE)],
     );
-    expect(await enqueueNotificationEmail(pool, { ...event, userId: await userId(STORE), reservationId: null })).toBe(
-      false,
-    );
+    expect(await enqueueNotificationEmails(pool, [untyped.rows[0]!.id])).toBe(0);
+    expect(await enqueueNotificationEmails(pool, [])).toBe(0);
     expect(await queueRows()).toEqual([]);
   });
 });
