@@ -153,6 +153,38 @@ test.describe("store", () => {
     }
   });
 
+  test("Add product starts with the templates collapsed into one row and the form on the first screen", async ({ page }) => {
+    // Six templates, the number the review saw push the form to the third screen (saved by name,
+    // so a rerun updates them).
+    const storeApi = await apiAs("store");
+    for (let i = 1; i <= 6; i++) {
+      const saved = await storeApi.post("/api/product-templates", {
+        data: { name: `E2E Predložak ${i}`, category: "Dairy", unit: "kg", original_price: "2.00", discounted_price: "1.00", quantity: "10", shelf_life_days: 2 },
+      });
+      expect(saved.ok()).toBe(true);
+    }
+    await storeApi.dispose();
+
+    await page.goto("/add-product");
+    const toggle = page.getByRole("button", { name: /^Predlošci \(\d+\)/ });
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(page.getByRole("button", { name: /^E2E Predložak 1 / })).toBeHidden();
+    await expect(page.getByLabel("Naziv proizvoda")).toBeInViewport();
+    await expectTapTargets(toggle, "templates row");
+
+    await toggle.click();
+    const template = page.getByRole("button", { name: /^E2E Predložak 3 / });
+    await expect(template).toBeVisible();
+    await expectTapTargets(page.locator("section").filter({ has: toggle }), "templates list");
+
+    // Applying one fills the form, collapses the list and names the template in the row.
+    await template.click();
+    await expect(page.getByLabel("Naziv proizvoda")).toHaveValue("E2E Predložak 3");
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(template).toBeHidden();
+    await expect(toggle).toContainText("Primijenjen: E2E Predložak 3");
+  });
+
   test("form fields use at least 16 px text on My profile, Add product and New donation", async ({ page }) => {
     for (const path of ["/my-profile", "/add-product", "/donate-food/new"]) await expectNoSmallFieldText(page, path);
   });

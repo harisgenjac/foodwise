@@ -545,6 +545,8 @@
     "empty": "You have no templates yet. Turn on \"Save as template\" when adding a product and pick it with one click next time.",
     "search": "Search templates",
     "noResults": "No templates match this search.",
+    "toggle": "Templates ({{count}})",
+    "appliedShort": "Applied: {{name}}",
     "applied": "Template \"{{name}}\" applied.",
     "saveToggle": "Save as template",
     "updateToggle": "Update template",
