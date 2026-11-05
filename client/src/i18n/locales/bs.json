@@ -1695,6 +1695,7 @@
       "columnUsage": "Potrošeno / ukupno",
       "columnNextMonth": "Sljedeći mjesec",
       "columnAutoRenew": "Automatska obnova",
+      "columnRequests": "Zahtjevi",
       "autoRenewFor": "Automatska obnova: {{branch}}",
       "noPlan": "Bez paketa",
       "choosePlan": "Izaberi paket",

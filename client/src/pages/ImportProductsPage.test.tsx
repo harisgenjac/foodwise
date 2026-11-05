@@ -133,6 +133,10 @@ describe("ImportProductsPage", () => {
     expect(rows).toHaveLength(3);
     expect(rows[1]).toHaveTextContent("3Category is not valid.");
     expect(rows[2]).toHaveTextContent("5Expiry date is not valid.");
+    // On phones each row is a card: "Row 3" and the problem under it.
+    const [first] = screen.getAllByTestId("data-card");
+    expect(within(first!).getByText(`${t("importProducts.row")} 3`)).toBeInTheDocument();
+    expect(within(first!).getByText("Category is not valid.")).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(apiMock.post).toHaveBeenCalledTimes(1);
     expect(screen.queryByTestId("location")).not.toBeInTheDocument();

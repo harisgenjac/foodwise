@@ -15,7 +15,7 @@ import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
-import SortableHeader from "../../components/admin/SortableHeader.js";
+import DataTable, { type DataColumn } from "../../components/common/DataTable.js";
 import ConfirmModal from "../../components/common/ConfirmModal.js";
 import { DONATION_STATUS_STYLES, DONATION_TYPE_STYLES } from "../../utils/donations.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
@@ -35,7 +35,7 @@ function AdminDonationsPage() {
   const [status, setStatus] = useState("");
   const [type, setType] = useState("");
   const { page, offset, setPage } = useAdminPage();
-  const { sort, dir, toggleSort } = useAdminSort(SORT_KEYS);
+  const { sort, dir, toggleSort, setSort } = useAdminSort(SORT_KEYS);
   const [selected, setSelected] = useState<AdminDonation | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -72,6 +72,86 @@ function AdminDonationsPage() {
       setBusy(false);
     }
   };
+
+  const removeButton = (donation: AdminDonation, card: boolean) =>
+    donation.status !== "Removed" && (
+      <button
+        type="button"
+        onClick={() => setSelected(donation)}
+        className={
+          card
+            ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+            : "inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+        }
+      >
+        <Trash2 className="h-4 w-4" />
+        {t("admin.common.remove")}
+      </button>
+    );
+  // Phone cards: the donation (quantity, category) and its status, the donor, the type and the last
+  // day, and Remove as a full-width button.
+  const columns: DataColumn<AdminDonation>[] = [
+    {
+      id: "donation",
+      header: t("admin.donations.columnDonation"),
+      card: "title",
+      cell: (donation) => (
+        <>
+          <p className="font-medium text-gray-900">{donation.name}</p>
+          <p className="text-xs text-gray-500">
+            {parseFloat(donation.quantity)} {labels.units[donation.unit] || donation.unit}
+            {" · "}
+            {labels.categories[donation.category] || donation.category}
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "donor",
+      header: t("admin.donations.columnDonor"),
+      cell: (donation) => (
+        <Link to={`/admin/users/${donation.donor_id}`} className="font-medium text-gray-900 hover:text-orange-600">
+          {donation.business_name || donation.donor_email}
+        </Link>
+      ),
+    },
+    {
+      id: "type",
+      header: t("admin.donations.columnType"),
+      className: "hidden md:table-cell",
+      cell: (donation) => (
+        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${DONATION_TYPE_STYLES[donation.donation_type]}`}>
+          {labels.typeBadges[donation.donation_type]}
+        </span>
+      ),
+    },
+    {
+      id: "expiry",
+      header: t("admin.donations.columnExpiry"),
+      sortKey: "expiry_date",
+      className: "hidden md:table-cell",
+      cellClassName: "text-gray-600",
+      cell: (donation) => formatDisplayDate(donation.expiry_date),
+    },
+    {
+      id: "status",
+      header: t("admin.donations.columnStatus"),
+      card: "status",
+      cell: (donation) => (
+        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${DONATION_STATUS_STYLES[donation.status]}`}>
+          {labels.statuses[donation.status] || donation.status}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      card: "actions",
+      cellClassName: "text-right",
+      cell: (donation) => removeButton(donation, false),
+      cardCell: (donation) => removeButton(donation, true),
+    },
+  ];
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
@@ -162,69 +242,13 @@ function AdminDonationsPage() {
         )
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                <tr>
-                  <th className="px-4 py-3">{t("admin.donations.columnDonation")}</th>
-                  <th className="px-4 py-3">{t("admin.donations.columnDonor")}</th>
-                  <th className="hidden px-4 py-3 md:table-cell">{t("admin.donations.columnType")}</th>
-                  <SortableHeader
-                    label={t("admin.donations.columnExpiry")}
-                    sortKey="expiry_date"
-                    sort={sort}
-                    dir={dir}
-                    onSort={toggleSort}
-                    className="hidden px-4 py-3 md:table-cell"
-                  />
-                  <th className="px-4 py-3">{t("admin.donations.columnStatus")}</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {donations.map((donation) => (
-                  <tr key={donation.id}>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{donation.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {parseFloat(donation.quantity)} {labels.units[donation.unit] || donation.unit}
-                        {" · "}
-                        {labels.categories[donation.category] || donation.category}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link to={`/admin/users/${donation.donor_id}`} className="font-medium text-gray-900 hover:text-orange-600">
-                        {donation.business_name || donation.donor_email}
-                      </Link>
-                    </td>
-                    <td className="hidden px-4 py-3 md:table-cell">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${DONATION_TYPE_STYLES[donation.donation_type]}`}>
-                        {labels.typeBadges[donation.donation_type]}
-                      </span>
-                    </td>
-                    <td className="hidden px-4 py-3 text-gray-600 md:table-cell">{formatDisplayDate(donation.expiry_date)}</td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${DONATION_STATUS_STYLES[donation.status]}`}>
-                        {labels.statuses[donation.status] || donation.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {donation.status !== "Removed" && (
-                        <button
-                          type="button"
-                          onClick={() => setSelected(donation)}
-                          className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          {t("admin.common.remove")}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            label={t("admin.donations.title")}
+            rows={donations}
+            rowKey={(donation) => donation.id}
+            sort={{ sort, dir, onSort: toggleSort, setSort }}
+            columns={columns}
+          />
           <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={(next) => setPage(next / ADMIN_PAGE_SIZE + 1)} />
         </>
       )}

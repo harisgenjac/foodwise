@@ -11,7 +11,7 @@ import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
-import DataTable, { type DataColumn } from "../../components/admin/DataTable.js";
+import DataTable, { type DataColumn } from "../../components/common/DataTable.js";
 import { ADMIN_PAGE_SIZE, ROLE_STYLES } from "../../utils/admin.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
 import { creditMonthEnd, currentCreditMonth, usageBarColor, usagePercent } from "../../utils/credits.js";
@@ -244,6 +244,7 @@ function AdminCreditsPage() {
             rows={users}
             rowKey={(row) => row.id}
             rowHref={(row) => `/admin/users/${row.id}`}
+            rowClassName="hover:bg-gray-50"
             sort={{ sort, dir, onSort: toggleSort, setSort }}
             columns={columns}
           />

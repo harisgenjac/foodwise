@@ -11,7 +11,7 @@ import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
-import DataTable, { type DataColumn } from "../../components/admin/DataTable.js";
+import DataTable, { type DataColumn } from "../../components/common/DataTable.js";
 import CreditRequestDecisionModal, {
   CreditRequestDecisionButtons,
   type CreditRequestAction,

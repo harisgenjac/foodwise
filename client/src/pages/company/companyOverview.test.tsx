@@ -206,6 +206,22 @@ describe("CompanyOverviewPage", () => {
     expect(within(screen.getByTestId("dashboard-branch-23")).getByText(t("company.credits.noPlan"))).toBeInTheDocument();
   });
 
+  it("shows each branch as a card on phones: city, status, plan, usage, offers and pending reservations", async () => {
+    renderPage();
+    const cards = await screen.findAllByTestId("data-card");
+    const visoko = within(cards[0]!);
+    expect(visoko.getByRole("link", { name: "Bingo Visoko" })).toHaveAttribute("href", "/company/branches/21");
+    expect(visoko.getByText("Visoko")).toBeInTheDocument();
+    expect(visoko.getByText(t("company.branchStatus.active"))).toBeInTheDocument();
+    expect(visoko.getAllByRole("term").map((term) => term.textContent)).toEqual([
+      t("company.overview.columnPlan"),
+      t("company.overview.columnCredits"),
+      t("company.overview.columnOffers"),
+      t("company.overview.columnPending"),
+    ]);
+    expect(visoko.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "20");
+  });
+
   it("shows an empty state without branches", async () => {
     renderPage({ ...DASHBOARD, decisions: [], branches: [] });
     expect(await screen.findByText(t("company.overview.noBranchesTitle"))).toBeInTheDocument();

@@ -13,6 +13,7 @@ import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
 import { ADMIN_PAGE_SIZE, formatDateTime } from "../../utils/admin.js";
 import type { AdminAction } from "../../types/index.js";
+import DataTable, { type DataColumn } from "../../components/common/DataTable.js";
 
 const ACTION_STYLES: Record<AdminAction["action"], string> = {
   CREATE_USER: "bg-green-50 text-green-700",
@@ -50,6 +51,70 @@ function AdminActionsPage() {
   useKeepPageInRange(page, total, setPage);
 
   const actionTypes = t("admin.actionTypes", { returnObjects: true }) as Record<string, string>;
+
+  // Phone cards: what was affected and the action as the pill, the reason, the admin and the time.
+  const columns: DataColumn<AdminAction>[] = [
+    {
+      id: "action",
+      header: t("admin.actions.columnAction"),
+      card: "status",
+      cell: (row) => (
+        <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${ACTION_STYLES[row.action]}`}>
+          {actionTypes[row.action] ?? row.action}
+        </span>
+      ),
+    },
+    {
+      id: "target",
+      header: t("admin.actions.columnTarget"),
+      card: "title",
+      cell: (row) => (
+        <>
+          {row.announcement_title && <p className="font-medium text-gray-900">{row.announcement_title}</p>}
+          {(row.product_name || row.donation_name) && (
+            <p className="font-medium text-gray-900">
+              {row.product_name || row.donation_name}
+              {row.target_reservation_id && <span className="font-normal text-gray-500"> · #{row.target_reservation_id}</span>}
+            </p>
+          )}
+          {row.target_company_id && (
+            <Link to={`/admin/companies/${row.target_company_id}`} className="font-medium text-gray-900 hover:text-orange-600">
+              {row.company_name}
+            </Link>
+          )}
+          {row.target_user_id ? (
+            <Link to={`/admin/users/${row.target_user_id}`} className="text-gray-600 hover:text-orange-600">
+              {row.target_business_name || row.target_email}
+            </Link>
+          ) : (
+            !row.announcement_title && !row.target_company_id && <span className="text-gray-400">—</span>
+          )}
+        </>
+      ),
+    },
+    {
+      id: "reason",
+      header: t("admin.actions.columnReason"),
+      className: "hidden lg:table-cell",
+      cellClassName: "max-w-xs text-gray-600",
+      cardStacked: true,
+      cell: (row) => row.reason || "—",
+      cardCell: (row) => row.reason,
+    },
+    {
+      id: "admin",
+      header: t("admin.actions.columnAdmin"),
+      className: "hidden md:table-cell",
+      cellClassName: "text-gray-600",
+      cell: (row) => row.admin_email,
+    },
+    {
+      id: "time",
+      header: t("admin.actions.columnTime"),
+      cellClassName: "whitespace-nowrap text-gray-500",
+      cell: (row) => formatDateTime(row.created_at),
+    },
+  ];
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
@@ -100,59 +165,13 @@ function AdminActionsPage() {
         )
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                <tr>
-                  <th className="px-4 py-3">{t("admin.actions.columnAction")}</th>
-                  <th className="px-4 py-3">{t("admin.actions.columnTarget")}</th>
-                  <th className="hidden px-4 py-3 lg:table-cell">{t("admin.actions.columnReason")}</th>
-                  <th className="hidden px-4 py-3 md:table-cell">{t("admin.actions.columnAdmin")}</th>
-                  <th className="px-4 py-3">{t("admin.actions.columnTime")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {actions.map((row) => (
-                  <tr key={row.id} className="align-top">
-                    <td className="px-4 py-3">
-                      <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${ACTION_STYLES[row.action]}`}>
-                        {actionTypes[row.action] ?? row.action}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {row.announcement_title && <p className="font-medium text-gray-900">{row.announcement_title}</p>}
-                      {(row.product_name || row.donation_name) && (
-                        <p className="font-medium text-gray-900">
-                          {row.product_name || row.donation_name}
-                          {row.target_reservation_id && (
-                            <span className="font-normal text-gray-500"> · #{row.target_reservation_id}</span>
-                          )}
-                        </p>
-                      )}
-                      {row.target_company_id && (
-                        <Link
-                          to={`/admin/companies/${row.target_company_id}`}
-                          className="font-medium text-gray-900 hover:text-orange-600"
-                        >
-                          {row.company_name}
-                        </Link>
-                      )}
-                      {row.target_user_id ? (
-                        <Link to={`/admin/users/${row.target_user_id}`} className="text-gray-600 hover:text-orange-600">
-                          {row.target_business_name || row.target_email}
-                        </Link>
-                      ) : (
-                        !row.announcement_title && !row.target_company_id && <span className="text-gray-400">—</span>
-                      )}
-                    </td>
-                    <td className="hidden max-w-xs px-4 py-3 text-gray-600 lg:table-cell">{row.reason || "—"}</td>
-                    <td className="hidden px-4 py-3 text-gray-600 md:table-cell">{row.admin_email}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-gray-500">{formatDateTime(row.created_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            label={t("admin.actions.title")}
+            rows={actions}
+            rowKey={(row) => row.id}
+            rowClassName="align-top"
+            columns={columns}
+          />
           <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={(next) => setPage(next / ADMIN_PAGE_SIZE + 1)} />
         </>
       )}

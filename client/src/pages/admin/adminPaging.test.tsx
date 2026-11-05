@@ -6,6 +6,9 @@ import AdminProductsPage from "./AdminProductsPage.js";
 import { apiMock, makeUser, renderWithProviders, t } from "../../test/utils.js";
 import type { AdminProduct } from "../../types/index.js";
 
+// jsdom renders both the table (md up) and the phone cards (DataTable); list checks use the table.
+const findInTable = async (text: string) => within(await screen.findByRole("table")).getByText(text);
+
 const admin = makeUser({ id: 1, role: "ADMIN", email: "admin@test.com" });
 
 // The query string of the current URL, where the admin page keeps ?page=.
@@ -35,7 +38,7 @@ describe("Admin paging", () => {
       },
     );
 
-    await screen.findByText("Market 0");
+    await findInTable("Market 0");
     expect(lastParams("/admin/users")).toMatchObject({ limit: 20, offset: 20 });
     expect(screen.getByRole("button", { name: t("admin.common.page", { page: 2 }) })).toHaveAttribute("aria-current", "page");
 
@@ -57,7 +60,7 @@ describe("Admin paging", () => {
         get: { "/admin/users": () => ({ users: users(10), total: 45 }) },
       },
     );
-    await screen.findByText("Market 0");
+    await findInTable("Market 0");
 
     await userEvent.selectOptions(screen.getByLabelText(t("admin.users.columnRole")), "STORE");
     expect(screen.getByTestId("search")).toBeEmptyDOMElement();
@@ -106,13 +109,13 @@ describe("Admin paging", () => {
       },
     );
 
-    await screen.findByText("Piletina");
-    await userEvent.click(screen.getByRole("button", { name: t("admin.common.remove") }));
+    await findInTable("Piletina");
+    await userEvent.click(within(screen.getByRole("table")).getByRole("button", { name: t("admin.common.remove") }));
     const dialog = screen.getByRole("dialog");
     await userEvent.type(within(dialog).getByLabelText(t("admin.common.reasonLabel")), "Neispravan opis");
     await userEvent.click(within(dialog).getByRole("button", { name: t("admin.common.remove") }));
 
-    expect(await screen.findByText("Mlijeko")).toBeInTheDocument();
+    expect(await findInTable("Mlijeko")).toBeInTheDocument();
     expect(screen.getByTestId("search")).toBeEmptyDOMElement();
     expect(lastParams("/admin/products")).toMatchObject({ offset: 0 });
   });

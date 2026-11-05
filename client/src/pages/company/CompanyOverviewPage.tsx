@@ -10,11 +10,12 @@ import EmptyState from "../../components/product/EmptyState.js";
 import DashboardHero from "../../components/dashboard/DashboardHero.js";
 import StatCard from "../../components/dashboard/StatCard.js";
 import UsageBar from "../../components/credits/UsageBar.js";
+import DataTable, { type DataColumn } from "../../components/common/DataTable.js";
 import CompanyDecisions from "../../components/company/CompanyDecisions.js";
 import { BRANCH_STATUS_STYLES } from "../../utils/branches.js";
 import { usagePercent, usageTone } from "../../utils/credits.js";
 import { formatSavedFood } from "../../utils/savedFood.js";
-import type { CompanyDashboard } from "../../types/index.js";
+import type { CompanyDashboard, CompanyDashboardBranch } from "../../types/index.js";
 
 // The headquarters' start page ("Pregled"): what waits for its decision, this month's totals of
 // the company and a row per branch. Credits follow the credit month, reservations and food saved
@@ -45,8 +46,84 @@ function CompanyOverviewPage() {
   const { totals, branches } = dashboard;
   const newBranch = { to: "/company/branches/new", label: t("company.branches.newBranch"), icon: Store };
   const savedUnits = formatSavedFood(totals.saved, t("dashboard.piecesShort"));
-  const cell = "px-3 py-3";
-  const head = "px-3 py-2";
+  // Phone cards: the branch and its city, the status pill, the plan, the credit usage, the active
+  // offers and the pending reservations.
+  const columns: DataColumn<CompanyDashboardBranch>[] = [
+    {
+      id: "branch",
+      header: t("company.overview.columnBranch"),
+      card: "title",
+      cell: (branch) => (
+        <Link to={`/company/branches/${branch.id}`} className="font-medium text-gray-900 hover:text-orange-600">
+          {branch.name}
+        </Link>
+      ),
+      cardCell: (branch) => (
+        <>
+          <Link to={`/company/branches/${branch.id}`} className="font-medium text-gray-900 hover:text-orange-600">
+            {branch.name}
+          </Link>
+          {branch.city && <p className="text-xs text-gray-500">{branch.city}</p>}
+        </>
+      ),
+    },
+    {
+      id: "city",
+      header: t("company.overview.columnCity"),
+      className: "hidden md:table-cell",
+      cellClassName: "text-gray-600",
+      card: "none",
+      cell: (branch) => branch.city ?? "—",
+    },
+    {
+      id: "status",
+      header: t("company.overview.columnStatus"),
+      card: "status",
+      cell: (branch) => (
+        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${BRANCH_STATUS_STYLES[branch.status]}`}>
+          {t(`company.branchStatus.${branch.status}`)}
+        </span>
+      ),
+    },
+    {
+      id: "plan",
+      header: t("company.overview.columnPlan"),
+      className: "hidden md:table-cell",
+      cellClassName: "text-gray-700",
+      cell: (branch) => branch.plan_name ?? t("company.credits.noPlan"),
+    },
+    {
+      id: "credits",
+      header: t("company.overview.columnCredits"),
+      cellClassName: "min-w-40",
+      cardStacked: true,
+      cell: (branch) => (
+        <UsageBar used={branch.used} total={branch.total} label={t("company.credits.branchUsage", { branch: branch.name })} />
+      ),
+    },
+    {
+      id: "offers",
+      header: t("company.overview.columnOffers"),
+      className: "hidden lg:table-cell",
+      cellClassName: "tabular-nums",
+      cell: (branch) => branch.active_products,
+    },
+    {
+      id: "pending",
+      header: t("company.overview.columnPending"),
+      className: "hidden lg:table-cell",
+      cellClassName: "tabular-nums",
+      cell: (branch) => branch.pending_reservations,
+    },
+    {
+      id: "pickedUp",
+      header: t("company.overview.columnPickedUp"),
+      className: "hidden lg:table-cell",
+      cellClassName: "tabular-nums",
+      card: "none",
+      cell: (branch) => branch.completed_this_month,
+    },
+  ];
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 pb-16">
@@ -136,57 +213,15 @@ function CompanyOverviewPage() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-gray-100 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  <tr>
-                    <th className={head}>{t("company.overview.columnBranch")}</th>
-                    <th className={`hidden md:table-cell ${head}`}>{t("company.overview.columnCity")}</th>
-                    <th className={head}>{t("company.overview.columnStatus")}</th>
-                    <th className={`hidden md:table-cell ${head}`}>{t("company.overview.columnPlan")}</th>
-                    <th className={head}>{t("company.overview.columnCredits")}</th>
-                    <th className={`hidden lg:table-cell ${head}`}>{t("company.overview.columnOffers")}</th>
-                    <th className={`hidden lg:table-cell ${head}`}>{t("company.overview.columnPending")}</th>
-                    <th className={`hidden lg:table-cell ${head}`}>{t("company.overview.columnPickedUp")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {branches.map((branch) => (
-                    <tr key={branch.id} data-testid={`dashboard-branch-${branch.id}`}>
-                      <td className={cell}>
-                        <Link
-                          to={`/company/branches/${branch.id}`}
-                          className="font-medium text-gray-900 hover:text-orange-600"
-                        >
-                          {branch.name}
-                        </Link>
-                      </td>
-                      <td className={`hidden md:table-cell ${cell} text-gray-600`}>{branch.city ?? "—"}</td>
-                      <td className={cell}>
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${BRANCH_STATUS_STYLES[branch.status]}`}
-                        >
-                          {t(`company.branchStatus.${branch.status}`)}
-                        </span>
-                      </td>
-                      <td className={`hidden md:table-cell ${cell} text-gray-700`}>
-                        {branch.plan_name ?? t("company.credits.noPlan")}
-                      </td>
-                      <td className={`${cell} min-w-40`}>
-                        <UsageBar
-                          used={branch.used}
-                          total={branch.total}
-                          label={t("company.credits.branchUsage", { branch: branch.name })}
-                        />
-                      </td>
-                      <td className={`hidden lg:table-cell ${cell} tabular-nums`}>{branch.active_products}</td>
-                      <td className={`hidden lg:table-cell ${cell} tabular-nums`}>{branch.pending_reservations}</td>
-                      <td className={`hidden lg:table-cell ${cell} tabular-nums`}>{branch.completed_this_month}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              embedded
+              className="mt-4"
+              label={t("company.overview.branchesTitle")}
+              rows={branches}
+              rowKey={(branch) => branch.id}
+              rowTestId={(branch) => `dashboard-branch-${branch.id}`}
+              columns={columns}
+            />
           </section>
         </>
       )}

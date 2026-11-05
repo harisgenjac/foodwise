@@ -119,15 +119,25 @@ describe("MyReservationsPage", () => {
   });
 
   describe("History", () => {
+    // A fixed midday clock, so "today" and "yesterday" never cross midnight while the suite runs.
+    const NOW = new Date(2026, 9, 20, 12, 0);
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(NOW);
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
     const history = [
-      makeReservation({ id: 31, product_name: "Jogurt", status: "Rejected", created_at: new Date().toISOString() }),
+      makeReservation({ id: 31, product_name: "Jogurt", status: "Rejected", created_at: NOW.toISOString() }),
       makeReservation({
         id: 30,
         product_name: "Hljeb",
         status: "Completed",
         quantity: "3",
         discounted_price: "1.50",
-        created_at: new Date(Date.now() - 86400 * 1000).toISOString(),
+        created_at: new Date(NOW.getTime() - 86400 * 1000).toISOString(),
       }),
     ];
     const renderHistory = () =>

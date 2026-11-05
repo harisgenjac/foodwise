@@ -1655,6 +1655,7 @@
       "columnUsage": "Used / total",
       "columnNextMonth": "Next month",
       "columnAutoRenew": "Auto-renew",
+      "columnRequests": "Requests",
       "autoRenewFor": "Auto-renew: {{branch}}",
       "noPlan": "No plan",
       "choosePlan": "Choose plan",

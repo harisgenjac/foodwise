@@ -14,7 +14,7 @@ import EmptyState from "../../components/product/EmptyState.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Pagination from "../../components/admin/Pagination.js";
-import SortableHeader from "../../components/admin/SortableHeader.js";
+import DataTable, { type DataColumn } from "../../components/common/DataTable.js";
 import ConfirmModal from "../../components/common/ConfirmModal.js";
 import { PRODUCT_STATUS_STYLES } from "../../utils/productStatus.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
@@ -32,7 +32,7 @@ function AdminProductsPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const { page, offset, setPage } = useAdminPage();
-  const { sort, dir, toggleSort } = useAdminSort(SORT_KEYS);
+  const { sort, dir, toggleSort, setSort } = useAdminSort(SORT_KEYS);
   const [selected, setSelected] = useState<AdminProduct | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -66,6 +66,89 @@ function AdminProductsPage() {
       setBusy(false);
     }
   };
+
+  const removeButton = (product: AdminProduct, card: boolean) =>
+    product.status !== "Removed" && (
+      <button
+        type="button"
+        onClick={() => setSelected(product)}
+        className={
+          card
+            ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+            : "inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+        }
+      >
+        <Trash2 className="h-4 w-4" />
+        {t("admin.common.remove")}
+      </button>
+    );
+  // Phone cards: the product and quantity, its status, the store, the price and the expiry date, and
+  // Remove as a full-width button.
+  const columns: DataColumn<AdminProduct>[] = [
+    {
+      id: "product",
+      header: t("admin.products.columnProduct"),
+      card: "title",
+      cell: (product) => (
+        <>
+          <p className="font-medium text-gray-900">{product.name}</p>
+          <p className="text-xs text-gray-500">
+            {parseFloat(product.quantity)} {units[product.unit] || product.unit}
+          </p>
+        </>
+      ),
+    },
+    {
+      id: "store",
+      header: t("admin.products.columnStore"),
+      cell: (product) => (
+        <>
+          <Link to={`/admin/users/${product.store_id}`} className="font-medium text-gray-900 hover:text-orange-600">
+            {product.business_name || product.store_email}
+          </Link>
+          {product.store_is_blocked && <p className="text-xs font-semibold text-red-600">{t("admin.products.storeBlocked")}</p>}
+        </>
+      ),
+    },
+    {
+      id: "price",
+      header: t("admin.products.columnPrice"),
+      sortKey: "discounted_price",
+      className: "hidden md:table-cell",
+      cell: (product) => (
+        <>
+          <span className="font-semibold text-green-700">{parseFloat(product.discounted_price).toFixed(2)} KM</span>
+          <span className="ml-1 text-xs text-gray-400 line-through">{parseFloat(product.original_price).toFixed(2)}</span>
+        </>
+      ),
+    },
+    {
+      id: "expiry",
+      header: t("admin.products.columnExpiry"),
+      sortKey: "expiry_date",
+      className: "hidden md:table-cell",
+      cellClassName: "text-gray-600",
+      cell: (product) => formatDisplayDate(product.expiry_date),
+    },
+    {
+      id: "status",
+      header: t("admin.products.columnStatus"),
+      card: "status",
+      cell: (product) => (
+        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${PRODUCT_STATUS_STYLES[product.status]}`}>
+          {statuses[product.status] || product.status}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      card: "actions",
+      cellClassName: "text-right",
+      cell: (product) => removeButton(product, false),
+      cardCell: (product) => removeButton(product, true),
+    },
+  ];
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
@@ -146,78 +229,13 @@ function AdminProductsPage() {
         )
       ) : (
         <>
-          <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                <tr>
-                  <th className="px-4 py-3">{t("admin.products.columnProduct")}</th>
-                  <th className="px-4 py-3">{t("admin.products.columnStore")}</th>
-                  <SortableHeader
-                    label={t("admin.products.columnPrice")}
-                    sortKey="discounted_price"
-                    sort={sort}
-                    dir={dir}
-                    onSort={toggleSort}
-                    className="hidden px-4 py-3 md:table-cell"
-                  />
-                  <SortableHeader
-                    label={t("admin.products.columnExpiry")}
-                    sortKey="expiry_date"
-                    sort={sort}
-                    dir={dir}
-                    onSort={toggleSort}
-                    className="hidden px-4 py-3 md:table-cell"
-                  />
-                  <th className="px-4 py-3">{t("admin.products.columnStatus")}</th>
-                  <th className="px-4 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {products.map((product) => (
-                  <tr key={product.id}>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{product.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {parseFloat(product.quantity)} {units[product.unit] || product.unit}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link to={`/admin/users/${product.store_id}`} className="font-medium text-gray-900 hover:text-orange-600">
-                        {product.business_name || product.store_email}
-                      </Link>
-                      {product.store_is_blocked && (
-                        <p className="text-xs font-semibold text-red-600">{t("admin.products.storeBlocked")}</p>
-                      )}
-                    </td>
-                    <td className="hidden px-4 py-3 md:table-cell">
-                      <span className="font-semibold text-green-700">{parseFloat(product.discounted_price).toFixed(2)} KM</span>
-                      <span className="ml-1 text-xs text-gray-400 line-through">
-                        {parseFloat(product.original_price).toFixed(2)}
-                      </span>
-                    </td>
-                    <td className="hidden px-4 py-3 text-gray-600 md:table-cell">{formatDisplayDate(product.expiry_date)}</td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${PRODUCT_STATUS_STYLES[product.status]}`}>
-                        {statuses[product.status] || product.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {product.status !== "Removed" && (
-                        <button
-                          type="button"
-                          onClick={() => setSelected(product)}
-                          className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          {t("admin.common.remove")}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            label={t("admin.products.title")}
+            rows={products}
+            rowKey={(product) => product.id}
+            sort={{ sort, dir, onSort: toggleSort, setSort }}
+            columns={columns}
+          />
           <Pagination total={total ?? 0} limit={ADMIN_PAGE_SIZE} offset={offset} onChange={(next) => setPage(next / ADMIN_PAGE_SIZE + 1)} />
         </>
       )}
