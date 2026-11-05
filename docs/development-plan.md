@@ -172,7 +172,7 @@ The review and its findings per page are in `docs/mobile-review.md`, the referen
 - [x] Modal: a maximum height with a scrolling body and buttons that stay visible.
 - [x] Banners: compact announcement and credit banners on phones, a 44 px close button.
 - [x] Tables become cards below md (orders, products, admin lists): one shared pattern, admin credit requests and credits first.
-- [ ] Filters on phones: the search stays, the other filters go behind a "Filters" button.
+- [x] Filters on phones: the search stays, the other filters go behind a "Filters" button.
 - [ ] Small parts: dashboard stat labels, pagination and chip sizes, footer links (44 px targets).
 - [ ] Pages: collapsible templates on Add product, and what is left outside Orders phase 1.
 - [ ] Cart as a bottom sheet on phones.

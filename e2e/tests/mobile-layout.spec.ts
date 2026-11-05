@@ -39,6 +39,51 @@ const expectNoSmallFieldText = async (page: Page, path: string) => {
   expect(small, `${path}: fields under 16 px`).toEqual([]);
 };
 
+// Every visible button, link, tab and form field inside `scope` is at least 44 px high (a finger's
+// tap target).
+const expectTapTargets = async (scope: Locator, label: string) => {
+  const small = await scope.evaluateAll((roots) =>
+    roots
+      .flatMap((root) => [...root.querySelectorAll<HTMLElement>("button, a, [role=tab], select, input:not([type=checkbox]):not([type=radio])")])
+      .filter((element) => element.getClientRects().length > 0)
+      .filter((element) => element.getBoundingClientRect().height < 44)
+      .map((element) => `${element.tagName.toLowerCase()} "${(element.textContent?.trim() || element.getAttribute("aria-label") || "").slice(0, 30)}" ${Math.round(element.getBoundingClientRect().height)} px`),
+  );
+  expect(small, `${label}: tap targets under 44 px`).toEqual([]);
+};
+
+// Below sm the search stays on screen and the other filters wait behind the Filters button; the
+// panel opens under the bar, counts what is set and closes with the results button.
+const expectFilterPanel = async (page: Page, path: string, search: string) => {
+  await page.goto(path);
+  await page.waitForLoadState("networkidle");
+  const bar = page.getByTestId("filter-bar");
+  const category = bar.getByRole("combobox").filter({ has: page.locator('option[value="Dairy"]') });
+  await expect(bar.getByPlaceholder(search), path).toBeVisible();
+  await expect(category, path).toBeHidden();
+  const button = bar.getByRole("button", { name: /^Filteri/ });
+  await expect(button, path).toHaveAttribute("aria-expanded", "false");
+  // The closed bar is one row: the search and the button side by side.
+  expect((await bar.boundingBox())!.height, path).toBeLessThan(90);
+
+  await button.click();
+  await expect(category, path).toBeVisible();
+  await category.selectOption("Dairy");
+  await expect(button, path).toHaveAccessibleName(/^Filteri\s*1$/);
+  await expectTapTargets(bar, path);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth), path).toBeLessThanOrEqual(375);
+
+  await bar.getByRole("button", { name: /^Prikaži \d+ rezultat/ }).click();
+  await expect(category, path).toBeHidden();
+  await expect(button, path).toHaveAttribute("aria-expanded", "false");
+
+  // Clear filters in the panel resets the category and the count.
+  await button.click();
+  await bar.getByRole("button", { name: "Očisti filtere" }).click();
+  await expect(category, path).toHaveValue("");
+  await expect(button, path).toHaveAccessibleName(/^Filteri$/);
+};
+
 let productId: number;
 let reservationId: number;
 let storeId: number;
@@ -64,6 +109,10 @@ test.describe("store", () => {
   test("every page fits a 375 px screen", async ({ page }) => {
     const details = [`/products/${productId}`, `/edit-product/${productId}`, `/reservation/${reservationId}`, `/donate-food/${donationIds.store}/edit`];
     for (const path of [...STORE_PAGES, ...SHARED_PAGES, ...details]) await expectPhoneLayout(page, path);
+  });
+
+  test("My products keeps the search and puts the other filters behind the Filters button", async ({ page }) => {
+    await expectFilterPanel(page, "/my-products", "Pretraga po imenu");
   });
 
   test("form fields use at least 16 px text on My profile, Add product and New donation", async ({ page }) => {
@@ -324,6 +373,10 @@ test.describe("restaurant", () => {
   test("every page fits a 375 px screen", async ({ page }) => {
     const details = [`/stores/${storeId}`, `/products/${productId}`, `/reservation/${reservationId}`, `/donate-food/${donationIds.restaurant}/edit`];
     for (const path of [...RESTAURANT_PAGES, ...SHARED_PAGES, ...details]) await expectPhoneLayout(page, path);
+  });
+
+  test("Browse products keeps the search and puts the other filters behind the Filters button", async ({ page }) => {
+    await expectFilterPanel(page, "/browse-products", "Pretraga po imenu");
   });
 
   test("the meal donation form uses at least 16 px text", async ({ page }) => {

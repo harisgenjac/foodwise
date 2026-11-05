@@ -277,16 +277,24 @@ function MyReservationsPage() {
         ))}
       </div>
 
-      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={isHistory ? 4 : 3}>
-        <FilterField icon={Search}>
-          <input
-            type="text"
-            placeholder={t("filters.searchByName")}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className={inputStyle}
-          />
-        </FilterField>
+      <FilterBar
+        hasActiveFilters={hasActiveFilters}
+        activeCount={[businessName, status, period].filter(Boolean).length}
+        resultCount={total ?? undefined}
+        onClear={clearFilters}
+        columns={isHistory ? 4 : 3}
+        search={
+          <FilterField icon={Search}>
+            <input
+              type="text"
+              placeholder={t("filters.searchByName")}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputStyle}
+            />
+          </FilterField>
+        }
+      >
         <FilterField icon={Store}>
           <input
             type="text"

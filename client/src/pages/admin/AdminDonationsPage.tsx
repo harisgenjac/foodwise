@@ -180,6 +180,8 @@ function AdminDonationsPage() {
 
       <FilterBar
         hasActiveFilters={hasActiveFilters}
+        activeCount={[status, type].filter(Boolean).length}
+        resultCount={total ?? undefined}
         onClear={() => {
           setQ("");
           setStatus("");
@@ -187,17 +189,19 @@ function AdminDonationsPage() {
           setPage(1);
         }}
         columns={3}
+        search={
+          <FilterField icon={Search}>
+            <input
+              type="text"
+              value={q}
+              onChange={(e) => filter(setQ)(e.target.value)}
+              placeholder={t("admin.donations.search")}
+              aria-label={t("admin.donations.search")}
+              className={inputStyle}
+            />
+          </FilterField>
+        }
       >
-        <FilterField icon={Search}>
-          <input
-            type="text"
-            value={q}
-            onChange={(e) => filter(setQ)(e.target.value)}
-            placeholder={t("admin.donations.search")}
-            aria-label={t("admin.donations.search")}
-            className={inputStyle}
-          />
-        </FilterField>
         <FilterField icon={Gift}>
           <select
             value={type}

@@ -47,17 +47,25 @@ function CompanyBranchesPage() {
         action={{ ...newBranch, icon: Store }}
       />
 
-      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={3}>
-        <FilterField icon={Search}>
-          <input
-            type="text"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={t("company.branches.search")}
-            aria-label={t("company.branches.search")}
-            className={inputStyle}
-          />
-        </FilterField>
+      <FilterBar
+        hasActiveFilters={hasActiveFilters}
+        activeCount={[cityId, status].filter(Boolean).length}
+        resultCount={total ?? undefined}
+        onClear={clearFilters}
+        columns={3}
+        search={
+          <FilterField icon={Search}>
+            <input
+              type="text"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={t("company.branches.search")}
+              aria-label={t("company.branches.search")}
+              className={inputStyle}
+            />
+          </FilterField>
+        }
+      >
         <FilterField icon={MapPin}>
           <CitySelect
             value={cityId}

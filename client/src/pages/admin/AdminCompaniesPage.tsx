@@ -91,17 +91,25 @@ function AdminCompaniesPage() {
         action={{ ...newCompany, icon: Building2 }}
       />
 
-      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={3}>
-        <FilterField icon={Search}>
-          <input
-            type="text"
-            value={q}
-            onChange={(e) => filter(setQ)(e.target.value)}
-            placeholder={t("admin.companies.search")}
-            aria-label={t("admin.companies.search")}
-            className={inputStyle}
-          />
-        </FilterField>
+      <FilterBar
+        hasActiveFilters={hasActiveFilters}
+        activeCount={[blocked].filter(Boolean).length}
+        resultCount={total ?? undefined}
+        onClear={clearFilters}
+        columns={3}
+        search={
+          <FilterField icon={Search}>
+            <input
+              type="text"
+              value={q}
+              onChange={(e) => filter(setQ)(e.target.value)}
+              placeholder={t("admin.companies.search")}
+              aria-label={t("admin.companies.search")}
+              className={inputStyle}
+            />
+          </FilterField>
+        }
+      >
         <FilterField icon={ToggleLeft}>
           <select
             value={blocked}
