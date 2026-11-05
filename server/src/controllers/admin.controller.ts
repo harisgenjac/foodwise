@@ -326,6 +326,15 @@ export const getUserDetails = async (req: Request, res: Response) => {
        LIMIT $2`,
       [targetId, RECENT_ACTIONS_LIMIT],
     );
+    // What the user did to their own account (account_events), e.g. a password reset by email.
+    const events = await pool.query(
+      `SELECT account_events.id, account_events.event, account_events.ip, account_events.created_at
+       FROM account_events
+       WHERE account_events.user_id = $1
+       ORDER BY account_events.created_at DESC, account_events.id DESC
+       LIMIT $2`,
+      [targetId, RECENT_ACTIONS_LIMIT],
+    );
 
     return res.status(200).json({
       user: user.rows[0],
@@ -333,6 +342,7 @@ export const getUserDetails = async (req: Request, res: Response) => {
         Object.entries(countsRow).map(([key, value]) => [key, Number(value)]),
       ),
       actions: actions.rows,
+      events: events.rows,
     });
   } catch (error) {
     console.error("Error while fetching users:", error);

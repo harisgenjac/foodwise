@@ -1,7 +1,7 @@
 import pool from "../config/db.js";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import type { Request, Response } from "express";
+import { clearSessionCookie, setSessionCookie } from "../utils/session.js";
 import {
   hashPassword,
   isUniqueViolation,
@@ -104,7 +104,7 @@ export const login = async (req: Request, res: Response) => {
 
     const result = await pool.query(
       `SELECT users.id, users.first_name, users.last_name, users.email, users.role, users.password_hash,
-         users.must_change_password, users.is_blocked, users.blocked_reason, users.deactivated_at,
+         users.must_change_password, users.is_blocked, users.blocked_reason, users.deactivated_at, users.session_version,
          companies.is_blocked AS company_is_blocked, companies.blocked_reason AS company_blocked_reason
        FROM users LEFT JOIN companies ON companies.id = users.company_id
        WHERE LOWER(users.email) = $1`,
@@ -129,17 +129,7 @@ export const login = async (req: Request, res: Response) => {
     if (user.deactivated_at) {
       return res.status(403).json({ error: "This branch has been deactivated. Contact your company." });
     }
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      process.env.JWT_SECRET!,
-      { expiresIn: "7d" },
-    );
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setSessionCookie(res, user);
 
     return res.status(200).json({
       message: "Login successful.",
@@ -161,11 +151,7 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const logout = (req: Request, res: Response) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
+  clearSessionCookie(res);
   return res.status(200).json({ message: "Logged out successfully." });
 };
 

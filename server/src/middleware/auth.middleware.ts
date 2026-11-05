@@ -40,13 +40,21 @@ export const authenticate = async (
   }
 
   try {
-    const result = await pool.query<{ role: Role; is_blocked: boolean; must_change_password: boolean }>(
-      `SELECT users.role, NOT ${notBlocked("users")} AS is_blocked, users.must_change_password
+    const result = await pool.query<{
+      role: Role;
+      is_blocked: boolean;
+      must_change_password: boolean;
+      session_version: number;
+    }>(
+      `SELECT users.role, NOT ${notBlocked("users")} AS is_blocked, users.must_change_password, users.session_version
        FROM users WHERE users.id = $1`,
       [decoded.id],
     );
     const user = result.rows[0];
-    if (!user) {
+    // A token signed before the user's last password reset (session_version raised) no longer
+    // counts. Tokens from before session versions existed have no `sv` and count as version 0.
+    const tokenVersion = typeof decoded.sv === "number" ? decoded.sv : 0;
+    if (!user || tokenVersion !== user.session_version) {
       return res.status(401).json({ error: "Token is invalid or has expired." });
     }
     if (user.is_blocked) {

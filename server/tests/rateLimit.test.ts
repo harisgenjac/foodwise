@@ -1,6 +1,7 @@
 import request from "supertest";
 import app from "../src/app.js";
 import { rateLimiters } from "../src/middleware/rateLimit.middleware.js";
+import pool from "../src/config/db.js";
 import { cleanupUsers, PASSWORD, registerAndLogin, userId } from "./helpers.js";
 
 // The real limiters are off under Vitest; this file swaps in enabled ones with low limits.
@@ -8,7 +9,7 @@ vi.mock("../src/middleware/rateLimit.middleware.js", async (importOriginal) => {
   const original = await importOriginal<typeof import("../src/middleware/rateLimit.middleware.js")>();
   return {
     ...original,
-    rateLimiters: original.createRateLimiters({ api: 30, login: 3, password: 2, upload: 2 }, true),
+    rateLimiters: original.createRateLimiters({ api: 30, login: 3, password: 2, upload: 2, forgotPassword: 2 }, true),
   };
 });
 
@@ -95,5 +96,22 @@ describe("rate limits", () => {
     expect(blocked.body.error).toBe(TOO_MANY);
 
     expect((await restaurant.post("/api/users/me/logo")).status).toBe(400);
+  });
+
+  it("limits reset link requests per IP with the normal answer and no email", async () => {
+    await registerAndLogin(STORE, "STORE");
+    await pool.query("DELETE FROM email_queue");
+    const answer = { message: "If an account exists for this email, we sent a link to set a new password." };
+    // The limit is 2 per IP: other addresses count too.
+    for (const email of ["nobody-1@test.com", STORE]) {
+      const response = await request(app).post("/api/auth/forgot-password").send({ email });
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual(answer);
+    }
+    const limited = await request(app).post("/api/auth/forgot-password").send({ email: STORE });
+    expect(limited.status).toBe(200);
+    expect(limited.body).toEqual(answer);
+    const { rows } = await pool.query("SELECT recipient FROM email_queue WHERE template = 'PASSWORD_RESET'");
+    expect(rows).toEqual([{ recipient: STORE }]);
   });
 });

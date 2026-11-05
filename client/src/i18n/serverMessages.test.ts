@@ -81,6 +81,7 @@ describe("server texts", () => {
     /^Branch 7 by the platform administrator: /,
     /^Your (product|donation) was removed by the platform administrator: /,
     /^Platform announcement: /,
+    /^Your password was changed with a password reset link.$/,
     /\(KM\)$/,
     /^Food saved \(/,
     /^(Bakery Products|Dairy Products|Frozen Food|Favorites only|Pickup date|Reservation no\.)$/,

@@ -1,5 +1,7 @@
 import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage.js';
+import ForgotPasswordPage from './pages/ForgotPasswordPage.js';
+import ResetPasswordPage from './pages/ResetPasswordPage.js';
 import ProtectedRoute from './components/ProtectedRoute.js';
 import PublicRoute from './components/PublicRoute.js';
 import Layout from './components/Layout.js';
@@ -51,6 +53,9 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+        {/* The emailed link works with or without a session (the reset ends every session anyway). */}
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         {/* Store and restaurant accounts are created by an admin. RegisterPage stays for the planned public roles. */}
         <Route path="/register" element={<Navigate to="/login" replace state={{ registrationClosed: true }} />} />
         {/* The bare address goes to the dashboard; ProtectedRoute sends a visitor who is not logged in on to /login. */}

@@ -265,6 +265,12 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
       heading: "Centrala je odbila vaš zahtjev",
       intro: [`Centrala je odbila vaš zahtjev za ${v.credits} dodatnih kredita.`],
     }),
+    PASSWORD_CHANGED: () => ({
+      subject: "Vaša lozinka je promijenjena",
+      heading: "Lozinka je promijenjena",
+      intro: ["Lozinka vašeg FoodWise računa je upravo promijenjena putem linka za novu lozinku. Sve prijave na drugim uređajima su odjavljene."],
+      outro: ["Ako to niste bili vi, odmah zatražite novu lozinku na stranici za prijavu (Zaboravili ste lozinku?) i javite se administratoru."],
+    }),
   },
   en: {
     RESERVATION_CREATED: (v) => ({
@@ -480,14 +486,34 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
       heading: "Your headquarters rejected your request",
       intro: [`Your headquarters rejected your request for ${v.credits} extra credits.`],
     }),
+    PASSWORD_CHANGED: () => ({
+      subject: "Your password was changed",
+      heading: "Your password was changed",
+      intro: ["The password of your FoodWise account was just changed with a password reset link. Every session on other devices was signed out."],
+      outro: ["If this was not you, ask for a new password on the login page (Forgot password?) right away and contact an administrator."],
+    }),
   },
 };
 
+// Notifications whose email is a system email: sent even with email notifications off, and
+// without the footer link to the switch.
+export const SYSTEM_NOTIFICATION_TYPES: readonly NotificationType[] = ["PASSWORD_CHANGED"];
+
 // Where the button goes, like getNotificationLink on the client (the same order of checks).
-type LinkKind = "reservation" | "product" | "donations" | "dashboard" | "credits" | "requests" | "branch" | "list";
+type LinkKind =
+  | "reservation"
+  | "product"
+  | "donations"
+  | "dashboard"
+  | "credits"
+  | "requests"
+  | "branch"
+  | "profile"
+  | "list";
 
 export const notificationLink = (type: NotificationType, d: NotificationEmailData): { path: string; kind: LinkKind } => {
   if (type === "BRANCH_TOPUP_REQUESTED") return { path: "/company/credits", kind: "credits" };
+  if (type === "PASSWORD_CHANGED") return { path: "/my-profile", kind: "profile" };
   if (d.recipientRole === "COMPANY" && d.branchId !== null) {
     return { path: `/company/branches/${d.branchId}`, kind: "branch" };
   }
@@ -522,6 +548,7 @@ const BUTTONS: Record<EmailLanguage, Record<LinkKind, string>> = {
     credits: "Otvori kredite",
     requests: "Otvori zahtjeve",
     branch: "Otvori poslovnicu",
+    profile: "Otvori profil",
     list: "Otvori rezervacije",
   },
   en: {
@@ -532,6 +559,7 @@ const BUTTONS: Record<EmailLanguage, Record<LinkKind, string>> = {
     credits: "Open credits",
     requests: "Open requests",
     branch: "Open branch",
+    profile: "Open profile",
     list: "Open reservations",
   },
 };
@@ -622,13 +650,14 @@ const renderNotificationEmail = (type: NotificationType) => (raw: unknown, lang:
   };
   const link = notificationLink(type, d);
   const button = { label: BUTTONS[lang][link.kind], url: `${appUrl}${link.path}` };
-  const settingsUrl = `${appUrl}${EMAIL_SETTINGS_PATH}`;
+  // A system email cannot be turned off, so it has no link to the switch.
+  const settingsUrl = SYSTEM_NOTIFICATION_TYPES.includes(type) ? undefined : `${appUrl}${EMAIL_SETTINGS_PATH}`;
 
   if (type === "PLATFORM_ANNOUNCEMENT") {
     // The announcement's own title and text, in English when the admin wrote one.
     const { title, body } = announcement(d, lang);
     const subject = lang === "en" ? `Platform announcement: ${title}` : `Obavještenje platforme: ${title}`;
-    return renderLayout({ lang, subject, heading: title, intro: paragraphs(body), button, settingsUrl });
+    return renderLayout({ lang, subject, heading: title, intro: paragraphs(body), button, ...(settingsUrl ? { settingsUrl } : {}) });
   }
   const copy = COPY[lang][type](values, d);
   return renderLayout({
@@ -639,7 +668,7 @@ const renderNotificationEmail = (type: NotificationType) => (raw: unknown, lang:
     details: detailRows(type, d, lang, amount),
     ...(copy.outro ? { outro: copy.outro } : {}),
     button,
-    settingsUrl,
+    ...(settingsUrl ? { settingsUrl } : {}),
   });
 };
 
@@ -647,5 +676,11 @@ const NOTIFICATION_TYPES = Object.keys(COPY.bs) as NotificationType[];
 
 // Every notification type has an email (the Record type makes a missing one a compile error).
 export const NOTIFICATION_TEMPLATES = Object.fromEntries(
-  NOTIFICATION_TYPES.map((type) => [type, { render: renderNotificationEmail(type) } satisfies EmailTemplate]),
+  NOTIFICATION_TYPES.map((type) => [
+    type,
+    {
+      ...(SYSTEM_NOTIFICATION_TYPES.includes(type) ? { system: true } : {}),
+      render: renderNotificationEmail(type),
+    } satisfies EmailTemplate,
+  ]),
 ) as Record<NotificationType, EmailTemplate>;

@@ -84,7 +84,26 @@
     "accountBlocked": "Vaš nalog je blokiran.",
     "registrationClosed": "Naloge za prodavnice i restorane kreira administrator platforme. Obratite nam se da dobijete pristupne podatke.",
     "accountByAdmin": "Nemate nalog? Nalog za prodavnicu ili restoran kreira administrator platforme.",
-    "companyRole": "Centrala"
+    "companyRole": "Centrala",
+    "forgot": {
+      "link": "Zaboravili ste lozinku?",
+      "title": "Nova lozinka",
+      "subtitle": "Unesite email svog računa i poslat ćemo vam link za novu lozinku.",
+      "submit": "Pošalji link",
+      "error": "Link nije poslan. Pokušajte ponovo.",
+      "checkInbox": "Provjerite inbox (i spam). Link vrijedi 1 sat.",
+      "backToLogin": "Nazad na prijavu"
+    },
+    "reset": {
+      "title": "Postavite novu lozinku",
+      "subtitle": "Unesite novu lozinku dva puta. Nakon toga ćete biti odjavljeni na svim uređajima.",
+      "submit": "Spremi novu lozinku",
+      "error": "Lozinka nije promijenjena. Pokušajte ponovo.",
+      "done": "Lozinka je promijenjena. Prijavite se novom lozinkom.",
+      "invalidTitle": "Link više ne vrijedi",
+      "invalidText": "Ovaj link je istekao, već je iskorišten ili je poslan noviji. Zatražite novi link.",
+      "newLink": "Zatraži novi link"
+    }
   },
   "product": {
     "addTitle": "Dodaj proizvod",
@@ -352,7 +371,8 @@
       "BRANCH_CREDIT_REQUEST_REJECTED": "Zahtjev za poslovnicu {{branch}} je odbijen.",
       "BRANCH_CREDIT_REQUEST_EXPIRED": "Zahtjev za poslovnicu {{branch}} je istekao.",
       "CREDIT_TOPUP_COMPANY_APPROVED": "Centrala je proslijedila vaš zahtjev za dodatne kredite administratoru.",
-      "CREDIT_TOPUP_COMPANY_REJECTED": "Centrala je odbila vaš zahtjev za dodatne kredite."
+      "CREDIT_TOPUP_COMPANY_REJECTED": "Centrala je odbila vaš zahtjev za dodatne kredite.",
+      "PASSWORD_CHANGED": "Lozinka je promijenjena putem linka za novu lozinku. Ako to niste bili vi, odmah zatražite novu lozinku."
     },
     "reason": "Razlog: {{reason}}",
     "credits": {
@@ -944,6 +964,10 @@
       "REACTIVATE_BRANCH": "Poslovnica ponovo aktivirana",
       "ATTACH_BRANCH": "Prodavnica pripojena firmi"
     },
+    "accountEvents": {
+      "PASSWORD_RESET_REQUESTED": "Zatražen link za novu lozinku",
+      "PASSWORD_RESET": "Lozinka promijenjena putem linka"
+    },
     "common": {
       "cancel": "Odustani",
       "reasonLabel": "Razlog",
@@ -1072,7 +1096,10 @@
       "description": "Opis",
       "firstName": "Ime",
       "lastName": "Prezime",
-      "company": "Firma"
+      "company": "Firma",
+      "activitySection": "Aktivnost računa",
+      "noActivity": "Korisnik još nije sam mijenjao račun.",
+      "fromIp": "IP: {{ip}}"
     },
     "createUser": {
       "title": "Novi korisnik",

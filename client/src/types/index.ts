@@ -365,6 +365,16 @@ export interface AdminAction {
   company_name?: string | null;
 }
 
+// What a user did to their own account, without an admin (GET /admin/users/:id `events`).
+export type AccountEventType = "PASSWORD_RESET_REQUESTED" | "PASSWORD_RESET";
+
+export interface AccountEvent {
+  id: number;
+  event: AccountEventType;
+  ip: string | null;
+  created_at: string;
+}
+
 export type AnnouncementAudience = "ALL" | "STORE" | "RESTAURANT";
 
 // GET /announcements/active; the English texts are optional and fall back to Bosnian.

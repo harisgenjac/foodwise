@@ -36,7 +36,7 @@ import EditProfileModal from "../../components/admin/EditProfileModal.js";
 import SetPasswordModal from "../../components/admin/SetPasswordModal.js";
 import { ROLE_STYLES, accountName, formatDateTime } from "../../utils/admin.js";
 import { getAccountSetup } from "../../utils/accountSetup.js";
-import type { AdminAction, AdminUserCounts, User } from "../../types/index.js";
+import type { AccountEvent, AdminAction, AdminUserCounts, User } from "../../types/index.js";
 
 type Dialog = "block" | "unblock" | "password" | "profile" | null;
 
@@ -49,6 +49,7 @@ function AdminUserDetailsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [counts, setCounts] = useState<AdminUserCounts | null>(null);
   const [actions, setActions] = useState<AdminAction[]>([]);
+  const [events, setEvents] = useState<AccountEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [busy, setBusy] = useState(false);
@@ -59,6 +60,7 @@ function AdminUserDetailsPage() {
       setUser(response.data.user);
       setCounts(response.data.counts);
       setActions(response.data.actions);
+      setEvents(response.data.events ?? []);
     } catch (err) {
       console.error(err);
       setUser(null);
@@ -118,6 +120,7 @@ function AdminUserDetailsPage() {
 
   const roles = t("admin.roles", { returnObjects: true }) as Record<string, string>;
   const actionTypes = t("admin.actionTypes", { returnObjects: true }) as Record<string, string>;
+  const eventTypes = t("admin.accountEvents", { returnObjects: true }) as Record<string, string>;
   const name = accountName(user);
   const fullName = `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim();
   const isOwnAccount = me?.id === user.id;
@@ -320,6 +323,34 @@ function AdminUserDetailsPage() {
                     <ShieldCheck className="h-3 w-3" />
                     {action.admin_email}
                   </span>
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* What the user did to their own account (e.g. a password reset by email), apart from the admin log. */}
+      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
+          <UserRound className="h-4 w-4 text-orange-600" />
+          {t("admin.userDetails.activitySection")}
+        </h2>
+        {events.length === 0 ? (
+          <p className="text-sm text-gray-500">{t("admin.userDetails.noActivity")}</p>
+        ) : (
+          <ul className="divide-y divide-gray-100">
+            {events.map((event) => (
+              <li key={event.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-start sm:justify-between">
+                <p className="text-sm font-medium text-gray-900">{eventTypes[event.event] ?? event.event}</p>
+                <p className="shrink-0 text-xs text-gray-500 sm:text-right">
+                  {formatDateTime(event.created_at)}
+                  {event.ip && (
+                    <>
+                      <br />
+                      {t("admin.userDetails.fromIp", { ip: event.ip })}
+                    </>
+                  )}
                 </p>
               </li>
             ))}
