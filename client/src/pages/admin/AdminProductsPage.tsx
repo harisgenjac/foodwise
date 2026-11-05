@@ -177,26 +177,30 @@ function AdminProductsPage() {
 
       <FilterBar
         hasActiveFilters={hasActiveFilters}
+        activeCount={[status].filter(Boolean).length}
+        resultCount={total ?? undefined}
         onClear={() => {
           setQ("");
           setStatus("");
           setPage(1);
         }}
         columns={3}
+        search={
+          <FilterField icon={Search}>
+            <input
+              type="text"
+              value={q}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setPage(1);
+              }}
+              placeholder={t("admin.products.search")}
+              aria-label={t("admin.products.search")}
+              className={inputStyle}
+            />
+          </FilterField>
+        }
       >
-        <FilterField icon={Search}>
-          <input
-            type="text"
-            value={q}
-            onChange={(e) => {
-              setQ(e.target.value);
-              setPage(1);
-            }}
-            placeholder={t("admin.products.search")}
-            aria-label={t("admin.products.search")}
-            className={inputStyle}
-          />
-        </FilterField>
         <FilterField icon={ListFilter}>
           <select
             value={status}

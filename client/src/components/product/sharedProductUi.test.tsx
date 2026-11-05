@@ -77,4 +77,55 @@ describe("FilterBar", () => {
     await userEvent.click(screen.getByRole("button", { name: t("filters.clear") }));
     expect(onClear).toHaveBeenCalledTimes(1);
   });
+
+  // jsdom applies no CSS, so the phone panel is checked by its classes: "hidden sm:contents" while
+  // closed (hidden below sm, plain grid items from sm up) and "grid sm:contents" while open.
+  const panelOf = (button: HTMLElement) => document.getElementById(button.getAttribute("aria-controls")!)!;
+
+  it("keeps the search outside the phone panel and opens the other filters with the Filters button", async () => {
+    render(
+      <FilterBar hasActiveFilters onClear={vi.fn()} search={<input aria-label="search" />} activeCount={2} resultCount={7}>
+        <select aria-label="category" />
+        <select aria-label="status" />
+      </FilterBar>,
+    );
+    const button = screen.getByRole("button", { name: new RegExp(`^${t("filters.button")}\\s*2$`) });
+    const panel = panelOf(button);
+
+    expect(panel).not.toContainElement(screen.getByLabelText("search"));
+    expect(panel).toContainElement(screen.getByLabelText("category"));
+    expect(panel).toHaveClass("hidden", "sm:contents");
+    expect(button).toHaveAttribute("aria-expanded", "false");
+
+    await userEvent.click(button);
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    expect(panel).toHaveClass("grid", "sm:contents");
+    expect(panel).not.toHaveClass("hidden");
+
+    await userEvent.click(screen.getByRole("button", { name: t("filters.showResults", { count: 7 }) }));
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    expect(panel).toHaveClass("hidden");
+  });
+
+  it("shows no count without active filters and Done when the result count is unknown", async () => {
+    render(
+      <FilterBar hasActiveFilters={false} onClear={vi.fn()} search={<input aria-label="search" />}>
+        <select aria-label="category" />
+      </FilterBar>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: t("filters.button") }));
+    // Nothing to clear yet, but the panel can still be closed.
+    expect(screen.queryByRole("button", { name: t("filters.clear") })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: t("filters.done") })).toBeInTheDocument();
+  });
+
+  it("leaves a lone filter without a search visible, with no Filters button", () => {
+    render(
+      <FilterBar hasActiveFilters={false} onClear={vi.fn()}>
+        <select aria-label="action" />
+      </FilterBar>,
+    );
+    expect(screen.queryByRole("button", { name: t("filters.button") })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("action").parentElement).not.toHaveClass("hidden");
+  });
 });

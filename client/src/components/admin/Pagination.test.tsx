@@ -21,7 +21,27 @@ describe("Pagination", () => {
   it("puts an ellipsis around the current page when there are many", () => {
     render(<Pagination total={200} limit={10} offset={90} onChange={() => {}} />);
     expect(pageButtons()).toEqual(["1", "9", "10", "11", "20"]);
-    expect(screen.getAllByText("…")).toHaveLength(2);
+    // Two from sm up (1 … 9 10 11 … 20) and two on phones (1 … 10 … 20).
+    const ellipses = screen.getAllByText("…");
+    expect(ellipses.filter((dots) => dots.classList.contains("sm:inline"))).toHaveLength(2);
+    expect(ellipses.filter((dots) => dots.classList.contains("sm:hidden"))).toHaveLength(2);
+  });
+
+  // jsdom applies no CSS, so the phone layout is checked by its classes.
+  it("keeps only the first, current and last page on phones, all 44 px high", () => {
+    render(<Pagination total={200} limit={10} offset={90} onChange={() => {}} />);
+    const page = (n: number) => screen.getByRole("button", { name: t("admin.common.page", { page: n }) });
+
+    for (const n of [1, 10, 20]) expect(page(n)).not.toHaveClass("hidden");
+    for (const n of [9, 11]) expect(page(n)).toHaveClass("hidden", "sm:inline-block");
+    for (const button of within(screen.getByRole("navigation")).getAllByRole("button")) {
+      expect(button).toHaveClass("min-h-11", "sm:min-h-0");
+    }
+  });
+
+  it("shows no phone ellipsis between neighbouring pages", () => {
+    render(<Pagination total={25} limit={10} offset={10} onChange={() => {}} />);
+    expect(screen.queryByText("…")).not.toBeInTheDocument();
   });
 
   it("reports the offset of the chosen page", async () => {

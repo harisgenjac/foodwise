@@ -21,6 +21,10 @@ describe("Footer", () => {
     for (const key of ["help", "terms", "privacy"]) {
       expect(screen.queryByRole("link", { name: t(`footer.${key}`) })).not.toBeInTheDocument();
     }
+    // 44 px high with room on both sides below sm, so a finger hits one item.
+    for (const key of ["help", "contact", "terms", "privacy"]) {
+      expect(screen.getByText(t(`footer.${key}`))).toHaveClass("min-h-11", "px-2", "sm:min-h-0", "sm:px-0");
+    }
     expect(screen.getByText(`© ${new Date().getFullYear()} FoodWise · Još vrijedi`)).toBeInTheDocument();
     expect(screen.getByText(`v${__APP_VERSION__}`)).toBeInTheDocument();
     await waitFor(() => expect(apiMock.get).toHaveBeenCalledWith("/stats/impact"));

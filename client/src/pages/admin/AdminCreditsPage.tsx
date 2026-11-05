@@ -178,26 +178,30 @@ function AdminCreditsPage() {
 
       <FilterBar
         hasActiveFilters={hasActiveFilters}
+        activeCount={[role, plan].filter(Boolean).length}
+        resultCount={total ?? undefined}
         onClear={() => {
           setQ("");
           setRole("");
           setPlan("");
         }}
         columns={3}
+        search={
+          <FilterField icon={Search}>
+            <input
+              type="text"
+              value={q}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setPage(1);
+              }}
+              placeholder={t("admin.credits.search")}
+              aria-label={t("admin.credits.search")}
+              className={inputStyle}
+            />
+          </FilterField>
+        }
       >
-        <FilterField icon={Search}>
-          <input
-            type="text"
-            value={q}
-            onChange={(e) => {
-              setQ(e.target.value);
-              setPage(1);
-            }}
-            placeholder={t("admin.credits.search")}
-            aria-label={t("admin.credits.search")}
-            className={inputStyle}
-          />
-        </FilterField>
         <FilterField icon={ListFilter}>
           <select
             value={role}

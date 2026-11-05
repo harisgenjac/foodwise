@@ -119,16 +119,24 @@ function ReservationsPage() {
         count={t("reservations.count", { count: total ?? reservationsList.length })}
       />
 
-      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={3}>
-        <FilterField icon={Search}>
-          <input
-            type="text"
-            placeholder={t("filters.searchByName")}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className={inputStyle}
-          />
-        </FilterField>
+      <FilterBar
+        hasActiveFilters={hasActiveFilters}
+        activeCount={[status, cityId].filter(Boolean).length}
+        resultCount={total ?? undefined}
+        onClear={clearFilters}
+        columns={3}
+        search={
+          <FilterField icon={Search}>
+            <input
+              type="text"
+              placeholder={t("filters.searchByName")}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputStyle}
+            />
+          </FilterField>
+        }
+      >
         <FilterField icon={MapPin}>
           <CitySelect
             value={cityId}

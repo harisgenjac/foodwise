@@ -90,16 +90,24 @@ function BrowseProductsPage() {
         icon={ShoppingBasket}
       />
 
-      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={5}>
-        <FilterField icon={Search}>
-          <input
-            type="text"
-            placeholder={t("filters.searchByName")}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className={inputStyle}
-          />
-        </FilterField>
+      <FilterBar
+        hasActiveFilters={hasActiveFilters}
+        activeCount={[category, expiryWithinDays, cityId, radius !== DEFAULT_RADIUS].filter(Boolean).length}
+        resultCount={total ?? undefined}
+        onClear={clearFilters}
+        columns={5}
+        search={
+          <FilterField icon={Search}>
+            <input
+              type="text"
+              placeholder={t("filters.searchByName")}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputStyle}
+            />
+          </FilterField>
+        }
+      >
         <FilterField icon={Tag}>
           <select
             value={category}

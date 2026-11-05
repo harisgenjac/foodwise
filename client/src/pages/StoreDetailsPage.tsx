@@ -271,7 +271,7 @@ function StoreDetailsPage() {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              className={`inline-flex min-h-11 sm:min-h-0 cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                 activeTab === tab.key ? "bg-orange-500 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"
               }`}
             >
@@ -352,7 +352,7 @@ function StoreDetailsPage() {
                 key={filter.value}
                 type="button"
                 onClick={() => setReservationStatus(filter.value)}
-                className={`cursor-pointer rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                className={`min-h-11 sm:min-h-0 cursor-pointer rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
                   reservationStatus === filter.value
                     ? "border-orange-500 bg-orange-500 text-white"
                     : "border-gray-200 bg-white text-gray-600 hover:border-orange-300 hover:text-orange-600"

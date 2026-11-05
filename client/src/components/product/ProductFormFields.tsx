@@ -216,7 +216,7 @@ function ProductFormFields({
                       key={days}
                       type="button"
                       onClick={() => onChange("expiry_date", value)}
-                      className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
+                      className={`min-h-11 sm:min-h-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         selected
                           ? "border-orange-400 bg-orange-50 text-orange-700"
                           : "border-gray-200 text-gray-600 hover:border-orange-200 hover:bg-orange-50/50"

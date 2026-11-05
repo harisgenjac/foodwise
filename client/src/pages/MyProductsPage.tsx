@@ -118,16 +118,23 @@ function MyProductsPage() {
         action={{ to: "/add-product", label: t("myProducts.addProductButton"), icon: PackagePlus }}
       />
 
-      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters}>
-        <FilterField icon={Search}>
-          <input
-            type="text"
-            placeholder={t("filters.searchByName")}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className={inputStyle}
-          />
-        </FilterField>
+      <FilterBar
+        hasActiveFilters={hasActiveFilters}
+        activeCount={[category, expiryWithinDays, status !== "Available"].filter(Boolean).length}
+        resultCount={total ?? undefined}
+        onClear={clearFilters}
+        search={
+          <FilterField icon={Search}>
+            <input
+              type="text"
+              placeholder={t("filters.searchByName")}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputStyle}
+            />
+          </FilterField>
+        }
+      >
         <FilterField icon={Tag}>
           <select
             value={category}

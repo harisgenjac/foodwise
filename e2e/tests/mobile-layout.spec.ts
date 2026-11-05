@@ -4,7 +4,9 @@ import { apiAs, createDonation, createProduct, createStoreWithoutPlan, myId, req
 
 // Phone width: every store and restaurant page fits the screen, with the bottom bar instead of the
 // sidebar (docs/mobile-review.md, the navigation shell).
-test.use({ viewport: { width: 375, height: 812 }, hasTouch: true });
+// 375 px by default; MOBILE_WIDTH=390 runs the same checks on a wider phone (docs/e2e.md).
+const WIDTH = Number(process.env.MOBILE_WIDTH ?? 375);
+test.use({ viewport: { width: WIDTH, height: 812 }, hasTouch: true });
 
 const STORE_PAGES = ["/dashboard", "/my-products", "/add-product", "/import-products", "/reservations"];
 const RESTAURANT_PAGES = ["/dashboard", "/browse-products", "/stores", "/my-reservations"];
@@ -39,6 +41,67 @@ const expectNoSmallFieldText = async (page: Page, path: string) => {
   expect(small, `${path}: fields under 16 px`).toEqual([]);
 };
 
+// Every visible button, link, tab and form field inside `scope` is at least 44 px high (a finger's
+// tap target).
+const expectTapTargets = async (scope: Locator, label: string) => {
+  await expect(scope.first(), label).toBeVisible();
+  const small = await scope.evaluateAll((roots) =>
+    roots
+      .flatMap((root) => {
+        const selector = "button, a, [role=tab], select, input:not([type=checkbox]):not([type=radio])";
+        return [root, ...root.querySelectorAll<HTMLElement>(selector)].filter((element) => element.matches(selector));
+      })
+      .filter((element) => element.getClientRects().length > 0)
+      .filter((element) => element.getBoundingClientRect().height < 44)
+      .map((element) => `${element.tagName.toLowerCase()} "${(element.textContent?.trim() || element.getAttribute("aria-label") || "").slice(0, 30)}" ${Math.round(element.getBoundingClientRect().height)} px`),
+  );
+  expect(small, `${label}: tap targets under 44 px`).toEqual([]);
+};
+
+// The dashboard's stat cards sit two to a row on a phone; every label is shown whole (it wraps
+// instead of ending in "…").
+const expectStatLabelsWhole = async (page: Page) => {
+  await page.goto("/dashboard");
+  const labels = page.getByTestId("stat-label");
+  await expect(labels.first()).toBeVisible();
+  const cut = await labels.evaluateAll((all) =>
+    all.filter((label) => label.scrollWidth > label.clientWidth || getComputedStyle(label).textOverflow === "ellipsis").map((label) => label.textContent),
+  );
+  expect(cut, "stat labels cut off").toEqual([]);
+};
+
+// Below sm the search stays on screen and the other filters wait behind the Filters button; the
+// panel opens under the bar, counts what is set and closes with the results button.
+const expectFilterPanel = async (page: Page, path: string, search: string) => {
+  await page.goto(path);
+  await page.waitForLoadState("networkidle");
+  const bar = page.getByTestId("filter-bar");
+  const category = bar.getByRole("combobox").filter({ has: page.locator('option[value="Dairy"]') });
+  await expect(bar.getByPlaceholder(search), path).toBeVisible();
+  await expect(category, path).toBeHidden();
+  const button = bar.getByRole("button", { name: /^Filteri/ });
+  await expect(button, path).toHaveAttribute("aria-expanded", "false");
+  // The closed bar is one row: the search and the button side by side.
+  expect((await bar.boundingBox())!.height, path).toBeLessThan(90);
+
+  await button.click();
+  await expect(category, path).toBeVisible();
+  await category.selectOption("Dairy");
+  await expect(button, path).toHaveAccessibleName(/^Filteri\s*1$/);
+  await expectTapTargets(bar, path);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth), path).toBeLessThanOrEqual(WIDTH);
+
+  await bar.getByRole("button", { name: /^Prikaži \d+ rezultat/ }).click();
+  await expect(category, path).toBeHidden();
+  await expect(button, path).toHaveAttribute("aria-expanded", "false");
+
+  // Clear filters in the panel resets the category and the count.
+  await button.click();
+  await bar.getByRole("button", { name: "Očisti filtere" }).click();
+  await expect(category, path).toHaveValue("");
+  await expect(button, path).toHaveAccessibleName(/^Filteri$/);
+};
+
 let productId: number;
 let reservationId: number;
 let storeId: number;
@@ -61,9 +124,67 @@ test.beforeAll(async () => {
 test.describe("store", () => {
   test.use({ storageState: storageState("store") });
 
-  test("every page fits a 375 px screen", async ({ page }) => {
+  test("every page fits a phone screen", async ({ page }) => {
     const details = [`/products/${productId}`, `/edit-product/${productId}`, `/reservation/${reservationId}`, `/donate-food/${donationIds.store}/edit`];
     for (const path of [...STORE_PAGES, ...SHARED_PAGES, ...details]) await expectPhoneLayout(page, path);
+  });
+
+  test("My products keeps the search and puts the other filters behind the Filters button", async ({ page }) => {
+    await expectFilterPanel(page, "/my-products", "Pretraga po imenu");
+  });
+
+  test("stat labels are not cut, and tabs, chips, report presets and footer links are 44 px", async ({ page }) => {
+    await expectStatLabelsWhole(page);
+    await expectTapTargets(page.getByRole("navigation", { name: "Podnožje" }), "footer");
+
+    // The three Pickups tabs share one row.
+    await page.goto("/pickups");
+    const tabs = page.getByRole("tablist").getByRole("tab");
+    await expect(tabs).toHaveCount(3);
+    const tops = await tabs.evaluateAll((all) => all.map((tab) => Math.round(tab.getBoundingClientRect().top)));
+    expect(new Set(tops).size, "Pickups tabs on one row").toBe(1);
+    await expectTapTargets(page.getByRole("tablist"), "/pickups tabs");
+
+    await page.goto("/reports");
+    await expectTapTargets(page.locator("button[aria-pressed]"), "/reports presets");
+    await page.goto("/credits");
+    await expectTapTargets(page.getByRole("tablist"), "/credits tabs");
+    await page.goto("/add-product");
+    for (const name of ["Danas", "Sutra"]) {
+      await expectTapTargets(page.getByRole("button", { name, exact: true }), `/add-product ${name}`);
+    }
+  });
+
+  test("Add product starts with the templates collapsed into one row and the form on the first screen", async ({ page }) => {
+    // Six templates, the number the review saw push the form to the third screen (saved by name,
+    // so a rerun updates them).
+    const storeApi = await apiAs("store");
+    for (let i = 1; i <= 6; i++) {
+      const saved = await storeApi.post("/api/product-templates", {
+        data: { name: `E2E Predložak ${i}`, category: "Dairy", unit: "kg", original_price: "2.00", discounted_price: "1.00", quantity: "10", shelf_life_days: 2 },
+      });
+      expect(saved.ok()).toBe(true);
+    }
+    await storeApi.dispose();
+
+    await page.goto("/add-product");
+    const toggle = page.getByRole("button", { name: /^Predlošci \(\d+\)/ });
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(page.getByRole("button", { name: /^E2E Predložak 1 / })).toBeHidden();
+    await expect(page.getByLabel("Naziv proizvoda")).toBeInViewport();
+    await expectTapTargets(toggle, "templates row");
+
+    await toggle.click();
+    const template = page.getByRole("button", { name: /^E2E Predložak 3 / });
+    await expect(template).toBeVisible();
+    await expectTapTargets(page.locator("section").filter({ has: toggle }), "templates list");
+
+    // Applying one fills the form, collapses the list and names the template in the row.
+    await template.click();
+    await expect(page.getByLabel("Naziv proizvoda")).toHaveValue("E2E Predložak 3");
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(template).toBeHidden();
+    await expect(toggle).toContainText("Primijenjen: E2E Predložak 3");
   });
 
   test("form fields use at least 16 px text on My profile, Add product and New donation", async ({ page }) => {
@@ -77,9 +198,9 @@ test.describe("store", () => {
     await expect(panel).toBeVisible();
     const box = (await panel.boundingBox())!;
     expect(box.x).toBeGreaterThanOrEqual(0);
-    expect(box.x + box.width).toBeLessThanOrEqual(375);
+    expect(box.x + box.width).toBeLessThanOrEqual(WIDTH);
     expect(box.y + box.height).toBeLessThanOrEqual(812);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(WIDTH);
     await page.keyboard.press("Escape");
     await expect(panel).toBeHidden();
   });
@@ -87,8 +208,8 @@ test.describe("store", () => {
 
 // Dialogs on a short phone (iPhone SE, 667 px): the title and the buttons are on screen as soon as
 // the dialog opens, only the dialog body scrolls, and the page behind stays still.
-test.describe("dialogs at 375×667", () => {
-  test.use({ viewport: { width: 375, height: 667 } });
+test.describe("dialogs on a short phone (667 px)", () => {
+  test.use({ viewport: { width: WIDTH, height: 667 } });
 
   const expectButtonsOnScreen = async (page: Page, dialog: Locator, buttons: string[]) => {
     const scrollBefore = await page.evaluate(() => window.scrollY);
@@ -221,7 +342,7 @@ test.describe("admin", () => {
     await admin.dispose();
   });
 
-  test("every admin list shows cards with all row actions on a 375 px screen", async ({ page }) => {
+  test("every admin list shows cards with all row actions on a phone screen", async ({ page }) => {
     for (const path of [
       "/admin/users",
       "/admin/products",
@@ -240,7 +361,27 @@ test.describe("admin", () => {
     await expect(page.getByRole("combobox", { name: "Sortiraj po" })).toBeVisible();
   });
 
-  test("the admin's other pages fit a 375 px screen", async ({ page }) => {
+  test("pagination fits one row with 44 px buttons", async ({ page }) => {
+    // More than one page of 20 users: the seed has fewer, so add accounts (the list shows them all).
+    const admin = await apiAs("admin");
+    for (let i = 0; i < 21; i++) {
+      const created = await admin.post("/api/admin/users", {
+        data: { role: "RESTAURANT", email: `e2e-page-${runId()}-${i}@foodwise.test`, password: "Privremena-123" },
+      });
+      expect(created.ok()).toBe(true);
+    }
+    await admin.dispose();
+    await page.goto("/admin/users");
+    const pagination = page.getByRole("navigation", { name: "Stranice" });
+    await expect(pagination).toBeVisible();
+    await expectTapTargets(pagination, "pagination");
+    const buttons = pagination.getByRole("button").filter({ visible: true });
+    const tops = await buttons.evaluateAll((all) => all.map((button) => Math.round(button.getBoundingClientRect().top)));
+    expect(new Set(tops).size, "pagination buttons on one row").toBe(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(WIDTH);
+  });
+
+  test("the admin's other pages fit a phone screen", async ({ page }) => {
     for (const path of ["/admin", "/admin/users/new", "/admin/companies/new", `/admin/users/${storeId}`, `/admin/companies/${companyId}`]) {
       await expectPhonePage(page, path);
     }
@@ -275,7 +416,7 @@ test.describe("admin", () => {
       await expect(button, name).toBeInViewport({ ratio: 1 });
       const box = (await button.boundingBox())!;
       expect(box.x, name).toBeGreaterThanOrEqual(0);
-      expect(box.x + box.width, name).toBeLessThanOrEqual(375);
+      expect(box.x + box.width, name).toBeLessThanOrEqual(WIDTH);
       expect(box.height, name).toBeGreaterThanOrEqual(44);
     }
     expect(await page.evaluate(() => window.scrollX)).toBe(0);
@@ -296,7 +437,7 @@ test.describe("company headquarters", () => {
     await hq.dispose();
   });
 
-  test("the overview, credits and reports show cards with all actions on a 375 px screen", async ({ page }) => {
+  test("the overview, credits and reports show cards with all actions on a phone screen", async ({ page }) => {
     for (const path of ["/dashboard", "/company/credits", "/company/reports"]) {
       await expectPhonePage(page, path, { cards: true });
     }
@@ -311,7 +452,7 @@ test.describe("company headquarters", () => {
     }
   });
 
-  test("the headquarters' other pages fit a 375 px screen", async ({ page }) => {
+  test("the headquarters' other pages fit a phone screen", async ({ page }) => {
     for (const path of ["/company/branches", `/company/branches/${branchId}`, "/company/profile", "/my-profile", "/notifications"]) {
       await expectPhonePage(page, path);
     }
@@ -321,9 +462,19 @@ test.describe("company headquarters", () => {
 test.describe("restaurant", () => {
   test.use({ storageState: storageState("restaurant") });
 
-  test("every page fits a 375 px screen", async ({ page }) => {
+  test("every page fits a phone screen", async ({ page }) => {
     const details = [`/stores/${storeId}`, `/products/${productId}`, `/reservation/${reservationId}`, `/donate-food/${donationIds.restaurant}/edit`];
     for (const path of [...RESTAURANT_PAGES, ...SHARED_PAGES, ...details]) await expectPhoneLayout(page, path);
+  });
+
+  test("Browse products keeps the search and puts the other filters behind the Filters button", async ({ page }) => {
+    await expectFilterPanel(page, "/browse-products", "Pretraga po imenu");
+  });
+
+  test("stat labels are not cut, and the reservation tabs are 44 px", async ({ page }) => {
+    await expectStatLabelsWhole(page);
+    await page.goto("/my-reservations");
+    await expectTapTargets(page.getByRole("tablist"), "/my-reservations tabs");
   });
 
   test("the meal donation form uses at least 16 px text", async ({ page }) => {

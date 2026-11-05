@@ -222,4 +222,25 @@ describe("AddProductPage", () => {
     expect(apiMock.delete).toHaveBeenCalledWith("/product-templates/3");
     expect(screen.queryByRole("button", { name: new RegExp(TEMPLATE.name) })).not.toBeInTheDocument();
   });
+
+  // jsdom applies no CSS, so the collapsed list below lg is checked by its classes: "hidden lg:block"
+  // while collapsed, always shown from lg up.
+  it("collapses the templates into one row below lg and again after applying one", async () => {
+    renderPage([TEMPLATE, { ...TEMPLATE, id: 4, name: "Kifla" }]);
+    const toggle = await screen.findByRole("button", { name: t("templates.toggle", { count: 2 }) });
+    const list = document.getElementById(toggle.getAttribute("aria-controls")!)!;
+    expect(toggle).toHaveClass("lg:hidden");
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(list).toHaveClass("hidden", "lg:block");
+
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(list).not.toHaveClass("hidden");
+
+    await userEvent.click(within(list).getByRole("button", { name: new RegExp(TEMPLATE.name) }));
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(list).toHaveClass("hidden");
+    // The collapsed row says which template fills the form.
+    expect(toggle).toHaveTextContent(t("templates.appliedShort", { name: TEMPLATE.name }));
+  });
 });

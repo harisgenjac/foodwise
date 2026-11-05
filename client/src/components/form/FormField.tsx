@@ -6,7 +6,7 @@ import FieldError from "./FieldError.js";
 // Shared input look. Pair it with FormField, which adds the leading icon (pl-10 leaves room for it).
 // Below sm the text is 16 px (iOS zooms into smaller fields) and the field 46 px high; from sm up 14 px.
 export const inputStyle =
-  "w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-3 text-base text-gray-900 placeholder:text-gray-400 sm:text-sm transition-colors focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500";
+  "min-h-11 w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-3 text-base text-gray-900 placeholder:text-gray-400 sm:min-h-0 sm:text-sm transition-colors focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500";
 
 // The red asterisk of a required field's label. It is CSS content, so it is not part of the
 // label's accessible name; the field itself carries aria-required.

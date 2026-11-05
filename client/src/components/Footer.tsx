@@ -18,7 +18,9 @@ const FOOTER_LINKS: FooterLink[] = [
   { key: "privacy" },
 ];
 
-const linkStyle = "text-gray-700 transition-colors hover:text-orange-600";
+// Below sm each item is a 44 px tap target with some room on both sides.
+const itemStyle = "inline-flex min-h-11 items-center px-2 sm:min-h-0 sm:px-0";
+const linkStyle = `${itemStyle} text-gray-700 transition-colors hover:text-orange-600`;
 
 interface FooterProps {
   // The impact counter needs a login, so the login page leaves it out.
@@ -76,7 +78,7 @@ function Footer({ showImpact = true }: FooterProps) {
                   {t(`footer.${key}`)}
                 </a>
               ) : (
-                <span>{t(`footer.${key}`)}</span>
+                <span className={itemStyle}>{t(`footer.${key}`)}</span>
               )}
             </Fragment>
           ))}

@@ -26,7 +26,7 @@ function SectionCard({ title, icon: TitleIcon, viewAll, isEmpty, empty, children
         </h2>
         <Link
           to={viewAll.to}
-          className="group inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-orange-600 transition-colors hover:bg-orange-50"
+          className="group inline-flex min-h-11 sm:min-h-0 shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-orange-600 transition-colors hover:bg-orange-50"
         >
           {viewAll.label}
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

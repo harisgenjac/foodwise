@@ -258,7 +258,7 @@ function MyReservationsPage() {
             role="tab"
             aria-selected={tab === key}
             onClick={() => switchTab(key)}
-            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+            className={`inline-flex min-h-11 sm:min-h-0 cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
               tab === key ? "bg-orange-500 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"
             }`}
           >
@@ -277,16 +277,24 @@ function MyReservationsPage() {
         ))}
       </div>
 
-      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={isHistory ? 4 : 3}>
-        <FilterField icon={Search}>
-          <input
-            type="text"
-            placeholder={t("filters.searchByName")}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className={inputStyle}
-          />
-        </FilterField>
+      <FilterBar
+        hasActiveFilters={hasActiveFilters}
+        activeCount={[businessName, status, period].filter(Boolean).length}
+        resultCount={total ?? undefined}
+        onClear={clearFilters}
+        columns={isHistory ? 4 : 3}
+        search={
+          <FilterField icon={Search}>
+            <input
+              type="text"
+              placeholder={t("filters.searchByName")}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputStyle}
+            />
+          </FilterField>
+        }
+      >
         <FilterField icon={Store}>
           <input
             type="text"

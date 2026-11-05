@@ -137,17 +137,24 @@ function AdminUsersPage() {
         action={{ to: "/admin/users/new", label: t("admin.dashboard.newUser"), icon: UserPlus }}
       />
 
-      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters}>
-        <FilterField icon={Search}>
-          <input
-            type="text"
-            value={q}
-            onChange={(e) => filter(setQ)(e.target.value)}
-            placeholder={t("admin.users.search")}
-            aria-label={t("admin.users.search")}
-            className={inputStyle}
-          />
-        </FilterField>
+      <FilterBar
+        hasActiveFilters={hasActiveFilters}
+        activeCount={[role, blocked, cityId].filter(Boolean).length}
+        resultCount={total ?? undefined}
+        onClear={clearFilters}
+        search={
+          <FilterField icon={Search}>
+            <input
+              type="text"
+              value={q}
+              onChange={(e) => filter(setQ)(e.target.value)}
+              placeholder={t("admin.users.search")}
+              aria-label={t("admin.users.search")}
+              className={inputStyle}
+            />
+          </FilterField>
+        }
+      >
         <FilterField icon={ShieldCheck}>
           <select
             value={role}

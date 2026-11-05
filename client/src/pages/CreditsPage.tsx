@@ -155,7 +155,7 @@ function CreditsPage() {
                   role="tab"
                   aria-selected={tab === key}
                   onClick={() => setTab(key)}
-                  className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                  className={`min-h-11 sm:min-h-0 cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                     tab === key ? "bg-orange-500 text-white" : "text-gray-600 hover:bg-gray-100"
                   }`}
                 >

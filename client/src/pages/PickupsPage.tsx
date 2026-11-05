@@ -125,7 +125,7 @@ function PickupsPage() {
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div role="tablist" className="inline-flex w-fit flex-wrap rounded-full border border-gray-100 bg-white p-1 shadow-sm">
+        <div role="tablist" className="flex w-full rounded-full border border-gray-100 bg-white p-1 shadow-sm sm:inline-flex sm:w-fit">
           {tabs.map(({ key, label, icon: Icon, count }) => (
             <button
               key={key}
@@ -133,11 +133,11 @@ function PickupsPage() {
               role="tab"
               aria-selected={scope === key}
               onClick={() => setScope(key)}
-              className={`relative inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              className={`relative inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-2 py-1.5 text-sm sm:min-h-0 sm:flex-none sm:px-4 font-medium transition-colors ${
                 scope === key ? "bg-orange-500 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"
               }`}
             >
-              <Icon className="h-4 w-4" strokeWidth={1.8} />
+              <Icon className="hidden h-4 w-4 sm:block" strokeWidth={1.8} />
               {label}
               {!!count && (
                 <span

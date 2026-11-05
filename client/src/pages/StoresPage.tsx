@@ -139,16 +139,24 @@ function StoresPage() {
         count={t("store.count", { count: total ?? storesList.length })}
       />
 
-      <FilterBar hasActiveFilters={hasActiveFilters} onClear={clearFilters} columns={4}>
-        <FilterField icon={Search}>
-          <input
-            type="text"
-            placeholder={t("filters.searchByStore")}
-            value={businessName}
-            onChange={(e) => setBusinessName(e.target.value)}
-            className={inputStyle}
-          />
-        </FilterField>
+      <FilterBar
+        hasActiveFilters={hasActiveFilters}
+        activeCount={[cityId, showFavoritesOnly, radius !== DEFAULT_RADIUS].filter(Boolean).length}
+        resultCount={total ?? undefined}
+        onClear={clearFilters}
+        columns={4}
+        search={
+          <FilterField icon={Search}>
+            <input
+              type="text"
+              placeholder={t("filters.searchByStore")}
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+              className={inputStyle}
+            />
+          </FilterField>
+        }
+      >
         <FilterField icon={MapPin}>
           <CitySelect
             value={cityId}

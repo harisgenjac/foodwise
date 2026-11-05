@@ -169,6 +169,8 @@ function AdminCreditRequestsPage() {
 
       <FilterBar
         hasActiveFilters={hasActiveFilters}
+        activeCount={[type, status].filter(Boolean).length}
+        resultCount={total ?? undefined}
         onClear={() => {
           setType("");
           setStatus("");

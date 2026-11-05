@@ -61,7 +61,7 @@ function NotificationsPage() {
                   key={tab.key}
                   type="button"
                   onClick={() => setFilter(tab.key)}
-                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                  className={`inline-flex min-h-11 sm:min-h-0 cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                     filter === tab.key
                       ? "bg-orange-500 text-white shadow-sm"
                       : "text-gray-600 hover:bg-gray-50"
@@ -86,7 +86,7 @@ function NotificationsPage() {
                 <button
                   type="button"
                   onClick={markAllAsRead}
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-orange-600 transition-colors hover:bg-orange-50"
+                  className="inline-flex min-h-11 sm:min-h-0 cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-orange-600 transition-colors hover:bg-orange-50"
                 >
                   <CheckCheck className="h-4 w-4" />
                   {t("notifications.markAllRead")}
@@ -96,7 +96,7 @@ function NotificationsPage() {
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(true)}
-                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                  className="inline-flex min-h-11 sm:min-h-0 cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
                 >
                   <Trash2 className="h-4 w-4" />
                   {t("notifications.deleteRead")}

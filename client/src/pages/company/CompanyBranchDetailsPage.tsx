@@ -300,7 +300,7 @@ function CompanyBranchDetailsPage() {
               role="tab"
               aria-selected={tab === key}
               onClick={() => setTab(key)}
-              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              className={`inline-flex min-h-11 sm:min-h-0 cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                 tab === key ? "bg-orange-500 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"
               }`}
             >
