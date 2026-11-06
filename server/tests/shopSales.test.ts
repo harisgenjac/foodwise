@@ -131,6 +131,24 @@ describe("recording a sale in the shop", () => {
     expect(parseFloat(rest.body.donation.quantity)).toBe(3);
   });
 
+  it("returning a fully moved donation counts the shop sales", async () => {
+    const product = await createProduct(store, { quantity: 10 });
+    await sellInShop(product.id, 7);
+    // The 3 kg still free go to donations: nothing is reserved, so the product leaves the offer.
+    const moved = await store.post(`/api/donations/from-product/${product.id}`).send({ donation_type: "FREE" });
+    expect(moved.status).toBe(201);
+    expect(await productStatus(product.id)).toBe("Removed");
+
+    const returned = await store.post(`/api/donations/${moved.body.donation.id}/return-to-product`);
+    expect(returned.status).toBe(200);
+    // Rebuilt as donation 3 + reservations 0 + sold in shop 7, so exactly the 3 kg are free again.
+    expect(parseFloat(returned.body.product.quantity)).toBe(10);
+    expect(returned.body.product.status).toBe("Available");
+    expect(await available(product.id)).toBe(3);
+    const marketplace = (await restaurant.get(`/api/products?store_id=${await userId(STORE)}`)).body.products;
+    expect(parseFloat(marketplace.find((row: { id: number }) => row.id === product.id).available_quantity)).toBe(3);
+  });
+
   it("validates the amount, the owner and the product", async () => {
     const product = await createProduct(store, { quantity: 10 });
     for (const quantity of [0, -1, "abc", undefined]) {

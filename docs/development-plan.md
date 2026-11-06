@@ -42,7 +42,7 @@ Design, decisions and PR split: `docs/orders-design.md` (agreed Nov 6, 2026). De
 
 - [ ] `orders` table above reservations (`order_id` on the reservation), with a fulfilment method (pickup only for now), and status history (who, when, source).
 - [x] "Sold in shop" (Nov 6, 2026): a store records an amount sold at its own till, which lowers the free quantity (no credit back, not an app sale, cannot be undone: a confirmation shows the amount and the free quantity before and after).
-- [ ] Check that "Move to donations", returning a donation to the offer and every other place that computes a product's free quantity count shop sales (the marketplace, the product page, the sold-out status and the order stock checks already do).
+- [ ] Check that every place that computes a product's free quantity counts shop sales (the marketplace, the product page, the sold-out status, the order stock checks, moving to donations and returning a donation to the offer already do).
 - [ ] Short order code (random, 4 characters, e.g. `#K7PM`).
 - [ ] Cart: one store, "empty the cart?" dialog, no stock held, "Accept partial fulfilment" option.
 - [ ] Submitting an order with all items at once, using the existing available-quantity protection.
