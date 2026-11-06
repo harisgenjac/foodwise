@@ -13,6 +13,7 @@ import {
   Pencil,
   Search,
   SearchX,
+  Store,
   Tag,
   Trash2,
 } from "lucide-react";
@@ -26,6 +27,7 @@ import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
 import ConfirmModal from "../components/common/ConfirmModal.js";
 import DonateProductModal from "../components/donation/DonateProductModal.js";
+import SoldInShopModal from "../components/product/SoldInShopModal.js";
 import { inputStyle } from "../components/form/FormField.js";
 import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
@@ -51,6 +53,7 @@ function MyProductsPage() {
   const [sort, setSort] = useState<SortValue>("newest");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [donatingProduct, setDonatingProduct] = useState<Product | null>(null);
+  const [shopSaleProduct, setShopSaleProduct] = useState<Product | null>(null);
   const [deleting, setDeleting] = useState(false);
   const { t } = useTranslation();
   const categories = t("categories", { returnObjects: true }) as Record<
@@ -231,6 +234,17 @@ function MyProductsPage() {
                       <HandHeart className="h-4 w-4" />
                     </button>
                   )}
+                  {product.status === "Available" && parseFloat(product.available_quantity ?? "0") > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setShopSaleProduct(product)}
+                      title={t("soldInShop.button")}
+                      aria-label={t("soldInShop.button")}
+                      className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-gray-200 px-3 text-gray-600 transition-colors hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
+                    >
+                      <Store className="h-4 w-4" />
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setSelectedProduct(product)}
@@ -253,6 +267,10 @@ function MyProductsPage() {
         fetching={fetching}
         onLoadMore={loadMore}
       />
+
+      {shopSaleProduct && (
+        <SoldInShopModal product={shopSaleProduct} onClose={() => setShopSaleProduct(null)} onRecorded={refetch} />
+      )}
 
       {donatingProduct && (
         <DonateProductModal

@@ -1786,5 +1786,27 @@
         "branches": "branches"
       }
     }
+  },
+  "soldInShop": {
+    "button": "Sold in shop",
+    "title": "Sold in your shop",
+    "text": "Record an amount you sold at your own till, so restaurants see what is really left.",
+    "free": "Free now: {{amount}} {{unit}}",
+    "quantity": "Amount sold in the shop",
+    "hint": "Only the free quantity can be recorded. Quantity in pending or accepted reservations stays reserved.",
+    "nothingFree": "Nothing is free right now: everything left is in reservations.",
+    "positive": "Enter an amount above zero.",
+    "tooMuch": "That is more than the free quantity.",
+    "next": "Continue",
+    "cancel": "Cancel",
+    "confirmAmount": "Sold in shop: {{amount}} {{unit}}.",
+    "confirmAfter": "Available after this: {{after}} {{unit}} (now {{before}} {{unit}}).",
+    "cannotUndo": "This cannot be undone. If you make a mistake, publish a new product.",
+    "confirmButton": "Record the sale",
+    "success": "The sale in your shop was recorded.",
+    "error": "The sale was not recorded. Please try again.",
+    "stockLabel": "sold in shop",
+    "historyTitle": "Sold in your shop",
+    "historyTotal": "{{amount}} {{unit}} in total. Restaurants see only the lower available quantity."
   }
 }

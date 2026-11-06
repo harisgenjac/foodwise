@@ -13,6 +13,9 @@ export interface Product {
   created_at: string;
   updated_at: string;
   available_quantity?: string;
+  // What the store sold in its own shop ("Sold in shop"); only for the store, on its product details
+  // and my products (DECIMAL as a string).
+  sold_in_shop?: string;
   days_until_expiry?: number;
   // For a restaurant: straight-line km from its city to the store's (null without a city on either side).
   distance_km?: number | null;
@@ -24,6 +27,14 @@ export interface Product {
   store_address?: string | null;
   store_phone?: string | null;
   store_pickup_hours?: string | null;
+}
+
+// One "Sold in shop" entry (GET /products/:id/shop-sales).
+export interface ShopSale {
+  id: number;
+  quantity: string;
+  created_at: string;
+  created_by_email: string | null;
 }
 
 export interface Reservation {

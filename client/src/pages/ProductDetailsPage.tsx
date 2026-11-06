@@ -31,6 +31,8 @@ import ConfirmModal from "../components/common/ConfirmModal.js";
 import DetailItem from "../components/product/DetailItem.js";
 import ReserveProductModal from "../components/product/ReserveProductModal.js";
 import DonateProductModal from "../components/donation/DonateProductModal.js";
+import SoldInShopModal from "../components/product/SoldInShopModal.js";
+import ShopSalesCard from "../components/product/ShopSalesCard.js";
 import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
 import { PRODUCT_STATUS_STYLES } from "../utils/productStatus.js";
 import { getDaysUntilExpiry } from "../utils/expiry.js";
@@ -48,6 +50,9 @@ function ProductDetailsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [donating, setDonating] = useState(false);
+  const [sellingInShop, setSellingInShop] = useState(false);
+  // Changes after a "Sold in shop" entry, so the list of entries loads again.
+  const [shopSalesKey, setShopSalesKey] = useState(0);
   const { t } = useTranslation();
   const productStatuses = t("productStatus", { returnObjects: true }) as Record<
     string,
@@ -133,7 +138,9 @@ function ProductDetailsPage() {
   const isOwner = isStore && product.store_id === user?.id;
   const quantity = parseFloat(product.quantity);
   const available = parseFloat(product.available_quantity ?? product.quantity);
-  const reserved = Math.max(quantity - available, 0);
+  // The owner also sees what it sold in its own shop; for restaurants that is part of "reserved".
+  const soldInShop = isOwner ? parseFloat(product.sold_in_shop ?? "0") : 0;
+  const reserved = Math.max(quantity - available - soldInShop, 0);
   const availablePercent = quantity > 0 ? Math.round((available / quantity) * 100) : 0;
   const originalPrice = Number(product.original_price);
   const discountedPrice = Number(product.discounted_price);
@@ -251,6 +258,12 @@ function ProductDetailsPage() {
               <span className="font-medium text-gray-700">{t("myProducts.stockTitle")}</span>
               <span className="text-gray-500">
                 {t("myProducts.reservedQuantity")}: {reserved} {unit}
+                {soldInShop > 0 && (
+                  <>
+                    <span className="text-gray-300"> · </span>
+                    {t("soldInShop.stockLabel")}: {soldInShop} {unit}
+                  </>
+                )}
               </span>
             </div>
             <div className="h-2.5 overflow-hidden rounded-full bg-gray-100">
@@ -278,6 +291,16 @@ function ProductDetailsPage() {
                 >
                   <HandHeart className="h-4 w-4" />
                   {t("donations.fromProduct.button")}
+                </button>
+              )}
+              {product.status === "Available" && available > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSellingInShop(true)}
+                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 font-semibold text-gray-700 transition-colors hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
+                >
+                  <Store className="h-4 w-4" />
+                  {t("soldInShop.button")}
                 </button>
               )}
               {canDelete && (
@@ -361,6 +384,19 @@ function ProductDetailsPage() {
             )}
           </div>
         </section>
+      )}
+
+      {isOwner && <ShopSalesCard productId={product.id} unit={unit} reloadKey={shopSalesKey} />}
+
+      {sellingInShop && (
+        <SoldInShopModal
+          product={product}
+          onClose={() => setSellingInShop(false)}
+          onRecorded={() => {
+            setShopSalesKey((key) => key + 1);
+            fetchProduct();
+          }}
+        />
       )}
 
       {donating && (

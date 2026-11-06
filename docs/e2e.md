@@ -30,6 +30,7 @@ e2e/
     ├── credits-first-product.spec.ts  store without a plan is stopped on Add product → requests a plan → admin approves → notification, 50 credits → publishes (49)
     ├── store-chain.spec.ts            admin creates a company (temporary password option) → HQ first login → branch in Breza + plan → admin approves → branch first login (name and city locked) → product → restaurant in Visoko sees "dio <company>"
     ├── nearby-offers.spec.ts          Breza (7 km) and Tuzla (73 km) products → default 10 km shows Breza + "more further away" hint → "Svi gradovi" shows Tuzla → city Tuzla shows it at 5 km
+    ├── sold-in-shop.spec.ts           store records 4 of 10 kg as sold in its shop through the confirmation (amount, before and after, cannot be undone) → the entry list → the restaurant sees 6 kg
     ├── csv-import.spec.ts             store imports a 3-row CSV → My products, −3 credits → a CSV with an invalid row shows the row error, imports nothing, credits unchanged
     ├── block-store.spec.ts            admin blocks blockStore with a reason → its session ends, login shows the reason → offer hidden → unblock → offer back
     ├── donations.spec.ts              store moves a product's free quantity to donations → shown on "Doniraj hranu", gone from the marketplace → removed and returned to the offer

@@ -7,6 +7,7 @@ import { parseId, parseNumber } from "../utils/params.js";
 import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import { parseCityFilter } from "../utils/cities.js";
 import { visibleStore } from "../utils/visibility.js";
+import { freeQuantity, soldOutCover } from "../services/stock.js";
 
 export const RESERVATION_STATUSES = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
 
@@ -59,13 +60,8 @@ export const createReservation = async (req: Request, res: Response) => {
         error: "Pickup date must be between today and the product's expiry date.",
       });
     }
-    const reserved = await client.query(
-      "SELECT COALESCE(SUM(quantity), 0) AS total_reserved FROM reservations WHERE product_id = $1 AND status IN ('Pending', 'Confirmed', 'Completed')",
-      [productId],
-    );
-    const availableQuantity =
-      parseFloat(products.rows[0].quantity) -
-      parseFloat(reserved.rows[0].total_reserved);
+    // Under the product lock: what reservations hold and what the store sold in its shop are gone.
+    const availableQuantity = await freeQuantity(client, productId);
     if (availableQuantity < requestedQuantity) {
       await client.query("ROLLBACK");
       return res
@@ -403,20 +399,19 @@ export const getStoreReservations = async (req: Request, res: Response) => {
   }
 };
 
-// Marks the product Sold once confirmed (or already picked up) reservations cover its whole quantity.
-// The caller's transaction must hold the lock on the product row.
+// Marks the product Sold once confirmed (or already picked up) reservations and shop sales cover its
+// whole quantity (soldOutCover). The caller's transaction must hold the lock on the product row.
+// `notify` is false when the store sold the rest itself in its shop: it needs no notification.
 export const markSoldIfFullyConfirmed = async (
   client: PoolClient,
   product: { id: number; store_id: number; name: string; quantity: string },
+  { notify = true }: { notify?: boolean } = {},
 ) => {
-  const confirmedSum = await client.query(
-    "SELECT COALESCE(SUM(quantity), 0) AS total_confirmed FROM reservations WHERE product_id = $1 AND status IN ('Confirmed', 'Completed')",
-    [product.id],
-  );
-  if (parseFloat(confirmedSum.rows[0].total_confirmed) < parseFloat(product.quantity)) {
+  if ((await soldOutCover(client, product.id)) < parseFloat(product.quantity)) {
     return false;
   }
   await client.query("UPDATE products SET status = 'Sold' WHERE id = $1", [product.id]);
+  if (!notify) return true;
   await createNotification(client, {
     userId: product.store_id,
     type: "PRODUCT_SOLD_OUT",
@@ -833,7 +828,8 @@ export const completeReservation = async (req: Request, res: Response) => {
 };
 
 // After a Confirmed reservation was cancelled: a product it had sold out becomes Available again,
-// unless it has expired or Confirmed + Completed still cover its quantity. Locks the product row.
+// unless it has expired or Confirmed + Completed + shop sales still cover its quantity. Locks the
+// product row.
 export const releaseSoldProduct = async (client: PoolClient, productId: number) => {
   const productResult = await client.query(
     "SELECT id, status, quantity, expiry_date < CURRENT_DATE AS is_expired FROM products WHERE id = $1 FOR UPDATE",
@@ -841,11 +837,7 @@ export const releaseSoldProduct = async (client: PoolClient, productId: number) 
   );
   const product = productResult.rows[0];
   if (!product || product.status !== "Sold" || product.is_expired) return;
-  const held = await client.query(
-    "SELECT COALESCE(SUM(quantity), 0) AS total_held FROM reservations WHERE product_id = $1 AND status IN ('Confirmed', 'Completed')",
-    [product.id],
-  );
-  if (parseFloat(held.rows[0].total_held) < parseFloat(product.quantity)) {
+  if ((await soldOutCover(client, product.id)) < parseFloat(product.quantity)) {
     await client.query("UPDATE products SET status = 'Available' WHERE id = $1", [product.id]);
   }
 };

@@ -372,10 +372,17 @@ export const getStoreDetails = async (req: Request, res: Response) => {
     }
 
     // The store's offers are paged through GET /products?store_id=. Both reservation counts are
-    // picked-up (Completed) only: a Confirmed one can still become a missed pickup.
+    // picked-up (Completed) only: a Confirmed one can still become a missed pickup. A product counts
+    // as sold only when restaurants bought some of it: one sold out only in the store's own shop
+    // (Sold in shop) is not an app sale.
     const stats = await pool.query(
-      `SELECT 
-     COUNT(DISTINCT id) FILTER (WHERE status = 'Sold') AS sold_articles,
+      `SELECT
+     COUNT(DISTINCT id) FILTER (
+       WHERE status = 'Sold'
+         AND EXISTS (SELECT 1 FROM reservations
+                     WHERE reservations.product_id = products.id
+                       AND reservations.status IN ('Confirmed', 'Completed'))
+     ) AS sold_articles,
      (SELECT COUNT(*) FROM reservations r JOIN products p ON r.product_id = p.id WHERE p.store_id = $1 AND r.status = 'Completed') AS successful_reservations
    FROM products WHERE store_id = $1`,
       [storeId],

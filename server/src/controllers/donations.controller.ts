@@ -11,6 +11,7 @@ import {
 import { parseId, parseNumber } from "../utils/params.js";
 import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import { markSoldIfFullyConfirmed } from "./reservations.controller.js";
+import { freeQuantity, heldByReservations, reservedQuantity, soldInShop } from "../services/stock.js";
 import { HttpError } from "../utils/httpError.js";
 import { chargeForProduct, hasOpenProductCharge, refundForProduct } from "../services/creditService.js";
 
@@ -284,12 +285,9 @@ export const donateProduct = async (req: Request, res: Response) => {
       return res.status(400).json({ error: priceError });
     }
 
-    const reserved = await client.query(
-      "SELECT COALESCE(SUM(quantity), 0) AS total_reserved FROM reservations WHERE product_id = $1 AND status IN ('Pending', 'Confirmed', 'Completed')",
-      [productId],
-    );
-    const totalReserved = parseFloat(reserved.rows[0].total_reserved);
-    const available = parseFloat(product.quantity) - totalReserved;
+    // The free quantity: reservations and shop sales keep theirs.
+    const available = await freeQuantity(client, productId);
+    const totalReserved = await reservedQuantity(client, productId);
     const donatedQuantity = requestedQuantity ?? available;
     if (available <= 0 || donatedQuantity > available) {
       await client.query("ROLLBACK");
@@ -427,17 +425,14 @@ export const returnDonationToProduct = async (req: Request, res: Response) => {
     }
 
     // A Removed product kept its old quantity when everything was moved, so it is rebuilt from
-    // what reservations still hold; otherwise the donated amount is simply added back.
+    // what reservations still hold and what the store sold in its shop, plus the donation (so the
+    // donation is exactly what becomes free again); otherwise the donated amount is simply added back.
     const updated =
       product.status === "Removed"
         ? await client.query(
             `UPDATE products
              SET status = 'Available',
-                 quantity = $1::decimal + COALESCE(
-                   (SELECT SUM(reservations.quantity) FROM reservations
-                    WHERE reservations.product_id = $2
-                      AND reservations.status IN ('Pending', 'Confirmed', 'Completed')),
-                   0)
+                 quantity = $1::decimal + ${heldByReservations("products")} + ${soldInShop("products")}
              WHERE id = $2 RETURNING *`,
             [donation.quantity, product.id],
           )
