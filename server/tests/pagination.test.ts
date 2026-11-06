@@ -197,14 +197,14 @@ describe("Pagination", () => {
       await pool.query(
         `INSERT INTO credit_requests (user_id, request_type, plan_id, period_month, status, created_at)
          VALUES ($1, 'SUBSCRIPTION', $2, $3, 'REJECTED', $4)`,
-        [await userId(RESTAURANT), planId, `2029-${String(month).padStart(2, "0")}-01`, SAME_TIME],
+        [await userId(STORE), planId, `2029-${String(month).padStart(2, "0")}-01`, SAME_TIME],
       );
     }
 
-    const response = await restaurant.get("/api/credits/requests");
+    const response = await store.get("/api/credits/requests");
     expect(response.body.requests).toHaveLength(10);
     expect(response.body.total).toBe(12);
-    await expectStablePages(restaurant, "/api/credits/requests", "requests");
+    await expectStablePages(store, "/api/credits/requests", "requests");
   });
 
   it("admin lists return 20 by default", async () => {
@@ -228,7 +228,7 @@ describe("Pagination", () => {
     "/api/donations/mine",
     "/api/credits/requests",
   ])("%s rejects an invalid limit or offset", async (url) => {
-    const agent = url.startsWith("/api/products/mine") || url.startsWith("/api/reservations/store") || url.startsWith("/api/donations")
+    const agent = url.startsWith("/api/products/mine") || url.startsWith("/api/reservations/store") || url.startsWith("/api/donations") || url.startsWith("/api/credits")
       ? store
       : restaurant;
     for (const page of ["limit=0", "limit=101", "limit=abc", "offset=-1", "offset=1.5"]) {

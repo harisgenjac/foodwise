@@ -1,5 +1,7 @@
 # Feature spec: Credit-based subscription system
 
+> **Changed Nov 6, 2026:** restaurants no longer pay credits (orders design, `docs/orders-design.md`). Only stores have plans, top-ups, a balance and the Credits page; reserving is free and nothing is refunded to a restaurant. The restaurant rules below are kept as history.
+
 ## How to work (read first)
 You already know this project. Before writing any code:
 
@@ -71,7 +73,7 @@ approves it. Card payments, auto-approval and invoicing come later, so keep the 
 7. After publishing, **only quantity and expiry date are locked** (disable in UI AND reject in API).
    All other fields stay editable.
 
-## RESTAURANT: 1 credit per reservation
+## RESTAURANT: 1 credit per reservation (removed Nov 6, 2026: restaurants pay no credits)
 1. Creating a reservation charges 1 credit immediately. Balance 0 → reject.
 2. Adding a donation meal: no charge.
 3. Restaurant cancels an unconfirmed reservation, same day: refund. After the day boundary: no refund.

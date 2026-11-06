@@ -48,6 +48,7 @@ export const createRenewals = async (
     WHERE subscriptions.period_month = $1
       AND subscriptions.status = 'ACTIVE'
       AND subscriptions.auto_renew
+      AND users.role = 'STORE' -- only stores pay credits
       AND ${notBlocked("users")}
       AND ($3::int IS NULL OR subscriptions.user_id = $3)
       AND NOT EXISTS (

@@ -238,67 +238,40 @@ describe("store: 1 credit per published product", () => {
   });
 });
 
-describe("restaurant: 1 credit per reservation", () => {
+describe("restaurant: reservations cost no credits", () => {
   let productId: number;
+
+  // Every ledger row of the restaurant (it has no subscription, see insertUser).
+  const restaurantLedger = async () =>
+    (await pool.query("SELECT type FROM credit_transactions WHERE user_id = $1", [restaurantId])).rows;
 
   beforeEach(async () => {
     productId = (await createProduct(store, { category: "Dairy" })).id;
   });
 
-  it("charges 1 credit with the reserved product's category", async () => {
-    const before = await available(restaurantId);
-    const reservationId = (await reserve(restaurant, productId, 2)) as number;
-    expect(await available(restaurantId)).toBe(before - 1);
-    expect(await ledger("RESERVATION_CHARGE", reservationId)).toMatchObject([{ amount: -1, category: "Dairy" }]);
-  });
-
-  it("refuses a reservation at 0 credits and keeps the stock free", async () => {
-    await setCredits(restaurantId, 0);
+  it("reserves without a subscription or credits, and nothing is charged", async () => {
     const response = await restaurant
       .post("/api/reservations")
       .send({ product_id: productId, quantity: 2, pickup_date: futurePickup() });
-    expect(response.status).toBe(402);
-    expect(response.body.code).toBe("INSUFFICIENT_CREDITS");
-    expect((await pool.query("SELECT id FROM reservations WHERE product_id = $1", [productId])).rows).toHaveLength(0);
+    expect(response.status).toBe(201);
+    expect(await restaurantLedger()).toEqual([]);
   });
 
-  it("refunds the restaurant's own cancel on the same day", async () => {
-    const before = await available(restaurantId);
-    const reservationId = await reserve(restaurant, productId, 2);
-    const response = await restaurant.patch(`/api/reservations/${reservationId}/cancel`);
-    expect(response.status).toBe(200);
-    expect(response.body.creditRefunded).toBe(true);
-    expect(await available(restaurantId)).toBe(before);
-  });
-
-  it("does not refund the restaurant's own cancel after the day boundary", async () => {
-    const reservationId = await reserve(restaurant, productId, 2);
-    moveToTomorrow();
-    const response = await restaurant.patch(`/api/reservations/${reservationId}/cancel`);
-    expect(response.body.creditRefunded).toBe(false);
-    expect(await ledger("RESERVATION_REFUND", reservationId)).toHaveLength(0);
-  });
-
-  it("always refunds a reservation the store rejects, even after the day boundary", async () => {
-    const reservationId = await reserve(restaurant, productId, 2);
-    moveToTomorrow();
-    expect((await store.patch(`/api/reservations/${reservationId}/reject`)).status).toBe(200);
-    expect(await ledger("RESERVATION_REFUND", reservationId)).toMatchObject([{ amount: 1, actor: "USER" }]);
-  });
-
-  it("does not refund a missed pickup cancelled by the store", async () => {
-    const reservationId = await reserve(restaurant, productId, 2);
-    await store.patch(`/api/reservations/${reservationId}/accept`);
-    await pool.query("UPDATE reservations SET pickup_date = NOW() - INTERVAL '2 days' WHERE id = $1", [reservationId]);
-    expect((await store.patch(`/api/reservations/${reservationId}/cancel-overdue`)).status).toBe(200);
-    expect(await ledger("RESERVATION_REFUND", reservationId)).toHaveLength(0);
-  });
-
-  it("refunds pending reservations cancelled by the expiry job", async () => {
-    const reservationId = await reserve(restaurant, productId, 2);
+  it("writes nothing to the ledger when a reservation is cancelled, rejected, missed or expires", async () => {
+    const cancelled = await reserve(restaurant, productId, 1);
+    expect((await restaurant.patch(`/api/reservations/${cancelled}/cancel`)).body).toEqual({
+      message: "Reservation cancelled successfully.",
+    });
+    const rejected = await reserve(restaurant, productId, 1);
+    expect((await store.patch(`/api/reservations/${rejected}/reject`)).status).toBe(200);
+    const missed = await reserve(restaurant, productId, 1);
+    await store.patch(`/api/reservations/${missed}/accept`);
+    await pool.query("UPDATE reservations SET pickup_date = NOW() - INTERVAL '2 days' WHERE id = $1", [missed]);
+    expect((await store.patch(`/api/reservations/${missed}/cancel-overdue`)).status).toBe(200);
+    await reserve(restaurant, productId, 1);
     await pool.query("UPDATE products SET expiry_date = CURRENT_DATE - 1 WHERE id = $1", [productId]);
     await expireProducts();
-    expect(await ledger("RESERVATION_REFUND", reservationId)).toMatchObject([{ amount: 1, actor: "SYSTEM" }]);
+    expect(await restaurantLedger()).toEqual([]);
   });
 
   describe("admin cancellations", () => {
@@ -308,26 +281,17 @@ describe("restaurant: 1 credit per reservation", () => {
       admin = await registerAndLogin(ADMIN, "ADMIN");
     });
 
-    it("refunds a reservation an admin cancels, also an accepted one", async () => {
-      const reservationId = await reserve(restaurant, productId, 2);
-      await store.patch(`/api/reservations/${reservationId}/accept`);
-      const response = await admin.post(`/api/admin/reservations/${reservationId}/cancel`).send({ reason: "Dispute" });
-      expect(response.status).toBe(200);
-      expect(await ledger("RESERVATION_REFUND", reservationId)).toMatchObject([{ actor: "ADMIN" }]);
-    });
-
-    it("refunds the restaurants but not the store when an admin removes a product", async () => {
-      const reservationId = await reserve(restaurant, productId, 2);
-      const response = await admin.delete(`/api/admin/products/${productId}`).send({ reason: "Rules" });
-      expect(response.status).toBe(200);
-      expect(await ledger("RESERVATION_REFUND", reservationId)).toHaveLength(1);
+    it("cancels without any refund, and keeps the store's credit when it removes a product", async () => {
+      const accepted = await reserve(restaurant, productId, 2);
+      await store.patch(`/api/reservations/${accepted}/accept`);
+      expect((await admin.post(`/api/admin/reservations/${accepted}/cancel`).send({ reason: "Dispute" })).status).toBe(200);
+      await reserve(restaurant, productId, 2);
+      expect((await admin.delete(`/api/admin/products/${productId}`).send({ reason: "Rules" })).status).toBe(200);
       expect(await ledger("PRODUCT_REFUND", productId)).toHaveLength(0);
-    });
-
-    it("refunds pending reservations cancelled by blocking a user", async () => {
-      const reservationId = await reserve(restaurant, productId, 2);
+      const other = (await createProduct(store)).id;
+      await reserve(restaurant, other, 1);
       expect((await admin.post(`/api/admin/users/${storeId}/block`).send({ reason: "Fraud" })).status).toBe(200);
-      expect(await ledger("RESERVATION_REFUND", reservationId)).toHaveLength(1);
+      expect(await restaurantLedger()).toEqual([]);
     });
   });
 });

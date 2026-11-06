@@ -94,7 +94,6 @@ function SidebarNav({ expanded, locked = false, onNavigate, replace = false }: S
     { to: "/my-reservations", label: t("sidebar.myReservations"), icon: CalendarCheck },
     { to: "/pickups", label: t("sidebar.pickups"), icon: PackageCheck },
     { to: "/reports", label: t("sidebar.reports"), icon: FileChartColumn },
-    { to: "/credits", label: t("sidebar.credits"), icon: Coins },
   ];
 
   const humanitarianLinks: SidebarLink[] = [

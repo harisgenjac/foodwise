@@ -1,8 +1,9 @@
 // Replaces ALL data with a demo platform that looks like it has been in use for two months:
 // the stores, restaurants and admins from seedData.ts, with products, reservations, donations,
-// subscriptions, credits, favorites, notifications, announcements and admin actions spread over
-// the last HISTORY_DAYS days. The history is simulated day by day and every credit movement goes
-// through creditService with the simulated time, so balances follow the real rules. Random choices
+// the stores' subscriptions and credits (restaurants pay none), favorites, notifications,
+// announcements and admin actions spread over the last HISTORY_DAYS days. The history is
+// simulated day by day and every credit movement goes through creditService with the simulated
+// time, so balances follow the real rules. Random choices
 // use a fixed seed, so every run gives the same data relative to the day it runs.
 //
 // Usage: npm run seed
@@ -15,12 +16,10 @@ import { creditMonth, nextMonth } from "../utils/creditTime.js";
 import {
   adjustCredits,
   chargeForProduct,
-  chargeForReservation,
   getBalance,
   grantPlan,
   grantTopup,
   refundForProduct,
-  refundForReservation,
   type ActorRef,
 } from "../services/creditService.js";
 import {
@@ -123,7 +122,6 @@ interface Business {
   createdAt: Date;
   activeFrom: Date;
   favorites: Business[];
-  topups: Map<string, number>;
 }
 
 interface SimProduct {
@@ -345,7 +343,6 @@ async function seed() {
         createdAt,
         activeFrom: createdAt,
         favorites: [],
-        topups: new Map(),
       };
     };
     const stores: Business[] = [];
@@ -491,23 +488,25 @@ async function seed() {
       if (!months.includes(month)) months.push(month);
     }
     const planFor = (business: Business, monthIndex: number) =>
-      business.data.plans[Math.min(monthIndex, business.data.plans.length - 1)]!;
+      business.store!.plans[Math.min(monthIndex, business.store!.plans.length - 1)]!;
 
-    for (const business of businesses) {
+    // Only stores subscribe: restaurants order for free from the moment their account exists.
+    for (const business of stores) {
+      const { autoRenew } = business.store!;
       // First month: subscribe right after the account is created; nothing happens before approval.
       const firstAsked = addHours(business.createdAt, between(0.2, 0.6));
       const firstApproved = addHours(firstAsked, between(1, 3));
       const firstIndex = months.indexOf(creditMonth(firstApproved));
       await creditRequest({
         user: business, type: "SUBSCRIPTION", plan: planFor(business, firstIndex), periodMonth: months[firstIndex]!,
-        autoRenew: business.data.autoRenew, createdAt: firstAsked, status: "APPROVED", reviewedAt: firstApproved,
+        autoRenew, createdAt: firstAsked, status: "APPROVED", reviewedAt: firstApproved,
       });
       business.activeFrom = firstApproved;
 
       for (let index = firstIndex + 1; index < months.length; index++) {
         const monthStart = months[index]!;
         const plan = planFor(business, index);
-        if (business.data.email === "restoran.starigrad@demo.com" && index === 1) {
+        if (business.data.email === "market.neretva@demo.com" && index === 1) {
           await creditRequest({
             user: business, type: "SUBSCRIPTION", plan: "Pro", periodMonth: monthStart, createdAt: at(monthStart, 7.5),
             status: "REJECTED", reviewedAt: at(monthStart, 7.8),
@@ -518,10 +517,10 @@ async function seed() {
           // Plan change: asked a few days before the month starts, approved the next day.
           const asked = at(addDays(monthStart, -4), between(10, 15));
           await creditRequest({
-            user: business, type: "SUBSCRIPTION", plan, periodMonth: monthStart, autoRenew: business.data.autoRenew,
+            user: business, type: "SUBSCRIPTION", plan, periodMonth: monthStart, autoRenew,
             createdAt: asked, status: "APPROVED", reviewedAt: at(addDays(monthStart, -3), between(9, 12)),
           });
-        } else if (business.data.autoRenew) {
+        } else if (autoRenew) {
           // The renewal job runs at 00:10 London two days before the month and an admin approves it.
           await creditRequest({
             user: business, type: "SUBSCRIPTION", plan, periodMonth: monthStart, autoRenew: true, source: "AUTO_RENEW",
@@ -660,7 +659,6 @@ async function seed() {
         [r.product.id, r.restaurant.id, r.quantity, r.product.price, r.status, r.pickupDate, r.pickedUpAt, r.createdAt, r.updatedAt],
       );
       const id = result.rows[0]!.id;
-      await chargeForReservation(client, r.restaurant.id, { id, category: r.product.category }, r.createdAt);
       await notify(
         client, r.product.store.id, "RESERVATION_CREATED",
         `New reservation request: ${r.quantity}${r.product.unit} ${r.product.name}`, r.createdAt,
@@ -690,7 +688,7 @@ async function seed() {
       const createdAt = at(day, between(9, 14));
       if (createdAt < restaurant.activeFrom) return;
       const candidates = candidatesFor(restaurant, createdAt, 1, day);
-      if (candidates.length === 0 || !(await hasCredit(restaurant, createdAt))) return;
+      if (candidates.length === 0) return;
       const product = pick(candidates);
       const available = product.quantity - product.held;
       const quantity = chance(0.35) ? available : Math.max(1, Math.round(available * between(0.25, 0.7)));
@@ -709,7 +707,7 @@ async function seed() {
       const store = product.store;
 
       if (roll < 0.04 && pickupNextDay <= yesterday) {
-        // Accepted, never picked up: the store cancels it the next day (no refund).
+        // Accepted, never picked up: the store cancels it the next day.
         const missedAt = at(pickupNextDay, between(9, 11));
         const id = await insertReservation({
           product, restaurant, quantity, status: "Cancelled", createdAt, pickupDate, pickedUpAt: null, updatedAt: missedAt,
@@ -724,38 +722,35 @@ async function seed() {
         const id = await insertReservation({
           product, restaurant, quantity, status: "Rejected", createdAt, pickupDate, pickedUpAt: null, updatedAt: decided,
         });
-        await refundForReservation(client, id, { forced: true, by: { actor: "USER", userId: store.id } }, decided);
         await notify(client, restaurant.id, "RESERVATION_REJECTED", `Your reservation for ${product.name} was rejected.`, decided, {
           reservationId: id,
           productId: product.id,
         });
         countStatus("Rejected");
       } else if (roll < 0.21) {
-        // The restaurant changes its mind: mostly the same day (refunded), sometimes the next morning.
+        // The restaurant changes its mind: mostly the same day, sometimes the next morning.
         const cancelledAt = chance(0.2) && nextDay <= yesterday ? at(nextDay, between(8, 9.5)) : addHours(createdAt, between(0.2, 1.5));
         const id = await insertReservation({
           product, restaurant, quantity, status: "Cancelled", createdAt, pickupDate, pickedUpAt: null, updatedAt: cancelledAt,
         });
-        await refundForReservation(client, id, { forced: false, by: { actor: "USER", userId: restaurant.id } }, cancelledAt);
         await notify(client, store.id, "RESERVATION_CANCELLED", `A reservation for ${product.name} was cancelled.`, cancelledAt, {
           reservationId: id,
           productId: product.id,
         });
         countStatus("Cancelled (by restaurant)");
       } else if (roll < 0.24 && product.expiry === day && nextDay <= today) {
-        // Left pending until the product expired: the midnight job cancels and refunds it.
+        // Left pending until the product expired: the midnight job cancels it.
         const expiredAt = at(nextDay, 0.05);
         const id = await insertReservation({
           product, restaurant, quantity, status: "Cancelled", createdAt, pickupDate, pickedUpAt: null, updatedAt: expiredAt,
         });
-        await refundForReservation(client, id, { forced: true }, expiredAt);
         await notify(client, restaurant.id, "RESERVATION_EXPIRED", `Your reservation for ${product.name} was cancelled because the product expired.`, expiredAt, {
           reservationId: id,
           productId: product.id,
         });
         countStatus("Cancelled (product expired)");
       } else if (roll > 0.985 && adminCancels < 2 && pickupDate > addHours(decided, 1.5)) {
-        // Cancelled by an admin after a store reported a problem (always refunded).
+        // Cancelled by an admin after a store reported a problem.
         adminCancels++;
         const admin = anyAdmin();
         const cancelledAt = addHours(decided, 1);
@@ -763,7 +758,6 @@ async function seed() {
           product, restaurant, quantity, status: "Cancelled", createdAt, pickupDate, pickedUpAt: null, updatedAt: cancelledAt,
         });
         await accept(product, restaurant, id, decided, quantity, false);
-        await refundForReservation(client, id, { forced: true, by: { actor: "ADMIN", userId: admin.id } }, cancelledAt);
         const reason = "Prodavnica je prijavila da proizvod nije ispravan za prodaju.";
         await logAction(client, admin, "CANCEL_RESERVATION", cancelledAt, { reservationId: id, userId: restaurant.id, reason });
         for (const userId of [restaurant.id, store.id]) {
@@ -830,20 +824,6 @@ async function seed() {
     for (let dayIndex = 0, day = startDay; day <= yesterday; dayIndex++, day = addDays(day, 1)) {
       // The platform grows: activity starts at ~55% and ends a little above the base rate.
       const growth = 0.55 + 0.6 * (dayIndex / HISTORY_DAYS);
-
-      // Restaurants that ran low buy a top-up in the morning (at most two a month).
-      for (const restaurant of restaurants) {
-        const morning = at(day, between(8, 8.4));
-        if (morning < restaurant.activeFrom) continue;
-        const month = creditMonth(morning);
-        if ((restaurant.topups.get(month) ?? 0) >= 2) continue;
-        if ((await getBalance(client, restaurant.id, morning)).available >= 3) continue;
-        restaurant.topups.set(month, (restaurant.topups.get(month) ?? 0) + 1);
-        await creditRequest({
-          user: restaurant, type: "TOPUP", credits: 20, periodMonth: month, createdAt: morning,
-          status: "APPROVED", reviewedAt: addHours(morning, between(0.4, 1)),
-        });
-      }
 
       for (const store of stores) {
         const postings = chance(store.data.activity * growth) ? (chance(0.25) ? 2 : 1) : 0;
@@ -950,7 +930,7 @@ async function seed() {
       const restaurant = weightedRestaurant();
       const createdAt = recentTime(status === "Pending" ? 36 : 72);
       const candidates = candidatesFor(restaurant, createdAt, 2, today);
-      if (candidates.length === 0 || !(await hasCredit(restaurant, createdAt))) return false;
+      if (candidates.length === 0) return false;
       const product = pick(candidates);
       const pickupDate = upcomingPickup(product.store, product.expiry, status === "Pending" ? 2 : 3);
       if (!pickupDate) return false;
@@ -990,9 +970,8 @@ async function seed() {
       user: neretva, type: "SUBSCRIPTION", plan: "Pro", periodMonth: nextMonth(creditMonth(now)),
       createdAt: recentTime(30), status: "PENDING",
     });
-    const zeleniKutak = byEmail("bistro.zelenikutak@demo.com");
     await creditRequest({
-      user: zeleniKutak, type: "TOPUP", credits: 10, periodMonth: creditMonth(now),
+      user: byEmail("zeleni.market@demo.com"), type: "TOPUP", credits: 10, periodMonth: creditMonth(now),
       createdAt: addHours(now, -1.5), status: "PENDING",
     });
     // Branch top-ups: one waiting for its headquarters, one the headquarters forwarded to the admin.

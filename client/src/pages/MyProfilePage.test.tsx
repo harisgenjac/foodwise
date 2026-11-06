@@ -18,8 +18,14 @@ const renderPage = () =>
 
 describe("MyProfilePage feedback", () => {
   beforeEach(() => {
-    // The credits section loads on its own; its requests are not part of these tests.
     vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  it("has no subscription or credits section: restaurants pay no credits", async () => {
+    renderPage();
+    expect(await screen.findByDisplayValue("Bistro Most")).toBeInTheDocument();
+    expect(screen.queryByText(t("credits.profile.title"))).not.toBeInTheDocument();
+    expect(apiMock.get).not.toHaveBeenCalledWith("/credits/plans");
   });
 
   it("confirms a saved profile with a toast", async () => {

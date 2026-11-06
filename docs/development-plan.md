@@ -27,7 +27,7 @@ A restaurant orders from a cart with one store and chooses delivery (Korpa) or p
 - A restaurant pays no subscription and no credits.
 - Delivery: Korpa sets the price, the time and the courier. On delivery the courier collects cash for the goods and the delivery together. Card payments come later.
 - Pickup: the restaurant pays the store directly, as today.
-- A store accepts or rejects individual items, unless the restaurant turned off "Accept partial fulfilment".
+- A store accepts or rejects individual items, or accepts a smaller quantity (never more), each change with a reason, unless the restaurant turned off "Accept partial fulfilment" (then only the whole order is accepted or rejected). The restaurant does not confirm again; it is notified with the changes and the new total. The same option applies when the order is sent: lines with less stock go with what is left, sold-out lines stay in the cart.
 - On accepting, the store enters when the goods will be ready, and this goes to Korpa.
 - Korpa builds the API to our specification. Later our own delivery app implements the same contract.
 
@@ -38,12 +38,15 @@ A restaurant orders from a cart with one store and chooses delivery (Korpa) or p
 
 ### Phase 1: Orders and cart (pickup only)
 
-- [ ] `orders` table above reservations (`order_id` on the reservation) and status history (who, when, source).
-- [ ] Short order number (e.g. `#A47`).
+Design, decisions and PR split: `docs/orders-design.md` (agreed Nov 6, 2026). Decided there: a random 4-character order code (`#K7PM`) instead of a sequence, a server-side cart, at most 10 pending orders per restaurant, a fulfilment method on the order (only pickup now), partial fulfilment over items and quantities with reasons (also at sending), "Sold in shop" for stock sold at the store's own till, and no single-item cancels or partial pickups.
+
+- [ ] `orders` table above reservations (`order_id` on the reservation), with a fulfilment method (pickup only for now), and status history (who, when, source).
+- [ ] "Sold in shop": a store records an amount sold at its own till, which lowers the free quantity (no credit back, not an app sale).
+- [ ] Short order code (random, 4 characters, e.g. `#K7PM`).
 - [ ] Cart: one store, "empty the cart?" dialog, no stock held, "Accept partial fulfilment" option.
 - [ ] Submitting an order with all items at once, using the existing available-quantity protection.
-- [ ] Accepting per item: rejected items return their quantity to the offer; if all are rejected, the order is `Rejected`.
-- [ ] Restaurants without credits: remove charging, subscription and banners for restaurants, adjust the admin credits overview. Add a limit on pending orders.
+- [ ] Accepting per item: accept all, a smaller quantity or reject, with a reason; freed quantity returns to the offer; if all are rejected, the order is `Rejected`.
+- [ ] Restaurants without credits: remove charging, subscription and banners for restaurants, adjust the admin credits overview. Add a limit on pending orders. (Credits part done Nov 6, 2026; the pending-order limit comes with orders.)
 - [ ] Adapt existing features: Pickups, details, notifications, reports, admin reservations and cancelling, blocking and moderation.
 - [ ] E2E tests for the cart and orders.
 

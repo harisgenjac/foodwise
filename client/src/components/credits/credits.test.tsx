@@ -130,7 +130,7 @@ describe("SubscriptionSection", () => {
     const success = vi.spyOn(toast, "success");
     apiMock.post.mockResolvedValue({ data: {} });
     renderWithCredits(
-      <SubscriptionSection role="STORE" />,
+      <SubscriptionSection />,
       makeCreditSummary({ subscription: null, hasActiveSubscription: false, total: 0, used: 0, available: 0 }),
     );
 
@@ -166,7 +166,7 @@ describe("SubscriptionSection", () => {
 
   it("keeps next month's plans behind a prominent toggle when the subscription ends, and closes it after a request", async () => {
     apiMock.post.mockResolvedValue({ data: {} });
-    renderWithCredits(<SubscriptionSection role="RESTAURANT" />, makeCreditSummary());
+    renderWithCredits(<SubscriptionSection />, makeCreditSummary());
 
     expect(await screen.findByText(t("credits.profile.endsOn", { date: formatDisplayDate("2030-01-31") }))).toBeInTheDocument();
     const toggle = screen.getByRole("button", { name: t("credits.profile.choosePlanNext") });
@@ -191,7 +191,7 @@ describe("SubscriptionSection", () => {
 
   it("offers a quiet plan change while auto-renew is on", async () => {
     renderWithCredits(
-      <SubscriptionSection role="STORE" />,
+      <SubscriptionSection />,
       makeCreditSummary({ subscription: { ...makeCreditSummary().subscription!, auto_renew: true } }),
     );
 
@@ -205,7 +205,7 @@ describe("SubscriptionSection", () => {
 
   it("shows no plan toggle once next month is approved or requested", async () => {
     const { unmount } = renderWithCredits(
-      <SubscriptionSection role="STORE" />,
+      <SubscriptionSection />,
       makeCreditSummary({ nextSubscription: { ...makeCreditSummary().subscription!, id: 2, period_month: "2030-02-01" } }),
     );
     expect(await screen.findByText(t("credits.profile.planDecided"))).toBeInTheDocument();
@@ -213,7 +213,7 @@ describe("SubscriptionSection", () => {
     unmount();
 
     renderWithCredits(
-      <SubscriptionSection role="STORE" />,
+      <SubscriptionSection />,
       makeCreditSummary({
         pendingRequests: [{ ...PENDING_TOPUP, id: 10, request_type: "SUBSCRIPTION", plan_id: 1, topup_package_id: null, period_month: "2030-02-01" }],
       }),
@@ -225,7 +225,7 @@ describe("SubscriptionSection", () => {
 
   it("keeps extra credits behind a toggle and closes it after a request", async () => {
     apiMock.post.mockResolvedValue({ data: {} });
-    renderWithCredits(<SubscriptionSection role="RESTAURANT" />, makeCreditSummary());
+    renderWithCredits(<SubscriptionSection />, makeCreditSummary());
 
     const toggle = await screen.findByRole("button", { name: t("credits.profile.buyTopup") });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
@@ -238,7 +238,7 @@ describe("SubscriptionSection", () => {
     expect(apiMock.post).not.toHaveBeenCalled();
     expect(dialog).toHaveTextContent(t("credits.topupModal.what"));
     expect(dialog).toHaveTextContent(t("credits.topupModal.expiry", { date: formatDisplayDate("2030-01-31") }));
-    expect(dialog).toHaveTextContent(t("credits.modal.chargeRestaurant"));
+    expect(dialog).toHaveTextContent(t("credits.modal.chargeStore"));
     await userEvent.click(within(dialog).getByRole("button", { name: t("credits.modal.submit") }));
 
     expect(apiMock.post).toHaveBeenCalledWith("/credits/requests", { request_type: "TOPUP", topup_package_id: 4 });
@@ -247,7 +247,7 @@ describe("SubscriptionSection", () => {
   });
 
   it("opens extra credits by default when no credits are left", async () => {
-    renderWithCredits(<SubscriptionSection role="STORE" />, makeCreditSummary({ used: 50, available: 0 }));
+    renderWithCredits(<SubscriptionSection />, makeCreditSummary({ used: 50, available: 0 }));
 
     expect(await screen.findByRole("button", { name: t("credits.profile.buyTopup") })).toHaveAttribute("aria-expanded", "true");
     expect(await screen.findByText(t("credits.profile.price", { price: "15.00" }))).toBeInTheDocument();
@@ -256,7 +256,7 @@ describe("SubscriptionSection", () => {
   it("opens and scrolls to the section from a #topup or #subscription link", async () => {
     const scroll = vi.fn();
     Element.prototype.scrollIntoView = scroll;
-    const { unmount } = renderWithCredits(<SubscriptionSection role="STORE" />, makeCreditSummary(), {}, "/my-profile#topup");
+    const { unmount } = renderWithCredits(<SubscriptionSection />, makeCreditSummary(), {}, "/my-profile#topup");
 
     await waitFor(() =>
       expect(screen.getByRole("button", { name: t("credits.profile.buyTopup") })).toHaveAttribute("aria-expanded", "true"),
@@ -265,7 +265,7 @@ describe("SubscriptionSection", () => {
     expect(scroll).toHaveBeenCalled();
     unmount();
 
-    renderWithCredits(<SubscriptionSection role="STORE" />, makeCreditSummary(), {}, "/my-profile#subscription");
+    renderWithCredits(<SubscriptionSection />, makeCreditSummary(), {}, "/my-profile#subscription");
     await waitFor(() =>
       expect(screen.getByRole("button", { name: t("credits.profile.choosePlanNext") })).toHaveAttribute("aria-expanded", "true"),
     );
@@ -275,7 +275,7 @@ describe("SubscriptionSection", () => {
   it("withdraws a pending request and toggles auto-renew", async () => {
     apiMock.delete.mockResolvedValue({ data: {} });
     apiMock.patch.mockResolvedValue({ data: {} });
-    renderWithCredits(<SubscriptionSection role="STORE" />, makeCreditSummary({ pendingRequests: [PENDING_TOPUP] }));
+    renderWithCredits(<SubscriptionSection />, makeCreditSummary({ pendingRequests: [PENDING_TOPUP] }));
 
     expect(await screen.findByText(t("credits.profile.topupPending"))).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: t("credits.profile.buyTopup") })).not.toBeInTheDocument();
@@ -291,7 +291,7 @@ describe("SubscriptionSection", () => {
   it("says when turning auto-renew on sent the renewal request at once", async () => {
     const success = vi.spyOn(toast, "success");
     apiMock.patch.mockResolvedValue({ data: { message: "Auto-renew turned on.", autoRenew: true, renewalCreated: true } });
-    renderWithCredits(<SubscriptionSection role="STORE" />, makeCreditSummary());
+    renderWithCredits(<SubscriptionSection />, makeCreditSummary());
 
     await userEvent.click(await screen.findByRole("switch", { name: t("credits.profile.autoRenew") }));
     const months = t("dashboard.months", { returnObjects: true }) as string[];
@@ -323,7 +323,7 @@ describe("SubscriptionSection", () => {
     // The server keeps the renewal and only turns its auto-renew off, so nothing is asked.
     it("turns auto-renew off at once, keeping the renewal", async () => {
       apiMock.patch.mockResolvedValue({ data: {} });
-      renderWithCredits(<SubscriptionSection role="STORE" />, withRenewal());
+      renderWithCredits(<SubscriptionSection />, withRenewal());
 
       await userEvent.click(await screen.findByRole("switch", { name: t("credits.profile.autoRenew") }));
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -333,7 +333,7 @@ describe("SubscriptionSection", () => {
 
     it("confirms withdrawing the renewal request", async () => {
       apiMock.delete.mockResolvedValue({ data: {} });
-      renderWithCredits(<SubscriptionSection role="STORE" />, withRenewal());
+      renderWithCredits(<SubscriptionSection />, withRenewal());
 
       await userEvent.click(await screen.findByRole("button", { name: t("credits.profile.withdraw") }));
       const dialog = screen.getByRole("dialog", { name: t("credits.renewalConfirm.withdrawTitle") });
@@ -360,7 +360,7 @@ describe("SubscriptionSection", () => {
         status: "REJECTED" as const,
         period_month: `2029-${String((i % 12) + 1).padStart(2, "0")}-01`,
       }));
-    renderWithCredits(<SubscriptionSection role="STORE" />, makeCreditSummary({ pendingRequests: [PENDING_TOPUP] }), {
+    renderWithCredits(<SubscriptionSection />, makeCreditSummary({ pendingRequests: [PENDING_TOPUP] }), {
       "/credits/requests": (params: { limit: number }) => ({ requests: requests(params.limit), total: 15 }),
     });
     const requestParams = () =>

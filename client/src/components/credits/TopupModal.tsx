@@ -5,11 +5,10 @@ import { useTranslation } from "react-i18next";
 import api from "../../api/axios.js";
 import Modal, { ModalBody, ModalFooter, ModalHeader } from "../product/Modal.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
-import type { Role, TopupPackage } from "../../types/index.js";
+import type { TopupPackage } from "../../types/index.js";
 
 interface TopupModalProps {
   topup: TopupPackage;
-  role: Role;
   // Last day of the current month, when the extra credits expire.
   periodEnd: string;
   onClose: () => void;
@@ -25,7 +24,6 @@ interface TopupModalProps {
 // its headquarters, a headquarters for one of its branches).
 function TopupModal({
   topup,
-  role,
   periodEnd,
   onClose,
   onSent,
@@ -74,7 +72,7 @@ function TopupModal({
             <p className="font-semibold text-gray-900">{t("credits.topupModal.whatTitle")}</p>
             <p>{t("credits.topupModal.what")}</p>
           </div>
-          <p>{t(role === "STORE" ? "credits.modal.chargeStore" : "credits.modal.chargeRestaurant")}</p>
+          <p>{t("credits.modal.chargeStore")}</p>
           <p>{t("credits.topupModal.expiry", { date: formatDisplayDate(periodEnd) })}</p>
         </div>
 

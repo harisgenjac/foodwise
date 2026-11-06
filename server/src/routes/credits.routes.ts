@@ -11,9 +11,10 @@ import {
 } from "../controllers/credits.controller.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
 
-// Credits of the logged-in store or restaurant; admins manage credits under /api/admin/credits.
+// Credits of the logged-in store (restaurants pay no credits); admins manage credits under
+// /api/admin/credits.
 const router = express.Router();
-router.use(authenticate, authorize("STORE", "RESTAURANT"));
+router.use(authenticate, authorize("STORE"));
 
 router.get("/plans", getPlans);
 router.get("/topup-packages", getTopupPackages);

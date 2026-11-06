@@ -119,8 +119,10 @@ export const seedE2e = async (databaseUrl: string) => {
       [blockStore, "STORE", "Visoko", "Musala 9", null],
       [branch, "STORE", "Visoko", "Kakanjska 4", companyId],
     ];
+    // Only stores pay credits: restaurants get no plan.
     for (const [account, role, city, address, branchOf] of businesses) {
-      await grantPlan(await insertBusiness(account, role, city, address, branchOf));
+      const id = await insertBusiness(account, role, city, address, branchOf);
+      if (role === "STORE") await grantPlan(id);
     }
 
     await client.query("COMMIT");

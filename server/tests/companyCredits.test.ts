@@ -15,7 +15,7 @@ import {
 } from "./helpers.js";
 
 // The headquarters asks and pays for its branches' credits; the branch asks its headquarters for
-// top-ups. Independent stores and restaurants keep their own requests.
+// top-ups. Independent stores keep their own requests.
 
 const ADMIN = "cocredits-admin@test.com";
 const HQ = "cocredits-hq@test.com";
@@ -24,8 +24,7 @@ const BRANCH = "cocredits-branch@test.com";
 const SECOND_BRANCH = "cocredits-second@test.com";
 const OTHER_BRANCH = "cocredits-other-branch@test.com";
 const LONE_STORE = "cocredits-lone-store@test.com";
-const RESTAURANT = "cocredits-restaurant@test.com";
-const EMAILS = [ADMIN, HQ, OTHER_HQ, BRANCH, SECOND_BRANCH, OTHER_BRANCH, LONE_STORE, RESTAURANT];
+const EMAILS = [ADMIN, HQ, OTHER_HQ, BRANCH, SECOND_BRANCH, OTHER_BRANCH, LONE_STORE];
 
 const COMPANY = "Cocredits Chain";
 const OTHER_COMPANY = "Cocredits Other Chain";
@@ -517,11 +516,10 @@ describe("the renewal job", () => {
   });
 });
 
-describe("stores without a company and restaurants", () => {
+describe("stores without a company", () => {
   it("keep sending their own requests to the admin", async () => {
     await insertUser(LONE_STORE, "STORE", "Cocredits Lone", 10);
-    await insertUser(RESTAURANT, "RESTAURANT", "Cocredits Restaurant", 10);
-    for (const email of [LONE_STORE, RESTAURANT]) {
+    for (const email of [LONE_STORE]) {
       const agent = await login(email);
       const id = await userId(email);
       const me = await agent.get("/api/credits/me");

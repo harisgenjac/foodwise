@@ -428,7 +428,7 @@ function MyProfilePage() {
       {emailNotifications !== null && <EmailNotificationsSection initial={emailNotifications} />}
 
       {/* Plans, top-ups and requests for stores and restaurants; shown once credits are loaded. */}
-      {(role === "STORE" || role === "RESTAURANT") && <SubscriptionSection role={role} />}
+      {role === "STORE" && <SubscriptionSection />}
 
       <ChangePasswordForm required={Boolean(user?.must_change_password)} />
     </div>

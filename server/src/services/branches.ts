@@ -197,12 +197,12 @@ export const setBranchPassword = async (db: Pool | PoolClient, branchId: number,
 // Deactivating closes a branch without losing its history: it is hidden from restaurants (its
 // products through the visibility condition, unchanged) and cannot sign in. Refused while
 // restaurants still wait to pick up accepted reservations; Pending ones are cancelled like a
-// block does (refund, notification without a reason). Its open credit requests are withdrawn and
+// block does (notification without a reason). Its open credit requests are withdrawn and
 // auto-renew is turned off (closeBranchCredits). The branch row must be locked.
 export const deactivateBranch = async (
   client: PoolClient,
   branch: BranchRow,
-  by: { actor: "ADMIN" | "USER"; userId: number },
+  byUserId: number,
 ) => {
   if (branch.deactivated_at) {
     throw new HttpError(400, "Branch is already deactivated.");
@@ -221,7 +221,7 @@ export const deactivateBranch = async (
     );
   }
   await client.query("UPDATE users SET deactivated_at = NOW(), deactivated_by = $1 WHERE users.id = $2", [
-    by.userId,
+    byUserId,
     branch.id,
   ]);
   const withdrawnRequests = await closeBranchCredits(client, branch.id);
@@ -230,8 +230,7 @@ export const deactivateBranch = async (
     "products.store_id = $1",
     [branch.id],
     (row) => row.restaurant_id,
-    by.userId,
-    { actor: by.actor, storeClosed: true },
+    { storeClosed: true },
   );
   return { cancelledReservations, withdrawnRequests };
 };

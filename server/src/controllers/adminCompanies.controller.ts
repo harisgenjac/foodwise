@@ -324,7 +324,6 @@ export const blockCompany = async (req: Request, res: Response) => {
       `products.store_id IN (${companyStores}) OR reservations.restaurant_id IN (${companyStores})`,
       [companyId],
       (row) => (storeIds.has(row.restaurant_id) ? row.store_id : row.restaurant_id),
-      req.user!.id,
     );
     await logAdminAction(client, {
       adminId: req.user!.id,
@@ -455,7 +454,7 @@ const changeBranchActivation = async (req: Request, res: Response, deactivate: b
     }
     let closed = { cancelledReservations: 0, withdrawnRequests: 0 };
     if (deactivate) {
-      closed = await deactivateBranch(client, branch, { actor: "ADMIN", userId: req.user!.id });
+      closed = await deactivateBranch(client, branch, req.user!.id);
     } else {
       await reactivateBranch(client, branch);
     }

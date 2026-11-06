@@ -31,7 +31,6 @@ function Layout() {
   const { user } = useAuth();
   const { pathname } = useLocation();
   const setup = getAccountSetup(user);
-  const isBusiness = user?.role === 'STORE' || user?.role === 'RESTAURANT';
   const bottomNavRole = hasBottomNav(user?.role) ? user.role : null;
 
   function onToggleSidebar() {
@@ -55,8 +54,8 @@ function Layout() {
   return (
     // A temporary password blocks every other API call, so notifications wait until it is replaced.
     <NotificationsProvider enabled={!setup.needsPassword}>
-      {/* Credits only exist for stores and restaurants, and only once the account is set up. */}
-      <CreditsProvider enabled={isBusiness && !setup.locked}>
+      {/* Only stores pay credits (restaurants order for free), and only once the account is set up. */}
+      <CreditsProvider enabled={user?.role === "STORE" && !setup.locked}>
         <div className="flex min-h-dvh flex-col bg-gray-50">
           <Header
             isSidebarOpen={isSidebarOpen}

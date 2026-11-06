@@ -406,12 +406,6 @@ describe("Branches", () => {
       expect(await notificationsOf(RESTAURANT)).toContainEqual(
         expect.objectContaining({ type: "RESERVATION_CANCELLED_STORE_CLOSED", reservation_id: pending, details: null }),
       );
-      const refund = await pool.query(
-        `SELECT actor FROM credit_transactions
-         WHERE type = 'RESERVATION_REFUND' AND related_entity_type = 'reservation' AND related_entity_id = $1`,
-        [pending],
-      );
-      expect(refund.rows).toEqual([{ actor: "USER" }]);
       // The headquarters' own action does not notify it.
       expect(await notificationsOf(HQ)).toEqual([]);
 

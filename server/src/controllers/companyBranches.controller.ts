@@ -228,7 +228,7 @@ export const deactivateCompanyBranch = (req: Request, res: Response) =>
     req,
     res,
     async (client, branch) => {
-      const closed = await deactivateBranch(client, branch, { actor: "USER", userId: req.user!.id });
+      const closed = await deactivateBranch(client, branch, req.user!.id);
       return { message: "Branch deactivated.", ...closed };
     },
     "An error occurred while deactivating the branch.",

@@ -76,7 +76,7 @@ function App() {
         <Route path="/my-reservations" element={<ProtectedRoute role="RESTAURANT"><MyReservationsPage /></ProtectedRoute>} />
         <Route path="/pickups" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><PickupsPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><ReportsPage /></ProtectedRoute>} />
-        <Route path="/credits" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><CreditsPage /></ProtectedRoute>} />
+        <Route path="/credits" element={<ProtectedRoute role="STORE"><CreditsPage /></ProtectedRoute>} />
         <Route path="/my-profile" element={<MyProfilePage />} />
         <Route path="/donate-food" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><DonateFoodPage /></ProtectedRoute>} />
         <Route path="/donate-food/new" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><AddDonationPage /></ProtectedRoute>} />

@@ -15,7 +15,6 @@ import {
   createProduct,
   futurePickup,
   insertUser,
-  login,
   registerAndLogin,
   reserve,
   userId,
@@ -24,9 +23,8 @@ import {
 
 const STORE = "email-queue-store@test.com";
 const RESTAURANT = "email-queue-restaurant@test.com";
-const POOR_RESTAURANT = "email-queue-poor@test.com";
 const BLOCKED_STORE = "email-queue-blocked@test.com";
-const EMAILS = [STORE, RESTAURANT, POOR_RESTAURANT, BLOCKED_STORE];
+const EMAILS = [STORE, RESTAURANT, BLOCKED_STORE];
 
 const CONFIG = { from: "FoodWise <no-reply@example.com>", redirectTo: null, appUrl: "https://app.example.com" };
 
@@ -121,14 +119,16 @@ describe("queueing", () => {
     expect(notification.rowCount).toBe(1);
   });
 
-  it("queues nothing when the reservation is rolled back", async () => {
-    await insertUser(POOR_RESTAURANT, "RESTAURANT", "Poor Restaurant", null);
-    const poor = await login(POOR_RESTAURANT);
-    const product = await createProduct(store);
-    const response = await poor
-      .post("/api/reservations")
-      .send({ product_id: product.id, quantity: 1, pickup_date: futurePickup() });
-    expect(response.status).toBe(402);
+  it("queues nothing when the action is rolled back", async () => {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await createNotification(client, { userId: await userId(STORE), type: "PRODUCT_EXPIRED", message: "Expired" });
+      expect(await queueRows()).toEqual([]);
+      await client.query("ROLLBACK");
+    } finally {
+      client.release();
+    }
     expect(await queueRows()).toEqual([]);
   });
 
@@ -327,7 +327,7 @@ describe("retries", () => {
 });
 
 describe("a failing email service never breaks the reservation", () => {
-  it("keeps the reservation, the notification and the credit charge", async () => {
+  it("keeps the reservation and the notification", async () => {
     const { reservationId } = await reserveChicken();
     const { transport } = fakeTransport(new Error("Resend responded with 500: Internal error"));
     await processEmailQueue({ transport, config: CONFIG });

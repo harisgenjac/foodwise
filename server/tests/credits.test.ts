@@ -5,12 +5,10 @@ import {
   adjustCredits,
   chargeForProduct,
   chargeForProducts,
-  chargeForReservation,
   getBalance,
   grantPlan,
   grantTopup,
   refundForProduct,
-  refundForReservation,
 } from "../src/services/creditService.js";
 import { cleanupUsers, giveSubscription, insertUser, userId } from "./helpers.js";
 
@@ -19,7 +17,6 @@ const RESTAURANT = "credits-restaurant@test.com";
 const ADMIN = "credits-admin@test.com";
 
 const USER_ACTION = (id: number) => ({ actor: "USER" as const, userId: id });
-const SYSTEM = { actor: "SYSTEM" as const, userId: null };
 
 // Sarajevo wall-clock instants. The credit day changes at 01:00 Sarajevo (00:00 London).
 const JAN_10 = new Date("2026-01-10T10:00:00+01:00");
@@ -102,7 +99,7 @@ describe("charges", () => {
 
   it("refuses a charge without a subscription, pointing to the subscription section", async () => {
     const error = await inTransaction((client) =>
-      chargeForReservation(client, restaurantId, { id: freshId(), category: "Meat" }, JAN_10),
+      chargeForProduct(client, storeId, { id: freshId(), category: "Meat" }, JAN_10),
     ).then(expectedFailure, (caught: unknown) => caught as InsufficientCreditsError);
 
     expect(error.body()).toMatchObject({ hasActiveSubscription: false, actionUrl: "/my-profile#subscription" });
@@ -136,16 +133,16 @@ describe("charges", () => {
   });
 
   it("lets exactly one of two parallel charges spend the last credit", async () => {
-    await giveSubscription(restaurantId, 1, JAN_10);
+    await giveSubscription(storeId, 1, JAN_10);
     const results = await Promise.allSettled([
-      inTransaction((client) => chargeForReservation(client, restaurantId, { id: freshId(), category: "Meat" }, JAN_10)),
-      inTransaction((client) => chargeForReservation(client, restaurantId, { id: freshId(), category: "Fish" }, JAN_10)),
+      inTransaction((client) => chargeForProduct(client, storeId, { id: freshId(), category: "Meat" }, JAN_10)),
+      inTransaction((client) => chargeForProduct(client, storeId, { id: freshId(), category: "Fish" }, JAN_10)),
     ]);
 
     expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
     const rejected = results.find((result) => result.status === "rejected");
     expect(rejected?.reason).toBeInstanceOf(InsufficientCreditsError);
-    expect((await getBalance(pool, restaurantId, JAN_10)).available).toBe(0);
+    expect((await getBalance(pool, storeId, JAN_10)).available).toBe(0);
   });
 });
 
@@ -203,76 +200,25 @@ describe("refunds", () => {
     expect((await inTransaction((client) => refundForProduct(client, rejected, USER_ACTION(storeId)))).refunded).toBe(true);
   });
 
-  it("refunds a restaurant's own cancel on the same day only", async () => {
-    await giveSubscription(restaurantId, 5, JAN_10);
-    const reservationId = freshId();
-    await inTransaction((client) => chargeForReservation(client, restaurantId, { id: reservationId, category: "Fish" }, JAN_10));
-
-    const nextDay = new Date("2026-01-11T01:01:00+01:00");
-    const result = await inTransaction((client) =>
-      refundForReservation(client, reservationId, { forced: false, by: USER_ACTION(restaurantId) }, nextDay),
-    );
-    expect(result).toEqual({ refunded: false, reason: "DAY_PASSED" });
-  });
-
-  it("always refunds a store-rejected or system-cancelled reservation, even days later", async () => {
-    await giveSubscription(restaurantId, 5, JAN_10);
-    const reservationId = freshId();
-    await inTransaction((client) => chargeForReservation(client, restaurantId, { id: reservationId, category: "Fish" }, JAN_10));
-
-    const later = new Date("2026-01-20T12:00:00+01:00");
-    const result = await inTransaction((client) => refundForReservation(client, reservationId, { forced: true, by: SYSTEM }, later));
-    expect(result.refunded).toBe(true);
-    expect(result.refunded && result.transaction).toMatchObject({ amount: 1, type: "RESERVATION_REFUND", actor: "SYSTEM" });
-    expect(await getBalance(pool, restaurantId, later)).toMatchObject({ total: 5, used: 0, available: 5 });
-  });
-
-  it("puts a refund after a month change into the new month as new credit", async () => {
-    await giveSubscription(restaurantId, 5, JAN_31);
-    const febSubscription = await giveSubscription(restaurantId, 3, FEB_02);
-    const reservationId = freshId();
-    await inTransaction((client) => chargeForReservation(client, restaurantId, { id: reservationId, category: "Meat" }, JAN_31));
-
-    const result = await inTransaction((client) => refundForReservation(client, reservationId, { forced: true }, FEB_02));
-    expect(result.refunded && result.transaction).toMatchObject({ period_month: "2026-02-01", subscription_id: febSubscription });
-    // January keeps its used credit; February gets 3 + 1.
-    expect(await getBalance(pool, restaurantId, JAN_31)).toMatchObject({ used: 1 });
-    expect(await getBalance(pool, restaurantId, FEB_02)).toMatchObject({ total: 4, used: 0, available: 4 });
-  });
-
-  it("holds a refund in a month without a subscription until the user subscribes", async () => {
-    await giveSubscription(restaurantId, 5, JAN_31);
-    const reservationId = freshId();
-    await inTransaction((client) => chargeForReservation(client, restaurantId, { id: reservationId, category: "Meat" }, JAN_31));
-    const result = await inTransaction((client) => refundForReservation(client, reservationId, { forced: true }, FEB_02));
-    expect(result.refunded && result.transaction.subscription_id).toBeNull();
-    expect(await getBalance(pool, restaurantId, FEB_02)).toMatchObject({ total: 1, available: 0, hasActiveSubscription: false });
-
-    await giveSubscription(restaurantId, 3, FEB_02);
-    expect((await getBalance(pool, restaurantId, FEB_02)).available).toBe(4);
-  });
-
   it("never refunds the same charge twice", async () => {
-    await giveSubscription(restaurantId, 5, JAN_10);
-    const reservationId = freshId();
+    await giveSubscription(storeId, 5, JAN_10);
+    const productId = freshId();
     const charge = await inTransaction((client) =>
-      chargeForReservation(client, restaurantId, { id: reservationId, category: "Meat" }, JAN_10),
+      chargeForProduct(client, storeId, { id: productId, category: "Meat" }, JAN_10),
     );
-    expect((await inTransaction((client) => refundForReservation(client, reservationId, { forced: true }, JAN_10))).refunded).toBe(true);
-    expect(await inTransaction((client) => refundForReservation(client, reservationId, { forced: true }, JAN_10))).toEqual({
-      refunded: false,
-      reason: "NO_CHARGE",
-    });
+    const refund = () => inTransaction((client) => refundForProduct(client, productId, USER_ACTION(storeId), JAN_10));
+    expect((await refund()).refunded).toBe(true);
+    expect(await refund()).toEqual({ refunded: false, reason: "NO_CHARGE" });
 
     // Even a raw insert cannot refund it again (UNIQUE refunds_transaction_id).
     await expect(
       pool.query(
         `INSERT INTO credit_transactions (user_id, period_month, amount, type, refunds_transaction_id, actor)
-         VALUES ($1, '2026-01-01', 1, 'RESERVATION_REFUND', $2, 'SYSTEM')`,
-        [restaurantId, charge.id],
+         VALUES ($1, '2026-01-01', 1, 'PRODUCT_REFUND', $2, 'SYSTEM')`,
+        [storeId, charge.id],
       ),
     ).rejects.toMatchObject({ code: "23505" });
-    expect(await getBalance(pool, restaurantId, JAN_10)).toMatchObject({ used: 0, available: 5 });
+    expect(await getBalance(pool, storeId, JAN_10)).toMatchObject({ used: 0, available: 5 });
   });
 
   it("does nothing for an entity that was never charged", async () => {

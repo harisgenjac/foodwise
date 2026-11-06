@@ -3,9 +3,8 @@ import pool from "../src/config/db.js";
 import {
   adjustCredits,
   chargeForProduct,
-  chargeForReservation,
   getBalance,
-  refundForReservation,
+  refundForProduct,
 } from "../src/services/creditService.js";
 import { creditMonth } from "../src/utils/creditTime.js";
 import {
@@ -15,7 +14,6 @@ import {
   createProduct,
   futureDate,
   futurePickup,
-  giveSubscription,
   insertUser,
   login,
   registerAndLogin,
@@ -28,7 +26,9 @@ const RESTAURANT = "sorting-restaurant@test.com";
 const USERS = ["sorting-user-a@test.com", "sorting-user-b@test.com", "sorting-user-c@test.com"];
 // Credit overview accounts, A..F in creation order (so their ids grow in that order).
 const CREDIT_USERS = ["a", "b", "c", "d", "e", "f"].map((key) => `sorting-credit-${key}@test.com`);
-const ALL = [ADMIN, STORE, RESTAURANT, ...USERS, ...CREDIT_USERS];
+// A restaurant matching the overview search: restaurants pay no credits, so it is never listed.
+const CREDIT_RESTAURANT = "sorting-credit-restaurant@test.com";
+const ALL = [ADMIN, STORE, RESTAURANT, ...USERS, ...CREDIT_USERS, CREDIT_RESTAURANT];
 
 const SYSTEM = { actor: "SYSTEM" as const, userId: null };
 
@@ -192,19 +192,19 @@ describe("sorting the admin tables", () => {
 describe("credit overview balances, sorting and the plan filter", () => {
   // A: Pro, 10 granted, 2 used.             total 10, used 2, available 8, usage 0.2
   // B: Pro, 4 granted, 3 charged, 1 refunded the same day.   total 4, used 2, available 2, usage 0.5
-  // C: Standard, 6 granted, plus the refund of last month's charge.   total 7, used 0, available 7, usage 0
+  // C: Standard, 6 granted, +1 adjustment.  total 7, used 0, available 7, usage 0
   // D: no subscription, +3 adjustment.      total 3, used 0, available 0, usage 0
-  // E: restaurant without a subscription and without rows.   total 0, usage NULL
+  // E: no subscription and no rows.         total 0, usage NULL
   // F: Pro without credits.                 total 0, usage NULL
   let a: number, b: number, c: number, d: number, e: number, f: number;
   let proId: number, standardId: number;
 
   beforeEach(async () => {
-    const roles = ["STORE", "RESTAURANT", "RESTAURANT", "STORE", "RESTAURANT", "RESTAURANT"] as const;
     const credits = [10, 4, 6, null, null, 0];
     for (const [index, email] of CREDIT_USERS.entries()) {
-      await insertUser(email, roles[index]!, `Sortcredit ${index}`, credits[index]);
+      await insertUser(email, "STORE", `Sortcredit ${index}`, credits[index]);
     }
+    await insertUser(CREDIT_RESTAURANT, "RESTAURANT", "Sortcredit restaurant");
     [a, b, c, d, e, f] = await Promise.all(CREDIT_USERS.map(userId)) as [number, number, number, number, number, number];
     proId = (await pool.query("SELECT id FROM plans WHERE name = 'Pro'")).rows[0].id;
     standardId = (await pool.query("SELECT id FROM plans WHERE name = 'Standard'")).rows[0].id;
@@ -213,21 +213,15 @@ describe("credit overview balances, sorting and the plan filter", () => {
       [standardId, c, creditMonth(new Date())],
     );
 
-    // Five days before this credit month: always the month before.
-    const lastMonth = new Date(new Date(`${creditMonth(new Date())}T12:00:00Z`).getTime() - 5 * 24 * 3600 * 1000);
-    await giveSubscription(c, 3, lastMonth);
-    const oldReservation = freshId();
     await inTransaction(async (client) => {
       await chargeForProduct(client, a, { id: freshId(), category: "Meat" });
       await chargeForProduct(client, a, { id: freshId(), category: "Fish" });
       const refunded = freshId();
-      await chargeForReservation(client, b, { id: refunded, category: "Meat" });
-      await chargeForReservation(client, b, { id: freshId(), category: "Meat" });
-      await chargeForReservation(client, b, { id: freshId(), category: "Meat" });
-      await refundForReservation(client, refunded, { forced: false });
-      await chargeForReservation(client, c, { id: oldReservation, category: "Dairy" }, lastMonth);
-      // Refunded this month: new credit now (Total), not less used.
-      await refundForReservation(client, oldReservation, { forced: true });
+      await chargeForProduct(client, b, { id: refunded, category: "Meat" });
+      await chargeForProduct(client, b, { id: freshId(), category: "Meat" });
+      await chargeForProduct(client, b, { id: freshId(), category: "Meat" });
+      await refundForProduct(client, refunded, SYSTEM);
+      await adjustCredits(client, { userId: c, amount: 1, reason: "Goodwill", by: SYSTEM });
       await adjustCredits(client, { userId: d, amount: 3, reason: "Goodwill", by: SYSTEM });
     });
   });
@@ -285,13 +279,12 @@ describe("credit overview balances, sorting and the plan filter", () => {
     expect(ids(paged)).toEqual(expected());
   });
 
-  it("filters by plan, or by no subscription this month, together with role, search and sorting", async () => {
+  it("filters by plan, or by no subscription this month, together with search and sorting", async () => {
     const pro = await overview({ plan: String(proId) });
     expect(ids(pro.users)).toEqual([a, b, f]);
     expect(pro.total).toBe(3);
     expect(ids((await overview({ plan: String(standardId) })).users)).toEqual([c]);
     expect(ids((await overview({ plan: "none" })).users)).toEqual([d, e]);
-    expect(ids((await overview({ plan: "none", role: "STORE" })).users)).toEqual([d]);
     expect(ids((await overview({ plan: "none", sort: "total", dir: "asc" })).users)).toEqual([e, d]);
     expect(ids((await overview({ plan: String(proId), sort: "usage", dir: "desc" })).users)).toEqual([b, a, f]);
     expect((await overview({ plan: "" })).total).toBe(6);
