@@ -38,8 +38,10 @@ A restaurant orders from a cart with one store and chooses delivery (Korpa) or p
 
 ### Phase 1: Orders and cart (pickup only)
 
+Design, decisions and PR split: `docs/orders-design.md` (agreed Nov 6, 2026). Decided there: a random 4-character order code (`#K7PM`) instead of a sequence, a server-side cart, at most 10 pending orders per restaurant, no partial quantities, single-item cancels or partial pickups.
+
 - [ ] `orders` table above reservations (`order_id` on the reservation) and status history (who, when, source).
-- [ ] Short order number (e.g. `#A47`).
+- [ ] Short order code (random, 4 characters, e.g. `#K7PM`).
 - [ ] Cart: one store, "empty the cart?" dialog, no stock held, "Accept partial fulfilment" option.
 - [ ] Submitting an order with all items at once, using the existing available-quantity protection.
 - [ ] Accepting per item: rejected items return their quantity to the offer; if all are rejected, the order is `Rejected`.
