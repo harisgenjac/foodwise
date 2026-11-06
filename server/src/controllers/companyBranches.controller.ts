@@ -17,6 +17,7 @@ import {
   getBranchProfile,
   getBranchStats,
   reactivateBranch,
+  resendBranchInvitation,
   setBranchPassword,
   updateBranch,
 } from "../services/branches.js";
@@ -208,6 +209,18 @@ export const setCompanyBranchPassword = (req: Request, res: Response) =>
       return { message: "Password changed successfully." };
     },
     "An error occurred while changing the password.",
+  );
+
+// POST /branches/:id/invitation: a new invitation email while the branch login never logged in.
+export const resendCompanyBranchInvitation = (req: Request, res: Response) =>
+  withBranch(
+    req,
+    res,
+    async (client, branch) => {
+      await resendBranchInvitation(client, branch.id, req.user!.id);
+      return { message: "Invitation sent." };
+    },
+    "An error occurred while sending the link.",
   );
 
 export const deactivateCompanyBranch = (req: Request, res: Response) =>

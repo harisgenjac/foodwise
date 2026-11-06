@@ -128,6 +128,48 @@ describe("Branches", () => {
       expect(attempt.status).toBe(400);
     });
 
+    it("resends the invitation only while the branch login never logged in", async () => {
+      const created = await hq
+        .post("/api/company/branches")
+        .send(branchPayload({ city_id: await cityId("Breza"), password: undefined }));
+      const id = created.body.branch.id;
+      expect(created.body.branch.last_login_at).toBeNull();
+
+      const resent = await hq.post(`/api/company/branches/${id}/invitation`);
+      expect(resent.status).toBe(200);
+      expect(resent.body.message).toBe("Invitation sent.");
+      // The first link stops working: only the newest token is open, sent by the headquarters.
+      const tokens = await pool.query(
+        `SELECT auth_tokens.created_by, auth_tokens.revoked_at IS NULL AS open FROM auth_tokens
+         WHERE auth_tokens.user_id = $1 ORDER BY auth_tokens.id`,
+        [id],
+      );
+      const hqId = await userId(HQ);
+      expect(tokens.rows).toEqual([
+        { created_by: hqId, open: false },
+        { created_by: hqId, open: true },
+      ]);
+      const emails = await pool.query(
+        "SELECT email_queue.data->>'sender' AS sender FROM email_queue WHERE email_queue.recipient = $1 ORDER BY email_queue.id",
+        [NEW_BRANCH],
+      );
+      expect(emails.rows).toEqual([{ sender: "COMPANY" }, { sender: "COMPANY" }]);
+
+      // A branch that logged in, a deactivated branch, another company's branch.
+      await pool.query("UPDATE users SET last_login_at = NOW() WHERE id = $1", [id]);
+      const loggedIn = await hq.post(`/api/company/branches/${id}/invitation`);
+      expect(loggedIn.status).toBe(400);
+      expect(loggedIn.body.error).toBe("The user has already logged in.");
+      await pool.query("UPDATE users SET last_login_at = NULL, deactivated_at = NOW() WHERE id = $1", [id]);
+      const deactivated = await hq.post(`/api/company/branches/${id}/invitation`);
+      expect(deactivated.status).toBe(400);
+      expect(deactivated.body.error).toBe("A blocked account cannot get a link.");
+      const otherCompany = await insertCompany(OTHER_COMPANY);
+      await insertUser(OTHER_HQ, "COMPANY", null, null, otherCompany);
+      const other = await login(OTHER_HQ);
+      expect((await other.post(`/api/company/branches/${id}/invitation`)).status).toBe(404);
+    });
+
     it("validates the fields", async () => {
       const missing = await hq.post("/api/company/branches").send(branchPayload({ city_id: await cityId("Breza"), phone: "" }));
       expect(missing.status).toBe(400);

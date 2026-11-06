@@ -13,6 +13,7 @@ import {
   validatePassword,
 } from "../utils/accounts.js";
 import { sendInvitation } from "./accountEmails.js";
+import { notBlocked } from "../utils/visibility.js";
 
 const BRANCH_REQUIRED = "Business name, city, address, phone and email are required.";
 import { storeDescription, storeLogo } from "../utils/branding.js";
@@ -162,6 +163,24 @@ export const updateBranch = async (db: Pool | PoolClient, branchId: number, body
   );
 };
 
+// A new invitation for a branch login that has never logged in (the old link stops working), like
+// the admin's resend. A blocked branch (also through its company) or a deactivated one cannot use
+// a link. The branch row is already locked by the caller.
+export const resendBranchInvitation = async (client: PoolClient, branchId: number, hqUserId: number) => {
+  const result = await client.query<{ last_login_at: string | null; blocked: boolean }>(
+    `SELECT users.last_login_at, NOT ${notBlocked("users")} AS blocked FROM users WHERE users.id = $1`,
+    [branchId],
+  );
+  const branch = result.rows[0]!;
+  if (branch.blocked) {
+    throw new HttpError(400, "A blocked account cannot get a link.");
+  }
+  if (branch.last_login_at !== null) {
+    throw new HttpError(400, "The user has already logged in.");
+  }
+  await sendInvitation(client, branchId, hqUserId, "COMPANY");
+};
+
 // Like an admin's password reset: the staff must replace it at the next login, and a running
 // session is held back at once.
 export const setBranchPassword = async (db: Pool | PoolClient, branchId: number, password: unknown) => {
@@ -234,7 +253,7 @@ export const getBranchProfile = async (db: Pool | PoolClient, branchId: number) 
        ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
        users.logo_url IS NOT NULL AS has_own_logo,
        ${BRANCH_STATUS} AS status, users.is_blocked, users.deactivated_at,
-       deactivators.email AS deactivated_by_email, users.must_change_password, users.created_at
+       deactivators.email AS deactivated_by_email, users.must_change_password, users.last_login_at, users.created_at
      FROM users
      LEFT JOIN cities ON cities.id = users.city_id
      LEFT JOIN users AS deactivators ON deactivators.id = users.deactivated_by

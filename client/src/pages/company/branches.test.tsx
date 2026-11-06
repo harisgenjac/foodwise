@@ -49,6 +49,7 @@ const details = (overrides: Partial<BranchDetails["branch"]> = {}): BranchDetail
     deactivated_at: null,
     deactivated_by_email: null,
     must_change_password: false,
+    last_login_at: "2026-10-02T08:00:00.000Z",
     created_at: "2026-10-01T10:00:00.000Z",
     ...overrides,
   },
@@ -255,6 +256,30 @@ describe("CompanyBranchDetailsPage", () => {
     await userEvent.type(within(dialog).getByLabelText(t("admin.userDetails.confirmPassword")), "novalozinka1");
     await userEvent.click(within(dialog).getByRole("button", { name: t("admin.userDetails.savePassword") }));
     expect(apiMock.patch).toHaveBeenCalledWith("/company/branches/21/password", { password: "novalozinka1" });
+  });
+
+  it("hides the invitation once the branch has logged in", async () => {
+    renderPage();
+    await screen.findByRole("heading", { level: 1, name: "Bingo Visoko" });
+    expect(screen.queryByRole("button", { name: t("company.branchDetails.resendInvitation") })).not.toBeInTheDocument();
+    expect(screen.queryByText(t("company.branchDetails.neverLoggedIn"))).not.toBeInTheDocument();
+  });
+
+  it("offers the invitation to a branch that never logged in", async () => {
+    apiMock.post.mockResolvedValue({ data: { message: "Invitation sent." } });
+    renderPage(details({ last_login_at: null }));
+    expect(await screen.findByText(t("company.branchDetails.neverLoggedIn"))).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: t("company.branchDetails.resendInvitation") }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText(/bingo\.visoko@test\.com/)).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: t("company.branchDetails.confirmSend") }));
+    expect(apiMock.post).toHaveBeenCalledWith("/company/branches/21/invitation");
+  });
+
+  it("does not offer the invitation to a deactivated branch", async () => {
+    renderPage(details({ last_login_at: null, status: "deactivated", deactivated_at: "2026-10-05T10:00:00.000Z" }));
+    await screen.findByRole("heading", { level: 1, name: "Bingo Visoko" });
+    expect(screen.queryByRole("button", { name: t("company.branchDetails.resendInvitation") })).not.toBeInTheDocument();
   });
 
   it("deactivates after confirming and shows the refusal with accepted pickups", async () => {

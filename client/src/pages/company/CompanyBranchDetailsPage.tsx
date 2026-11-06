@@ -12,6 +12,7 @@ import {
   KeyRound,
   Leaf,
   Mail,
+  MailPlus,
   MapPin,
   Package,
   PencilLine,
@@ -43,7 +44,7 @@ import { formatSavedFood } from "../../utils/savedFood.js";
 import { formatDateTime } from "../../utils/admin.js";
 import type { BranchDetails, Product, Reservation } from "../../types/index.js";
 
-type Dialog = "edit" | "password" | "deactivate" | "reactivate" | null;
+type Dialog = "edit" | "password" | "invitation" | "deactivate" | "reactivate" | null;
 type Tab = "products" | "reservations";
 
 const PRODUCT_STATUSES = ["Available", "Sold", "Expired"];
@@ -188,6 +189,10 @@ function CompanyBranchDetailsPage() {
 
   const { branch, stats } = details;
   const isDeactivated = branch.status === "deactivated";
+  // The staff have not opened their invitation (or used a temporary password) yet; a new link is
+  // only possible for an active branch (a blocked or deactivated login cannot use it).
+  const neverLoggedIn = !branch.last_login_at;
+  const canResendInvitation = neverLoggedIn && branch.status === "active";
   const savedFood = formatSavedFood(stats.saved_this_month, t("dashboard.piecesShort"));
   const staffName = `${branch.first_name ?? ""} ${branch.last_name ?? ""}`.trim();
   const secondaryButton =
@@ -217,6 +222,11 @@ function CompanyBranchDetailsPage() {
                 <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${BRANCH_STATUS_STYLES[branch.status]}`}>
                   {t(`company.branchStatus.${branch.status}`)}
                 </span>
+                {neverLoggedIn && (
+                  <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                    {t("company.branchDetails.neverLoggedIn")}
+                  </span>
+                )}
                 {branch.city && (
                   <span className="inline-flex items-center gap-1.5">
                     <MapPin className="h-4 w-4" />
@@ -235,6 +245,12 @@ function CompanyBranchDetailsPage() {
               <KeyRound className="h-4 w-4" />
               {t("company.branchDetails.setPassword")}
             </button>
+            {canResendInvitation && (
+              <button type="button" onClick={() => setDialog("invitation")} className={secondaryButton}>
+                <MailPlus className="h-4 w-4" />
+                {t("company.branchDetails.resendInvitation")}
+              </button>
+            )}
           </div>
         </div>
 
@@ -373,6 +389,20 @@ function CompanyBranchDetailsPage() {
           name={branch.business_name}
           busy={busy}
           onConfirm={(password) => run(() => api.patch(`/company/branches/${branch.id}/password`, { password }))}
+          onClose={closeDialog}
+        />
+      )}
+
+      {dialog === "invitation" && (
+        <ConfirmModal
+          variant="success"
+          icon={MailPlus}
+          title={t("company.branchDetails.resendInvitationTitle")}
+          message={t("company.branchDetails.resendInvitationText", { email: branch.email })}
+          confirmLabel={t("company.branchDetails.confirmSend")}
+          cancelLabel={t("admin.common.cancel")}
+          busy={busy}
+          onConfirm={() => run(() => api.post(`/company/branches/${branch.id}/invitation`))}
           onClose={closeDialog}
         />
       )}
