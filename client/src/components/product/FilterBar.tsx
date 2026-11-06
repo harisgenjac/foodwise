@@ -8,7 +8,7 @@ interface FilterBarProps {
   hasActiveFilters: boolean;
   onClear: () => void;
   // Number of filters per row on large screens.
-  columns?: 3 | 4 | 5;
+  columns?: 2 | 3 | 4 | 5;
   // The search field. Below sm it stays visible next to the "Filters" button; from sm up it is the
   // first field of the grid, as before.
   search?: ReactNode;
@@ -35,7 +35,7 @@ function FilterBar({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const panelId = useId();
-  const columnsStyle = { 3: "lg:grid-cols-3", 4: "lg:grid-cols-4", 5: "lg:grid-cols-5" }[columns];
+  const columnsStyle = { 2: "lg:grid-cols-2", 3: "lg:grid-cols-3", 4: "lg:grid-cols-4", 5: "lg:grid-cols-5" }[columns];
   const filterCount = Children.toArray(children).length;
   const collapsible = filterCount >= (search ? 1 : 2);
   // Below sm the panel shows when it is open (or always when nothing collapses); from sm up its

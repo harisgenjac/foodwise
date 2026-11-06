@@ -13,6 +13,8 @@ import {
 } from "./helpers.js";
 
 const STORE = "creditreq-store@test.com";
+const SUBSCRIBER = "creditreq-subscriber@test.com";
+// Restaurants pay no credits: no credit routes, not in the overview, no adjustments.
 const RESTAURANT = "creditreq-restaurant@test.com";
 const ADMIN = "creditreq-admin@test.com";
 const BLOCKED_ADMIN = "creditreq-blocked-admin@test.com";
@@ -20,10 +22,10 @@ const BLOCKED_ADMIN = "creditreq-blocked-admin@test.com";
 const CURRENT = creditMonth(new Date());
 
 let store: Agent;
-let restaurant: Agent;
+let subscriber: Agent;
 let admin: Agent;
 let storeId: number;
-let restaurantId: number;
+let subscriberId: number;
 let planId: number;
 let topupId: number;
 
@@ -39,18 +41,18 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  // The store starts without a subscription; the restaurant has one with 5 credits.
+  // The store starts without a subscription; the subscriber has one with 5 credits.
   await insertUser(STORE, "STORE", "Credit Store", null);
-  await insertUser(RESTAURANT, "RESTAURANT", "Credit Restaurant", 5);
+  await insertUser(SUBSCRIBER, "STORE", "Credit Subscriber", 5);
   store = await login(STORE);
-  restaurant = await login(RESTAURANT);
+  subscriber = await login(SUBSCRIBER);
   admin = await registerAndLogin(ADMIN, "ADMIN");
   storeId = await userId(STORE);
-  restaurantId = await userId(RESTAURANT);
+  subscriberId = await userId(SUBSCRIBER);
 });
 
 afterEach(async () => {
-  await cleanupUsers([STORE, RESTAURANT, ADMIN, BLOCKED_ADMIN]);
+  await cleanupUsers([STORE, SUBSCRIBER, RESTAURANT, ADMIN, BLOCKED_ADMIN]);
 });
 
 describe("plans and balance", () => {
@@ -62,7 +64,7 @@ describe("plans and balance", () => {
   });
 
   it("returns the balance, next month's subscription and pending requests", async () => {
-    const response = await restaurant.get("/api/credits/me");
+    const response = await subscriber.get("/api/credits/me");
     expect(response.status).toBe(200);
     expect(response.body.credits).toMatchObject({
       periodStart: CURRENT,
@@ -75,8 +77,15 @@ describe("plans and balance", () => {
     });
   });
 
-  it("is only for stores and restaurants", async () => {
+  it("is only for stores", async () => {
     expect((await admin.get("/api/credits/me")).status).toBe(403);
+    const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
+    for (const path of ["/api/credits/me", "/api/credits/plans", "/api/credits/requests"]) {
+      const response = await restaurant.get(path);
+      expect({ path, status: response.status }).toEqual({ path, status: 403 });
+    }
+    const request = await restaurant.post("/api/credits/requests").send({ request_type: "TOPUP", topup_package_id: 1 });
+    expect(request.status).toBe(403);
     expect((await store.get("/api/admin/credits/overview")).status).toBe(403);
   });
 });
@@ -125,10 +134,10 @@ describe("subscription requests", () => {
   });
 
   it("refuses a request for a month that already has a subscription", async () => {
-    const response = await subscribe(restaurant);
+    const response = await subscribe(subscriber);
     expect(response.status).toBe(400);
     expect(response.body.error).toBe("You already have a subscription for this month.");
-    expect((await subscribe(restaurant, { period: "next" })).status).toBe(201);
+    expect((await subscribe(subscriber, { period: "next" })).status).toBe(201);
   });
 
   it("validates the request", async () => {
@@ -142,7 +151,7 @@ describe("subscription requests", () => {
 
   it("lets the user withdraw only their own pending request", async () => {
     const request = (await subscribe(store)).body.request;
-    expect((await restaurant.delete(`/api/credits/requests/${request.id}`)).status).toBe(403);
+    expect((await subscriber.delete(`/api/credits/requests/${request.id}`)).status).toBe(403);
     const withdrawn = await store.delete(`/api/credits/requests/${request.id}`);
     expect(withdrawn.status).toBe(200);
     expect(withdrawn.body.request.status).toBe("CANCELLED");
@@ -163,24 +172,24 @@ describe("top-up requests", () => {
   });
 
   it("allows one pending top-up at a time", async () => {
-    expect((await topup(restaurant)).status).toBe(201);
-    const second = await topup(restaurant);
+    expect((await topup(subscriber)).status).toBe(201);
+    const second = await topup(subscriber);
     expect(second.status).toBe(400);
     expect(second.body.error).toBe("You already have a pending top-up request.");
   });
 
   it("adds approved top-up credits to the current month", async () => {
-    const request = (await topup(restaurant)).body.request;
+    const request = (await topup(subscriber)).body.request;
     const approved = await admin.post(`/api/admin/credits/requests/${request.id}/approve`).send({});
     expect(approved.status).toBe(200);
-    expect((await restaurant.get("/api/credits/me")).body.credits).toMatchObject({ total: 25, available: 25 });
+    expect((await subscriber.get("/api/credits/me")).body.credits).toMatchObject({ total: 25, available: 25 });
   });
 
   it("cannot be approved after its month has ended", async () => {
     const old = await pool.query(
       `INSERT INTO credit_requests (user_id, request_type, topup_package_id, period_month)
        VALUES ($1, 'TOPUP', $2, '2020-01-01') RETURNING id`,
-      [restaurantId, topupId],
+      [subscriberId, topupId],
     );
     const response = await admin.post(`/api/admin/credits/requests/${old.rows[0].id}/approve`).send({});
     expect(response.status).toBe(400);
@@ -220,9 +229,9 @@ describe("admin decisions", () => {
   });
 
   it("approves a request for next month without touching this month", async () => {
-    const request = (await subscribe(restaurant, { period: "next" })).body.request;
+    const request = (await subscribe(subscriber, { period: "next" })).body.request;
     await admin.post(`/api/admin/credits/requests/${request.id}/approve`).send({});
-    const credits = (await restaurant.get("/api/credits/me")).body.credits;
+    const credits = (await subscriber.get("/api/credits/me")).body.credits;
     expect(credits).toMatchObject({ total: 5, nextSubscription: { plan_name: "Standard" } });
   });
 
@@ -245,7 +254,7 @@ describe("admin decisions", () => {
 
   it("filters the request list and counts pending requests", async () => {
     await subscribe(store);
-    await restaurant.post("/api/credits/requests").send({ request_type: "TOPUP", topup_package_id: topupId });
+    await subscriber.post("/api/credits/requests").send({ request_type: "TOPUP", topup_package_id: topupId });
     const topups = await admin.get("/api/admin/credits/requests?type=TOPUP");
     expect(topups.body.requests.every((row: { request_type: string }) => row.request_type === "TOPUP")).toBe(true);
     const own = await admin.get(`/api/admin/credits/requests?user_id=${storeId}`);
@@ -261,7 +270,7 @@ describe("admin overview, adjustments and ledger", () => {
     await subscribe(store);
     const overview = await admin.get("/api/admin/credits/overview?role=&q=");
     expect(overview.status).toBe(200);
-    expect(overview.body.users.map((row: { id: number }) => row.id)).toEqual(expect.arrayContaining([storeId, restaurantId]));
+    expect(overview.body.users.map((row: { id: number }) => row.id)).toEqual(expect.arrayContaining([storeId, subscriberId]));
     const requests = await admin.get("/api/admin/credits/requests?type=&status=&user_id=");
     expect(requests.status).toBe(200);
     expect(requests.body.total).toBeGreaterThanOrEqual(1);
@@ -298,7 +307,7 @@ describe("admin overview, adjustments and ledger", () => {
     const response = await admin.get("/api/admin/credits/overview?q=Credit");
     expect(response.status).toBe(200);
     const rows = response.body.users as { id: number }[];
-    expect(rows.find((row) => row.id === restaurantId)).toMatchObject({
+    expect(rows.find((row) => row.id === subscriberId)).toMatchObject({
       plan_name: "Pro",
       has_subscription: true,
       total: 5,
@@ -306,36 +315,43 @@ describe("admin overview, adjustments and ledger", () => {
       available: 5,
     });
     expect(rows.find((row) => row.id === storeId)).toMatchObject({ has_subscription: false, available: 0 });
-    const restaurants = await admin.get("/api/admin/credits/overview?role=RESTAURANT&q=Credit");
-    expect(restaurants.body.users.map((row: { id: number }) => row.id)).toEqual([restaurantId]);
-    expect((await admin.get("/api/admin/credits/overview?role=ADMIN")).status).toBe(400);
+    // Stores only: a restaurant matching the search is not listed.
+    await insertUser(RESTAURANT, "RESTAURANT", "Credit Restaurant");
+    const listed = await admin.get("/api/admin/credits/overview?q=Credit");
+    expect(listed.body.users.map((row: { id: number }) => row.id).sort()).toEqual([storeId, subscriberId].sort());
   });
 
   it("adjusts credits with a reason and never below zero", async () => {
-    const added = await admin.post(`/api/admin/credits/users/${restaurantId}/adjust`).send({ amount: 3, reason: "Goodwill" });
+    const added = await admin.post(`/api/admin/credits/users/${subscriberId}/adjust`).send({ amount: 3, reason: "Goodwill" });
     expect(added.status).toBe(200);
     expect(added.body.balance.available).toBe(8);
-    const tooMuch = await admin.post(`/api/admin/credits/users/${restaurantId}/adjust`).send({ amount: -9, reason: "Fix" });
+    const tooMuch = await admin.post(`/api/admin/credits/users/${subscriberId}/adjust`).send({ amount: -9, reason: "Fix" });
     expect(tooMuch.body.error).toBe("The balance cannot go below zero.");
-    expect((await admin.post(`/api/admin/credits/users/${restaurantId}/adjust`).send({ amount: 2 })).body.error).toBe(
+    expect((await admin.post(`/api/admin/credits/users/${subscriberId}/adjust`).send({ amount: 2 })).body.error).toBe(
       "A reason is required (at most 500 characters).",
     );
-    expect((await admin.post(`/api/admin/credits/users/${restaurantId}/adjust`).send({ amount: 1.5, reason: "x" })).body.error).toBe(
+    expect((await admin.post(`/api/admin/credits/users/${subscriberId}/adjust`).send({ amount: 1.5, reason: "x" })).body.error).toBe(
       "Amount must be a whole number other than zero.",
     );
     const adminId = await userId(ADMIN);
     expect((await admin.post(`/api/admin/credits/users/${adminId}/adjust`).send({ amount: 1, reason: "x" })).body.error).toBe(
-      "Credits apply only to stores and restaurants.",
+      "Credits apply only to stores.",
     );
+    await insertUser(RESTAURANT, "RESTAURANT", "Credit Restaurant");
+    const restaurantId = await userId(RESTAURANT);
+    expect((await admin.post(`/api/admin/credits/users/${restaurantId}/adjust`).send({ amount: 1, reason: "x" })).body.error).toBe(
+      "Credits apply only to stores.",
+    );
+    expect((await admin.get(`/api/admin/credits/users/${restaurantId}/ledger`)).status).toBe(400);
     const log = await pool.query("SELECT reason FROM admin_actions WHERE action = 'ADJUST_CREDITS' AND target_user_id = $1", [
-      restaurantId,
+      subscriberId,
     ]);
     expect(log.rows).toEqual([{ reason: "+3: Goodwill" }]);
   });
 
   it("shows a user's ledger, newest first", async () => {
-    await admin.post(`/api/admin/credits/users/${restaurantId}/adjust`).send({ amount: 2, reason: "Bonus" });
-    const response = await admin.get(`/api/admin/credits/users/${restaurantId}/ledger`);
+    await admin.post(`/api/admin/credits/users/${subscriberId}/adjust`).send({ amount: 2, reason: "Bonus" });
+    const response = await admin.get(`/api/admin/credits/users/${subscriberId}/ledger`);
     expect(response.status).toBe(200);
     expect(response.body.total).toBe(2);
     expect(response.body.transactions[0]).toMatchObject({ type: "ADMIN_ADJUSTMENT", amount: 2, created_by_email: ADMIN });
@@ -409,15 +425,24 @@ describe("auto-renew", () => {
     expect(await renewals(storeId)).toHaveLength(1);
   });
 
+  it("never renews a restaurant, which pays no credits", async () => {
+    await insertUser(RESTAURANT, "RESTAURANT", "Credit Restaurant");
+    const restaurantId = await userId(RESTAURANT);
+    const subscription = await giveSubscription(restaurantId, 10, JUNE_28);
+    await pool.query("UPDATE subscriptions SET auto_renew = true WHERE id = $1", [subscription]);
+    await runCreditRenewals(JUNE_29);
+    expect(await renewals(restaurantId)).toEqual([]);
+  });
+
   it("skips users with their own pending request for next month or who are blocked", async () => {
     await pool.query(
       `INSERT INTO credit_requests (user_id, request_type, plan_id, period_month)
        VALUES ($1, 'SUBSCRIPTION', $2, '2030-07-01')`,
       [storeId, planId],
     );
-    const restaurantSubscription = await giveSubscription(restaurantId, 10, JUNE_28);
-    await pool.query("UPDATE subscriptions SET auto_renew = true WHERE id = $1", [restaurantSubscription]);
-    await pool.query("UPDATE users SET is_blocked = true WHERE id = $1", [restaurantId]);
+    const subscriberSubscription = await giveSubscription(subscriberId, 10, JUNE_28);
+    await pool.query("UPDATE subscriptions SET auto_renew = true WHERE id = $1", [subscriberSubscription]);
+    await pool.query("UPDATE users SET is_blocked = true WHERE id = $1", [subscriberId]);
 
     expect((await runCreditRenewals(JUNE_29)).created).toBe(0);
   });
@@ -492,13 +517,13 @@ describe("auto-renew", () => {
        VALUES ($1, 'SUBSCRIPTION', $2, '2030-07-01')`,
       [storeId, planId],
     );
-    const restaurantSubscription = await giveSubscription(restaurantId, 10, JUNE_28);
-    await pool.query("UPDATE subscriptions SET auto_renew = true WHERE id = $1", [restaurantSubscription]);
+    const subscriberSubscription = await giveSubscription(subscriberId, 10, JUNE_28);
+    await pool.query("UPDATE subscriptions SET auto_renew = true WHERE id = $1", [subscriberSubscription]);
 
-    // The store is skipped; the restaurant's renewal is still created in the same run.
+    // The store is skipped; the subscriber's renewal is still created in the same run.
     expect((await runCreditRenewals(JUNE_29)).created).toBe(1);
     expect(await renewals(storeId)).toHaveLength(0);
-    expect(await renewals(restaurantId)).toHaveLength(1);
+    expect(await renewals(subscriberId)).toHaveLength(1);
   });
 
   it("tells the user once when their plan is no longer offered", async () => {

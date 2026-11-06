@@ -2,8 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import toast from "react-hot-toast";
 import ReserveProductModal from "./ReserveProductModal.js";
-import { MemoryRouter } from "react-router-dom";
-import { apiMock, axiosError, creditError, makeProduct, mockGet, t } from "../../test/utils.js";
+import { apiMock, axiosError, makeProduct, mockGet, t } from "../../test/utils.js";
 import { translateServerMessage } from "../../i18n/serverMessages.js";
 import { toDateInput } from "../../utils/expiry.js";
 
@@ -55,24 +54,9 @@ describe("ReserveProductModal", () => {
     expect(onReserved).toHaveBeenCalled();
   });
 
-  it("explains a missing subscription inside the dialog with a link to it", async () => {
-    apiMock.post.mockRejectedValue(creditError(false));
-    const onClose = vi.fn();
-    render(
-      <MemoryRouter>
-        <ReserveProductModal product={product} onClose={onClose} onReserved={vi.fn()} />
-      </MemoryRouter>,
-    );
-
-    await fillForm();
-    await submit();
-
-    expect(await screen.findByText(t("credits.insufficient.noSubscription"))).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: t("credits.insufficient.subscribeLink") })).toHaveAttribute(
-      "href",
-      "/my-profile#subscription",
-    );
-    expect(onClose).not.toHaveBeenCalled();
+  it("says nothing about credits: restaurants reserve for free", () => {
+    renderModal();
+    expect(screen.queryByText(/kredit|credit/i)).not.toBeInTheDocument();
   });
 
   it("shows the server error and stays open when the reservation fails", async () => {

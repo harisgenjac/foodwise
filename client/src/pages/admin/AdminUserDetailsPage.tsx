@@ -316,7 +316,8 @@ function AdminUserDetailsPage() {
         </section>
       )}
 
-      {isBusiness && <UserCreditsPanel userId={user.id} />}
+      {/* Only stores pay credits. */}
+      {user.role === "STORE" && <UserCreditsPanel userId={user.id} />}
 
       <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
         <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">

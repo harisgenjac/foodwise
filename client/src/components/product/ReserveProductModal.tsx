@@ -13,9 +13,6 @@ import { isBlank, REQUIRED } from "../../utils/validation.js";
 import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
 import { formatTimeTyping, parseTimeInput, toDateInput } from "../../utils/expiry.js";
 import type { Product } from "../../types/index.js";
-import InsufficientCreditsNotice from "../credits/InsufficientCreditsNotice.js";
-import CreditHint from "../credits/CreditHint.js";
-import { getCreditError, type CreditError } from "../../utils/credits.js";
 import { translateServerMessage } from "../../i18n/serverMessages.js";
 
 // The axios interceptor has already translated `error`, so it is compared with the translated text.
@@ -39,7 +36,6 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [creditError, setCreditError] = useState<CreditError | null>(null);
   // Refreshed after the server refuses a quantity that is no longer available.
   const [available, setAvailable] = useState(product.available_quantity ?? product.quantity);
   // The server accepts a pickup from today up to the end of the expiry day. A typed date skips the
@@ -93,12 +89,6 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
       onClose();
       onReserved();
     } catch (err) {
-      // No credits: explain it inside the dialog, with the way to get credits.
-      const credits = getCreditError(err);
-      if (credits) {
-        setCreditError(credits);
-        return;
-      }
       console.error(err);
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
       toast.error(message || t("reservations.actionError"));
@@ -189,11 +179,6 @@ function ReserveProductModal({ product, storeLine, onClose, onReserved }: Reserv
               <RequiredHint />
             </div>
 
-            {creditError ? (
-              <InsufficientCreditsNotice error={creditError} className="mt-4" />
-            ) : (
-              <CreditHint className="mt-4" />
-            )}
         </ModalBody>
 
         <ModalFooter className="pt-6">

@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { storageState, uniqueName } from "../support/accounts.js";
 import { apiAs, createProduct } from "../support/api.js";
 import { sarajevoDate } from "../support/dates.js";
-import { availableCredits, expectAvailableCredits, toast } from "../support/ui.js";
+import { toast } from "../support/ui.js";
 
 const marketplaceCard = async (page: Page, productName: string) => {
   await page.goto("/browse-products");
@@ -12,7 +12,7 @@ const marketplaceCard = async (page: Page, productName: string) => {
   return card;
 };
 
-test("a rejected reservation gives the restaurant its credit back", async ({ browser }) => {
+test("a rejected reservation puts the quantity back on offer, with no credits for the restaurant", async ({ browser }) => {
   const productName = uniqueName("E2E Jogurt");
   const storeApi = await apiAs("store");
   await createProduct(storeApi, { name: productName, quantity: 10, unit: "kg" });
@@ -23,21 +23,19 @@ test("a rejected reservation gives the restaurant its credit back", async ({ bro
   const store = await storeContext.newPage();
   const restaurant = await restaurantContext.newPage();
 
-  const before = await test.step("Restoran: krediti prije rezervacije", () => availableCredits(restaurant));
-
   await test.step("Restoran rezerviše 4 od 10 kg", async () => {
     const card = await marketplaceCard(restaurant, productName);
     await expect(card.getByText("10 kilogram (kg)")).toBeVisible();
     await card.getByRole("button", { name: "Rezerviši" }).click();
     const dialog = restaurant.getByRole("dialog");
-    await expect(dialog.getByText(`Ovo troši 1 kredit (preostalo: ${before})`)).toBeVisible();
+    // Restaurants pay no credits: the dialog says nothing about them.
+    await expect(dialog.getByText(/kredit/i)).toHaveCount(0);
     await dialog.getByLabel("Datum preuzimanja").fill(sarajevoDate(1));
     await dialog.getByLabel("Datum preuzimanja").press("Enter");
     await dialog.getByLabel("Vrijeme preuzimanja").fill("12:00");
     await dialog.getByLabel("Količina").fill("4");
     await dialog.getByRole("button", { name: "Potvrdi" }).click();
     await expect(toast(restaurant, "Rezervacija uspješno kreirana.")).toBeVisible();
-    await expectAvailableCredits(restaurant, before - 1);
   });
 
   await test.step("Prodavnica odbija zahtjev", async () => {
@@ -59,8 +57,9 @@ test("a rejected reservation gives the restaurant its credit back", async ({ bro
     await expect(restaurant.getByText(`Vaša rezervacija za ${productName} je odbijena.`)).toBeVisible();
   });
 
-  await test.step("Kredit je vraćen, proizvod je opet ponuđen u cijeloj količini", async () => {
-    await expectAvailableCredits(restaurant, before);
+  await test.step("Proizvod je opet ponuđen u cijeloj količini, a restoran nema stranicu kredita", async () => {
+    await restaurant.goto("/credits");
+    await expect(restaurant).toHaveURL(/\/dashboard$/);
     const card = await marketplaceCard(restaurant, productName);
     await expect(card.getByText("10 kilogram (kg)")).toBeVisible();
   });

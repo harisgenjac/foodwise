@@ -267,7 +267,7 @@ it("an announcement emails every recipient in their language, with its own title
 });
 
 it("credit requests email the admins, and the decision emails the requester", async () => {
-  const response = await restaurant.post("/api/credits/requests").send({
+  const response = await store.post("/api/credits/requests").send({
     request_type: "TOPUP",
     topup_package_id: (await pool.query("SELECT id FROM topup_packages WHERE credits = 20")).rows[0].id,
   });
@@ -285,7 +285,7 @@ it("credit requests email the admins, and the decision emails the requester", as
   expect((await admin.post(`/api/admin/credits/requests/${requestId}/reject`).send({ note: "No payment" })).status).toBe(
     200,
   );
-  const [decision] = await emailsTo(RESTAURANT);
+  const [decision] = await emailsTo(STORE);
   expect(decision!.template).toBe("CREDIT_REQUEST_REJECTED");
   const rejected = renderBoth(decision!);
   expect(rejected.en.subject).toBe("Your request for extra credits was rejected");

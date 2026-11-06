@@ -12,7 +12,7 @@ import { creditDay, creditMonth, monthEnd } from "../utils/creditTime.js";
 // old month's credits have expired and cannot be given back where they came from.
 //
 // Every function that writes takes the caller's transaction client, so a charge or refund commits
-// or rolls back together with the product or reservation change it belongs to. `now` is a
+// or rolls back together with the product change it belongs to. `now` is a
 // parameter so tests can move the clock across day, month and DST boundaries.
 
 type Db = Pool | PoolClient;
@@ -24,8 +24,6 @@ export interface ActorRef {
   actor: CreditActor;
   userId: number | null;
 }
-
-const SYSTEM: ActorRef = { actor: "SYSTEM", userId: null };
 
 // Client paths the 402 points to (My profile sections).
 export const SUBSCRIPTION_ACTION_URL = "/my-profile#subscription";
@@ -271,11 +269,10 @@ interface ChargeItem {
 
 // Checks the balance and writes one charge row per item, all under the subscription lock.
 // Credits only ever come from the current month, so a past month's leftover cannot be spent.
+// Only stores pay credits (1 per published product); restaurants order for free.
 const charge = async (
   client: PoolClient,
   userId: number,
-  type: "PRODUCT_CHARGE" | "RESERVATION_CHARGE",
-  entityType: "product" | "reservation",
   items: ChargeItem[],
   now: Date,
 ): Promise<CreditTransaction[]> => {
@@ -289,10 +286,10 @@ const charge = async (
     throw new InsufficientCreditsError(true);
   }
 
-  const values: (string | number | Date | null)[] = [userId, subscriptionId, periodMonth, type, entityType, now];
+  const values: (string | number | Date | null)[] = [userId, subscriptionId, periodMonth, now];
   const rows = items.map((item) => {
     values.push(item.id, item.category);
-    return `($1, $2, $3, -1, $4, $5, $${values.length - 1}, $${values.length}, 'USER', $1, $6)`;
+    return `($1, $2, $3, -1, 'PRODUCT_CHARGE', 'product', $${values.length - 1}, $${values.length}, 'USER', $1, $4)`;
   });
   const result = await client.query<CreditTransaction>(
     `INSERT INTO credit_transactions
@@ -311,41 +308,29 @@ export const chargeForProduct = async (
   storeId: number,
   product: ChargeItem,
   now = new Date(),
-) => (await charge(client, storeId, "PRODUCT_CHARGE", "product", [product], now))[0]!;
+) => (await charge(client, storeId, [product], now))[0]!;
 
 // CSV import: all products are charged together or none (the import is all or nothing too).
 export const chargeForProducts = (client: PoolClient, storeId: number, products: ChargeItem[], now = new Date()) =>
-  charge(client, storeId, "PRODUCT_CHARGE", "product", products, now);
-
-// 1 credit per reservation; `category` is the reserved product's category.
-export const chargeForReservation = async (
-  client: PoolClient,
-  restaurantId: number,
-  reservation: ChargeItem,
-  now = new Date(),
-) => (await charge(client, restaurantId, "RESERVATION_CHARGE", "reservation", [reservation], now))[0]!;
+  charge(client, storeId, products, now);
 
 export type RefundResult =
   | { refunded: true; transaction: CreditTransaction }
   | { refunded: false; reason: "NO_CHARGE" | "DAY_PASSED" | "HAS_RESERVATIONS" | "ALREADY_REFUNDED" };
 
-// The newest charge of an entity that has not been refunded yet. A product can be charged more
+// The newest charge of a product that has not been refunded yet. A product can be charged more
 // than once (published, moved to donations and refunded, returned to the offer).
-const findOpenCharge = async (
-  client: PoolClient,
-  type: "PRODUCT_CHARGE" | "RESERVATION_CHARGE",
-  entityType: "product" | "reservation",
-  entityId: number,
-) => {
+const findOpenCharge = async (client: PoolClient, productId: number) => {
   const result = await client.query<CreditTransaction>(
     `SELECT * FROM credit_transactions charge
-     WHERE charge.type = $1 AND charge.related_entity_type = $2 AND charge.related_entity_id = $3
+     WHERE charge.type = 'PRODUCT_CHARGE' AND charge.related_entity_type = 'product'
+       AND charge.related_entity_id = $1
        AND NOT EXISTS (
          SELECT 1 FROM credit_transactions refund WHERE refund.refunds_transaction_id = charge.id
        )
      ORDER BY charge.created_at DESC, charge.id DESC
      LIMIT 1`,
-    [type, entityType, entityId],
+    [productId],
   );
   return result.rows[0] ?? null;
 };
@@ -353,7 +338,6 @@ const findOpenCharge = async (
 const refund = async (
   client: PoolClient,
   original: CreditTransaction,
-  type: "PRODUCT_REFUND" | "RESERVATION_REFUND",
   by: ActorRef,
   now: Date,
 ): Promise<RefundResult> => {
@@ -368,12 +352,12 @@ const refund = async (
     `INSERT INTO credit_transactions
        (user_id, subscription_id, period_month, amount, type, related_entity_type, related_entity_id,
         category, refunds_transaction_id, actor, created_by_user_id, created_at)
-     SELECT user_id, $2, $3, -amount, $4, related_entity_type, related_entity_id,
-            category, id, $5, $6, $7
+     SELECT user_id, $2, $3, -amount, 'PRODUCT_REFUND', related_entity_type, related_entity_id,
+            category, id, $4, $5, $6
      FROM credit_transactions WHERE id = $1
      ON CONFLICT (refunds_transaction_id) DO NOTHING
      RETURNING *`,
-    [original.id, subscription?.id ?? null, periodMonth, type, by.actor, by.userId, now],
+    [original.id, subscription?.id ?? null, periodMonth, by.actor, by.userId, now],
   );
   const transaction = result.rows[0];
   return transaction ? { refunded: true, transaction } : { refunded: false, reason: "ALREADY_REFUNDED" };
@@ -390,7 +374,7 @@ export const refundForProduct = async (
   by: ActorRef,
   now = new Date(),
 ): Promise<RefundResult> => {
-  const original = await findOpenCharge(client, "PRODUCT_CHARGE", "product", productId);
+  const original = await findOpenCharge(client, productId);
   if (!original) return { refunded: false, reason: "NO_CHARGE" };
   if (!isRefundEligible(original.created_at, now)) return { refunded: false, reason: "DAY_PASSED" };
 
@@ -402,30 +386,13 @@ export const refundForProduct = async (
   );
   if (reservations.rows.length > 0) return { refunded: false, reason: "HAS_RESERVATIONS" };
 
-  return refund(client, original, "PRODUCT_REFUND", by, now);
+  return refund(client, original, by, now);
 };
 
 // Whether the product's latest charge is still spent (never refunded). A product moved to
 // donations after the charge day keeps its charge, so returning it to the offer must not charge again.
 export const hasOpenProductCharge = async (client: PoolClient, productId: number) =>
-  (await findOpenCharge(client, "PRODUCT_CHARGE", "product", productId)) !== null;
-
-// A reservation ends without a sale. `forced` refunds regardless of the day: the store rejected
-// it, or the system/an admin cancelled it, so the restaurant is not at fault. The restaurant's
-// own cancel is not forced and follows the same-day rule.
-export const refundForReservation = async (
-  client: PoolClient,
-  reservationId: number,
-  { forced, by = SYSTEM }: { forced: boolean; by?: ActorRef },
-  now = new Date(),
-): Promise<RefundResult> => {
-  const original = await findOpenCharge(client, "RESERVATION_CHARGE", "reservation", reservationId);
-  if (!original) return { refunded: false, reason: "NO_CHARGE" };
-  if (!forced && !isRefundEligible(original.created_at, now)) {
-    return { refunded: false, reason: "DAY_PASSED" };
-  }
-  return refund(client, original, "RESERVATION_REFUND", by, now);
-};
+  (await findOpenCharge(client, productId)) !== null;
 
 // Admin approves a subscription request: creates the subscription for its month (the current or
 // the next one) and grants the credits to that month. `credits` is the request's snapshot (what

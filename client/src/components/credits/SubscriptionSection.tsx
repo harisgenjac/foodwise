@@ -21,7 +21,7 @@ import {
   formatCreditMonth,
   nextCreditMonth,
 } from "../../utils/credits.js";
-import type { CreditRequest, Plan, Role, TopupPackage } from "../../types/index.js";
+import type { CreditRequest, Plan, TopupPackage } from "../../types/index.js";
 
 const cardStyle = "rounded-2xl border border-gray-100 bg-white p-6 shadow-sm";
 const PLAN_OPTIONS = "plan-options";
@@ -55,7 +55,7 @@ function ToggleButton({ open, controls, onClick, prominent = false, children }: 
   );
 }
 
-// My profile for stores and restaurants: the current plan and balance, choosing a plan (this
+// My profile for stores (restaurants pay no credits): the current plan and balance, choosing a plan (this
 // month while there is none, else the next month), auto-renew, extra credits (only with an active
 // subscription) and the status of the user's requests. Payment is offline: every choice is a
 // request an admin approves. The two sections have ids so banners and errors can link to them.
@@ -64,7 +64,7 @@ function ToggleButton({ open, controls, onClick, prominent = false, children }: 
 // again after a request is sent.
 // A branch (managedByCompany) does not choose its plan: its headquarters chooses and pays it, so
 // the plans and the auto-renew switch are left out and extra credits are asked from the headquarters.
-function SubscriptionSection({ role }: { role: Role }) {
+function SubscriptionSection() {
   const { t } = useTranslation();
   const { credits, refresh } = useCredits();
   const { hash } = useLocation();
@@ -458,7 +458,6 @@ function SubscriptionSection({ role }: { role: Role }) {
       {selectedPlan && (
         <SubscribeModal
           plan={selectedPlan}
-          role={role}
           period={period}
           month={requestMonth}
           monthStarted={new Date().getDate() > 1}
@@ -473,7 +472,6 @@ function SubscriptionSection({ role }: { role: Role }) {
       {selectedTopup && (
         <TopupModal
           topup={selectedTopup}
-          role={role}
           periodEnd={credits.periodEnd}
           toCompany={managed ? company : null}
           onClose={() => setSelectedTopup(null)}

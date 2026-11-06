@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Coins } from "lucide-react";
 import api from "../api/axios.js";
-import { useAuth } from "../context/AuthContext.js";
 import { useCredits } from "../context/CreditsContext.js";
 import ProductPageHeader from "../components/product/ProductPageHeader.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
@@ -24,7 +23,6 @@ const boxStyle = "rounded-2xl border border-gray-100 bg-white p-6 shadow-sm";
 // product category (Box 2).
 function CreditsPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const { credits, loadedAt } = useCredits();
   const currentYear = Number((credits?.periodStart ?? new Date().toISOString()).slice(0, 4));
   const [year, setYear] = useState(currentYear);
@@ -72,7 +70,7 @@ function CreditsPage() {
           {t("credits.page.summaryTitle")}
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          {t(user?.role === "STORE" ? "credits.page.explanationStore" : "credits.page.explanationRestaurant")}
+          {t("credits.page.explanationStore")}
         </p>
 
         {!credits.hasActiveSubscription && credits.managedByCompany && (

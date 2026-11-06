@@ -171,7 +171,6 @@ function BranchCreditActions({
       {selectedPlan && (
         <SubscribeModal
           plan={selectedPlan}
-          role="STORE"
           period={period}
           month={month}
           monthStarted={new Date().getDate() > 1}
@@ -184,7 +183,6 @@ function BranchCreditActions({
       {selectedTopup && (
         <TopupModal
           topup={selectedTopup}
-          role="STORE"
           periodEnd={periodEnd}
           endpoint={endpoint}
           branchName={branch.name}

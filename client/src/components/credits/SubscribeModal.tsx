@@ -6,11 +6,10 @@ import api from "../../api/axios.js";
 import Modal, { ModalBody, ModalFooter, ModalHeader } from "../product/Modal.js";
 import AutoRenewTooltip from "./AutoRenewTooltip.js";
 import { formatCreditMonth } from "../../utils/credits.js";
-import type { Plan, Role } from "../../types/index.js";
+import type { Plan } from "../../types/index.js";
 
 interface SubscribeModalProps {
   plan: Plan;
-  role: Role;
   // "current" while the user has no subscription this month, else "next" (a plan change).
   period: "current" | "next";
   month: string;
@@ -27,7 +26,6 @@ interface SubscribeModalProps {
 // subscription request, and lets them choose this month only or auto-renew.
 function SubscribeModal({
   plan,
-  role,
   period,
   month,
   monthStarted,
@@ -41,7 +39,6 @@ function SubscribeModal({
   const [autoRenew, setAutoRenew] = useState(false);
   const [sending, setSending] = useState(false);
   const monthNames = t("dashboard.months", { returnObjects: true }) as string[];
-  const isStore = role === "STORE";
 
   const send = async () => {
     if (sending) return;
@@ -80,11 +77,11 @@ function SubscribeModal({
         <div className="space-y-3 rounded-xl bg-gray-50 p-4 text-sm text-gray-700">
           <div>
             <p className="font-semibold text-gray-900">{t("credits.modal.whatTitle")}</p>
-            <p>{t(isStore ? "credits.modal.chargeStore" : "credits.modal.chargeRestaurant")}</p>
+            <p>{t("credits.modal.chargeStore")}</p>
           </div>
           <div>
             <p className="font-semibold text-gray-900">{t("credits.modal.refundTitle")}</p>
-            <p>{t(isStore ? "credits.modal.refundStore" : "credits.modal.refundRestaurant")}</p>
+            <p>{t("credits.modal.refundStore")}</p>
           </div>
           <p>{t("credits.modal.expiry")}</p>
           <p>{t("credits.modal.balance")}</p>

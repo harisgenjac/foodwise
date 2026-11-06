@@ -45,7 +45,7 @@ Design, decisions and PR split: `docs/orders-design.md` (agreed Nov 6, 2026). De
 - [ ] Cart: one store, "empty the cart?" dialog, no stock held, "Accept partial fulfilment" option.
 - [ ] Submitting an order with all items at once, using the existing available-quantity protection.
 - [ ] Accepting per item: rejected items return their quantity to the offer; if all are rejected, the order is `Rejected`.
-- [ ] Restaurants without credits: remove charging, subscription and banners for restaurants, adjust the admin credits overview. Add a limit on pending orders.
+- [ ] Restaurants without credits: remove charging, subscription and banners for restaurants, adjust the admin credits overview. Add a limit on pending orders. (Credits part done Nov 6, 2026; the pending-order limit comes with orders.)
 - [ ] Adapt existing features: Pickups, details, notifications, reports, admin reservations and cancelling, blocking and moderation.
 - [ ] E2E tests for the cart and orders.
 

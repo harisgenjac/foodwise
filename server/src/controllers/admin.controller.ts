@@ -17,7 +17,7 @@ import { RESERVATION_STATUSES, lockReservation, releaseSoldProduct } from "./res
 import { updateProfile } from "./users.controller.js";
 import { isValidDateTime } from "../utils/dates.js";
 import { CITY_NAME, parseCityFilter } from "../utils/cities.js";
-import { getPlatformUsage, refundForReservation } from "../services/creditService.js";
+import { getPlatformUsage } from "../services/creditService.js";
 import { getSavedTotals } from "../services/impactStats.js";
 import { creditMonth, nextMonth } from "../utils/creditTime.js";
 import type { Role } from "../types/auth.js";
@@ -187,7 +187,7 @@ export const getStats = async (req: Request, res: Response) => {
     const creditCounts = await pool.query(
       `SELECT
          (SELECT COUNT(*) FROM users
-          WHERE users.role IN ('STORE', 'RESTAURANT') AND ${notBlocked("users")}
+          WHERE users.role = 'STORE' AND ${notBlocked("users")}
             AND NOT EXISTS (
               SELECT 1 FROM subscriptions
               WHERE subscriptions.user_id = users.id AND subscriptions.period_month = $1
@@ -516,17 +516,14 @@ export const resetPassword = async (req: Request, res: Response) => {
 };
 
 // Cancels the Pending reservations of `where` (locked first) and notifies `recipient` of each.
-// Confirmed reservations are kept: the store already agreed to hand that food over. `by` is the
-// admin (or, for `storeClosed`, the headquarters that deactivated its branch): the restaurant's
-// credit always comes back. `storeClosed` sends RESERVATION_CANCELLED_STORE_CLOSED instead of
-// RESERVATION_CANCELLED_BY_ADMIN.
+// Confirmed reservations are kept: the store already agreed to hand that food over.
+// `storeClosed` sends RESERVATION_CANCELLED_STORE_CLOSED instead of RESERVATION_CANCELLED_BY_ADMIN.
 export const cancelPendingReservations = async (
   client: PoolClient,
   where: string,
   values: number[],
   recipient: (row: { store_id: number; restaurant_id: number }) => number,
-  adminId: number,
-  { actor = "ADMIN", storeClosed = false }: { actor?: "ADMIN" | "USER"; storeClosed?: boolean } = {},
+  { storeClosed = false }: { storeClosed?: boolean } = {},
 ) => {
   const pending = await client.query(
     `SELECT reservations.id, reservations.restaurant_id, reservations.quantity,
@@ -539,8 +536,6 @@ export const cancelPendingReservations = async (
   );
   for (const row of pending.rows) {
     await client.query("UPDATE reservations SET status = 'Cancelled' WHERE reservations.id = $1", [row.id]);
-    // Not cancelled by the restaurant: its credit always comes back.
-    await refundForReservation(client, row.id, { forced: true, by: { actor, userId: adminId } });
     const item = `${Number(row.quantity)}${row.unit} ${row.name}`;
     await createNotification(client, {
       userId: recipient(row),
@@ -599,7 +594,6 @@ export const blockUser = async (req: Request, res: Response) => {
       "reservations.restaurant_id = $1 OR products.store_id = $1",
       [targetId],
       (row) => (row.restaurant_id === targetId ? row.store_id : row.restaurant_id),
-      req.user!.id,
     );
     const blocked = result.rows[0];
     // A branch's headquarters learns it was blocked, with the reason.
@@ -741,7 +735,6 @@ export const removeProduct = async (req: Request, res: Response) => {
       "reservations.product_id = $1",
       [productId],
       (row) => row.restaurant_id,
-      req.user!.id,
     );
     // No refund for the store: the product broke the rules, so its credit stays spent.
     const result = await client.query(
@@ -1045,8 +1038,6 @@ export const cancelReservation = async (req: Request, res: Response) => {
     if (reservation.status === "Confirmed") {
       await releaseSoldProduct(client, reservation.product_id);
     }
-    // An admin settled a dispute: the restaurant always gets its credit back.
-    await refundForReservation(client, reservationId, { forced: true, by: { actor: "ADMIN", userId: req.user!.id } });
     for (const userId of [reservation.store_id, reservation.restaurant_id]) {
       await createNotification(client, {
         userId,

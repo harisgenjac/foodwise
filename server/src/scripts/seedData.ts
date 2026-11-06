@@ -18,12 +18,13 @@ export interface SeedBusiness {
   pickup: [number, number];
   // Chance per day that the business acts (a store publishes a product, a restaurant reserves).
   activity: number;
+}
+
+// Only stores pay credits; restaurants order for free.
+export interface SeedStore extends SeedBusiness {
   // Plan name per credit month, oldest first; the last one repeats for later months.
   plans: string[];
   autoRenew: boolean;
-}
-
-export interface SeedStore extends SeedBusiness {
   categories: string[];
   // Products the store has on offer right now.
   currentStock: number;
@@ -166,61 +167,61 @@ export const RESTAURANTS: SeedBusiness[] = [
     first_name: "Lejla", last_name: "Softić", email: "restoran.ukus@demo.com", business_name: "Restoran Ukus",
     city: "Sarajevo", address: "Titova 20", phone: "062111111", opening_hours: "10:00–23:00", pickup_hours: "",
     description: "Bosanska i mediteranska kuhinja, dnevni meni i catering.",
-    pickup: [0, 0], activity: 0.9, plans: ["Pro"], autoRenew: true,
+    pickup: [0, 0], activity: 0.9,
   },
   {
     first_name: "Tarik", last_name: "Hasić", email: "bistro.avlija@demo.com", business_name: "Bistro Avlija",
     city: "Sarajevo", address: "Sime Milutinovića 4", phone: "062222223", opening_hours: "08:00–22:00", pickup_hours: "",
     description: "Doručci, sezonske salate i jela s roštilja u mirnoj avliji.",
-    pickup: [0, 0], activity: 0.75, plans: ["Standard", "Standard", "Pro"], autoRenew: false,
+    pickup: [0, 0], activity: 0.75,
   },
   {
     first_name: "Adnan", last_name: "Mešić", email: "pizzeria.roma@demo.com", business_name: "Pizzeria Roma",
     city: "Tuzla", address: "Trg slobode 7", phone: "062222222", opening_hours: "11:00–23:00", pickup_hours: "",
     description: "Pizza iz krušne peći i domaća tjestenina.",
-    pickup: [0, 0], activity: 0.7, plans: ["Basic"], autoRenew: true,
+    pickup: [0, 0], activity: 0.7,
   },
   {
     first_name: "Jasmin", last_name: "Omerović", email: "restoran.starigrad@demo.com", business_name: "Restoran Stari Grad",
     city: "Sarajevo", address: "Baščaršija 12", phone: "062333333", opening_hours: "09:00–23:00", pickup_hours: "",
     description: "Tradicionalna jela, ćevapi i pite u srcu Baščaršije.",
-    pickup: [0, 0], activity: 0.6, plans: ["Standard"], autoRenew: false,
+    pickup: [0, 0], activity: 0.6,
   },
   {
     first_name: "Ana", last_name: "Jurić", email: "kafana.most@demo.com", business_name: "Kafana Most",
     city: "Zenica", address: "Kamberovića čikma 2", phone: "062444444", opening_hours: "09:00–24:00", pickup_hours: "",
     description: "Domaća kuhinja i riblji specijaliteti s pogledom na rijeku Bosnu.",
-    pickup: [0, 0], activity: 0.55, plans: ["Standard"], autoRenew: true,
+    pickup: [0, 0], activity: 0.55,
   },
   {
     first_name: "Edin", last_name: "Karić", email: "restoran.panorama@demo.com", business_name: "Restoran Panorama",
     city: "Sarajevo", address: "Vrbanja 1", phone: "062555555", opening_hours: "11:00–23:00", pickup_hours: "",
     description: "Restoran za poslovne ručkove i proslave.",
-    pickup: [0, 0], activity: 0.5, plans: ["Standard"], autoRenew: false,
+    pickup: [0, 0], activity: 0.5,
   },
   {
     first_name: "Maja", last_name: "Pašić", email: "bistro.zelenikutak@demo.com", business_name: "Bistro Zeleni Kutak",
     city: "Kakanj", address: "Rudarska 12", phone: "062666666", opening_hours: "08:00–21:00", pickup_hours: "",
     description: "Vegetarijanska i veganska jela od lokalnih namirnica.",
-    pickup: [0, 0], activity: 0.4, plans: ["Basic"], autoRenew: true,
+    pickup: [0, 0], activity: 0.4,
   },
   {
     first_name: "Haris", last_name: "Imamović", email: "pizzeria.napoli@demo.com", business_name: "Pizzeria Napoli",
     city: "Tuzla", address: "Stupine B4", phone: "062777777", opening_hours: "11:00–23:00", pickup_hours: "",
     description: "Napolitanska pizza i brza dostava u Tuzli.",
-    pickup: [0, 0], activity: 0.35, plans: ["Standard"], autoRenew: false,
+    pickup: [0, 0], activity: 0.35,
   },
   {
     first_name: "Goran", last_name: "Vuković", email: "restoran.tvrdjava@demo.com", business_name: "Restoran Tvrđava",
     city: "Visoko", address: "Čaršijska 20", phone: "062888888", opening_hours: "10:00–23:00", pickup_hours: "",
     description: "Jela s ražnja i peke, domaća vina.",
-    pickup: [0, 0], activity: 0.3, plans: ["Basic"], autoRenew: false,
+    pickup: [0, 0], activity: 0.3,
   },
   {
     first_name: "Senad", last_name: "Bajrić", email: "ascinica.sofra@demo.com", business_name: "Aščinica Sofra",
     city: "Zenica", address: "Maršala Tita 15", phone: "062999999", opening_hours: "08:00–18:00", pickup_hours: "",
     description: "Kuhana jela, dolme i sogan-dolma po starim receptima.",
-    pickup: [0, 0], activity: 0.2, plans: ["Basic"], autoRenew: true,
+    pickup: [0, 0], activity: 0.2,
   },
 ];
 

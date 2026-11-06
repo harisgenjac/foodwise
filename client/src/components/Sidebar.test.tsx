@@ -47,5 +47,12 @@ describe("Sidebar", () => {
     expect(await screen.findByRole("link", { name: t("sidebar.myProducts") })).toBeInTheDocument();
     expect(screen.getByText(t("sidebar.humanitarian"))).toBeInTheDocument();
     expect(links()).not.toContain("/company/profile");
+    expect(links()).toContain("/credits");
+  });
+
+  it("gives restaurants no credits page: they pay no credits", async () => {
+    renderSidebar(makeUser({ role: "RESTAURANT" }));
+    expect(await screen.findByRole("link", { name: t("sidebar.browseProducts") })).toBeInTheDocument();
+    expect(links()).not.toContain("/credits");
   });
 });

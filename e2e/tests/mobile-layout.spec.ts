@@ -8,9 +8,10 @@ import { apiAs, createDonation, createProduct, createStoreWithoutPlan, myId, req
 const WIDTH = Number(process.env.MOBILE_WIDTH ?? 375);
 test.use({ viewport: { width: WIDTH, height: 812 }, hasTouch: true });
 
-const STORE_PAGES = ["/dashboard", "/my-products", "/add-product", "/import-products", "/reservations"];
+// Only stores have a Credits page: restaurants pay no credits.
+const STORE_PAGES = ["/dashboard", "/my-products", "/add-product", "/import-products", "/reservations", "/credits"];
 const RESTAURANT_PAGES = ["/dashboard", "/browse-products", "/stores", "/my-reservations"];
-const SHARED_PAGES = ["/pickups", "/reports", "/credits", "/my-profile", "/donate-food", "/donate-food/new", "/sponsor", "/notifications"];
+const SHARED_PAGES = ["/pickups", "/reports", "/my-profile", "/donate-food", "/donate-food/new", "/sponsor", "/notifications"];
 
 const bottomBar = (page: Page) => page.getByRole("navigation", { name: "Glavna navigacija" });
 

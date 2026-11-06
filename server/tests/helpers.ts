@@ -11,10 +11,10 @@ export const PASSWORD = "test12345";
 
 // Public registration no longer creates these roles (an admin does), so tests insert the
 // account directly. Stores and restaurants get a business name, because the marketplace
-// hides stores whose profile is not filled in, and a subscription for the current month with
-// `credits` credits (null = none), so creating products and reservations is not limited by
-// credits unless a test wants that. Hashed once: bcrypt is slow. A COMPANY user (and a branch
-// store) needs `companyId`; company users have no business name and no credits.
+// hides stores whose profile is not filled in. A store also gets a subscription for the current
+// month with `credits` credits (null = none), so creating products is not limited by credits
+// unless a test wants that; restaurants pay no credits. Hashed once: bcrypt is slow. A COMPANY
+// user (and a branch store) needs `companyId`; company users have no business name and no credits.
 let passwordHash: Promise<string> | undefined;
 export const insertUser = async (
   email: string,
@@ -31,7 +31,7 @@ export const insertUser = async (
      RETURNING id`,
     ["Test", "User", email, await passwordHash, role, isBusiness ? businessName : null, companyId],
   );
-  if (isBusiness && credits !== null) {
+  if (role === "STORE" && credits !== null) {
     await giveSubscription(result.rows[0]!.id, credits);
   }
 };

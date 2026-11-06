@@ -262,16 +262,10 @@ describe("Companies", () => {
       expect(response.body.cancelledReservations).toBe(1);
       expect(await reservationStatus(pending)).toBe("Cancelled");
       expect(await reservationStatus(confirmed)).toBe("Confirmed");
-      // The restaurant is told without the reason, and gets its credit back.
+      // The restaurant is told without the reason.
       expect(await notificationsOf(RESTAURANT)).toContainEqual(
         expect.objectContaining({ type: "RESERVATION_CANCELLED_BY_ADMIN", reservation_id: pending, details: null }),
       );
-      const refund = await pool.query(
-        `SELECT 1 FROM credit_transactions
-         WHERE type = 'RESERVATION_REFUND' AND related_entity_type = 'reservation' AND related_entity_id = $1`,
-        [pending],
-      );
-      expect(refund.rows).toHaveLength(1);
 
       const products = await restaurant.get("/api/products?radius=all");
       expect(products.body.products.some((row: { id: number }) => row.id === product.id)).toBe(false);
@@ -378,7 +372,7 @@ describe("Companies", () => {
       const adjust = await admin
         .post(`/api/admin/credits/users/${await userId(HQ)}/adjust`)
         .send({ amount: 5, reason: "Test" });
-      expect(adjust.body.error).toBe("Credits apply only to stores and restaurants.");
+      expect(adjust.body.error).toBe("Credits apply only to stores.");
     });
 
     it("updates its own profile with first name, last name and phone", async () => {

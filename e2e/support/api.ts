@@ -82,7 +82,7 @@ export const myId = async (api: APIRequestContext) => {
   return user.id;
 };
 
-// Reserves as a restaurant (costs it 1 credit); pickup tomorrow unless a date is given.
+// Reserves as a restaurant (restaurants pay no credits); pickup tomorrow unless a date is given.
 export const reserve = async (api: APIRequestContext, productId: number, quantity: number, pickupDate = isoDate(1)) => {
   const { reservation } = await ok<{ reservation: { id: number } }>(
     await api.post("/api/reservations", { data: { product_id: productId, quantity, pickup_date: pickupDate } }),

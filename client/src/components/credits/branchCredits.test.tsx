@@ -52,7 +52,7 @@ const renderBranch = (ui: React.ReactElement, credits: CreditSummary, requests: 
 
 describe("a branch's subscription section", () => {
   it("shows the plan paid by the company, without plan choice or auto-renew", async () => {
-    renderBranch(<SubscriptionSection role="STORE" />, branchSummary());
+    renderBranch(<SubscriptionSection />, branchSummary());
     expect(await screen.findByText(t("credits.profile.paidByCompany", { company: COMPANY }))).toBeInTheDocument();
     expect(screen.getByText(t("credits.profile.companyManagesPlan", { company: COMPANY }))).toBeInTheDocument();
     expect(screen.getByText("Standard")).toBeInTheDocument();
@@ -63,7 +63,7 @@ describe("a branch's subscription section", () => {
 
   it("asks the headquarters for extra credits", async () => {
     apiMock.post.mockResolvedValue({ data: {} });
-    renderBranch(<SubscriptionSection role="STORE" />, branchSummary());
+    renderBranch(<SubscriptionSection />, branchSummary());
     expect(await screen.findByRole("heading", { name: t("credits.profile.topupTitleCompany") })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: t("credits.profile.requestTopupFromCompany") }));
     await userEvent.click(await screen.findByRole("button", { name: /\+20/ }));
@@ -76,7 +76,7 @@ describe("a branch's subscription section", () => {
 
   it("shows a request waiting for the headquarters, which the branch can withdraw", async () => {
     apiMock.delete.mockResolvedValue({ data: {} });
-    renderBranch(<SubscriptionSection role="STORE" />, branchSummary({ pendingRequests: [TOPUP] }));
+    renderBranch(<SubscriptionSection />, branchSummary({ pendingRequests: [TOPUP] }));
     expect(
       await screen.findByText(t("credits.profile.topupPendingAtCompany", { company: COMPANY })),
     ).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe("a branch's subscription section", () => {
 
   it("cannot withdraw what the headquarters sent to the admin", async () => {
     renderBranch(
-      <SubscriptionSection role="STORE" />,
+      <SubscriptionSection />,
       branchSummary({ pendingRequests: [{ ...TOPUP, status: "PENDING", source: "COMPANY", requested_by: 2 }] }),
     );
     expect(await screen.findByText(t("credits.profile.topupPending"))).toBeInTheDocument();
@@ -94,7 +94,7 @@ describe("a branch's subscription section", () => {
   });
 
   it("shows the headquarters' note on a rejected request", async () => {
-    renderBranch(<SubscriptionSection role="STORE" />, branchSummary(), [
+    renderBranch(<SubscriptionSection />, branchSummary(), [
       { ...TOPUP, status: "COMPANY_REJECTED", company_note: "Ne ovaj mjesec." },
     ]);
     expect(await screen.findByText(t("credits.profile.companyNote", { note: "Ne ovaj mjesec." }))).toBeInTheDocument();

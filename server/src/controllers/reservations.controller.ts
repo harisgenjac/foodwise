@@ -5,9 +5,7 @@ import { createNotification } from "../utils/notifications.js";
 import { isValidDateTime } from "../utils/dates.js";
 import { parseId, parseNumber } from "../utils/params.js";
 import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
-import { HttpError } from "../utils/httpError.js";
 import { parseCityFilter } from "../utils/cities.js";
-import { chargeForReservation, refundForReservation } from "../services/creditService.js";
 import { visibleStore } from "../utils/visibility.js";
 
 export const RESERVATION_STATUSES = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
@@ -80,12 +78,6 @@ export const createReservation = async (req: Request, res: Response) => {
       "INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date) VALUES ($1, $2, $3, $4, 'Pending', $5) RETURNING *",
       [productId, restaurant_id, requestedQuantity, products.rows[0].discounted_price, pickup_date],
     );
-    // 1 credit per reservation, in the same transaction: without credits the reservation is
-    // rolled back (402). The product lock is already held, the subscription lock comes second.
-    await chargeForReservation(client, restaurant_id, {
-      id: result.rows[0].id,
-      category: products.rows[0].category,
-    });
     await createNotification(client, {
       userId: products.rows[0].store_id,
       type: "RESERVATION_CREATED",
@@ -100,9 +92,6 @@ export const createReservation = async (req: Request, res: Response) => {
     });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    if (error instanceof HttpError) {
-      return res.status(error.status).json(error.body());
-    }
     console.error("Error while creating reservation:", error);
     return res
       .status(500)
@@ -570,11 +559,6 @@ export const rejectReservation = async (req: Request, res: Response) => {
       "UPDATE reservations SET status = 'Rejected' WHERE id = $1 AND status = 'Pending'",
       [reservationId],
     );
-    // The store said no, so the restaurant is not at fault: always refunded, on any day.
-    await refundForReservation(client, reservationId, {
-      forced: true,
-      by: { actor: "USER", userId: store_id },
-    });
     await createNotification(client, {
       userId: result.rows[0].restaurant_id,
       type: "RESERVATION_REJECTED",
@@ -633,11 +617,6 @@ export const cancelReservation = async (req: Request, res: Response) => {
       "UPDATE reservations SET status = 'Cancelled' WHERE id = $1 AND status = 'Pending'",
       [reservationId],
     );
-    // The restaurant's own decision: refunded only on the credit day of the charge.
-    const refund = await refundForReservation(client, reservationId, {
-      forced: false,
-      by: { actor: "USER", userId: restaurant_id },
-    });
     await createNotification(client, {
       userId: result.rows[0].store_id,
       type: "RESERVATION_CANCELLED",
@@ -648,7 +627,7 @@ export const cancelReservation = async (req: Request, res: Response) => {
     await client.query("COMMIT");
     return res
       .status(200)
-      .json({ message: "Reservation cancelled successfully.", creditRefunded: refund.refunded });
+      .json({ message: "Reservation cancelled successfully." });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
     console.error("Error while cancelling reservation:", error);

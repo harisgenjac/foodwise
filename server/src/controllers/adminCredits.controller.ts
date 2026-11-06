@@ -23,11 +23,10 @@ import {
   REACHED_ADMIN,
 } from "../services/creditRequests.js";
 
-// Admin side of credits: every business's balance, the requests waiting for approval, manual
-// adjustments and each user's ledger. Mounted under /api/admin/credits (admin only).
+// Admin side of credits: every store's balance (only stores pay credits; restaurants order for
+// free), the requests waiting for approval, manual adjustments and each store's ledger. Mounted under /api/admin/credits (admin only).
 
 export const MAX_NOTE_LENGTH = 500;
-const BUSINESS_ROLES = ["STORE", "RESTAURANT"];
 
 // An optional internal note: trimmed, empty becomes null; undefined when it is too long or not text.
 export const parseNote = (value: unknown): string | null | undefined => {
@@ -47,10 +46,10 @@ const OVERVIEW_SORTS = {
   usage: BALANCE_SQL.usage,
 };
 
-// Stores and restaurants with this month's plan and balance. Filters: role, q (email or business
+// Stores (branches included) with this month's plan and balance. Filters: q (email or business
 // name), plan (a plan id, or `none` for no active subscription this month); sortable (OVERVIEW_SORTS).
 export const getCreditOverview = async (req: Request, res: Response) => {
-  const { role, q, plan } = req.query;
+  const { q, plan } = req.query;
   const page = parsePage(req.query, ADMIN_PAGE_SIZE);
   const orderBy = parseSort(
     req.query,
@@ -58,12 +57,11 @@ export const getCreditOverview = async (req: Request, res: Response) => {
     "users.business_name ASC NULLS LAST, users.email ASC, users.id DESC",
     "users.id DESC",
   );
-  // Unused filters arrive as empty strings (?role=), which mean "no filter".
+  // Unused filters arrive as empty strings (?plan=), which mean "no filter".
   const planId = plan && plan !== "none" ? parseId(plan) : null;
   if (
     !page ||
     !orderBy ||
-    (role && !BUSINESS_ROLES.includes(role as string)) ||
     (plan && plan !== "none" && planId === null)
   ) {
     return res.status(400).json({ error: "Invalid filter." });
@@ -72,12 +70,8 @@ export const getCreditOverview = async (req: Request, res: Response) => {
   const periodMonth = creditMonth(now);
   let from = `FROM users ${balanceJoins("$1")}
     LEFT JOIN companies ON companies.id = users.company_id
-    WHERE users.role IN ('STORE', 'RESTAURANT')`;
+    WHERE users.role = 'STORE'`;
   const values: (string | number)[] = [periodMonth];
-  if (role) {
-    values.push(role as string);
-    from += ` AND users.role = $${values.length}`;
-  }
   if (q) {
     values.push(`%${q as string}%`);
     from += ` AND (users.email ILIKE $${values.length} OR users.business_name ILIKE $${values.length})`;
@@ -290,7 +284,7 @@ const decideRequest = (decision: "APPROVED" | "REJECTED") => async (req: Request
 export const approveCreditRequest = decideRequest("APPROVED");
 export const rejectCreditRequest = decideRequest("REJECTED");
 
-// Looks up a business account for the per-user credit routes; null with the response sent.
+// Looks up a store for the per-user credit routes; null with the response sent.
 const findBusinessUser = async (req: Request, res: Response) => {
   const userId = parseId(req.params.id);
   const user = userId === null
@@ -300,8 +294,8 @@ const findBusinessUser = async (req: Request, res: Response) => {
     res.status(404).json({ error: "User not found." });
     return null;
   }
-  if (!BUSINESS_ROLES.includes(user.role)) {
-    res.status(400).json({ error: "Credits apply only to stores and restaurants." });
+  if (user.role !== "STORE") {
+    res.status(400).json({ error: "Credits apply only to stores." });
     return null;
   }
   return user.id as number;
