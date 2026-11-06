@@ -227,6 +227,11 @@ function AdminCompanyDetailsPage() {
                         {t("admin.common.blocked")}
                       </span>
                     )}
+                    {!hq.last_login_at && (
+                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                        {t("admin.userDetails.neverLoggedIn")}
+                      </span>
+                    )}
                     {hq.must_change_password && (
                       <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
                         {t("admin.common.pendingPassword")}

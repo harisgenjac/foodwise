@@ -3,12 +3,15 @@ import type { Request, Response } from "express";
 import { parseId } from "../utils/params.js";
 import { ADMIN_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import {
-  hashPassword,
+  INVALID_CREATE_METHOD,
+  initialPasswordHash,
   isUniqueViolation,
   normalizeEmail,
+  parseCreateMethod,
   validateEmail,
   validatePassword,
 } from "../utils/accounts.js";
+import { sendInvitation } from "../services/accountEmails.js";
 import {
   REASON_ERROR,
   RECENT_ACTIONS_LIMIT,
@@ -128,7 +131,7 @@ export const getCompanyDetails = async (req: Request, res: Response) => {
     }
     const hqUsers = await pool.query(
       `SELECT users.id, users.email, users.first_name, users.last_name, users.phone, users.is_blocked,
-         users.must_change_password, users.created_at
+         users.must_change_password, users.last_login_at, users.created_at
        FROM users WHERE users.company_id = $1 AND users.role = 'COMPANY'
        ORDER BY users.id`,
       [companyId],
@@ -166,24 +169,30 @@ export const getCompanyDetails = async (req: Request, res: Response) => {
 };
 
 // The company and its headquarters login are created together, so a company never exists
-// without a login. The admin chose the password, so it must be replaced at the first login.
+// without a login. The headquarters gets in like a new user (see parseCreateMethod): an
+// invitation email (the default) or a temporary password, replaced at the first login.
 export const createCompany = async (req: Request, res: Response) => {
   const { name, email, password } = req.body;
-  if (!name || !email || !password) {
-    return res.status(400).json({ error: "Company name, email and password are required." });
+  const method = parseCreateMethod(req.body);
+  if (!name || !email) {
+    return res.status(400).json({ error: "Company name and email are required." });
+  }
+  if (!method) {
+    return res.status(400).json({ error: INVALID_CREATE_METHOD });
   }
   const parsedName = parseCompanyName(name);
   if ("error" in parsedName) {
     return res.status(400).json({ error: parsedName.error });
   }
-  const credentialsError = validateEmail(email) ?? validatePassword(password);
+  const invite = method === "INVITE";
+  const credentialsError = validateEmail(email) ?? (invite ? null : validatePassword(password));
   if (credentialsError) {
     return res.status(400).json({ error: credentialsError });
   }
 
   let client;
   try {
-    const passwordHash = await hashPassword(password);
+    const passwordHash = await initialPasswordHash(method, password);
     client = await pool.connect();
     await client.query("BEGIN");
     const companyResult = await client.query(
@@ -193,15 +202,22 @@ export const createCompany = async (req: Request, res: Response) => {
     const company = companyResult.rows[0];
     const userResult = await client.query(
       `INSERT INTO users (email, password_hash, role, company_id, must_change_password)
-       VALUES ($1, $2, 'COMPANY', $3, true)
+       VALUES ($1, $2, 'COMPANY', $3, $4)
        RETURNING users.id, users.email, users.role, users.company_id, users.must_change_password, users.created_at`,
-      [normalizeEmail(email), passwordHash, company.id],
+      [normalizeEmail(email), passwordHash, company.id, !invite],
     );
+    const user = userResult.rows[0];
     await logAdminAction(client, { adminId: req.user!.id, action: "CREATE_COMPANY", targetCompanyId: company.id });
+    if (invite) {
+      await sendInvitation(client, user.id, req.user!.id);
+      await logAdminAction(client, { adminId: req.user!.id, action: "SEND_INVITATION", targetUserId: user.id });
+    }
     await client.query("COMMIT");
-    return res
-      .status(201)
-      .json({ message: "Company created successfully.", company: { ...company, branch_count: 0 }, user: userResult.rows[0] });
+    return res.status(201).json({
+      message: invite ? "Company created and invitation sent." : "Company created successfully.",
+      company: { ...company, branch_count: 0 },
+      user,
+    });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
     if (isDuplicateName(error)) {

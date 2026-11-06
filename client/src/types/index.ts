@@ -188,7 +188,7 @@ export interface AdminCompanyListItem {
 // GET /admin/companies/:id. Branches come with the next step, so the list is empty for now.
 export interface AdminCompanyDetails {
   company: Company;
-  hqUsers: Pick<User, "id" | "email" | "first_name" | "last_name" | "phone" | "is_blocked" | "must_change_password" | "created_at">[];
+  hqUsers: Pick<User, "id" | "email" | "first_name" | "last_name" | "phone" | "is_blocked" | "must_change_password" | "last_login_at" | "created_at">[];
   branches: {
     id: number;
     email: string;

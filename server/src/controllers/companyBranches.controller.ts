@@ -126,10 +126,12 @@ export const createCompanyBranch = async (req: Request, res: Response) => {
     const companyId = await callerCompanyId(req);
     client = await pool.connect();
     await client.query("BEGIN");
-    const id = await createBranch(client, companyId, req.body);
+    const { id, invited } = await createBranch(client, companyId, req.user!.id, req.body);
     const branch = await getBranchProfile(client, id);
     await client.query("COMMIT");
-    return res.status(201).json({ message: "Branch created successfully.", branch });
+    return res
+      .status(201)
+      .json({ message: invited ? "Branch created and invitation sent." : "Branch created successfully.", branch });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
     return fail(res, error, "An error occurred while creating the branch.");

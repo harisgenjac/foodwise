@@ -3,12 +3,18 @@ import { HttpError } from "../utils/httpError.js";
 import { parseId } from "../utils/params.js";
 import { cityExists } from "../utils/cities.js";
 import {
+  INVALID_CREATE_METHOD,
   hashPassword,
+  initialPasswordHash,
   isUniqueViolation,
   normalizeEmail,
+  parseCreateMethod,
   validateEmail,
   validatePassword,
 } from "../utils/accounts.js";
+import { sendInvitation } from "./accountEmails.js";
+
+const BRANCH_REQUIRED = "Business name, city, address, phone and email are required.";
 import { storeDescription, storeLogo } from "../utils/branding.js";
 import { savedUnits } from "../controllers/dashboard.controller.js";
 import { cancelPendingReservations } from "../controllers/admin.controller.js";
@@ -87,38 +93,42 @@ const parseBranchFields = async (db: Pool | PoolClient, body: BranchFields, requ
   return { businessName, cityId, address, phone };
 };
 
-// A new branch: a STORE of the company with a temporary password. Its staff set their own
-// password and fill in first and last name at the first login (the business data is already set).
-// It starts without its own logo or description, so it shows the company's.
+// A new branch: a STORE of the company. Its staff get in like a new user (see parseCreateMethod):
+// an invitation email from the headquarters (the default) or a temporary password the
+// headquarters passes on. They fill in first and last name at the first login (the business data
+// is already set). It starts without its own logo or description, so it shows the company's.
+// `hqUserId` is the headquarters login that creates it (it sends the invitation).
 export const createBranch = async (
   client: PoolClient,
   companyId: number,
-  body: BranchFields & { email?: unknown; password?: unknown },
+  hqUserId: number,
+  body: BranchFields & { email?: unknown; password?: unknown; method?: unknown },
 ) => {
   const company = await client.query("SELECT companies.is_blocked FROM companies WHERE companies.id = $1", [companyId]);
   if (company.rows[0]?.is_blocked) {
     throw new HttpError(403, "Your company is blocked.");
   }
-  const fields = await parseBranchFields(
-    client,
-    body,
-    "Business name, city, address, phone, email and password are required.",
-  );
-  if (!body.email || !body.password) {
-    throw new HttpError(400, "Business name, city, address, phone, email and password are required.");
+  const fields = await parseBranchFields(client, body, BRANCH_REQUIRED);
+  if (!body.email) {
+    throw new HttpError(400, BRANCH_REQUIRED);
   }
-  const credentialsError = validateEmail(body.email) ?? validatePassword(body.password);
+  const method = parseCreateMethod(body);
+  if (!method) {
+    throw new HttpError(400, INVALID_CREATE_METHOD);
+  }
+  const invite = method === "INVITE";
+  const credentialsError = validateEmail(body.email) ?? (invite ? null : validatePassword(body.password));
   if (credentialsError) {
     throw new HttpError(400, credentialsError);
   }
-  const passwordHash = await hashPassword(body.password as string);
+  const passwordHash = await initialPasswordHash(method, body.password);
   try {
     // A savepoint, so a duplicate email does not abort the caller's transaction.
     await client.query("SAVEPOINT create_branch");
     const result = await client.query<{ id: number }>(
       `INSERT INTO users
          (email, password_hash, role, company_id, business_name, city_id, address, phone, must_change_password)
-       VALUES ($1, $2, 'STORE', $3, $4, $5, $6, $7, true)
+       VALUES ($1, $2, 'STORE', $3, $4, $5, $6, $7, $8)
        RETURNING users.id`,
       [
         normalizeEmail(body.email as string),
@@ -128,10 +138,13 @@ export const createBranch = async (
         fields.cityId,
         fields.address,
         fields.phone,
+        !invite,
       ],
     );
     await client.query("RELEASE SAVEPOINT create_branch");
-    return result.rows[0]!.id;
+    const branchId = result.rows[0]!.id;
+    if (invite) await sendInvitation(client, branchId, hqUserId, "COMPANY");
+    return { id: branchId, invited: invite };
   } catch (error) {
     if (isUniqueViolation(error)) {
       await client.query("ROLLBACK TO SAVEPOINT create_branch");

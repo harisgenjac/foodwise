@@ -108,7 +108,7 @@ describe("AdminCreateCompanyPage", () => {
       user: admin,
     });
 
-  it("requires the name, email and password before sending", async () => {
+  it("requires the name and email before sending", async () => {
     renderPage();
     await userEvent.click(await screen.findByRole("button", { name: t("admin.createCompany.submit") }));
     expect(screen.getByLabelText(t("admin.createCompany.name"))).toHaveAccessibleDescription(t("common.fieldRequired"));
@@ -116,17 +116,41 @@ describe("AdminCreateCompanyPage", () => {
     expect(apiMock.post).not.toHaveBeenCalled();
   });
 
-  it("creates the company with its HQ login and opens it", async () => {
-    apiMock.post.mockResolvedValue({ data: { message: "Company created successfully.", company: { id: 3 } } });
+  it("sends an invitation to the HQ login by default and opens the company", async () => {
+    apiMock.post.mockResolvedValue({ data: { message: "Company created and invitation sent.", company: { id: 3 } } });
+    const success = vi.spyOn(toast, "success");
     renderPage();
-    await userEvent.type(await screen.findByLabelText(t("admin.createCompany.name")), "Bingo d.o.o.");
+    expect(await screen.findByRole("radio", { name: new RegExp(t("admin.createUser.methods.INVITE.title")) })).toBeChecked();
+    expect(screen.queryByLabelText(t("admin.createCompany.password"))).not.toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText(t("admin.createCompany.name")), "Bingo d.o.o.");
     await userEvent.type(screen.getByLabelText(t("admin.createCompany.email")), "bingo@test.com");
-    await userEvent.type(screen.getByLabelText(t("admin.createCompany.password")), "lozinka123");
     await userEvent.click(screen.getByRole("button", { name: t("admin.createCompany.submit") }));
 
     expect(apiMock.post).toHaveBeenCalledWith("/admin/companies", {
       name: "Bingo d.o.o.",
       email: "bingo@test.com",
+      method: "INVITE",
+    });
+    expect(success).toHaveBeenCalledWith(t("admin.createCompany.successInvite"));
+    await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/admin/companies/3"));
+  });
+
+  it("creates the HQ login with a temporary password when chosen", async () => {
+    apiMock.post.mockResolvedValue({ data: { message: "Company created successfully.", company: { id: 3 } } });
+    renderPage();
+    await userEvent.type(await screen.findByLabelText(t("admin.createCompany.name")), "Bingo d.o.o.");
+    await userEvent.type(screen.getByLabelText(t("admin.createCompany.email")), "bingo@test.com");
+    await userEvent.click(screen.getByRole("radio", { name: new RegExp(t("admin.createUser.methods.PASSWORD.title")) }));
+    await userEvent.click(screen.getByRole("button", { name: t("admin.createCompany.submit") }));
+    expect(screen.getByLabelText(t("admin.createCompany.password"))).toHaveAccessibleDescription(t("common.fieldRequired"));
+    expect(apiMock.post).not.toHaveBeenCalled();
+
+    await userEvent.type(screen.getByLabelText(t("admin.createCompany.password")), "lozinka123");
+    await userEvent.click(screen.getByRole("button", { name: t("admin.createCompany.submit") }));
+    expect(apiMock.post).toHaveBeenCalledWith("/admin/companies", {
+      name: "Bingo d.o.o.",
+      email: "bingo@test.com",
+      method: "PASSWORD",
       password: "lozinka123",
     });
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/admin/companies/3"));
@@ -138,7 +162,6 @@ describe("AdminCreateCompanyPage", () => {
     renderPage();
     await userEvent.type(await screen.findByLabelText(t("admin.createCompany.name")), "Bingo d.o.o.");
     await userEvent.type(screen.getByLabelText(t("admin.createCompany.email")), "bingo@test.com");
-    await userEvent.type(screen.getByLabelText(t("admin.createCompany.password")), "lozinka123");
     await userEvent.click(screen.getByRole("button", { name: t("admin.createCompany.submit") }));
     await waitFor(() => expect(error).toHaveBeenCalledWith("Firma s ovim nazivom već postoji."));
     expect(screen.getByRole("button", { name: t("admin.createCompany.submit") })).toBeEnabled();
@@ -160,6 +183,8 @@ describe("AdminCompanyDetailsPage", () => {
     expect(screen.getByText("Trgovački lanac")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "bingo@test.com" })).toHaveAttribute("href", "/admin/users/9");
     expect(screen.getByText(t("admin.common.pendingPassword"))).toBeInTheDocument();
+    // An invited headquarters that has not opened the link yet.
+    expect(screen.getByText(t("admin.userDetails.neverLoggedIn"))).toBeInTheDocument();
     expect(screen.getByText(t("admin.companyDetails.noBranchesTitle"))).toBeInTheDocument();
     expect(screen.getByText(t("admin.actionTypes.CREATE_COMPANY"))).toBeInTheDocument();
   });

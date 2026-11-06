@@ -1404,8 +1404,10 @@
       "password": "Privremena lozinka",
       "infoTitle": "Šta slijedi",
       "infoText": "Proslijedite email i lozinku centrali. Pri prvoj prijavi centrala bira svoju lozinku i upisuje ime, prezime i telefon. Naziv firme kasnije mijenja samo administrator.",
+      "infoTextInvite": "Centrala dobija email s linkom za postavljanje lozinke, a zatim upisuje ime, prezime i telefon. Ako link istekne, pozivnicu možete ponovo poslati na stranici korisnika za prijavu centrale. Naziv firme kasnije mijenja samo administrator.",
       "submit": "Kreiraj firmu",
       "success": "Firma je kreirana.",
+      "successInvite": "Firma je kreirana i pozivnica je poslana.",
       "error": "Firma nije kreirana. Pokušajte ponovo."
     },
     "companyDetails": {
@@ -1706,6 +1708,7 @@
       "previewName": "Naziv poslovnice",
       "infoTitle": "Šta slijedi",
       "infoText": "Proslijedite email i lozinku poslovnici. Pri prvoj prijavi osoblje bira svoju lozinku i upisuje ime i prezime. Dok poslovnica ne postavi svoj logo i opis, prikazuju se logo i opis firme.",
+      "infoTextInvite": "Osoblje dobija email s linkom za postavljanje lozinke, a zatim upisuje ime i prezime. Ako link istekne, mogu koristiti Zaboravili ste lozinku? na stranici za prijavu, ili im možete postaviti privremenu lozinku na stranici poslovnice. Dok poslovnica ne postavi svoj logo i opis, prikazuju se logo i opis firme.",
       "submit": "Kreiraj poslovnicu",
       "error": "Poslovnica nije kreirana. Pokušajte ponovo."
     },

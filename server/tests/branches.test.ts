@@ -1,6 +1,7 @@
 import request from "supertest";
 import app from "../src/app.js";
 import pool from "../src/config/db.js";
+import { SYSTEM_TEMPLATES } from "../src/email/templates/systemEmails.js";
 import {
   type Agent,
   cityId,
@@ -102,10 +103,35 @@ describe("Branches", () => {
       expect(me.body.user).toMatchObject({ must_change_password: true, first_name: null, company_name: COMPANY });
     });
 
+    it("invites the branch staff by email by default, worded as from the headquarters", async () => {
+      const breza = await cityId("Breza");
+      const payload = branchPayload({ city_id: breza, password: undefined });
+      const response = await hq.post("/api/company/branches").send(payload);
+      expect(response.status).toBe(201);
+      expect(response.body.message).toBe("Branch created and invitation sent.");
+      expect(response.body.branch).toMatchObject({ email: NEW_BRANCH, must_change_password: false });
+
+      const queued = await pool.query(
+        "SELECT email_queue.data FROM email_queue WHERE email_queue.recipient = $1 AND email_queue.template = 'INVITATION'",
+        [NEW_BRANCH],
+      );
+      expect(queued.rows).toHaveLength(1);
+      const email = SYSTEM_TEMPLATES.INVITATION!.render(queued.rows[0].data, "en", "https://app.example.com");
+      expect(email.text).toContain("Your company's headquarters opened a branch account for you");
+      expect(email.text).toContain("ask your headquarters");
+      // The token records the headquarters login that sent it.
+      const tokens = await pool.query("SELECT auth_tokens.created_by FROM auth_tokens WHERE auth_tokens.user_id = $1", [
+        response.body.branch.id,
+      ]);
+      expect(tokens.rows).toEqual([{ created_by: await userId(HQ) }]);
+      const attempt = await request(app).post("/api/auth/login").send({ email: NEW_BRANCH, password: "lozinka123" });
+      expect(attempt.status).toBe(400);
+    });
+
     it("validates the fields", async () => {
       const missing = await hq.post("/api/company/branches").send(branchPayload({ city_id: await cityId("Breza"), phone: "" }));
       expect(missing.status).toBe(400);
-      expect(missing.body.error).toBe("Business name, city, address, phone, email and password are required.");
+      expect(missing.body.error).toBe("Business name, city, address, phone and email are required.");
       const badCity = await hq.post("/api/company/branches").send(branchPayload({ city_id: 999999 }));
       expect(badCity.body.error).toBe("Invalid city.");
       const badEmail = await hq

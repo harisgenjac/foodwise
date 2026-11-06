@@ -119,7 +119,14 @@ describe("CompanyCreateBranchPage", () => {
     await userEvent.type(screen.getByLabelText(t("user.address")), "Titova 1");
     await userEvent.type(screen.getByLabelText(t("user.phone")), "032 111");
     await userEvent.type(screen.getByLabelText(t("company.createBranch.email")), "breza@test.com");
-    await userEvent.type(screen.getByLabelText(t("company.createBranch.password")), "lozinka123");
+  };
+
+  const branchFields = {
+    business_name: "Bingo Breza",
+    city_id: 2,
+    address: "Titova 1",
+    phone: "032 111",
+    email: "breza@test.com",
   };
 
   it("requires every field before sending", async () => {
@@ -130,8 +137,8 @@ describe("CompanyCreateBranchPage", () => {
     expect(apiMock.post).not.toHaveBeenCalled();
   });
 
-  it("previews the branch with the company's chain label, then creates it", async () => {
-    apiMock.post.mockResolvedValue({ data: { message: "Branch created successfully.", branch: { id: 30 } } });
+  it("previews the branch with the company's chain label, then creates it with an invitation", async () => {
+    apiMock.post.mockResolvedValue({ data: { message: "Branch created and invitation sent.", branch: { id: 30 } } });
     renderPage();
     await fill();
 
@@ -143,14 +150,29 @@ describe("CompanyCreateBranchPage", () => {
     );
     // No branding choice: a new branch shows the company's logo.
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    // The invitation is the default, so there is no password field.
+    expect(screen.getByRole("radio", { name: new RegExp(t("admin.createUser.methods.INVITE.title")) })).toBeChecked();
+    expect(screen.queryByLabelText(t("company.createBranch.password"))).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: t("company.createBranch.submit") }));
+    expect(apiMock.post).toHaveBeenCalledWith("/company/branches", { ...branchFields, method: "INVITE" });
+    await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/company/branches/30"));
+  });
+
+  it("creates the branch with a temporary password when chosen", async () => {
+    apiMock.post.mockResolvedValue({ data: { message: "Branch created successfully.", branch: { id: 30 } } });
+    renderPage();
+    await fill();
+    await userEvent.click(screen.getByRole("radio", { name: new RegExp(t("admin.createUser.methods.PASSWORD.title")) }));
+    await userEvent.click(screen.getByRole("button", { name: t("company.createBranch.submit") }));
+    expect(screen.getByLabelText(t("company.createBranch.password"))).toHaveAccessibleDescription(t("common.fieldRequired"));
+    expect(apiMock.post).not.toHaveBeenCalled();
+
+    await userEvent.type(screen.getByLabelText(t("company.createBranch.password")), "lozinka123");
+    await userEvent.click(screen.getByRole("button", { name: t("company.createBranch.submit") }));
     expect(apiMock.post).toHaveBeenCalledWith("/company/branches", {
-      business_name: "Bingo Breza",
-      city_id: 2,
-      address: "Titova 1",
-      phone: "032 111",
-      email: "breza@test.com",
+      ...branchFields,
+      method: "PASSWORD",
       password: "lozinka123",
     });
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/company/branches/30"));
