@@ -11,6 +11,7 @@ import {
 import { parseId, parseNumber } from "../utils/params.js";
 import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import { markSoldIfFullyConfirmed } from "./reservations.controller.js";
+import { freeQuantity, reservedQuantity } from "../services/stock.js";
 import { HttpError } from "../utils/httpError.js";
 import { chargeForProduct, hasOpenProductCharge, refundForProduct } from "../services/creditService.js";
 
@@ -284,12 +285,9 @@ export const donateProduct = async (req: Request, res: Response) => {
       return res.status(400).json({ error: priceError });
     }
 
-    const reserved = await client.query(
-      "SELECT COALESCE(SUM(quantity), 0) AS total_reserved FROM reservations WHERE product_id = $1 AND status IN ('Pending', 'Confirmed', 'Completed')",
-      [productId],
-    );
-    const totalReserved = parseFloat(reserved.rows[0].total_reserved);
-    const available = parseFloat(product.quantity) - totalReserved;
+    // The free quantity: reservations and shop sales keep theirs.
+    const available = await freeQuantity(client, productId);
+    const totalReserved = await reservedQuantity(client, productId);
     const donatedQuantity = requestedQuantity ?? available;
     if (available <= 0 || donatedQuantity > available) {
       await client.query("ROLLBACK");

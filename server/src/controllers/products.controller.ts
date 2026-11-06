@@ -9,6 +9,7 @@ import { cityDistance, parseCityFilter, parseRadius, userCityId } from '../utils
 import { chargeForProduct, chargeForProducts, refundForProduct } from '../services/creditService.js';
 import { visibleStore } from '../utils/visibility.js';
 import { companyName } from '../utils/branding.js';
+import { availableQuantity, soldInShop } from '../services/stock.js';
 
 export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
 
@@ -179,12 +180,7 @@ export const getProducts = async (req: Request, res: Response) => {
         ${companyName("users")} AS company_name,
         cities.name AS city,
         ${cityDistance("$1::integer", "users.city_id")} AS distance_km,
-        products.quantity - COALESCE(
-          (SELECT SUM(quantity) FROM reservations
-           WHERE reservations.product_id = products.id
-           AND reservations.status IN ('Pending', 'Confirmed', 'Completed')),
-          0
-        ) AS available_quantity,
+        ${availableQuantity("products")} AS available_quantity,
         products.expiry_date - CURRENT_DATE AS days_until_expiry
       FROM products
       JOIN users ON products.store_id = users.id
@@ -282,12 +278,8 @@ export const getProductById = async (req: Request, res: Response) => {
     users.address AS store_address,
     users.phone AS store_phone,
     users.pickup_hours AS store_pickup_hours,
-    products.quantity - COALESCE(
-      (SELECT SUM(quantity) FROM reservations
-       WHERE reservations.product_id = products.id
-       AND reservations.status IN ('Pending', 'Confirmed', 'Completed')),
-      0
-    ) AS available_quantity,
+    ${availableQuantity("products")} AS available_quantity,
+    ${soldInShop("products")} AS sold_in_shop,
      products.expiry_date - CURRENT_DATE AS days_until_expiry
    FROM products
    JOIN users ON products.store_id = users.id
@@ -299,7 +291,11 @@ export const getProductById = async (req: Request, res: Response) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Product not found." });
     }
-    return res.status(200).json({ product: result.rows[0] });
+    // What the store sold in its own shop is its business: others see only the lower availability.
+    const { sold_in_shop, ...product } = result.rows[0];
+    return res
+      .status(200)
+      .json({ product: product.store_id === req.user!.id ? { ...product, sold_in_shop } : product });
   } catch (error) {
     console.error("Error while fetching products:", error);
     return res
@@ -348,7 +344,14 @@ export const listStoreProducts = async (storeId: number, query: Request["query"]
     from += ` AND name ILIKE $${values.length}`;
   }
 
-  const { rows, total } = await listPage("*", from, MINE_SORT_ORDERS[sortKey]!, values, page);
+  // The free quantity (what a sale in the shop can still take) and what the store sold in its shop.
+  const { rows, total } = await listPage(
+    `products.*, ${availableQuantity("products")} AS available_quantity, ${soldInShop("products")} AS sold_in_shop`,
+    from,
+    MINE_SORT_ORDERS[sortKey]!,
+    values,
+    page,
+  );
   return { products: rows, total };
 };
 

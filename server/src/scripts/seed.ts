@@ -140,6 +140,8 @@ interface SimProduct {
   soldAt: Date | null;
   // Taken off the marketplace: no new reservations.
   frozen: boolean;
+  // Sold out by "Sold in shop" (the store's own till): no "sold out" notification.
+  soldOutInShop?: boolean;
   removedAt: Date | null;
 }
 
@@ -148,7 +150,7 @@ interface Admin {
   email: string;
 }
 
-const counts = { products: 0, reservations: 0, donations: 0, notifications: 0, topups: 0 };
+const counts = { products: 0, reservations: 0, donations: 0, notifications: 0, topups: 0, shopSales: 0 };
 
 // ---------- Inserts with explicit timestamps ----------
 
@@ -984,6 +986,35 @@ async function seed() {
       createdAt: addHours(now, -5), status: "PENDING", fromBranch: true, companyApprovedAt: addHours(now, -4),
     });
 
+    // ----- Sold in shop -----
+    // Stores record part of some current offers as sold at their own till ("Sold in shop"), which
+    // only lowers the free quantity; one product is sold out that way (no pending reservation on it).
+    let shopSellOut = false;
+    const shopCandidates = shuffle(
+      products.filter((p) => !p.removedAt && !p.soldAt && !p.frozen && p.expiry >= today && p.quantity - p.held >= 4),
+    );
+    for (const product of shopCandidates.slice(0, 10)) {
+      const free = product.quantity - product.held;
+      const sellsOut = !shopSellOut && product.held === product.confirmed;
+      const amount = sellsOut ? free : Math.max(1, Math.round(free * between(0.2, 0.4)));
+      const soldAt = earlier(
+        new Date(Math.max(product.postedAt.getTime() + HOUR_MS, recentTime(30).getTime())),
+        addHours(now, -0.1),
+      );
+      await client.query(
+        `INSERT INTO product_shop_sales (product_id, store_id, quantity, created_by, created_at)
+         VALUES ($1, $2, $3, $2, $4)`,
+        [product.id, product.store.id, amount, soldAt],
+      );
+      counts.shopSales++;
+      product.held += amount;
+      if (sellsOut) {
+        shopSellOut = true;
+        product.soldAt = soldAt;
+        product.soldOutInShop = true;
+      }
+    }
+
     // ----- Final product statuses -----
     for (const product of products) {
       let status = "Available";
@@ -994,7 +1025,7 @@ async function seed() {
       } else if (product.soldAt) {
         status = "Sold";
         changedAt = product.soldAt;
-        await notify(client, product.store.id, "PRODUCT_SOLD_OUT", `${product.name} is sold out.`, product.soldAt, { productId: product.id });
+        if (!product.soldOutInShop) await notify(client, product.store.id, "PRODUCT_SOLD_OUT", `${product.name} is sold out.`, product.soldAt, { productId: product.id });
       } else if (product.expiry < today) {
         status = "Expired";
         changedAt = at(addDays(product.expiry, 1), 0.05);
@@ -1070,6 +1101,7 @@ async function printSummary(stores: Business[], restaurants: Business[], reserva
 
   console.log(`\nDemo data covers ${startDay} to ${today}.`);
   console.log(`Users: ${stores.length} stores, ${restaurants.length} restaurants, ${ADMINS.length} admins.`);
+  console.log(`Sold in shop: ${counts.shopSales} entries.`);
   console.log(`Products: ${counts.products} (${await byStatus("SELECT status AS label, COUNT(*) AS count FROM products GROUP BY status ORDER BY status")}).`);
   console.log(`Reservations: ${counts.reservations} (${Object.entries(reservationStatusCount).map(([label, count]) => `${label} ${count}`).join(", ")}).`);
   console.log(`Donations: ${counts.donations} (${await byStatus(
