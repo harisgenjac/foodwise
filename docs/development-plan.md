@@ -41,7 +41,8 @@ A restaurant orders from a cart with one store and chooses delivery (Korpa) or p
 Design, decisions and PR split: `docs/orders-design.md` (agreed Nov 6, 2026). Decided there: a random 4-character order code (`#K7PM`) instead of a sequence, a server-side cart, at most 10 pending orders per restaurant, a fulfilment method on the order (only pickup now), partial fulfilment over items and quantities with reasons (also at sending), "Sold in shop" for stock sold at the store's own till, and no single-item cancels or partial pickups.
 
 - [ ] `orders` table above reservations (`order_id` on the reservation), with a fulfilment method (pickup only for now), and status history (who, when, source).
-- [ ] "Sold in shop": a store records an amount sold at its own till, which lowers the free quantity (no credit back, not an app sale).
+- [ ] "Sold in shop": a store records an amount sold at its own till, which lowers the free quantity (no credit back, not an app sale, cannot be undone: a confirmation shows the amount and the free quantity before and after).
+- [ ] Check that "Move to donations", returning a donation to the offer and every other place that computes a product's free quantity count shop sales (the marketplace, the product page, the sold-out status and the order stock checks already do).
 - [ ] Short order code (random, 4 characters, e.g. `#K7PM`).
 - [ ] Cart: one store, "empty the cart?" dialog, no stock held, "Accept partial fulfilment" option.
 - [ ] Submitting an order with all items at once, using the existing available-quantity protection.
