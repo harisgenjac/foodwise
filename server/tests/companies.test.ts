@@ -99,10 +99,50 @@ describe("Companies", () => {
       });
     });
 
+    it("invites the headquarters login by email by default", async () => {
+      const response = await admin.post("/api/admin/companies").send({ name: NEW_COMPANY, email: NEW_HQ });
+      expect(response.status).toBe(201);
+      expect(response.body.message).toBe("Company created and invitation sent.");
+      expect(response.body.user).toMatchObject({ email: NEW_HQ, role: "COMPANY", must_change_password: false });
+      const queued = await pool.query(
+        "SELECT email_queue.data->>'sender' AS sender FROM email_queue WHERE email_queue.recipient = $1 AND email_queue.template = 'INVITATION'",
+        [NEW_HQ],
+      );
+      expect(queued.rows).toEqual([{ sender: "ADMIN" }]);
+      const tokens = await pool.query("SELECT auth_tokens.created_by FROM auth_tokens WHERE auth_tokens.user_id = $1", [
+        response.body.user.id,
+      ]);
+      expect(tokens.rows).toEqual([{ created_by: await userId(ADMIN) }]);
+      const actions = await pool.query(
+        "SELECT admin_actions.action FROM admin_actions WHERE admin_actions.target_user_id = $1",
+        [response.body.user.id],
+      );
+      expect(actions.rows).toEqual([{ action: "SEND_INVITATION" }]);
+      expect(await companyActions(response.body.company.id)).toEqual([
+        expect.objectContaining({ action: "CREATE_COMPANY" }),
+      ]);
+      // Nobody knows a password for the login yet.
+      const attempt = await request(app).post("/api/auth/login").send({ email: NEW_HQ, password: "lozinka123" });
+      expect(attempt.status).toBe(400);
+    });
+
+    it("refuses an unknown method and a temporary password method without a password", async () => {
+      const unknown = await admin
+        .post("/api/admin/companies")
+        .send({ name: NEW_COMPANY, email: NEW_HQ, method: "SMS" });
+      expect(unknown.status).toBe(400);
+      expect(unknown.body.error).toBe("Choose an invitation or a temporary password.");
+      const noPassword = await admin
+        .post("/api/admin/companies")
+        .send({ name: NEW_COMPANY, email: NEW_HQ, method: "PASSWORD" });
+      expect(noPassword.status).toBe(400);
+      expect(noPassword.body.error).toBe("Password must be at least 8 characters long.");
+    });
+
     it("validates the fields and keeps nothing when the email is taken", async () => {
-      const missing = await admin.post("/api/admin/companies").send({ name: NEW_COMPANY, email: NEW_HQ });
+      const missing = await admin.post("/api/admin/companies").send({ name: NEW_COMPANY, password: "lozinka123" });
       expect(missing.status).toBe(400);
-      expect(missing.body.error).toBe("Company name, email and password are required.");
+      expect(missing.body.error).toBe("Company name and email are required.");
 
       const blankName = await admin
         .post("/api/admin/companies")

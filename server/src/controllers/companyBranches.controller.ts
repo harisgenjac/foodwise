@@ -17,6 +17,7 @@ import {
   getBranchProfile,
   getBranchStats,
   reactivateBranch,
+  resendBranchInvitation,
   setBranchPassword,
   updateBranch,
 } from "../services/branches.js";
@@ -126,10 +127,12 @@ export const createCompanyBranch = async (req: Request, res: Response) => {
     const companyId = await callerCompanyId(req);
     client = await pool.connect();
     await client.query("BEGIN");
-    const id = await createBranch(client, companyId, req.body);
+    const { id, invited } = await createBranch(client, companyId, req.user!.id, req.body);
     const branch = await getBranchProfile(client, id);
     await client.query("COMMIT");
-    return res.status(201).json({ message: "Branch created successfully.", branch });
+    return res
+      .status(201)
+      .json({ message: invited ? "Branch created and invitation sent." : "Branch created successfully.", branch });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
     return fail(res, error, "An error occurred while creating the branch.");
@@ -206,6 +209,18 @@ export const setCompanyBranchPassword = (req: Request, res: Response) =>
       return { message: "Password changed successfully." };
     },
     "An error occurred while changing the password.",
+  );
+
+// POST /branches/:id/invitation: a new invitation email while the branch login never logged in.
+export const resendCompanyBranchInvitation = (req: Request, res: Response) =>
+  withBranch(
+    req,
+    res,
+    async (client, branch) => {
+      await resendBranchInvitation(client, branch.id, req.user!.id);
+      return { message: "Invitation sent." };
+    },
+    "An error occurred while sending the link.",
   );
 
 export const deactivateCompanyBranch = (req: Request, res: Response) =>

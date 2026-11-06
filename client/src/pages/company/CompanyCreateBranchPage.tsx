@@ -9,24 +9,33 @@ import FormSection from "../../components/form/FormSection.js";
 import FormField, { inputStyle } from "../../components/form/FormField.js";
 import RequiredHint from "../../components/form/RequiredHint.js";
 import CitySelect from "../../components/form/CitySelect.js";
+import SignInMethodPicker, { type SignInMethod } from "../../components/form/SignInMethodPicker.js";
 import ChainLabel from "../../components/store/ChainLabel.js";
 import { useFormValidation } from "../../hooks/useFormValidation.js";
 import { useCities } from "../../hooks/useCities.js";
 import { isBlank, REQUIRED } from "../../utils/validation.js";
 import type { Company } from "../../types/index.js";
 
-// "Nova poslovnica": the headquarters creates a branch with its business data and a login. The
-// staff set their own password and enter their names at the first login. A new branch has no
-// logo or description of its own, so restaurants see the company's (shown in the preview).
+// "Nova poslovnica": the headquarters creates a branch with its business data and a login: an
+// email and how the staff get in (an invitation email by default, or a temporary password). The
+// staff enter their names at the first login. A new branch has no logo or description of its own,
+// so restaurants see the company's (shown in the preview).
 function CompanyCreateBranchPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { cities } = useCities();
   const [company, setCompany] = useState<Company | null>(null);
   const [values, setValues] = useState({ business_name: "", city_id: "", address: "", phone: "", email: "", password: "" });
+  const [method, setMethod] = useState<SignInMethod>("INVITE");
   const [saving, setSaving] = useState(false);
   const { formRef, errorFor, blur, validate } = useFormValidation(
-    Object.fromEntries(Object.entries(values).map(([field, value]) => [field, isBlank(value) ? REQUIRED : undefined])),
+    Object.fromEntries(
+      Object.entries(values).map(([field, value]) => [
+        field,
+        // The password is asked only for a temporary password.
+        isBlank(value) && !(field === "password" && method === "INVITE") ? REQUIRED : undefined,
+      ]),
+    ),
   );
 
   useEffect(() => {
@@ -43,7 +52,13 @@ function CompanyCreateBranchPage() {
     if (saving || !validate()) return;
     setSaving(true);
     try {
-      const response = await api.post("/company/branches", { ...values, city_id: Number(values.city_id) });
+      const { password, ...fields } = values;
+      const response = await api.post("/company/branches", {
+        ...fields,
+        city_id: Number(values.city_id),
+        method,
+        ...(method === "PASSWORD" ? { password } : {}),
+      });
       toast.success(response.data.message);
       navigate(`/company/branches/${response.data.branch.id}`);
     } catch (err) {
@@ -100,11 +115,14 @@ function CompanyCreateBranchPage() {
           </FormSection>
 
           <FormSection title={t("company.createBranch.loginSection")} icon={KeyRound}>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {textField("email", t("company.createBranch.email"), Mail, "email")}
-              {textField("password", t("company.createBranch.password"), Lock)}
-            </div>
-            <p className="mt-2 text-xs text-gray-500">{t("company.createBranch.passwordHint")}</p>
+            {textField("email", t("company.createBranch.email"), Mail, "email")}
+            <SignInMethodPicker value={method} onChange={setMethod} />
+            {method === "PASSWORD" && (
+              <div className="mt-4">
+                {textField("password", t("company.createBranch.password"), Lock)}
+                <p className="mt-2 text-xs text-gray-500">{t("company.createBranch.passwordHint")}</p>
+              </div>
+            )}
           </FormSection>
         </div>
 
@@ -146,7 +164,9 @@ function CompanyCreateBranchPage() {
               <Info className="h-4 w-4" />
               {t("company.createBranch.infoTitle")}
             </p>
-            <p className="mt-2">{t("company.createBranch.infoText")}</p>
+            <p className="mt-2">
+              {t(method === "INVITE" ? "company.createBranch.infoTextInvite" : "company.createBranch.infoText")}
+            </p>
           </div>
           <button
             type="submit"

@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import { randomBytes } from "node:crypto";
 
 export const MAX_EMAIL_LENGTH = 254;
 export const MIN_PASSWORD_LENGTH = 8;
@@ -31,3 +32,22 @@ export const hashPassword = (password: string) => bcrypt.hash(password, SALT_ROU
 // Postgres unique_violation, e.g. two accounts created with the same email at the same moment.
 export const isUniqueViolation = (error: unknown) =>
   error instanceof Error && "code" in error && error.code === "23505";
+
+// How a new account gets in, when an admin or a headquarters creates it: an invitation email with
+// a link to set the first password (the default), or a temporary password the creator passes on
+// (for users without email access), which must be replaced at the first login.
+export type CreateMethod = "INVITE" | "PASSWORD";
+const CREATE_METHODS: readonly string[] = ["INVITE", "PASSWORD"];
+export const INVALID_CREATE_METHOD = "Choose an invitation or a temporary password.";
+
+// The chosen method, or null when it is not one of the two. Without a method, a password means a
+// temporary password (as before invitations existed).
+export const parseCreateMethod = (body: { method?: unknown; password?: unknown }): CreateMethod | null => {
+  const method = body.method ?? (body.password ? "PASSWORD" : "INVITE");
+  return typeof method === "string" && CREATE_METHODS.includes(method) ? (method as CreateMethod) : null;
+};
+
+// The first password hash: the temporary password, or for an invitation the hash of a random value
+// nobody knows (the user has no password until they set one from the link).
+export const initialPasswordHash = (method: CreateMethod, password: unknown) =>
+  hashPassword(method === "INVITE" ? randomBytes(32).toString("base64url") : (password as string));
