@@ -1,6 +1,7 @@
 import request from "supertest";
 import app from "../src/app.js";
 import pool from "../src/config/db.js";
+import { SYSTEM_TEMPLATES } from "../src/email/templates/systemEmails.js";
 import {
   type Agent,
   cityId,
@@ -102,10 +103,77 @@ describe("Branches", () => {
       expect(me.body.user).toMatchObject({ must_change_password: true, first_name: null, company_name: COMPANY });
     });
 
+    it("invites the branch staff by email by default, worded as from the headquarters", async () => {
+      const breza = await cityId("Breza");
+      const payload = branchPayload({ city_id: breza, password: undefined });
+      const response = await hq.post("/api/company/branches").send(payload);
+      expect(response.status).toBe(201);
+      expect(response.body.message).toBe("Branch created and invitation sent.");
+      expect(response.body.branch).toMatchObject({ email: NEW_BRANCH, must_change_password: false });
+
+      const queued = await pool.query(
+        "SELECT email_queue.data FROM email_queue WHERE email_queue.recipient = $1 AND email_queue.template = 'INVITATION'",
+        [NEW_BRANCH],
+      );
+      expect(queued.rows).toHaveLength(1);
+      const email = SYSTEM_TEMPLATES.INVITATION!.render(queued.rows[0].data, "en", "https://app.example.com");
+      expect(email.text).toContain("Your company's headquarters opened a branch account for you");
+      expect(email.text).toContain("ask your headquarters");
+      // The token records the headquarters login that sent it.
+      const tokens = await pool.query("SELECT auth_tokens.created_by FROM auth_tokens WHERE auth_tokens.user_id = $1", [
+        response.body.branch.id,
+      ]);
+      expect(tokens.rows).toEqual([{ created_by: await userId(HQ) }]);
+      const attempt = await request(app).post("/api/auth/login").send({ email: NEW_BRANCH, password: "lozinka123" });
+      expect(attempt.status).toBe(400);
+    });
+
+    it("resends the invitation only while the branch login never logged in", async () => {
+      const created = await hq
+        .post("/api/company/branches")
+        .send(branchPayload({ city_id: await cityId("Breza"), password: undefined }));
+      const id = created.body.branch.id;
+      expect(created.body.branch.last_login_at).toBeNull();
+
+      const resent = await hq.post(`/api/company/branches/${id}/invitation`);
+      expect(resent.status).toBe(200);
+      expect(resent.body.message).toBe("Invitation sent.");
+      // The first link stops working: only the newest token is open, sent by the headquarters.
+      const tokens = await pool.query(
+        `SELECT auth_tokens.created_by, auth_tokens.revoked_at IS NULL AS open FROM auth_tokens
+         WHERE auth_tokens.user_id = $1 ORDER BY auth_tokens.id`,
+        [id],
+      );
+      const hqId = await userId(HQ);
+      expect(tokens.rows).toEqual([
+        { created_by: hqId, open: false },
+        { created_by: hqId, open: true },
+      ]);
+      const emails = await pool.query(
+        "SELECT email_queue.data->>'sender' AS sender FROM email_queue WHERE email_queue.recipient = $1 ORDER BY email_queue.id",
+        [NEW_BRANCH],
+      );
+      expect(emails.rows).toEqual([{ sender: "COMPANY" }, { sender: "COMPANY" }]);
+
+      // A branch that logged in, a deactivated branch, another company's branch.
+      await pool.query("UPDATE users SET last_login_at = NOW() WHERE id = $1", [id]);
+      const loggedIn = await hq.post(`/api/company/branches/${id}/invitation`);
+      expect(loggedIn.status).toBe(400);
+      expect(loggedIn.body.error).toBe("The user has already logged in.");
+      await pool.query("UPDATE users SET last_login_at = NULL, deactivated_at = NOW() WHERE id = $1", [id]);
+      const deactivated = await hq.post(`/api/company/branches/${id}/invitation`);
+      expect(deactivated.status).toBe(400);
+      expect(deactivated.body.error).toBe("A blocked account cannot get a link.");
+      const otherCompany = await insertCompany(OTHER_COMPANY);
+      await insertUser(OTHER_HQ, "COMPANY", null, null, otherCompany);
+      const other = await login(OTHER_HQ);
+      expect((await other.post(`/api/company/branches/${id}/invitation`)).status).toBe(404);
+    });
+
     it("validates the fields", async () => {
       const missing = await hq.post("/api/company/branches").send(branchPayload({ city_id: await cityId("Breza"), phone: "" }));
       expect(missing.status).toBe(400);
-      expect(missing.body.error).toBe("Business name, city, address, phone, email and password are required.");
+      expect(missing.body.error).toBe("Business name, city, address, phone and email are required.");
       const badCity = await hq.post("/api/company/branches").send(branchPayload({ city_id: 999999 }));
       expect(badCity.body.error).toBe("Invalid city.");
       const badEmail = await hq

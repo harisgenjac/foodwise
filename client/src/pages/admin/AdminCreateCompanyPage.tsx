@@ -8,22 +8,25 @@ import api from "../../api/axios.js";
 import FormSection from "../../components/form/FormSection.js";
 import FormField, { inputStyle } from "../../components/form/FormField.js";
 import RequiredHint from "../../components/form/RequiredHint.js";
+import SignInMethodPicker, { type SignInMethod } from "../../components/form/SignInMethodPicker.js";
 import { useFormValidation } from "../../hooks/useFormValidation.js";
 import { isBlank, REQUIRED } from "../../utils/validation.js";
 
-// The admin creates a company together with its headquarters login (email and a temporary
-// password the admin passes on); the headquarters fills in the rest after the first login.
+// The admin creates a company together with its headquarters login: an email and how the
+// headquarters gets in, like a new user (an invitation email by default, or a temporary password
+// the admin passes on). The headquarters fills in the rest after the first login.
 function AdminCreateCompanyPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [method, setMethod] = useState<SignInMethod>("INVITE");
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const { formRef, errorFor, blur, validate } = useFormValidation({
     name: isBlank(name) ? REQUIRED : undefined,
     email: isBlank(email) ? REQUIRED : undefined,
-    password: password ? undefined : REQUIRED,
+    password: method === "INVITE" || password ? undefined : REQUIRED,
   });
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -31,8 +34,11 @@ function AdminCreateCompanyPage() {
     if (saving || !validate()) return;
     setSaving(true);
     try {
-      const response = await api.post("/admin/companies", { name, email, password });
-      toast.success(t("admin.createCompany.success"));
+      const response = await api.post(
+        "/admin/companies",
+        method === "INVITE" ? { name, email, method } : { name, email, method, password },
+      );
+      toast.success(t(method === "INVITE" ? "admin.createCompany.successInvite" : "admin.createCompany.success"));
       navigate(`/admin/companies/${response.data.company.id}`);
     } catch (err) {
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
@@ -69,29 +75,34 @@ function AdminCreateCompanyPage() {
           </FormSection>
 
           <FormSection title={t("admin.createCompany.loginSection")} icon={KeyRound}>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField label={t("admin.createCompany.email")} icon={Mail} required error={errorFor("email")}>
-                <input
-                  type="email"
-                  autoComplete="off"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onBlur={blur("email")}
-                  className={inputStyle}
-                />
-              </FormField>
-              <FormField label={t("admin.createCompany.password")} icon={Lock} required error={errorFor("password")}>
-                <input
-                  type="text"
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onBlur={blur("password")}
-                  className={inputStyle}
-                />
-              </FormField>
-            </div>
-            <p className="mt-2 text-xs text-gray-500">{t("admin.createUser.passwordHint")}</p>
+            <FormField label={t("admin.createCompany.email")} icon={Mail} required error={errorFor("email")}>
+              <input
+                type="email"
+                autoComplete="off"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={blur("email")}
+                className={inputStyle}
+              />
+            </FormField>
+
+            <SignInMethodPicker value={method} onChange={setMethod} />
+
+            {method === "PASSWORD" && (
+              <div className="mt-4">
+                <FormField label={t("admin.createCompany.password")} icon={Lock} required error={errorFor("password")}>
+                  <input
+                    type="text"
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onBlur={blur("password")}
+                    className={inputStyle}
+                  />
+                </FormField>
+                <p className="mt-2 text-xs text-gray-500">{t("admin.createUser.passwordHint")}</p>
+              </div>
+            )}
           </FormSection>
         </div>
 
@@ -101,7 +112,9 @@ function AdminCreateCompanyPage() {
               <Info className="h-4 w-4" />
               {t("admin.createCompany.infoTitle")}
             </p>
-            <p className="mt-2">{t("admin.createCompany.infoText")}</p>
+            <p className="mt-2">
+              {t(method === "INVITE" ? "admin.createCompany.infoTextInvite" : "admin.createCompany.infoText")}
+            </p>
           </div>
           <button
             type="submit"

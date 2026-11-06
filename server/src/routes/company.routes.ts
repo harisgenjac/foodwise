@@ -8,6 +8,7 @@ import {
   getBranchReservations,
   getBranches,
   reactivateCompanyBranch,
+  resendCompanyBranchInvitation,
   setCompanyBranchPassword,
   updateCompanyBranch,
 } from "../controllers/companyBranches.controller.js";
@@ -50,6 +51,7 @@ router.put("/branches/:id", updateCompanyBranch);
 router.get("/branches/:id/products", getBranchProducts);
 router.get("/branches/:id/reservations", getBranchReservations);
 router.patch("/branches/:id/password", rateLimiters.password, setCompanyBranchPassword);
+router.post("/branches/:id/invitation", resendCompanyBranchInvitation);
 router.post("/branches/:id/deactivate", deactivateCompanyBranch);
 router.post("/branches/:id/reactivate", reactivateCompanyBranch);
 router.get("/branches/:id/credits", getBranchCredits);

@@ -4,9 +4,10 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
-import { Building2, Info, KeyRound, Lock, Mail, MailPlus, ShieldCheck, Store, UserPlus, UtensilsCrossed } from "lucide-react";
+import { Building2, Info, KeyRound, Lock, Mail, ShieldCheck, Store, UserPlus, UtensilsCrossed } from "lucide-react";
 import api from "../../api/axios.js";
 import FormSection from "../../components/form/FormSection.js";
+import SignInMethodPicker, { type SignInMethod } from "../../components/form/SignInMethodPicker.js";
 import FormField, { inputStyle } from "../../components/form/FormField.js";
 import RequiredHint from "../../components/form/RequiredHint.js";
 import { useFormValidation } from "../../hooks/useFormValidation.js";
@@ -21,11 +22,6 @@ const ROLE_ICONS: Record<Role, LucideIcon> = {
   COMPANY: Building2,
 };
 
-// How the new user gets in: an invitation email with a link to set their own password (default),
-// or a temporary password the admin passes on (for users without email access).
-type Method = "INVITE" | "PASSWORD";
-const METHOD_ICONS: Record<Method, LucideIcon> = { INVITE: MailPlus, PASSWORD: Lock };
-
 // The admin enters only the account type, the email and how the user gets in; the user fills in
 // the rest of the profile after the first login.
 function AdminCreateUserPage() {
@@ -33,7 +29,7 @@ function AdminCreateUserPage() {
   const navigate = useNavigate();
   const [role, setRole] = useState<Role>("STORE");
   const [email, setEmail] = useState("");
-  const [method, setMethod] = useState<Method>("INVITE");
+  const [method, setMethod] = useState<SignInMethod>("INVITE");
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const { formRef, errorFor, blur, validate } = useFormValidation({
@@ -113,34 +109,7 @@ function AdminCreateUserPage() {
               />
             </FormField>
 
-            <div
-              role="radiogroup"
-              aria-label={t("admin.createUser.methodSection")}
-              className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2"
-            >
-              {(["INVITE", "PASSWORD"] as const).map((code) => {
-                const Icon = METHOD_ICONS[code];
-                const selected = method === code;
-                return (
-                  <button
-                    key={code}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => setMethod(code)}
-                    className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border-2 p-4 text-left transition-colors ${
-                      selected ? "border-orange-500 bg-orange-50" : "border-gray-200 bg-white hover:border-orange-200"
-                    }`}
-                  >
-                    <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${selected ? "text-orange-600" : "text-gray-400"}`} strokeWidth={1.8} />
-                    <span>
-                      <span className="block font-semibold text-gray-900">{t(`admin.createUser.methods.${code}.title`)}</span>
-                      <span className="mt-0.5 block text-xs text-gray-500">{t(`admin.createUser.methods.${code}.description`)}</span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <SignInMethodPicker value={method} onChange={setMethod} />
 
             {method === "PASSWORD" && (
               <div className="mt-4">

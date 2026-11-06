@@ -5,9 +5,12 @@ import { createNotification, notifyAnnouncement, notifyCompanyHq } from "../util
 import { parseId } from "../utils/params.js";
 import { ADMIN_PAGE_SIZE, listPage, parsePage, parseSort } from "../utils/pagination.js";
 import {
+  INVALID_CREATE_METHOD,
   hashPassword,
+  initialPasswordHash,
   isUniqueViolation,
   normalizeEmail,
+  parseCreateMethod,
   validateEmail,
   validatePassword,
 } from "../utils/accounts.js";
@@ -23,7 +26,6 @@ import { creditMonth, nextMonth } from "../utils/creditTime.js";
 import type { Role } from "../types/auth.js";
 import { notBlocked } from "../utils/visibility.js";
 import { sendInvitation, sendPasswordResetLink } from "../services/accountEmails.js";
-import { randomBytes } from "node:crypto";
 
 // Every role an admin can filter by. COMPANY accounts are created with their company
 // (POST /companies), never through POST /users.
@@ -356,17 +358,12 @@ export const getUserDetails = async (req: Request, res: Response) => {
   }
 };
 
-// An admin creates store, restaurant and admin accounts with only an email (and a temporary
-// password, or an invitation). The user fills in the name and business data on the profile page.
-// How the new user gets in: an invitation email with a link to set their own password (the
-// default), or a temporary password the admin passes on (for users without email access), which
-// they must replace at the first login.
-const CREATE_METHODS = ["INVITE", "PASSWORD"];
-
+// An admin creates store, restaurant and admin accounts with only an email and how the user gets
+// in (an invitation, the default, or a temporary password; see parseCreateMethod). The user fills
+// in the name and business data on the profile page.
 export const createUser = async (req: Request, res: Response) => {
   const { role, email, password } = req.body;
-  // Without a method, a password means a temporary password (as before invitations existed).
-  const method = req.body.method ?? (password ? "PASSWORD" : "INVITE");
+  const method = parseCreateMethod(req.body);
   if (!role || !email) {
     return res.status(400).json({ error: "Email and role are required." });
   }
@@ -376,8 +373,8 @@ export const createUser = async (req: Request, res: Response) => {
   if (typeof role !== "string" || !USER_CREATED_ROLES.includes(role)) {
     return res.status(400).json({ error: "Role must be STORE, RESTAURANT or ADMIN." });
   }
-  if (!CREATE_METHODS.includes(method)) {
-    return res.status(400).json({ error: "Choose an invitation or a temporary password." });
+  if (!method) {
+    return res.status(400).json({ error: INVALID_CREATE_METHOD });
   }
   const invite = method === "INVITE";
   const credentialsError = validateEmail(email) ?? (invite ? null : validatePassword(password));
@@ -388,8 +385,7 @@ export const createUser = async (req: Request, res: Response) => {
   let client;
   try {
     const normalized = normalizeEmail(email);
-    // An invited user has no password until they set one: the hash of a random value nobody knows.
-    const passwordHash = await hashPassword(invite ? randomBytes(32).toString("base64url") : password);
+    const passwordHash = await initialPasswordHash(method, password);
     client = await pool.connect();
     await client.query("BEGIN");
     const result = await client.query(

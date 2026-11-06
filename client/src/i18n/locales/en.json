@@ -1370,8 +1370,10 @@
       "password": "Temporary password",
       "infoTitle": "What happens next",
       "infoText": "Pass the email and password on to the headquarters. At the first login they choose their own password and enter a first name, last name and phone. Only an admin can change the company name later.",
+      "infoTextInvite": "The headquarters gets an email with a link to set their password, then enters a first name, last name and phone. If the link expires, you can send the invitation again on the headquarters login's user page. Only an admin can change the company name later.",
       "submit": "Create company",
       "success": "Company created.",
+      "successInvite": "The company was created and the invitation sent.",
       "error": "The company was not created. Please try again."
     },
     "companyDetails": {
@@ -1665,6 +1667,7 @@
       "previewName": "Branch name",
       "infoTitle": "What happens next",
       "infoText": "Pass the email and password on to the branch. At the first login the staff choose their own password and enter a first and last name. Until the branch sets its own logo and description, the company's are shown.",
+      "infoTextInvite": "The staff get an email with a link to set their password, then enter a first and last name. If the link expires, they can use Forgot password? on the login page, or you can set a temporary password on the branch page. Until the branch sets its own logo and description, the company's are shown.",
       "submit": "Create branch",
       "error": "The branch was not created. Please try again."
     },
@@ -1678,6 +1681,11 @@
       "editText": "Only you (or an admin) change the name and city; the branch edits its other details itself.",
       "save": "Save",
       "setPassword": "Set a new password",
+      "resendInvitation": "Resend invitation",
+      "resendInvitationTitle": "Send the invitation again?",
+      "resendInvitationText": "We send a new invitation (valid for 72 hours) to {{email}}. The earlier invitation stops working.",
+      "confirmSend": "Send",
+      "neverLoggedIn": "Never logged in",
       "login": "Login email",
       "staff": "Staff",
       "staffNotSet": "Not signed in yet",

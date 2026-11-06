@@ -27,6 +27,7 @@ test("a chain's branch in Breza publishes a product that a restaurant in Visoko 
     await admin.goto("/admin/companies/new");
     await admin.getByLabel("Naziv firme").fill(company);
     await admin.getByLabel("Email centrale").fill(hq.email);
+    await admin.getByRole("radio", { name: /Postavi privremenu lozinku/ }).click();
     await admin.getByLabel("Privremena lozinka").fill(hq.temporaryPassword);
     await admin.getByRole("button", { name: "Kreiraj firmu" }).click();
     await expect(toast(admin, "Firma je kreirana.")).toBeVisible();
@@ -57,6 +58,7 @@ test("a chain's branch in Breza publishes a product that a restaurant in Visoko 
     await hqPage.getByLabel("Telefon").fill("032 111 222");
     await hqPage.getByLabel("Adresa").fill("Bosanska 1");
     await hqPage.getByLabel("Email za prijavu").fill(branchLogin.email);
+    await hqPage.getByRole("radio", { name: /Postavi privremenu lozinku/ }).click();
     await hqPage.getByLabel("Privremena lozinka").fill(branchLogin.temporaryPassword);
     await hqPage.getByRole("button", { name: "Kreiraj poslovnicu" }).click();
     await expect(toast(hqPage, "Poslovnica je uspješno kreirana.")).toBeVisible();

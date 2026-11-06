@@ -3,12 +3,19 @@ import { HttpError } from "../utils/httpError.js";
 import { parseId } from "../utils/params.js";
 import { cityExists } from "../utils/cities.js";
 import {
+  INVALID_CREATE_METHOD,
   hashPassword,
+  initialPasswordHash,
   isUniqueViolation,
   normalizeEmail,
+  parseCreateMethod,
   validateEmail,
   validatePassword,
 } from "../utils/accounts.js";
+import { sendInvitation } from "./accountEmails.js";
+import { notBlocked } from "../utils/visibility.js";
+
+const BRANCH_REQUIRED = "Business name, city, address, phone and email are required.";
 import { storeDescription, storeLogo } from "../utils/branding.js";
 import { savedUnits } from "../controllers/dashboard.controller.js";
 import { cancelPendingReservations } from "../controllers/admin.controller.js";
@@ -87,38 +94,42 @@ const parseBranchFields = async (db: Pool | PoolClient, body: BranchFields, requ
   return { businessName, cityId, address, phone };
 };
 
-// A new branch: a STORE of the company with a temporary password. Its staff set their own
-// password and fill in first and last name at the first login (the business data is already set).
-// It starts without its own logo or description, so it shows the company's.
+// A new branch: a STORE of the company. Its staff get in like a new user (see parseCreateMethod):
+// an invitation email from the headquarters (the default) or a temporary password the
+// headquarters passes on. They fill in first and last name at the first login (the business data
+// is already set). It starts without its own logo or description, so it shows the company's.
+// `hqUserId` is the headquarters login that creates it (it sends the invitation).
 export const createBranch = async (
   client: PoolClient,
   companyId: number,
-  body: BranchFields & { email?: unknown; password?: unknown },
+  hqUserId: number,
+  body: BranchFields & { email?: unknown; password?: unknown; method?: unknown },
 ) => {
   const company = await client.query("SELECT companies.is_blocked FROM companies WHERE companies.id = $1", [companyId]);
   if (company.rows[0]?.is_blocked) {
     throw new HttpError(403, "Your company is blocked.");
   }
-  const fields = await parseBranchFields(
-    client,
-    body,
-    "Business name, city, address, phone, email and password are required.",
-  );
-  if (!body.email || !body.password) {
-    throw new HttpError(400, "Business name, city, address, phone, email and password are required.");
+  const fields = await parseBranchFields(client, body, BRANCH_REQUIRED);
+  if (!body.email) {
+    throw new HttpError(400, BRANCH_REQUIRED);
   }
-  const credentialsError = validateEmail(body.email) ?? validatePassword(body.password);
+  const method = parseCreateMethod(body);
+  if (!method) {
+    throw new HttpError(400, INVALID_CREATE_METHOD);
+  }
+  const invite = method === "INVITE";
+  const credentialsError = validateEmail(body.email) ?? (invite ? null : validatePassword(body.password));
   if (credentialsError) {
     throw new HttpError(400, credentialsError);
   }
-  const passwordHash = await hashPassword(body.password as string);
+  const passwordHash = await initialPasswordHash(method, body.password);
   try {
     // A savepoint, so a duplicate email does not abort the caller's transaction.
     await client.query("SAVEPOINT create_branch");
     const result = await client.query<{ id: number }>(
       `INSERT INTO users
          (email, password_hash, role, company_id, business_name, city_id, address, phone, must_change_password)
-       VALUES ($1, $2, 'STORE', $3, $4, $5, $6, $7, true)
+       VALUES ($1, $2, 'STORE', $3, $4, $5, $6, $7, $8)
        RETURNING users.id`,
       [
         normalizeEmail(body.email as string),
@@ -128,10 +139,13 @@ export const createBranch = async (
         fields.cityId,
         fields.address,
         fields.phone,
+        !invite,
       ],
     );
     await client.query("RELEASE SAVEPOINT create_branch");
-    return result.rows[0]!.id;
+    const branchId = result.rows[0]!.id;
+    if (invite) await sendInvitation(client, branchId, hqUserId, "COMPANY");
+    return { id: branchId, invited: invite };
   } catch (error) {
     if (isUniqueViolation(error)) {
       await client.query("ROLLBACK TO SAVEPOINT create_branch");
@@ -147,6 +161,24 @@ export const updateBranch = async (db: Pool | PoolClient, branchId: number, body
     `UPDATE users SET business_name = $1, city_id = $2, address = $3, phone = $4 WHERE users.id = $5`,
     [fields.businessName, fields.cityId, fields.address, fields.phone, branchId],
   );
+};
+
+// A new invitation for a branch login that has never logged in (the old link stops working), like
+// the admin's resend. A blocked branch (also through its company) or a deactivated one cannot use
+// a link. The branch row is already locked by the caller.
+export const resendBranchInvitation = async (client: PoolClient, branchId: number, hqUserId: number) => {
+  const result = await client.query<{ last_login_at: string | null; blocked: boolean }>(
+    `SELECT users.last_login_at, NOT ${notBlocked("users")} AS blocked FROM users WHERE users.id = $1`,
+    [branchId],
+  );
+  const branch = result.rows[0]!;
+  if (branch.blocked) {
+    throw new HttpError(400, "A blocked account cannot get a link.");
+  }
+  if (branch.last_login_at !== null) {
+    throw new HttpError(400, "The user has already logged in.");
+  }
+  await sendInvitation(client, branchId, hqUserId, "COMPANY");
 };
 
 // Like an admin's password reset: the staff must replace it at the next login, and a running
@@ -221,7 +253,7 @@ export const getBranchProfile = async (db: Pool | PoolClient, branchId: number) 
        ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
        users.logo_url IS NOT NULL AS has_own_logo,
        ${BRANCH_STATUS} AS status, users.is_blocked, users.deactivated_at,
-       deactivators.email AS deactivated_by_email, users.must_change_password, users.created_at
+       deactivators.email AS deactivated_by_email, users.must_change_password, users.last_login_at, users.created_at
      FROM users
      LEFT JOIN cities ON cities.id = users.city_id
      LEFT JOIN users AS deactivators ON deactivators.id = users.deactivated_by

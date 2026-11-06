@@ -40,28 +40,58 @@ const RESET_COPY: Record<EmailLanguage, { subject: string; intro: string; outro:
   },
 };
 
-const INVITATION_COPY: Record<EmailLanguage, { subject: string; intro: string; outro: string[]; button: string }> = {
+// Who opened the account: the platform administrator, or a company's headquarters (a branch login).
+export type InvitationSender = "ADMIN" | "COMPANY";
+
+const INVITATION_COPY: Record<
+  EmailLanguage,
+  { subject: string; intro: Record<InvitationSender, string>; outro: Record<InvitationSender, string[]>; button: string }
+> = {
   bs: {
     subject: "Pozivnica za FoodWise",
-    intro:
-      "Administrator platforme FoodWise vam je otvorio račun. Kliknite dugme da postavite svoju lozinku, a zatim popunite profil.",
-    outro: [
-      "Link vrijedi 72 sata i može se iskoristiti jednom. Ako je istekao, zatražite novi od administratora ili na stranici za prijavu (Zaboravili ste lozinku?).",
-      "Ako ne očekujete ovaj email, zanemarite ga.",
-    ],
+    intro: {
+      ADMIN:
+        "Administrator platforme FoodWise vam je otvorio račun. Kliknite dugme da postavite svoju lozinku, a zatim popunite profil.",
+      COMPANY:
+        "Centrala vaše kompanije vam je otvorila račun poslovnice na platformi FoodWise. Kliknite dugme da postavite svoju lozinku, a zatim popunite profil.",
+    },
+    outro: {
+      ADMIN: [
+        "Link vrijedi 72 sata i može se iskoristiti jednom. Ako je istekao, zatražite novi od administratora ili na stranici za prijavu (Zaboravili ste lozinku?).",
+        "Ako ne očekujete ovaj email, zanemarite ga.",
+      ],
+      COMPANY: [
+        "Link vrijedi 72 sata i može se iskoristiti jednom. Ako je istekao, zatražite novi na stranici za prijavu (Zaboravili ste lozinku?) ili se obratite centrali.",
+        "Ako ne očekujete ovaj email, zanemarite ga.",
+      ],
+    },
     button: "Postavi lozinku",
   },
   en: {
     subject: "Your FoodWise invitation",
-    intro:
-      "The FoodWise platform administrator opened an account for you. Click the button to set your password, then fill in your profile.",
-    outro: [
-      "The link is valid for 72 hours and can be used once. If it has expired, ask the administrator for a new one or use Forgot password? on the login page.",
-      "If you did not expect this email, ignore it.",
-    ],
+    intro: {
+      ADMIN:
+        "The FoodWise platform administrator opened an account for you. Click the button to set your password, then fill in your profile.",
+      COMPANY:
+        "Your company's headquarters opened a branch account for you on FoodWise. Click the button to set your password, then fill in your profile.",
+    },
+    outro: {
+      ADMIN: [
+        "The link is valid for 72 hours and can be used once. If it has expired, ask the administrator for a new one or use Forgot password? on the login page.",
+        "If you did not expect this email, ignore it.",
+      ],
+      COMPANY: [
+        "The link is valid for 72 hours and can be used once. If it has expired, use Forgot password? on the login page or ask your headquarters.",
+        "If you did not expect this email, ignore it.",
+      ],
+    },
     button: "Set your password",
   },
 };
+
+// Older invitations have no sender: they came from the administrator.
+const invitationSender = (data: unknown): InvitationSender =>
+  (data as { sender?: unknown } | null)?.sender === "COMPANY" ? "COMPANY" : "ADMIN";
 
 export const PASSWORD_RESET_PAGE = "/reset-password";
 export const INVITATION_PAGE = "/set-password";
@@ -87,12 +117,13 @@ export const SYSTEM_TEMPLATES: Record<string, EmailTemplate> = {
     render: (data, lang, appUrl) => {
       const { token } = parseToken(data, "INVITATION");
       const copy = INVITATION_COPY[lang];
+      const sender = invitationSender(data);
       return renderLayout({
         lang,
         subject: copy.subject,
         heading: copy.subject,
-        intro: [copy.intro],
-        outro: copy.outro,
+        intro: [copy.intro[sender]],
+        outro: copy.outro[sender],
         button: { label: copy.button, url: link(appUrl, INVITATION_PAGE, token) },
       });
     },

@@ -163,6 +163,7 @@ export interface BranchDetails {
     deactivated_at: string | null;
     deactivated_by_email: string | null;
     must_change_password: boolean;
+    last_login_at?: string | null;
     created_at: string;
   };
   stats: {
@@ -188,7 +189,7 @@ export interface AdminCompanyListItem {
 // GET /admin/companies/:id. Branches come with the next step, so the list is empty for now.
 export interface AdminCompanyDetails {
   company: Company;
-  hqUsers: Pick<User, "id" | "email" | "first_name" | "last_name" | "phone" | "is_blocked" | "must_change_password" | "created_at">[];
+  hqUsers: Pick<User, "id" | "email" | "first_name" | "last_name" | "phone" | "is_blocked" | "must_change_password" | "last_login_at" | "created_at">[];
   branches: {
     id: number;
     email: string;
