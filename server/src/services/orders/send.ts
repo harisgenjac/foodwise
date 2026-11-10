@@ -9,7 +9,7 @@ import { formatOrderCode, insertOrder, type OrderRow } from "./codes.js";
 import { recordOrderCreated } from "./status.js";
 
 // Sending an order (docs/orders-design.md, section 5): one transaction with the stock protection,
-// where "Accept partial fulfilment" already applies to what can be sent.
+// where accepting partial fulfilment already applies to what can be sent.
 
 // At most this many Pending orders per restaurant across all stores (without credits nothing
 // else stops a restaurant from flooding stores with orders).

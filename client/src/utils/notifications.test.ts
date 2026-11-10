@@ -8,12 +8,12 @@ import {
   getNotificationText,
 } from "./notifications.js";
 import i18n from "../i18n/config.js";
-import { makeNotification, t } from "../test/utils.js";
+import { makeNotification, makeOrderNotification, t } from "../test/utils.js";
 import type { Notification } from "../context/NotificationsContext.js";
 
 describe("getNotificationMeta", () => {
   it("returns the icon for the notification type", () => {
-    expect(getNotificationMeta(makeNotification()).icon).toBe(ShoppingBag);
+    expect(getNotificationMeta(makeOrderNotification()).icon).toBe(ShoppingBag);
   });
 
   it("falls back to the bell for untyped notifications", () => {
@@ -33,6 +33,11 @@ describe("getNotificationLink", () => {
   it("links to the reservation first, then the product", () => {
     expect(getNotificationLink(makeNotification({ reservation_id: 5, product_id: 9 }), "STORE")).toBe("/reservation/5");
     expect(getNotificationLink(makeNotification({ reservation_id: null, product_id: 9 }), "STORE")).toBe("/products/9");
+  });
+
+  it("opens the role's list for an order until the order page exists", () => {
+    expect(getNotificationLink(makeOrderNotification(), "STORE")).toBe("/reservations");
+    expect(getNotificationLink(makeOrderNotification(), "RESTAURANT")).toBe("/my-reservations");
   });
 
   it("falls back to the role's reservation list", () => {
@@ -67,12 +72,21 @@ describe("getNotificationLink", () => {
 });
 
 describe("getNotificationText", () => {
-  it("translates by type with the product, quantity and unit", async () => {
+  it("translates by type with the product", async () => {
     await i18n.changeLanguage("en");
-    const text = getNotificationText(makeNotification({ quantity: "2.50" }), t);
-    expect(text).toContain("Piletina");
-    expect(text).toContain("2.5");
-    expect(text).not.toBe(makeNotification().message);
+    expect(getNotificationText(makeNotification(), t)).toBe(t("notifications.types.PRODUCT_SOLD_OUT", { product: "Piletina" }));
+  });
+
+  it("names an order by its code and the other party, with an admin's reason", () => {
+    expect(getNotificationText(makeOrderNotification(), t)).toBe(
+      t("notifications.types.ORDER_CREATED", { code: "#K7PM", restaurant: "Restoran Ukus" }),
+    );
+    const cancelled = makeOrderNotification({ type: "ORDER_CANCELLED_BY_ADMIN", details: "Spor" });
+    expect(getNotificationText(cancelled, t)).toBe(
+      `${t("notifications.types.ORDER_CANCELLED_BY_ADMIN", { code: "#K7PM" })} ${t("notifications.reason", { reason: "Spor" })}`,
+    );
+    // The order is gone: the English message.
+    expect(getNotificationText(makeOrderNotification({ order_code: null }), t)).toBe("New order #K7PM: 1 item.");
   });
 
   it("adds the admin's reason after the translated text", () => {

@@ -21,21 +21,24 @@ import type { User } from "../types/index.js";
 import { SUBSCRIPTION_SECTION, TOPUP_SECTION } from "./credits.js";
 
 export const NOTIFICATION_META: Record<NotificationType, { icon: LucideIcon; style: string }> = {
-  RESERVATION_CREATED: { icon: ShoppingBag, style: "bg-amber-50 text-amber-600" },
-  RESERVATION_ACCEPTED: { icon: CircleCheck, style: "bg-green-50 text-green-600" },
-  RESERVATION_REJECTED: { icon: CircleX, style: "bg-red-50 text-red-600" },
-  RESERVATION_CANCELLED: { icon: Ban, style: "bg-gray-100 text-gray-600" },
-  RESERVATION_EXPIRED: { icon: CalendarX, style: "bg-red-50 text-red-600" },
+  ORDER_CREATED: { icon: ShoppingBag, style: "bg-amber-50 text-amber-600" },
+  ORDER_CANCELLED: { icon: Ban, style: "bg-gray-100 text-gray-600" },
+  ORDER_ACCEPTED: { icon: CircleCheck, style: "bg-green-50 text-green-600" },
+  ORDER_PARTIALLY_ACCEPTED: { icon: CircleCheck, style: "bg-amber-50 text-amber-600" },
+  ORDER_REJECTED: { icon: CircleX, style: "bg-red-50 text-red-600" },
+  ORDER_COMPLETED: { icon: PackageCheck, style: "bg-green-50 text-green-600" },
+  ORDER_PICKUP_MISSED: { icon: CalendarX, style: "bg-red-50 text-red-600" },
+  ORDER_PICKUP_TODAY: { icon: Clock, style: "bg-blue-50 text-blue-600" },
+  ORDER_ITEMS_EXPIRED: { icon: CalendarX, style: "bg-amber-50 text-amber-600" },
+  ORDER_EXPIRED: { icon: CalendarX, style: "bg-red-50 text-red-600" },
+  ORDER_ITEMS_REMOVED: { icon: ShieldAlert, style: "bg-amber-50 text-amber-600" },
+  ORDER_CANCELLED_BY_ADMIN: { icon: ShieldAlert, style: "bg-gray-100 text-gray-600" },
+  ORDER_CANCELLED_STORE_CLOSED: { icon: Ban, style: "bg-gray-100 text-gray-600" },
   PRODUCT_EXPIRED: { icon: CalendarX, style: "bg-red-50 text-red-600" },
   PRODUCT_SOLD_OUT: { icon: PackageCheck, style: "bg-green-50 text-green-600" },
   PRODUCT_EXPIRING_SOON: { icon: Hourglass, style: "bg-amber-50 text-amber-600" },
-  PICKUP_TODAY: { icon: Clock, style: "bg-blue-50 text-blue-600" },
-  RESERVATION_COMPLETED: { icon: PackageCheck, style: "bg-green-50 text-green-600" },
-  PICKUP_MISSED: { icon: CalendarX, style: "bg-red-50 text-red-600" },
   PRODUCT_REMOVED_BY_ADMIN: { icon: ShieldAlert, style: "bg-red-50 text-red-600" },
   DONATION_REMOVED_BY_ADMIN: { icon: ShieldAlert, style: "bg-red-50 text-red-600" },
-  RESERVATION_CANCELLED_BY_ADMIN: { icon: ShieldAlert, style: "bg-gray-100 text-gray-600" },
-  RESERVATION_CANCELLED_STORE_CLOSED: { icon: Ban, style: "bg-gray-100 text-gray-600" },
   BRANCH_BLOCKED: { icon: ShieldAlert, style: "bg-red-50 text-red-600" },
   BRANCH_UNBLOCKED: { icon: Store, style: "bg-green-50 text-green-600" },
   BRANCH_DEACTIVATED: { icon: Store, style: "bg-gray-100 text-gray-600" },
@@ -88,6 +91,8 @@ export const getNotificationLink = (notification: Notification, role: User["role
   if (notification.type === "PASSWORD_CHANGED") return "/my-profile";
   if (role === "COMPANY" && notification.branch_id) return `/company/branches/${notification.branch_id}`;
   if (notification.reservation_id) return `/reservation/${notification.reservation_id}`;
+  // Orders open the role's list until the order details page exists (orders PR 3b: /orders/:id).
+  if (notification.order_id) return role === "STORE" ? "/reservations" : "/my-reservations";
   if (notification.product_id) return `/products/${notification.product_id}`;
   if (notification.donation_id) return "/donate-food";
   // The full announcement text is in the banner on every page.
@@ -124,6 +129,19 @@ export const getNotificationText = (notification: Notification, t: TFunction, la
   // No request was created, so there is nothing to join: the type says it all.
   if (notification.type === "CREDIT_RENEWAL_SKIPPED") return t("notifications.types.CREDIT_RENEWAL_SKIPPED");
   if (notification.type === "PASSWORD_CHANGED") return t("notifications.types.PASSWORD_CHANGED");
+  // An order's text names it by its code and the other party; without the joined order (deleted)
+  // the English message is shown.
+  if (notification.type?.startsWith("ORDER_")) {
+    const text = notification.order_code
+      ? t(`notifications.types.${notification.type}`, {
+          code: `#${notification.order_code}`,
+          store: notification.order_store_name ?? "",
+          restaurant: notification.order_restaurant_name ?? "",
+          defaultValue: notification.message,
+        })
+      : notification.message;
+    return notification.details ? `${text} ${t("notifications.reason", { reason: notification.details })}` : text;
+  }
   const creditKeys = notification.type ? CREDIT_TEXT_KEYS[notification.type] : undefined;
   if (creditKeys) {
     // A branch's request names its company: "Bingo d.o.o. → Bingo Tuzla".

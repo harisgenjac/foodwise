@@ -4,21 +4,25 @@ import { useTranslation } from "react-i18next";
 import api from "../api/axios.js";
 
 export type NotificationType =
-  | "RESERVATION_CREATED"
-  | "RESERVATION_ACCEPTED"
-  | "RESERVATION_REJECTED"
-  | "RESERVATION_CANCELLED"
-  | "RESERVATION_EXPIRED"
+  // Orders, linked by order_id (one notification per order event).
+  | "ORDER_CREATED"
+  | "ORDER_CANCELLED"
+  | "ORDER_ACCEPTED"
+  | "ORDER_PARTIALLY_ACCEPTED"
+  | "ORDER_REJECTED"
+  | "ORDER_COMPLETED"
+  | "ORDER_PICKUP_MISSED"
+  | "ORDER_PICKUP_TODAY"
+  | "ORDER_ITEMS_EXPIRED"
+  | "ORDER_EXPIRED"
+  | "ORDER_ITEMS_REMOVED"
+  | "ORDER_CANCELLED_BY_ADMIN"
+  | "ORDER_CANCELLED_STORE_CLOSED"
   | "PRODUCT_EXPIRED"
   | "PRODUCT_SOLD_OUT"
   | "PRODUCT_EXPIRING_SOON"
-  | "PICKUP_TODAY"
-  | "RESERVATION_COMPLETED"
-  | "PICKUP_MISSED"
   | "PRODUCT_REMOVED_BY_ADMIN"
   | "DONATION_REMOVED_BY_ADMIN"
-  | "RESERVATION_CANCELLED_BY_ADMIN"
-  | "RESERVATION_CANCELLED_STORE_CLOSED"
   | "BRANCH_BLOCKED"
   | "BRANCH_UNBLOCKED"
   | "BRANCH_DEACTIVATED"
@@ -67,6 +71,12 @@ export interface Notification {
   // A company headquarters' notifications about one of its branches: the branch and its name.
   branch_id?: number | null;
   branch_name?: string | null;
+  // An order's notifications: its code (shown as #K7PM), item count and the two parties.
+  order_id?: number | null;
+  order_code?: string | null;
+  order_item_count?: number | null;
+  order_store_name?: string | null;
+  order_restaurant_name?: string | null;
   // The product's name, or the donation's for donation notifications.
   product_name: string | null;
   unit: string | null;

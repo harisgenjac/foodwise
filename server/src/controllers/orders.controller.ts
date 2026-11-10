@@ -18,9 +18,11 @@ import {
 // /api/orders (docs/orders-design.md, section 10). The order service throws an HttpError for
 // every refusal; anything else is logged and answered with 500.
 
-const fail = (res: Response, error: unknown, log: string, message: string) => {
+// A refusal of the order service answers with its status; anything else is logged with the
+// answer's text and is a 500.
+const fail = (res: Response, error: unknown, message: string) => {
   if (error instanceof HttpError) return res.status(error.status).json(error.body());
-  console.error(log, error);
+  console.error(message, error);
   return res.status(500).json({ error: message });
 };
 
@@ -32,7 +34,7 @@ export const createOrder = async (req: Request, res: Response) => {
     const sent = await inTransaction((client) => sendOrder(client, req.user!.id, input));
     return res.status(201).json({ message: "Order sent.", order: { ...sent.order, items: sent.items }, changes: sent.changes });
   } catch (error) {
-    return fail(res, error, "Error while sending order:", "An error occurred while sending the order.");
+    return fail(res, error, "An error occurred while sending the order.");
   }
 };
 
@@ -42,7 +44,7 @@ export const getMineOrders = async (req: Request, res: Response) => {
     if (!result) return res.status(400).json({ error: "Invalid filter." });
     return res.status(200).json({ message: "Orders fetched successfully.", ...result });
   } catch (error) {
-    return fail(res, error, "Error while fetching orders:", FETCH_ERROR);
+    return fail(res, error, FETCH_ERROR);
   }
 };
 
@@ -52,7 +54,7 @@ export const getMineOrdersSummary = async (req: Request, res: Response) => {
     if (!summary) return res.status(400).json({ error: "Invalid filter." });
     return res.status(200).json({ message: "Orders fetched successfully.", summary });
   } catch (error) {
-    return fail(res, error, "Error while fetching orders:", FETCH_ERROR);
+    return fail(res, error, FETCH_ERROR);
   }
 };
 
@@ -62,7 +64,7 @@ export const getStoreOrders = async (req: Request, res: Response) => {
     if (!result) return res.status(400).json({ error: "Invalid filter." });
     return res.status(200).json({ message: "Orders fetched successfully.", ...result });
   } catch (error) {
-    return fail(res, error, "Error while fetching orders:", FETCH_ERROR);
+    return fail(res, error, FETCH_ERROR);
   }
 };
 
@@ -72,7 +74,7 @@ export const getOrderPickups = async (req: Request, res: Response) => {
     if (!result) return res.status(400).json({ error: "Invalid filter." });
     return res.status(200).json({ message: "Pickups fetched successfully.", ...result });
   } catch (error) {
-    return fail(res, error, "Error while fetching pickups:", "An error occurred while fetching pickups.");
+    return fail(res, error, "An error occurred while fetching pickups.");
   }
 };
 
@@ -81,7 +83,7 @@ export const getOrderPickupCounts = async (req: Request, res: Response) => {
     const counts = await countPickupOrders(req.user!.id, req.user!.role);
     return res.status(200).json({ message: "Pickups fetched successfully.", counts });
   } catch (error) {
-    return fail(res, error, "Error while fetching pickups:", "An error occurred while fetching pickups.");
+    return fail(res, error, "An error occurred while fetching pickups.");
   }
 };
 
@@ -93,7 +95,7 @@ export const getOrder = async (req: Request, res: Response) => {
     if (!order) return res.status(404).json({ error: "Order not found." });
     return res.status(200).json({ message: "Order fetched successfully.", order });
   } catch (error) {
-    return fail(res, error, "Error while fetching order:", FETCH_ERROR);
+    return fail(res, error, FETCH_ERROR);
   }
 };
 
@@ -111,30 +113,30 @@ const orderAction =
       const order = await inTransaction((client) => run(client, req.user!.id, orderId, req.body));
       return res.status(200).json({ message, order });
     } catch (error) {
-      return fail(res, error, `${errorMessage}:`, `An error occurred while ${errorMessage.toLowerCase()}.`);
+      return fail(res, error, errorMessage);
     }
   };
 
 export const decideOrderRoute = orderAction(
   (client, storeId, orderId, body) => decideOrder(client, storeId, orderId, body),
   "Order decision saved.",
-  "Saving the order decision",
+  "An error occurred while saving the order decision.",
 );
 
 export const cancelOrderRoute = orderAction(
   (client, restaurantId, orderId) => cancelOrder(client, restaurantId, orderId),
   "Order cancelled.",
-  "Cancelling the order",
+  "An error occurred while cancelling the order.",
 );
 
 export const completeOrderRoute = orderAction(
   (client, storeId, orderId) => completeOrder(client, storeId, orderId),
   "Order marked as picked up.",
-  "Confirming the pickup",
+  "An error occurred while confirming the pickup.",
 );
 
 export const cancelOverdueOrderRoute = orderAction(
   (client, storeId, orderId) => cancelOverdueOrder(client, storeId, orderId),
   "Overdue order cancelled.",
-  "Cancelling the order",
+  "An error occurred while cancelling the order.",
 );

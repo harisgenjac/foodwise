@@ -24,10 +24,10 @@ export const RESERVATION_STATUSES = ["Pending", "Confirmed", "Completed", "Rejec
 
 const NOT_FOUND = "Reservation not found.";
 
-// The answer for an error the order service threw (or 500 with `message`).
-const failWith = (res: Response, error: unknown, log: string, message: string) => {
+// The answer for an error the order service threw (or 500 with `message`, which is also logged).
+const failWith = (res: Response, error: unknown, message: string) => {
   if (error instanceof HttpError) return res.status(error.status).json(error.body());
-  console.error(log, error);
+  console.error(message, error);
   return res.status(500).json({ error: message });
 };
 
@@ -103,7 +103,7 @@ export const createReservation = async (req: Request, res: Response) => {
             : "Product is no longer available for reservation.",
       });
     }
-    return failWith(res, error, "Error while creating reservation:", "An error occurred while creating the reservation.");
+    return failWith(res, error, "An error occurred while creating the reservation.");
   }
 };
 
@@ -442,7 +442,6 @@ const reservationAction =
     check: (reservation: Reservation) => { status: number; error: string } | null,
     run: (client: PoolClient, userId: number, reservation: Reservation) => Promise<unknown>,
     message: string,
-    log: string,
     errorMessage: string,
   ) =>
   async (req: Request, res: Response) => {
@@ -465,7 +464,7 @@ const reservationAction =
       await inTransaction((client) => run(client, req.user!.id, reservation));
       return res.status(200).json({ message });
     } catch (error) {
-      return failWith(res, error, log, errorMessage);
+      return failWith(res, error, errorMessage);
     }
   };
 
@@ -483,7 +482,6 @@ export const acceptReservation = reservationAction(
   (client, storeId, reservation) =>
     decideOrder(client, storeId, reservation.order_id, { items: [{ item_id: reservation.id, action: "ACCEPT" }] }),
   "Reservation accepted successfully.",
-  "Error while accepting reservation:",
   "An error occurred while accepting the reservation.",
 );
 
@@ -496,7 +494,6 @@ export const rejectReservation = reservationAction(
   (client, storeId, reservation) =>
     decideOrder(client, storeId, reservation.order_id, { reject_order: true }, { reasonRequired: false }),
   "Reservation rejected successfully.",
-  "Error while rejecting reservation:",
   "An error occurred while rejecting the reservation.",
 );
 
@@ -506,7 +503,6 @@ export const cancelReservation = reservationAction(
   (reservation) => (reservation.status !== "Pending" ? NOT_PENDING : null),
   (client, restaurantId, reservation) => cancelOrder(client, restaurantId, reservation.order_id),
   "Reservation cancelled successfully.",
-  "Error while cancelling reservation:",
   "An error occurred while cancelling the reservation.",
 );
 
@@ -654,7 +650,6 @@ export const completeReservation = reservationAction(
       : null,
   (client, storeId, reservation) => completeOrder(client, storeId, reservation.order_id),
   "Reservation marked as picked up.",
-  "Error while confirming pickup:",
   "An error occurred while confirming the pickup.",
 );
 
@@ -668,6 +663,5 @@ export const cancelOverdueReservation = reservationAction(
       : null,
   (client, storeId, reservation) => cancelOverdueOrder(client, storeId, reservation.order_id),
   "Overdue reservation cancelled.",
-  "Error while cancelling overdue reservation:",
   "An error occurred while cancelling the reservation.",
 );

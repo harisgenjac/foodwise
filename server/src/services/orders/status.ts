@@ -20,8 +20,8 @@ export interface OrderEvent {
 }
 
 // Pending while any item waits; then Completed, Confirmed, Rejected in that order; Cancelled
-// only when every item is. "Partially accepted" is not a status (Confirmed or Completed with an
-// item rejected or reduced).
+// only when every item is. A partly accepted order has no status of its own (Confirmed or
+// Completed with an item rejected or reduced).
 export const deriveOrderStatus = (itemStatuses: string[]): OrderStatus => {
   for (const status of ["Pending", "Completed", "Confirmed", "Rejected"] as const) {
     if (itemStatuses.includes(status)) return status;

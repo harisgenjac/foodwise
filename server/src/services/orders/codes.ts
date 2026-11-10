@@ -14,7 +14,8 @@ export const generateOrderCode = () =>
 
 export const formatOrderCode = (code: string) => `#${code}`;
 
-// "#k7pm", "K7PM " → "K7PM"; null when it cannot be a code (search filters answer 400 then).
+// A code as typed in a search (with or without #, any case, spaces around) in its stored form;
+// null when it cannot be a code (search filters answer 400 then).
 export const parseOrderCode = (value: unknown): string | null => {
   if (typeof value !== "string") return null;
   const code = value.trim().replace(/^#/, "").toUpperCase();
@@ -65,5 +66,5 @@ export const insertOrder = async (client: PoolClient, order: NewOrder): Promise<
     );
     if (result.rows[0]) return result.rows[0];
   }
-  throw new Error("Could not draw a free order code.");
+  throw new Error(`No free order code for store ${order.storeId} after ${MAX_CODE_TRIES} tries.`);
 };

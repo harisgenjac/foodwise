@@ -23,6 +23,7 @@ const ACTION_STYLES: Record<AdminAction["action"], string> = {
   REMOVE_PRODUCT: "bg-red-50 text-red-600",
   REMOVE_DONATION: "bg-red-50 text-red-600",
   CANCEL_RESERVATION: "bg-amber-50 text-amber-700",
+  CANCEL_ORDER: "bg-amber-50 text-amber-700",
   UPDATE_PROFILE: "bg-blue-50 text-blue-700",
   CREATE_ANNOUNCEMENT: "bg-blue-50 text-blue-700",
   END_ANNOUNCEMENT: "bg-gray-100 text-gray-700",

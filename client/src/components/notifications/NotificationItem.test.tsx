@@ -6,6 +6,7 @@ import i18n from "../../i18n/config.js";
 import {
   apiMock,
   makeNotification,
+  makeOrderNotification,
   makeUser,
   renderWithProviders,
   t,
@@ -31,28 +32,33 @@ const renderItem = (notification: Notification, onNavigate?: () => void) => {
 describe("NotificationItem", () => {
   it("shows the translated text and the relative time", async () => {
     await i18n.changeLanguage("en");
-    const notification = makeNotification();
+    const notification = makeOrderNotification();
     renderItem(notification);
-    expect(screen.getByText(t(`notifications.types.RESERVATION_CREATED`, {
-      product: "Piletina",
-      quantity: 2,
-      unit: "kg",
+    expect(screen.getByText(t("notifications.types.ORDER_CREATED", {
+      code: "#K7PM",
+      restaurant: "Restoran Ukus",
     }))).toBeInTheDocument();
     expect(screen.getByText(t("notifications.time.justNow"))).toBeInTheDocument();
   });
 
   it("marks an unread notification as read and opens its link", async () => {
     const onNavigate = vi.fn();
-    renderItem(makeNotification({ id: 4, reservation_id: 20 }), onNavigate);
+    renderItem(makeOrderNotification({ id: 4 }), onNavigate);
 
-    await userEvent.click(screen.getByText(/Piletina/));
+    await userEvent.click(screen.getByText(/K7PM/));
     expect(apiMock.patch).toHaveBeenCalledWith("/notifications/4/read");
     expect(onNavigate).toHaveBeenCalled();
-    expect(await screen.findByTestId("location")).toHaveTextContent("/reservation/20");
+    // Until the order details page exists, an order opens the store's list.
+    expect(await screen.findByTestId("location")).toHaveTextContent("/reservations");
+  });
+
+  it("falls back to the English message when the order is gone", async () => {
+    renderItem(makeOrderNotification({ order_code: null }));
+    expect(screen.getByText("New order #K7PM: 1 item.")).toBeInTheDocument();
   });
 
   it("does not mark a read notification again", async () => {
-    renderItem(makeNotification({ is_read: true, reservation_id: null, product_id: 10 }));
+    renderItem(makeNotification({ is_read: true }));
     await userEvent.click(screen.getByText(/Piletina/));
     expect(apiMock.patch).not.toHaveBeenCalled();
     expect(await screen.findByTestId("location")).toHaveTextContent("/products/10");

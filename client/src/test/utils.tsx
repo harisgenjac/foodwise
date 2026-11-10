@@ -147,17 +147,33 @@ export const makeReservation = (overrides: Partial<Reservation> = {}): Reservati
 export const makeNotification = (overrides: Partial<Notification> = {}): Notification => ({
   id: 30,
   user_id: 1,
-  type: "RESERVATION_CREATED",
-  message: "New reservation request: 2kg Piletina",
+  type: "PRODUCT_SOLD_OUT",
+  message: "Piletina is sold out.",
   is_read: false,
   created_at: new Date().toISOString(),
-  reservation_id: 20,
+  reservation_id: null,
   product_id: 10,
   product_name: "Piletina",
   unit: "kg",
-  quantity: "2",
+  quantity: null,
   ...overrides,
 });
+
+// A store's notification about a new order.
+export const makeOrderNotification = (overrides: Partial<Notification> = {}): Notification =>
+  makeNotification({
+    type: "ORDER_CREATED",
+    message: "New order #K7PM: 1 item.",
+    order_id: 20,
+    order_code: "K7PM",
+    order_item_count: 1,
+    order_store_name: "Market Centar",
+    order_restaurant_name: "Restoran Ukus",
+    product_id: null,
+    product_name: null,
+    unit: null,
+    ...overrides,
+  });
 
 export const makeDonation = (overrides: Partial<DonationOffer> = {}): DonationOffer => ({
   id: 30,
