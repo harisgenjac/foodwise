@@ -96,9 +96,12 @@ export const getShopSales = async (req: Request, res: Response) => {
     }
     const sales = await pool.query(
       `SELECT product_shop_sales.id, product_shop_sales.quantity, product_shop_sales.created_at,
-         creators.email AS created_by_email
+         creators.email AS created_by_email,
+         -- Set when it was recorded from an order decision ("iz narudžbe #K7PM").
+         product_shop_sales.order_id, orders.code AS order_code
        FROM product_shop_sales
        LEFT JOIN users AS creators ON creators.id = product_shop_sales.created_by
+       LEFT JOIN orders ON orders.id = product_shop_sales.order_id
        WHERE product_shop_sales.product_id = $1
        ORDER BY product_shop_sales.created_at DESC, product_shop_sales.id DESC`,
       [productId],
