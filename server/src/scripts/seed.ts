@@ -1,5 +1,5 @@
 // Replaces ALL data with a demo platform that looks like it has been in use for two months:
-// the stores, restaurants and admins from seedData.ts, with products, reservations, donations,
+// the stores, restaurants and admins from seedData.ts, with products, orders, donations,
 // the stores' subscriptions and credits (restaurants pay none), favorites, notifications,
 // announcements and admin actions spread over the last HISTORY_DAYS days. The history is
 // simulated day by day and every credit movement goes through creditService with the simulated
@@ -11,6 +11,7 @@ import "dotenv/config";
 import bcrypt from "bcrypt";
 import type { PoolClient } from "pg";
 import pool from "../config/db.js";
+import { ORDER_CODE_ALPHABET, ORDER_CODE_LENGTH } from "../services/orders/codes.js";
 import { APP_TIMEZONE, todayInAppTimezone } from "../utils/dates.js";
 import { creditMonth, nextMonth } from "../utils/creditTime.js";
 import {
@@ -134,11 +135,12 @@ interface SimProduct {
   price: number;
   expiry: string;
   postedAt: Date;
-  // Reserved by Pending, Confirmed and Completed reservations; `confirmed` only the last two.
+  // Held by Pending, Confirmed and Completed order items and shop sales; `confirmed` what keeps it
+  // sold out (Confirmed and Completed items and shop sales).
   held: number;
   confirmed: number;
   soldAt: Date | null;
-  // Taken off the marketplace: no new reservations.
+  // Taken off the marketplace: no new orders.
   frozen: boolean;
   // Sold out by "Sold in shop" (the store's own till): no "sold out" notification.
   soldOutInShop?: boolean;
@@ -150,12 +152,12 @@ interface Admin {
   email: string;
 }
 
-const counts = { products: 0, reservations: 0, donations: 0, notifications: 0, topups: 0, shopSales: 0 };
+const counts = { products: 0, orders: 0, items: 0, donations: 0, notifications: 0, topups: 0, shopSales: 0 };
 
 // ---------- Inserts with explicit timestamps ----------
 
 interface NotificationLinks {
-  reservationId?: number;
+  orderId?: number;
   productId?: number;
   donationId?: number;
   creditRequestId?: number;
@@ -176,14 +178,14 @@ const notify = async (
   const isRead = now.getTime() - createdAt.getTime() > 3 * DAY_MS ? chance(0.95) : chance(0.3);
   await client.query(
     `INSERT INTO notifications
-       (user_id, type, message, reservation_id, product_id, donation_id, credit_request_id, announcement_id, details,
+       (user_id, type, message, order_id, product_id, donation_id, credit_request_id, announcement_id, details,
         is_read, created_at, branch_id)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
     [
       userId,
       type,
       message,
-      links.reservationId ?? null,
+      links.orderId ?? null,
       links.productId ?? null,
       links.donationId ?? null,
       links.creditRequestId ?? null,
@@ -202,6 +204,7 @@ interface AdminActionTargets {
   productId?: number;
   donationId?: number;
   reservationId?: number;
+  orderId?: number;
   announcementId?: number;
   creditRequestId?: number;
   companyId?: number;
@@ -212,8 +215,8 @@ const logAction = async (client: PoolClient, admin: Admin, action: string, creat
   await client.query(
     `INSERT INTO admin_actions
        (admin_id, action, target_user_id, target_product_id, target_donation_id, target_reservation_id,
-        target_announcement_id, target_credit_request_id, target_company_id, reason, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        target_order_id, target_announcement_id, target_credit_request_id, target_company_id, reason, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
     [
       admin.id,
       action,
@@ -221,6 +224,7 @@ const logAction = async (client: PoolClient, admin: Admin, action: string, creat
       targets.productId ?? null,
       targets.donationId ?? null,
       targets.reservationId ?? null,
+      targets.orderId ?? null,
       targets.announcementId ?? null,
       targets.creditRequestId ?? null,
       targets.companyId ?? null,
@@ -238,7 +242,7 @@ async function seed() {
     await client.query("BEGIN");
 
     console.log("Deleting existing data...");
-    // Reservations, admin actions, announcements and the credit ledger reference users with
+    // Orders, admin actions, announcements and the credit ledger reference users with
     // RESTRICT; everything else cascades from users, and companies go after their users
     // (users.company_id is RESTRICT). The ledger is append-only and allows
     // deletes only with app.ledger_maintenance on (set for this transaction only).
@@ -247,7 +251,8 @@ async function seed() {
     await client.query("DELETE FROM admin_actions");
     await client.query("DELETE FROM notifications");
     await client.query("DELETE FROM announcements");
-    await client.query("DELETE FROM reservations");
+    // Their items, history and shop-sale links go with them.
+    await client.query("DELETE FROM orders");
     await client.query("DELETE FROM donation_offers");
     await client.query("DELETE FROM products");
     await client.query("DELETE FROM users");
@@ -591,7 +596,7 @@ async function seed() {
 
     // ----- Simulation helpers -----
     const products: SimProduct[] = [];
-    const reservationStatusCount: Record<string, number> = {};
+    const orderStatusCount: Record<string, number> = {};
 
     const hasCredit = async (business: Business, instant: Date) =>
       (await getBalance(client, business.id, instant)).available >= 1;
@@ -643,145 +648,308 @@ async function seed() {
       return at(day, between(earliest, to - 0.25));
     };
 
-    interface NewReservation {
+    // ----- Orders -----
+    // Orders are written with the same shapes the order service writes (orders, items, history,
+    // codes, notifications). While the old reservation screens are in use (orders PR 3a), orders
+    // with several items are only in final statuses; open orders (Pending, Confirmed) have one item.
+    const orderCodes = new Map<number, Set<string>>();
+    // Random like the rest of the seed (the app draws codes with crypto.randomInt), unique per store.
+    const drawCode = (storeId: number) => {
+      const used = orderCodes.get(storeId) ?? new Set<string>();
+      orderCodes.set(storeId, used);
+      for (;;) {
+        const code = Array.from({ length: ORDER_CODE_LENGTH }, () => pick([...ORDER_CODE_ALPHABET])).join("");
+        if (!used.has(code)) {
+          used.add(code);
+          return code;
+        }
+      }
+    };
+
+    type ChangeReason = "NOT_ENOUGH_STOCK" | "QUALITY" | "OTHER";
+    interface NewLine {
       product: SimProduct;
-      restaurant: Business;
+      // What the order sent, and what the store accepted (the same unless it accepted less).
+      ordered: number;
       quantity: number;
       status: string;
-      createdAt: Date;
-      pickupDate: Date;
-      pickedUpAt: Date | null;
-      updatedAt: Date;
+      reason?: ChangeReason | null;
+      note?: string | null;
     }
-    const insertReservation = async (r: NewReservation) => {
-      const result = await client.query<{ id: number }>(
-        `INSERT INTO reservations
-           (product_id, restaurant_id, quantity, unit_price, status, pickup_date, picked_up_at, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
-        [r.product.id, r.restaurant.id, r.quantity, r.product.price, r.status, r.pickupDate, r.pickedUpAt, r.createdAt, r.updatedAt],
+    interface OrderEvent {
+      at: Date;
+      to: string;
+      source: "RESTAURANT" | "STORE" | "ADMIN" | "SYSTEM";
+      actorId?: number | null;
+      reason?: string | null;
+      // Item rows when items moved differently (indexes into `lines`).
+      items?: { index: number; from: string; to: string }[];
+    }
+    interface NewOrder {
+      restaurant: Business;
+      lines: NewLine[];
+      status: string;
+      createdAt: Date;
+      pickupAt: Date;
+      acceptPartial: boolean;
+      sendChanges?: object[];
+      decidedAt?: Date | null;
+      pickedUpAt?: Date | null;
+      updatedAt: Date;
+      // After the creation row.
+      events: OrderEvent[];
+    }
+    interface InsertedOrder {
+      id: number;
+      code: string;
+      itemIds: number[];
+    }
+
+    const insertOrder = async (o: NewOrder): Promise<InsertedOrder> => {
+      const store = o.lines[0]!.product.store;
+      const code = drawCode(store.id);
+      const order = await client.query<{ id: number }>(
+        `INSERT INTO orders
+           (store_id, restaurant_id, code, status, pickup_at, accept_partial, decided_at, send_changes, picked_up_at,
+            created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+        [
+          store.id, o.restaurant.id, code, o.status, o.pickupAt, o.acceptPartial, o.decidedAt ?? null,
+          JSON.stringify(o.sendChanges ?? []), o.pickedUpAt ?? null, o.createdAt, o.updatedAt,
+        ],
       );
-      const id = result.rows[0]!.id;
+      const id = order.rows[0]!.id;
+      const itemIds: number[] = [];
+      for (const line of o.lines) {
+        const decided = line.status !== "Pending" && o.decidedAt ? o.decidedAt : null;
+        const item = await client.query<{ id: number }>(
+          `INSERT INTO reservations
+             (order_id, product_id, restaurant_id, quantity, ordered_quantity, unit_price, status, pickup_date,
+              picked_up_at, decided_at, change_reason, change_note, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
+          [
+            id, line.product.id, o.restaurant.id, line.quantity, line.ordered, line.product.price, line.status, o.pickupAt,
+            line.status === "Completed" ? (o.pickedUpAt ?? null) : null, decided, line.reason ?? null, line.note ?? null,
+            o.createdAt, o.updatedAt,
+          ],
+        );
+        itemIds.push(item.rows[0]!.id);
+      }
+      const history = async (itemId: number | null, from: string | null, to: string, event: Omit<OrderEvent, "to">) =>
+        client.query(
+          `INSERT INTO order_status_history (order_id, item_id, from_status, to_status, source, actor_id, reason, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [id, itemId, from, to, event.source, event.actorId ?? null, event.reason ?? null, event.at],
+        );
+      await history(null, null, "Pending", { at: o.createdAt, source: "RESTAURANT", actorId: o.restaurant.id });
+      let current = "Pending";
+      for (const event of o.events) {
+        for (const item of event.items ?? []) await history(itemIds[item.index]!, item.from, item.to, event);
+        if (event.to !== current) {
+          await history(null, current, event.to, event);
+          current = event.to;
+        }
+      }
       await notify(
-        client, r.product.store.id, "RESERVATION_CREATED",
-        `New reservation request: ${r.quantity}${r.product.unit} ${r.product.name}`, r.createdAt,
-        { reservationId: id, productId: r.product.id },
+        client, store.id, "ORDER_CREATED",
+        `New order #${code}: ${o.lines.length} ${o.lines.length === 1 ? "item" : "items"}.`, o.createdAt, { orderId: id },
       );
-      counts.reservations++;
-      return id;
+      counts.orders++;
+      counts.items += o.lines.length;
+      return { id, code, itemIds };
     };
     const countStatus = (label: string) => {
-      reservationStatusCount[label] = (reservationStatusCount[label] ?? 0) + 1;
+      orderStatusCount[label] = (orderStatusCount[label] ?? 0) + 1;
     };
-    const accept = async (product: SimProduct, restaurant: Business, reservationId: number, acceptedAt: Date, quantity: number, holds: boolean) => {
-      await notify(client, restaurant.id, "RESERVATION_ACCEPTED", `Your reservation for ${product.name} was accepted.`, acceptedAt, {
-        reservationId,
-        productId: product.id,
-      });
-      if (!holds) return;
-      product.confirmed += quantity;
-      if (product.confirmed >= product.quantity && !product.soldAt) product.soldAt = acceptedAt;
+    // The lines' accepted quantities now cover their products (Confirmed or Completed).
+    const cover = (lines: NewLine[], at: Date) => {
+      for (const line of lines) {
+        if (line.status !== "Confirmed" && line.status !== "Completed") continue;
+        line.product.confirmed += line.quantity;
+        if (line.product.confirmed >= line.product.quantity && !line.product.soldAt) line.product.soldAt = at;
+      }
     };
+    // The store sold the rest in its own shop while deciding (recorded from the order).
+    const shopSaleFromOrder = async (product: SimProduct, amount: number, orderId: number, at: Date) => {
+      await client.query(
+        `INSERT INTO product_shop_sales (product_id, store_id, quantity, created_by, order_id, created_at)
+         VALUES ($1, $2, $3, $2, $4, $5)`,
+        [product.id, product.store.id, amount, orderId, at],
+      );
+      counts.shopSales++;
+      product.held += amount;
+      product.confirmed += amount;
+      if (product.confirmed >= product.quantity && !product.soldAt) product.soldAt = at;
+    };
+
+    const OTHER_NOTES = ["Ambalaža je oštećena.", "Proizvod je zadržan za internu kontrolu.", "Pogrešno upisana cijena."];
 
     let adminCancels = 0;
     let adminProductRemovals = 0;
 
-    // One reservation from the history: decided, picked up or cancelled before today.
-    const reserveInHistory = async (restaurant: Business, day: string) => {
+    // The lines of one order from the history: the first product and sometimes more of the same store.
+    const historyLines = (restaurant: Business, createdAt: Date, day: string) => {
+      const candidates = candidatesFor(restaurant, createdAt, 1, day);
+      if (candidates.length === 0) return null;
+      const first = pick(candidates);
+      const sameStore = shuffle(candidatesFor(restaurant, createdAt, 1, day).filter((p) => p.store === first.store && p !== first));
+      const products = [first, ...(chance(0.4) ? sameStore.slice(0, randomInt(1, 2)) : [])];
+      return products.map((product) => {
+        const available = product.quantity - product.held;
+        const ordered = chance(0.35) ? available : Math.max(1, Math.round(available * between(0.25, 0.7)));
+        return { product, ordered, quantity: ordered, status: "Pending" } as NewLine;
+      });
+    };
+
+    // What the restaurant saw changed at sending, for some orders (a display snapshot).
+    const sendChangesFor = (lines: NewLine[]) => {
+      if (!chance(0.12)) return [];
+      const line = lines[0]!;
+      const product = line.product;
+      return chance(0.5)
+        ? [{
+            product_id: product.id, name: product.name, unit: product.unit, kind: "PRICE_LOWERED",
+            requested: line.ordered, sent: line.ordered, old_price: roundPrice(product.price * 1.2), new_price: product.price,
+          }]
+        : [{
+            product_id: product.id, name: product.name, unit: product.unit, kind: "QUANTITY_REDUCED",
+            requested: line.ordered + randomInt(1, 5), sent: line.ordered, old_price: product.price, new_price: product.price,
+          }];
+    };
+
+    // One order from the history: decided, picked up or cancelled before today.
+    const orderInHistory = async (restaurant: Business, day: string) => {
       const createdAt = at(day, between(9, 14));
       if (createdAt < restaurant.activeFrom) return;
-      const candidates = candidatesFor(restaurant, createdAt, 1, day);
-      if (candidates.length === 0) return;
-      const product = pick(candidates);
-      const available = product.quantity - product.held;
-      const quantity = chance(0.35) ? available : Math.max(1, Math.round(available * between(0.25, 0.7)));
+      const lines = historyLines(restaurant, createdAt, day);
+      if (!lines) return;
+      const store = lines[0]!.product.store;
+      const lastExpiry = lines.map((line) => line.product.expiry).sort()[0]!;
 
       const nextDay = addDays(day, 1);
-      const canUseNextDay = nextDay <= yesterday && nextDay <= product.expiry;
-      let pickupDate = chance(0.6) ? pickupOn(product.store, day, createdAt) : null;
-      if (!pickupDate && canUseNextDay) pickupDate = pickupOn(product.store, nextDay, createdAt);
-      if (!pickupDate) pickupDate = pickupOn(product.store, day, createdAt) ?? addHours(createdAt, 1.5);
-      const pickupDay = localDay(pickupDate);
-      const pickupNextDay = addDays(pickupDay, 1);
+      const canUseNextDay = nextDay <= yesterday && nextDay <= lastExpiry;
+      let pickupAt = chance(0.6) ? pickupOn(store, day, createdAt) : null;
+      if (!pickupAt && canUseNextDay) pickupAt = pickupOn(store, nextDay, createdAt);
+      if (!pickupAt) pickupAt = pickupOn(store, day, createdAt) ?? addHours(createdAt, 1.5);
+      const pickupNextDay = addDays(localDay(pickupAt), 1);
 
       const roll = random();
-      const decidedAt = earlier(addHours(createdAt, between(0.3, 2.5)), addHours(pickupDate, -0.25));
+      const decidedAt = earlier(addHours(createdAt, between(0.3, 2.5)), addHours(pickupAt, -0.25));
       const decided = decidedAt > createdAt ? decidedAt : addHours(createdAt, 0.2);
-      const store = product.store;
+      const acceptPartial = !chance(0.15);
+      const base = { restaurant, lines, createdAt, pickupAt, acceptPartial, sendChanges: sendChangesFor(lines) };
+      const storeEvent = (at: Date, to: string, extra: Partial<OrderEvent> = {}): OrderEvent => ({
+        at, to, source: "STORE", actorId: store.id, ...extra,
+      });
+      const setAll = (status: string) => lines.forEach((line) => (line.status = status));
 
       if (roll < 0.04 && pickupNextDay <= yesterday) {
         // Accepted, never picked up: the store cancels it the next day.
         const missedAt = at(pickupNextDay, between(9, 11));
-        const id = await insertReservation({
-          product, restaurant, quantity, status: "Cancelled", createdAt, pickupDate, pickedUpAt: null, updatedAt: missedAt,
+        setAll("Cancelled");
+        const order = await insertOrder({
+          ...base, status: "Cancelled", decidedAt: decided, updatedAt: missedAt,
+          events: [storeEvent(decided, "Confirmed"), storeEvent(missedAt, "Cancelled")],
         });
-        await accept(product, restaurant, id, decided, quantity, false);
-        await notify(client, restaurant.id, "PICKUP_MISSED", `Your reservation for ${product.name} was cancelled because it was not picked up.`, missedAt, {
-          reservationId: id,
-          productId: product.id,
+        await notify(client, restaurant.id, "ORDER_ACCEPTED", `Your order #${order.code} was accepted.`, decided, { orderId: order.id });
+        await notify(client, restaurant.id, "ORDER_PICKUP_MISSED", `Your order #${order.code} was cancelled because it was not picked up.`, missedAt, {
+          orderId: order.id,
         });
         countStatus("Cancelled (missed pickup)");
       } else if (roll < 0.11) {
-        const id = await insertReservation({
-          product, restaurant, quantity, status: "Rejected", createdAt, pickupDate, pickedUpAt: null, updatedAt: decided,
+        const reason = pick(["NOT_ENOUGH_STOCK", "QUALITY", "OTHER"] as const);
+        const note = reason === "OTHER" ? pick(OTHER_NOTES) : null;
+        lines.forEach((line) => Object.assign(line, { status: "Rejected", reason, note }));
+        const order = await insertOrder({
+          ...base, status: "Rejected", decidedAt: decided, updatedAt: decided, events: [storeEvent(decided, "Rejected")],
         });
-        await notify(client, restaurant.id, "RESERVATION_REJECTED", `Your reservation for ${product.name} was rejected.`, decided, {
-          reservationId: id,
-          productId: product.id,
-        });
+        await notify(client, restaurant.id, "ORDER_REJECTED", `Your order #${order.code} was rejected.`, decided, { orderId: order.id });
         countStatus("Rejected");
       } else if (roll < 0.21) {
         // The restaurant changes its mind: mostly the same day, sometimes the next morning.
         const cancelledAt = chance(0.2) && nextDay <= yesterday ? at(nextDay, between(8, 9.5)) : addHours(createdAt, between(0.2, 1.5));
-        const id = await insertReservation({
-          product, restaurant, quantity, status: "Cancelled", createdAt, pickupDate, pickedUpAt: null, updatedAt: cancelledAt,
+        setAll("Cancelled");
+        const order = await insertOrder({
+          ...base, status: "Cancelled", updatedAt: cancelledAt,
+          events: [{ at: cancelledAt, to: "Cancelled", source: "RESTAURANT", actorId: restaurant.id }],
         });
-        await notify(client, store.id, "RESERVATION_CANCELLED", `A reservation for ${product.name} was cancelled.`, cancelledAt, {
-          reservationId: id,
-          productId: product.id,
+        await notify(client, store.id, "ORDER_CANCELLED", `Order #${order.code} was cancelled by the restaurant.`, cancelledAt, {
+          orderId: order.id,
         });
         countStatus("Cancelled (by restaurant)");
-      } else if (roll < 0.24 && product.expiry === day && nextDay <= today) {
+      } else if (roll < 0.24 && lines.length === 1 && lastExpiry === day && nextDay <= today) {
         // Left pending until the product expired: the midnight job cancels it.
         const expiredAt = at(nextDay, 0.05);
-        const id = await insertReservation({
-          product, restaurant, quantity, status: "Cancelled", createdAt, pickupDate, pickedUpAt: null, updatedAt: expiredAt,
+        setAll("Cancelled");
+        const order = await insertOrder({
+          ...base, status: "Cancelled", updatedAt: expiredAt, events: [{ at: expiredAt, to: "Cancelled", source: "SYSTEM" }],
         });
-        await notify(client, restaurant.id, "RESERVATION_EXPIRED", `Your reservation for ${product.name} was cancelled because the product expired.`, expiredAt, {
-          reservationId: id,
-          productId: product.id,
+        await notify(client, restaurant.id, "ORDER_EXPIRED", `Your order #${order.code} was cancelled because its products expired.`, expiredAt, {
+          orderId: order.id,
         });
-        countStatus("Cancelled (product expired)");
-      } else if (roll > 0.985 && adminCancels < 2 && pickupDate > addHours(decided, 1.5)) {
+        countStatus("Cancelled (products expired)");
+      } else if (roll > 0.985 && adminCancels < 2 && pickupAt > addHours(decided, 1.5)) {
         // Cancelled by an admin after a store reported a problem.
         adminCancels++;
         const admin = anyAdmin();
         const cancelledAt = addHours(decided, 1);
-        const id = await insertReservation({
-          product, restaurant, quantity, status: "Cancelled", createdAt, pickupDate, pickedUpAt: null, updatedAt: cancelledAt,
-        });
-        await accept(product, restaurant, id, decided, quantity, false);
         const reason = "Prodavnica je prijavila da proizvod nije ispravan za prodaju.";
-        await logAction(client, admin, "CANCEL_RESERVATION", cancelledAt, { reservationId: id, userId: restaurant.id, reason });
+        setAll("Cancelled");
+        const order = await insertOrder({
+          ...base, status: "Cancelled", decidedAt: decided, updatedAt: cancelledAt,
+          events: [
+            storeEvent(decided, "Confirmed"),
+            { at: cancelledAt, to: "Cancelled", source: "ADMIN", actorId: admin.id, reason },
+          ],
+        });
+        await notify(client, restaurant.id, "ORDER_ACCEPTED", `Your order #${order.code} was accepted.`, decided, { orderId: order.id });
+        await logAction(client, admin, "CANCEL_ORDER", cancelledAt, {
+          orderId: order.id, reservationId: order.itemIds[0]!, productId: lines[0]!.product.id, userId: restaurant.id, reason,
+        });
         for (const userId of [restaurant.id, store.id]) {
-          await notify(client, userId, "RESERVATION_CANCELLED_BY_ADMIN", `Reservation cancelled by the platform administrator: ${product.name}`, cancelledAt, {
-            reservationId: id,
-            productId: product.id,
+          await notify(client, userId, "ORDER_CANCELLED_BY_ADMIN", `Order #${order.code} was cancelled by the platform administrator.`, cancelledAt, {
+            orderId: order.id,
             details: reason,
           });
         }
         countStatus("Cancelled (by admin)");
       } else {
-        const pickedUpAt = addHours(pickupDate, between(-0.25, 0.5));
-        const id = await insertReservation({
-          product, restaurant, quantity, status: "Completed", createdAt, pickupDate, pickedUpAt, updatedAt: pickedUpAt,
+        // Picked up; some orders were accepted only partly first (a smaller quantity with the
+        // difference sold in the shop, a rejected item).
+        const pickedUpAt = addHours(pickupAt, between(-0.25, 0.5));
+        const partly = acceptPartial && roll < 0.36 && (lines.length > 1 || lines[0]!.ordered >= 2);
+        const changed: { index: number; from: string; to: string }[] = [];
+        const sales: { product: SimProduct; amount: number }[] = [];
+        // Partly: the first line accepted with less (when there is more than 1 of it), the second
+        // rejected; any other line accepted as it is. A one-line order always has 2 or more.
+        lines.forEach((line, index) => {
+          line.status = "Completed";
+          if (partly && index === 0 && line.ordered >= 2) {
+            line.quantity = Math.max(1, Math.round(line.ordered * between(0.5, 0.85)));
+            line.reason = "NOT_ENOUGH_STOCK";
+            if (chance(0.7)) sales.push({ product: line.product, amount: line.ordered - line.quantity });
+          } else if (partly && index === 1) {
+            line.status = "Rejected";
+            line.reason = chance(0.5) ? "QUALITY" : "OTHER";
+            line.note = line.reason === "OTHER" ? pick(OTHER_NOTES) : null;
+          }
+          changed.push({ index, from: "Pending", to: line.status === "Rejected" ? "Rejected" : "Confirmed" });
         });
-        product.held += quantity;
-        await accept(product, restaurant, id, decided, quantity, true);
-        await notify(client, restaurant.id, "RESERVATION_COMPLETED", `Pickup of ${product.name} confirmed.`, pickedUpAt, {
-          reservationId: id,
-          productId: product.id,
+        const order = await insertOrder({
+          ...base, status: "Completed", decidedAt: decided, pickedUpAt, updatedAt: pickedUpAt,
+          events: [storeEvent(decided, "Confirmed", { items: partly ? changed : [] }), storeEvent(pickedUpAt, "Completed")],
         });
-        countStatus("Completed");
+        for (const line of lines) if (line.status === "Completed") line.product.held += line.quantity;
+        cover(lines, decided);
+        for (const sale of sales) await shopSaleFromOrder(sale.product, sale.amount, order.id, decided);
+        await notify(
+          client, restaurant.id, partly ? "ORDER_PARTIALLY_ACCEPTED" : "ORDER_ACCEPTED",
+          `Your order #${order.code} was ${partly ? "partly accepted" : "accepted"}.`, decided, { orderId: order.id },
+        );
+        await notify(client, restaurant.id, "ORDER_COMPLETED", `Pickup of order #${order.code} confirmed.`, pickedUpAt, {
+          orderId: order.id,
+        });
+        countStatus(partly ? "Completed (partly accepted)" : "Completed");
       }
     };
 
@@ -858,8 +1026,8 @@ async function seed() {
       for (const restaurant of restaurants) {
         if (restaurant === blocked && day >= blockedFrom && day < blockedUntil) continue;
         if (!chance(restaurant.data.activity * growth)) continue;
-        await reserveInHistory(restaurant, day);
-        if (chance(0.25)) await reserveInHistory(restaurant, day);
+        await orderInHistory(restaurant, day);
+        if (chance(0.25)) await orderInHistory(restaurant, day);
       }
 
       for (const donor of businesses) {
@@ -890,7 +1058,7 @@ async function seed() {
     }
 
     // ----- Today: current stock, open requests and upcoming pickups -----
-    console.log("Creating current offer and open reservations...");
+    console.log("Creating current offer and open orders...");
     for (const store of stores) {
       for (let i = 0; i < store.store!.currentStock; i++) {
         let postedAt = at(addDays(today, -randomInt(0, 3)), between(7, 11));
@@ -928,34 +1096,68 @@ async function seed() {
       return restaurants[0]!;
     };
 
-    const openReservation = async (status: "Pending" | "Confirmed") => {
+    // An open one-item order: Pending (some with partial fulfilment off) or Confirmed.
+    const openOrder = async (status: "Pending" | "Confirmed") => {
       const restaurant = weightedRestaurant();
       const createdAt = recentTime(status === "Pending" ? 36 : 72);
       const candidates = candidatesFor(restaurant, createdAt, 2, today);
       if (candidates.length === 0) return false;
       const product = pick(candidates);
-      const pickupDate = upcomingPickup(product.store, product.expiry, status === "Pending" ? 2 : 3);
-      if (!pickupDate) return false;
+      const pickupAt = upcomingPickup(product.store, product.expiry, status === "Pending" ? 2 : 3);
+      if (!pickupAt) return false;
       // Always leaves some stock, so the product stays on the marketplace.
       const available = product.quantity - product.held;
       const quantity = Math.max(1, Math.min(available - 1, Math.round(available * between(0.2, 0.5))));
       const acceptedAt = earlier(addHours(createdAt, between(0.3, 3)), addHours(now, -0.1));
-      const id = await insertReservation({
-        product, restaurant, quantity, status, createdAt, pickupDate, pickedUpAt: null,
+      const lines: NewLine[] = [{ product, ordered: quantity, quantity, status }];
+      const order = await insertOrder({
+        restaurant, lines, status, createdAt, pickupAt, acceptPartial: status === "Confirmed" || !chance(0.25),
+        sendChanges: sendChangesFor(lines),
+        decidedAt: status === "Confirmed" ? acceptedAt : null,
         updatedAt: status === "Confirmed" ? acceptedAt : createdAt,
+        events: status === "Confirmed" ? [{ at: acceptedAt, to: "Confirmed", source: "STORE", actorId: product.store.id }] : [],
       });
       product.held += quantity;
-      if (status === "Confirmed") await accept(product, restaurant, id, acceptedAt, quantity, true);
+      if (status === "Confirmed") {
+        cover(lines, acceptedAt);
+        await notify(client, restaurant.id, "ORDER_ACCEPTED", `Your order #${order.code} was accepted.`, acceptedAt, { orderId: order.id });
+      }
       countStatus(status);
       return true;
     };
     for (const [status, target] of [["Pending", PENDING_NOW], ["Confirmed", CONFIRMED_NOW]] as const) {
       let created = 0;
       for (let attempt = 0; created < target && attempt < target * 10; attempt++) {
-        if (await openReservation(status)) created++;
+        if (await openOrder(status)) created++;
       }
     }
 
+    // Late pickups: accepted orders whose pickup day was yesterday and three days ago, still
+    // waiting for the store to mark them picked up or cancel them.
+    for (const daysAgo of [1, 3]) {
+      const pickupDay = addDays(today, -daysAgo);
+      for (let attempt = 0; attempt < 30; attempt++) {
+        const restaurant = weightedRestaurant();
+        const createdAt = at(addDays(pickupDay, -1), between(10, 14));
+        const candidates = candidatesFor(restaurant, createdAt, 2, pickupDay);
+        if (candidates.length === 0) continue;
+        const product = pick(candidates);
+        const pickupAt = pickupOn(product.store, pickupDay, createdAt);
+        if (!pickupAt) continue;
+        const quantity = Math.max(1, Math.round((product.quantity - product.held) * between(0.2, 0.4)));
+        const acceptedAt = addHours(createdAt, between(0.5, 2));
+        const lines: NewLine[] = [{ product, ordered: quantity, quantity, status: "Confirmed" }];
+        const order = await insertOrder({
+          restaurant, lines, status: "Confirmed", createdAt, pickupAt, acceptPartial: true, decidedAt: acceptedAt,
+          updatedAt: acceptedAt, events: [{ at: acceptedAt, to: "Confirmed", source: "STORE", actorId: product.store.id }],
+        });
+        product.held += quantity;
+        cover(lines, acceptedAt);
+        await notify(client, restaurant.id, "ORDER_ACCEPTED", `Your order #${order.code} was accepted.`, acceptedAt, { orderId: order.id });
+        countStatus("Confirmed (late pickup)");
+        break;
+      }
+    }
     // Current donations: product lines from stores, tonight's meals from restaurants.
     for (const donor of shuffle(stores).slice(0, 8)) {
       const createdAt = recentTime(40);
@@ -988,7 +1190,7 @@ async function seed() {
 
     // ----- Sold in shop -----
     // Stores record part of some current offers as sold at their own till ("Sold in shop"), which
-    // only lowers the free quantity; one product is sold out that way (no pending reservation on it).
+    // only lowers the free quantity; one product is sold out that way (no pending order on it).
     let shopSellOut = false;
     const shopCandidates = shuffle(
       products.filter((p) => !p.removedAt && !p.soldAt && !p.frozen && p.expiry >= today && p.quantity - p.held >= 4),
@@ -1084,7 +1286,7 @@ async function seed() {
     await logAction(client, mainAdmin, "UNBLOCK_USER", at(blockedUntil, 10), { userId: blocked.id });
 
     await client.query("COMMIT");
-    await printSummary(stores, restaurants, reservationStatusCount);
+    await printSummary(stores, restaurants, orderStatusCount);
   } catch (error) {
     await client.query("ROLLBACK");
     console.error("Error while seeding:", error);
@@ -1095,7 +1297,7 @@ async function seed() {
   }
 }
 
-async function printSummary(stores: Business[], restaurants: Business[], reservationStatusCount: Record<string, number>) {
+async function printSummary(stores: Business[], restaurants: Business[], orderStatusCount: Record<string, number>) {
   const byStatus = async (sql: string) =>
     (await pool.query<{ label: string; count: string }>(sql)).rows.map((row) => `${row.label} ${row.count}`).join(", ");
 
@@ -1103,7 +1305,7 @@ async function printSummary(stores: Business[], restaurants: Business[], reserva
   console.log(`Users: ${stores.length} stores, ${restaurants.length} restaurants, ${ADMINS.length} admins.`);
   console.log(`Sold in shop: ${counts.shopSales} entries.`);
   console.log(`Products: ${counts.products} (${await byStatus("SELECT status AS label, COUNT(*) AS count FROM products GROUP BY status ORDER BY status")}).`);
-  console.log(`Reservations: ${counts.reservations} (${Object.entries(reservationStatusCount).map(([label, count]) => `${label} ${count}`).join(", ")}).`);
+  console.log(`Orders: ${counts.orders} with ${counts.items} items (${Object.entries(orderStatusCount).map(([label, count]) => `${label} ${count}`).join(", ")}).`);
   console.log(`Donations: ${counts.donations} (${await byStatus(
     "SELECT donation_type || ' ' || status AS label, COUNT(*) AS count FROM donation_offers GROUP BY donation_type, status ORDER BY 1",
   )}).`);
