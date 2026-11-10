@@ -188,7 +188,7 @@
     "availableQuantity": "Available Quantity",
     "totalQuantity": "Total Quantity",
     "daysUntilExpiry": "Days Until Expiry",
-    "reserveButton": "Reserve"
+    "reserveButton": "Order"
   },
   "myReservations": {
     "placeholderMax": "Maximum",
