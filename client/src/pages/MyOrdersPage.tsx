@@ -1,26 +1,23 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import toast from "react-hot-toast";
-import axios from "axios";
 import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
-  CalendarCheck,
   CalendarClock,
   CalendarRange,
   CircleDot,
+  ReceiptText,
   History,
   Search,
   SearchX,
   ShoppingBasket,
   Store,
   X,
-  XCircle,
 } from "lucide-react";
 import api from "../api/axios.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
-import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.js";
-import ReservationHistoryRow from "../components/reservation/ReservationHistoryRow.js";
+import OrderCard from "../components/order/OrderCard.js";
+import OrderHistoryRow from "../components/order/OrderHistoryRow.js";
 import ProductPageHeader, { CountPill } from "../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../components/product/FilterBar.js";
 import SortSelect, {
@@ -30,20 +27,20 @@ import SortSelect, {
 } from "../components/product/SortSelect.js";
 import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
-import ConfirmModal from "../components/common/ConfirmModal.js";
 import { inputStyle } from "../components/form/FormField.js";
 import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { usePagedLimit } from "../hooks/usePagedLimit.js";
 import { CARD_PAGE_SIZE, HISTORY_PAGE_SIZE } from "../utils/pagination.js";
 import { groupByDay } from "../utils/dayGroups.js";
-import type { Reservation } from "../types/index.js";
+import { useCancelOrder } from "../hooks/useCancelOrder.js";
+import type { Order } from "../types/index.js";
 
 type Tab = "active" | "history";
-type Status = Reservation["status"];
+type Status = Order["status"];
 
 const STATUSES: Status[] = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
-// The statuses a reservation on the Active tab can have.
+// The statuses an order on the Active tab can have.
 const ACTIVE_STATUSES: Status[] = ["Pending", "Confirmed"];
 const PERIODS = [
   { value: "today", label: "reservations.period.today" },
@@ -51,13 +48,14 @@ const PERIODS = [
   { value: "month", label: "reservations.period.thisMonth" },
 ];
 
-// The tab counts: every reservation (History) and every active one (Active), without filters.
-interface ReservationSummary {
+// The tab counts: every order (History) and every active one (Active), without filters.
+interface OrderSummary {
   total: number;
   active: number;
 }
 
-function MyReservationsPage() {
+// The restaurant's orders: Active (waiting for the store or for the pickup) and History.
+function MyOrdersPage() {
   const [tab, setTab] = useState<Tab>("active");
   // Each tab has its own filters, so a tab switch resets them.
   const [name, setName] = useState("");
@@ -67,10 +65,7 @@ function MyReservationsPage() {
   const [status, setStatus] = useState("");
   // Only on Active; History is always newest first.
   const [sort, setSort] = useState<MyReservationsSort>("newest");
-  const [summary, setSummary] = useState<ReservationSummary | null>(null);
-  const [cancellingReservation, setCancellingReservation] =
-    useState<Reservation | null>(null);
-  const [cancelling, setCancelling] = useState(false);
+  const [summary, setSummary] = useState<OrderSummary | null>(null);
   const { t } = useTranslation();
 
   const isHistory = tab === "history";
@@ -85,15 +80,15 @@ function MyReservationsPage() {
     JSON.stringify(query),
   );
   const {
-    data: reservationsList,
+    data: orders,
     total,
     error,
     loading,
     fetching,
     refetch,
-  } = useFetch<Reservation>(
-    "/reservations/mine",
-    "reservations",
+  } = useFetch<Order>(
+    "/orders/mine",
+    "orders",
     { ...query, limit },
     // Each tab is its own list: a switch drops the previous tab's list and shows the loading state.
     { resetKey: tab },
@@ -101,10 +96,10 @@ function MyReservationsPage() {
 
   const fetchSummary = useCallback(async () => {
     try {
-      const response = await api.get("/reservations/mine/summary");
+      const response = await api.get("/orders/mine/summary");
       setSummary(response.data.summary);
     } catch (err) {
-      console.error("Error fetching the reservation summary:", err);
+      console.error("Error fetching the order summary:", err);
     }
   }, []);
 
@@ -125,28 +120,13 @@ function MyReservationsPage() {
     setTab(next);
   };
 
-  const handleCancellation = async (reservationId: number) => {
-    if (cancelling) return;
-    setCancelling(true);
-    try {
-      const response = await api.patch(`/reservations/${reservationId}/cancel`);
-      toast.success(response.data.message);
-      setCancellingReservation(null);
-      refetch();
-      fetchSummary();
-    } catch (err) {
-      console.error("Error canceling reservation:", err);
-      const message = axios.isAxiosError(err)
-        ? err.response?.data?.error
-        : null;
-      toast.error(message || t("reservations.actionError"));
-    } finally {
-      setCancelling(false);
-    }
-  };
+  const cancelOrder = useCancelOrder(() => {
+    refetch();
+    fetchSummary();
+  });
 
   const hasActiveFilters = Boolean(name || businessName || status || period);
-  const totalCount = total ?? reservationsList.length;
+  const totalCount = total ?? orders.length;
 
   const tabs: { key: Tab; label: string; icon: typeof CalendarClock; count?: number }[] = [
     { key: "active", label: t("reservations.tabs.active"), icon: CalendarClock, ...(summary && { count: summary.active }) },
@@ -156,8 +136,8 @@ function MyReservationsPage() {
   const noResults = (
     <EmptyState
       icon={SearchX}
-      title={t("reservations.noResultsTitle")}
-      subtitle={t("reservations.noResultsSubtitle")}
+      title={t("orders.noResultsTitle")}
+      subtitle={t("orders.noResultsSubtitle")}
     />
   );
 
@@ -165,17 +145,17 @@ function MyReservationsPage() {
   let list;
   if (loading) {
     list = <LoadingSpinner />;
-  } else if (error && reservationsList.length === 0) {
+  } else if (error && orders.length === 0) {
     list = <LoadErrorState />;
-  } else if (reservationsList.length === 0) {
+  } else if (orders.length === 0) {
     if (hasActiveFilters) {
       list = noResults;
     } else if (isHistory) {
       list = (
         <EmptyState
-          icon={CalendarCheck}
-          title={t("reservations.noCreatedResTitle")}
-          subtitle={t("reservations.noCreatedResSubtitle")}
+          icon={ReceiptText}
+          title={t("orders.historyEmptyTitle")}
+          subtitle={t("orders.historyEmptySubtitle")}
           action={{ to: "/browse-products", label: t("dashboard.browseOffers") }}
         />
       );
@@ -183,21 +163,21 @@ function MyReservationsPage() {
       list = (
         <EmptyState
           icon={CalendarClock}
-          title={t("reservations.emptyActiveTitle")}
-          subtitle={t("reservations.emptyActiveSubtitle")}
+          title={t("orders.activeEmptyTitle")}
+          subtitle={t("orders.activeEmptySubtitle")}
           action={{ to: "/browse-products", label: t("dashboard.browseOffers") }}
           secondaryAction={{ label: t("reservations.showHistory"), onClick: () => switchTab("history") }}
         />
       );
     }
   } else if (isHistory) {
-    list = groupByDay(reservationsList, (r) => r.created_at, t).map((group) => (
+    list = groupByDay(orders, (r) => r.created_at, t).map((group) => (
       <section key={group.key}>
         {/* A day may continue on the next page, so the heading has no count. */}
         <h2 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{group.title}</h2>
         <div className="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-          {group.items.map((reservation) => (
-            <ReservationHistoryRow key={reservation.id} reservation={reservation} />
+          {group.items.map((order) => (
+            <OrderHistoryRow key={order.id} order={order} />
           ))}
         </div>
       </section>
@@ -205,18 +185,18 @@ function MyReservationsPage() {
   } else {
     list = (
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {reservationsList.map((reservation) => (
-          <DashboardReservationCard
-            key={reservation.id}
-            reservation={reservation}
+        {orders.map((order) => (
+          <OrderCard
+            key={order.id}
+            order={order}
             partyLabel={t("reservations.seller")}
             showCreatedAt
             linkStore
             actions={
-              reservation.status === "Pending" ? (
+              order.status === "Pending" ? (
                 <>
                   <Link
-                    to={`/reservation/${reservation.id}`}
+                    to={`/orders/${order.id}`}
                     className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-orange-50 py-2.5 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
                   >
                     {t("dashboard.detailsButton")}
@@ -224,7 +204,9 @@ function MyReservationsPage() {
                   </Link>
                   <button
                     type="button"
-                    onClick={() => setCancellingReservation(reservation)}
+                    onClick={() =>
+                      cancelOrder.request({ id: order.id, code: order.code, storeName: order.business_name ?? "" })
+                    }
                     className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                   >
                     <X className="h-4 w-4" />
@@ -239,14 +221,14 @@ function MyReservationsPage() {
     );
   }
 
-  const countText = t("reservations.count", { count: totalCount });
+  const countText = t("orders.count", { count: totalCount });
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
       <ProductPageHeader
-        title={t("reservations.title")}
-        subtitle={t("reservations.restaurantSubtitle")}
-        icon={CalendarCheck}
+        title={t("orders.myTitle")}
+        subtitle={t("orders.mySubtitle")}
+        icon={ReceiptText}
         action={{ to: "/browse-products", label: t("dashboard.browseOffers"), icon: ShoppingBasket }}
       />
 
@@ -287,7 +269,7 @@ function MyReservationsPage() {
           <FilterField icon={Search}>
             <input
               type="text"
-              placeholder={t("filters.searchByName")}
+              placeholder={t("orders.searchProduct")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               className={inputStyle}
@@ -323,12 +305,12 @@ function MyReservationsPage() {
         )}
         <FilterField icon={CircleDot}>
           <select
-            aria-label={t("filters.selectResStatus")}
+            aria-label={t("orders.selectStatus")}
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             className={inputStyle}
           >
-            <option value="">{t("filters.selectResStatus")}</option>
+            <option value="">{t("orders.selectStatus")}</option>
             {(isHistory ? STATUSES : ACTIVE_STATUSES).map((value) => (
               <option key={value} value={value}>
                 {t(`reservationStatus.${value}`)}
@@ -351,31 +333,16 @@ function MyReservationsPage() {
 
       {!loading && (
         <LoadMore
-          shown={reservationsList.length}
+          shown={orders.length}
           total={totalCount}
           fetching={fetching}
           onLoadMore={loadMore}
         />
       )}
 
-      {cancellingReservation && (
-        <ConfirmModal
-          variant="danger"
-          icon={XCircle}
-          title={t("reservations.cancelConfirmation")}
-          message={t("reservations.cancelConfirmationText", {
-            product: cancellingReservation.product_name,
-            business: cancellingReservation.business_name,
-          })}
-          confirmLabel={t("reservations.cancelButton")}
-          cancelLabel={t("reservations.keepButton")}
-          busy={cancelling}
-          onConfirm={() => handleCancellation(cancellingReservation.id)}
-          onClose={() => setCancellingReservation(null)}
-        />
-      )}
+      {cancelOrder.modal}
     </div>
   );
 }
 
-export default MyReservationsPage;
+export default MyOrdersPage;

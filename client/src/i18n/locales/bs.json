@@ -31,11 +31,12 @@
     "companyCredits": "Krediti i pretplate",
     "companyReports": "Izvještaji",
     "menu": "Meni",
-    "closeMenu": "Zatvori meni"
+    "closeMenu": "Zatvori meni",
+    "orders": "Narudžbe",
+    "myOrders": "Moje narudžbe"
   },
   "breadcrumbs": {
     "label": "Putanja",
-    "reservation": "Rezervacija #{{id}}",
     "edit": "Uredi"
   },
   "header": {
@@ -56,7 +57,8 @@
     "browseProducts": "Ponude",
     "reservations": "Rezervacije",
     "pickups": "Preuzimanja",
-    "more": "Više"
+    "more": "Više",
+    "orders": "Narudžbe"
   },
   "auth": {
     "welcomeBack": "Dobrodošli nazad",
@@ -178,7 +180,6 @@
     "deleteConfirmationText": "Proizvod \"{{name}}\" će biti uklonjen iz ponude.",
     "cancelButton": "Otkaži",
     "confirmDeleteButton": "Obriši",
-    "reservationCreated": "Rezervacija uspješno kreirana.",
     "productNotFoundTitle": "Proizvod nije pronađen.",
     "notFoundSubtitle": "Proizvod ne postoji ili je uklonjen iz ponude.",
     "backToList": "Nazad na proizvode",
@@ -193,15 +194,13 @@
     "reserveButton": "Rezerviši"
   },
   "myReservations": {
-    "reservePopupTitle": "Rezerviši",
     "placeholderMax": "Maksimalno",
     "pickupDate": "Datum preuzimanja",
     "pickupTime": "Vrijeme preuzimanja",
     "timePlaceholder": "HH:MM",
     "invalidTime": "Unesite vrijeme u formatu HH:MM (00:00–23:59).",
     "pickupDateOutOfRange": "Datum mora biti između danas i datuma isteka.",
-    "cancelButton": "Otkaži",
-    "confirmButton": "Potvrdi"
+    "cancelButton": "Otkaži"
   },
   "reservations": {
     "title": "Moje Rezervacije",
@@ -242,8 +241,8 @@
       "history": "Historija"
     },
     "period": {
-      "all": "Rezervisano: sve",
-      "today": "Rezervisano danas",
+      "all": "Poslano: sve",
+      "today": "Poslano danas",
       "last7Days": "Zadnjih 7 dana",
       "thisMonth": "Ovaj mjesec"
     },
@@ -420,9 +419,9 @@
     "successfullyReservations": "Uspješno isporučeno (preuzeto)",
     "mineReservations": "Vaše rezervacije ovdje (preuzete)",
     "productsTab": "Proizvodi",
-    "reservationsTab": "Moje rezervacije",
+    "reservationsTab": "Moje narudžbe",
     "storeNoProducts": "Ova prodavnica trenutno nema dostupnih proizvoda.",
-    "restaurantNoRes": "Nemate rezervacija kod ove prodavnice.",
+    "restaurantNoRes": "Nemate narudžbi kod ove prodavnice.",
     "subtitle": "Pronađite prodavnice u svojoj blizini i pogledajte njihovu ponudu.",
     "count_one": "{{count}} prodavnica",
     "count_few": "{{count}} prodavnice",
@@ -443,7 +442,7 @@
     "storeNotFoundSubtitle": "Prodavnica ne postoji ili više nije dostupna.",
     "storeNoProductsSubtitle": "Provjerite ponovo kasnije ili pogledajte ponudu drugih prodavnica.",
     "browseOtherOffers": "Pogledaj sve ponude",
-    "restaurantNoResSubtitle": "Kada rezervišete proizvod iz ove prodavnice, rezervacija će se pojaviti ovdje.",
+    "restaurantNoResSubtitle": "Kada naručite proizvod iz ove prodavnice, narudžba će se pojaviti ovdje.",
     "noStatusResultsSubtitle": "Nemate rezervacija s ovim statusom kod ove prodavnice.",
     "allStatuses": "Sve",
     "chainLabel": "dio {{company}}"
@@ -575,7 +574,11 @@
       "novembar",
       "decembar"
     ],
-    "dateFormat": "{{weekday}}, {{day}}. {{month}}"
+    "dateFormat": "{{weekday}}, {{day}}. {{month}}",
+    "myOrdersTitle": "Moje narudžbe",
+    "recentOrdersTitle": "Nove narudžbe",
+    "viewAllOrders": "Vidi sve narudžbe",
+    "noOrders": "Još nema narudžbi."
   },
   "productStatus": {
     "Available": "Dostupno",
@@ -722,20 +725,20 @@
     "cancelOverdueButton": "Otkaži",
     "details": "Detalji",
     "completeConfirmation": "Potvrditi preuzimanje?",
-    "completeConfirmationText": "{{business}} je preuzeo {{quantity}} {{unit}} \"{{product}}\". Rezervacija će biti označena kao preuzeta.",
+    "completeConfirmationText": "{{business}} je preuzeo narudžbu {{code}} ({{items}}, {{total}}). Narudžba će biti označena kao preuzeta.",
     "cancelOverdueConfirmation": "Otkazati zakašnjelo preuzimanje?",
-    "cancelOverdueConfirmationText": "{{business}} nije preuzeo \"{{product}}\" na vrijeme. Rezervacija će biti otkazana, a količina vraćena u ponudu.",
+    "cancelOverdueConfirmationText": "{{business}} nije preuzeo narudžbu {{code}} na vrijeme. Narudžba će biti otkazana, a proizvodi vraćeni u ponudu.",
     "keepButton": "Odustani",
     "confirmCompleteButton": "Potvrdi preuzimanje",
-    "confirmCancelButton": "Otkaži rezervaciju",
+    "confirmCancelButton": "Otkaži narudžbu",
     "empty": {
       "todayTitle": "Danas nema preuzimanja",
-      "todayStoreSubtitle": "Prihvaćene rezervacije s preuzimanjem danas pojavit će se ovdje.",
-      "todayRestaurantSubtitle": "Kada prodavnica prihvati rezervaciju s preuzimanjem danas, vidjet ćete je ovdje.",
+      "todayStoreSubtitle": "Prihvaćene narudžbe s preuzimanjem danas pojavit će se ovdje.",
+      "todayRestaurantSubtitle": "Kada prodavnica prihvati narudžbu s preuzimanjem danas, vidjet ćete je ovdje.",
       "upcomingTitle": "Nema nadolazećih preuzimanja",
-      "upcomingSubtitle": "Prihvaćene rezervacije s budućim datumom preuzimanja pojavit će se ovdje.",
+      "upcomingSubtitle": "Prihvaćene narudžbe s budućim datumom preuzimanja pojavit će se ovdje.",
       "completedTitle": "Još nema preuzete robe",
-      "completedSubtitle": "Kada rezervacija bude preuzeta, ovdje ćete vidjeti historiju.",
+      "completedSubtitle": "Kada narudžba bude preuzeta, ovdje ćete vidjeti historiju.",
       "noResultsTitle": "Nema rezultata",
       "noResultsSubtitle": "Nijedno preuzimanje ne odgovara pretrazi."
     }
@@ -1853,5 +1856,137 @@
     "stockLabel": "prodano u radnji",
     "historyTitle": "Prodano u vašoj radnji",
     "historyTotal": "Ukupno {{amount}} {{unit}}. Restorani vide samo manju dostupnu količinu."
+  },
+  "orders": {
+    "title": "Narudžba {{code}}",
+    "myTitle": "Moje narudžbe",
+    "mySubtitle": "Pratite svoje narudžbe, odgovore prodavnica i termine preuzimanja.",
+    "storeTitle": "Narudžbe",
+    "storeSubtitle": "Odgovorite na nove narudžbe restorana i pratite prihvaćene.",
+    "count_one": "{{count}} narudžba",
+    "count_few": "{{count}} narudžbe",
+    "count_other": "{{count}} narudžbi",
+    "itemCount_one": "{{count}} stavka",
+    "itemCount_few": "{{count}} stavke",
+    "itemCount_other": "{{count}} stavki",
+    "moreItems_one": "{{first}} + još {{count}}",
+    "moreItems_few": "{{first}} + još {{count}}",
+    "moreItems_other": "{{first}} + još {{count}}",
+    "items": "Stavke",
+    "total": "Ukupno",
+    "sentAt": "Poslano",
+    "pickup": "Preuzimanje",
+    "partialBadge": "{{accepted}}/{{count}} prihvaćeno",
+    "partiallyAccepted": "Djelimično prihvaćena",
+    "partialSetting": "Djelimična isporuka",
+    "partialOn": "Prihvaćena (prodavnica može prihvatiti manje)",
+    "partialOff": "Samo cijela narudžba",
+    "sendChangesTitle": "Promjene pri slanju",
+    "searchProduct": "Pretraga po proizvodu",
+    "searchCode": "Kod narudžbe",
+    "selectStatus": "Status narudžbe",
+    "noResultsTitle": "Nema rezultata",
+    "noResultsSubtitle": "Pokušajte promijeniti ili ukloniti filtere.",
+    "storeEmptyTitle": "Još nemate narudžbi",
+    "storeEmptySubtitle": "Kada restoran naruči vaše proizvode, narudžba će se pojaviti ovdje.",
+    "activeEmptyTitle": "Nemate aktivnih narudžbi",
+    "activeEmptySubtitle": "Nema narudžbi na čekanju ni prihvaćenih. Starije narudžbe su u historiji.",
+    "historyEmptyTitle": "Još niste poslali nijednu narudžbu",
+    "historyEmptySubtitle": "Kada pošaljete narudžbu, ona će se pojaviti ovdje.",
+    "notFoundTitle": "Narudžba nije pronađena.",
+    "notFoundSubtitle": "Narudžba ne postoji ili nemate pristup njoj.",
+    "backToList": "Nazad na narudžbe",
+    "decideButton": "Odluči",
+    "cancelButton": "Otkaži narudžbu",
+    "cancelConfirmation": "Otkazati ovu narudžbu?",
+    "cancelConfirmationText": "Narudžba {{code}} kod {{business}} će biti otkazana.",
+    "table": {
+      "product": "Proizvod",
+      "quantity": "Količina",
+      "price": "Cijena",
+      "status": "Status",
+      "total": "Iznos"
+    },
+    "reasons": {
+      "NOT_ENOUGH_STOCK": "Nema dovoljno na stanju",
+      "QUALITY": "Kvalitet",
+      "OTHER": "Drugo"
+    },
+    "reasonLabels": {
+      "NOT_ENOUGH_STOCK": "Nema dovoljno na stanju",
+      "QUALITY": "Kvalitet",
+      "OTHER": "Drugo"
+    },
+    "sendChanges": {
+      "QUANTITY_REDUCED": "{{product}}: {{sent}} umjesto {{requested}}, nema više na stanju",
+      "PRICE_LOWERED": "{{product}}: nova cijena {{newPrice}} umjesto {{oldPrice}}",
+      "NOT_SENT_SOLD_OUT": "{{product}} nije poslan: rasprodano",
+      "NOT_SENT_PRICE_RAISED": "{{product}} nije poslan: cijena je porasla na {{newPrice}}"
+    },
+    "history": {
+      "title": "Historija",
+      "created": "Narudžbu je poslao {{who}}",
+      "order": "Narudžba: {{status}} ({{who}})",
+      "item": "{{product}}: {{status}} ({{who}})",
+      "sources": {
+        "RESTAURANT": "restoran",
+        "STORE": "prodavnica",
+        "ADMIN": "administrator",
+        "SYSTEM": "sistem"
+      }
+    },
+    "decision": {
+      "title": "Odluka o narudžbi {{code}}",
+      "rejectTitle": "Odbij narudžbu {{code}}",
+      "actions": {
+        "ACCEPT": "Prihvati sve",
+        "ACCEPT_LESS": "Prihvati manje",
+        "REJECT": "Odbij"
+      },
+      "acceptedQuantity": "Prihvaćena količina: {{product}}",
+      "lessThan": "Manje od {{amount}}",
+      "reason": "Razlog",
+      "chooseReason": "Odaberite razlog",
+      "note": "Opis razloga",
+      "notePlaceholder": "Opišite razlog (najviše 300 znakova)",
+      "recordSale": "Upiši razliku kao prodano u radnji",
+      "recordSaleOf": "Upiši {{product}} kao prodano u radnji",
+      "saleQuantity": "Prodano u radnji",
+      "wholeOnly": "Restoran prihvata samo cijelu narudžbu.",
+      "rejectText": "Narudžba {{code}} od {{restaurant}} će biti odbijena. Restoran će dobiti obavijest s razlogom.",
+      "total": "Iznos: {{total}}",
+      "newTotal": "Novi iznos: {{total}} umjesto {{ordered}}",
+      "summaryAll_one": "Prihvatate cijelu narudžbu ({{count}} stavka) · {{total}}",
+      "summaryAll_few": "Prihvatate cijelu narudžbu ({{count}} stavke) · {{total}}",
+      "summaryAll_other": "Prihvatate cijelu narudžbu ({{count}} stavki) · {{total}}",
+      "summary": "Prihvatate {{accepted}}, manje količine {{reduced}}, odbijate {{rejected}} · {{total}}",
+      "summaryReject": "Odbijate cijelu narudžbu {{code}}.",
+      "irreversible": "Restoran će dobiti obavijest. Odluka se ne može poništiti.",
+      "rejectOrder": "Odbij narudžbu",
+      "confirmDecision": "Potvrdi odluku",
+      "acceptAll": "Prihvati sve",
+      "back": "Nazad",
+      "save": "Sačuvaj odluku",
+      "saveReject": "Odbij narudžbu",
+      "errors": {
+        "reason": "Odaberite razlog.",
+        "note": "Opišite razlog (najviše 300 znakova).",
+        "quantity": "Prihvaćena količina mora biti veća od nule i manja od naručene.",
+        "sale": "Količina prodana u radnji nije ispravna."
+      }
+    },
+    "send": {
+      "title": "Naruči",
+      "submit": "Pošalji narudžbu",
+      "acceptPartial": "Prihvatam djelimičnu isporuku: prodavnica može prihvatiti manju količinu.",
+      "soldOut": "Proizvod je u međuvremenu rasprodan, narudžba nije poslana.",
+      "priceRaised": "Cijena je porasla na {{price}} (bila je {{old}}). Narudžba nije poslana; potvrdite novu cijenu.",
+      "confirmNewPrice": "Naruči po novoj cijeni",
+      "lessStock": "Nema dovoljno na stanju. Dostupno je još {{amount}}; narudžba nije poslana.",
+      "sentTitle": "Narudžba {{code}} je poslana",
+      "sentText": "Iznos {{total}}. {{store}} će odgovoriti na narudžbu.",
+      "toMyOrders": "Moje narudžbe",
+      "close": "Zatvori"
+    }
   }
 }

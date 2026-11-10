@@ -6,7 +6,17 @@ import api from "../api/axios.js";
 import i18n from "../i18n/config.js";
 import { AuthProvider } from "../context/AuthContext.jsx";
 import type { Notification } from "../context/NotificationsContext.js";
-import type { City, CreditSummary, DonationOffer, Product, Reservation, User } from "../types/index.js";
+import type {
+  City,
+  CreditSummary,
+  DonationOffer,
+  Order,
+  OrderDetails,
+  OrderItem,
+  Product,
+  Reservation,
+  User,
+} from "../types/index.js";
 
 export const apiMock = vi.mocked(api);
 export const t = i18n.t.bind(i18n);
@@ -143,6 +153,58 @@ export const makeReservation = (overrides: Partial<Reservation> = {}): Reservati
   city: "Sarajevo",
   ...overrides,
 });
+
+export const makeOrderItem = (overrides: Partial<OrderItem> = {}): OrderItem => ({
+  id: 40,
+  product_id: 10,
+  product_name: "Piletina",
+  category: "Meat",
+  unit: "kg",
+  quantity: "2",
+  ordered_quantity: "2",
+  unit_price: "5.00",
+  status: "Pending",
+  ...overrides,
+});
+
+// A Pending one-item order (#K7PM, 2 kg Piletina at 5 KM) as the lists return it.
+export const makeOrder = (overrides: Partial<Order> = {}): Order => ({
+  id: 20,
+  code: "K7PM",
+  status: "Pending",
+  fulfilment_method: "PICKUP",
+  pickup_at: "2030-01-01T10:00:00.000Z",
+  accept_partial: true,
+  decided_at: null,
+  picked_up_at: null,
+  created_at: "2030-01-01T00:00:00.000Z",
+  updated_at: "2030-01-01T00:00:00.000Z",
+  store_id: 2,
+  restaurant_id: 1,
+  is_overdue: false,
+  item_count: 1,
+  accepted_count: 0,
+  ordered_total: "10.00",
+  total: "10.00",
+  is_partial: false,
+  items: [makeOrderItem()],
+  business_name: "Market Centar",
+  city: "Sarajevo",
+  ...overrides,
+});
+
+// GET /orders/:id for an order made by makeOrder.
+export const makeOrderDetails = (overrides: Partial<OrderDetails> = {}): OrderDetails => {
+  const { business_name: _business, city: _city, ...order } = makeOrder();
+  return {
+    ...order,
+    send_changes: [],
+    store: { id: 2, business_name: "Market Centar", city: "Sarajevo", address: "Titova 1", phone: "033 111 222", pickup_hours: "8-16" },
+    restaurant: { id: 1, business_name: "Restoran Ukus", city: "Sarajevo", address: "Ferhadija 2", phone: "061 222 333", pickup_hours: null },
+    history: [],
+    ...overrides,
+  };
+};
 
 export const makeNotification = (overrides: Partial<Notification> = {}): Notification => ({
   id: 30,

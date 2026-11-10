@@ -48,8 +48,7 @@ describe("NotificationItem", () => {
     await userEvent.click(screen.getByText(/K7PM/));
     expect(apiMock.patch).toHaveBeenCalledWith("/notifications/4/read");
     expect(onNavigate).toHaveBeenCalled();
-    // Until the order details page exists, an order opens the store's list.
-    expect(await screen.findByTestId("location")).toHaveTextContent("/reservations");
+    expect(await screen.findByTestId("location")).toHaveTextContent("/orders/20");
   });
 
   it("falls back to the English message when the order is gone", async () => {

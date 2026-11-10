@@ -31,11 +31,12 @@
     "companyCredits": "Credits and plans",
     "companyReports": "Reports",
     "menu": "Menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "orders": "Orders",
+    "myOrders": "My orders"
   },
   "breadcrumbs": {
     "label": "Breadcrumb",
-    "reservation": "Reservation #{{id}}",
     "edit": "Edit"
   },
   "header": {
@@ -56,7 +57,8 @@
     "browseProducts": "Offers",
     "reservations": "Reservations",
     "pickups": "Pickups",
-    "more": "More"
+    "more": "More",
+    "orders": "Orders"
   },
   "auth": {
     "welcomeBack": "Welcome back",
@@ -175,7 +177,6 @@
     "deleteConfirmationText": "\"{{name}}\" will be removed from your listings.",
     "cancelButton": "Cancel",
     "confirmDeleteButton": "Delete",
-    "reservationCreated": "Reservation created successfully.",
     "notFoundSubtitle": "The product does not exist or has been removed.",
     "backToList": "Back to products",
     "stockTitle": "Stock",
@@ -190,15 +191,13 @@
     "reserveButton": "Reserve"
   },
   "myReservations": {
-    "reservePopupTitle": "Reserve",
     "placeholderMax": "Maximum",
     "pickupDate": "Pickup Date",
     "pickupTime": "Pickup time",
     "timePlaceholder": "HH:MM",
     "invalidTime": "Enter a time as HH:MM (00:00–23:59).",
     "pickupDateOutOfRange": "The date must be between today and the expiry date.",
-    "cancelButton": "Cancel",
-    "confirmButton": "Confirm"
+    "cancelButton": "Cancel"
   },
   "reservations": {
     "title": "My Reservations",
@@ -238,8 +237,8 @@
       "history": "History"
     },
     "period": {
-      "all": "Reserved: any time",
-      "today": "Reserved today",
+      "all": "Sent: any time",
+      "today": "Sent today",
       "last7Days": "Last 7 days",
       "thisMonth": "This month"
     },
@@ -409,9 +408,9 @@
     "successfullyReservations": "Successful deliveries (picked up)",
     "mineReservations": "Your reservations here (picked up)",
     "productsTab": "Products",
-    "reservationsTab": "My Reservations",
+    "reservationsTab": "My orders",
     "storeNoProducts": "This store currently has no available products.",
-    "restaurantNoRes": "You have no reservations with this store.",
+    "restaurantNoRes": "You have no orders with this store.",
     "subtitle": "Find stores near you and browse their offers.",
     "count_one": "{{count}} store",
     "count_other": "{{count}} stores",
@@ -430,7 +429,7 @@
     "storeNotFoundSubtitle": "The store does not exist or is no longer available.",
     "storeNoProductsSubtitle": "Check back later or browse offers from other stores.",
     "browseOtherOffers": "Browse all offers",
-    "restaurantNoResSubtitle": "When you reserve a product from this store, the reservation will appear here.",
+    "restaurantNoResSubtitle": "When you order a product from this store, the order will appear here.",
     "noStatusResultsSubtitle": "You have no reservations with this status at this store.",
     "allStatuses": "All",
     "chainLabel": "part of {{company}}"
@@ -562,7 +561,11 @@
       "November",
       "December"
     ],
-    "dateFormat": "{{weekday}}, {{day}} {{month}}"
+    "dateFormat": "{{weekday}}, {{day}} {{month}}",
+    "myOrdersTitle": "My orders",
+    "recentOrdersTitle": "New orders",
+    "viewAllOrders": "View all orders",
+    "noOrders": "No orders yet."
   },
   "productStatus": {
     "Available": "Available",
@@ -702,20 +705,20 @@
     "cancelOverdueButton": "Cancel",
     "details": "Details",
     "completeConfirmation": "Confirm pickup?",
-    "completeConfirmationText": "{{business}} picked up {{quantity}} {{unit}} of \"{{product}}\". The reservation will be marked as picked up.",
+    "completeConfirmationText": "{{business}} picked up order {{code}} ({{items}}, {{total}}). The order will be marked as picked up.",
     "cancelOverdueConfirmation": "Cancel the overdue pickup?",
-    "cancelOverdueConfirmationText": "{{business}} did not pick up \"{{product}}\" in time. The reservation will be cancelled and the quantity put back on offer.",
+    "cancelOverdueConfirmationText": "{{business}} did not pick up order {{code}} in time. The order will be cancelled and its products put back on offer.",
     "keepButton": "Go back",
     "confirmCompleteButton": "Confirm pickup",
-    "confirmCancelButton": "Cancel reservation",
+    "confirmCancelButton": "Cancel order",
     "empty": {
       "todayTitle": "No pickups today",
-      "todayStoreSubtitle": "Accepted reservations to be picked up today will show up here.",
-      "todayRestaurantSubtitle": "When a store accepts a reservation for today, you will see it here.",
+      "todayStoreSubtitle": "Accepted orders with a pickup today will appear here.",
+      "todayRestaurantSubtitle": "When a store accepts an order with a pickup today, you will see it here.",
       "upcomingTitle": "No upcoming pickups",
-      "upcomingSubtitle": "Accepted reservations with a later pickup date will show up here.",
+      "upcomingSubtitle": "Accepted orders with a later pickup date will appear here.",
       "completedTitle": "Nothing picked up yet",
-      "completedSubtitle": "Once a reservation is picked up, its history shows up here.",
+      "completedSubtitle": "When an order is picked up, you will see the history here.",
       "noResultsTitle": "No results",
       "noResultsSubtitle": "No pickup matches your search."
     }
@@ -1812,5 +1815,133 @@
     "stockLabel": "sold in shop",
     "historyTitle": "Sold in your shop",
     "historyTotal": "{{amount}} {{unit}} in total. Restaurants see only the lower available quantity."
+  },
+  "orders": {
+    "title": "Order {{code}}",
+    "myTitle": "My orders",
+    "mySubtitle": "Follow your orders, the stores' answers and the pickup times.",
+    "storeTitle": "Orders",
+    "storeSubtitle": "Answer restaurants' new orders and follow the accepted ones.",
+    "count_one": "{{count}} order",
+    "count_other": "{{count}} orders",
+    "itemCount_one": "{{count}} item",
+    "itemCount_other": "{{count}} items",
+    "moreItems_one": "{{first}} + {{count}} more",
+    "moreItems_other": "{{first}} + {{count}} more",
+    "items": "Items",
+    "total": "Total",
+    "sentAt": "Sent",
+    "pickup": "Pickup",
+    "partialBadge": "{{accepted}}/{{count}} accepted",
+    "partiallyAccepted": "Partially accepted",
+    "partialSetting": "Partial fulfilment",
+    "partialOn": "Accepted (the store may accept less)",
+    "partialOff": "Whole order only",
+    "sendChangesTitle": "Changes when sending",
+    "searchProduct": "Search by product",
+    "searchCode": "Order code",
+    "selectStatus": "Order status",
+    "noResultsTitle": "No results",
+    "noResultsSubtitle": "Try changing or removing the filters.",
+    "storeEmptyTitle": "No orders yet",
+    "storeEmptySubtitle": "When a restaurant orders your products, the order will appear here.",
+    "activeEmptyTitle": "No active orders",
+    "activeEmptySubtitle": "Nothing pending or accepted. Older orders are in the history.",
+    "historyEmptyTitle": "You have not sent any orders yet",
+    "historyEmptySubtitle": "When you send an order, it will appear here.",
+    "notFoundTitle": "Order not found.",
+    "notFoundSubtitle": "The order does not exist or you do not have access to it.",
+    "backToList": "Back to orders",
+    "decideButton": "Decide",
+    "cancelButton": "Cancel order",
+    "cancelConfirmation": "Cancel this order?",
+    "cancelConfirmationText": "Order {{code}} with {{business}} will be cancelled.",
+    "table": {
+      "product": "Product",
+      "quantity": "Quantity",
+      "price": "Price",
+      "status": "Status",
+      "total": "Amount"
+    },
+    "reasons": {
+      "NOT_ENOUGH_STOCK": "Not enough in stock",
+      "QUALITY": "Quality",
+      "OTHER": "Other"
+    },
+    "reasonLabels": {
+      "NOT_ENOUGH_STOCK": "Not enough in stock",
+      "QUALITY": "Quality",
+      "OTHER": "Other"
+    },
+    "sendChanges": {
+      "QUANTITY_REDUCED": "{{product}}: {{sent}} instead of {{requested}}, no more in stock",
+      "PRICE_LOWERED": "{{product}}: new price {{newPrice}} instead of {{oldPrice}}",
+      "NOT_SENT_SOLD_OUT": "{{product}} was not sent: sold out",
+      "NOT_SENT_PRICE_RAISED": "{{product}} was not sent: the price went up to {{newPrice}}"
+    },
+    "history": {
+      "title": "History",
+      "created": "Order sent by the {{who}}",
+      "order": "Order: {{status}} ({{who}})",
+      "item": "{{product}}: {{status}} ({{who}})",
+      "sources": {
+        "RESTAURANT": "restaurant",
+        "STORE": "store",
+        "ADMIN": "administrator",
+        "SYSTEM": "system"
+      }
+    },
+    "decision": {
+      "title": "Decision on order {{code}}",
+      "rejectTitle": "Reject order {{code}}",
+      "actions": {
+        "ACCEPT": "Accept all",
+        "ACCEPT_LESS": "Accept less",
+        "REJECT": "Reject"
+      },
+      "acceptedQuantity": "Accepted quantity: {{product}}",
+      "lessThan": "Less than {{amount}}",
+      "reason": "Reason",
+      "chooseReason": "Choose a reason",
+      "note": "Reason description",
+      "notePlaceholder": "Describe the reason (at most 300 characters)",
+      "recordSale": "Record the difference as sold in the shop",
+      "recordSaleOf": "Record {{product}} as sold in the shop",
+      "saleQuantity": "Sold in the shop",
+      "wholeOnly": "The restaurant accepts only the whole order.",
+      "rejectText": "Order {{code}} from {{restaurant}} will be rejected. The restaurant is notified with the reason.",
+      "total": "Amount: {{total}}",
+      "newTotal": "New amount: {{total}} instead of {{ordered}}",
+      "summaryAll_one": "You accept the whole order ({{count}} item) · {{total}}",
+      "summaryAll_other": "You accept the whole order ({{count}} items) · {{total}}",
+      "summary": "You accept {{accepted}}, a smaller quantity of {{reduced}}, reject {{rejected}} · {{total}}",
+      "summaryReject": "You reject the whole order {{code}}.",
+      "irreversible": "The restaurant will be notified. The decision cannot be undone.",
+      "rejectOrder": "Reject order",
+      "confirmDecision": "Confirm decision",
+      "acceptAll": "Accept all",
+      "back": "Back",
+      "save": "Save decision",
+      "saveReject": "Reject order",
+      "errors": {
+        "reason": "Choose a reason.",
+        "note": "Describe the reason (at most 300 characters).",
+        "quantity": "The accepted quantity must be more than zero and less than ordered.",
+        "sale": "The amount sold in the shop is not valid."
+      }
+    },
+    "send": {
+      "title": "Order",
+      "submit": "Send order",
+      "acceptPartial": "I accept partial fulfilment: the store may accept a smaller quantity.",
+      "soldOut": "The product sold out in the meantime; the order was not sent.",
+      "priceRaised": "The price went up to {{price}} (it was {{old}}). The order was not sent; confirm the new price.",
+      "confirmNewPrice": "Order at the new price",
+      "lessStock": "Not enough in stock. {{amount}} is left; the order was not sent.",
+      "sentTitle": "Order {{code}} was sent",
+      "sentText": "Amount {{total}}. {{store}} will answer the order.",
+      "toMyOrders": "My orders",
+      "close": "Close"
+    }
   }
 }

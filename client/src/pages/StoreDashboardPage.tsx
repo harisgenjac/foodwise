@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  CalendarCheck,
   CheckCircle2,
   Hourglass,
   Leaf,
   Package,
   PackagePlus,
+  ReceiptText,
 } from "lucide-react";
 import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.js";
@@ -15,15 +15,15 @@ import DashboardHero from "../components/dashboard/DashboardHero.js";
 import StatCard from "../components/dashboard/StatCard.js";
 import SectionCard from "../components/dashboard/SectionCard.js";
 import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
-import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.js";
+import OrderCard from "../components/order/OrderCard.js";
 import { formatSavedFood } from "../utils/savedFood.js";
-import type { Product, Reservation, StoreDashboardStats } from "../types/index.js";
+import type { Order, Product, StoreDashboardStats } from "../types/index.js";
 
 const SECTION_SIZE = 3;
 
 function StoreDashboardPage() {
   const [productsList, setProductsList] = useState<Product[]>([]);
-  const [reservationsList, setReservationsList] = useState<Reservation[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [stats, setStats] = useState<StoreDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -51,19 +51,18 @@ function StoreDashboardPage() {
     }
   };
 
-  const fetchReservations = async () => {
+  const fetchOrders = async () => {
     try {
-      const response = await api.get("/reservations/store", { params: { limit: SECTION_SIZE } });
-      const data: Reservation[] = response.data.reservations;
-      setReservationsList(data);
+      const response = await api.get("/orders/store", { params: { limit: SECTION_SIZE } });
+      setOrders(response.data.orders);
     } catch (err) {
-      console.error("Error fetching reservations:", err);
+      console.error("Error fetching orders:", err);
     }
   };
 
   useEffect(() => {
     const loadData = async () => {
-      await Promise.all([fetchStats(), fetchProducts(), fetchReservations()]);
+      await Promise.all([fetchStats(), fetchProducts(), fetchOrders()]);
 
       setLoading(false);
     };
@@ -120,15 +119,15 @@ function StoreDashboardPage() {
         </SectionCard>
 
         <SectionCard
-          title={t("dashboard.recentReservationsTitle")}
-          icon={CalendarCheck}
-          viewAll={{ to: "/reservations", label: t("dashboard.viewAllReservations") }}
-          isEmpty={reservationsList.length === 0}
-          empty={{ icon: CalendarCheck, text: t("dashboard.noReservations") }}
+          title={t("dashboard.recentOrdersTitle")}
+          icon={ReceiptText}
+          viewAll={{ to: "/orders", label: t("dashboard.viewAllOrders") }}
+          isEmpty={orders.length === 0}
+          empty={{ icon: ReceiptText, text: t("dashboard.noOrders") }}
         >
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {reservationsList.map((reservation) => (
-              <DashboardReservationCard key={reservation.id} reservation={reservation} partyLabel={t("dashboard.restaurantName")} />
+            {orders.map((order) => (
+              <OrderCard key={order.id} order={order} partyLabel={t("dashboard.restaurantName")} />
             ))}
           </div>
         </SectionCard>

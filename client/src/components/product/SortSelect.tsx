@@ -33,7 +33,7 @@ export const MARKETPLACE_SORT_OPTIONS = [
 
 export type MarketplaceSort = (typeof MARKETPLACE_SORT_OPTIONS)[number]["value"];
 
-// The `GET /reservations/mine` sorts offered on the restaurant's Active reservations.
+// The `GET /orders/mine` sorts offered on the restaurant's Active orders.
 export const MY_RESERVATIONS_SORT_OPTIONS = [
   { value: "newest", label: "filters.sortNewest" },
   { value: "status", label: "reservations.sortPendingFirst" },

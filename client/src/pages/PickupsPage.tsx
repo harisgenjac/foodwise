@@ -25,7 +25,7 @@ import { usePagedLimit } from "../hooks/usePagedLimit.js";
 import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import { usePickupActions } from "../hooks/usePickupActions.js";
 import { groupByDay, type DayGroup } from "../utils/dayGroups.js";
-import type { Reservation } from "../types/index.js";
+import type { Order } from "../types/index.js";
 
 type Scope = "today" | "upcoming" | "completed";
 
@@ -36,7 +36,7 @@ interface PickupCounts {
   completed: number;
 }
 
-interface PickupGroup extends DayGroup<Reservation> {
+interface PickupGroup extends DayGroup<Order> {
   overdue?: boolean;
 }
 
@@ -59,9 +59,9 @@ function PickupsPage() {
     fetching,
     error,
     refetch,
-  } = useFetch<Reservation>(
-    "/reservations/pickups",
-    "reservations",
+  } = useFetch<Order>(
+    "/orders/pickups",
+    "orders",
     { scope, name, ...(isHistory && { limit }) },
     // Each tab is its own list: a switch drops the previous tab's list and shows the loading state.
     { resetKey: scope },
@@ -69,7 +69,7 @@ function PickupsPage() {
 
   const fetchCounts = useCallback(async () => {
     try {
-      const response = await api.get("/reservations/pickups/counts");
+      const response = await api.get("/orders/pickups/counts");
       setCounts(response.data.counts);
     } catch (err) {
       console.error("Error fetching pickup counts:", err);
@@ -100,7 +100,7 @@ function PickupsPage() {
       { key: "today", title: t("pickups.sections.today"), items: onTime },
     ].filter((group) => group.items.length > 0);
   } else if (scope === "upcoming") {
-    groups = groupByDay(pickups, (r) => r.pickup_date, t);
+    groups = groupByDay(pickups, (r) => r.pickup_at, t);
   } else {
     groups = groupByDay(pickups, (r) => r.picked_up_at ?? r.updated_at, t);
   }
@@ -201,13 +201,13 @@ function PickupsPage() {
               )}
             </h2>
             <div className="flex flex-col gap-3">
-              {group.items.map((reservation) => (
+              {group.items.map((order) => (
                 <PickupCard
-                  key={reservation.id}
-                  reservation={reservation}
+                  key={order.id}
+                  order={order}
                   isStore={isStore}
-                  onComplete={(r) => actions.request("complete", r)}
-                  onCancelOverdue={(r) => actions.request("cancel-overdue", r)}
+                  onComplete={(o) => actions.request("complete", o)}
+                  onCancelOverdue={(o) => actions.request("cancel-overdue", o)}
                 />
               ))}
             </div>

@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   BadgePercent,
-  CalendarCheck,
   CheckCircle2,
   Hourglass,
   ShoppingBasket,
+  ReceiptText,
 } from "lucide-react";
 import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.js";
@@ -14,9 +14,9 @@ import DashboardHero from "../components/dashboard/DashboardHero.js";
 import StatCard from "../components/dashboard/StatCard.js";
 import SectionCard from "../components/dashboard/SectionCard.js";
 import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
-import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.js";
+import OrderCard from "../components/order/OrderCard.js";
 import { DEFAULT_RADIUS, nextRadius, type Radius } from "../utils/radius.js";
-import type { Reservation, Product, RestaurantDashboardStats } from "../types/index.js";
+import type { Order, Product, RestaurantDashboardStats } from "../types/index.js";
 
 const SECTION_SIZE = 3;
 
@@ -24,13 +24,13 @@ const RestaurantDashboardPage = () => {
   // The three offers closest to expiry nearby, and how many offers that radius has.
   const [bestOffers, setBestOffers] = useState<Product[]>([]);
   const [offersCount, setOffersCount] = useState(0);
-  const [reservationsList, setReservationsList] = useState<Reservation[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [stats, setStats] = useState<RestaurantDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { t } = useTranslation();
 
-  // The stat cards come from the server over all reservations; the list is only the newest few.
+  // The stat cards come from the server over all reservations; the list is only the first few orders.
   const fetchStats = async () => {
     try {
       const response = await api.get("/dashboard/stats");
@@ -65,19 +65,18 @@ const RestaurantDashboardPage = () => {
     }
   };
 
-  const fetchReservations = async () => {
+  const fetchOrders = async () => {
     try {
-      const response = await api.get("/reservations/mine", { params: { limit: SECTION_SIZE } });
-      const data: Reservation[] = response.data.reservations;
-      setReservationsList(data);
+      const response = await api.get("/orders/mine", { params: { limit: SECTION_SIZE } });
+      setOrders(response.data.orders);
     } catch (err) {
-      console.error("Error fetching reservations:", err);
+      console.error("Error fetching orders:", err);
     }
   };
 
   useEffect(() => {
     const loadData = async () => {
-      await Promise.all([fetchStats(), fetchProducts(), fetchReservations()]);
+      await Promise.all([fetchStats(), fetchProducts(), fetchOrders()]);
 
       setLoading(false);
     };
@@ -123,19 +122,19 @@ const RestaurantDashboardPage = () => {
         </SectionCard>
 
         <SectionCard
-          title={t("dashboard.myReservationsTitle")}
-          icon={CalendarCheck}
-          viewAll={{ to: "/my-reservations", label: t("dashboard.viewAllReservations") }}
-          isEmpty={reservationsList.length === 0}
+          title={t("dashboard.myOrdersTitle")}
+          icon={ReceiptText}
+          viewAll={{ to: "/my-orders", label: t("dashboard.viewAllOrders") }}
+          isEmpty={orders.length === 0}
           empty={{
-            icon: CalendarCheck,
-            text: t("dashboard.noReservations"),
+            icon: ReceiptText,
+            text: t("dashboard.noOrders"),
             action: { to: "/browse-products", label: t("dashboard.browseOffers") },
           }}
         >
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {reservationsList.map((reservation) => (
-              <DashboardReservationCard key={reservation.id} reservation={reservation} partyLabel={t("myProducts.store")} linkStore />
+            {orders.map((order) => (
+              <OrderCard key={order.id} order={order} partyLabel={t("myProducts.store")} linkStore />
             ))}
           </div>
         </SectionCard>

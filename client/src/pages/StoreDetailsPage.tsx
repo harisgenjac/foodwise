@@ -31,11 +31,11 @@ import DetailItem from "../components/product/DetailItem.js";
 import ReserveProductModal from "../components/product/ReserveProductModal.js";
 import StatCard from "../components/dashboard/StatCard.js";
 import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
-import DashboardReservationCard from "../components/dashboard/DashboardReservationCard.js";
+import OrderCard from "../components/order/OrderCard.js";
 import StoreAvatar from "../components/store/StoreAvatar.js";
 import ChainLabel from "../components/store/ChainLabel.js";
 import FavoriteButton from "../components/store/FavoriteButton.js";
-import type { Product, Reservation, User, Favorites } from "../types/index.js";
+import type { Order, Product, User, Favorites } from "../types/index.js";
 
 interface StoreStats {
   sold_articles: string;
@@ -47,7 +47,7 @@ interface MyReservationsCount {
 
 type Tab = "products" | "reservations";
 
-const RESERVATION_STATUSES: Reservation["status"][] = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
+const RESERVATION_STATUSES: Order["status"][] = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
 
 function StoreDetailsPage() {
   const { id } = useParams();
@@ -128,15 +128,15 @@ function StoreDetailsPage() {
     loading: reservationsLoading,
     fetching: reservationsFetching,
     refetch: refetchReservations,
-  } = useFetch<Reservation>("/reservations/mine", "reservations", {
+  } = useFetch<Order>("/orders/mine", "orders", {
     store_id: id!,
     status: reservationStatus,
     limit: reservations.limit,
   });
-  // The tab's count: every reservation here, whatever status pill is selected.
-  const { total: reservationsCount, refetch: refetchReservationsCount } = useFetch<Reservation>(
-    "/reservations/mine",
-    "reservations",
+  // The tab's count: every order here, whatever status pill is selected.
+  const { total: reservationsCount, refetch: refetchReservationsCount } = useFetch<Order>(
+    "/orders/mine",
+    "orders",
     { store_id: id!, limit: 1 },
   );
 
@@ -379,12 +379,8 @@ function StoreDetailsPage() {
             />
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {reservationsList.map((reservation) => (
-                <DashboardReservationCard
-                  key={reservation.id}
-                  reservation={reservation}
-                  partyLabel={t("myProducts.store")}
-                />
+              {reservationsList.map((order) => (
+                <OrderCard key={order.id} order={order} partyLabel={t("myProducts.store")} />
               ))}
             </div>
           )}
