@@ -43,12 +43,12 @@ Design, decisions and PR split: `docs/orders-design.md` (agreed Nov 6, 2026). De
 - [x] `orders` table above reservations (`order_id` on the reservation), with a fulfilment method (pickup only for now), and status history (who, when, source) (Nov 10, 2026: the order model and `/api/orders` on the server; the screens come in the next PR).
 - [x] "Sold in shop" (Nov 6, 2026): a store records an amount sold at its own till, which lowers the free quantity (no credit back, not an app sale, cannot be undone: a confirmation shows the amount and the free quantity before and after).
 - [ ] Check that every place that computes a product's free quantity counts shop sales (the marketplace, the product page, the sold-out status, the order stock checks, moving to donations and returning a donation to the offer already do).
-- [x] Short order code (random, 4 characters, e.g. `#K7PM`) (Nov 10, 2026: notifications and emails use it; the order pages come in the next PR).
+- [x] Short order code (random, 4 characters, e.g. `#K7PM`) (Nov 10, 2026: notifications, emails, the order lists and pages, and the store's code search).
 - [ ] Cart: one store, "empty the cart?" dialog, no stock held, "Accept partial fulfilment" option.
 - [ ] Submitting an order with all items at once, using the existing available-quantity protection.
-- [ ] Accepting per item: accept all, a smaller quantity or reject, with a reason; freed quantity returns to the offer; if all are rejected, the order is `Rejected`.
-- [ ] Restaurants without credits: remove charging, subscription and banners for restaurants, adjust the admin credits overview. Add a limit on pending orders. (Credits part done Nov 6, 2026; the pending-order limit comes with orders.)
-- [ ] Adapt existing features: Pickups, details, notifications, reports, admin reservations and cancelling, blocking and moderation.
+- [x] Accepting per item: accept all, a smaller quantity or reject, with a reason; freed quantity returns to the offer; if all are rejected, the order is `Rejected` (Nov 10, 2026: the store's decision dialog with reasons and shop sales, the order pages for both sides).
+- [x] Restaurants without credits: remove charging, subscription and banners for restaurants, adjust the admin credits overview. Add a limit on pending orders. (Credits part done Nov 6, 2026; the limit of 10 pending orders Nov 10, 2026.)
+- [ ] Adapt existing features: Pickups, details, notifications, reports, admin reservations and cancelling, blocking and moderation. (Nov 10, 2026: pickups, order details, notifications and emails, blocking, moderation and expiry work on orders; the admin's orders, the headquarters' branch orders, statistics and reports come in orders PR 4.)
 - [ ] E2E tests for the cart and orders.
 
 ### Phase 2: Delivery with a mock provider

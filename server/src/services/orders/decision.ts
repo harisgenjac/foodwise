@@ -38,11 +38,7 @@ interface Reason {
 }
 
 // A reason with its note: OTHER needs a note; any note is at most 300 characters.
-const parseReason = (value: unknown, noteValue: unknown, { required }: { required: boolean }): Reason => {
-  if (value === undefined || value === null || value === "") {
-    if (required) throw new HttpError(400, REASON_ERROR);
-    return { reason: null, note: null };
-  }
+const parseReason = (value: unknown, noteValue: unknown): Reason => {
   if (typeof value !== "string" || !(CHANGE_REASONS as readonly string[]).includes(value)) {
     throw new HttpError(400, REASON_ERROR);
   }
@@ -70,10 +66,9 @@ const parseDecisions = (
   body: Record<string, unknown>,
   pendingItems: ItemRow[],
   acceptPartial: boolean,
-  { reasonRequired }: { reasonRequired: boolean },
 ): ItemDecision[] => {
   if (body.reject_order === true) {
-    const { reason, note } = parseReason(body.reason, body.note, { required: reasonRequired });
+    const { reason, note } = parseReason(body.reason, body.note);
     const sales = body.shop_sales ?? [];
     if (!Array.isArray(sales)) throw new HttpError(400, SHOP_SALE_ERROR);
     const saleByProduct = new Map<number, number>();
@@ -124,17 +119,12 @@ const parseDecisions = (
       }
       quantity = accepted;
     }
-    const { reason, note } = parseReason(entry.reason, entry.note, { required: reasonRequired });
+    const { reason, note } = parseReason(entry.reason, entry.note);
     const shopSale = parseShopSale(entry.record_shop_sale, reason, ordered - quantity);
     decisions.push({ item, action, quantity, reason, note, shopSale });
   }
   return decisions;
 };
-
-export interface DecisionOptions {
-  // Only the temporary reservation endpoints (PR 3a) reject without a reason: the old dialog has none.
-  reasonRequired?: boolean;
-}
 
 // The decision inside the caller's transaction. `storeId` must own the order (anyone else: 404).
 export const decideOrder = async (
@@ -142,7 +132,6 @@ export const decideOrder = async (
   storeId: number,
   orderId: number,
   body: Record<string, unknown>,
-  { reasonRequired = true }: DecisionOptions = {},
 ) => {
   const order = await lockOrder(client, orderId);
   if (!order || order.store_id !== storeId) {
@@ -153,7 +142,7 @@ export const decideOrder = async (
   }
   const items = await lockOrderItems(client, orderId);
   const pendingItems = items.filter((item) => item.status === "Pending");
-  const decisions = parseDecisions(body, pendingItems, order.accept_partial, { reasonRequired });
+  const decisions = parseDecisions(body, pendingItems, order.accept_partial);
   if (decisions.some((decision) => decision.action !== "REJECT" && decision.item.is_expired)) {
     throw new HttpError(400, "An expired product cannot be accepted.");
   }

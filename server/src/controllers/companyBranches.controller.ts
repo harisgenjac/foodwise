@@ -22,7 +22,7 @@ import {
   updateBranch,
 } from "../services/branches.js";
 import { listStoreProducts } from "./products.controller.js";
-import { listStoreReservations } from "./reservations.controller.js";
+import { listStoreReservations } from "../services/reservationItems.js";
 
 // The headquarters (COMPANY) manages its company's branches. Every branch route answers 404 for a
 // branch of another company, so their existence is not revealed. The headquarters only reads a

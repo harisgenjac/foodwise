@@ -1,9 +1,13 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import toast from "react-hot-toast";
-import MyReservationsPage from "./MyReservationsPage.js";
-import { apiMock, axiosError, makeReservation, makeUser, renderWithProviders, t } from "../test/utils.js";
-import type { Reservation } from "../types/index.js";
+import MyOrdersPage from "./MyOrdersPage.js";
+import { apiMock, axiosError, makeOrder, makeOrderItem, makeUser, renderWithProviders, t } from "../test/utils.js";
+import type { Order } from "../types/index.js";
+
+// An order of one product (2 kg at 5 KM unless the item says otherwise).
+const order = (id: number, product = "Piletina", extra: Partial<Order> = {}, item: Parameters<typeof makeOrderItem>[0] = {}) =>
+  makeOrder({ id, items: [makeOrderItem({ product_name: product, ...item })], ...extra });
 
 const SUMMARY = {
   total: 10,
@@ -14,36 +18,36 @@ const SUMMARY = {
 const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3600 * 1000).toISOString();
 
 // The list mock gets the request params, so a test can answer Active and History differently.
-const renderPage = (reservations: Reservation[] | ((params: Record<string, unknown>) => Reservation[])) =>
-  renderWithProviders(<MyReservationsPage />, {
-    route: "/my-reservations",
-    path: "/my-reservations",
+const renderPage = (orders: Order[] | ((params: Record<string, unknown>) => Order[])) =>
+  renderWithProviders(<MyOrdersPage />, {
+    route: "/my-orders",
+    path: "/my-orders",
     user: makeUser(),
     get: {
-      "/reservations/mine": (params: unknown) => {
-        const list = typeof reservations === "function" ? reservations(params as Record<string, unknown>) : reservations;
-        return { reservations: list, total: list.length };
+      "/orders/mine": (params: unknown) => {
+        const list = typeof orders === "function" ? orders(params as Record<string, unknown>) : orders;
+        return { orders: list, total: list.length };
       },
-      "/reservations/mine/summary": { summary: SUMMARY },
+      "/orders/mine/summary": { summary: SUMMARY },
     },
   });
 
-const listCalls = () => apiMock.get.mock.calls.filter(([url]) => url === "/reservations/mine");
+const listCalls = () => apiMock.get.mock.calls.filter(([url]) => url === "/orders/mine");
 const lastListParams = () => listCalls().at(-1)?.[1]?.params;
-const summaryCalls = () => apiMock.get.mock.calls.filter(([url]) => url === "/reservations/mine/summary");
+const summaryCalls = () => apiMock.get.mock.calls.filter(([url]) => url === "/orders/mine/summary");
 
 const tab = (key: "active" | "history") => screen.getByRole("tab", { name: new RegExp(t(`reservations.tabs.${key}`)) });
-const statusSelect = () => screen.getByLabelText(t("filters.selectResStatus"));
+const statusSelect = () => screen.getByLabelText(t("orders.selectStatus"));
 const statusOptions = () => within(statusSelect()).getAllByRole("option").map((option) => option.getAttribute("value"));
 const periodSelect = () => screen.getByLabelText(t("reservations.period.all"));
 const queryPeriodSelect = () => screen.queryByLabelText(t("reservations.period.all"));
 const cancelButton = () => screen.getByRole("button", { name: t("reservations.cancelShortButton") });
 
-describe("MyReservationsPage", () => {
+describe("MyOrdersPage", () => {
   it("opens on Active with the active scope, newest first, 12 at a time", async () => {
-    renderPage([makeReservation({ id: 1, product_name: "Piletina", status: "Pending" })]);
+    renderPage([order(1, "Piletina", { status: "Pending" })]);
 
-    expect(await screen.findByText("Piletina")).toBeInTheDocument();
+    expect(await screen.findByText(/Piletina/)).toBeInTheDocument();
     expect(tab("active")).toHaveAttribute("aria-selected", "true");
     expect(lastListParams()).toMatchObject({ scope: "active", sort: "newest", status: "", limit: 12 });
     expect(lastListParams()).not.toHaveProperty("period");
@@ -54,8 +58,8 @@ describe("MyReservationsPage", () => {
   });
 
   it("filters Active by the two active statuses only", async () => {
-    renderPage([makeReservation()]);
-    await screen.findByText("Piletina");
+    renderPage([order(1)]);
+    await screen.findByText(/Piletina/);
 
     expect(statusOptions()).toEqual(["", "Pending", "Confirmed"]);
     await userEvent.selectOptions(statusSelect(), t("reservationStatus.Confirmed"));
@@ -63,13 +67,13 @@ describe("MyReservationsPage", () => {
   });
 
   it("shows the unfiltered tab counts from one summary request", async () => {
-    renderPage([makeReservation()]);
+    renderPage([order(1)]);
     await waitFor(() => expect(within(tab("active")).getByText("7")).toBeInTheDocument());
     expect(within(tab("history")).getByText("10")).toBeInTheDocument();
-    expect(summaryCalls()).toEqual([["/reservations/mine/summary"]]);
+    expect(summaryCalls()).toEqual([["/orders/mine/summary"]]);
 
     // Filtering the list and switching tabs leave the counts alone.
-    await userEvent.type(screen.getByPlaceholderText(t("filters.searchByName")), "pile");
+    await userEvent.type(screen.getByPlaceholderText(t("orders.searchProduct")), "pile");
     await waitFor(() => expect(lastListParams()).toMatchObject({ name: "pile" }));
     await userEvent.click(tab("history"));
     await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all" }));
@@ -77,40 +81,40 @@ describe("MyReservationsPage", () => {
     expect(within(tab("active")).getByText("7")).toBeInTheDocument();
   });
 
-  it("shows the reservations and offers cancelling only Pending ones", async () => {
+  it("shows the orders and offers cancelling only Pending ones", async () => {
     renderPage([
-      makeReservation({ id: 1, product_name: "Piletina", status: "Pending" }),
-      makeReservation({ id: 2, product_name: "Mlijeko", status: "Confirmed" }),
+      order(1, "Piletina", { status: "Pending" }),
+      order(2, "Mlijeko", { status: "Confirmed" }),
     ]);
 
-    expect(await screen.findByText("Piletina")).toBeInTheDocument();
-    expect(screen.getByText("Mlijeko")).toBeInTheDocument();
+    expect(await screen.findByText(/Piletina/)).toBeInTheDocument();
+    expect(screen.getByText(/Mlijeko/)).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: t("reservations.cancelShortButton") })).toHaveLength(1);
   });
 
-  it("shows when each active reservation was made", async () => {
-    renderPage([makeReservation({ id: 1, created_at: hoursAgo(2) })]);
+  it("shows when each active order was sent", async () => {
+    renderPage([order(1, "Piletina", { created_at: hoursAgo(2) })]);
     expect(await screen.findByText(t("notifications.time.hoursAgo", { count: 2 }))).toBeInTheDocument();
-    expect(screen.getByText(t("reservations.createdAt"))).toBeInTheDocument();
+    expect(screen.getByText(t("orders.sentAt"))).toBeInTheDocument();
   });
 
   it("sends the chosen sort and keeps it when the filters are cleared", async () => {
-    renderPage([makeReservation()]);
-    await screen.findByText("Piletina");
+    renderPage([order(1)]);
+    await screen.findByText(/Piletina/);
 
     await userEvent.selectOptions(screen.getByLabelText(t("filters.sortBy")), t("reservations.sortPickupSoonest"));
     await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "active", sort: "pickup" }));
 
-    await userEvent.type(screen.getByPlaceholderText(t("filters.searchByName")), "pile");
+    await userEvent.type(screen.getByPlaceholderText(t("orders.searchProduct")), "pile");
     await userEvent.click(screen.getByRole("button", { name: t("filters.clear") }));
     expect(screen.getByLabelText(t("filters.sortBy"))).toHaveValue("pickup");
-    expect(screen.getByPlaceholderText(t("filters.searchByName"))).toHaveValue("");
+    expect(screen.getByPlaceholderText(t("orders.searchProduct"))).toHaveValue("");
     expect(tab("active")).toHaveAttribute("aria-selected", "true");
   });
 
   it("shows an empty Active state with links to the history and the offers", async () => {
     renderPage([]);
-    expect(await screen.findByText(t("reservations.emptyActiveTitle"))).toBeInTheDocument();
+    expect(await screen.findByText(t("orders.activeEmptyTitle"))).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: t("dashboard.browseOffers") }).length).toBeGreaterThan(0);
 
     await userEvent.click(screen.getByRole("button", { name: t("reservations.showHistory") }));
@@ -130,30 +134,28 @@ describe("MyReservationsPage", () => {
     });
 
     const history = [
-      makeReservation({ id: 31, product_name: "Jogurt", status: "Rejected", created_at: NOW.toISOString() }),
-      makeReservation({
-        id: 30,
-        product_name: "Hljeb",
-        status: "Completed",
-        quantity: "3",
-        discounted_price: "1.50",
-        created_at: new Date(NOW.getTime() - 86400 * 1000).toISOString(),
-      }),
+      order(31, "Jogurt", { status: "Rejected", created_at: NOW.toISOString() }),
+      order(
+        30,
+        "Hljeb",
+        { status: "Completed", total: "4.50", created_at: new Date(NOW.getTime() - 86400 * 1000).toISOString() },
+        { quantity: "3", ordered_quantity: "3", unit_price: "1.50" },
+      ),
     ];
     const renderHistory = () =>
-      renderPage((params) => (params.scope === "all" ? history : [makeReservation({ id: 1, product_name: "Aktivna" })]));
+      renderPage((params) => (params.scope === "all" ? history : [order(1, "Aktivna")]));
 
     it("loads every status newest first, 20 at a time, as rows grouped by day", async () => {
       renderHistory();
-      await screen.findByText("Aktivna");
+      await screen.findByText(/Aktivna/);
       await userEvent.click(tab("history"));
 
-      expect(await screen.findByText("Jogurt")).toBeInTheDocument();
+      expect(await screen.findByText(/Jogurt/)).toBeInTheDocument();
       expect(lastListParams()).toMatchObject({ scope: "all", sort: "newest", limit: 20 });
       expect(screen.getByRole("heading", { name: t("notifications.groups.today") })).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: t("notifications.groups.yesterday") })).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /Jogurt/ })).toHaveAttribute("href", "/reservation/31");
-      expect(screen.getByRole("link", { name: /Hljeb/ })).toHaveAttribute("href", "/reservation/30");
+      expect(screen.getByRole("link", { name: /Jogurt/ })).toHaveAttribute("href", "/orders/31");
+      expect(screen.getByRole("link", { name: /Hljeb/ })).toHaveAttribute("href", "/orders/30");
       expect(screen.getByText("4.50 KM")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: t("reservations.cancelShortButton") })).not.toBeInTheDocument();
       expect(screen.queryByLabelText(t("filters.sortBy"))).not.toBeInTheDocument();
@@ -162,19 +164,19 @@ describe("MyReservationsPage", () => {
     it("shows the loading state, not the Active list, while History loads, and ignores a late Active response", async () => {
       // Each list request waits until the test answers it.
       const pending: { scope: unknown; respond: () => void }[] = [];
-      renderWithProviders(<MyReservationsPage />, {
-        route: "/my-reservations",
-        path: "/my-reservations",
+      renderWithProviders(<MyOrdersPage />, {
+        route: "/my-orders",
+        path: "/my-orders",
         user: makeUser(),
         get: {
-          "/reservations/mine": (params: unknown) => {
+          "/orders/mine": (params: unknown) => {
             const { scope } = params as { scope: string };
-            const list = scope === "all" ? history : [makeReservation({ id: 1, product_name: "Aktivna" })];
+            const list = scope === "all" ? history : [order(1, "Aktivna")];
             return new Promise((resolve) => {
-              pending.push({ scope, respond: () => resolve({ reservations: list, total: list.length }) });
+              pending.push({ scope, respond: () => resolve({ orders: list, total: list.length }) });
             });
           },
-          "/reservations/mine/summary": { summary: SUMMARY },
+          "/orders/mine/summary": { summary: SUMMARY },
         },
       });
       const respond = async (scope: string) => {
@@ -183,10 +185,10 @@ describe("MyReservationsPage", () => {
       };
 
       await respond("active");
-      await screen.findByText("Aktivna");
+      await screen.findByText(/Aktivna/);
 
       await userEvent.click(tab("history"));
-      expect(screen.queryByText("Aktivna")).not.toBeInTheDocument();
+      expect(screen.queryByText(/Aktivna/)).not.toBeInTheDocument();
       expect(screen.getByRole("status")).toBeInTheDocument();
 
       // Back to Active and to History again; the first History answer arrives after the second Active one.
@@ -194,14 +196,14 @@ describe("MyReservationsPage", () => {
       await userEvent.click(tab("active"));
       await respond("active");
       await respond("all");
-      expect(await screen.findByText("Aktivna")).toBeInTheDocument();
+      expect(await screen.findByText(/Aktivna/)).toBeInTheDocument();
       await new Promise((r) => setTimeout(r, 0));
-      expect(screen.queryByText("Jogurt")).not.toBeInTheDocument();
+      expect(screen.queryByText(/Jogurt/)).not.toBeInTheDocument();
     });
 
     it("offers every status on History and clears the status on each tab switch", async () => {
       renderHistory();
-      await screen.findByText("Aktivna");
+      await screen.findByText(/Aktivna/);
       await userEvent.selectOptions(statusSelect(), t("reservationStatus.Pending"));
 
       await userEvent.click(tab("history"));
@@ -217,10 +219,10 @@ describe("MyReservationsPage", () => {
 
     it("resets the name, store, period and status on each tab switch and keeps the sort", async () => {
       renderHistory();
-      await screen.findByText("Aktivna");
+      await screen.findByText(/Aktivna/);
 
       await userEvent.selectOptions(screen.getByLabelText(t("filters.sortBy")), t("reservations.sortPickupSoonest"));
-      await userEvent.type(screen.getByPlaceholderText(t("filters.searchByName")), "jog");
+      await userEvent.type(screen.getByPlaceholderText(t("orders.searchProduct")), "jog");
       await userEvent.type(screen.getByPlaceholderText(t("filters.searchByStore")), "centar");
       await userEvent.selectOptions(statusSelect(), t("reservationStatus.Confirmed"));
       await waitFor(() =>
@@ -231,19 +233,19 @@ describe("MyReservationsPage", () => {
       await waitFor(() =>
         expect(lastListParams()).toMatchObject({ scope: "all", name: "", business_name: "", status: "", period: "" }),
       );
-      expect(screen.getByPlaceholderText(t("filters.searchByName"))).toHaveValue("");
+      expect(screen.getByPlaceholderText(t("orders.searchProduct"))).toHaveValue("");
       expect(screen.getByPlaceholderText(t("filters.searchByStore"))).toHaveValue("");
       expect(statusSelect()).toHaveValue("");
       expect(screen.queryByRole("button", { name: t("filters.clear") })).not.toBeInTheDocument();
 
       await userEvent.selectOptions(periodSelect(), t("reservations.period.last7Days"));
-      await userEvent.type(screen.getByPlaceholderText(t("filters.searchByName")), "hlj");
+      await userEvent.type(screen.getByPlaceholderText(t("orders.searchProduct")), "hlj");
       await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all", name: "hlj", period: "7d" }));
 
       await userEvent.click(tab("active"));
       await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "active", name: "", sort: "pickup" }));
       expect(lastListParams()).not.toHaveProperty("period");
-      expect(screen.getByPlaceholderText(t("filters.searchByName"))).toHaveValue("");
+      expect(screen.getByPlaceholderText(t("orders.searchProduct"))).toHaveValue("");
       expect(screen.getByLabelText(t("filters.sortBy"))).toHaveValue("pickup");
 
       await userEvent.click(tab("history"));
@@ -252,11 +254,11 @@ describe("MyReservationsPage", () => {
 
     it("has no status chips; the status select filters and the count pill shows the results", async () => {
       renderHistory();
-      await screen.findByText("Aktivna");
+      await screen.findByText(/Aktivna/);
       await userEvent.click(tab("history"));
-      await screen.findByText("Jogurt");
+      await screen.findByText(/Jogurt/);
 
-      expect(screen.getByText(t("reservations.count", { count: 2 }))).toBeInTheDocument();
+      expect(screen.getByText(t("orders.count", { count: 2 }))).toBeInTheDocument();
       expect(screen.queryAllByRole("button", { pressed: false })).toHaveLength(0);
       expect(screen.queryAllByRole("button", { pressed: true })).toHaveLength(0);
 
@@ -266,7 +268,7 @@ describe("MyReservationsPage", () => {
 
     it("clears the period, name and status but keeps the tab", async () => {
       renderHistory();
-      await screen.findByText("Aktivna");
+      await screen.findByText(/Aktivna/);
       await userEvent.click(tab("history"));
       await userEvent.selectOptions(statusSelect(), t("reservationStatus.Completed"));
       await userEvent.selectOptions(periodSelect(), t("reservations.period.today"));
@@ -278,43 +280,43 @@ describe("MyReservationsPage", () => {
     });
   });
 
-  it("cancels a reservation after confirmation and reloads the list and the summary", async () => {
+  it("cancels an order after confirmation and reloads the list and the summary", async () => {
     const success = vi.spyOn(toast, "success");
-    apiMock.patch.mockResolvedValue({ data: { message: "Reservation cancelled successfully." } });
-    renderPage([makeReservation({ id: 5, status: "Pending" })]);
+    apiMock.post.mockResolvedValue({ data: { message: "Order cancelled." } });
+    renderPage([order(5, "Piletina", { status: "Pending" })]);
 
     await userEvent.click(await screen.findByRole("button", { name: t("reservations.cancelShortButton") }));
     const dialog = screen.getByRole("dialog");
-    await userEvent.click(within(dialog).getByRole("button", { name: t("reservations.cancelButton") }));
+    await userEvent.click(within(dialog).getByRole("button", { name: t("orders.cancelButton") }));
 
-    expect(apiMock.patch).toHaveBeenCalledWith("/reservations/5/cancel");
-    expect(success).toHaveBeenCalledWith("Reservation cancelled successfully.");
+    expect(apiMock.post).toHaveBeenCalledWith("/orders/5/cancel");
+    expect(success).toHaveBeenCalledWith("Order cancelled.");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(listCalls()).toHaveLength(2);
-    expect(apiMock.get.mock.calls.filter(([url]) => url === "/reservations/mine/summary")).toHaveLength(2);
+    expect(apiMock.get.mock.calls.filter(([url]) => url === "/orders/mine/summary")).toHaveLength(2);
   });
 
-  it("keeps the reservation when the user changes their mind", async () => {
-    renderPage([makeReservation({ id: 5, status: "Pending" })]);
+  it("keeps the order when the user changes their mind", async () => {
+    renderPage([order(5, "Piletina", { status: "Pending" })]);
 
     await userEvent.click(await screen.findByRole("button", { name: t("reservations.cancelShortButton") }));
     await userEvent.click(screen.getByRole("button", { name: t("reservations.keepButton") }));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(apiMock.patch).not.toHaveBeenCalled();
+    expect(apiMock.post).not.toHaveBeenCalled();
     expect(cancelButton()).toBeInTheDocument();
   });
 
   it("shows the server error when cancelling fails", async () => {
     const error = vi.spyOn(toast, "error");
     vi.spyOn(console, "error").mockImplementation(() => {});
-    apiMock.patch.mockRejectedValue(axiosError(400, "Reservation is not in 'Pending' status."));
-    renderPage([makeReservation({ id: 5, status: "Pending" })]);
+    apiMock.post.mockRejectedValue(axiosError(400, "Only pending orders can be cancelled."));
+    renderPage([order(5, "Piletina", { status: "Pending" })]);
 
     await userEvent.click(await screen.findByRole("button", { name: t("reservations.cancelShortButton") }));
-    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: t("reservations.cancelButton") }));
+    await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: t("orders.cancelButton") }));
 
-    expect(error).toHaveBeenCalledWith("Reservation is not in 'Pending' status.");
+    expect(error).toHaveBeenCalledWith("Only pending orders can be cancelled.");
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

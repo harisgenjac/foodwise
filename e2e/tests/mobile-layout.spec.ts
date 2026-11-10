@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { runId, storageState, type SeededRole } from "../support/accounts.js";
-import { apiAs, createDonation, createProduct, createStoreWithoutPlan, myId, requestSubscription, reserve } from "../support/api.js";
+import { apiAs, createDonation, createProduct, createStoreWithoutPlan, myId, requestSubscription, sendOrder } from "../support/api.js";
 
 // Phone width: every store and restaurant page fits the screen, with the bottom bar instead of the
 // sidebar (docs/mobile-review.md, the navigation shell).
@@ -9,8 +9,8 @@ const WIDTH = Number(process.env.MOBILE_WIDTH ?? 375);
 test.use({ viewport: { width: WIDTH, height: 812 }, hasTouch: true });
 
 // Only stores have a Credits page: restaurants pay no credits.
-const STORE_PAGES = ["/dashboard", "/my-products", "/add-product", "/import-products", "/reservations", "/credits"];
-const RESTAURANT_PAGES = ["/dashboard", "/browse-products", "/stores", "/my-reservations"];
+const STORE_PAGES = ["/dashboard", "/my-products", "/add-product", "/import-products", "/orders", "/credits"];
+const RESTAURANT_PAGES = ["/dashboard", "/browse-products", "/stores", "/my-orders"];
 const SHARED_PAGES = ["/pickups", "/reports", "/my-profile", "/donate-food", "/donate-food/new", "/sponsor", "/notifications"];
 
 const bottomBar = (page: Page) => page.getByRole("navigation", { name: "Glavna navigacija" });
@@ -104,7 +104,7 @@ const expectFilterPanel = async (page: Page, path: string, search: string) => {
 };
 
 let productId: number;
-let reservationId: number;
+let orderId: number;
 let storeId: number;
 let restaurantId: number;
 const donationIds: Partial<Record<SeededRole, number>> = {};
@@ -115,7 +115,7 @@ test.beforeAll(async () => {
   productId = (await createProduct(storeApi, { name: `E2E Mobilni ${runId()}` })).id;
   storeId = await myId(storeApi);
   restaurantId = await myId(restaurantApi);
-  reservationId = (await reserve(restaurantApi, productId, 1)).id;
+  orderId = (await sendOrder(restaurantApi, productId, 1)).id;
   donationIds.store = (await createDonation(storeApi, `E2E Mobilna donacija ${runId()}`)).id;
   donationIds.restaurant = (await createDonation(restaurantApi, `E2E Mobilni obrok ${runId()}`)).id;
   await storeApi.dispose();
@@ -126,7 +126,7 @@ test.describe("store", () => {
   test.use({ storageState: storageState("store") });
 
   test("every page fits a phone screen", async ({ page }) => {
-    const details = [`/products/${productId}`, `/edit-product/${productId}`, `/reservation/${reservationId}`, `/donate-food/${donationIds.store}/edit`];
+    const details = [`/products/${productId}`, `/edit-product/${productId}`, `/orders/${orderId}`, `/donate-food/${donationIds.store}/edit`];
     for (const path of [...STORE_PAGES, ...SHARED_PAGES, ...details]) await expectPhoneLayout(page, path);
   });
 
@@ -228,11 +228,11 @@ test.describe("dialogs on a short phone (667 px)", () => {
   test.describe("restaurant", () => {
     test.use({ storageState: storageState("restaurant") });
 
-    test("the reserve dialog shows its buttons, and Back closes it on the same page", async ({ page }) => {
+    test("the order dialog shows its buttons, and Back closes it on the same page", async ({ page }) => {
       await page.goto(`/products/${productId}`);
-      await page.getByRole("button", { name: "Rezerviši" }).click();
-      const dialog = page.getByRole("dialog", { name: "Rezerviši" });
-      await expectButtonsOnScreen(page, dialog, ["Otkaži", "Potvrdi"]);
+      await page.getByRole("button", { name: "Naruči" }).click();
+      const dialog = page.getByRole("dialog", { name: "Naruči" });
+      await expectButtonsOnScreen(page, dialog, ["Otkaži", "Pošalji narudžbu"]);
 
       // The Android back button: the dialog closes and the page stays.
       await page.goBack();
@@ -464,7 +464,7 @@ test.describe("restaurant", () => {
   test.use({ storageState: storageState("restaurant") });
 
   test("every page fits a phone screen", async ({ page }) => {
-    const details = [`/stores/${storeId}`, `/products/${productId}`, `/reservation/${reservationId}`, `/donate-food/${donationIds.restaurant}/edit`];
+    const details = [`/stores/${storeId}`, `/products/${productId}`, `/orders/${orderId}`, `/donate-food/${donationIds.restaurant}/edit`];
     for (const path of [...RESTAURANT_PAGES, ...SHARED_PAGES, ...details]) await expectPhoneLayout(page, path);
   });
 
@@ -472,10 +472,10 @@ test.describe("restaurant", () => {
     await expectFilterPanel(page, "/browse-products", "Pretraga po imenu");
   });
 
-  test("stat labels are not cut, and the reservation tabs are 44 px", async ({ page }) => {
+  test("stat labels are not cut, and the order tabs are 44 px", async ({ page }) => {
     await expectStatLabelsWhole(page);
-    await page.goto("/my-reservations");
-    await expectTapTargets(page.getByRole("tablist"), "/my-reservations tabs");
+    await page.goto("/my-orders");
+    await expectTapTargets(page.getByRole("tablist"), "/my-orders tabs");
   });
 
   test("the meal donation form uses at least 16 px text", async ({ page }) => {

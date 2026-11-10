@@ -1,12 +1,12 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import ProductDetailsPage from "./ProductDetailsPage.js";
-import ReservationDetailsPage from "./ReservationDetailsPage.js";
+import OrderDetailsPage from "./OrderDetailsPage.js";
 import StoreDetailsPage from "./StoreDetailsPage.js";
 import AdminUserDetailsPage from "./admin/AdminUserDetailsPage.js";
 import {
   axiosError,
   makeProduct,
-  makeReservation,
+  makeOrderDetails,
   makeUser,
   renderWithProviders,
   t,
@@ -84,24 +84,24 @@ describe("Product details breadcrumbs", () => {
   });
 });
 
-describe("Reservation details breadcrumbs", () => {
-  const reservation = makeReservation({ id: 7 });
+describe("Order details breadcrumbs", () => {
+  const order = makeOrderDetails({ id: 7 });
 
   it.each([
-    ["store", STORE, "sidebar.reservations", "/reservations"],
-    ["restaurant", RESTAURANT, "sidebar.myReservations", "/my-reservations"],
-  ])("puts the reservation under the %s's list", async (_role, user, labelKey, to) => {
-    renderWithProviders(<ReservationDetailsPage />, {
-      route: "/reservation/7",
-      path: "/reservation/:id",
+    ["store", STORE, "sidebar.orders", "/orders"],
+    ["restaurant", RESTAURANT, "sidebar.myOrders", "/my-orders"],
+  ])("puts the order under the %s's list", async (_role, user, labelKey, to) => {
+    renderWithProviders(<OrderDetailsPage />, {
+      route: "/orders/7",
+      path: "/orders/:id",
       user,
-      get: { "/reservations/7": { reservation } },
+      get: { "/orders/7": { order } },
     });
 
-    await screen.findByText(reservation.product_name!);
+    await screen.findByRole("heading", { level: 1, name: t("orders.title", { code: "#K7PM" }) });
     await expectTrail([
       [t(labelKey), to],
-      [t("breadcrumbs.reservation", { id: "7" }), null],
+      ["#K7PM", null],
     ]);
   });
 });
@@ -116,7 +116,7 @@ describe("Store details breadcrumbs", () => {
         "/users/stores/2": storeResponse,
         "/favorites": { favorites: [] },
         "/products": { products: [PRODUCT], total: 1 },
-        "/reservations/mine": { reservations: [], total: 0 },
+        "/orders/mine": { orders: [], total: 0 },
       },
     });
 

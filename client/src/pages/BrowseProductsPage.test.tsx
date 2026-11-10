@@ -188,12 +188,12 @@ describe("BrowseProductsPage", () => {
     });
   });
 
-  it("opens the reservation modal for a product", async () => {
+  it("opens the order dialog for a product", async () => {
     renderPage(() => [makeProduct({ id: 1, name: "Piletina" })]);
     await userEvent.click(await screen.findByRole("button", { name: t("myProducts.reserveButton") }));
 
     const dialog = screen.getByRole("dialog");
-    expect(within(dialog).getByRole("heading", { name: t("myReservations.reservePopupTitle") })).toBeInTheDocument();
+    expect(within(dialog).getByRole("heading", { name: t("orders.send.title") })).toBeInTheDocument();
     expect(within(dialog).getByText("Piletina")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: t("myReservations.cancelButton") }));

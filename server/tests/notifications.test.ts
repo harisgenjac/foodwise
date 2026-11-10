@@ -12,6 +12,9 @@ import {
   type Agent,
   insertOrderItem,
   orderOf,
+  acceptItem,
+  rejectItem,
+  itemOrderAction,
 } from "./helpers.js";
 
 const STORE = "notifications-store@test.com";
@@ -89,7 +92,7 @@ describe("Notifications", () => {
       const product = await createProduct(store, { quantity: 4 });
       const reservationId = await reserve(restaurant, product.id, 4);
 
-      const accept = await store.patch(`/api/reservations/${reservationId}/accept`);
+      const accept = await acceptItem(store, reservationId);
       expect(accept.status).toBe(200);
 
       expect((await notificationsOf(restaurant))[0]).toMatchObject({
@@ -103,7 +106,7 @@ describe("Notifications", () => {
     it("does not send a sold-out notification while quantity remains", async () => {
       const product = await createProduct(store, { quantity: 10 });
       const reservationId = await reserve(restaurant, product.id, 4);
-      await store.patch(`/api/reservations/${reservationId}/accept`);
+      await acceptItem(store, reservationId);
 
       const storeTypes = (await notificationsOf(store)).map((n) => n.type);
       expect(storeTypes).not.toContain("PRODUCT_SOLD_OUT");
@@ -114,8 +117,8 @@ describe("Notifications", () => {
       const rejected = await reserve(restaurant, product.id, 2);
       const cancelled = await reserve(restaurant, product.id, 2);
 
-      expect((await store.patch(`/api/reservations/${rejected}/reject`)).status).toBe(200);
-      expect((await restaurant.patch(`/api/reservations/${cancelled}/cancel`)).status).toBe(200);
+      expect((await rejectItem(store, rejected)).status).toBe(200);
+      expect((await itemOrderAction(restaurant, cancelled, "cancel")).status).toBe(200);
 
       expect((await notificationsOf(restaurant))[0]).toMatchObject({
         type: "ORDER_REJECTED",
@@ -130,10 +133,10 @@ describe("Notifications", () => {
     it("does not create a notification when an action fails", async () => {
       const product = await createProduct(store);
       const reservationId = await reserve(restaurant, product.id, 1);
-      await store.patch(`/api/reservations/${reservationId}/accept`);
+      await acceptItem(store, reservationId);
       const before = (await notificationsOf(restaurant)).length;
 
-      expect((await store.patch(`/api/reservations/${reservationId}/reject`)).status).toBe(400);
+      expect((await rejectItem(store, reservationId)).status).toBe(400);
       expect(await notificationsOf(restaurant)).toHaveLength(before);
     });
   });

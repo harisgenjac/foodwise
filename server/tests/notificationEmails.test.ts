@@ -24,6 +24,9 @@ import {
   reserve,
   userId,
   type Agent,
+  acceptItem,
+  rejectItem,
+  itemOrderAction,
 } from "./helpers.js";
 
 // Every notification queues its email: each type through createNotification, and every bulk path
@@ -185,11 +188,11 @@ it("the actions of both sides queue their emails with the right links", async ()
   const product = await createProduct(store, { name: "Mlijeko", unit: "l", quantity: 10 });
   const first = await reserve(restaurant, product.id, 2);
   const second = await reserve(restaurant, product.id, 3);
-  expect((await store.patch(`/api/reservations/${first}/accept`)).status).toBe(200);
-  expect((await store.patch(`/api/reservations/${second}/reject`)).status).toBe(200);
-  expect((await store.patch(`/api/reservations/${first}/complete`)).status).toBe(200);
+  expect((await acceptItem(store, first)).status).toBe(200);
+  expect((await rejectItem(store, second)).status).toBe(200);
+  expect((await itemOrderAction(store, first, "complete")).status).toBe(200);
   const third = await reserve(restaurant, product.id, 1);
-  expect((await restaurant.patch(`/api/reservations/${third}/cancel`)).status).toBe(200);
+  expect((await itemOrderAction(restaurant, third, "cancel")).status).toBe(200);
 
   expect((await emailsTo(STORE)).map((row) => row.template)).toEqual([
     "ORDER_CREATED",
@@ -205,7 +208,7 @@ it("the actions of both sides queue their emails with the right links", async ()
   expect(accepted.en.subject).toBe(`Order #${code} was accepted`);
   expect(accepted.bs.text).toContain("Prodavnica: Test Business");
   expect(accepted.bs.text).toContain("- Mlijeko, 2 l: 10,00 KM");
-  expect(accepted.bs.text).toContain(`Otvori rezervacije: ${APP_URL}/my-reservations`);
+  expect(accepted.bs.text).toContain(`Otvori narudžbu: ${APP_URL}/orders/${await orderOf(first)}`);
   // The data is a snapshot: the rejection shows the line as it was then.
   expect(renderBoth(toRestaurant[1]!).bs.text).toContain("- [Mlijeko, 3 l]: 15,00 KM");
   expect(renderBoth(toRestaurant[2]!).en.text).toContain(`The pickup of order #${code} was confirmed.`);
@@ -326,11 +329,8 @@ it("the reminder and expiry jobs queue their emails", async () => {
   const tomorrow = await createProduct(store, { name: "Kajmak", expiry_date: futureDate(1) });
   await reserve(restaurant, tomorrow.id, 1);
   const today = await createProduct(store, { name: "Burek", expiry_date: futureDate(0) });
-  const reserved = await restaurant
-    .post("/api/reservations")
-    .send({ product_id: today.id, quantity: 1, pickup_date: `${futureDate(0)}T12:00:00` });
-  expect(reserved.status).toBe(201);
-  expect((await store.patch(`/api/reservations/${reserved.body.reservation.id}/accept`)).status).toBe(200);
+  const reserved = await reserve(restaurant, today.id, 1, `${futureDate(0)}T12:00:00`);
+  expect((await acceptItem(store, reserved)).status).toBe(200);
   const expired = await pool.query<{ id: number }>(
     `INSERT INTO products (store_id, name, category, original_price, discounted_price, quantity, unit, expiry_date)
      VALUES ($1, 'Stari sir', 'Dairy', 2, 1, 5, 'kg', CURRENT_DATE - 1) RETURNING id`,

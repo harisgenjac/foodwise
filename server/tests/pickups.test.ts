@@ -8,6 +8,9 @@ import {
   userId,
   type Agent,
   insertOrderItem,
+  acceptItem,
+  itemOrderAction,
+  orderOf,
 } from "./helpers.js";
 
 const STORE_A = "pickups-store-a@test.com";
@@ -18,7 +21,7 @@ const RESTAURANT_B = "pickups-restaurant-b@test.com";
 let store: Agent;
 let restaurant: Agent;
 
-// Inserts a reservation with a chosen status and a pickup at `time` on CURRENT_DATE + `days`
+// Inserts a one-item order with a chosen status and a pickup at `time` on CURRENT_DATE + `days`
 // (the API only accepts future pickups and always starts as Pending).
 const insertReservation = async (
   productId: number,
@@ -39,6 +42,9 @@ const insertReservation = async (
   });
   return itemId;
 };
+
+// The order of an item: the pickups list shows orders.
+const orderIdOf = orderOf;
 
 const reservationRow = async (id: number) =>
   (
@@ -61,7 +67,7 @@ const notificationTypes = async (email: string) =>
     await pool.query<{ type: string }>("SELECT type FROM notifications WHERE user_id = $1", [await userId(email)])
   ).rows.map((row) => row.type);
 
-const ids = (body: { reservations: { id: number }[] }) => body.reservations.map((r) => r.id);
+const ids = (body: { orders: { id: number }[] }) => body.orders.map((r) => r.id);
 
 describe("Pickups", () => {
   beforeEach(async () => {
@@ -73,8 +79,8 @@ describe("Pickups", () => {
     await cleanupUsers([STORE_A, STORE_B, RESTAURANT_A, RESTAURANT_B]);
   });
 
-  describe("GET /api/reservations/pickups", () => {
-    it("splits Confirmed reservations into today (with overdue first) and upcoming, and lists Completed", async () => {
+  describe("GET /api/orders/pickups", () => {
+    it("splits Confirmed orders into today (with overdue first) and upcoming, and lists Completed", async () => {
       const product = await createProduct(store, { quantity: 20 });
       const overdue = await insertReservation(product.id, RESTAURANT_A, { days: -2 });
       const earlier = await insertReservation(product.id, RESTAURANT_A, { days: 0, time: "00:00:01" });
@@ -83,20 +89,20 @@ describe("Pickups", () => {
       const completed = await insertReservation(product.id, RESTAURANT_A, { status: "Completed", days: -1 });
       await insertReservation(product.id, RESTAURANT_A, { status: "Pending", days: 0 });
 
-      const today = await store.get("/api/reservations/pickups?scope=today");
+      const today = await store.get("/api/orders/pickups?scope=today");
       expect(today.status).toBe(200);
-      expect(ids(today.body)).toEqual([overdue, earlier, later]);
-      expect(today.body.reservations[0]).toMatchObject({ is_overdue: true, days_overdue: 2 });
+      expect(ids(today.body)).toEqual([await orderIdOf(overdue), await orderIdOf(earlier), await orderIdOf(later)]);
+      expect(today.body.orders[0]).toMatchObject({ is_overdue: true, days_overdue: 2 });
       // A pickup time that passed earlier today is not late yet; only a past day is.
-      expect(today.body.reservations[1]).toMatchObject({ is_overdue: false, days_overdue: 0 });
-      expect(today.body.reservations[2]).toMatchObject({ is_overdue: false, days_overdue: 0 });
+      expect(today.body.orders[1]).toMatchObject({ is_overdue: false, days_overdue: 0 });
+      expect(today.body.orders[2]).toMatchObject({ is_overdue: false, days_overdue: 0 });
 
-      const next = await store.get("/api/reservations/pickups?scope=upcoming");
-      expect(ids(next.body)).toEqual([upcoming]);
+      const next = await store.get("/api/orders/pickups?scope=upcoming");
+      expect(ids(next.body)).toEqual([await orderIdOf(upcoming)]);
 
-      const done = await store.get("/api/reservations/pickups?scope=completed");
-      expect(ids(done.body)).toEqual([completed]);
-      expect(done.body.reservations[0].picked_up_at).not.toBeNull();
+      const done = await store.get("/api/orders/pickups?scope=completed");
+      expect(ids(done.body)).toEqual([await orderIdOf(completed)]);
+      expect(done.body.orders[0].picked_up_at).not.toBeNull();
     });
 
     it("returns the other party: the restaurant to the store and the store to the restaurant", async () => {
@@ -105,11 +111,11 @@ describe("Pickups", () => {
       const product = await createProduct(store);
       await insertReservation(product.id, RESTAURANT_A);
 
-      const storeView = await store.get("/api/reservations/pickups?scope=today");
-      expect(storeView.body.reservations[0]).toMatchObject({ business_name: "Bistro A", party_phone: "061111111" });
+      const storeView = await store.get("/api/orders/pickups?scope=today");
+      expect(storeView.body.orders[0]).toMatchObject({ business_name: "Bistro A", party_phone: "061111111" });
 
-      const restaurantView = await restaurant.get("/api/reservations/pickups?scope=today");
-      expect(restaurantView.body.reservations[0]).toMatchObject({
+      const restaurantView = await restaurant.get("/api/orders/pickups?scope=today");
+      expect(restaurantView.body.orders[0]).toMatchObject({
         business_name: "Market A",
         party_pickup_hours: "8-16",
       });
@@ -121,9 +127,9 @@ describe("Pickups", () => {
       const product = await createProduct(store);
       await insertReservation(product.id, RESTAURANT_A);
 
-      expect((await otherStore.get("/api/reservations/pickups?scope=today")).body.reservations).toEqual([]);
-      expect((await otherRestaurant.get("/api/reservations/pickups?scope=today")).body.reservations).toEqual([]);
-      expect((await restaurant.get("/api/reservations/pickups?scope=today")).body.reservations).toHaveLength(1);
+      expect((await otherStore.get("/api/orders/pickups?scope=today")).body.orders).toEqual([]);
+      expect((await otherRestaurant.get("/api/orders/pickups?scope=today")).body.orders).toEqual([]);
+      expect((await restaurant.get("/api/orders/pickups?scope=today")).body.orders).toHaveLength(1);
     });
 
     it("filters by product name", async () => {
@@ -132,18 +138,18 @@ describe("Pickups", () => {
       const milkReservation = await insertReservation(milk.id, RESTAURANT_A);
       await insertReservation(bread.id, RESTAURANT_A);
 
-      const response = await store.get("/api/reservations/pickups?scope=today&name=mlij");
-      expect(ids(response.body)).toEqual([milkReservation]);
+      const response = await store.get("/api/orders/pickups?scope=today&name=mlij");
+      expect(ids(response.body)).toEqual([await orderIdOf(milkReservation)]);
     });
 
     it.each(["", "scope=all"])("returns 400 for an invalid scope (%s)", async (query) => {
-      const response = await store.get(`/api/reservations/pickups?${query}`);
+      const response = await store.get(`/api/orders/pickups?${query}`);
       expect(response.status).toBe(400);
       expect(response.body.error).toBe("Invalid filter.");
     });
   });
 
-  describe("GET /api/reservations/pickups/counts", () => {
+  describe("GET /api/orders/pickups/counts", () => {
     it("counts today, overdue, upcoming and completed pickups for both sides", async () => {
       const product = await createProduct(store, { quantity: 20 });
       await insertReservation(product.id, RESTAURANT_A, { days: -1 });
@@ -152,92 +158,94 @@ describe("Pickups", () => {
       await insertReservation(product.id, RESTAURANT_A, { status: "Completed", days: -1 });
 
       const expected = { today: 2, overdue: 1, upcoming: 1, completed: 1 };
-      const storeCounts = await store.get("/api/reservations/pickups/counts");
+      const storeCounts = await store.get("/api/orders/pickups/counts");
       expect(storeCounts.status).toBe(200);
       expect(storeCounts.body.counts).toEqual(expected);
-      expect((await restaurant.get("/api/reservations/pickups/counts")).body.counts).toEqual(expected);
+      expect((await restaurant.get("/api/orders/pickups/counts")).body.counts).toEqual(expected);
     });
   });
 
-  describe("PATCH /api/reservations/:id/complete", () => {
-    it("marks a Confirmed reservation Completed and notifies the restaurant", async () => {
+  describe("POST /api/orders/:id/complete", () => {
+    it("marks a Confirmed order Completed and notifies the restaurant", async () => {
       const product = await createProduct(store);
       const id = await insertReservation(product.id, RESTAURANT_A, { days: -1 });
 
-      const response = await store.patch(`/api/reservations/${id}/complete`);
+      const response = await itemOrderAction(store, id, "complete");
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Reservation marked as picked up.");
+      expect(response.body.message).toBe("Order marked as picked up.");
       const row = await reservationRow(id);
       expect(row.status).toBe("Completed");
       expect(row.picked_up_at).not.toBeNull();
       expect(await notificationTypes(RESTAURANT_A)).toContain("ORDER_COMPLETED");
 
-      const again = await store.patch(`/api/reservations/${id}/complete`);
+      const again = await itemOrderAction(store, id, "complete");
       expect(again.status).toBe(400);
-      expect(again.body.error).toBe("Only accepted reservations can be marked as picked up.");
+      expect(again.body.error).toBe("Only accepted orders can be marked as picked up.");
     });
 
     it("keeps the picked-up quantity out of stock", async () => {
       const product = await createProduct(store, { quantity: 10 });
       const id = await reserve(restaurant, product.id, 6);
-      await store.patch(`/api/reservations/${id}/accept`);
+      await acceptItem(store, id);
       expect(await availableQuantity(product.id)).toBe(4);
 
-      await store.patch(`/api/reservations/${id}/complete`);
+      await itemOrderAction(store, id, "complete");
       expect(await availableQuantity(product.id)).toBe(4);
 
-      const tooMuch = await restaurant
-        .post("/api/reservations")
-        .send({ product_id: product.id, quantity: 5, pickup_date: `${futureDate(0)}T23:00` });
-      expect(tooMuch.status).toBe(400);
-      expect(tooMuch.body.error).toBe("Not enough product available.");
+      const tooMuch = await restaurant.post("/api/orders").send({
+        pickup_at: `${futureDate(0)}T23:00`,
+        accept_partial: false,
+        items: [{ product_id: product.id, quantity: 5, unit_price: 5 }],
+      });
+      expect(tooMuch.status).toBe(409);
+      expect(tooMuch.body.lines).toMatchObject([{ kind: "QUANTITY_REDUCED", available: 4 }]);
     });
 
-    it("still counts a Completed reservation as successful in the store statistics", async () => {
+    it("still counts a Completed order as successful in the store statistics", async () => {
       const product = await createProduct(store);
       const id = await insertReservation(product.id, RESTAURANT_A);
-      await store.patch(`/api/reservations/${id}/complete`);
+      await itemOrderAction(store, id, "complete");
 
       const response = await restaurant.get(`/api/users/stores/${await userId(STORE_A)}`);
       expect(response.body.stats.successful_reservations).toBe("1");
     });
 
-    it.each(["Pending", "Rejected", "Cancelled"])("returns 400 for a %s reservation", async (status) => {
+    it.each(["Pending", "Rejected", "Cancelled"])("returns 400 for a %s order", async (status) => {
       const product = await createProduct(store);
       const id = await insertReservation(product.id, RESTAURANT_A, { status });
-      const response = await store.patch(`/api/reservations/${id}/complete`);
+      const response = await itemOrderAction(store, id, "complete");
       expect(response.status).toBe(400);
       expect(await reservationRow(id)).toMatchObject({ status });
     });
 
-    it("returns 403 for another store and for a restaurant", async () => {
+    it("returns 404 for another store and 403 for a restaurant", async () => {
       const otherStore = await registerAndLogin(STORE_B, "STORE");
       const product = await createProduct(store);
       const id = await insertReservation(product.id, RESTAURANT_A);
 
-      const foreign = await otherStore.patch(`/api/reservations/${id}/complete`);
-      expect(foreign.status).toBe(403);
-      expect(foreign.body.error).toBe("You are not allowed to confirm the pickup of this reservation.");
-      expect((await restaurant.patch(`/api/reservations/${id}/complete`)).status).toBe(403);
+      const foreign = await itemOrderAction(otherStore, id, "complete");
+      expect(foreign.status).toBe(404);
+      expect(foreign.body.error).toBe("Order not found.");
+      expect((await itemOrderAction(restaurant, id, "complete")).status).toBe(403);
       expect((await reservationRow(id)).status).toBe("Confirmed");
     });
 
-    it("returns 404 for a missing reservation", async () => {
-      const response = await store.patch("/api/reservations/999999/complete");
+    it("returns 404 for a missing order", async () => {
+      const response = await store.post("/api/orders/999999/complete");
       expect(response.status).toBe(404);
-      expect(response.body.error).toBe("Reservation not found.");
+      expect(response.body.error).toBe("Order not found.");
     });
   });
 
-  describe("PATCH /api/reservations/:id/cancel-overdue", () => {
+  describe("POST /api/orders/:id/cancel-overdue", () => {
     it("cancels an overdue pickup, frees the quantity and notifies the restaurant", async () => {
       const product = await createProduct(store, { quantity: 10 });
       const id = await insertReservation(product.id, RESTAURANT_A, { days: -1, quantity: 4 });
       expect(await availableQuantity(product.id)).toBe(6);
 
-      const response = await store.patch(`/api/reservations/${id}/cancel-overdue`);
+      const response = await itemOrderAction(store, id, "cancel-overdue");
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Overdue reservation cancelled.");
+      expect(response.body.message).toBe("Overdue order cancelled.");
       expect((await reservationRow(id)).status).toBe("Cancelled");
       expect(await availableQuantity(product.id)).toBe(10);
       expect(await notificationTypes(RESTAURANT_A)).toContain("ORDER_PICKUP_MISSED");
@@ -248,7 +256,7 @@ describe("Pickups", () => {
       const id = await insertReservation(product.id, RESTAURANT_A, { days: -1, quantity: 4 });
       await pool.query("UPDATE products SET status = 'Sold' WHERE id = $1", [product.id]);
 
-      await store.patch(`/api/reservations/${id}/cancel-overdue`);
+      await itemOrderAction(store, id, "cancel-overdue");
       expect(await productStatus(product.id)).toBe("Available");
     });
 
@@ -257,7 +265,7 @@ describe("Pickups", () => {
       const id = await insertReservation(product.id, RESTAURANT_A, { days: -2, quantity: 4 });
       await pool.query("UPDATE products SET status = 'Sold', expiry_date = CURRENT_DATE - 1 WHERE id = $1", [product.id]);
 
-      const response = await store.patch(`/api/reservations/${id}/cancel-overdue`);
+      const response = await itemOrderAction(store, id, "cancel-overdue");
       expect(response.status).toBe(200);
       expect(await productStatus(product.id)).toBe("Sold");
     });
@@ -269,30 +277,29 @@ describe("Pickups", () => {
     ])("returns 400 for a pickup on %s", async (_label, when) => {
       const product = await createProduct(store);
       const id = await insertReservation(product.id, RESTAURANT_A, when);
-      const response = await store.patch(`/api/reservations/${id}/cancel-overdue`);
+      const response = await itemOrderAction(store, id, "cancel-overdue");
       expect(response.status).toBe(400);
       expect(response.body.error).toBe("Only overdue pickups can be cancelled.");
       expect((await reservationRow(id)).status).toBe("Confirmed");
     });
 
-    it.each(["Pending", "Completed"])("returns 400 for a %s reservation", async (status) => {
+    it.each(["Pending", "Completed"])("returns 400 for a %s order", async (status) => {
       const product = await createProduct(store);
       const id = await insertReservation(product.id, RESTAURANT_A, { status, days: -1 });
-      const response = await store.patch(`/api/reservations/${id}/cancel-overdue`);
+      const response = await itemOrderAction(store, id, "cancel-overdue");
       expect(response.status).toBe(400);
       expect((await reservationRow(id)).status).toBe(status);
     });
 
-    it("returns 403 for another store and for a restaurant, 404 for a missing reservation", async () => {
+    it("returns 404 for another store and a missing order, 403 for a restaurant", async () => {
       const otherStore = await registerAndLogin(STORE_B, "STORE");
       const product = await createProduct(store);
       const id = await insertReservation(product.id, RESTAURANT_A, { days: -1 });
 
-      const foreign = await otherStore.patch(`/api/reservations/${id}/cancel-overdue`);
-      expect(foreign.status).toBe(403);
-      expect(foreign.body.error).toBe("You are not allowed to cancel this reservation.");
-      expect((await restaurant.patch(`/api/reservations/${id}/cancel-overdue`)).status).toBe(403);
-      expect((await store.patch("/api/reservations/999999/cancel-overdue")).status).toBe(404);
+      const foreign = await itemOrderAction(otherStore, id, "cancel-overdue");
+      expect(foreign.status).toBe(404);
+      expect((await itemOrderAction(restaurant, id, "cancel-overdue")).status).toBe(403);
+      expect((await store.post("/api/orders/999999/cancel-overdue")).status).toBe(404);
       expect((await reservationRow(id)).status).toBe("Confirmed");
     });
   });

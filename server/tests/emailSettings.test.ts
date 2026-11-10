@@ -16,6 +16,7 @@ import {
   userId,
   type Agent,
   orderOf,
+  acceptItem,
 } from "./helpers.js";
 
 // Two templates that are not notifications, for the system-email rule: a system one (like the
@@ -144,7 +145,7 @@ describe("notification emails follow it", () => {
     expect(notifications.map((n: { order_id: number }) => n.order_id)).toContain(await orderOf(reservationId));
 
     // The restaurant still gets its own emails.
-    expect((await store.patch(`/api/reservations/${reservationId}/accept`)).status).toBe(200);
+    expect((await acceptItem(store, reservationId)).status).toBe(200);
     expect((await queueRows()).map((row) => [row.template, row.recipient])).toEqual([
       ["ORDER_ACCEPTED", RESTAURANT],
     ]);

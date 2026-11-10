@@ -37,6 +37,8 @@ export interface ShopSale {
   created_by_email: string | null;
 }
 
+// One item row as the admin's reservations and the headquarters' branch page still list it (until
+// orders PR 4 moves them to orders); the restaurant's and store's screens use Order.
 export interface Reservation {
   id: number;
   product_id: number;
@@ -48,7 +50,7 @@ export interface Reservation {
   updated_at: string;
   // Set when the store marks the reservation as picked up (Completed).
   picked_up_at?: string | null;
-  // Confirmed and the pickup day is before today (a passed time on the same day is not late); on GET /reservations/store, /reservations/:id and the pickups list.
+  // Confirmed and the pickup day is before today (a passed time on the same day is not late).
   is_overdue?: boolean;
   product_name?: string;
   description?: string;
@@ -58,9 +60,8 @@ export interface Reservation {
   unit?: string;
   business_name?: string;
   city?: string;
-  // On GET /reservations/:id and /reservations/mine.
   store_id?: number;
-  // Only on GET /reservations/:id, which returns both parties.
+  // Both parties (admin lists).
   store_address?: string | null;
   store_phone?: string | null;
   store_pickup_hours?: string | null;
@@ -68,11 +69,112 @@ export interface Reservation {
   restaurant_city?: string | null;
   restaurant_address?: string | null;
   restaurant_phone?: string | null;
-  // Only on GET /reservations/pickups: whole days since a missed pickup date, and the other party's contact.
+  // Whole days since a missed pickup date, and the other party's contact.
   days_overdue?: number;
   party_phone?: string | null;
   party_address?: string | null;
   party_pickup_hours?: string | null;
+}
+
+export type OrderStatus = "Pending" | "Confirmed" | "Completed" | "Rejected" | "Cancelled";
+export type ChangeReason = "NOT_ENOUGH_STOCK" | "QUALITY" | "OTHER";
+export type SendChangeKind = "QUANTITY_REDUCED" | "PRICE_LOWERED" | "NOT_SENT_SOLD_OUT" | "NOT_SENT_PRICE_RAISED";
+
+// One line of an order (a row of the items table). `quantity` is what the store accepted (the
+// ordered quantity while Pending); NUMERIC values arrive as strings.
+export interface OrderItem {
+  id: number;
+  product_id: number;
+  product_name: string;
+  category: string;
+  unit: string;
+  quantity: string;
+  ordered_quantity: string;
+  unit_price: string;
+  status: OrderStatus;
+  // Only on GET /orders/:id.
+  decided_at?: string | null;
+  change_reason?: ChangeReason | null;
+  change_note?: string | null;
+  picked_up_at?: string | null;
+  original_price?: string;
+  expiry_date?: string;
+}
+
+// What sending changed on a line (orders.send_changes and the send response's `changes`).
+export interface SendChange {
+  product_id: number;
+  name: string;
+  unit: string;
+  kind: SendChangeKind;
+  requested: number;
+  sent: number;
+  old_price: number;
+  new_price: number;
+}
+
+// An order as the lists return it (GET /orders/mine, /orders/store, /orders/pickups).
+export interface Order {
+  id: number;
+  // 4 characters, shown as #K7PM (formatOrderCode); unique within its store.
+  code: string;
+  status: OrderStatus;
+  fulfilment_method: "PICKUP";
+  pickup_at: string;
+  accept_partial: boolean;
+  decided_at: string | null;
+  picked_up_at: string | null;
+  created_at: string;
+  updated_at: string;
+  store_id: number;
+  restaurant_id: number;
+  // Confirmed and the pickup day is before today.
+  is_overdue: boolean;
+  item_count: number;
+  accepted_count: number;
+  // What the order sent, and the current amount (the accepted one after the decision).
+  ordered_total: string;
+  total: string;
+  // Confirmed or Completed with an item reduced or rejected.
+  is_partial: boolean;
+  items: OrderItem[];
+  // The other party (the store on the restaurant's lists, the restaurant on the store's).
+  business_name?: string;
+  city?: string | null;
+  // Only on GET /orders/pickups.
+  days_overdue?: number;
+  party_phone?: string | null;
+  party_address?: string | null;
+  party_pickup_hours?: string | null;
+}
+
+export interface OrderParty {
+  id: number;
+  business_name: string | null;
+  city: string | null;
+  address: string | null;
+  phone: string | null;
+  pickup_hours: string | null;
+}
+
+// One row of the order's timeline: the order's status (item_id null) or one item's.
+export interface OrderHistoryEntry {
+  id: number;
+  item_id: number | null;
+  from_status: OrderStatus | null;
+  to_status: OrderStatus;
+  source: "RESTAURANT" | "STORE" | "ADMIN" | "SYSTEM";
+  reason: string | null;
+  created_at: string;
+  product_name: string | null;
+}
+
+// GET /orders/:id: the order with both parties, the changes made at sending and the history.
+export interface OrderDetails extends Omit<Order, "business_name" | "city"> {
+  send_changes: SendChange[];
+  store: OrderParty;
+  restaurant: OrderParty;
+  history: OrderHistoryEntry[];
 }
 
 // COMPANY = a store chain's headquarters login (see Company).

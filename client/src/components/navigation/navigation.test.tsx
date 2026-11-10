@@ -151,7 +151,7 @@ describe("BottomNav", () => {
     renderLayout(store);
     await waitFor(() => expect(bottomBar()).toBeInTheDocument());
     expect(itemLinks()).toEqual(BOTTOM_NAV_ITEMS.STORE.map((item) => item.to));
-    expect(itemLinks()).toEqual(["/dashboard", "/my-products", "/reservations", "/pickups"]);
+    expect(itemLinks()).toEqual(["/dashboard", "/my-products", "/orders", "/pickups"]);
     const bar = within(bottomBar()!);
     expect(bar.getByRole("link", { name: t("bottomNav.myProducts") })).toBeInTheDocument();
     expect(bar.getAllByRole("listitem").at(-1)).toHaveTextContent(t("bottomNav.more"));
@@ -160,7 +160,7 @@ describe("BottomNav", () => {
   it("shows the restaurant's pages from the config", async () => {
     renderLayout(restaurant);
     await waitFor(() => expect(bottomBar()).toBeInTheDocument());
-    expect(itemLinks()).toEqual(["/dashboard", "/browse-products", "/my-reservations", "/pickups"]);
+    expect(itemLinks()).toEqual(["/dashboard", "/browse-products", "/my-orders", "/pickups"]);
     expect(within(bottomBar()!).getByRole("link", { name: t("bottomNav.browseProducts") })).toBeInTheDocument();
   });
 

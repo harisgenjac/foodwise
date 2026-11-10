@@ -17,6 +17,7 @@ import {
   reserve,
   userId,
   orderOf,
+  acceptItem,
 } from "./helpers.js";
 
 const ADMIN = "branches-admin@test.com";
@@ -319,7 +320,7 @@ describe("Branches", () => {
       });
 
       // The headquarters cannot act as the store.
-      expect((await hq.patch(`/api/reservations/${reservation}/accept`)).status).toBe(403);
+      expect((await acceptItem(hq, reservation)).status).toBe(403);
       expect((await hq.put(`/api/products/${product.id}`).send({})).status).toBe(403);
       expect((await hq.post(`/api/company/branches/${branchId}/products`).send({})).status).toBe(404);
     });
@@ -383,7 +384,7 @@ describe("Branches", () => {
       const product = await createProduct(branch, { quantity: 10 });
       for (const quantity of [1, 2]) {
         const id = await reserve(restaurant, product.id, quantity);
-        await branch.patch(`/api/reservations/${id}/accept`);
+        await acceptItem(branch, id);
       }
       const response = await hq.post(`/api/company/branches/${branchId}/deactivate`);
       expect(response.status).toBe(400);
@@ -417,10 +418,11 @@ describe("Branches", () => {
       expect((await restaurant.get(`/api/products/${product.id}`)).status).toBe(404);
       expect((await restaurant.get(`/api/users/stores/${branchId}`)).status).toBe(404);
       expect((await restaurant.get("/api/favorites")).body.favorites).toEqual([]);
-      const reservation = await restaurant
-        .post("/api/reservations")
-        .send({ product_id: product.id, quantity: 1, pickup_date: futurePickup(1) });
-      expect(reservation.status).toBe(404);
+      const order = await restaurant
+        .post("/api/orders")
+        .send({ pickup_at: futurePickup(1), items: [{ product_id: product.id, quantity: 1, unit_price: 5 }] });
+      expect(order.status).toBe(409);
+      expect(order.body.code).toBe("ORDER_NOT_SENT");
 
       // The running session ends; a new login gets the deactivation message.
       expect((await branch.get("/api/users/me")).status).toBe(401);

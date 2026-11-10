@@ -1,5 +1,6 @@
 // Small UI helpers shared by the specs. Kept as plain functions, not page objects.
 import { expect, type Page } from "@playwright/test";
+import { sarajevoDate } from "./dates.js";
 
 // Toasts are role="status", and so is the credit banner, so they are told apart by text.
 export const toast = (page: Page, text: string | RegExp) => page.getByRole("status").filter({ hasText: text });
@@ -79,4 +80,38 @@ export const availableCredits = async (page: Page) => {
 
 export const expectAvailableCredits = async (page: Page, expected: number) => {
   await expect(await availableOnCreditsPage(page)).toHaveText(String(expected));
+};
+
+// The restaurant orders a product from its marketplace card through the order dialog (pickup
+// tomorrow at `time`) and closes the result step. Returns the order's code shown there (K7PM).
+export const orderFromMarketplace = async (
+  page: Page,
+  productName: string,
+  { quantity, time = "12:00", acceptPartial = true }: { quantity: string; time?: string; acceptPartial?: boolean },
+) => {
+  const card = await searchMarketplace(page, productName);
+  await expect(card).toHaveCount(1);
+  await card.getByRole("button", { name: "Naruči" }).click();
+  const dialog = page.getByRole("dialog", { name: "Naruči" });
+  await dialog.getByLabel("Datum preuzimanja").fill(sarajevoDate(1));
+  await dialog.getByLabel("Datum preuzimanja").press("Enter");
+  await dialog.getByLabel("Vrijeme preuzimanja").fill(time);
+  await dialog.getByLabel("Količina").fill(quantity);
+  if (!acceptPartial) await dialog.getByRole("checkbox", { name: /Prihvatam djelimičnu isporuku/ }).uncheck();
+  await dialog.getByRole("button", { name: "Pošalji narudžbu" }).click();
+  const sent = page.getByRole("dialog", { name: /^Narudžba #[A-Z0-9]{4} je poslana$/ });
+  await expect(sent).toBeVisible();
+  const code = /#([A-Z0-9]{4})/.exec((await sent.getByRole("heading").first().textContent()) ?? "")![1]!;
+  await sent.getByRole("button", { name: "Zatvori" }).click();
+  await expect(sent).toBeHidden();
+  return code;
+};
+
+// The store's card of an order on Narudžbe, found by a product in it.
+export const storeOrderCard = async (page: Page, productName: string) => {
+  await page.goto("/orders");
+  await page.getByPlaceholder("Pretraga po proizvodu").fill(productName);
+  const card = page.getByTestId("order-card").filter({ hasText: productName });
+  await expect(card).toHaveCount(1);
+  return card;
 };

@@ -30,21 +30,22 @@ describe("getNotificationMeta", () => {
 });
 
 describe("getNotificationLink", () => {
-  it("links to the reservation first, then the product", () => {
-    expect(getNotificationLink(makeNotification({ reservation_id: 5, product_id: 9 }), "STORE")).toBe("/reservation/5");
+  it("links to the order first, then the product", () => {
+    expect(getNotificationLink(makeOrderNotification({ product_id: 9 }), "STORE")).toBe("/orders/20");
     expect(getNotificationLink(makeNotification({ reservation_id: null, product_id: 9 }), "STORE")).toBe("/products/9");
   });
 
-  it("opens the role's list for an order until the order page exists", () => {
-    expect(getNotificationLink(makeOrderNotification(), "STORE")).toBe("/reservations");
-    expect(getNotificationLink(makeOrderNotification(), "RESTAURANT")).toBe("/my-reservations");
+  it("opens the role's order list for an old reservation notification", () => {
+    const old = makeNotification({ reservation_id: 5, product_id: 9 });
+    expect(getNotificationLink(old, "STORE")).toBe("/orders");
+    expect(getNotificationLink(old, "RESTAURANT")).toBe("/my-orders");
   });
 
-  it("falls back to the role's reservation list", () => {
+  it("falls back to the role's order list", () => {
     const bare = makeNotification({ reservation_id: null, product_id: null });
-    expect(getNotificationLink(bare, "STORE")).toBe("/reservations");
-    expect(getNotificationLink(bare, "RESTAURANT")).toBe("/my-reservations");
-    expect(getNotificationLink(bare, undefined)).toBe("/my-reservations");
+    expect(getNotificationLink(bare, "STORE")).toBe("/orders");
+    expect(getNotificationLink(bare, "RESTAURANT")).toBe("/my-orders");
+    expect(getNotificationLink(bare, undefined)).toBe("/my-orders");
   });
 
   it("sends a donation notification to the donations page", () => {

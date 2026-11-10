@@ -1,7 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import StoreDashboardPage from "./StoreDashboardPage.js";
 import RestaurantDashboardPage from "./RestaurantDashboardPage.js";
-import { apiMock, makeProduct, makeReservation, makeUser, renderWithProviders, t } from "../test/utils.js";
+import { apiMock, makeOrder, makeOrderItem, makeProduct, makeUser, renderWithProviders, t } from "../test/utils.js";
 import type { RestaurantDashboardStats, StoreDashboardStats } from "../types/index.js";
 
 // The value printed under a stat card's label (the label is the card's first, truncated line).
@@ -32,8 +32,8 @@ describe("StoreDashboardPage", () => {
           ],
           total: 40,
         },
-        // A single Pending reservation: the cards must not be computed from this page of the list.
-        "/reservations/store": { reservations: [makeReservation({ id: 9, product_name: "Jogurt" })], total: 30 },
+        // A single Pending order: the cards must not be computed from this page of the list.
+        "/orders/store": { orders: [makeOrder({ id: 9, items: [makeOrderItem({ product_name: "Jogurt" })] })], total: 30 },
       },
     });
 
@@ -73,13 +73,13 @@ describe("StoreDashboardPage", () => {
     expect(screen.queryByTestId("unit-chips")).not.toBeInTheDocument();
   });
 
-  it("asks only for the 3 newest available products and reservations", async () => {
+  it("asks only for the 3 newest available products and orders", async () => {
     renderStore({ active_products: 0, pending_reservations: 0, successful_reservations: 0, saved: { kg: 0, l: 0, pieces: 0 } });
 
-    expect(await screen.findByText("Jogurt")).toBeInTheDocument();
+    expect(await screen.findByText(/Jogurt/)).toBeInTheDocument();
     expect(screen.getByText("Sir")).toBeInTheDocument();
     expect(paramsOf("/products/mine")).toEqual({ status: "Available", limit: 3 });
-    expect(paramsOf("/reservations/store")).toEqual({ limit: 3 });
+    expect(paramsOf("/orders/store")).toEqual({ limit: 3 });
     expect(statValue(t("dashboard.statSavedFood"))).toBe("0 kg");
   });
 
@@ -91,13 +91,11 @@ describe("StoreDashboardPage", () => {
     expect(statValue(t("dashboard.statSavedFood"))).toBe("0 kg");
   });
 
-  it("titles the reservations section Recent reservations", async () => {
+  it("titles the orders section New orders and links it to Orders", async () => {
     renderStore({ active_products: 0, pending_reservations: 0, successful_reservations: 0, saved: { kg: 0, l: 0, pieces: 0 } });
 
-    expect(await screen.findByRole("heading", { name: t("dashboard.recentReservationsTitle") })).toHaveTextContent(
-      "Nedavne rezervacije",
-    );
-    expect(screen.queryByRole("heading", { name: t("dashboard.myReservationsTitle") })).not.toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: t("dashboard.recentOrdersTitle") })).toHaveTextContent("Nove narudžbe");
+    expect(screen.getByRole("link", { name: t("dashboard.viewAllOrders") })).toHaveAttribute("href", "/orders");
   });
 });
 
@@ -110,8 +108,8 @@ describe("RestaurantDashboardPage", () => {
       get: {
         "/dashboard/stats": { stats },
         "/products": { products: [makeProduct({ id: 1, name: "Hljeb" })], total: 58 },
-        "/reservations/mine": {
-          reservations: [makeReservation({ id: 9, product_name: "Jogurt", status: "Confirmed" })],
+        "/orders/mine": {
+          orders: [makeOrder({ id: 9, status: "Confirmed", items: [makeOrderItem({ product_name: "Jogurt" })] })],
           total: 12,
         },
       },
@@ -120,30 +118,30 @@ describe("RestaurantDashboardPage", () => {
   it("shows the server's numbers and the marketplace total on the stat cards", async () => {
     renderRestaurant({ pending_reservations: 3, successful_reservations: 21, savings: 146.5 });
 
-    expect(await screen.findByText("Jogurt")).toBeInTheDocument();
+    expect(await screen.findByText(/Jogurt/)).toBeInTheDocument();
     expect(statValue(t("dashboard.statAvailableOffers"))).toBe("58");
     expect(statValue(t("dashboard.statPending"))).toBe("3");
     expect(statValue(t("dashboard.statConfirmed"))).toBe("21");
     expect(statValue(t("dashboard.statSavings"))).toBe("146.50 KM");
   });
 
-  it("asks for the 3 offers closest to expiry and the 3 latest reservations", async () => {
+  it("asks for the 3 offers closest to expiry and the first 3 orders", async () => {
     renderRestaurant({ pending_reservations: 0, successful_reservations: 0, savings: 0 });
 
     expect(await screen.findByText("Hljeb")).toBeInTheDocument();
     expect(paramsOf("/products")).toEqual({ sort: "expiry", radius: "10", limit: 3 });
-    expect(paramsOf("/reservations/mine")).toEqual({ limit: 3 });
+    expect(paramsOf("/orders/mine")).toEqual({ limit: 3 });
     expect(statValue(t("dashboard.statSavings"))).toBe("0.00 KM");
   });
 
-  it("titles the reservations section My reservations, like the page its link opens", async () => {
+  it("titles the orders section My orders, like the page its link opens", async () => {
     renderRestaurant({ pending_reservations: 0, successful_reservations: 0, savings: 0 });
 
-    expect(await screen.findByRole("heading", { name: t("dashboard.myReservationsTitle") })).toHaveTextContent(
-      "Moje rezervacije",
+    expect(await screen.findByRole("heading", { name: t("dashboard.myOrdersTitle") })).toHaveTextContent(
+      "Moje narudžbe",
     );
-    expect(screen.queryByRole("heading", { name: t("dashboard.recentReservationsTitle") })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: t("dashboard.viewAllReservations") })).toHaveAttribute("href", "/my-reservations");
+    expect(screen.queryByRole("heading", { name: t("dashboard.recentOrdersTitle") })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: t("dashboard.viewAllOrders") })).toHaveAttribute("href", "/my-orders");
   });
 
   describe("offers closest to expiry, nearby first", () => {
@@ -171,7 +169,7 @@ describe("RestaurantDashboardPage", () => {
             total: byRadius[radius]!.products.length,
             outside_radius_count: byRadius[radius]!.outside,
           }),
-          "/reservations/mine": { reservations: [], total: 0 },
+          "/orders/mine": { orders: [], total: 0 },
         },
       });
     const productRadii = () =>

@@ -1,10 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { ACCOUNTS, storageState, uniqueName } from "../support/accounts.js";
-import { apiAs, createProduct, orderCode, reserve } from "../support/api.js";
+import { apiAs, createProduct, orderCode, sendOrder } from "../support/api.js";
 import { MAILPIT_URL, countEmails, waitForEmail } from "../support/mailpit.js";
 import { toast } from "../support/ui.js";
 
-// The store switches its email notifications off on My profile: a new reservation sends it no
+// The store switches its email notifications off on My profile: a new order sends it no
 // email. Switched on again, the next one does. Uses brezaStore (only nearby-offers.spec.ts reads its
 // products, by name), so the shared store never has its emails off, and switches it back on after
 // the test even when it fails.
@@ -24,14 +24,14 @@ test.afterEach(async () => {
 
 const emailSwitch = (page: Page) => page.getByRole("switch", { name: "Obavijesti emailom" });
 
-// A product of the store, reserved by the restaurant through the API.
-const reserveNew = async (prefix: string) => {
+// A product of the store, ordered by the restaurant through the API.
+const orderNew = async (prefix: string) => {
   const productName = uniqueName(prefix);
   const storeApi = await apiAs("brezaStore");
   const product = await createProduct(storeApi, { name: productName, quantity: 10, unit: "kg" });
   await storeApi.dispose();
   const restaurantApi = await apiAs("restaurant");
-  await reserve(restaurantApi, product.id, 1);
+  await sendOrder(restaurantApi, product.id, 1);
   await restaurantApi.dispose();
   return productName;
 };
@@ -50,7 +50,7 @@ test("a store with email notifications off gets no email, and gets one again onc
     await expect(emailSwitch(page)).toHaveAttribute("aria-checked", "false");
   });
 
-  const mutedProduct = await test.step("Restoran rezerviše dok su isključene", () => reserveNew("E2E Tišina"));
+  const mutedProduct = await test.step("Restoran naručuje dok su isključene", () => orderNew("E2E Tišina"));
 
   await test.step("Prodavnica ponovo uključuje email obavijesti", async () => {
     await emailSwitch(page).click();
@@ -58,7 +58,7 @@ test("a store with email notifications off gets no email, and gets one again onc
     await expect(emailSwitch(page)).toHaveAttribute("aria-checked", "true");
   });
 
-  const product = await test.step("Restoran rezerviše dok su uključene", () => reserveNew("E2E Zvono"));
+  const product = await test.step("Restoran naručuje dok su uključene", () => orderNew("E2E Zvono"));
 
   await test.step("Mailpit: email samo za drugu narudžbu", async () => {
     const restaurantApi = await apiAs("restaurant");

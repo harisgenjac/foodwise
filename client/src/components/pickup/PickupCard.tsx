@@ -13,13 +13,14 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
-import type { Reservation } from "../../types/index.js";
+import { formatMoney, formatOrderCode, itemsSummary } from "../../utils/orders.js";
+import type { Order } from "../../types/index.js";
 
 interface PickupCardProps {
-  reservation: Reservation;
+  order: Order;
   isStore: boolean;
-  onComplete?: (reservation: Reservation) => void;
-  onCancelOverdue?: (reservation: Reservation) => void;
+  onComplete?: (order: Order) => void;
+  onCancelOverdue?: (order: Order) => void;
 }
 
 const timeFormat: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit", hourCycle: "h23" };
@@ -27,22 +28,20 @@ const timeFormat: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-dig
 const shortDate = (date: Date) =>
   `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.`;
 
-// One handover: the time on the left (orange, red when overdue, green once picked up),
-// the product and the other party in the middle, the actions on the right.
-function PickupCard({ reservation, isStore, onComplete, onCancelOverdue }: PickupCardProps) {
+// One handover of a whole order: the time on the left (orange, red when overdue, green once
+// picked up), the order and the other party in the middle, the actions on the right.
+function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const units = t("units", { returnObjects: true }) as Record<string, string>;
 
-  const isCompleted = reservation.status === "Completed";
-  const isOverdue = Boolean(reservation.is_overdue);
-  const pickup = new Date(reservation.pickup_date);
-  const pickedUpAt = new Date(reservation.picked_up_at ?? reservation.updated_at);
-  const unit = reservation.unit ? units[reservation.unit] || reservation.unit : "";
-  const total = Number(reservation.discounted_price ?? 0) * Number(reservation.quantity);
-  const image = (reservation.category && CATEGORY_IMAGES[reservation.category]) || CATEGORY_IMAGES.Other;
+  const isCompleted = order.status === "Completed";
+  const isOverdue = Boolean(order.is_overdue);
+  const pickup = new Date(order.pickup_at);
+  const pickedUpAt = new Date(order.picked_up_at ?? order.updated_at);
+  const category = order.items[0]?.category;
+  const image = (category && CATEGORY_IMAGES[category]) || CATEGORY_IMAGES.Other;
   const PartyIcon = isStore ? UtensilsCrossed : Store;
-  const daysOverdue = reservation.days_overdue ?? 0;
+  const daysOverdue = order.days_overdue ?? 0;
 
   const tone = isCompleted
     ? "bg-green-50 text-green-700"
@@ -52,7 +51,8 @@ function PickupCard({ reservation, isStore, onComplete, onCancelOverdue }: Picku
 
   return (
     <article
-      onClick={() => navigate(`/reservation/${reservation.id}`)}
+      data-testid="pickup-card"
+      onClick={() => navigate(`/orders/${order.id}`)}
       className={`group flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:flex-row ${
         isOverdue ? "border-red-100" : "border-gray-100"
       }`}
@@ -77,48 +77,47 @@ function PickupCard({ reservation, isStore, onComplete, onCancelOverdue }: Picku
       <div className="flex min-w-0 flex-1 gap-4 p-4">
         <img
           src={image}
-          alt={reservation.product_name}
+          alt=""
           className="h-16 w-16 shrink-0 rounded-xl object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="min-w-0 flex-1 space-y-2">
           <div>
-            <h3 className="truncate text-base font-bold text-gray-900">{reservation.product_name}</h3>
+            <h3 className="truncate text-base font-bold text-gray-900">
+              {t("orders.title", { code: formatOrderCode(order.code) })}
+            </h3>
             <p className="text-sm text-gray-500">
-              <span className="font-medium text-gray-700">
-                {reservation.quantity} {unit}
-              </span>
+              <span className="font-medium text-gray-700">{itemsSummary(order, t)}</span>
               {" · "}
-              {t("pickups.total")}{" "}
-              <span className="font-semibold text-green-700">{total.toFixed(2)} KM</span>
+              {t("pickups.total")} <span className="font-semibold text-green-700">{formatMoney(order.total)}</span>
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
             <span className="inline-flex min-w-0 items-center gap-1.5">
               <PartyIcon className="h-4 w-4 shrink-0 text-gray-400" />
-              <span className="truncate font-medium text-gray-800">{reservation.business_name}</span>
-              {reservation.city && <span className="text-gray-400">· {reservation.city}</span>}
+              <span className="truncate font-medium text-gray-800">{order.business_name}</span>
+              {order.city && <span className="text-gray-400">· {order.city}</span>}
             </span>
-            {reservation.party_phone && (
+            {order.party_phone && (
               <a
-                href={`tel:${reservation.party_phone}`}
+                href={`tel:${order.party_phone}`}
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1.5 font-medium text-orange-700 hover:underline"
               >
                 <Phone className="h-4 w-4 shrink-0 text-gray-400" />
-                {reservation.party_phone}
+                {order.party_phone}
               </a>
             )}
-            {!isStore && reservation.party_address && (
+            {!isStore && order.party_address && (
               <span className="inline-flex items-center gap-1.5">
                 <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
-                {reservation.party_address}
+                {order.party_address}
               </span>
             )}
-            {!isStore && reservation.party_pickup_hours && (
+            {!isStore && order.party_pickup_hours && (
               <span className="inline-flex items-center gap-1.5">
                 <Clock className="h-4 w-4 shrink-0 text-gray-400" />
-                {t("pickups.pickupHours")}: {reservation.party_pickup_hours}
+                {t("pickups.pickupHours")}: {order.party_pickup_hours}
               </span>
             )}
           </div>
@@ -139,7 +138,7 @@ function PickupCard({ reservation, isStore, onComplete, onCancelOverdue }: Picku
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onComplete?.(reservation);
+                onComplete?.(order);
               }}
               className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm shadow-green-600/20 transition-colors hover:bg-green-700"
             >
@@ -151,7 +150,7 @@ function PickupCard({ reservation, isStore, onComplete, onCancelOverdue }: Picku
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onCancelOverdue?.(reservation);
+                  onCancelOverdue?.(order);
                 }}
                 className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 px-3 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
               >
@@ -169,7 +168,7 @@ function PickupCard({ reservation, isStore, onComplete, onCancelOverdue }: Picku
           )
         )}
         <Link
-          to={`/reservation/${reservation.id}`}
+          to={`/orders/${order.id}`}
           onClick={(e) => e.stopPropagation()}
           className="inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-50"
         >

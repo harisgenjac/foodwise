@@ -7,6 +7,8 @@ import {
   registerAndLogin,
   reserve,
   userId,
+  acceptItem,
+  rejectItem,
 } from "./helpers.js";
 
 // "Sold in shop": the store records what it sold at its own till; only the free quantity drops.
@@ -74,28 +76,28 @@ describe("recording a sale in the shop", () => {
     expect(tooMuch.status).toBe(400);
     expect(tooMuch.body.error).toBe("You can record at most the free quantity (6).");
     expect((await sellInShop(product.id, 6)).status).toBe(201);
-    // The pending reservation still holds 4, so the product stays Available with nothing free.
+    // The pending order still holds 4, so the product stays Available with nothing free.
     expect(await available(product.id)).toBe(0);
     expect(await productStatus(product.id)).toBe("Available");
     const marketplace = (await restaurant.get("/api/products?radius=all")).body.products;
     expect(marketplace.map((row: { id: number }) => row.id)).not.toContain(product.id);
-    // Nor can a new reservation take what the shop sold.
-    const reserving = await restaurant
-      .post("/api/reservations")
-      .send({ product_id: product.id, quantity: 1, pickup_date: futurePickup() });
-    expect(reserving.status).toBe(400);
-    expect(reserving.body.error).toBe("Not enough product available.");
+    // Nor can a new order take what the shop sold.
+    const ordering = await restaurant
+      .post("/api/orders")
+      .send({ pickup_at: futurePickup(), items: [{ product_id: product.id, quantity: 1, unit_price: 5 }] });
+    expect(ordering.status).toBe(409);
+    expect(ordering.body.lines).toMatchObject([{ product_id: product.id, kind: "NOT_SENT_SOLD_OUT" }]);
   });
 
   it("frees the pending quantity again when the store rejects, and sells out when it accepts", async () => {
     const product = await createProduct(store, { quantity: 10 });
     const rejected = await reserve(restaurant, product.id, 4);
     await sellInShop(product.id, 6);
-    await store.patch(`/api/reservations/${rejected}/reject`);
+    await rejectItem(store, rejected);
     expect(await available(product.id)).toBe(4);
 
     const accepted = await reserve(restaurant, product.id, 4);
-    expect((await store.patch(`/api/reservations/${accepted}/accept`)).status).toBe(200);
+    expect((await acceptItem(store, accepted)).status).toBe(200);
     // 4 accepted + 6 sold in the shop cover the 10.
     expect(await productStatus(product.id)).toBe("Sold");
     expect(await notificationTypes(STORE)).toContain("PRODUCT_SOLD_OUT");

@@ -82,12 +82,20 @@ export const myId = async (api: APIRequestContext) => {
   return user.id;
 };
 
-// Reserves as a restaurant (restaurants pay no credits); pickup tomorrow unless a date is given.
-export const reserve = async (api: APIRequestContext, productId: number, quantity: number, pickupDate = isoDate(1)) => {
-  const { reservation } = await ok<{ reservation: { id: number } }>(
-    await api.post("/api/reservations", { data: { product_id: productId, quantity, pickup_date: pickupDate } }),
+// Sends a one-item order as a restaurant (restaurants pay no credits) at the product's current
+// price, with partial fulfilment off; pickup tomorrow at 12:00 unless a date is given.
+export const sendOrder = async (api: APIRequestContext, productId: number, quantity: number, pickupDate = isoDate(1)) => {
+  const { product } = await ok<{ product: { discounted_price: string } }>(await api.get(`/api/products/${productId}`));
+  const { order } = await ok<{ order: { id: number; code: string } }>(
+    await api.post("/api/orders", {
+      data: {
+        pickup_at: `${pickupDate}T12:00`,
+        accept_partial: false,
+        items: [{ product_id: productId, quantity, unit_price: product.discounted_price }],
+      },
+    }),
   );
-  return reservation;
+  return order;
 };
 
 // The code of the restaurant's order that contains `productName` (shown as #K7PM), to find its
@@ -100,11 +108,36 @@ export const orderCode = async (api: APIRequestContext, productName: string) => 
   return orders[0]!.code;
 };
 
-// The store's side of a reservation: accept it, or mark it picked up.
-export const acceptReservation = async (api: APIRequestContext, reservationId: number) =>
-  ok(await api.patch(`/api/reservations/${reservationId}/accept`));
-export const completeReservation = async (api: APIRequestContext, reservationId: number) =>
-  ok(await api.patch(`/api/reservations/${reservationId}/complete`));
+// Sends one order of several products of one store (the dialog orders one product; the cart comes
+// later), each at its shown price, pickup tomorrow at 12:00.
+export const sendOrderOf = async (
+  api: APIRequestContext,
+  lines: { productId: number; quantity: number; unitPrice: number }[],
+  acceptPartial = true,
+) => {
+  const { order } = await ok<{ order: { id: number; code: string } }>(
+    await api.post("/api/orders", {
+      data: {
+        pickup_at: `${isoDate(1)}T12:00`,
+        accept_partial: acceptPartial,
+        items: lines.map((line) => ({ product_id: line.productId, quantity: line.quantity, unit_price: line.unitPrice })),
+      },
+    }),
+  );
+  return order;
+};
+
+// The store's side of an order: accept every item, or mark it picked up.
+export const acceptOrder = async (api: APIRequestContext, orderId: number) => {
+  const { order } = await ok<{ order: { items: { id: number }[] } }>(await api.get(`/api/orders/${orderId}`));
+  return ok(
+    await api.post(`/api/orders/${orderId}/decision`, {
+      data: { items: order.items.map((item) => ({ item_id: item.id, action: "ACCEPT" })) },
+    }),
+  );
+};
+export const completeOrder = async (api: APIRequestContext, orderId: number) =>
+  ok(await api.post(`/api/orders/${orderId}/complete`));
 
 // A new store (or restaurant) in Visoko with a complete profile, its own password set and no plan,
 // logged in. For tests that need a state the shared seeded accounts lose after one run (here: no

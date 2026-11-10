@@ -10,11 +10,12 @@ import AddProductPage from './pages/AddProductPage.js';
 import MyProductsPage from './pages/MyProductsPage.js';
 import ImportProductsPage from './pages/ImportProductsPage.js';
 import EditProductPage from './pages/EditProductPage.js';
-import ReservationsPage from './pages/ReservationsPage.js'
+import StoreOrdersPage from './pages/StoreOrdersPage.js';
 import BrowseProductsPage from './pages/BrowseProductsPage.js';
 import StoresPage from './pages/StoresPage.js'
 import StoreDetailsPage from './pages/StoreDetailsPage.js';
-import MyReservationsPage from './pages/MyReservationsPage.js';
+import MyOrdersPage from './pages/MyOrdersPage.js';
+import OrdersRedirect from './components/OrdersRedirect.js';
 import MyProfilePage from './pages/MyProfilePage.js'
 import DonateFoodPage from './pages/DonateFoodPage.js';
 import AddDonationPage from './pages/AddDonationPage.js';
@@ -22,7 +23,7 @@ import EditDonationPage from './pages/EditDonationPage.js';
 import SponsorPage from './pages/SponsorPage.js';
 import NotificationsPage from './pages/NotificationsPage.js'
 import ProductDetailsPage from "./pages/ProductDetailsPage.js"
-import ReservationDetailsPage from "./pages/ReservationDetailsPage.js"
+import OrderDetailsPage from "./pages/OrderDetailsPage.js";
 import PickupsPage from './pages/PickupsPage.js';
 import ReportsPage from './pages/ReportsPage.js';
 import CreditsPage from './pages/CreditsPage.js';
@@ -69,11 +70,11 @@ function App() {
         <Route path="/import-products" element={<ProtectedRoute role="STORE"><ImportProductsPage /></ProtectedRoute>} />
         <Route path="/my-products" element={<ProtectedRoute role="STORE"><MyProductsPage /></ProtectedRoute>} />
         <Route path="/edit-product/:id" element={<ProtectedRoute role="STORE"><EditProductPage /></ProtectedRoute>} />
-        <Route path="/reservations" element={<ProtectedRoute role="STORE"><ReservationsPage /></ProtectedRoute>} />
+        <Route path="/orders" element={<ProtectedRoute role="STORE"><StoreOrdersPage /></ProtectedRoute>} />
         <Route path="/browse-products" element={<ProtectedRoute role="RESTAURANT"><BrowseProductsPage /></ProtectedRoute>} />
         <Route path="/stores" element={<ProtectedRoute role="RESTAURANT"><StoresPage /></ProtectedRoute>} />
         <Route path="/stores/:id" element={<ProtectedRoute role="RESTAURANT"><StoreDetailsPage /></ProtectedRoute>} />
-        <Route path="/my-reservations" element={<ProtectedRoute role="RESTAURANT"><MyReservationsPage /></ProtectedRoute>} />
+        <Route path="/my-orders" element={<ProtectedRoute role="RESTAURANT"><MyOrdersPage /></ProtectedRoute>} />
         <Route path="/pickups" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><PickupsPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><ReportsPage /></ProtectedRoute>} />
         <Route path="/credits" element={<ProtectedRoute role="STORE"><CreditsPage /></ProtectedRoute>} />
@@ -84,7 +85,11 @@ function App() {
         <Route path="/sponsor" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><SponsorPage /></ProtectedRoute>} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/products/:id" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><ProductDetailsPage /></ProtectedRoute>} />
-        <Route path="/reservation/:id" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><ReservationDetailsPage /></ProtectedRoute>} />
+        <Route path="/orders/:id" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><OrderDetailsPage /></ProtectedRoute>} />
+        {/* Old reservation links from earlier emails and notifications. */}
+        <Route path="/reservations" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><OrdersRedirect /></ProtectedRoute>} />
+        <Route path="/my-reservations" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><OrdersRedirect /></ProtectedRoute>} />
+        <Route path="/reservation/:id" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><OrdersRedirect /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute role="ADMIN"><AdminDashboardPage /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute role="ADMIN"><AdminUsersPage /></ProtectedRoute>} />
         <Route path="/admin/users/new" element={<ProtectedRoute role="ADMIN"><AdminCreateUserPage /></ProtectedRoute>} />

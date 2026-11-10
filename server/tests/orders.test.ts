@@ -379,6 +379,13 @@ describe("order lists and details", () => {
     });
     expect((await store.get("/api/orders/pickups?scope=nope")).status).toBe(400);
   });
+
+  it("no longer has the old reservation endpoints", async () => {
+    for (const path of ["/api/reservations/mine", "/api/reservations/store", "/api/reservations/pickups?scope=today"]) {
+      expect((await restaurant.get(path)).status).toBe(404);
+    }
+    expect((await restaurant.post("/api/reservations").send({})).status).toBe(404);
+  });
 });
 
 describe("actions on a whole order", () => {

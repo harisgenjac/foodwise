@@ -100,16 +100,16 @@ describe("authorize middleware", () => {
     const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
 
     const response = await restaurant
-      .post("/api/reservations")
-      .send({ product_id: product.id, quantity: 1, pickup_date: futurePickup() });
+      .post("/api/orders")
+      .send({ pickup_at: futurePickup(), items: [{ product_id: product.id, quantity: 1, unit_price: 5 }] });
     expect(response.status).toBe(201);
   });
 
   it("returns 403 when a STORE calls a RESTAURANT-only route", async () => {
     const store = await registerAndLogin(STORE, "STORE");
     const response = await store
-      .post("/api/reservations")
-      .send({ product_id: 1, quantity: 1, pickup_date: futurePickup() });
+      .post("/api/orders")
+      .send({ pickup_at: futurePickup(), items: [{ product_id: 1, quantity: 1, unit_price: 5 }] });
     expect(response.status).toBe(403);
     expect(response.body.error).toBe("You do not have the required role for this action.");
   });

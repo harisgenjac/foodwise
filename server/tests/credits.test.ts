@@ -10,7 +10,7 @@ import {
   grantTopup,
   refundForProduct,
 } from "../src/services/creditService.js";
-import { cleanupUsers, giveSubscription, insertUser, userId, insertOrderItem } from "./helpers.js";
+import { cleanupUsers, giveSubscription, insertUser, userId, insertOrderItem, reserve } from "./helpers.js";
 
 const STORE = "credits-store@test.com";
 const RESTAURANT = "credits-restaurant@test.com";

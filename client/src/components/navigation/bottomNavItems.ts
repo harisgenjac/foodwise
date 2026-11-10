@@ -1,4 +1,4 @@
-import { CalendarCheck, LayoutDashboard, Package, PackageCheck, ShoppingBasket } from "lucide-react";
+import { LayoutDashboard, Package, PackageCheck, ReceiptText, ShoppingBasket } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export interface BottomNavItem {
@@ -16,13 +16,13 @@ export const BOTTOM_NAV_ITEMS: Record<BottomNavRole, BottomNavItem[]> = {
   STORE: [
     { to: "/dashboard", labelKey: "bottomNav.dashboard", icon: LayoutDashboard },
     { to: "/my-products", labelKey: "bottomNav.myProducts", icon: Package },
-    { to: "/reservations", labelKey: "bottomNav.reservations", icon: CalendarCheck },
+    { to: "/orders", labelKey: "bottomNav.orders", icon: ReceiptText },
     { to: "/pickups", labelKey: "bottomNav.pickups", icon: PackageCheck },
   ],
   RESTAURANT: [
     { to: "/dashboard", labelKey: "bottomNav.dashboard", icon: LayoutDashboard },
     { to: "/browse-products", labelKey: "bottomNav.browseProducts", icon: ShoppingBasket },
-    { to: "/my-reservations", labelKey: "bottomNav.reservations", icon: CalendarCheck },
+    { to: "/my-orders", labelKey: "bottomNav.orders", icon: ReceiptText },
     { to: "/pickups", labelKey: "bottomNav.pickups", icon: PackageCheck },
   ],
 };

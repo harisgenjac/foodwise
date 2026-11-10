@@ -82,17 +82,17 @@ const DEFAULT_META = { icon: Bell, style: "bg-orange-50 text-orange-600" };
 export const getNotificationMeta = (notification: Notification) =>
   (notification.type && NOTIFICATION_META[notification.type]) || DEFAULT_META;
 
-// Reservation details first, then product details, then the donations page; untyped (older)
-// notifications go to the role's list.
+// Order details first, then product details, then the donations page; untyped (older)
+// notifications go to the role's order list.
 export const getNotificationLink = (notification: Notification, role: User["role"] | undefined) => {
   // A branch asking for credits waits on the headquarters' credits page; other notifications
   // about one of its branches open the branch page.
   if (notification.type === "BRANCH_TOPUP_REQUESTED") return "/company/credits";
   if (notification.type === "PASSWORD_CHANGED") return "/my-profile";
   if (role === "COMPANY" && notification.branch_id) return `/company/branches/${notification.branch_id}`;
-  if (notification.reservation_id) return `/reservation/${notification.reservation_id}`;
-  // Orders open the role's list until the order details page exists (orders PR 3b: /orders/:id).
-  if (notification.order_id) return role === "STORE" ? "/reservations" : "/my-reservations";
+  if (notification.order_id) return `/orders/${notification.order_id}`;
+  // An old reservation notification: its id is not an order's, so the role's list.
+  if (notification.reservation_id) return role === "STORE" ? "/orders" : "/my-orders";
   if (notification.product_id) return `/products/${notification.product_id}`;
   if (notification.donation_id) return "/donate-food";
   // The full announcement text is in the banner on every page.
@@ -117,7 +117,7 @@ export const getNotificationLink = (notification: Notification, role: User["role
     return `/my-profile#${SUBSCRIPTION_SECTION}`;
   }
   if (role === "COMPANY") return "/dashboard";
-  return role === "STORE" ? "/reservations" : "/my-reservations";
+  return role === "STORE" ? "/orders" : "/my-orders";
 };
 
 export const getNotificationText = (notification: Notification, t: TFunction, language = "bs") => {

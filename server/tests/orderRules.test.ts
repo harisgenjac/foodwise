@@ -6,6 +6,9 @@ import {
   futurePickup,
   productPayload,
   registerAndLogin,
+  acceptItem,
+  itemOrderAction,
+  orderOf,
 } from "./helpers.js";
 
 const EMAILS = ["store-a@test.com", "restaurant-a@test.com"];
@@ -13,13 +16,20 @@ const EMAILS = ["store-a@test.com", "restaurant-a@test.com"];
 let store: Agent;
 let restaurant: Agent;
 
-const reserve = (productId: number | string, quantity: unknown, pickup_date = futurePickup()) =>
-  restaurant.post("/api/reservations").send({ product_id: productId, quantity, pickup_date });
+// Sends a one-item order at the test product's price (5 KM).
+const send = (productId: number | string, quantity: unknown, pickup_at = futurePickup()) =>
+  restaurant.post("/api/orders").send({ pickup_at, items: [{ product_id: productId, quantity, unit_price: 5 }] });
+
+// The item of a sent one-item order.
+const itemOf = (response: { body: { order: { items: { id: number }[] } } }) => response.body.order.items[0]!.id;
+
+const orderDetails = async (itemId: number) =>
+  (await restaurant.get(`/api/orders/${await orderOf(itemId)}`)).body.order;
 
 const availableQuantity = async (productId: number) =>
   parseFloat((await store.get(`/api/products/${productId}`)).body.product.available_quantity);
 
-describe("Reservation rules", () => {
+describe("Order rules", () => {
   beforeEach(async () => {
     store = await registerAndLogin("store-a@test.com", "STORE");
     restaurant = await registerAndLogin("restaurant-a@test.com", "RESTAURANT");
@@ -29,14 +39,14 @@ describe("Reservation rules", () => {
     await cleanupUsers(EMAILS);
   });
 
-  describe("POST /api/reservations validation", () => {
+  describe("POST /api/orders validation", () => {
     it.each([
       ["a negative quantity", -5],
       ["zero", 0],
       ["text", "abc"],
     ])("rejects %s and leaves the available quantity unchanged", async (_, quantity) => {
       const product = await createProduct(store);
-      const response = await reserve(product.id, quantity);
+      const response = await send(product.id, quantity);
       expect(response.status).toBe(400);
       expect(response.body.error).toBe("Quantity must be greater than zero.");
       expect(await availableQuantity(product.id)).toBe(10);
@@ -47,31 +57,31 @@ describe("Reservation rules", () => {
       ["after the expiry date", `${futureDate(31)}T10:00:00`],
     ])("rejects a pickup date %s", async (_, pickupDate) => {
       const product = await createProduct(store);
-      const response = await reserve(product.id, 2, pickupDate);
+      const response = await send(product.id, 2, pickupDate);
       expect(response.status).toBe(400);
       expect(response.body.error).toBe(
-        "Pickup date must be between today and the product's expiry date.",
+        "Pickup date must be between today and the products' expiry date.",
       );
     });
 
     it("returns 404 for a non-numeric product id", async () => {
-      const response = await reserve("abc", 2);
+      const response = await send("abc", 2);
       expect(response.status).toBe(404);
     });
   });
 
-  describe("reject and cancel", () => {
+  describe("accept and cancel", () => {
     it("lets only one of a simultaneous accept and cancel succeed", async () => {
       const product = await createProduct(store);
-      const reservationId = (await reserve(product.id, 10)).body.reservation.id;
+      const reservationId = itemOf(await send(product.id, 10));
 
       const [accept, cancel] = await Promise.all([
-        store.patch(`/api/reservations/${reservationId}/accept`),
-        restaurant.patch(`/api/reservations/${reservationId}/cancel`),
+        acceptItem(store, reservationId),
+        itemOrderAction(restaurant, reservationId, "cancel"),
       ]);
       expect([accept.status, cancel.status].sort()).toEqual([200, 400]);
 
-      const reservation = (await restaurant.get(`/api/reservations/${reservationId}`)).body.reservation;
+      const reservation = await orderDetails(reservationId);
       const current = (await store.get(`/api/products/${product.id}`)).body.product;
       if (accept.status === 200) {
         expect(reservation.status).toBe("Confirmed");
@@ -83,23 +93,23 @@ describe("Reservation rules", () => {
     });
   });
 
-  describe("PUT /api/products/:id with reservations", () => {
-    it("keeps the reserved price after the store changes the product price", async () => {
+  describe("PUT /api/products/:id with orders", () => {
+    it("keeps the ordered price after the store changes the product price", async () => {
       const product = await createProduct(store);
-      const reservationId = (await reserve(product.id, 2)).body.reservation.id;
+      const reservationId = itemOf(await send(product.id, 2));
 
       const update = await store
         .put(`/api/products/${product.id}`)
         .send(productPayload({ discounted_price: 8 }));
       expect(update.status).toBe(200);
 
-      const reservation = (await restaurant.get(`/api/reservations/${reservationId}`)).body.reservation;
-      expect(parseFloat(reservation.discounted_price)).toBe(5);
+      const order = await orderDetails(reservationId);
+      expect(parseFloat(order.items[0].unit_price)).toBe(5);
     });
 
-    it("keeps the quantity locked after publishing, also with reservations", async () => {
+    it("keeps the quantity locked after publishing, also with orders", async () => {
       const product = await createProduct(store);
-      await reserve(product.id, 6);
+      await send(product.id, 6);
 
       const response = await store.put(`/api/products/${product.id}`).send(productPayload({ quantity: 6 }));
       expect(response.status).toBe(400);
@@ -108,8 +118,7 @@ describe("Reservation rules", () => {
 
     it("refuses to edit a product that is no longer available", async () => {
       const product = await createProduct(store);
-      const reservationId = (await reserve(product.id, 10)).body.reservation.id;
-      await store.patch(`/api/reservations/${reservationId}/accept`);
+      await acceptItem(store, itemOf(await send(product.id, 10)));
 
       const response = await store.put(`/api/products/${product.id}`).send(productPayload({ quantity: 20 }));
       expect(response.status).toBe(400);

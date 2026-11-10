@@ -1,16 +1,16 @@
 import { expect, test } from "@playwright/test";
 import { ACCOUNTS, PASSWORD, storageState, uniqueName } from "../support/accounts.js";
-import { acceptReservation, apiAs, completeReservation, createProduct, myId, reserve } from "../support/api.js";
+import { acceptOrder, apiAs, completeOrder, createProduct, myId, sendOrder } from "../support/api.js";
 import { expectNotInMarketplace, searchMarketplace, submitLoginForm, toast } from "../support/ui.js";
 
 // Only this test uses the seeded company's branch. Whatever happens, it ends active and without
 // the accepted pickup it created, so a retry or the next run can deactivate it again.
 let branchId: number | undefined;
-let acceptedReservationId: number | undefined;
+let acceptedOrderId: number | undefined;
 test.afterEach(async () => {
-  if (acceptedReservationId !== undefined) {
+  if (acceptedOrderId !== undefined) {
     const branch = await apiAs("branch");
-    await branch.patch(`/api/reservations/${acceptedReservationId}/complete`); // 400 once picked up
+    await branch.post(`/api/orders/${acceptedOrderId}/complete`); // 400 once picked up
     await branch.dispose();
   }
   if (branchId !== undefined) {
@@ -26,14 +26,14 @@ test("headquarters can deactivate a branch only after its accepted pickups, and 
   test.slow();
   const productName = uniqueName("E2E Poslovnica");
 
-  // Arrange: the branch offers a product, the restaurant reserves it and the branch accepts.
+  // Arrange: the branch offers a product, the restaurant orders it and the branch accepts.
   const branchApi = await apiAs("branch");
   const restaurantApi = await apiAs("restaurant");
   branchId = await myId(branchApi);
   const product = await createProduct(branchApi, { name: productName, quantity: 10 });
-  const reservation = await reserve(restaurantApi, product.id, 2);
-  await acceptReservation(branchApi, reservation.id);
-  acceptedReservationId = reservation.id;
+  const order = await sendOrder(restaurantApi, product.id, 2);
+  await acceptOrder(branchApi, order.id);
+  acceptedOrderId = order.id;
   await restaurantApi.dispose();
 
   const hqContext = await browser.newContext({ storageState: storageState("hq") });
@@ -60,8 +60,8 @@ test("headquarters can deactivate a branch only after its accepted pickups, and 
   });
 
   await test.step("Poslovnica označava preuzimanje (API)", async () => {
-    await completeReservation(branchApi, reservation.id);
-    acceptedReservationId = undefined;
+    await completeOrder(branchApi, order.id);
+    acceptedOrderId = undefined;
     await branchApi.dispose();
   });
 

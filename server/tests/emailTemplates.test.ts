@@ -73,8 +73,7 @@ describe("ORDER_CREATED email", () => {
     expect(email.html).toContain("Nova narudžba #K7PM</h1>");
     expect(email.html).toContain("Restoran Ćevap &amp; Co je poslao narudžbu #K7PM.");
     expect(email.html).toContain("06.11.2026. 14:30");
-    // Until the order details page exists (orders PR 3b), the store's list.
-    expect(email.html).toContain(`href="${APP_URL}/reservations"`);
+    expect(email.html).toContain(`href="${APP_URL}/orders/42"`);
     expect(email.html).toContain("Ovu poruku ste dobili jer imate račun na platformi FoodWise.");
 
     expect(email.text).toContain("Narudžba: #K7PM");
@@ -160,7 +159,7 @@ describe("the store's decision in the email", () => {
     expect(email.text).toContain("  Odbijeno · Ambalaža oštećena");
     expect(email.text).toContain("Ukupno: 52,50 KM");
     expect(email.html).toContain("text-decoration:line-through");
-    expect(email.text).toContain(`${APP_URL}/my-reservations`);
+    expect(email.text).toContain(`Otvori narudžbu: ${APP_URL}/orders/42`);
   });
 
   it("has no total when the store rejected everything", () => {
@@ -303,9 +302,8 @@ describe("every notification email", () => {
   it("links like the notification does in the app", () => {
     const link = (type: NotificationType, data: Partial<NotificationEmailData> = {}) =>
       notificationLink(type, { ...FULL[type], ...data }).path;
-    // Orders open the role's list until the order details page exists (orders PR 3b).
-    expect(link("ORDER_CREATED")).toBe("/reservations");
-    expect(link("ORDER_ACCEPTED")).toBe("/my-reservations");
+    expect(link("ORDER_CREATED")).toBe("/orders/42");
+    expect(link("ORDER_ACCEPTED")).toBe("/orders/42");
     expect(link("PRODUCT_EXPIRED")).toBe("/products/7");
     expect(link("DONATION_REMOVED_BY_ADMIN")).toBe("/donate-food");
     expect(link("PLATFORM_ANNOUNCEMENT")).toBe("/dashboard");

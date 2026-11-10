@@ -4,12 +4,12 @@ import { translateServerData, translateServerMessage } from "./serverMessages.js
 
 describe("translateServerMessage", () => {
   it("translates a known server text into Bosnian", () => {
-    expect(translateServerMessage("Reservation cancelled successfully.")).toBe("Rezervacija je uspješno otkazana.");
+    expect(translateServerMessage("Order cancelled.")).toBe("Narudžba je otkazana.");
   });
 
   it("keeps the English text in the English interface", async () => {
     await i18n.changeLanguage("en");
-    expect(translateServerMessage("Reservation cancelled successfully.")).toBe("Reservation cancelled successfully.");
+    expect(translateServerMessage("Order cancelled.")).toBe("Order cancelled.");
   });
 
   it("puts the values of a text with placeholders into the translation", () => {

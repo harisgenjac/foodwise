@@ -121,7 +121,7 @@ describe("Pagination", () => {
     });
   });
 
-  describe("reservations", () => {
+  describe("orders", () => {
     beforeEach(async () => {
       const product = await createProduct(store, { quantity: 1000 });
       for (const status of ["Pending", "Pending", "Confirmed", "Completed", "Rejected", "Cancelled"]) {
@@ -134,35 +134,35 @@ describe("Pagination", () => {
       await insertReservation(product.id, "Confirmed", 0);
     });
 
-    it("GET /reservations/mine and /store return 12 by default with the total", async () => {
-      for (const [agent, url] of [[restaurant, "/api/reservations/mine"], [store, "/api/reservations/store"]] as const) {
+    it("GET /orders/mine and /store return 12 by default with the total", async () => {
+      for (const [agent, url] of [[restaurant, "/api/orders/mine"], [store, "/api/orders/store"]] as const) {
         const response = await agent.get(url);
-        expect(response.body.reservations).toHaveLength(12);
+        expect(response.body.orders).toHaveLength(12);
         expect(response.body.total).toBe(15);
-        await expectStablePages(agent, url, "reservations");
+        await expectStablePages(agent, url, "orders");
       }
     });
 
     it("counts the total with the filters", async () => {
-      const response = await restaurant.get("/api/reservations/mine").query({ status: "Completed", limit: 2 });
+      const response = await restaurant.get("/api/orders/mine").query({ status: "Completed", limit: 2 });
       expect(response.body.total).toBe(4);
-      expect(response.body.reservations).toHaveLength(2);
-      await expectStablePages(store, "/api/reservations/store", "reservations", { status: "Pending" });
+      expect(response.body.orders).toHaveLength(2);
+      await expectStablePages(store, "/api/orders/store", "orders", { status: "Pending" });
     });
 
     it("pages only the picked-up pickups; today and upcoming are always complete", async () => {
-      const completed = await store.get("/api/reservations/pickups").query({ scope: "completed", limit: 3 });
+      const completed = await store.get("/api/orders/pickups").query({ scope: "completed", limit: 3 });
       expect(completed.body.total).toBe(4);
-      expect(completed.body.reservations).toHaveLength(3);
-      await expectStablePages(restaurant, "/api/reservations/pickups", "reservations", { scope: "completed" });
+      expect(completed.body.orders).toHaveLength(3);
+      await expectStablePages(restaurant, "/api/orders/pickups", "orders", { scope: "completed" });
 
-      const upcoming = await store.get("/api/reservations/pickups").query({ scope: "upcoming", limit: 1 });
+      const upcoming = await store.get("/api/orders/pickups").query({ scope: "upcoming", limit: 1 });
       expect(upcoming.status).toBe(200);
-      expect(upcoming.body.reservations).toHaveLength(2);
+      expect(upcoming.body.orders).toHaveLength(2);
       expect(upcoming.body.total).toBeUndefined();
 
-      const today = await store.get("/api/reservations/pickups").query({ scope: "today", limit: 1, offset: 5 });
-      expect(today.body.reservations).toHaveLength(1);
+      const today = await store.get("/api/orders/pickups").query({ scope: "today", limit: 1, offset: 5 });
+      expect(today.body.orders).toHaveLength(1);
     });
   });
 
@@ -225,14 +225,14 @@ describe("Pagination", () => {
   it.each([
     "/api/products",
     "/api/products/mine",
-    "/api/reservations/mine",
-    "/api/reservations/store",
-    "/api/reservations/pickups?scope=completed",
+    "/api/orders/mine",
+    "/api/orders/store",
+    "/api/orders/pickups?scope=completed",
     "/api/users/stores",
     "/api/donations/mine",
     "/api/credits/requests",
   ])("%s rejects an invalid limit or offset", async (url) => {
-    const agent = url.startsWith("/api/products/mine") || url.startsWith("/api/reservations/store") || url.startsWith("/api/donations") || url.startsWith("/api/credits")
+    const agent = url.startsWith("/api/products/mine") || url.startsWith("/api/orders/store") || url.startsWith("/api/donations") || url.startsWith("/api/credits")
       ? store
       : restaurant;
     for (const page of ["limit=0", "limit=101", "limit=abc", "offset=-1", "offset=1.5"]) {
