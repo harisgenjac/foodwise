@@ -15,6 +15,7 @@ import {
   reserve,
   userId,
   type Agent,
+  orderOf,
 } from "./helpers.js";
 
 // Two templates that are not notifications, for the system-email rule: a system one (like the
@@ -140,18 +141,18 @@ describe("notification emails follow it", () => {
     const reservationId = await reserve(restaurant, product.id, 1);
     expect(await queueRows()).toEqual([]);
     const notifications = (await store.get("/api/notifications")).body.notifications;
-    expect(notifications.map((n: { reservation_id: number }) => n.reservation_id)).toContain(reservationId);
+    expect(notifications.map((n: { order_id: number }) => n.order_id)).toContain(await orderOf(reservationId));
 
     // The restaurant still gets its own emails.
     expect((await store.patch(`/api/reservations/${reservationId}/accept`)).status).toBe(200);
     expect((await queueRows()).map((row) => [row.template, row.recipient])).toEqual([
-      ["RESERVATION_ACCEPTED", RESTAURANT],
+      ["ORDER_ACCEPTED", RESTAURANT],
     ]);
 
     // On again: the next reservation's email is queued.
     await setEmails(store, true);
     await reserve(restaurant, product.id, 1);
-    expect((await queueRows()).map((row) => row.template)).toEqual(["RESERVATION_ACCEPTED", "RESERVATION_CREATED"]);
+    expect((await queueRows()).map((row) => row.template)).toEqual(["ORDER_ACCEPTED", "ORDER_CREATED"]);
   });
 
   it("skips an email queued before the user turned it off", async () => {

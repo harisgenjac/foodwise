@@ -15,6 +15,7 @@ import {
   registerAndLogin,
   reserve,
   userId,
+  orderOf,
 } from "./helpers.js";
 
 const ADMIN = "companies-admin@test.com";
@@ -43,7 +44,7 @@ const reservationStatus = async (id: number) =>
 const notificationsOf = async (email: string) =>
   (
     await pool.query(
-      `SELECT notifications.type, notifications.reservation_id, notifications.details
+      `SELECT notifications.type, notifications.order_id, notifications.details
        FROM notifications JOIN users ON notifications.user_id = users.id
        WHERE users.email = $1 ORDER BY notifications.id`,
       [email],
@@ -289,7 +290,7 @@ describe("Companies", () => {
       expect(blockedUsers.body.users).toEqual([expect.objectContaining({ email: HQ, company_is_blocked: true })]);
     });
 
-    it("hides the company's stores, cancels their Pending reservations and keeps Confirmed ones", async () => {
+    it("hides the company's stores, cancels their Pending orders and keeps Confirmed ones", async () => {
       await insertUser(BRANCH, "STORE", "Companies Branch", 1000, companyId);
       const branch = await login(BRANCH);
       const product = await createProduct(branch, { quantity: 10 });
@@ -304,7 +305,7 @@ describe("Companies", () => {
       expect(await reservationStatus(confirmed)).toBe("Confirmed");
       // The restaurant is told without the reason.
       expect(await notificationsOf(RESTAURANT)).toContainEqual(
-        expect.objectContaining({ type: "RESERVATION_CANCELLED_BY_ADMIN", reservation_id: pending, details: null }),
+        expect.objectContaining({ type: "ORDER_CANCELLED_BY_ADMIN", order_id: await orderOf(pending), details: null }),
       );
 
       const products = await restaurant.get("/api/products?radius=all");

@@ -13,6 +13,7 @@ import {
   registerAndLogin,
   reserve,
   userId,
+  orderOf,
 } from "./helpers.js";
 
 const ADMIN = "admin-admin@test.com";
@@ -30,7 +31,7 @@ const notificationsOf = async (email: string) =>
   (
     await pool.query(
       `SELECT notifications.type, notifications.details, notifications.product_id,
-         notifications.donation_id, notifications.reservation_id
+         notifications.donation_id, notifications.reservation_id, notifications.order_id
        FROM notifications JOIN users ON notifications.user_id = users.id
        WHERE users.email = $1 ORDER BY notifications.id`,
       [email],
@@ -389,7 +390,7 @@ describe("Admin", () => {
 
       // The restaurant is told; it never sees the admin's reason.
       expect(await notificationsOf(RESTAURANT)).toContainEqual(
-        expect.objectContaining({ type: "RESERVATION_CANCELLED_BY_ADMIN", reservation_id: pending, details: null }),
+        expect.objectContaining({ type: "ORDER_CANCELLED_BY_ADMIN", order_id: await orderOf(pending), details: null }),
       );
 
       const products = await restaurant.get("/api/products");
@@ -423,7 +424,7 @@ describe("Admin", () => {
       await admin.post(`/api/admin/users/${restaurantId}/block`).send({ reason: "Ne dolazi po robu" });
       expect(await reservationStatus(pending)).toBe("Cancelled");
       expect(await notificationsOf(STORE)).toContainEqual(
-        expect.objectContaining({ type: "RESERVATION_CANCELLED_BY_ADMIN", reservation_id: pending }),
+        expect.objectContaining({ type: "ORDER_CANCELLED_BY_ADMIN", order_id: await orderOf(pending) }),
       );
     });
 
@@ -478,7 +479,7 @@ describe("Admin", () => {
         expect.objectContaining({ type: "PRODUCT_REMOVED_BY_ADMIN", product_id: product.id, details: "Neispravan opis" }),
       );
       expect(await notificationsOf(RESTAURANT)).toContainEqual(
-        expect.objectContaining({ type: "RESERVATION_CANCELLED_BY_ADMIN", reservation_id: pending }),
+        expect.objectContaining({ type: "ORDER_CANCELLED_BY_ADMIN", order_id: await orderOf(pending) }),
       );
       const listed = await store.get("/api/notifications");
       expect(listed.body.notifications[0]).toMatchObject({
@@ -586,19 +587,19 @@ describe("Admin", () => {
       for (const email of [STORE, RESTAURANT]) {
         expect(await notificationsOf(email)).toContainEqual(
           expect.objectContaining({
-            type: "RESERVATION_CANCELLED_BY_ADMIN",
-            reservation_id: pending,
+            type: "ORDER_CANCELLED_BY_ADMIN",
+            order_id: await orderOf(pending),
             details: "Spor oko cijene",
           }),
         );
       }
       expect(await actions()).toEqual([
-        expect.objectContaining({ action: "CANCEL_RESERVATION", reason: "Spor oko cijene", target_product_id: product.id }),
+        expect.objectContaining({ action: "CANCEL_ORDER", reason: "Spor oko cijene", target_product_id: product.id }),
       ]);
 
       // The store sees the cancellation in its history too, through its product.
       const storeHistory = await admin.get(`/api/admin/users/${product.store_id}`);
-      expect(storeHistory.body.actions).toEqual([expect.objectContaining({ action: "CANCEL_RESERVATION" })]);
+      expect(storeHistory.body.actions).toEqual([expect.objectContaining({ action: "CANCEL_ORDER" })]);
     });
 
     it("puts a Confirmed reservation's quantity back on offer", async () => {

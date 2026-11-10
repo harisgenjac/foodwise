@@ -10,6 +10,8 @@ import {
   reserve,
   userId,
   type Agent,
+  insertOrderItem,
+  orderOf,
 } from "./helpers.js";
 
 const STORE = "notifications-store@test.com";
@@ -21,6 +23,7 @@ interface Notification {
   type: string;
   product_id: number | null;
   reservation_id: number | null;
+  order_id: number | null;
 }
 
 let store: Agent;
@@ -41,12 +44,14 @@ const insertProduct = async (name: string, expiry: string, status = "Available")
 };
 
 const insertReservation = async (productId: number, status: string, pickup: string) => {
-  const result = await pool.query<{ id: number }>(
-    `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date)
-     VALUES ($1, $2, 2, 1, $3, ${pickup}) RETURNING id`,
-    [productId, await userId(RESTAURANT_A), status],
-  );
-  return result.rows[0]!.id;
+  return insertOrderItem({
+    productId,
+    restaurantId: await userId(RESTAURANT_A),
+    quantity: 2,
+    unitPrice: 1,
+    status,
+    pickupAt: pickup,
+  });
 };
 
 describe("Notifications", () => {
@@ -60,23 +65,24 @@ describe("Notifications", () => {
     await cleanupUsers([STORE, RESTAURANT_A, RESTAURANT_B]);
   });
 
-  describe("created by reservation actions", () => {
-    it("notifies the store about a new reservation with links and product details", async () => {
+  describe("created by order actions", () => {
+    it("notifies the store about a new order with its code, item count and restaurant", async () => {
       const product = await createProduct(store, { name: "Piletina" });
-      const reservationId = await reserve(restaurant, product.id, 4);
+      const orderId = await orderOf(await reserve(restaurant, product.id, 4));
 
       const response = await store.get("/api/notifications");
       expect(response.status).toBe(200);
       expect(response.body.unreadCount).toBe(1);
+      const code = (await pool.query("SELECT code FROM orders WHERE id = $1", [orderId])).rows[0].code;
       expect(response.body.notifications[0]).toMatchObject({
-        type: "RESERVATION_CREATED",
-        reservation_id: reservationId,
-        product_id: product.id,
-        product_name: "Piletina",
-        unit: "kg",
+        type: "ORDER_CREATED",
+        order_id: orderId,
+        order_code: code,
+        order_item_count: 1,
+        order_restaurant_name: "Test Business",
+        reservation_id: null,
         is_read: false,
       });
-      expect(parseFloat(response.body.notifications[0].quantity)).toBe(4);
     });
 
     it("notifies the restaurant on accept and the store when the product sells out", async () => {
@@ -87,11 +93,11 @@ describe("Notifications", () => {
       expect(accept.status).toBe(200);
 
       expect((await notificationsOf(restaurant))[0]).toMatchObject({
-        type: "RESERVATION_ACCEPTED",
-        reservation_id: reservationId,
+        type: "ORDER_ACCEPTED",
+        order_id: await orderOf(reservationId),
       });
       const storeTypes = (await notificationsOf(store)).map((n) => n.type);
-      expect(storeTypes).toEqual(expect.arrayContaining(["RESERVATION_CREATED", "PRODUCT_SOLD_OUT"]));
+      expect(storeTypes).toEqual(expect.arrayContaining(["ORDER_CREATED", "PRODUCT_SOLD_OUT"]));
     });
 
     it("does not send a sold-out notification while quantity remains", async () => {
@@ -112,12 +118,12 @@ describe("Notifications", () => {
       expect((await restaurant.patch(`/api/reservations/${cancelled}/cancel`)).status).toBe(200);
 
       expect((await notificationsOf(restaurant))[0]).toMatchObject({
-        type: "RESERVATION_REJECTED",
-        reservation_id: rejected,
+        type: "ORDER_REJECTED",
+        order_id: await orderOf(rejected),
       });
       expect((await notificationsOf(store))[0]).toMatchObject({
-        type: "RESERVATION_CANCELLED",
-        reservation_id: cancelled,
+        type: "ORDER_CANCELLED",
+        order_id: await orderOf(cancelled),
       });
     });
 
@@ -201,7 +207,7 @@ describe("Notifications", () => {
   });
 
   describe("expiry job", () => {
-    it("expires the product, cancels Pending reservations, keeps Confirmed ones and notifies", async () => {
+    it("expires the product, cancels Pending orders, keeps Confirmed ones and notifies", async () => {
       const productId = await insertProduct("Jogurt", "CURRENT_DATE - 1");
       const pending = await insertReservation(productId, "Pending", "NOW()");
       const confirmed = await insertReservation(productId, "Confirmed", "NOW()");
@@ -210,14 +216,16 @@ describe("Notifications", () => {
 
       const product = await pool.query("SELECT status FROM products WHERE id = $1", [productId]);
       expect(product.rows[0].status).toBe("Expired");
-      const statuses = await pool.query("SELECT id, status FROM reservations WHERE product_id = $1", [productId]);
+      const statuses = await pool.query("SELECT id, status FROM orders WHERE id = ANY($1)", [
+        [pending.orderId, confirmed.orderId],
+      ]);
       const byId = Object.fromEntries(statuses.rows.map((r) => [r.id, r.status]));
-      expect(byId[pending]).toBe("Cancelled");
-      expect(byId[confirmed]).toBe("Confirmed");
+      expect(byId[pending.orderId]).toBe("Cancelled");
+      expect(byId[confirmed.orderId]).toBe("Confirmed");
 
       expect((await notificationsOf(store))[0]).toMatchObject({ type: "PRODUCT_EXPIRED", product_id: productId });
-      const restaurantNotes = (await notificationsOf(restaurant)).filter((n) => n.type === "RESERVATION_EXPIRED");
-      expect(restaurantNotes.map((n) => n.reservation_id)).toEqual([pending]);
+      const restaurantNotes = (await notificationsOf(restaurant)).filter((n) => n.type === "ORDER_EXPIRED");
+      expect(restaurantNotes.map((n) => n.order_id)).toEqual([pending.orderId]);
     });
 
     it("leaves unexpired products, non-Available products and finished reservations alone", async () => {
@@ -231,7 +239,7 @@ describe("Notifications", () => {
         [fresh, sold],
       ]);
       expect(products.rows.map((p) => p.status)).toEqual(["Available", "Sold"]);
-      const reservation = await pool.query("SELECT status FROM reservations WHERE id = $1", [completed]);
+      const reservation = await pool.query("SELECT status FROM reservations WHERE id = $1", [completed.itemId]);
       expect(reservation.rows[0].status).toBe("Completed");
       expect(await notificationsOf(store)).toEqual([]);
     });
@@ -251,9 +259,9 @@ describe("Notifications", () => {
       expect(expiringNotes).toHaveLength(1);
       expect(expiringNotes[0]!.product_id).toBe(expiring);
 
-      const pickupNotes = (await notificationsOf(restaurant)).filter((n) => n.type === "PICKUP_TODAY");
+      const pickupNotes = (await notificationsOf(restaurant)).filter((n) => n.type === "ORDER_PICKUP_TODAY");
       expect(pickupNotes).toHaveLength(1);
-      expect(pickupNotes[0]!.reservation_id).toBe(confirmed);
+      expect(pickupNotes[0]!.order_id).toBe(confirmed.orderId);
     });
 
     it("skips products without Pending requests and pickups that are not Confirmed or not today", async () => {
@@ -268,7 +276,7 @@ describe("Notifications", () => {
       await sendReminders();
 
       expect((await notificationsOf(store)).filter((n) => n.type === "PRODUCT_EXPIRING_SOON")).toEqual([]);
-      expect((await notificationsOf(restaurant)).filter((n) => n.type === "PICKUP_TODAY")).toEqual([]);
+      expect((await notificationsOf(restaurant)).filter((n) => n.type === "ORDER_PICKUP_TODAY")).toEqual([]);
     });
   });
 });

@@ -3,6 +3,7 @@ import app from "../src/app.js";
 import bcrypt from "bcrypt";
 import pool from "../src/config/db.js";
 import { creditMonth } from "../src/utils/creditTime.js";
+import { generateOrderCode } from "../src/services/orders/codes.js";
 
 export type Agent = ReturnType<typeof request.agent>;
 export type Role = "STORE" | "RESTAURANT" | "ADMIN" | "COMPANY";
@@ -170,9 +171,69 @@ export const reserve = async (restaurant: Agent, productId: number, quantity: nu
   return response.body.reservation.id as number;
 };
 
+export interface OrderItemInput {
+  productId: number;
+  restaurantId: number;
+  quantity: number;
+  unitPrice?: number;
+  // The item's status; the one-item order gets the same.
+  status?: string;
+  // What the order sent (default `quantity`); above `quantity` when the store accepted less.
+  orderedQuantity?: number;
+  // SQL expressions (fixed text from the test, never input): the pickup, the pickup moment of a
+  // Completed item (default NOW()) and when the order was sent (default NOW()).
+  pickupAt?: string;
+  pickedUpAt?: string;
+  createdAt?: string;
+  acceptPartial?: boolean;
+}
+
+// A one-item order straight in the database, in any status (the API only reaches statuses by its
+// own steps). Returns the order's and the item's id.
+export const insertOrderItem = async ({
+  productId,
+  restaurantId,
+  quantity,
+  unitPrice = 5,
+  status = "Pending",
+  orderedQuantity = quantity,
+  pickupAt = "CURRENT_DATE + 1",
+  pickedUpAt = "NOW()",
+  createdAt = "NOW()",
+  acceptPartial = true,
+}: OrderItemInput) => {
+  const pickedUp = status === "Completed" ? pickedUpAt : "NULL";
+  let order: { id: number } | undefined;
+  while (!order) {
+    const inserted = await pool.query<{ id: number }>(
+      `INSERT INTO orders (store_id, restaurant_id, code, status, pickup_at, accept_partial, picked_up_at, created_at)
+       SELECT products.store_id, $2, $3, $4::order_status, (${pickupAt})::timestamp, $5, ${pickedUp}, ${createdAt}
+       FROM products WHERE products.id = $1
+       ON CONFLICT (store_id, code) DO NOTHING
+       RETURNING orders.id`,
+      [productId, restaurantId, generateOrderCode(), status, acceptPartial],
+    );
+    order = inserted.rows[0];
+  }
+  const item = await pool.query<{ id: number }>(
+    `INSERT INTO reservations
+       (order_id, product_id, restaurant_id, quantity, ordered_quantity, unit_price, status, pickup_date, picked_up_at, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::reservation_status, (${pickupAt})::timestamp, ${pickedUp}, ${createdAt})
+     RETURNING reservations.id`,
+    [order.id, productId, restaurantId, quantity, orderedQuantity, unitPrice, status],
+  );
+  return { orderId: order.id, itemId: item.rows[0]!.id };
+};
+
+// The order of an item (a reservation row).
+export const orderOf = async (itemId: number): Promise<number> =>
+  (await pool.query<{ order_id: number }>("SELECT order_id FROM reservations WHERE id = $1", [itemId])).rows[0]!
+    .order_id;
+
 // The audit log and announcements go first because they keep an admin from being deleted
-// (RESTRICT), then the credit ledger and the reservations (also RESTRICT); deleting the users
-// cascades to products, notifications, favorites, templates, subscriptions and credit requests.
+// (RESTRICT), then the credit ledger and the orders (also RESTRICT; their items go with them);
+// deleting the users cascades to products, notifications, favorites, templates, subscriptions and
+// credit requests.
 export const cleanupUsers = async (emails: string[]) => {
   // The ledger is append-only; its trigger allows deletes only with app.ledger_maintenance on.
   const client = await pool.connect();
@@ -201,13 +262,9 @@ export const cleanupUsers = async (emails: string[]) => {
     [emails],
   );
   await pool.query(
-    `DELETE FROM reservations
+    `DELETE FROM orders
      WHERE restaurant_id IN (SELECT id FROM users WHERE email = ANY($1))
-        OR product_id IN (
-          SELECT products.id FROM products
-          JOIN users ON products.store_id = users.id
-          WHERE users.email = ANY($1)
-        )`,
+        OR store_id IN (SELECT id FROM users WHERE email = ANY($1))`,
     [emails],
   );
   await pool.query("DELETE FROM users WHERE email = ANY($1)", [emails]);

@@ -16,7 +16,10 @@ import {
 } from "../utils/accounts.js";
 import { PRODUCT_STATUSES } from "./products.controller.js";
 import { DONATION_STATUSES, DONATION_TYPES } from "../utils/validateDonation.js";
-import { RESERVATION_STATUSES, lockReservation, releaseSoldProduct } from "./reservations.controller.js";
+import { RESERVATION_STATUSES, findReservation } from "./reservations.controller.js";
+import { cancelPendingItemsOfProducts, cancelPendingOrders, lockOrdersHoldingProducts } from "../services/orders/cascades.js";
+import { adminCancelOrder } from "../services/orders/actions.js";
+import { HttpError } from "../utils/httpError.js";
 import { updateProfile } from "./users.controller.js";
 import { isValidDateTime } from "../utils/dates.js";
 import { CITY_NAME, parseCityFilter } from "../utils/cities.js";
@@ -42,6 +45,7 @@ export const ADMIN_ACTIONS = [
   "REMOVE_PRODUCT",
   "REMOVE_DONATION",
   "CANCEL_RESERVATION",
+  "CANCEL_ORDER",
   "UPDATE_PROFILE",
   "CREATE_ANNOUNCEMENT",
   "END_ANNOUNCEMENT",
@@ -84,6 +88,7 @@ interface AdminAction {
   targetProductId?: number | null;
   targetDonationId?: number | null;
   targetReservationId?: number | null;
+  targetOrderId?: number | null;
   targetAnnouncementId?: number | null;
   targetCreditRequestId?: number | null;
   targetCompanyId?: number | null;
@@ -100,6 +105,7 @@ export const logAdminAction = async (
     targetProductId = null,
     targetDonationId = null,
     targetReservationId = null,
+    targetOrderId = null,
     targetAnnouncementId = null,
     targetCreditRequestId = null,
     targetCompanyId = null,
@@ -109,8 +115,8 @@ export const logAdminAction = async (
   await db.query(
     `INSERT INTO admin_actions
        (admin_id, action, target_user_id, target_product_id, target_donation_id, target_reservation_id,
-        target_announcement_id, target_credit_request_id, target_company_id, reason)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        target_order_id, target_announcement_id, target_credit_request_id, target_company_id, reason)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
     [
       adminId,
       action,
@@ -118,6 +124,7 @@ export const logAdminAction = async (
       targetProductId,
       targetDonationId,
       targetReservationId,
+      targetOrderId,
       targetAnnouncementId,
       targetCreditRequestId,
       targetCompanyId,
@@ -322,14 +329,18 @@ export const getUserDetails = async (req: Request, res: Response) => {
     const actions = await pool.query(
       `SELECT admin_actions.id, admin_actions.action, admin_actions.reason, admin_actions.created_at,
          admin_actions.target_product_id, admin_actions.target_donation_id, admin_actions.target_reservation_id,
+         admin_actions.target_order_id,
          admins.email AS admin_email, products.name AS product_name, donation_offers.name AS donation_name
        FROM admin_actions
        JOIN users AS admins ON admin_actions.admin_id = admins.id
        LEFT JOIN products ON admin_actions.target_product_id = products.id
        LEFT JOIN donation_offers ON admin_actions.target_donation_id = donation_offers.id
-       -- A cancelled reservation targets the restaurant; the store sees it through its product.
+       -- A cancelled order (or an old cancelled reservation) targets the restaurant; the store sees
+       -- it through the order (or the product).
        WHERE admin_actions.target_user_id = $1
           OR (admin_actions.action = 'CANCEL_RESERVATION' AND products.store_id = $1)
+          OR (admin_actions.action = 'CANCEL_ORDER'
+              AND admin_actions.target_order_id IN (SELECT orders.id FROM orders WHERE orders.store_id = $1))
        ORDER BY admin_actions.created_at DESC, admin_actions.id DESC
        LIMIT $2`,
       [targetId, RECENT_ACTIONS_LIMIT],
@@ -511,41 +522,6 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
-// Cancels the Pending reservations of `where` (locked first) and notifies `recipient` of each.
-// Confirmed reservations are kept: the store already agreed to hand that food over.
-// `storeClosed` sends RESERVATION_CANCELLED_STORE_CLOSED instead of RESERVATION_CANCELLED_BY_ADMIN.
-export const cancelPendingReservations = async (
-  client: PoolClient,
-  where: string,
-  values: number[],
-  recipient: (row: { store_id: number; restaurant_id: number }) => number,
-  { storeClosed = false }: { storeClosed?: boolean } = {},
-) => {
-  const pending = await client.query(
-    `SELECT reservations.id, reservations.restaurant_id, reservations.quantity,
-       products.id AS product_id, products.store_id, products.name, products.unit
-     FROM reservations
-     JOIN products ON reservations.product_id = products.id
-     WHERE reservations.status = 'Pending' AND (${where})
-     FOR UPDATE OF reservations`,
-    values,
-  );
-  for (const row of pending.rows) {
-    await client.query("UPDATE reservations SET status = 'Cancelled' WHERE reservations.id = $1", [row.id]);
-    const item = `${Number(row.quantity)}${row.unit} ${row.name}`;
-    await createNotification(client, {
-      userId: recipient(row),
-      type: storeClosed ? "RESERVATION_CANCELLED_STORE_CLOSED" : "RESERVATION_CANCELLED_BY_ADMIN",
-      message: storeClosed
-        ? `Reservation cancelled because the store is no longer active: ${item}`
-        : `Reservation cancelled by the platform administrator: ${item}`,
-      reservationId: row.id,
-      productId: row.product_id,
-    });
-  }
-  return pending.rows.length;
-};
-
 // Blocking signs the user out at once (authenticate reads is_blocked), hides a store's offers
 // and cancels the user's Pending reservations on both sides. An admin cannot block their own
 // account, so at least one active admin always remains.
@@ -584,12 +560,13 @@ export const blockUser = async (req: Request, res: Response) => {
        WHERE users.id = $2 RETURNING ${USER_COLUMNS}`,
       [reason, targetId],
     );
-    // The other party of each reservation is told; the blocked user cannot sign in anyway.
-    const cancelledReservations = await cancelPendingReservations(
+    // The other party of each order is told; the blocked user cannot sign in anyway.
+    // (cancelledReservations counts orders; PR 4 renames it to cancelledOrders with the admin screens.)
+    const cancelledReservations = await cancelPendingOrders(
       client,
-      "reservations.restaurant_id = $1 OR products.store_id = $1",
+      "orders.restaurant_id = $1 OR orders.store_id = $1",
       [targetId],
-      (row) => (row.restaurant_id === targetId ? row.store_id : row.restaurant_id),
+      (order) => (order.restaurant_id === targetId ? order.store_id : order.restaurant_id),
     );
     const blocked = result.rows[0];
     // A branch's headquarters learns it was blocked, with the reason.
@@ -696,8 +673,9 @@ export const getAdminProducts = async (req: Request, res: Response) => {
   }
 };
 
-// Moderation: the product leaves the marketplace, its Pending reservations are cancelled and
-// the store is told why. Confirmed reservations stay for the store to hand over.
+// Moderation: the product leaves the marketplace, its Pending order items are cancelled (a whole
+// order when the restaurant did not accept partial fulfilment or nothing is left) and the store is
+// told why. Confirmed items stay for the store to hand over.
 export const removeProduct = async (req: Request, res: Response) => {
   const productId = parseId(req.params.id);
   if (productId === null) {
@@ -712,6 +690,8 @@ export const removeProduct = async (req: Request, res: Response) => {
   try {
     client = await pool.connect();
     await client.query("BEGIN");
+    // The orders holding it first, then the product (the order paths' lock order).
+    const orders = await lockOrdersHoldingProducts(client, [productId]);
     const existing = await client.query(
       "SELECT products.id, products.store_id, products.name, products.status FROM products WHERE products.id = $1 FOR UPDATE",
       [productId],
@@ -726,12 +706,11 @@ export const removeProduct = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Product is already removed." });
     }
 
-    await cancelPendingReservations(
-      client,
-      "reservations.product_id = $1",
-      [productId],
-      (row) => row.restaurant_id,
-    );
+    await cancelPendingItemsOfProducts(client, orders, [productId], "REMOVED", {
+      source: "ADMIN",
+      actorId: req.user!.id,
+      reason,
+    });
     // No refund for the store: the product broke the rules, so its credit stays spent.
     const result = await client.query(
       "UPDATE products SET status = 'Removed' WHERE products.id = $1 RETURNING *",
@@ -1001,8 +980,9 @@ export const getAdminReservations = async (req: Request, res: Response) => {
   }
 };
 
-// Resolves a dispute: a Pending or Confirmed reservation is cancelled and both sides are told why.
-// Cancelling a Confirmed one puts its quantity back on offer (a product it sold out is available again).
+// Resolves a dispute: the reservation's whole order (Pending or Confirmed) is cancelled and both
+// sides are told why. Cancelling a Confirmed one puts its quantity back on offer (a product it sold
+// out is available again). TEMPORARY (orders PR 3a): PR 4 replaces it with POST /admin/orders/:id/cancel.
 export const cancelReservation = async (req: Request, res: Response) => {
   const reservationId = parseId(req.params.id);
   if (reservationId === null) {
@@ -1017,8 +997,7 @@ export const cancelReservation = async (req: Request, res: Response) => {
   try {
     client = await pool.connect();
     await client.query("BEGIN");
-    const result = await lockReservation(client, reservationId);
-    const reservation = result.rows[0];
+    const reservation = await findReservation(client, reservationId);
     if (!reservation) {
       await client.query("ROLLBACK");
       return res.status(404).json({ error: "Reservation not found." });
@@ -1030,32 +1009,21 @@ export const cancelReservation = async (req: Request, res: Response) => {
         .json({ error: "Only pending or accepted reservations can be cancelled." });
     }
 
-    await client.query("UPDATE reservations SET status = 'Cancelled' WHERE reservations.id = $1", [reservationId]);
-    if (reservation.status === "Confirmed") {
-      await releaseSoldProduct(client, reservation.product_id);
-    }
-    for (const userId of [reservation.store_id, reservation.restaurant_id]) {
-      await createNotification(client, {
-        userId,
-        type: "RESERVATION_CANCELLED_BY_ADMIN",
-        message: `Reservation cancelled by the platform administrator: ${reservation.product_name}`,
-        reservationId,
-        productId: reservation.product_id,
-        details: reason,
-      });
-    }
+    await adminCancelOrder(client, req.user!.id, reservation.order_id, reason);
     await logAdminAction(client, {
       adminId: req.user!.id,
-      action: "CANCEL_RESERVATION",
+      action: "CANCEL_ORDER",
       targetUserId: reservation.restaurant_id,
       targetProductId: reservation.product_id,
       targetReservationId: reservationId,
+      targetOrderId: reservation.order_id,
       reason,
     });
     await client.query("COMMIT");
     return res.status(200).json({ message: "Reservation cancelled." });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
+    if (error instanceof HttpError) return res.status(error.status).json(error.body());
     console.error("Error while cancelling reservation:", error);
     return res.status(500).json({ error: "An error occurred while cancelling the reservation." });
   } finally {

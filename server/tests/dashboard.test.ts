@@ -1,7 +1,7 @@
 import request from "supertest";
 import app from "../src/app.js";
 import pool from "../src/config/db.js";
-import { cleanupUsers, createProduct, registerAndLogin, userId, type Agent } from "./helpers.js";
+import { cleanupUsers, createProduct, registerAndLogin, userId, type Agent, insertOrderItem } from "./helpers.js";
 
 const STORE_A = "dashboard-store-a@test.com";
 const STORE_B = "dashboard-store-b@test.com";
@@ -17,11 +17,7 @@ const insertReservation = async (
   quantity: number,
   unitPrice = 5,
 ) => {
-  await pool.query(
-    `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date)
-     VALUES ($1, $2, $3, $4, $5::reservation_status, CURRENT_DATE + 1)`,
-    [productId, await userId(restaurantEmail), quantity, unitPrice, status],
-  );
+  await insertOrderItem({ productId, restaurantId: await userId(restaurantEmail), quantity, unitPrice, status });
 };
 
 const stats = async (agent: Agent) => {

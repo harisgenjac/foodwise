@@ -7,6 +7,7 @@ import {
   registerAndLogin,
   userId,
   type Agent,
+  insertOrderItem,
 } from "./helpers.js";
 
 const STORE = "paging-store@test.com";
@@ -49,12 +50,15 @@ const expectStablePages = async (agent: Agent, url: string, key: string, query: 
 };
 
 const insertReservation = async (productId: number, status: string, days = 1) => {
-  await pool.query(
-    `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date, picked_up_at, created_at)
-     VALUES ($1, $2, 1, 5, $3::reservation_status, (CURRENT_DATE + $4::int) + TIME '10:00',
-             CASE WHEN $3::reservation_status = 'Completed' THEN $5::timestamptz END, $5)`,
-    [productId, await userId(RESTAURANT), status, days, SAME_TIME],
-  );
+  await insertOrderItem({
+    productId,
+    restaurantId: await userId(RESTAURANT),
+    quantity: 1,
+    status,
+    pickupAt: `(CURRENT_DATE + ${Number(days)}) + TIME '10:00'`,
+    pickedUpAt: `'${SAME_TIME}'::timestamptz`,
+    createdAt: `'${SAME_TIME}'::timestamptz`,
+  });
 };
 
 describe("Pagination", () => {

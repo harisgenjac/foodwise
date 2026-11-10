@@ -31,7 +31,12 @@ export const getNotifications = async (req: Request, res: Response) => {
         COALESCE(requesters.business_name, requesters.email) AS credit_requester,
         requester_companies.name AS credit_company,
         notifications.branch_id,
-        branches.business_name AS branch_name
+        branches.business_name AS branch_name,
+        notifications.order_id,
+        orders.code AS order_code,
+        (SELECT COUNT(*) FROM reservations WHERE reservations.order_id = orders.id)::int AS order_item_count,
+        order_stores.business_name AS order_store_name,
+        order_restaurants.business_name AS order_restaurant_name
       FROM notifications
       LEFT JOIN products ON notifications.product_id = products.id
       LEFT JOIN donation_offers ON notifications.donation_id = donation_offers.id
@@ -41,6 +46,9 @@ export const getNotifications = async (req: Request, res: Response) => {
       LEFT JOIN users AS requesters ON credit_requests.user_id = requesters.id
       LEFT JOIN companies AS requester_companies ON requesters.company_id = requester_companies.id
       LEFT JOIN users AS branches ON notifications.branch_id = branches.id
+      LEFT JOIN orders ON notifications.order_id = orders.id
+      LEFT JOIN users AS order_stores ON orders.store_id = order_stores.id
+      LEFT JOIN users AS order_restaurants ON orders.restaurant_id = order_restaurants.id
       WHERE notifications.user_id = $1
       ORDER BY notifications.created_at DESC, notifications.id DESC
       LIMIT $2`,

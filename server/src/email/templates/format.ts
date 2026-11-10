@@ -15,6 +15,18 @@ export const formatQuantity = (quantity: string, lang: EmailLanguage) => {
   return new Intl.NumberFormat(lang === "en" ? "en-US" : "bs-BA", { maximumFractionDigits: 2 }).format(value);
 };
 
+// "52.5" → "52,50 KM" in Bosnian and "52.50 KM" in English.
+export const formatMoney = (amount: string, lang: EmailLanguage) => {
+  const value = Number(amount);
+  if (!Number.isFinite(value)) return `${amount} KM`;
+  const number = new Intl.NumberFormat(lang === "en" ? "en-US" : "bs-BA", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: false,
+  }).format(value);
+  return `${number} KM`;
+};
+
 // "2026-11-06T14:30" (local wall-clock time) → "06.11.2026. 14:30" / "06/11/2026 14:30", the date
 // formats the app uses. Midnight means only a day was chosen, so the time is left out.
 export const formatPickup = (pickupAt: string, lang: EmailLanguage) => {

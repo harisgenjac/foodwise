@@ -1,8 +1,7 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import { parseId, parseNumber } from "../utils/params.js";
-import { markSoldIfFullyConfirmed } from "./reservations.controller.js";
-import { freeQuantity } from "../services/stock.js";
+import { freeQuantity, markSoldIfFullyConfirmed } from "../services/stock.js";
 
 // Sold in shop: a store also sells at its own till, so the app's stock can be higher than what is
 // really left. The store records the amount it sold there, which lowers the product's free quantity

@@ -8,6 +8,7 @@ import {
   insertUser,
   login,
   userId,
+  insertOrderItem,
 } from "./helpers.js";
 
 // The headquarters' reports over its branches follow the rules of a store's own reports.
@@ -43,12 +44,15 @@ const insertPickup = async (
      VALUES ($1, 'Kruh', 'Bakery', 10, 5, 100, $2, CURRENT_DATE + 3) RETURNING id`,
     [storeId, unit],
   );
-  await pool.query(
-    `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date, picked_up_at)
-     VALUES ($1, $2, $3, $4, $5::reservation_status, (CURRENT_DATE - $6::int) + time '10:00',
-             CASE WHEN $5::reservation_status = 'Completed' THEN (CURRENT_DATE - $6::int) + time '12:00' END)`,
-    [product.rows[0]!.id, await userId(restaurantEmail), quantity, unitPrice, status, daysAgo],
-  );
+  await insertOrderItem({
+    productId: product.rows[0]!.id,
+    restaurantId: await userId(restaurantEmail),
+    quantity,
+    unitPrice,
+    status,
+    pickupAt: `(CURRENT_DATE - ${Number(daysAgo)}) + time '10:00'`,
+    pickedUpAt: `(CURRENT_DATE - ${Number(daysAgo)}) + time '12:00'`,
+  });
 };
 
 const parse = (text: string) =>

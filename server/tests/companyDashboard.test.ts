@@ -8,6 +8,7 @@ import {
   insertUser,
   login,
   userId,
+  insertOrderItem,
 } from "./helpers.js";
 
 // The headquarters' dashboard only reads: what waits for its decision, the company's totals and a
@@ -55,12 +56,16 @@ const insertReservation = async (
 ) => {
   const productId = await insertProduct(storeId, unit);
   const at = lastMonth ? "date_trunc('month', CURRENT_DATE) - interval '1 day' + time '12:00'" : "NOW()";
-  await pool.query(
-    `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date, picked_up_at, created_at)
-     VALUES ($1, $2, $3, $4, $5::reservation_status, ${at},
-             CASE WHEN $5::reservation_status = 'Completed' THEN ${at} END, ${at})`,
-    [productId, await userId(restaurantEmail), quantity, unitPrice, status],
-  );
+  await insertOrderItem({
+    productId,
+    restaurantId: await userId(restaurantEmail),
+    quantity,
+    unitPrice,
+    status,
+    pickupAt: at,
+    pickedUpAt: at,
+    createdAt: at,
+  });
 };
 
 // Credits a branch used this month (a charge in the ledger).
