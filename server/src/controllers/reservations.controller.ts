@@ -1,16 +1,38 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import type { PoolClient } from "pg";
-import { createNotification } from "../utils/notifications.js";
 import { isValidDateTime } from "../utils/dates.js";
+import { HttpError } from "../utils/httpError.js";
 import { parseId, parseNumber } from "../utils/params.js";
 import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import { parseCityFilter } from "../utils/cities.js";
 import { visibleStore } from "../utils/visibility.js";
-import { freeQuantity, soldOutCover } from "../services/stock.js";
+import { freeQuantity } from "../services/stock.js";
+import { sendOrder } from "../services/orders/send.js";
+import { decideOrder } from "../services/orders/decision.js";
+import { cancelOrder, cancelOverdueOrder, completeOrder } from "../services/orders/actions.js";
+import { inTransaction } from "../utils/transaction.js";
+
+// TEMPORARY (orders PR 3a): today's reservation screens keep working on one-item orders until
+// PR 3b moves them to /api/orders and removes these endpoints. The lists, details and pickups
+// below read the items (one row per item, as before); every write goes through the order service:
+// reserving sends a one-item order, accept / reject / cancel / complete / cancel-overdue act on
+// the item's order. The checks before the service keep the old answers; the service checks
+// everything again under its locks.
 
 export const RESERVATION_STATUSES = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
 
+const NOT_FOUND = "Reservation not found.";
+
+// The answer for an error the order service threw (or 500 with `message`, which is also logged).
+const failWith = (res: Response, error: unknown, message: string) => {
+  if (error instanceof HttpError) return res.status(error.status).json(error.body());
+  console.error(message, error);
+  return res.status(500).json({ error: message });
+};
+
+// Sends a one-item order. The restaurant saw today's price, and the old dialog never sends less
+// than asked, so partial fulfilment is off: anything short of the full quantity is refused.
 export const createReservation = async (req: Request, res: Response) => {
   const { product_id, quantity, pickup_date } = req.body ?? {};
   const restaurant_id = req.user!.id;
@@ -30,70 +52,58 @@ export const createReservation = async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Pickup date is not valid." });
   }
 
-  let client;
   try {
-    client = await pool.connect();
-    await client.query("BEGIN");
-    const products = await client.query(
-      `SELECT *,
-         expiry_date < CURRENT_DATE AS is_expired,
-         $2::timestamp::date < CURRENT_DATE OR $2::timestamp::date > expiry_date AS pickup_out_of_range
+    const products = await pool.query(
+      `SELECT products.id, products.status, products.discounted_price,
+         products.expiry_date < CURRENT_DATE AS is_expired,
+         $2::timestamp::date < CURRENT_DATE OR $2::timestamp::date > products.expiry_date AS pickup_out_of_range
        FROM products
-       WHERE id = $1
-         AND store_id IN (SELECT users.id FROM users WHERE ${visibleStore("users")})
-       FOR UPDATE`,
+       WHERE products.id = $1
+         AND products.store_id IN (SELECT users.id FROM users WHERE ${visibleStore("users")})`,
       [productId, pickup_date],
     );
-    if (products.rows.length === 0) {
-      await client.query("ROLLBACK");
+    const product = products.rows[0];
+    if (!product) {
       return res.status(404).json({ error: "Product not found." });
     }
-    if (products.rows[0].status !== "Available" || products.rows[0].is_expired) {
-      await client.query("ROLLBACK");
-      return res
-        .status(400)
-        .json({ error: "Product is no longer available for reservation." });
+    if (product.status !== "Available" || product.is_expired) {
+      return res.status(400).json({ error: "Product is no longer available for reservation." });
     }
-    if (products.rows[0].pickup_out_of_range) {
-      await client.query("ROLLBACK");
+    if (product.pickup_out_of_range) {
       return res.status(400).json({
         error: "Pickup date must be between today and the product's expiry date.",
       });
     }
-    // Under the product lock: what reservations hold and what the store sold in its shop are gone.
-    const availableQuantity = await freeQuantity(client, productId);
-    if (availableQuantity < requestedQuantity) {
-      await client.query("ROLLBACK");
-      return res
-        .status(400)
-        .json({ error: "Not enough product available." });
+    if ((await freeQuantity(pool, productId)) < requestedQuantity) {
+      return res.status(400).json({ error: "Not enough product available." });
     }
 
-    // unit_price keeps the price agreed at reservation time, even if the store edits the product later.
-    const result = await client.query(
-      "INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date) VALUES ($1, $2, $3, $4, 'Pending', $5) RETURNING *",
-      [productId, restaurant_id, requestedQuantity, products.rows[0].discounted_price, pickup_date],
+    const sent = await inTransaction((client) =>
+      sendOrder(client, restaurant_id, {
+        pickupAt: pickup_date,
+        acceptPartial: false,
+        lines: [{ productId, quantity: requestedQuantity, unitPrice: parseFloat(product.discounted_price) }],
+      }),
     );
-    await createNotification(client, {
-      userId: products.rows[0].store_id,
-      type: "RESERVATION_CREATED",
-      message: `New reservation request: ${requestedQuantity}${products.rows[0].unit} ${products.rows[0].name}`,
-      reservationId: result.rows[0].id,
-      productId: products.rows[0].id,
-    });
-    await client.query("COMMIT");
+    const reservation = await pool.query("SELECT * FROM reservations WHERE reservations.id = $1", [
+      sent.items[0]!.id,
+    ]);
     return res.status(201).json({
       message: "Reservation created successfully.",
-      reservation: result.rows[0],
+      reservation: reservation.rows[0],
     });
   } catch (error) {
-    if (client) await client.query("ROLLBACK");
-    console.error("Error while creating reservation:", error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while creating the reservation." });
-  } finally {
-    if (client) client.release();
+    // Something changed between the checks above and the service's locks.
+    if (error instanceof HttpError && error.details.code === "ORDER_NOT_SENT") {
+      const [line] = error.details.lines as { kind: string }[];
+      return res.status(400).json({
+        error:
+          line?.kind === "QUANTITY_REDUCED"
+            ? "Not enough product available."
+            : "Product is no longer available for reservation.",
+      });
+    }
+    return failWith(res, error, "An error occurred while creating the reservation.");
   }
 };
 
@@ -399,240 +409,102 @@ export const getStoreReservations = async (req: Request, res: Response) => {
   }
 };
 
-// Marks the product Sold once confirmed (or already picked up) reservations and shop sales cover its
-// whole quantity (soldOutCover). The caller's transaction must hold the lock on the product row.
-// `notify` is false when the store sold the rest itself in its shop: it needs no notification.
-export const markSoldIfFullyConfirmed = async (
-  client: PoolClient,
-  product: { id: number; store_id: number; name: string; quantity: string },
-  { notify = true }: { notify?: boolean } = {},
-) => {
-  if ((await soldOutCover(client, product.id)) < parseFloat(product.quantity)) {
-    return false;
-  }
-  await client.query("UPDATE products SET status = 'Sold' WHERE id = $1", [product.id]);
-  if (!notify) return true;
-  await createNotification(client, {
-    userId: product.store_id,
-    type: "PRODUCT_SOLD_OUT",
-    message: `${product.name} is sold out.`,
-    productId: product.id,
-  });
-  return true;
-};
-
-export const acceptReservation = async (req: Request, res: Response) => {
-  const reservationId = parseId(req.params.id);
-  const store_id = req.user!.id;
-
-  if (reservationId === null) {
-    return res.status(404).json({ error: "Reservation not found." });
-  }
-
-  let client;
-  try {
-    client = await pool.connect();
-    await client.query("BEGIN");
-
-    const result = await client.query(
-      "SELECT * FROM reservations WHERE id = $1 FOR UPDATE",
-      [reservationId],
-    );
-
-    if (result.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Reservation not found." });
-    }
-
-    const productResult = await client.query(
-      "SELECT *, expiry_date < CURRENT_DATE AS is_expired FROM products WHERE id = $1 FOR UPDATE",
-      [result.rows[0].product_id],
-    );
-
-    if (productResult.rows[0].store_id !== store_id) {
-      await client.query("ROLLBACK");
-      return res
-        .status(403)
-        .json({ error: "You are not allowed to accept this reservation." });
-    }
-
-    if (result.rows[0].status !== "Pending") {
-      await client.query("ROLLBACK");
-      return res
-        .status(400)
-        .json({ error: "Reservation is not in 'Pending' status." });
-    }
-
-    if (productResult.rows[0].is_expired) {
-      await client.query("ROLLBACK");
-      return res.status(400).json({
-        error:
-          "The reservation cannot be accepted because the product has expired.",
-      });
-    }
-
-    await client.query(
-      "UPDATE reservations SET status = 'Confirmed' WHERE id = $1",
-      [reservationId],
-    );
-    await createNotification(client, {
-      userId: result.rows[0].restaurant_id,
-      type: "RESERVATION_ACCEPTED",
-      message: `Your reservation for ${productResult.rows[0].name} was accepted.`,
-      reservationId: result.rows[0].id,
-      productId: result.rows[0].product_id,
-    });
-
-    await markSoldIfFullyConfirmed(client, productResult.rows[0]);
-
-    await client.query("COMMIT");
-    return res
-      .status(200)
-      .json({ message: "Reservation accepted successfully." });
-  } catch (error) {
-    if (client) await client.query("ROLLBACK");
-    console.error("Error while accepting reservation:", error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while accepting the reservation." });
-  } finally {
-    if (client) client.release();
-  }
-};
-
-// Locks the reservation row, so a reject, cancel or pickup cannot interleave with another status change.
+// The item with what the old answers need (no lock: the order service locks and checks again).
 // A pickup is overdue once its whole day has passed (the pickup time on the same day does not count).
-export const lockReservation = (client: PoolClient, reservationId: number) =>
-  client.query(
+export const findReservation = async (db: Pick<PoolClient, "query">, reservationId: number) => {
+  const result = await db.query(
     `SELECT
        reservations.id,
+       reservations.order_id,
        reservations.status,
        reservations.restaurant_id,
        reservations.product_id,
        reservations.pickup_date::date < CURRENT_DATE AS is_overdue,
        products.name AS product_name,
-       products.store_id
+       products.store_id,
+       products.expiry_date < CURRENT_DATE AS is_expired
      FROM reservations
      JOIN products ON reservations.product_id = products.id
-     WHERE reservations.id = $1
-     FOR UPDATE OF reservations`,
+     WHERE reservations.id = $1`,
     [reservationId],
   );
-
-export const rejectReservation = async (req: Request, res: Response) => {
-  const reservationId = parseId(req.params.id);
-  const store_id = req.user!.id;
-  if (reservationId === null) {
-    return res.status(404).json({ error: "Reservation not found." });
-  }
-
-  let client;
-  try {
-    client = await pool.connect();
-    await client.query("BEGIN");
-    const result = await lockReservation(client, reservationId);
-
-    if (result.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Reservation not found." });
-    }
-
-    if (result.rows[0].store_id !== store_id) {
-      await client.query("ROLLBACK");
-      return res
-        .status(403)
-        .json({ error: "You are not allowed to reject this reservation." });
-    }
-
-    if (result.rows[0].status !== "Pending") {
-      await client.query("ROLLBACK");
-      return res
-        .status(400)
-        .json({ error: "Reservation is not in 'Pending' status." });
-    }
-    await client.query(
-      "UPDATE reservations SET status = 'Rejected' WHERE id = $1 AND status = 'Pending'",
-      [reservationId],
-    );
-    await createNotification(client, {
-      userId: result.rows[0].restaurant_id,
-      type: "RESERVATION_REJECTED",
-      message: `Your reservation for ${result.rows[0].product_name} was rejected.`,
-      reservationId: result.rows[0].id,
-      productId: result.rows[0].product_id,
-    });
-    await client.query("COMMIT");
-    return res
-      .status(200)
-      .json({ message: "Reservation rejected successfully." });
-  } catch (error) {
-    if (client) await client.query("ROLLBACK");
-    console.error("Error while rejecting reservation:", error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while rejecting the reservation." });
-  } finally {
-    if (client) client.release();
-  }
+  return result.rows[0] ?? null;
 };
 
-export const cancelReservation = async (req: Request, res: Response) => {
-  const reservationId = parseId(req.params.id);
-  const restaurant_id = req.user!.id;
-  if (reservationId === null) {
-    return res.status(404).json({ error: "Reservation not found." });
-  }
+type Reservation = NonNullable<Awaited<ReturnType<typeof findReservation>>>;
 
-  let client;
-  try {
-    client = await pool.connect();
-    await client.query("BEGIN");
-    const result = await lockReservation(client, reservationId);
-
-    if (result.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Reservation not found." });
+// One write on the reservation's order: the old checks (`check` returns an error answer or null),
+// then the order service in a transaction.
+const reservationAction =
+  (
+    party: "store_id" | "restaurant_id",
+    forbidden: string,
+    check: (reservation: Reservation) => { status: number; error: string } | null,
+    run: (client: PoolClient, userId: number, reservation: Reservation) => Promise<unknown>,
+    message: string,
+    errorMessage: string,
+  ) =>
+  async (req: Request, res: Response) => {
+    const reservationId = parseId(req.params.id);
+    if (reservationId === null) {
+      return res.status(404).json({ error: NOT_FOUND });
     }
-
-    if (result.rows[0].restaurant_id !== restaurant_id) {
-      await client.query("ROLLBACK");
-      return res
-        .status(403)
-        .json({ error: "You are not allowed to cancel this reservation." });
+    try {
+      const reservation = await findReservation(pool, reservationId);
+      if (!reservation) {
+        return res.status(404).json({ error: NOT_FOUND });
+      }
+      if (reservation[party] !== req.user!.id) {
+        return res.status(403).json({ error: forbidden });
+      }
+      const refused = check(reservation);
+      if (refused) {
+        return res.status(refused.status).json({ error: refused.error });
+      }
+      await inTransaction((client) => run(client, req.user!.id, reservation));
+      return res.status(200).json({ message });
+    } catch (error) {
+      return failWith(res, error, errorMessage);
     }
+  };
 
-    if (result.rows[0].status !== "Pending") {
-      await client.query("ROLLBACK");
-      return res
-        .status(400)
-        .json({ error: "Reservation is not in 'Pending' status." });
-    }
+const NOT_PENDING = { status: 400, error: "Reservation is not in 'Pending' status." };
 
-    await client.query(
-      "UPDATE reservations SET status = 'Cancelled' WHERE id = $1 AND status = 'Pending'",
-      [reservationId],
-    );
-    await createNotification(client, {
-      userId: result.rows[0].store_id,
-      type: "RESERVATION_CANCELLED",
-      message: `A reservation for ${result.rows[0].product_name} was cancelled.`,
-      reservationId: result.rows[0].id,
-      productId: result.rows[0].product_id,
-    });
-    await client.query("COMMIT");
-    return res
-      .status(200)
-      .json({ message: "Reservation cancelled successfully." });
-  } catch (error) {
-    if (client) await client.query("ROLLBACK");
-    console.error("Error while cancelling reservation:", error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while cancelling the reservation." });
-  } finally {
-    if (client) client.release();
-  }
-};
+export const acceptReservation = reservationAction(
+  "store_id",
+  "You are not allowed to accept this reservation.",
+  (reservation) =>
+    reservation.status !== "Pending"
+      ? NOT_PENDING
+      : reservation.is_expired
+        ? { status: 400, error: "The reservation cannot be accepted because the product has expired." }
+        : null,
+  (client, storeId, reservation) =>
+    decideOrder(client, storeId, reservation.order_id, { items: [{ item_id: reservation.id, action: "ACCEPT" }] }),
+  "Reservation accepted successfully.",
+  "An error occurred while accepting the reservation.",
+);
+
+// Rejects the item's (one-item) order. The old dialog has no reason, so this is the one
+// rejection without one.
+export const rejectReservation = reservationAction(
+  "store_id",
+  "You are not allowed to reject this reservation.",
+  (reservation) => (reservation.status !== "Pending" ? NOT_PENDING : null),
+  (client, storeId, reservation) =>
+    decideOrder(client, storeId, reservation.order_id, { reject_order: true }, { reasonRequired: false }),
+  "Reservation rejected successfully.",
+  "An error occurred while rejecting the reservation.",
+);
+
+export const cancelReservation = reservationAction(
+  "restaurant_id",
+  "You are not allowed to cancel this reservation.",
+  (reservation) => (reservation.status !== "Pending" ? NOT_PENDING : null),
+  (client, restaurantId, reservation) => cancelOrder(client, restaurantId, reservation.order_id),
+  "Reservation cancelled successfully.",
+  "An error occurred while cancelling the reservation.",
+);
 
 export const PICKUP_SCOPES = ["today", "upcoming", "completed"];
 
@@ -769,138 +641,27 @@ export const getPickupCounts = async (req: Request, res: Response) => {
 
 // The store hands the food over. Allowed after the pickup time or the product's expiry too:
 // the food was already promised to this restaurant.
-export const completeReservation = async (req: Request, res: Response) => {
-  const reservationId = parseId(req.params.id);
-  const store_id = req.user!.id;
-  if (reservationId === null) {
-    return res.status(404).json({ error: "Reservation not found." });
-  }
-
-  let client;
-  try {
-    client = await pool.connect();
-    await client.query("BEGIN");
-    const result = await lockReservation(client, reservationId);
-
-    if (result.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Reservation not found." });
-    }
-
-    if (result.rows[0].store_id !== store_id) {
-      await client.query("ROLLBACK");
-      return res
-        .status(403)
-        .json({ error: "You are not allowed to confirm the pickup of this reservation." });
-    }
-
-    if (result.rows[0].status !== "Confirmed") {
-      await client.query("ROLLBACK");
-      return res.status(400).json({
-        error: "Only accepted reservations can be marked as picked up.",
-      });
-    }
-
-    await client.query(
-      "UPDATE reservations SET status = 'Completed', picked_up_at = NOW() WHERE id = $1 AND status = 'Confirmed'",
-      [reservationId],
-    );
-    await createNotification(client, {
-      userId: result.rows[0].restaurant_id,
-      type: "RESERVATION_COMPLETED",
-      message: `Pickup of ${result.rows[0].product_name} confirmed.`,
-      reservationId: result.rows[0].id,
-      productId: result.rows[0].product_id,
-    });
-    await client.query("COMMIT");
-    return res
-      .status(200)
-      .json({ message: "Reservation marked as picked up." });
-  } catch (error) {
-    if (client) await client.query("ROLLBACK");
-    console.error("Error while confirming pickup:", error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while confirming the pickup." });
-  } finally {
-    if (client) client.release();
-  }
-};
-
-// After a Confirmed reservation was cancelled: a product it had sold out becomes Available again,
-// unless it has expired or Confirmed + Completed + shop sales still cover its quantity. Locks the
-// product row.
-export const releaseSoldProduct = async (client: PoolClient, productId: number) => {
-  const productResult = await client.query(
-    "SELECT id, status, quantity, expiry_date < CURRENT_DATE AS is_expired FROM products WHERE id = $1 FOR UPDATE",
-    [productId],
-  );
-  const product = productResult.rows[0];
-  if (!product || product.status !== "Sold" || product.is_expired) return;
-  if ((await soldOutCover(client, product.id)) < parseFloat(product.quantity)) {
-    await client.query("UPDATE products SET status = 'Available' WHERE id = $1", [product.id]);
-  }
-};
+export const completeReservation = reservationAction(
+  "store_id",
+  "You are not allowed to confirm the pickup of this reservation.",
+  (reservation) =>
+    reservation.status !== "Confirmed"
+      ? { status: 400, error: "Only accepted reservations can be marked as picked up." }
+      : null,
+  (client, storeId, reservation) => completeOrder(client, storeId, reservation.order_id),
+  "Reservation marked as picked up.",
+  "An error occurred while confirming the pickup.",
+);
 
 // The restaurant did not come: the store cancels a Confirmed reservation whose pickup day has passed.
-// The quantity goes back on offer, and a product sold out by it becomes Available again while it has not expired.
-export const cancelOverdueReservation = async (req: Request, res: Response) => {
-  const reservationId = parseId(req.params.id);
-  const store_id = req.user!.id;
-  if (reservationId === null) {
-    return res.status(404).json({ error: "Reservation not found." });
-  }
-
-  let client;
-  try {
-    client = await pool.connect();
-    await client.query("BEGIN");
-    const result = await lockReservation(client, reservationId);
-
-    if (result.rows.length === 0) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Reservation not found." });
-    }
-
-    if (result.rows[0].store_id !== store_id) {
-      await client.query("ROLLBACK");
-      return res
-        .status(403)
-        .json({ error: "You are not allowed to cancel this reservation." });
-    }
-
-    if (result.rows[0].status !== "Confirmed" || !result.rows[0].is_overdue) {
-      await client.query("ROLLBACK");
-      return res
-        .status(400)
-        .json({ error: "Only overdue pickups can be cancelled." });
-    }
-
-    await client.query(
-      "UPDATE reservations SET status = 'Cancelled' WHERE id = $1 AND status = 'Confirmed'",
-      [reservationId],
-    );
-    await releaseSoldProduct(client, result.rows[0].product_id);
-    // No credit refund here: the restaurant missed its own pickup.
-
-    await createNotification(client, {
-      userId: result.rows[0].restaurant_id,
-      type: "PICKUP_MISSED",
-      message: `Your reservation for ${result.rows[0].product_name} was cancelled because it was not picked up.`,
-      reservationId: result.rows[0].id,
-      productId: result.rows[0].product_id,
-    });
-    await client.query("COMMIT");
-    return res
-      .status(200)
-      .json({ message: "Overdue reservation cancelled." });
-  } catch (error) {
-    if (client) await client.query("ROLLBACK");
-    console.error("Error while cancelling overdue reservation:", error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while cancelling the reservation." });
-  } finally {
-    if (client) client.release();
-  }
-};
+export const cancelOverdueReservation = reservationAction(
+  "store_id",
+  "You are not allowed to cancel this reservation.",
+  (reservation) =>
+    reservation.status !== "Confirmed" || !reservation.is_overdue
+      ? { status: 400, error: "Only overdue pickups can be cancelled." }
+      : null,
+  (client, storeId, reservation) => cancelOverdueOrder(client, storeId, reservation.order_id),
+  "Overdue reservation cancelled.",
+  "An error occurred while cancelling the reservation.",
+);

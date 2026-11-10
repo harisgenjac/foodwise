@@ -18,7 +18,7 @@ import { notBlocked } from "../utils/visibility.js";
 const BRANCH_REQUIRED = "Business name, city, address, phone and email are required.";
 import { storeDescription, storeLogo } from "../utils/branding.js";
 import { savedUnits } from "../controllers/dashboard.controller.js";
-import { cancelPendingReservations } from "../controllers/admin.controller.js";
+import { cancelPendingOrders } from "./orders/cascades.js";
 import { closeBranchCredits } from "./creditRequests.js";
 
 // Branches are STORE users with a company_id. Their headquarters (COMPANY) and admins create,
@@ -196,8 +196,8 @@ export const setBranchPassword = async (db: Pool | PoolClient, branchId: number,
 
 // Deactivating closes a branch without losing its history: it is hidden from restaurants (its
 // products through the visibility condition, unchanged) and cannot sign in. Refused while
-// restaurants still wait to pick up accepted reservations; Pending ones are cancelled like a
-// block does (notification without a reason). Its open credit requests are withdrawn and
+// restaurants still wait to pick up accepted orders; Pending ones are cancelled like a block
+// does (notification without a reason). Its open credit requests are withdrawn and
 // auto-renew is turned off (closeBranchCredits). The branch row must be locked.
 export const deactivateBranch = async (
   client: PoolClient,
@@ -208,9 +208,7 @@ export const deactivateBranch = async (
     throw new HttpError(400, "Branch is already deactivated.");
   }
   const confirmed = await client.query(
-    `SELECT COUNT(*) AS count FROM reservations
-     JOIN products ON reservations.product_id = products.id
-     WHERE products.store_id = $1 AND reservations.status = 'Confirmed'`,
+    "SELECT COUNT(*) AS count FROM orders WHERE orders.store_id = $1 AND orders.status = 'Confirmed'",
     [branch.id],
   );
   const count = Number(confirmed.rows[0].count);
@@ -225,11 +223,11 @@ export const deactivateBranch = async (
     branch.id,
   ]);
   const withdrawnRequests = await closeBranchCredits(client, branch.id);
-  const cancelledReservations = await cancelPendingReservations(
+  const cancelledReservations = await cancelPendingOrders(
     client,
-    "products.store_id = $1",
+    "orders.store_id = $1",
     [branch.id],
-    (row) => row.restaurant_id,
+    (order) => order.restaurant_id,
     { storeClosed: true },
   );
   return { cancelledReservations, withdrawnRequests };

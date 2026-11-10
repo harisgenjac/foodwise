@@ -10,7 +10,7 @@ import {
   grantTopup,
   refundForProduct,
 } from "../src/services/creditService.js";
-import { cleanupUsers, giveSubscription, insertUser, userId } from "./helpers.js";
+import { cleanupUsers, giveSubscription, insertUser, userId, insertOrderItem } from "./helpers.js";
 
 const STORE = "credits-store@test.com";
 const RESTAURANT = "credits-restaurant@test.com";
@@ -178,11 +178,7 @@ describe("refunds", () => {
         )
       ).rows[0]!.id;
     const reserve = (productId: number, status: string) =>
-      pool.query(
-        `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date)
-         VALUES ($1, $2, 1, 5, $3, NOW())`,
-        [productId, restaurantId, status],
-      );
+      insertOrderItem({ productId, restaurantId, quantity: 1, status, pickupAt: "NOW()" });
 
     const pending = await insertProduct();
     const rejected = await insertProduct();

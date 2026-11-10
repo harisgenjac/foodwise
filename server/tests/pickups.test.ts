@@ -7,6 +7,7 @@ import {
   reserve,
   userId,
   type Agent,
+  insertOrderItem,
 } from "./helpers.js";
 
 const STORE_A = "pickups-store-a@test.com";
@@ -29,14 +30,14 @@ const insertReservation = async (
     quantity?: number;
   } = {},
 ) => {
-  const result = await pool.query<{ id: number }>(
-    `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date, picked_up_at)
-     VALUES ($1, $2, $3, 5, $4::reservation_status, (CURRENT_DATE + $5::int) + $6::time,
-             CASE WHEN $4::reservation_status = 'Completed' THEN NOW() END)
-     RETURNING id`,
-    [productId, await userId(restaurantEmail), quantity, status, days, time],
-  );
-  return result.rows[0]!.id;
+  const { itemId } = await insertOrderItem({
+    productId,
+    restaurantId: await userId(restaurantEmail),
+    quantity,
+    status,
+    pickupAt: `(CURRENT_DATE + ${Number(days)}) + '${time}'::time`,
+  });
+  return itemId;
 };
 
 const reservationRow = async (id: number) =>
@@ -169,7 +170,7 @@ describe("Pickups", () => {
       const row = await reservationRow(id);
       expect(row.status).toBe("Completed");
       expect(row.picked_up_at).not.toBeNull();
-      expect(await notificationTypes(RESTAURANT_A)).toContain("RESERVATION_COMPLETED");
+      expect(await notificationTypes(RESTAURANT_A)).toContain("ORDER_COMPLETED");
 
       const again = await store.patch(`/api/reservations/${id}/complete`);
       expect(again.status).toBe(400);
@@ -239,7 +240,7 @@ describe("Pickups", () => {
       expect(response.body.message).toBe("Overdue reservation cancelled.");
       expect((await reservationRow(id)).status).toBe("Cancelled");
       expect(await availableQuantity(product.id)).toBe(10);
-      expect(await notificationTypes(RESTAURANT_A)).toContain("PICKUP_MISSED");
+      expect(await notificationTypes(RESTAURANT_A)).toContain("ORDER_PICKUP_MISSED");
     });
 
     it("puts a sold-out product back on offer while it has not expired", async () => {

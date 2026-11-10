@@ -1,8 +1,7 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import { parseId, parseNumber } from "../utils/params.js";
-import { markSoldIfFullyConfirmed } from "./reservations.controller.js";
-import { freeQuantity } from "../services/stock.js";
+import { freeQuantity, markSoldIfFullyConfirmed } from "../services/stock.js";
 
 // Sold in shop: a store also sells at its own till, so the app's stock can be higher than what is
 // really left. The store records the amount it sold there, which lowers the product's free quantity
@@ -97,9 +96,12 @@ export const getShopSales = async (req: Request, res: Response) => {
     }
     const sales = await pool.query(
       `SELECT product_shop_sales.id, product_shop_sales.quantity, product_shop_sales.created_at,
-         creators.email AS created_by_email
+         creators.email AS created_by_email,
+         -- Set when it was recorded from an order decision ("iz narudžbe #K7PM").
+         product_shop_sales.order_id, orders.code AS order_code
        FROM product_shop_sales
        LEFT JOIN users AS creators ON creators.id = product_shop_sales.created_by
+       LEFT JOIN orders ON orders.id = product_shop_sales.order_id
        WHERE product_shop_sales.product_id = $1
        ORDER BY product_shop_sales.created_at DESC, product_shop_sales.id DESC`,
       [productId],

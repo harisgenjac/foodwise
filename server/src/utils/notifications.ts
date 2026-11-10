@@ -4,22 +4,31 @@ import { notBlocked } from "./visibility.js";
 
 // The client translates notifications by `type`; `message` is the English fallback.
 export type NotificationType =
-  | "RESERVATION_CREATED"
-  | "RESERVATION_ACCEPTED"
-  | "RESERVATION_REJECTED"
-  | "RESERVATION_CANCELLED"
-  | "RESERVATION_EXPIRED"
+  // Orders, linked by order_id: one notification per order event (docs/orders-design.md, section 8).
+  // To the store: a restaurant sent an order, or withdrew it.
+  | "ORDER_CREATED"
+  | "ORDER_CANCELLED"
+  // To the restaurant: the store's decision, the pickup, a missed pickup, the 07:00 reminder.
+  | "ORDER_ACCEPTED"
+  | "ORDER_PARTIALLY_ACCEPTED"
+  | "ORDER_REJECTED"
+  | "ORDER_COMPLETED"
+  | "ORDER_PICKUP_MISSED"
+  | "ORDER_PICKUP_TODAY"
+  // To the restaurant: the expiry job cancelled some (ITEMS) or all of its Pending items, or
+  // moderation removed some of them (all of them: ORDER_CANCELLED_BY_ADMIN).
+  | "ORDER_ITEMS_EXPIRED"
+  | "ORDER_EXPIRED"
+  | "ORDER_ITEMS_REMOVED"
+  // An admin's cancel (both sides, with the reason), a block or a removed product (the other side).
+  | "ORDER_CANCELLED_BY_ADMIN"
+  // To the restaurant when a branch is deactivated (by its headquarters or an admin).
+  | "ORDER_CANCELLED_STORE_CLOSED"
   | "PRODUCT_EXPIRED"
   | "PRODUCT_SOLD_OUT"
   | "PRODUCT_EXPIRING_SOON"
-  | "PICKUP_TODAY"
-  | "RESERVATION_COMPLETED"
-  | "PICKUP_MISSED"
   | "PRODUCT_REMOVED_BY_ADMIN"
   | "DONATION_REMOVED_BY_ADMIN"
-  | "RESERVATION_CANCELLED_BY_ADMIN"
-  // To the restaurant when a branch is deactivated (by its headquarters or an admin).
-  | "RESERVATION_CANCELLED_STORE_CLOSED"
   // To a company's headquarters when an admin acts on one of its branches, linked by branch_id.
   | "BRANCH_BLOCKED"
   | "BRANCH_UNBLOCKED"
@@ -56,6 +65,7 @@ interface NewNotification {
   type: NotificationType;
   message: string;
   reservationId?: number | null;
+  orderId?: number | null;
   productId?: number | null;
   donationId?: number | null;
   creditRequestId?: number | null;
@@ -77,6 +87,7 @@ export const createNotification = async (
     type,
     message,
     reservationId = null,
+    orderId = null,
     productId = null,
     donationId = null,
     creditRequestId = null,
@@ -86,10 +97,10 @@ export const createNotification = async (
 ) => {
   const inserted = await db.query<{ id: number }>(
     `INSERT INTO notifications
-       (user_id, type, message, reservation_id, product_id, donation_id, credit_request_id, branch_id, details)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       (user_id, type, message, reservation_id, order_id, product_id, donation_id, credit_request_id, branch_id, details)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING notifications.id`,
-    [userId, type, message, reservationId, productId, donationId, creditRequestId, branchId, details],
+    [userId, type, message, reservationId, orderId, productId, donationId, creditRequestId, branchId, details],
   );
   await enqueueNotificationEmails(db, insertedIds(inserted));
 };

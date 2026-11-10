@@ -67,17 +67,16 @@ describe("server texts", () => {
   // Capitalized texts with a space that are not API responses: notification fallbacks (the UI
   // translates notifications by type), CSV report headers, category names and route names.
   const NOT_RESPONSES = [
-    /^New reservation request: /,
-    /^Your reservation for /,
-    /^A reservation for /,
-    /^Pickup of /,
+    // Order notifications ("7" stands for the code, {code} for the replaced placeholder).
+    /^New order 7: /,
+    /^(Your order|Order|Some items of your order) (7|{code}) /,
+    /^Pickup of order 7 /,
+    /^No free order code /,
     /^New .* request waiting for approval\.$/,
     /^Your .* request was /,
     // Credit notifications about a branch (to its headquarters, and the headquarters' answer).
     /^A branch /,
     /^Your company (sent|rejected) your top-up request/,
-    /^Reservation cancelled by the platform administrator: /,
-    /^Reservation cancelled because the store is no longer active: /,
     /^Branch 7 by the platform administrator: /,
     /^Your (product|donation) was removed by the platform administrator: /,
     /^Platform announcement: /,
@@ -87,7 +86,7 @@ describe("server texts", () => {
     /^(Bakery Products|Dairy Products|Frozen Food|Favorites only|Pickup date|Reservation no\.)$/,
     /^(Broj|Datum|Pekarski|Smrznuta|Mliječni|Spašena) /,
     /^(GET|POST|PUT|PATCH|DELETE) \/api\//,
-    /^(SELECT|UPDATE|INSERT|DELETE|WITH|FROM|FOR|COALESCE|SAVEPOINT|RELEASE|ROLLBACK)[ (]/,
+    /^(SELECT|UPDATE|INSERT|DELETE|WITH|FROM|FOR|COALESCE|CASE|SAVEPOINT|RELEASE|ROLLBACK)[ (]/,
     // `Your account is blocked.${reason}`: the reason part has its own key (see below).
     /^Your account is blocked\.7$/,
   ];

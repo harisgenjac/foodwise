@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ACCOUNTS, APP_URL, storageState, uniqueName } from "../support/accounts.js";
-import { apiAs, createProduct } from "../support/api.js";
+import { apiAs, createProduct, orderCode } from "../support/api.js";
 import { sarajevoDate } from "../support/dates.js";
 import { MAILPIT_URL, waitForEmail } from "../support/mailpit.js";
 import { toast } from "../support/ui.js";
@@ -11,7 +11,7 @@ test.skip(
   "Set MAILPIT_URL and EMAIL_PROVIDER=smtp in e2e/.env.e2e and start Mailpit to run this test.",
 );
 
-test("the store gets an email for a new reservation, and its link opens the reservation", async ({ browser }) => {
+test("the store gets an email for a new order, and its link opens its list", async ({ browser }) => {
   expect(MAILPIT_URL, "MAILPIT_URL must be set in CI").toBeTruthy();
   const productName = uniqueName("E2E Sir");
   const storeApi = await apiAs("store");
@@ -39,28 +39,35 @@ test("the store gets an email for a new reservation, and its link opens the rese
   });
   await restaurantContext.close();
 
+  const restaurantApi = await apiAs("restaurant");
+  const code = await orderCode(restaurantApi, productName);
+  await restaurantApi.dispose();
+
   const email = await test.step("Prodavnica dobija email u Mailpitu", async () => {
-    const message = await waitForEmail(`to:${ACCOUNTS.store.email} subject:"${productName}"`);
+    // The subject names the order, the text lists its products.
+    const message = await waitForEmail(`to:${ACCOUNTS.store.email} "${productName}"`);
     expect(message.To.map((to) => to.Address)).toEqual([ACCOUNTS.store.email]);
-    expect(message.Subject).toBe(`Nova rezervacija: 2,5 kg ${productName}`);
-    expect(message.Text).toContain(`Proizvod: ${productName}`);
-    expect(message.Text).toContain("Količina: 2,5 kg");
+    expect(message.Subject).toBe(`Nova narudžba #${code} od ${ACCOUNTS.restaurant.businessName}`);
+    expect(message.Text).toContain(`Narudžba: #${code}`);
+    expect(message.Text).toContain(`- ${productName}, 2,5 kg: 5,00 KM`);
     expect(message.Text).toContain(`Restoran: ${ACCOUNTS.restaurant.businessName}`);
     expect(message.Text).toContain(`Preuzimanje: ${sarajevoDate(1).replaceAll("/", ".")}. 12:00`);
-    expect(message.HTML).toContain("Nova rezervacija</h1>");
-    expect(message.HTML).toContain(">Otvori rezervaciju</a>");
+    expect(message.HTML).toContain(`Nova narudžba #${code}</h1>`);
+    expect(message.HTML).toContain(">Otvori rezervacije</a>");
     return message;
   });
 
-  await test.step("Link iz emaila otvara rezervaciju prodavnici", async () => {
-    const link = /Otvori rezervaciju: (\S+)/.exec(email.Text)?.[1];
-    expect(link).toMatch(new RegExp(`^${APP_URL}/reservation/\\d+$`));
+  // Until the order details page exists (orders PR 3b), the link opens the store's list.
+  await test.step("Link iz emaila otvara listu prodavnice s narudžbom", async () => {
+    const link = /Otvori rezervacije: (\S+)/.exec(email.Text)?.[1];
+    expect(link).toBe(`${APP_URL}/reservations`);
     expect(email.HTML).toContain(`href="${link}"`);
 
     const storeContext = await browser.newContext({ storageState: storageState("store") });
     const store = await storeContext.newPage();
     await store.goto(link!);
-    await expect(store.getByRole("heading", { level: 1, name: productName })).toBeVisible();
+    await store.getByPlaceholder("Pretraga po imenu").fill(productName);
+    await expect(store.getByTestId("reservation-card").filter({ has: store.getByRole("heading", { name: productName }) })).toHaveCount(1);
     await storeContext.close();
   });
 });

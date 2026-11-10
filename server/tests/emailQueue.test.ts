@@ -16,6 +16,7 @@ import {
   futurePickup,
   insertUser,
   registerAndLogin,
+  orderOf,
   reserve,
   userId,
   type Agent,
@@ -76,22 +77,26 @@ afterEach(async () => {
   await cleanupUsers(EMAILS);
 });
 
+const codeOf = async (orderId: number): Promise<string> =>
+  (await pool.query("SELECT code FROM orders WHERE id = $1", [orderId])).rows[0].code;
+
 const reserveChicken = async (quantity = 4) => {
   const product = await createProduct(store, { name: "Piletina", unit: "kg" });
   const reservationId = await reserve(restaurant, product.id, quantity);
-  return { product, reservationId };
+  const orderId = await orderOf(reservationId);
+  return { product, reservationId, orderId, code: await codeOf(orderId) };
 };
 
 describe("queueing", () => {
-  it("queues one email to the store with the reservation, in the same transaction as the notification", async () => {
-    const { product, reservationId } = await reserveChicken();
+  it("queues one email to the store with the order, in the same transaction as the notification", async () => {
+    const { orderId } = await reserveChicken();
     const rows = await queueRows();
     expect(rows).toHaveLength(1);
     const pickupDay = futurePickup().slice(0, 10);
     expect(rows[0]).toMatchObject({
       user_id: await userId(STORE),
       recipient: STORE,
-      template: "RESERVATION_CREATED",
+      template: "ORDER_CREATED",
       language: "bs",
       status: "PENDING",
       attempts: 0,
@@ -99,22 +104,32 @@ describe("queueing", () => {
       sent_at: null,
       data: {
         recipientRole: "STORE",
-        reservationId,
-        productId: product.id,
+        reservationId: null,
+        orderId,
+        productId: null,
         donationId: null,
         creditRequestId: null,
-        productName: "Piletina",
-        quantity: "4",
-        unit: "kg",
         restaurantName: "Test Business",
         storeName: "Test Business",
         pickupAt: `${pickupDay}T10:00`,
+        orderLines: [
+          {
+            product: "Piletina",
+            unit: "kg",
+            ordered: "4",
+            quantity: "4",
+            unitPrice: "5",
+            status: "Pending",
+            reason: null,
+            note: null,
+          },
+        ],
         details: null,
       },
     });
     const notification = await pool.query(
-      "SELECT notifications.id FROM notifications WHERE notifications.reservation_id = $1 AND notifications.type = 'RESERVATION_CREATED'",
-      [reservationId],
+      "SELECT notifications.id FROM notifications WHERE notifications.order_id = $1 AND notifications.type = 'ORDER_CREATED'",
+      [orderId],
     );
     expect(notification.rowCount).toBe(1);
   });
@@ -137,22 +152,22 @@ describe("queueing", () => {
     expect((await store.patch(`/api/reservations/${reservationId}/accept`)).status).toBe(200);
     const rows = await queueRows();
     expect(rows.map((row) => [row.template, row.recipient])).toEqual([
-      ["RESERVATION_CREATED", STORE],
-      ["RESERVATION_ACCEPTED", RESTAURANT],
+      ["ORDER_CREATED", STORE],
+      ["ORDER_ACCEPTED", RESTAURANT],
     ]);
   });
 
   it("queues nothing for a blocked user, an untyped notification or no notifications", async () => {
-    const { reservationId } = await reserveChicken();
+    const { orderId } = await reserveChicken();
     await pool.query("DELETE FROM email_queue");
     await insertUser(BLOCKED_STORE, "STORE", "Blocked Store");
     const blockedId = await userId(BLOCKED_STORE);
     await pool.query("UPDATE users SET is_blocked = true WHERE id = $1", [blockedId]);
     await createNotification(pool, {
       userId: blockedId,
-      type: "RESERVATION_CREATED",
-      message: "New reservation request",
-      reservationId,
+      type: "ORDER_CREATED",
+      message: "New order",
+      orderId,
     });
     // Rows from before notification types existed have no type.
     const untyped = await pool.query<{ id: number }>(
@@ -167,7 +182,7 @@ describe("queueing", () => {
 
 describe("sending", () => {
   it("sends a due email and marks it SENT", async () => {
-    const { reservationId } = await reserveChicken();
+    const { code } = await reserveChicken();
     const { transport, sent, send } = fakeTransport();
     const now = new Date();
 
@@ -177,10 +192,10 @@ describe("sending", () => {
     expect(sent[0]).toMatchObject({
       from: CONFIG.from,
       to: STORE,
-      subject: "Nova rezervacija: 4 kg Piletina",
+      subject: `Nova narudžba #${code} od Test Business`,
     });
-    expect(sent[0]!.html).toContain(`https://app.example.com/reservation/${reservationId}`);
-    expect(sent[0]!.text).toContain(`https://app.example.com/reservation/${reservationId}`);
+    expect(sent[0]!.html).toContain("https://app.example.com/reservations");
+    expect(sent[0]!.text).toContain("Piletina, 4 kg: 20,00 KM");
     const [row] = await queueRows();
     expect(send).toHaveBeenCalledWith(expect.anything(), { idempotencyKey: `foodwise-email-${row!.id}` });
     expect(row).toMatchObject({ status: "SENT", attempts: 1, last_error: null, locked_at: null });
@@ -192,23 +207,23 @@ describe("sending", () => {
   });
 
   it("sends to EMAIL_REDIRECT_TO with the real recipient in the subject", async () => {
-    await reserveChicken();
+    const { code } = await reserveChicken();
     const { transport, sent } = fakeTransport();
     await processEmailQueue({ transport, config: { ...CONFIG, redirectTo: "inbox@example.com" } });
     expect(sent[0]).toMatchObject({
       to: "inbox@example.com",
-      subject: `[to: ${STORE}] Nova rezervacija: 4 kg Piletina`,
+      subject: `[to: ${STORE}] Nova narudžba #${code} od Test Business`,
     });
     // The queue keeps the real recipient.
     expect((await queueRows())[0]!.recipient).toBe(STORE);
   });
 
   it("renders the email in the row's language", async () => {
-    await reserveChicken();
+    const { code } = await reserveChicken();
     await pool.query("UPDATE email_queue SET language = 'en'");
     const { transport, sent } = fakeTransport();
     await processEmailQueue({ transport, config: CONFIG });
-    expect(sent[0]!.subject).toBe("New reservation: 4 kg Piletina");
+    expect(sent[0]!.subject).toBe(`New order #${code} from Test Business`);
   });
 
   it("does not send an email whose next attempt is later", async () => {
@@ -229,9 +244,9 @@ describe("sending", () => {
     const { transport, sent } = fakeTransport();
     await processEmailQueue({ transport, config: CONFIG, batchSize: 1 });
     expect(sent).toHaveLength(1);
-    expect(sent[0]!.text).toContain(`/reservation/${first}`);
+    expect(sent[0]!.text).toContain(`#${await codeOf(await orderOf(first))}`);
     await processEmailQueue({ transport, config: CONFIG, batchSize: 1 });
-    expect(sent[1]!.text).toContain(`/reservation/${second}`);
+    expect(sent[1]!.text).toContain(`#${await codeOf(await orderOf(second))}`);
   });
 });
 
@@ -336,7 +351,7 @@ describe("a failing email service never breaks the reservation", () => {
     expect(reservation.status).toBe(200);
     expect(reservation.body.reservation.status).toBe("Pending");
     const notifications = await store.get("/api/notifications");
-    expect(notifications.body.notifications.map((n: { type: string }) => n.type)).toContain("RESERVATION_CREATED");
+    expect(notifications.body.notifications.map((n: { type: string }) => n.type)).toContain("ORDER_CREATED");
     // The store can still accept it.
     expect((await store.patch(`/api/reservations/${reservationId}/accept`)).status).toBe(200);
     expect((await queueRows())[0]).toMatchObject({ status: "PENDING", attempts: 1 });

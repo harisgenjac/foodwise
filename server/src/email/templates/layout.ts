@@ -11,6 +11,13 @@ export interface RenderedEmail {
   text: string;
 }
 
+export interface EmailLine {
+  label: string;
+  value: string;
+  note?: string;
+  struck?: boolean;
+}
+
 export interface EmailContent {
   lang: EmailLanguage;
   subject: string;
@@ -18,6 +25,10 @@ export interface EmailContent {
   // Paragraphs before the details.
   intro: string[];
   details?: { label: string; value: string }[];
+  // An order's lines under the details: each with its amount, an optional note under it (a
+  // change and its reason) and struck through when the store rejected it; then the total.
+  lines?: EmailLine[];
+  total?: { label: string; value: string };
   // Paragraphs after the details.
   outro?: string[];
   button: { label: string; url: string };
@@ -64,9 +75,27 @@ const detailsTable = (details: { label: string; value: string }[]) =>
     )
     .join("")}</table>`;
 
+const linesTable = (lines: EmailLine[], total: EmailContent["total"]) => {
+  const rows = lines.map(({ label, value, note, struck }) => {
+    const decoration = struck ? "text-decoration:line-through;color:#9ca3af;" : "color:#111827;";
+    return (
+      `<tr><td style="padding:8px 12px 8px 0;font-size:14px;border-bottom:1px solid #f3f4f6;vertical-align:top;">` +
+      `<span style="${decoration}">${escapeHtml(label)}</span>` +
+      (note ? `<br><span style="font-size:13px;color:#6b7280;">${escapeHtml(note)}</span>` : "") +
+      `</td><td align="right" style="padding:8px 0;font-size:14px;border-bottom:1px solid #f3f4f6;white-space:nowrap;vertical-align:top;${decoration}">${escapeHtml(value)}</td></tr>`
+    );
+  });
+  const totalRow = total
+    ? `<tr><td style="padding:10px 12px 0 0;font-size:14px;font-weight:700;color:#111827;">${escapeHtml(total.label)}</td>` +
+      `<td align="right" style="padding:10px 0 0;font-size:14px;font-weight:700;color:#111827;white-space:nowrap;">${escapeHtml(total.value)}</td></tr>`
+    : "";
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;border-collapse:collapse;">${rows.join("")}${totalRow}</table>`;
+};
+
 export const renderLayout = (content: EmailContent): RenderedEmail => {
   const footer = FOOTER[content.lang];
   const details = content.details ?? [];
+  const lines = content.lines ?? [];
   const outro = content.outro ?? [];
 
   const html = `<!DOCTYPE html>
@@ -85,6 +114,7 @@ export const renderLayout = (content: EmailContent): RenderedEmail => {
 <h1 style="margin:0 0 16px;font-size:20px;line-height:28px;color:#111827;">${escapeHtml(content.heading)}</h1>
 ${content.intro.map(paragraph).join("\n")}
 ${details.length > 0 ? detailsTable(details) : ""}
+${lines.length > 0 ? linesTable(lines, content.total) : ""}
 ${outro.map(paragraph).join("\n")}
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 24px;"><tr><td style="border-radius:8px;background-color:${ORANGE};">
 <a href="${escapeHtml(content.button.url)}" style="display:inline-block;padding:12px 24px;font-size:16px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">${escapeHtml(content.button.label)}</a>
@@ -111,6 +141,16 @@ ${escapeHtml(footer.reason)}<br>${escapeHtml(footer.tagline)}${
     "",
     ...content.intro.flatMap((line) => [line, ""]),
     ...(details.length > 0 ? [...details.map(({ label, value }) => `${label}: ${value}`), ""] : []),
+    ...(lines.length > 0
+      ? [
+          ...lines.flatMap(({ label, value, note, struck }) => [
+            `- ${struck ? `[${label}]` : label}: ${value}`,
+            ...(note ? [`  ${note}`] : []),
+          ]),
+          ...(content.total ? [`${content.total.label}: ${content.total.value}`] : []),
+          "",
+        ]
+      : []),
     ...outro.flatMap((line) => [line, ""]),
     `${content.button.label}: ${content.button.url}`,
     "",

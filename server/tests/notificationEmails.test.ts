@@ -20,6 +20,7 @@ import {
   insertUser,
   login,
   registerAndLogin,
+  orderOf,
   reserve,
   userId,
   type Agent,
@@ -90,12 +91,12 @@ afterEach(async () => {
 
 it("every declared notification type has an email template", async () => {
   expect(Object.keys(NOTIFICATION_TEMPLATES).sort()).toEqual(await declaredTypes());
-  expect(Object.keys(NOTIFICATION_TEMPLATES)).toHaveLength(33);
+  expect(Object.keys(NOTIFICATION_TEMPLATES)).toHaveLength(36);
 });
 
 it("createNotification queues the email of every type, and each renders in both languages", async () => {
   const product = await createProduct(store, { name: "Jogurt", unit: "kom", quantity: 10 });
-  const reservationId = await reserve(restaurant, product.id, 2);
+  const orderId = await orderOf(await reserve(restaurant, product.id, 2));
   const donation = await createDonation(store, { name: "Hljeb" });
   const restaurantId = await userId(RESTAURANT);
   const branchId = await userId(BRANCH);
@@ -110,7 +111,7 @@ it("createNotification queues the email of every type, and each renders in both 
   await pool.query("DELETE FROM email_queue");
 
   const links: Record<string, Record<string, number>> = {
-    reservation: { reservationId, productId: product.id },
+    order: { orderId },
     product: { productId: product.id },
     donation: { donationId: donation.id },
     credit: { creditRequestId: requestId },
@@ -120,21 +121,24 @@ it("createNotification queues the email of every type, and each renders in both 
   };
   // Who gets each type and what it links to, as the app sends it.
   const cases: Record<NotificationType, [string, keyof typeof links]> = {
-    RESERVATION_CREATED: [STORE, "reservation"],
-    RESERVATION_ACCEPTED: [RESTAURANT, "reservation"],
-    RESERVATION_REJECTED: [RESTAURANT, "reservation"],
-    RESERVATION_CANCELLED: [STORE, "reservation"],
-    RESERVATION_EXPIRED: [RESTAURANT, "reservation"],
+    ORDER_CREATED: [STORE, "order"],
+    ORDER_CANCELLED: [STORE, "order"],
+    ORDER_ACCEPTED: [RESTAURANT, "order"],
+    ORDER_PARTIALLY_ACCEPTED: [RESTAURANT, "order"],
+    ORDER_REJECTED: [RESTAURANT, "order"],
+    ORDER_COMPLETED: [RESTAURANT, "order"],
+    ORDER_PICKUP_MISSED: [RESTAURANT, "order"],
+    ORDER_PICKUP_TODAY: [RESTAURANT, "order"],
+    ORDER_ITEMS_EXPIRED: [RESTAURANT, "order"],
+    ORDER_EXPIRED: [RESTAURANT, "order"],
+    ORDER_ITEMS_REMOVED: [RESTAURANT, "order"],
+    ORDER_CANCELLED_BY_ADMIN: [STORE, "order"],
+    ORDER_CANCELLED_STORE_CLOSED: [RESTAURANT, "order"],
     PRODUCT_EXPIRED: [STORE, "product"],
     PRODUCT_SOLD_OUT: [STORE, "product"],
     PRODUCT_EXPIRING_SOON: [STORE, "product"],
-    PICKUP_TODAY: [RESTAURANT, "reservation"],
-    RESERVATION_COMPLETED: [RESTAURANT, "reservation"],
-    PICKUP_MISSED: [RESTAURANT, "reservation"],
     PRODUCT_REMOVED_BY_ADMIN: [STORE, "product"],
     DONATION_REMOVED_BY_ADMIN: [STORE, "donation"],
-    RESERVATION_CANCELLED_BY_ADMIN: [STORE, "reservation"],
-    RESERVATION_CANCELLED_STORE_CLOSED: [RESTAURANT, "reservation"],
     BRANCH_BLOCKED: [HQ, "branch"],
     BRANCH_UNBLOCKED: [HQ, "branch"],
     BRANCH_DEACTIVATED: [HQ, "branch"],
@@ -173,7 +177,7 @@ it("createNotification queues the email of every type, and each renders in both 
     expect(en.html, type).toContain(`href="${APP_URL}`);
   }
   // Every type was checked, which the Record type also enforces.
-  expect(Object.keys(cases)).toHaveLength(33);
+  expect(Object.keys(cases)).toHaveLength(36);
   expect(restaurantId).toBeGreaterThan(0);
 });
 
@@ -188,24 +192,23 @@ it("the actions of both sides queue their emails with the right links", async ()
   expect((await restaurant.patch(`/api/reservations/${third}/cancel`)).status).toBe(200);
 
   expect((await emailsTo(STORE)).map((row) => row.template)).toEqual([
-    "RESERVATION_CREATED",
-    "RESERVATION_CREATED",
-    "RESERVATION_CREATED",
-    "RESERVATION_CANCELLED",
+    "ORDER_CREATED",
+    "ORDER_CREATED",
+    "ORDER_CREATED",
+    "ORDER_CANCELLED",
   ]);
   const toRestaurant = await emailsTo(RESTAURANT);
-  expect(toRestaurant.map((row) => row.template)).toEqual([
-    "RESERVATION_ACCEPTED",
-    "RESERVATION_REJECTED",
-    "RESERVATION_COMPLETED",
-  ]);
+  expect(toRestaurant.map((row) => row.template)).toEqual(["ORDER_ACCEPTED", "ORDER_REJECTED", "ORDER_COMPLETED"]);
+  const code = (await pool.query("SELECT code FROM orders WHERE id = $1", [await orderOf(first)])).rows[0].code;
   const accepted = renderBoth(toRestaurant[0]!);
-  expect(accepted.bs.subject).toBe("Rezervacija prihvaćena: Mlijeko");
-  expect(accepted.en.subject).toBe("Reservation accepted: Mlijeko");
+  expect(accepted.bs.subject).toBe(`Narudžba #${code} je prihvaćena`);
+  expect(accepted.en.subject).toBe(`Order #${code} was accepted`);
   expect(accepted.bs.text).toContain("Prodavnica: Test Business");
-  expect(accepted.bs.text).toContain(`Otvori rezervaciju: ${APP_URL}/reservation/${first}`);
-  expect(renderBoth(toRestaurant[1]!).bs.text).toContain("Kredit za rezervaciju vam je vraćen.");
-  expect(renderBoth(toRestaurant[2]!).en.text).toContain("The store confirmed that you picked up 2 l Mlijeko.");
+  expect(accepted.bs.text).toContain("- Mlijeko, 2 l: 10,00 KM");
+  expect(accepted.bs.text).toContain(`Otvori rezervacije: ${APP_URL}/my-reservations`);
+  // The data is a snapshot: the rejection shows the line as it was then.
+  expect(renderBoth(toRestaurant[1]!).bs.text).toContain("- [Mlijeko, 3 l]: 15,00 KM");
+  expect(renderBoth(toRestaurant[2]!).en.text).toContain(`The pickup of order #${code} was confirmed.`);
 });
 
 it("an admin's reason is in the email, as in the notification", async () => {
@@ -223,7 +226,7 @@ it("an admin's reason is in the email, as in the notification", async () => {
   expect(en.text).toContain("Reason: Neispravan opis");
   expect(bs.text).toContain(`Otvori proizvod: ${APP_URL}/products/${product.id}`);
   // The restaurant's pending reservation was cancelled with it.
-  expect((await emailsTo(RESTAURANT)).map((row) => row.template)).toEqual(["RESERVATION_CANCELLED_BY_ADMIN"]);
+  expect((await emailsTo(RESTAURANT)).map((row) => row.template)).toEqual(["ORDER_CANCELLED_BY_ADMIN"]);
   expect(reservationId).toBeGreaterThan(0);
 
   const donation = await createDonation(store, { name: "Kifle" });
@@ -347,9 +350,10 @@ it("the reminder and expiry jobs queue their emails", async () => {
   expect(expiredEmail.bs.text).toContain(`${APP_URL}/products/${expired.rows[0]!.id}`);
 
   const toRestaurant = await emailsTo(RESTAURANT);
-  expect(toRestaurant.map((row) => row.template)).toEqual(["PICKUP_TODAY"]);
+  expect(toRestaurant.map((row) => row.template)).toEqual(["ORDER_PICKUP_TODAY"]);
   const reminder = renderBoth(toRestaurant[0]!);
-  expect(reminder.bs.subject).toBe("Podsjetnik: danas preuzimate Burek");
+  expect(reminder.bs.subject).toMatch(/^Podsjetnik: danas preuzimate narudžbu #[A-Z0-9]{4}$/);
+  expect(reminder.bs.text).toContain("- Burek, 1 kg: 5,00 KM");
   expect(reminder.bs.text).toMatch(/Preuzimanje: \d{2}\.\d{2}\.\d{4}\. 12:00/);
 
   // Running the reminders again sends nothing twice.

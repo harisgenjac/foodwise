@@ -2,21 +2,30 @@ import cron from "node-cron";
 import pool from "../config/db.js";
 import { APP_TIMEZONE } from "../utils/dates.js";
 import { createNotification } from "../utils/notifications.js";
+import { cancelPendingItemsOfProducts, lockOrdersHoldingProducts } from "../services/orders/cascades.js";
 
-// Marks Available products past their expiry date as Expired, cancels their
-// Pending reservations and notifies the stores and restaurants, all in one transaction.
-// Confirmed reservations are left alone: the store already agreed to hand that food over.
+// Marks Available products past their expiry date as Expired, cancels their Pending order items
+// (a whole order when nothing is left or its restaurant did not accept partial fulfilment) and
+// notifies the stores (per product) and the restaurants (per order), all in one transaction.
+// Confirmed items are left alone: the store already agreed to hand that food over.
 // Donation offers past their expiry date become Expired in the same run.
 export const expireProducts = async (): Promise<number> => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
-    const expiredProducts = await client.query(
+    const due = await client.query<{ id: number }>(
+      "SELECT products.id FROM products WHERE products.status = 'Available' AND products.expiry_date < CURRENT_DATE",
+    );
+    const dueIds = due.rows.map((product) => product.id);
+    // The orders holding them first, then the products (the order paths' lock order).
+    const orders = await lockOrdersHoldingProducts(client, dueIds);
+    const expiredProducts = await client.query<{ id: number; store_id: number; name: string }>(
       `UPDATE products
        SET status = 'Expired'
-       WHERE status = 'Available' AND expiry_date < CURRENT_DATE
+       WHERE products.id = ANY($1::int[]) AND status = 'Available' AND expiry_date < CURRENT_DATE
        RETURNING id, store_id, name`,
+      [dueIds],
     );
 
     if (expiredProducts.rows.length > 0) {
@@ -31,28 +40,8 @@ export const expireProducts = async (): Promise<number> => {
         });
       }
 
-      const cancelledReservations = await client.query(
-        `UPDATE reservations
-         SET status = 'Cancelled'
-         WHERE product_id = ANY($1) AND status = 'Pending'
-         RETURNING id, restaurant_id, product_id`,
-        [expiredIds],
-      );
-
-      for (const r of cancelledReservations.rows) {
-        const product = expiredProducts.rows.find((p) => p.id === r.product_id);
-        await createNotification(client, {
-          userId: r.restaurant_id,
-          type: "RESERVATION_EXPIRED",
-          message: `Your reservation for ${product?.name} was cancelled because the product expired.`,
-          reservationId: r.id,
-          productId: r.product_id,
-        });
-      }
-
-      console.log(
-        `Expired ${expiredIds.length} products and cancelled their active reservations.`,
-      );
+      const touched = await cancelPendingItemsOfProducts(client, orders, expiredIds, "EXPIRED", { source: "SYSTEM" });
+      console.log(`Expired ${expiredIds.length} products and cancelled their pending items in ${touched} orders.`);
     }
 
     // Donation offers have no recipients yet, so expiring them needs no notification.

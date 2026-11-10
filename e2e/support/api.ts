@@ -90,6 +90,16 @@ export const reserve = async (api: APIRequestContext, productId: number, quantit
   return reservation;
 };
 
+// The code of the restaurant's order that contains `productName` (shown as #K7PM), to find its
+// notifications and emails.
+export const orderCode = async (api: APIRequestContext, productName: string) => {
+  const { orders } = await ok<{ orders: { code: string }[] }>(
+    await api.get(`/api/orders/mine?name=${encodeURIComponent(productName)}`),
+  );
+  expect(orders, `one order with ${productName}`).toHaveLength(1);
+  return orders[0]!.code;
+};
+
 // The store's side of a reservation: accept it, or mark it picked up.
 export const acceptReservation = async (api: APIRequestContext, reservationId: number) =>
   ok(await api.patch(`/api/reservations/${reservationId}/accept`));

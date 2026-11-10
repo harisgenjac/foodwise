@@ -40,10 +40,10 @@ A restaurant orders from a cart with one store and chooses delivery (Korpa) or p
 
 Design, decisions and PR split: `docs/orders-design.md` (agreed Nov 6, 2026). Decided there: a random 4-character order code (`#K7PM`) instead of a sequence, a server-side cart, at most 10 pending orders per restaurant, a fulfilment method on the order (only pickup now), partial fulfilment over items and quantities with reasons (also at sending), "Sold in shop" for stock sold at the store's own till, and no single-item cancels or partial pickups.
 
-- [ ] `orders` table above reservations (`order_id` on the reservation), with a fulfilment method (pickup only for now), and status history (who, when, source).
+- [x] `orders` table above reservations (`order_id` on the reservation), with a fulfilment method (pickup only for now), and status history (who, when, source) (Nov 10, 2026: the order model and `/api/orders` on the server; the screens come in the next PR).
 - [x] "Sold in shop" (Nov 6, 2026): a store records an amount sold at its own till, which lowers the free quantity (no credit back, not an app sale, cannot be undone: a confirmation shows the amount and the free quantity before and after).
 - [ ] Check that every place that computes a product's free quantity counts shop sales (the marketplace, the product page, the sold-out status, the order stock checks, moving to donations and returning a donation to the offer already do).
-- [ ] Short order code (random, 4 characters, e.g. `#K7PM`).
+- [x] Short order code (random, 4 characters, e.g. `#K7PM`) (Nov 10, 2026: notifications and emails use it; the order pages come in the next PR).
 - [ ] Cart: one store, "empty the cart?" dialog, no stock held, "Accept partial fulfilment" option.
 - [ ] Submitting an order with all items at once, using the existing available-quantity protection.
 - [ ] Accepting per item: accept all, a smaller quantity or reject, with a reason; freed quantity returns to the offer; if all are rejected, the order is `Rejected`.

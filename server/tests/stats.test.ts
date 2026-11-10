@@ -1,7 +1,7 @@
 import request from "supertest";
 import app from "../src/app.js";
 import pool from "../src/config/db.js";
-import { cleanupUsers, createProduct, registerAndLogin, userId, type Agent } from "./helpers.js";
+import { cleanupUsers, createProduct, registerAndLogin, userId, type Agent, insertOrderItem } from "./helpers.js";
 
 const STORE = "stats-store@test.com";
 const RESTAURANT = "stats-restaurant@test.com";
@@ -9,11 +9,7 @@ const ADMIN = "stats-admin@test.com";
 
 // Reservations are inserted directly so every status can be set.
 const insertReservation = async (productId: number, status: string, quantity: number) => {
-  await pool.query(
-    `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date)
-     VALUES ($1, $2, $3, 5, $4::reservation_status, CURRENT_DATE + 1)`,
-    [productId, await userId(RESTAURANT), quantity, status],
-  );
+  await insertOrderItem({ productId, restaurantId: await userId(RESTAURANT), quantity, status });
 };
 
 // The counter is platform-wide, so tests compare against the value before their own data.

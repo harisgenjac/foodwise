@@ -1,7 +1,7 @@
 import type { NotificationType } from "../../utils/notifications.js";
-import { formatPickup, formatQuantity, unitLabel } from "./format.js";
-import { EMAIL_SETTINGS_PATH, renderLayout, type EmailLanguage } from "./layout.js";
-import { parseNotificationData, type NotificationEmailData } from "./notificationData.js";
+import { formatMoney, formatPickup, formatQuantity, unitLabel } from "./format.js";
+import { EMAIL_SETTINGS_PATH, renderLayout, type EmailLanguage, type EmailLine } from "./layout.js";
+import { parseNotificationData, type NotificationEmailData, type OrderLineData } from "./notificationData.js";
 import type { EmailTemplate } from "./types.js";
 
 // One email per in-app notification type, worded like the notification itself (the client's
@@ -25,6 +25,13 @@ interface Values {
   // "Bingo d.o.o. → Bingo Tuzla" for a branch's request.
   requester: string;
   topup: boolean;
+  // An order: "#K7PM", the parties, and for a partly accepted one the new and the sent total
+  // ("52,50 KM"; newTotal is empty when the total did not change).
+  code: string;
+  store: string;
+  restaurant: string;
+  newTotal: string;
+  orderedTotal: string;
 }
 
 type CopyFn = (v: Values, d: NotificationEmailData) => Copy;
@@ -47,39 +54,82 @@ const announcement = (d: NotificationEmailData, lang: EmailLanguage) => {
   };
 };
 
-const REFUNDED = { bs: "Kredit za rezervaciju vam je vraćen.", en: "The reservation's credit was returned to you." };
-
 const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
   bs: {
-    RESERVATION_CREATED: (v) => ({
-      subject: `Nova rezervacija: ${v.amount} ${v.product}`,
-      heading: "Nova rezervacija",
-      intro: ["Imate novi zahtjev za rezervaciju."],
-      outro: ["Prihvatite ili odbijte rezervaciju u aplikaciji."],
+    ORDER_CREATED: (v) => ({
+      subject: `Nova narudžba ${v.code} od ${v.restaurant}`,
+      heading: `Nova narudžba ${v.code}`,
+      intro: [`${v.restaurant} je poslao narudžbu ${v.code}.`],
+      outro: ["Prihvatite ili odbijte stavke narudžbe u aplikaciji."],
     }),
-    RESERVATION_ACCEPTED: (v) => ({
-      subject: `Rezervacija prihvaćena: ${v.product}`,
-      heading: "Rezervacija je prihvaćena",
-      intro: [`Vaša rezervacija za ${v.product} je prihvaćena.`],
-      outro: ["Preuzmite hranu u dogovoreno vrijeme."],
+    ORDER_CANCELLED: (v) => ({
+      subject: `Narudžba ${v.code} je otkazana`,
+      heading: "Narudžba je otkazana",
+      intro: [`${v.restaurant} je otkazao narudžbu ${v.code}.`],
     }),
-    RESERVATION_REJECTED: (v) => ({
-      subject: `Rezervacija odbijena: ${v.product}`,
-      heading: "Rezervacija je odbijena",
-      intro: [`Vaša rezervacija za ${v.product} je odbijena.`],
-      outro: [REFUNDED.bs],
+    ORDER_ACCEPTED: (v) => ({
+      subject: `Narudžba ${v.code} je prihvaćena`,
+      heading: "Narudžba je prihvaćena",
+      intro: [`Prodavnica ${v.store} je prihvatila vašu narudžbu ${v.code}.`],
+      outro: ["Preuzmite je u dogovoreno vrijeme."],
     }),
-    RESERVATION_CANCELLED: (v) => ({
-      subject: `Rezervacija otkazana: ${v.product}`,
-      heading: "Restoran je otkazao rezervaciju",
-      intro: [`Restoran je otkazao rezervaciju za ${v.product}.`],
-      outro: ["Količina je ponovo u ponudi."],
+    ORDER_PARTIALLY_ACCEPTED: (v) => ({
+      subject: `Narudžba ${v.code} je djelimično prihvaćena`,
+      heading: "Narudžba je djelimično prihvaćena",
+      intro: [
+        `Prodavnica ${v.store} je prihvatila dio vaše narudžbe ${v.code}. Izmjene su navedene ispod.`,
+        ...(v.newTotal ? [`Novi iznos: ${v.newTotal} umjesto ${v.orderedTotal}.`] : []),
+      ],
+      outro: ["Preuzmite prihvaćene stavke u dogovoreno vrijeme."],
     }),
-    RESERVATION_EXPIRED: (v) => ({
-      subject: `Rezervacija otkazana: ${v.product}`,
-      heading: "Rezervacija je otkazana",
-      intro: [`Rezervacija za ${v.product} je otkazana jer je proizvodu istekao rok trajanja.`],
-      outro: [REFUNDED.bs],
+    ORDER_REJECTED: (v) => ({
+      subject: `Narudžba ${v.code} je odbijena`,
+      heading: "Narudžba je odbijena",
+      intro: [`Prodavnica ${v.store} je odbila vašu narudžbu ${v.code}.`],
+    }),
+    ORDER_COMPLETED: (v) => ({
+      subject: `Narudžba ${v.code} je preuzeta`,
+      heading: "Preuzimanje je potvrđeno",
+      intro: [`Preuzimanje narudžbe ${v.code} je potvrđeno.`],
+    }),
+    ORDER_PICKUP_MISSED: (v) => ({
+      subject: `Preuzimanje je propušteno: ${v.code}`,
+      heading: "Preuzimanje je propušteno",
+      intro: [`Narudžba ${v.code} je otkazana jer nije preuzeta na vrijeme.`],
+    }),
+    ORDER_PICKUP_TODAY: (v) => ({
+      subject: `Podsjetnik: danas preuzimate narudžbu ${v.code}`,
+      heading: "Danas je preuzimanje",
+      intro: [`Danas preuzimate narudžbu ${v.code} (${v.store}).`],
+    }),
+    ORDER_ITEMS_EXPIRED: (v) => ({
+      subject: `Dio narudžbe ${v.code} je otkazan`,
+      heading: "Dio narudžbe je otkazan",
+      intro: [
+        `Neki proizvodi iz narudžbe ${v.code} su istekli prije odgovora prodavnice, pa su otkazani. Ostale stavke i dalje čekaju odgovor.`,
+      ],
+    }),
+    ORDER_EXPIRED: (v) => ({
+      subject: `Narudžba ${v.code} je otkazana`,
+      heading: "Narudžba je otkazana",
+      intro: [`Narudžba ${v.code} je otkazana jer su proizvodi istekli prije odgovora prodavnice.`],
+    }),
+    ORDER_ITEMS_REMOVED: (v) => ({
+      subject: `Dio narudžbe ${v.code} je otkazan`,
+      heading: "Dio narudžbe je otkazan",
+      intro: [
+        `Administrator platforme je uklonio neke proizvode iz ponude, pa su otkazani iz narudžbe ${v.code}. Ostale stavke i dalje čekaju odgovor.`,
+      ],
+    }),
+    ORDER_CANCELLED_BY_ADMIN: (v) => ({
+      subject: `Narudžba ${v.code} je otkazana`,
+      heading: "Administrator je otkazao narudžbu",
+      intro: [`Administrator platforme je otkazao narudžbu ${v.code}.`],
+    }),
+    ORDER_CANCELLED_STORE_CLOSED: (v) => ({
+      subject: `Narudžba ${v.code} je otkazana`,
+      heading: "Narudžba je otkazana",
+      intro: [`Narudžba ${v.code} je otkazana jer prodavnica ${v.store} više nije aktivna.`],
     }),
     PRODUCT_EXPIRED: (v) => ({
       subject: `Istekao rok trajanja: ${v.product}`,
@@ -97,21 +147,6 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
       intro: [`${v.product} ističe sutra, a ima zahtjeva na čekanju.`],
       outro: ["Prihvatite ili odbijte zahtjeve prije isteka roka."],
     }),
-    PICKUP_TODAY: (v) => ({
-      subject: `Podsjetnik: danas preuzimate ${v.product}`,
-      heading: "Danas je preuzimanje",
-      intro: [`Danas preuzimate ${v.product}.`],
-    }),
-    RESERVATION_COMPLETED: (v) => ({
-      subject: `Preuzimanje potvrđeno: ${v.product}`,
-      heading: "Preuzimanje je potvrđeno",
-      intro: [`Prodavnica je potvrdila da ste preuzeli ${v.amount} ${v.product}.`],
-    }),
-    PICKUP_MISSED: (v) => ({
-      subject: `Rezervacija otkazana: ${v.product}`,
-      heading: "Preuzimanje je propušteno",
-      intro: [`Rezervacija za ${v.product} je otkazana jer nije preuzeta na vrijeme.`],
-    }),
     PRODUCT_REMOVED_BY_ADMIN: (v) => ({
       subject: `Proizvod uklonjen: ${v.product}`,
       heading: "Administrator je uklonio proizvod",
@@ -121,17 +156,6 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
       subject: `Donacija uklonjena: ${v.product}`,
       heading: "Administrator je uklonio donaciju",
       intro: [`Administrator je uklonio donaciju ${v.product}.`],
-    }),
-    RESERVATION_CANCELLED_BY_ADMIN: (v) => ({
-      subject: `Rezervacija otkazana: ${v.product}`,
-      heading: "Administrator je otkazao rezervaciju",
-      intro: [`Rezervaciju za ${v.product} je otkazao administrator platforme.`],
-    }),
-    RESERVATION_CANCELLED_STORE_CLOSED: (v) => ({
-      subject: `Rezervacija otkazana: ${v.product}`,
-      heading: "Prodavnica više nije aktivna",
-      intro: [`Rezervacija za ${v.product} je otkazana jer prodavnica više nije aktivna.`],
-      outro: [REFUNDED.bs],
     }),
     BRANCH_BLOCKED: (v) => ({
       subject: `Poslovnica blokirana: ${v.branch}`,
@@ -273,35 +297,80 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
     }),
   },
   en: {
-    RESERVATION_CREATED: (v) => ({
-      subject: `New reservation: ${v.amount} ${v.product}`,
-      heading: "New reservation",
-      intro: ["You have a new reservation request."],
-      outro: ["Accept or reject the reservation in the app."],
+    ORDER_CREATED: (v) => ({
+      subject: `New order ${v.code} from ${v.restaurant}`,
+      heading: `New order ${v.code}`,
+      intro: [`${v.restaurant} sent order ${v.code}.`],
+      outro: ["Accept or reject the order's items in the app."],
     }),
-    RESERVATION_ACCEPTED: (v) => ({
-      subject: `Reservation accepted: ${v.product}`,
-      heading: "Your reservation was accepted",
-      intro: [`Your reservation for ${v.product} was accepted.`],
-      outro: ["Pick up the food at the agreed time."],
+    ORDER_CANCELLED: (v) => ({
+      subject: `Order ${v.code} was cancelled`,
+      heading: "Order cancelled",
+      intro: [`${v.restaurant} cancelled order ${v.code}.`],
     }),
-    RESERVATION_REJECTED: (v) => ({
-      subject: `Reservation rejected: ${v.product}`,
-      heading: "Your reservation was rejected",
-      intro: [`Your reservation for ${v.product} was rejected.`],
-      outro: [REFUNDED.en],
+    ORDER_ACCEPTED: (v) => ({
+      subject: `Order ${v.code} was accepted`,
+      heading: "Order accepted",
+      intro: [`${v.store} accepted your order ${v.code}.`],
+      outro: ["Pick it up at the agreed time."],
     }),
-    RESERVATION_CANCELLED: (v) => ({
-      subject: `Reservation cancelled: ${v.product}`,
-      heading: "A restaurant cancelled its reservation",
-      intro: [`A restaurant cancelled its reservation for ${v.product}.`],
-      outro: ["The quantity is on offer again."],
+    ORDER_PARTIALLY_ACCEPTED: (v) => ({
+      subject: `Order ${v.code} was partly accepted`,
+      heading: "Order partly accepted",
+      intro: [
+        `${v.store} accepted part of your order ${v.code}. The changes are listed below.`,
+        ...(v.newTotal ? [`New total: ${v.newTotal} instead of ${v.orderedTotal}.`] : []),
+      ],
+      outro: ["Pick up the accepted items at the agreed time."],
     }),
-    RESERVATION_EXPIRED: (v) => ({
-      subject: `Reservation cancelled: ${v.product}`,
-      heading: "Your reservation was cancelled",
-      intro: [`Your reservation for ${v.product} was cancelled because the product expired.`],
-      outro: [REFUNDED.en],
+    ORDER_REJECTED: (v) => ({
+      subject: `Order ${v.code} was rejected`,
+      heading: "Order rejected",
+      intro: [`${v.store} rejected your order ${v.code}.`],
+    }),
+    ORDER_COMPLETED: (v) => ({
+      subject: `Order ${v.code} was picked up`,
+      heading: "Pickup confirmed",
+      intro: [`The pickup of order ${v.code} was confirmed.`],
+    }),
+    ORDER_PICKUP_MISSED: (v) => ({
+      subject: `Pickup missed: ${v.code}`,
+      heading: "Pickup missed",
+      intro: [`Order ${v.code} was cancelled because it was not picked up in time.`],
+    }),
+    ORDER_PICKUP_TODAY: (v) => ({
+      subject: `Reminder: pick up order ${v.code} today`,
+      heading: "Pickup today",
+      intro: [`Pick up order ${v.code} today (${v.store}).`],
+    }),
+    ORDER_ITEMS_EXPIRED: (v) => ({
+      subject: `Part of order ${v.code} was cancelled`,
+      heading: "Part of the order was cancelled",
+      intro: [
+        `Some products of order ${v.code} expired before the store answered, so they were cancelled. The other items still wait for an answer.`,
+      ],
+    }),
+    ORDER_EXPIRED: (v) => ({
+      subject: `Order ${v.code} was cancelled`,
+      heading: "Order cancelled",
+      intro: [`Order ${v.code} was cancelled because its products expired before the store answered.`],
+    }),
+    ORDER_ITEMS_REMOVED: (v) => ({
+      subject: `Part of order ${v.code} was cancelled`,
+      heading: "Part of the order was cancelled",
+      intro: [
+        `The platform administrator removed some products from the offer, so they were cancelled from order ${v.code}. The other items still wait for an answer.`,
+      ],
+    }),
+    ORDER_CANCELLED_BY_ADMIN: (v) => ({
+      subject: `Order ${v.code} was cancelled`,
+      heading: "An administrator cancelled an order",
+      intro: [`The platform administrator cancelled order ${v.code}.`],
+    }),
+    ORDER_CANCELLED_STORE_CLOSED: (v) => ({
+      subject: `Order ${v.code} was cancelled`,
+      heading: "Order cancelled",
+      intro: [`Order ${v.code} was cancelled because ${v.store} is no longer active.`],
     }),
     PRODUCT_EXPIRED: (v) => ({
       subject: `Expired: ${v.product}`,
@@ -319,21 +388,6 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
       intro: [`${v.product} expires tomorrow and has pending requests.`],
       outro: ["Accept or reject the requests before it expires."],
     }),
-    PICKUP_TODAY: (v) => ({
-      subject: `Reminder: pick up ${v.product} today`,
-      heading: "Pickup today",
-      intro: [`Pick up ${v.product} today.`],
-    }),
-    RESERVATION_COMPLETED: (v) => ({
-      subject: `Pickup confirmed: ${v.product}`,
-      heading: "Pickup confirmed",
-      intro: [`The store confirmed that you picked up ${v.amount} ${v.product}.`],
-    }),
-    PICKUP_MISSED: (v) => ({
-      subject: `Reservation cancelled: ${v.product}`,
-      heading: "Pickup missed",
-      intro: [`Your reservation for ${v.product} was cancelled because it was not picked up in time.`],
-    }),
     PRODUCT_REMOVED_BY_ADMIN: (v) => ({
       subject: `Product removed: ${v.product}`,
       heading: "An administrator removed a product",
@@ -343,17 +397,6 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
       subject: `Donation removed: ${v.product}`,
       heading: "An administrator removed a donation",
       intro: [`An administrator removed your donation ${v.product}.`],
-    }),
-    RESERVATION_CANCELLED_BY_ADMIN: (v) => ({
-      subject: `Reservation cancelled: ${v.product}`,
-      heading: "An administrator cancelled a reservation",
-      intro: [`The platform administrator cancelled the reservation for ${v.product}.`],
-    }),
-    RESERVATION_CANCELLED_STORE_CLOSED: (v) => ({
-      subject: `Reservation cancelled: ${v.product}`,
-      heading: "The store is no longer active",
-      intro: [`The reservation for ${v.product} was cancelled because the store is no longer active.`],
-      outro: [REFUNDED.en],
     }),
     BRANCH_BLOCKED: (v) => ({
       subject: `Branch blocked: ${v.branch}`,
@@ -518,6 +561,10 @@ export const notificationLink = (type: NotificationType, d: NotificationEmailDat
     return { path: `/company/branches/${d.branchId}`, kind: "branch" };
   }
   if (d.reservationId !== null) return { path: `/reservation/${d.reservationId}`, kind: "reservation" };
+  // Orders open the role's list until the order details page exists (orders PR 3b: /orders/:id).
+  if (d.orderId !== null) {
+    return { path: d.recipientRole === "STORE" ? "/reservations" : "/my-reservations", kind: "list" };
+  }
   if (d.productId !== null) return { path: `/products/${d.productId}`, kind: "product" };
   if (d.donationId !== null) return { path: "/donate-food", kind: "donations" };
   if (d.announcementId !== null) return { path: "/dashboard", kind: "dashboard" };
@@ -577,6 +624,8 @@ const LABELS: Record<EmailLanguage, Record<string, string>> = {
     credits: "Krediti",
     reason: "Razlog",
     note: "Napomena centrale",
+    order: "Narudžba",
+    total: "Ukupno",
   },
   en: {
     product: "Product",
@@ -590,6 +639,8 @@ const LABELS: Record<EmailLanguage, Record<string, string>> = {
     credits: "Credits",
     reason: "Reason",
     note: "Headquarters' note",
+    order: "Order",
+    total: "Total",
   },
 };
 
@@ -614,9 +665,10 @@ const detailRows = (type: NotificationType, d: NotificationEmailData, lang: Emai
   if (d.productName !== null && type !== "PLATFORM_ANNOUNCEMENT") {
     rows.push({ label: d.donationId !== null ? label.donation! : label.product!, value: d.productName });
   }
-  if (d.reservationId !== null) {
-    if (amount !== null) rows.push({ label: label.quantity!, value: amount });
-    // The other party of the reservation.
+  if (d.orderId !== null && d.orderCode !== null) rows.push({ label: label.order!, value: `#${d.orderCode}` });
+  if (d.reservationId !== null || d.orderId !== null) {
+    if (d.reservationId !== null && amount !== null) rows.push({ label: label.quantity!, value: amount });
+    // The other party.
     if (d.recipientRole === "STORE" && d.restaurantName) rows.push({ label: label.restaurant!, value: d.restaurantName });
     if (d.recipientRole === "RESTAURANT" && d.storeName) rows.push({ label: label.store!, value: d.storeName });
     if (d.pickupAt) rows.push({ label: label.pickup!, value: formatPickup(d.pickupAt, lang) });
@@ -636,6 +688,54 @@ const detailRows = (type: NotificationType, d: NotificationEmailData, lang: Emai
 const requesterName = (d: NotificationEmailData) =>
   d.creditCompany ? `${d.creditCompany} → ${d.creditRequester ?? ""}` : (d.creditRequester ?? "");
 
+const CHANGE_REASONS: Record<EmailLanguage, Record<string, string>> = {
+  bs: { NOT_ENOUGH_STOCK: "nema dovoljno na stanju", QUALITY: "kvalitet", OTHER: "drugo" },
+  en: { NOT_ENOUGH_STOCK: "not enough in stock", QUALITY: "quality", OTHER: "other" },
+};
+
+const LINE_TEXT: Record<EmailLanguage, { less: (accepted: string, ordered: string) => string; rejected: string; cancelled: string }> = {
+  bs: { less: (accepted, ordered) => `${accepted} od ${ordered}`, rejected: "Odbijeno", cancelled: "Otkazano" },
+  en: { less: (accepted, ordered) => `${accepted} of ${ordered}`, rejected: "Rejected", cancelled: "Cancelled" },
+};
+
+// A line that still counts: neither rejected by the store nor cancelled.
+const isLive = (line: OrderLineData) => line.status !== "Rejected" && line.status !== "Cancelled";
+
+const lineAmount = (line: OrderLineData, quantity: string) => Number(line.unitPrice) * Number(quantity);
+
+// The order's lines for the email table: "Piletina, 15 kg · 52,50 KM" with the change under it
+// ("15 kg od 20 kg · nema dovoljno na stanju", "Odbijeno · kvalitet"); rejected and cancelled
+// lines are struck through.
+const orderLines = (lines: OrderLineData[], lang: EmailLanguage): EmailLine[] =>
+  lines.map((line) => {
+    const unit = unitLabel(line.unit, lang);
+    const amount = (quantity: string) => `${formatQuantity(quantity, lang)} ${unit}`;
+    const text = LINE_TEXT[lang];
+    const live = isLive(line);
+    const reduced = live && Number(line.quantity) < Number(line.ordered);
+    const reason = line.reason ? (line.note ?? CHANGE_REASONS[lang][line.reason] ?? line.reason) : null;
+    const change = reduced
+      ? text.less(amount(line.quantity), amount(line.ordered))
+      : line.status === "Rejected"
+        ? text.rejected
+        : line.status === "Cancelled"
+          ? text.cancelled
+          : null;
+    const note = [change, reason].filter(Boolean).join(" · ");
+    return {
+      label: `${line.product}, ${amount(live ? line.quantity : line.ordered)}`,
+      value: formatMoney(String(lineAmount(line, live ? line.quantity : line.ordered)), lang),
+      ...(note ? { note } : {}),
+      ...(live ? {} : { struck: true }),
+    };
+  });
+
+// The current total (lines that still count) and the total the order sent.
+const orderTotals = (lines: OrderLineData[]) => ({
+  current: lines.filter(isLive).reduce((sum, line) => sum + lineAmount(line, line.quantity), 0),
+  ordered: lines.reduce((sum, line) => sum + lineAmount(line, line.ordered), 0),
+});
+
 const renderNotificationEmail = (type: NotificationType) => (raw: unknown, lang: EmailLanguage, appUrl: string) => {
   const d = parseNotificationData(raw, type);
   const amount =
@@ -647,7 +747,18 @@ const renderNotificationEmail = (type: NotificationType) => (raw: unknown, lang:
     credits: d.credits === null ? "–" : String(d.credits),
     requester: requesterName(d) || "–",
     topup: d.creditRequestType === "TOPUP",
+    code: d.orderCode ? `#${d.orderCode}` : "–",
+    store: d.storeName ?? "–",
+    restaurant: d.restaurantName ?? "–",
+    newTotal: "",
+    orderedTotal: "",
   };
+  const lines = d.orderLines ?? [];
+  const totals = orderTotals(lines);
+  if (lines.length > 0 && Math.round(totals.current * 100) !== Math.round(totals.ordered * 100)) {
+    values.newTotal = formatMoney(String(totals.current), lang);
+    values.orderedTotal = formatMoney(String(totals.ordered), lang);
+  }
   const link = notificationLink(type, d);
   const button = { label: BUTTONS[lang][link.kind], url: `${appUrl}${link.path}` };
   // A system email cannot be turned off, so it has no link to the switch.
@@ -666,6 +777,11 @@ const renderNotificationEmail = (type: NotificationType) => (raw: unknown, lang:
     heading: copy.heading,
     intro: copy.intro,
     details: detailRows(type, d, lang, amount),
+    ...(lines.length > 0 ? { lines: orderLines(lines, lang) } : {}),
+    // No total when nothing is left (a rejected or cancelled order).
+    ...(lines.some(isLive)
+      ? { total: { label: LABELS[lang].total!, value: formatMoney(String(totals.current), lang) } }
+      : {}),
     ...(copy.outro ? { outro: copy.outro } : {}),
     button,
     ...(settingsUrl ? { settingsUrl } : {}),

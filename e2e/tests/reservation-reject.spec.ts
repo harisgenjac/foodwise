@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { storageState, uniqueName } from "../support/accounts.js";
-import { apiAs, createProduct } from "../support/api.js";
+import { apiAs, createProduct, orderCode } from "../support/api.js";
 import { sarajevoDate } from "../support/dates.js";
 import { toast } from "../support/ui.js";
 
@@ -54,7 +54,10 @@ test("a rejected reservation puts the quantity back on offer, with no credits fo
     const row = restaurant.getByRole("link").filter({ hasText: productName });
     await expect(row.getByText("Odbijeno", { exact: true })).toBeVisible();
     await restaurant.goto("/notifications");
-    await expect(restaurant.getByText(`Vaša rezervacija za ${productName} je odbijena.`)).toBeVisible();
+    const restaurantApi = await apiAs("restaurant");
+    const code = await orderCode(restaurantApi, productName);
+    await restaurantApi.dispose();
+    await expect(restaurant.getByText(`Vaša narudžba #${code} je odbijena.`)).toBeVisible();
   });
 
   await test.step("Proizvod je opet ponuđen u cijeloj količini, a restoran nema stranicu kredita", async () => {

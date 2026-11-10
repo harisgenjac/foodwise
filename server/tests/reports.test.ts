@@ -1,7 +1,7 @@
 import request from "supertest";
 import app from "../src/app.js";
 import pool from "../src/config/db.js";
-import { cleanupUsers, createProduct, futureDate, registerAndLogin, userId, type Agent } from "./helpers.js";
+import { cleanupUsers, createProduct, futureDate, registerAndLogin, userId, type Agent, insertOrderItem } from "./helpers.js";
 
 const STORE_A = "reports-store-a@test.com";
 const STORE_B = "reports-store-b@test.com";
@@ -29,14 +29,16 @@ const insertPickup = async (
     status?: string;
   } = {},
 ) => {
-  const result = await pool.query<{ id: number }>(
-    `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date, picked_up_at)
-     VALUES ($1, $2, $3, $4, $5::reservation_status, (CURRENT_DATE - $6::int) + time '10:00',
-             CASE WHEN $5::reservation_status = 'Completed' THEN (CURRENT_DATE - $6::int) + time '12:00' END)
-     RETURNING id`,
-    [productId, await userId(restaurantEmail), quantity, unitPrice, status, daysAgo],
-  );
-  return result.rows[0]!.id;
+  const { itemId } = await insertOrderItem({
+    productId,
+    restaurantId: await userId(restaurantEmail),
+    quantity,
+    unitPrice,
+    status,
+    pickupAt: `(CURRENT_DATE - ${Number(daysAgo)}) + time '10:00'`,
+    pickedUpAt: `(CURRENT_DATE - ${Number(daysAgo)}) + time '12:00'`,
+  });
+  return itemId;
 };
 
 // Parses the CSV body into rows of cells (no quoted fields are used in these tests).

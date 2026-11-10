@@ -10,8 +10,7 @@ import {
 } from "../utils/validateDonation.js";
 import { parseId, parseNumber } from "../utils/params.js";
 import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
-import { markSoldIfFullyConfirmed } from "./reservations.controller.js";
-import { freeQuantity, heldByReservations, reservedQuantity, soldInShop } from "../services/stock.js";
+import { freeQuantity, heldByReservations, markSoldIfFullyConfirmed, reservedQuantity, soldInShop } from "../services/stock.js";
 import { HttpError } from "../utils/httpError.js";
 import { chargeForProduct, hasOpenProductCharge, refundForProduct } from "../services/creditService.js";
 

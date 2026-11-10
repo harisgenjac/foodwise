@@ -14,6 +14,8 @@ import {
   registerAndLogin,
   reserve,
   userId,
+  insertOrderItem,
+  orderOf,
 } from "./helpers.js";
 
 const STORE = "creditflows-store@test.com";
@@ -140,11 +142,7 @@ describe("store: 1 credit per published product", () => {
 
   it("keeps the credit when a deleted product had a picked-up reservation", async () => {
     const product = await createProduct(store);
-    await pool.query(
-      `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date, picked_up_at)
-       VALUES ($1, $2, 2, 5, 'Completed', NOW(), NOW())`,
-      [product.id, restaurantId],
-    );
+    await insertOrderItem({ productId: product.id, restaurantId, quantity: 2, status: "Completed", pickupAt: "NOW()" });
     const response = await store.delete(`/api/products/${product.id}`);
     expect(response.status).toBe(200);
     expect(response.body.creditRefunded).toBe(false);
@@ -266,6 +264,7 @@ describe("restaurant: reservations cost no credits", () => {
     expect((await store.patch(`/api/reservations/${rejected}/reject`)).status).toBe(200);
     const missed = await reserve(restaurant, productId, 1);
     await store.patch(`/api/reservations/${missed}/accept`);
+    await pool.query("UPDATE orders SET pickup_at = NOW() - INTERVAL '2 days' WHERE id = $1", [await orderOf(missed)]);
     await pool.query("UPDATE reservations SET pickup_date = NOW() - INTERVAL '2 days' WHERE id = $1", [missed]);
     expect((await store.patch(`/api/reservations/${missed}/cancel-overdue`)).status).toBe(200);
     await reserve(restaurant, productId, 1);

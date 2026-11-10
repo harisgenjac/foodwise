@@ -16,6 +16,7 @@ import {
   registerAndLogin,
   reserve,
   userId,
+  orderOf,
 } from "./helpers.js";
 
 const ADMIN = "branches-admin@test.com";
@@ -43,7 +44,7 @@ const reservationStatus = async (id: number) =>
 const notificationsOf = async (email: string) =>
   (
     await pool.query(
-      `SELECT notifications.type, notifications.reservation_id, notifications.branch_id, notifications.details
+      `SELECT notifications.type, notifications.order_id, notifications.branch_id, notifications.details
        FROM notifications JOIN users ON notifications.user_id = users.id
        WHERE users.email = $1 ORDER BY notifications.id`,
       [email],
@@ -393,7 +394,7 @@ describe("Branches", () => {
       expect(row.rows[0].deactivated_at).toBeNull();
     });
 
-    it("cancels Pending reservations with refunds, hides the branch and blocks its login until reactivated", async () => {
+    it("cancels Pending orders, hides the branch and blocks its login until reactivated", async () => {
       const branch = await login(BRANCH);
       const product = await createProduct(branch, { quantity: 10 });
       const pending = await reserve(restaurant, product.id, 2);
@@ -404,7 +405,7 @@ describe("Branches", () => {
       expect(response.body).toEqual({ message: "Branch deactivated.", cancelledReservations: 1, withdrawnRequests: 0 });
       expect(await reservationStatus(pending)).toBe("Cancelled");
       expect(await notificationsOf(RESTAURANT)).toContainEqual(
-        expect.objectContaining({ type: "RESERVATION_CANCELLED_STORE_CLOSED", reservation_id: pending, details: null }),
+        expect.objectContaining({ type: "ORDER_CANCELLED_STORE_CLOSED", order_id: await orderOf(pending), details: null }),
       );
       // The headquarters' own action does not notify it.
       expect(await notificationsOf(HQ)).toEqual([]);

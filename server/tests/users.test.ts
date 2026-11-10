@@ -10,6 +10,7 @@ import {
   reserve,
   userId,
   type Agent,
+  insertOrderItem,
 } from "./helpers.js";
 
 const STORE = "users-store@test.com";
@@ -221,12 +222,7 @@ describe("Users routes", () => {
       const product = await createProduct(store, { quantity: 10 });
       const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
       for (const status of ["Pending", "Confirmed", "Rejected", "Cancelled", "Completed"]) {
-        await pool.query(
-          `INSERT INTO reservations (product_id, restaurant_id, quantity, unit_price, status, pickup_date, picked_up_at)
-           VALUES ($1, $2, 1, 5, $3::reservation_status, CURRENT_DATE + 1,
-                   CASE WHEN $3::reservation_status = 'Completed' THEN NOW() END)`,
-          [product.id, await userId(RESTAURANT), status],
-        );
+        await insertOrderItem({ productId: product.id, restaurantId: await userId(RESTAURANT), quantity: 1, status });
       }
 
       const response = await restaurant.get(`/api/users/stores/${await userId(STORE)}`);

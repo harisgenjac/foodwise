@@ -15,12 +15,12 @@ import { sendInvitation } from "../services/accountEmails.js";
 import {
   REASON_ERROR,
   RECENT_ACTIONS_LIMIT,
-  cancelPendingReservations,
   logAdminAction,
   parseReason,
 } from "./admin.controller.js";
 import { HttpError } from "../utils/httpError.js";
 import { notifyCompanyHq } from "../utils/notifications.js";
+import { cancelPendingOrders } from "../services/orders/cascades.js";
 import {
   ACTIVE_PRODUCTS,
   BRANCH_NOT_FOUND,
@@ -318,12 +318,13 @@ export const blockCompany = async (req: Request, res: Response) => {
     const storeIds = new Set(
       (await client.query<{ id: number }>(companyStores, [companyId])).rows.map((store) => store.id),
     );
-    // The other party of each reservation is told; the company's users cannot sign in anyway.
-    const cancelledReservations = await cancelPendingReservations(
+    // The other party of each order is told; the company's users cannot sign in anyway.
+    // (cancelledReservations counts orders; PR 4 renames it to cancelledOrders with the admin screens.)
+    const cancelledReservations = await cancelPendingOrders(
       client,
-      `products.store_id IN (${companyStores}) OR reservations.restaurant_id IN (${companyStores})`,
+      `orders.store_id IN (${companyStores}) OR orders.restaurant_id IN (${companyStores})`,
       [companyId],
-      (row) => (storeIds.has(row.restaurant_id) ? row.store_id : row.restaurant_id),
+      (order) => (storeIds.has(order.restaurant_id) ? order.store_id : order.restaurant_id),
     );
     await logAdminAction(client, {
       adminId: req.user!.id,
