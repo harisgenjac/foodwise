@@ -650,8 +650,7 @@ async function seed() {
 
     // ----- Orders -----
     // Orders are written with the same shapes the order service writes (orders, items, history,
-    // codes, notifications). While the old reservation screens are in use (orders PR 3a), orders
-    // with several items are only in final statuses; open orders (Pending, Confirmed) have one item.
+    // codes, notifications), with 1 to 5 items from one store.
     const orderCodes = new Map<number, Set<string>>();
     // Random like the rest of the seed (the app draws codes with crypto.randomInt), unique per store.
     const drawCode = (storeId: number) => {
@@ -1096,20 +1095,33 @@ async function seed() {
       return restaurants[0]!;
     };
 
-    // An open one-item order: Pending (some with partial fulfilment off) or Confirmed.
+    // The lines of an open order: a product and, in about half the orders, 1 to 3 more of the same
+    // store. Each line always leaves some stock, so the product stays on the marketplace.
+    const openLines = (restaurant: Business, createdAt: Date, lastDay: string, status: NewLine["status"]) => {
+      const candidates = candidatesFor(restaurant, createdAt, 2, lastDay);
+      if (candidates.length === 0) return null;
+      const first = pick(candidates);
+      const sameStore = shuffle(candidates.filter((p) => p.store === first.store && p !== first));
+      const products = [first, ...(chance(0.5) ? sameStore.slice(0, randomInt(1, 3)) : [])];
+      return products.map((product): NewLine => {
+        const available = product.quantity - product.held;
+        const quantity = Math.max(1, Math.min(available - 1, Math.round(available * between(0.2, 0.5))));
+        return { product, ordered: quantity, quantity, status };
+      });
+    };
+    // The earliest expiry among the lines: the last possible pickup day.
+    const earliestExpiry = (lines: NewLine[]) => lines.map((line) => line.product.expiry).sort()[0]!;
+
+    // An open order: Pending (some with partial fulfilment off) or Confirmed, with 1 to 4 items.
     const openOrder = async (status: "Pending" | "Confirmed") => {
       const restaurant = weightedRestaurant();
       const createdAt = recentTime(status === "Pending" ? 36 : 72);
-      const candidates = candidatesFor(restaurant, createdAt, 2, today);
-      if (candidates.length === 0) return false;
-      const product = pick(candidates);
-      const pickupAt = upcomingPickup(product.store, product.expiry, status === "Pending" ? 2 : 3);
+      const lines = openLines(restaurant, createdAt, today, status);
+      if (!lines) return false;
+      const product = lines[0]!.product;
+      const pickupAt = upcomingPickup(product.store, earliestExpiry(lines), status === "Pending" ? 2 : 3);
       if (!pickupAt) return false;
-      // Always leaves some stock, so the product stays on the marketplace.
-      const available = product.quantity - product.held;
-      const quantity = Math.max(1, Math.min(available - 1, Math.round(available * between(0.2, 0.5))));
       const acceptedAt = earlier(addHours(createdAt, between(0.3, 3)), addHours(now, -0.1));
-      const lines: NewLine[] = [{ product, ordered: quantity, quantity, status }];
       const order = await insertOrder({
         restaurant, lines, status, createdAt, pickupAt, acceptPartial: status === "Confirmed" || !chance(0.25),
         sendChanges: sendChangesFor(lines),
@@ -1117,7 +1129,7 @@ async function seed() {
         updatedAt: status === "Confirmed" ? acceptedAt : createdAt,
         events: status === "Confirmed" ? [{ at: acceptedAt, to: "Confirmed", source: "STORE", actorId: product.store.id }] : [],
       });
-      product.held += quantity;
+      for (const line of lines) line.product.held += line.quantity;
       if (status === "Confirmed") {
         cover(lines, acceptedAt);
         await notify(client, restaurant.id, "ORDER_ACCEPTED", `Your order #${order.code} was accepted.`, acceptedAt, { orderId: order.id });
@@ -1139,19 +1151,17 @@ async function seed() {
       for (let attempt = 0; attempt < 30; attempt++) {
         const restaurant = weightedRestaurant();
         const createdAt = at(addDays(pickupDay, -1), between(10, 14));
-        const candidates = candidatesFor(restaurant, createdAt, 2, pickupDay);
-        if (candidates.length === 0) continue;
-        const product = pick(candidates);
+        const lines = openLines(restaurant, createdAt, pickupDay, "Confirmed");
+        if (!lines) continue;
+        const product = lines[0]!.product;
         const pickupAt = pickupOn(product.store, pickupDay, createdAt);
         if (!pickupAt) continue;
-        const quantity = Math.max(1, Math.round((product.quantity - product.held) * between(0.2, 0.4)));
         const acceptedAt = addHours(createdAt, between(0.5, 2));
-        const lines: NewLine[] = [{ product, ordered: quantity, quantity, status: "Confirmed" }];
         const order = await insertOrder({
           restaurant, lines, status: "Confirmed", createdAt, pickupAt, acceptPartial: true, decidedAt: acceptedAt,
           updatedAt: acceptedAt, events: [{ at: acceptedAt, to: "Confirmed", source: "STORE", actorId: product.store.id }],
         });
-        product.held += quantity;
+        for (const line of lines) line.product.held += line.quantity;
         cover(lines, acceptedAt);
         await notify(client, restaurant.id, "ORDER_ACCEPTED", `Your order #${order.code} was accepted.`, acceptedAt, { orderId: order.id });
         countStatus("Confirmed (late pickup)");
