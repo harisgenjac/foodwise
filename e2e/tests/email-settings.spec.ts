@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { ACCOUNTS, storageState, uniqueName } from "../support/accounts.js";
-import { apiAs, createProduct, reserve } from "../support/api.js";
+import { apiAs, createProduct, orderCode, reserve } from "../support/api.js";
 import { MAILPIT_URL, countEmails, waitForEmail } from "../support/mailpit.js";
 import { toast } from "../support/ui.js";
 
@@ -60,12 +60,16 @@ test("a store with email notifications off gets no email, and gets one again onc
 
   const product = await test.step("Restoran rezerviše dok su uključene", () => reserveNew("E2E Zvono"));
 
-  await test.step("Mailpit: email samo za drugu rezervaciju", async () => {
-    const email = await waitForEmail(`to:${STORE.email} subject:"${product}"`);
-    expect(email.Subject).toBe(`Nova rezervacija: 1 kg ${product}`);
+  await test.step("Mailpit: email samo za drugu narudžbu", async () => {
+    const restaurantApi = await apiAs("restaurant");
+    const code = await orderCode(restaurantApi, product);
+    await restaurantApi.dispose();
+    // The order email lists the product in its text.
+    const email = await waitForEmail(`to:${STORE.email} "${product}"`);
+    expect(email.Subject).toBe(`Nova narudžba #${code} od ${ACCOUNTS.restaurant.businessName}`);
     expect(email.Text).toContain("Isključite email obavijesti: ");
-    // The worker sends in order, so the first reservation's email would have arrived by now.
-    expect(await countEmails(`to:${STORE.email} subject:"${mutedProduct}"`)).toBe(0);
+    // The worker sends in order, so the first order's email would have arrived by now.
+    expect(await countEmails(`to:${STORE.email} "${mutedProduct}"`)).toBe(0);
   });
 });
 

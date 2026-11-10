@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { ACCOUNTS, runId, storageState } from "../support/accounts.js";
+import { apiAs, orderCode } from "../support/api.js";
 import { sarajevoDate } from "../support/dates.js";
 import { toast } from "../support/ui.js";
 
@@ -81,7 +82,10 @@ test("a store publishes a product, a restaurant reserves it and the store hands 
   await restaurant.getByRole("tab", { name: /Preuzeto/ }).click();
   await expect(pickupCard(restaurant, productName).getByText(/^Preuzeto /)).toBeVisible();
   await restaurant.goto("/notifications");
-  await expect(restaurant.getByText(`Preuzimanje potvrđeno: 4kg ${productName}.`)).toBeVisible();
+  const restaurantApi = await apiAs("restaurant");
+  const code = await orderCode(restaurantApi, productName);
+  await restaurantApi.dispose();
+  await expect(restaurant.getByText(`Preuzimanje narudžbe #${code} je potvrđeno.`)).toBeVisible();
 
   await storeContext.close();
   await restaurantContext.close();
