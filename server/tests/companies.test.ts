@@ -16,6 +16,7 @@ import {
   reserve,
   userId,
   orderOf,
+  acceptItem,
 } from "./helpers.js";
 
 const ADMIN = "companies-admin@test.com";
@@ -296,7 +297,7 @@ describe("Companies", () => {
       const product = await createProduct(branch, { quantity: 10 });
       const pending = await reserve(restaurant, product.id, 2);
       const confirmed = await reserve(restaurant, product.id, 3);
-      await branch.patch(`/api/reservations/${confirmed}/accept`);
+      await acceptItem(branch, confirmed);
       await restaurant.post("/api/favorites").send({ store_id: product.store_id });
 
       const response = await admin.post(`/api/admin/companies/${companyId}/block`).send({ reason: "Kršenje" });
@@ -317,10 +318,11 @@ describe("Companies", () => {
       expect((await restaurant.get("/api/favorites")).body.favorites).toEqual([]);
       await restaurant.delete(`/api/favorites/${product.store_id}`);
       expect((await restaurant.post("/api/favorites").send({ store_id: product.store_id })).status).toBe(404);
-      const reservation = await restaurant
-        .post("/api/reservations")
-        .send({ product_id: product.id, quantity: 1, pickup_date: futurePickup(1) });
-      expect(reservation.status).toBe(404);
+      const order = await restaurant
+        .post("/api/orders")
+        .send({ pickup_at: futurePickup(1), items: [{ product_id: product.id, quantity: 1, unit_price: 5 }] });
+      expect(order.status).toBe(409);
+      expect(order.body.code).toBe("ORDER_NOT_SENT");
 
       // Unblocking brings the store back.
       const unblock = await admin.post(`/api/admin/companies/${companyId}/unblock`);
@@ -389,9 +391,9 @@ describe("Companies", () => {
         ["POST /products", () => hq.post("/api/products").send({})],
         ["GET /products", () => hq.get("/api/products")],
         ["GET /products/mine", () => hq.get("/api/products/mine")],
-        ["POST /reservations", () => hq.post("/api/reservations").send({})],
-        ["GET /reservations/store", () => hq.get("/api/reservations/store")],
-        ["GET /reservations/pickups", () => hq.get("/api/reservations/pickups?scope=today")],
+        ["POST /orders", () => hq.post("/api/orders").send({})],
+        ["GET /orders/store", () => hq.get("/api/orders/store")],
+        ["GET /orders/pickups", () => hq.get("/api/orders/pickups?scope=today")],
         ["GET /users/stores", () => hq.get("/api/users/stores")],
         ["POST /users/me/logo", () => hq.post("/api/users/me/logo")],
         ["GET /favorites", () => hq.get("/api/favorites")],

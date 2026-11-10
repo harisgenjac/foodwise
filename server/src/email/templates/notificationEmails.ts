@@ -545,6 +545,7 @@ export const SYSTEM_NOTIFICATION_TYPES: readonly NotificationType[] = ["PASSWORD
 // Where the button goes, like getNotificationLink on the client (the same order of checks).
 type LinkKind =
   | "reservation"
+  | "order"
   | "product"
   | "donations"
   | "dashboard"
@@ -560,11 +561,8 @@ export const notificationLink = (type: NotificationType, d: NotificationEmailDat
   if (d.recipientRole === "COMPANY" && d.branchId !== null) {
     return { path: `/company/branches/${d.branchId}`, kind: "branch" };
   }
+  if (d.orderId !== null) return { path: `/orders/${d.orderId}`, kind: "order" };
   if (d.reservationId !== null) return { path: `/reservation/${d.reservationId}`, kind: "reservation" };
-  // Orders open the role's list until the order details page exists (orders PR 3b: /orders/:id).
-  if (d.orderId !== null) {
-    return { path: d.recipientRole === "STORE" ? "/reservations" : "/my-reservations", kind: "list" };
-  }
   if (d.productId !== null) return { path: `/products/${d.productId}`, kind: "product" };
   if (d.donationId !== null) return { path: "/donate-food", kind: "donations" };
   if (d.announcementId !== null) return { path: "/dashboard", kind: "dashboard" };
@@ -583,12 +581,13 @@ export const notificationLink = (type: NotificationType, d: NotificationEmailDat
     return { path: "/my-profile#subscription", kind: "credits" };
   }
   if (d.recipientRole === "COMPANY") return { path: "/dashboard", kind: "dashboard" };
-  return { path: d.recipientRole === "STORE" ? "/reservations" : "/my-reservations", kind: "list" };
+  return { path: d.recipientRole === "STORE" ? "/orders" : "/my-orders", kind: "list" };
 };
 
 const BUTTONS: Record<EmailLanguage, Record<LinkKind, string>> = {
   bs: {
     reservation: "Otvori rezervaciju",
+    order: "Otvori narudžbu",
     product: "Otvori proizvod",
     donations: "Otvori donacije",
     dashboard: "Otvori FoodWise",
@@ -596,10 +595,11 @@ const BUTTONS: Record<EmailLanguage, Record<LinkKind, string>> = {
     requests: "Otvori zahtjeve",
     branch: "Otvori poslovnicu",
     profile: "Otvori profil",
-    list: "Otvori rezervacije",
+    list: "Otvori narudžbe",
   },
   en: {
     reservation: "Open reservation",
+    order: "Open order",
     product: "Open product",
     donations: "Open donations",
     dashboard: "Open FoodWise",
@@ -607,7 +607,7 @@ const BUTTONS: Record<EmailLanguage, Record<LinkKind, string>> = {
     requests: "Open requests",
     branch: "Open branch",
     profile: "Open profile",
-    list: "Open reservations",
+    list: "Open orders",
   },
 };
 

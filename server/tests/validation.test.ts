@@ -4,10 +4,10 @@ import {
   type Agent,
   cleanupUsers,
   futureDate,
-  futurePickup,
   productPayload,
   registerAndLogin,
   userId,
+  reserve,
 } from "./helpers.js";
 
 const EMAILS = ["store-a@test.com", "restaurant-a@test.com", "ana.case@test.com", "validation-admin@test.com"];
@@ -57,7 +57,7 @@ describe("Input validation", () => {
   });
 
   describe("ids and filters", () => {
-    it.each([["/api/products/abc"], ["/api/reservations/abc"], ["/api/users/stores/abc"]])(
+    it.each([["/api/products/abc"], ["/api/orders/abc"], ["/api/users/stores/abc"]])(
       "returns 404 for a non-numeric id in %s",
       async (url) => {
         const response = await restaurant.get(url);
@@ -72,12 +72,12 @@ describe("Input validation", () => {
       ["/api/products?limit=1000"],
       ["/api/products?sort=price"],
       ["/api/products?sort=PRICE_ASC"],
-      ["/api/reservations/mine?status=Unknown"],
-      ["/api/reservations/mine?scope=open"],
-      ["/api/reservations/mine?sort=oldest"],
-      ["/api/reservations/mine?period=year"],
-      ["/api/reservations/mine/summary?period=30d"],
-      ["/api/reservations/mine/summary?store_id=abc"],
+      ["/api/orders/mine?status=Unknown"],
+      ["/api/orders/mine?scope=open"],
+      ["/api/orders/mine?sort=oldest"],
+      ["/api/orders/mine?period=year"],
+      ["/api/orders/mine/summary?period=30d"],
+      ["/api/orders/mine/summary?store_id=abc"],
     ])("returns 400 for %s", async (url) => {
       const response = await restaurant.get(url);
       expect(response.status).toBe(400);
@@ -103,9 +103,7 @@ describe("Input validation", () => {
         const response = await store.post("/api/products").send(productPayload({ name: `Paginacija ${i}` }));
         ids.push(response.body.product.id);
       }
-      await restaurant
-        .post("/api/reservations")
-        .send({ product_id: ids[0], quantity: 10, pickup_date: futurePickup() });
+      await reserve(restaurant, ids[0]!, 10);
 
       const firstPage = await restaurant.get("/api/products?name=Paginacija&limit=2");
       expect(firstPage.status).toBe(200);

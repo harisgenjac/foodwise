@@ -14,6 +14,10 @@ import {
   reserve,
   userId,
   orderOf,
+  acceptItem,
+  rejectItem,
+  itemOrderAction,
+  futurePickup,
 } from "./helpers.js";
 
 const ADMIN = "admin-admin@test.com";
@@ -79,13 +83,15 @@ describe("Admin", () => {
       expect((await request(app).get("/api/admin/stats")).status).toBe(401);
     });
 
-    it("keeps the admin out of the marketplace, reservations and reports", async () => {
+    it("keeps the admin out of the marketplace, orders and reports", async () => {
       const product = await createProduct(store);
       const paths = [
         "/api/products",
         `/api/products/${product.id}`,
-        "/api/reservations/pickups?scope=today",
-        "/api/reservations/pickups/counts",
+        "/api/orders/pickups?scope=today",
+        "/api/orders/pickups/counts",
+        "/api/orders/mine",
+        "/api/orders/store",
         "/api/reports/sales?from=2026-01-01&to=2026-01-31",
         `/api/users/stores/${await userId(STORE)}`,
         "/api/donations/mine",
@@ -93,10 +99,10 @@ describe("Admin", () => {
       for (const path of paths) {
         expect((await admin.get(path)).status).toBe(403);
       }
-      const reservation = await admin
-        .post("/api/reservations")
-        .send({ product_id: product.id, quantity: 1, pickup_date: "2030-01-01" });
-      expect(reservation.status).toBe(403);
+      const order = await admin
+        .post("/api/orders")
+        .send({ pickup_at: "2030-01-01T10:00", items: [{ product_id: product.id, quantity: 1, unit_price: 5 }] });
+      expect(order.status).toBe(403);
     });
 
     it("lets the admin read their profile and change only the name", async () => {
@@ -378,7 +384,7 @@ describe("Admin", () => {
       const product = await createProduct(store, { quantity: 10 });
       const pending = await reserve(restaurant, product.id, 2);
       const confirmed = await reserve(restaurant, product.id, 3);
-      await store.patch(`/api/reservations/${confirmed}/accept`);
+      await acceptItem(store, confirmed);
       await restaurant.post("/api/favorites").send({ store_id: product.store_id });
 
       const response = await admin
@@ -401,10 +407,12 @@ describe("Admin", () => {
       const stores = await restaurant.get("/api/users/stores");
       expect(stores.body.stores.some((row: { id: number }) => row.id === product.store_id)).toBe(false);
 
-      const reservation = await restaurant
-        .post("/api/reservations")
-        .send({ product_id: product.id, quantity: 1, pickup_date: new Date().toISOString() });
-      expect(reservation.status).toBe(404);
+      // Nothing of a blocked store can be ordered.
+      const order = await restaurant
+        .post("/api/orders")
+        .send({ pickup_at: futurePickup(), items: [{ product_id: product.id, quantity: 1, unit_price: 5 }] });
+      expect(order.status).toBe(409);
+      expect(order.body.code).toBe("ORDER_NOT_SENT");
 
       // Unblocking brings the store back.
       const unblock = await admin.post(`/api/admin/users/${product.store_id}/unblock`);
@@ -463,7 +471,7 @@ describe("Admin", () => {
       const product = await createProduct(store, { quantity: 10 });
       const pending = await reserve(restaurant, product.id, 2);
       const confirmed = await reserve(restaurant, product.id, 3);
-      await store.patch(`/api/reservations/${confirmed}/accept`);
+      await acceptItem(store, confirmed);
 
       const noReason = await admin.delete(`/api/admin/products/${product.id}`);
       expect(noReason.status).toBe(400);
@@ -548,7 +556,7 @@ describe("Admin", () => {
       const product = await createProduct(store, { name: "Admin reservation product" });
       const pending = await reserve(restaurant, product.id, 2);
       const confirmed = await reserve(restaurant, product.id, 3);
-      await store.patch(`/api/reservations/${confirmed}/accept`);
+      await acceptItem(store, confirmed);
 
       const all = await admin.get(`/api/admin/reservations?user_id=${product.store_id}`);
       expect(all.status).toBe(200);
@@ -605,7 +613,7 @@ describe("Admin", () => {
     it("puts a Confirmed reservation's quantity back on offer", async () => {
       const product = await createProduct(store, { quantity: 5 });
       const confirmed = await reserve(restaurant, product.id, 5);
-      await store.patch(`/api/reservations/${confirmed}/accept`);
+      await acceptItem(store, confirmed);
       expect(await productStatus(product.id)).toBe("Sold");
 
       await admin.post(`/api/admin/reservations/${confirmed}/cancel`).send({ reason: "Prodavnica nema robu" });
@@ -617,7 +625,7 @@ describe("Admin", () => {
     it("keeps an expired sold-out product Sold", async () => {
       const product = await createProduct(store, { quantity: 5 });
       const confirmed = await reserve(restaurant, product.id, 5);
-      await store.patch(`/api/reservations/${confirmed}/accept`);
+      await acceptItem(store, confirmed);
       await pool.query("UPDATE products SET expiry_date = CURRENT_DATE - 1 WHERE id = $1", [product.id]);
 
       const response = await admin.post(`/api/admin/reservations/${confirmed}/cancel`).send({ reason: "Istekao rok" });
@@ -628,12 +636,12 @@ describe("Admin", () => {
     it("refuses reservations that are already closed, and missing ones", async () => {
       const product = await createProduct(store, { quantity: 10 });
       const completed = await reserve(restaurant, product.id, 1);
-      await store.patch(`/api/reservations/${completed}/accept`);
-      await store.patch(`/api/reservations/${completed}/complete`);
+      await acceptItem(store, completed);
+      await itemOrderAction(store, completed, "complete");
       const rejected = await reserve(restaurant, product.id, 1);
-      await store.patch(`/api/reservations/${rejected}/reject`);
+      await rejectItem(store, rejected);
       const cancelled = await reserve(restaurant, product.id, 1);
-      await restaurant.patch(`/api/reservations/${cancelled}/cancel`);
+      await itemOrderAction(restaurant, cancelled, "cancel");
 
       for (const id of [completed, rejected, cancelled]) {
         const response = await admin.post(`/api/admin/reservations/${id}/cancel`).send({ reason: "Test" });
@@ -665,10 +673,10 @@ describe("Admin", () => {
 
       const product = await createProduct(store, { unit: "l", quantity: 20, original_price: 10, discounted_price: 4 });
       const confirmed = await reserve(restaurant, product.id, 3);
-      await store.patch(`/api/reservations/${confirmed}/accept`);
+      await acceptItem(store, confirmed);
       const completed = await reserve(restaurant, product.id, 2);
-      await store.patch(`/api/reservations/${completed}/accept`);
-      await store.patch(`/api/reservations/${completed}/complete`);
+      await acceptItem(store, completed);
+      await itemOrderAction(store, completed, "complete");
       await reserve(restaurant, product.id, 5); // Pending: not saved yet
 
       const after = await savedNow();

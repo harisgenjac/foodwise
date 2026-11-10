@@ -18,6 +18,7 @@ import {
   login,
   registerAndLogin,
   userId,
+  reserve,
 } from "./helpers.js";
 
 const ADMIN = "sorting-admin@test.com";
@@ -133,9 +134,7 @@ describe("sorting the admin tables", () => {
     const store = await registerAndLogin(STORE, "STORE");
     const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
     const product = await createProduct(store, { name: "Sortres", quantity: 10 });
-    const reserveOn = async (days: number) =>
-      (await restaurant.post("/api/reservations").send({ product_id: product.id, quantity: 1, pickup_date: futurePickup(days) }))
-        .body.reservation.id as number;
+    const reserveOn = (days: number) => reserve(restaurant, product.id, 1, futurePickup(days));
     const later = await reserveOn(3);
     const soon = await reserveOn(1);
     const middle = await reserveOn(2);

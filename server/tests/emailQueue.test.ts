@@ -20,6 +20,7 @@ import {
   reserve,
   userId,
   type Agent,
+  acceptItem,
 } from "./helpers.js";
 
 const STORE = "email-queue-store@test.com";
@@ -149,7 +150,7 @@ describe("queueing", () => {
 
   it("queues the email of every later notification too", async () => {
     const { reservationId } = await reserveChicken();
-    expect((await store.patch(`/api/reservations/${reservationId}/accept`)).status).toBe(200);
+    expect((await acceptItem(store, reservationId)).status).toBe(200);
     const rows = await queueRows();
     expect(rows.map((row) => [row.template, row.recipient])).toEqual([
       ["ORDER_CREATED", STORE],
@@ -182,7 +183,7 @@ describe("queueing", () => {
 
 describe("sending", () => {
   it("sends a due email and marks it SENT", async () => {
-    const { code } = await reserveChicken();
+    const { code, orderId } = await reserveChicken();
     const { transport, sent, send } = fakeTransport();
     const now = new Date();
 
@@ -194,7 +195,7 @@ describe("sending", () => {
       to: STORE,
       subject: `Nova narudžba #${code} od Test Business`,
     });
-    expect(sent[0]!.html).toContain("https://app.example.com/reservations");
+    expect(sent[0]!.html).toContain(`https://app.example.com/orders/${orderId}`);
     expect(sent[0]!.text).toContain("Piletina, 4 kg: 20,00 KM");
     const [row] = await queueRows();
     expect(send).toHaveBeenCalledWith(expect.anything(), { idempotencyKey: `foodwise-email-${row!.id}` });
@@ -347,13 +348,13 @@ describe("a failing email service never breaks the reservation", () => {
     const { transport } = fakeTransport(new Error("Resend responded with 500: Internal error"));
     await processEmailQueue({ transport, config: CONFIG });
 
-    const reservation = await restaurant.get(`/api/reservations/${reservationId}`);
-    expect(reservation.status).toBe(200);
-    expect(reservation.body.reservation.status).toBe("Pending");
+    const order = await restaurant.get(`/api/orders/${await orderOf(reservationId)}`);
+    expect(order.status).toBe(200);
+    expect(order.body.order.status).toBe("Pending");
     const notifications = await store.get("/api/notifications");
     expect(notifications.body.notifications.map((n: { type: string }) => n.type)).toContain("ORDER_CREATED");
     // The store can still accept it.
-    expect((await store.patch(`/api/reservations/${reservationId}/accept`)).status).toBe(200);
+    expect((await acceptItem(store, reservationId)).status).toBe(200);
     expect((await queueRows())[0]).toMatchObject({ status: "PENDING", attempts: 1 });
   });
 

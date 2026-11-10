@@ -11,6 +11,7 @@ import {
   userId,
   type Agent,
   insertOrderItem,
+  acceptItem,
 } from "./helpers.js";
 
 const STORE = "users-store@test.com";
@@ -196,7 +197,7 @@ describe("Users routes", () => {
       const product = await createProduct(store, { quantity: 4 });
       const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
       const reservation = await reserve(restaurant, product.id, 2);
-      await store.patch(`/api/reservations/${reservation}/accept`);
+      await acceptItem(store, reservation);
 
       const response = await restaurant.get(`/api/users/stores/${await userId(STORE)}`);
       expect(response.status).toBe(200);

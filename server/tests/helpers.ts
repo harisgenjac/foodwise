@@ -161,15 +161,34 @@ export const createDonation = async (donor: Agent, overrides: Record<string, unk
   return response.body.donation as { id: number; status: string; donation_type: string };
 };
 
-export const reserve = async (restaurant: Agent, productId: number, quantity: number) => {
-  const response = await restaurant
-    .post("/api/reservations")
-    .send({ product_id: productId, quantity, pickup_date: futurePickup() });
+// Sends a one-item order at the product's current price with partial fulfilment off (the
+// restaurant gets exactly what it asked for or nothing). Returns the item's id.
+export const reserve = async (restaurant: Agent, productId: number, quantity: number, pickupAt = futurePickup()) => {
+  const price = await pool.query<{ discounted_price: string }>("SELECT discounted_price FROM products WHERE id = $1", [
+    productId,
+  ]);
+  const response = await restaurant.post("/api/orders").send({
+    pickup_at: pickupAt,
+    accept_partial: false,
+    items: [{ product_id: productId, quantity, unit_price: price.rows[0]?.discounted_price ?? 0 }],
+  });
   if (response.status !== 201) {
-    throw new Error(`Reserving failed with ${response.status}: ${JSON.stringify(response.body)}`);
+    throw new Error(`Sending an order failed with ${response.status}: ${JSON.stringify(response.body)}`);
   }
-  return response.body.reservation.id as number;
+  return response.body.order.items[0].id as number;
 };
+
+// The store accepts the whole order of an item.
+export const acceptItem = async (store: Agent, itemId: number) =>
+  store.post(`/api/orders/${await orderOf(itemId)}/decision`).send({ items: [{ item_id: itemId, action: "ACCEPT" }] });
+
+// The store rejects the whole order of an item (reason: quality).
+export const rejectItem = async (store: Agent, itemId: number) =>
+  store.post(`/api/orders/${await orderOf(itemId)}/decision`).send({ reject_order: true, reason: "QUALITY" });
+
+// cancel (restaurant), complete or cancel-overdue (store) on the order of an item.
+export const itemOrderAction = async (agent: Agent, itemId: number, action: "cancel" | "complete" | "cancel-overdue") =>
+  agent.post(`/api/orders/${await orderOf(itemId)}/${action}`);
 
 export interface OrderItemInput {
   productId: number;

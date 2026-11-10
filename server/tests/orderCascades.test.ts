@@ -1,7 +1,7 @@
 import pool from "../src/config/db.js";
 import { expireProducts } from "../src/jobs/expireProducts.js";
 import { sendReminders } from "../src/jobs/notificationReminders.js";
-import { type Agent, cleanupUsers, createProduct, futurePickup, orderOf, registerAndLogin, reserve, userId } from "./helpers.js";
+import { type Agent, cleanupUsers, createProduct, futurePickup, orderOf, registerAndLogin, reserve, userId, acceptItem } from "./helpers.js";
 
 // What happens to orders when something outside them changes: an expired or removed product, a
 // blocked user, an admin's cancel, the pickup reminder (docs/orders-design.md, section 8).
@@ -113,7 +113,7 @@ describe("an admin's cancel", () => {
   it("cancels the whole Confirmed order, offers its products again and logs CANCEL_ORDER", async () => {
     const product = await createProduct(store, { quantity: 2 });
     const reservationId = await reserve(restaurant, product.id, 2);
-    expect((await store.patch(`/api/reservations/${reservationId}/accept`)).status).toBe(200);
+    expect((await acceptItem(store, reservationId)).status).toBe(200);
     expect((await pool.query("SELECT status FROM products WHERE id = $1", [product.id])).rows[0].status).toBe("Sold");
 
     const response = await admin.post(`/api/admin/reservations/${reservationId}/cancel`).send({ reason: "Spor" });

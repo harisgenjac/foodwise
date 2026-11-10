@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { pickupOwnership } from "./reservations.controller.js";
+import { pickupOwnership } from "../services/reservationItems.js";
 import { toCsv } from "../utils/csv.js";
 import { impactHeaders, parseReportLanguage, salesHeaders } from "../utils/reportLabels.js";
 import { impactRows, parsePeriod, salesRows, sendCsv } from "../services/reports.js";

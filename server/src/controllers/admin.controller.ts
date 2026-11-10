@@ -16,7 +16,7 @@ import {
 } from "../utils/accounts.js";
 import { PRODUCT_STATUSES } from "./products.controller.js";
 import { DONATION_STATUSES, DONATION_TYPES } from "../utils/validateDonation.js";
-import { RESERVATION_STATUSES, findReservation } from "./reservations.controller.js";
+import { RESERVATION_STATUSES, findReservation } from "../services/reservationItems.js";
 import { cancelPendingItemsOfProducts, cancelPendingOrders, lockOrdersHoldingProducts } from "../services/orders/cascades.js";
 import { adminCancelOrder } from "../services/orders/actions.js";
 import { HttpError } from "../utils/httpError.js";

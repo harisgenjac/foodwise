@@ -9,6 +9,7 @@ import {
   registerAndLogin,
   reserve,
   type Agent,
+  acceptItem,
 } from "./helpers.js";
 
 const STORE_A = "donations-store-a@test.com";
@@ -243,7 +244,7 @@ describe("Donations routes", () => {
     it("sells the product out when confirmed reservations cover the rest", async () => {
       const product = await createProduct(storeA, { quantity: 10 });
       const reservationId = await reserve(restaurant, product.id, 4);
-      await storeA.patch(`/api/reservations/${reservationId}/accept`);
+      await acceptItem(storeA, reservationId);
 
       const response = await storeA
         .post(`/api/donations/from-product/${product.id}`)
@@ -394,7 +395,7 @@ describe("Donations routes", () => {
     it("makes a sold-out product available again", async () => {
       const product = await createProduct(storeA, { quantity: 10 });
       const reservationId = await reserve(restaurant, product.id, 4);
-      await storeA.patch(`/api/reservations/${reservationId}/accept`);
+      await acceptItem(storeA, reservationId);
       const donationId = await moveToDonations(product.id);
       expect((await productRow(product.id)).status).toBe("Sold");
 
