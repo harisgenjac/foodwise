@@ -17,8 +17,8 @@ const renderPage = (total: number) =>
     get: {
       "/users/stores/2": {
         store: STORE,
-        stats: { sold_articles: "0", successful_reservations: "0" },
-        myReservations: { my_reservations_count: "0" },
+        stats: { sold_articles: "0", successful_orders: "0" },
+        myOrders: { my_orders_count: "0" },
       },
       "/favorites": { favorites: [] },
       "/products": (params: { limit: number }) => ({
@@ -138,8 +138,8 @@ describe("StoreDetailsPage chain label", () => {
       get: {
         "/users/stores/2": {
           store: { ...STORE, company_name: "Bingo d.o.o." },
-          stats: { sold_articles: "0", successful_reservations: "0" },
-          myReservations: { my_reservations_count: "0" },
+          stats: { sold_articles: "0", successful_orders: "0" },
+          myOrders: { my_orders_count: "0" },
         },
         "/favorites": { favorites: [] },
         "/products": { products: [], total: 0 },

@@ -5,9 +5,10 @@ import AdminUsersPage from "./AdminUsersPage.js";
 import AdminUserDetailsPage from "./AdminUserDetailsPage.js";
 import AdminCreateUserPage from "./AdminCreateUserPage.js";
 import AdminProductsPage from "./AdminProductsPage.js";
-import AdminReservationsPage from "./AdminReservationsPage.js";
-import { apiMock, axiosError, makeUser, renderWithProviders, t } from "../../test/utils.js";
-import type { AdminProduct, AdminReservation, User } from "../../types/index.js";
+import AdminOrdersPage from "./AdminOrdersPage.js";
+import AdminOrderDetailsPage from "./AdminOrderDetailsPage.js";
+import { apiMock, axiosError, makeOrder, makeOrderDetails, makeUser, renderWithProviders, t } from "../../test/utils.js";
+import type { AdminOrder, AdminProduct, User } from "../../types/index.js";
 
 // jsdom renders both the table (md up) and the phone cards (DataTable); list checks use the table.
 const findInTable = async (text: string) => within(await screen.findByRole("table")).getByText(text);
@@ -378,59 +379,98 @@ describe("AdminProductsPage on phones (cards)", () => {
   });
 });
 
-describe("AdminReservationsPage", () => {
-  const reservation = (overrides: Partial<AdminReservation>): AdminReservation => ({
-    id: 20,
-    status: "Pending",
-    quantity: "2",
-    unit_price: "5.00",
-    pickup_date: "2030-01-01T10:00:00.000Z",
-    picked_up_at: null,
-    created_at: "2026-10-01T10:00:00.000Z",
-    is_overdue: false,
-    product_id: 10,
-    product_name: "Piletina",
-    unit: "kg",
-    store_id: 5,
-    store_name: "Market Centar",
-    store_email: "market@test.com",
-    restaurant_id: 6,
-    restaurant_name: "Restoran Ukus",
-    restaurant_email: "ukus@test.com",
-    ...overrides,
-  });
+describe("AdminOrdersPage", () => {
+  const order = (overrides: Partial<AdminOrder>): AdminOrder => {
+    const { business_name: _business, city: _city, ...base } = makeOrder();
+    return {
+      ...base,
+      store_id: 5,
+      store_name: "Market Centar",
+      store_email: "market@test.com",
+      restaurant_id: 6,
+      restaurant_name: "Restoran Ukus",
+      restaurant_email: "ukus@test.com",
+      ...overrides,
+    };
+  };
 
-  it("offers cancelling only open reservations and sends the reason", async () => {
+  it("lists orders by code and offers cancelling only open ones with a reason", async () => {
     const respond = vi.fn(() => ({
-      reservations: [
-        reservation({ id: 20, status: "Confirmed", product_name: "Piletina", is_overdue: true }),
-        reservation({ id: 21, status: "Completed", product_name: "Hljeb" }),
+      orders: [
+        order({ id: 20, code: "K7PM", status: "Confirmed", is_overdue: true }),
+        order({ id: 21, code: "AB23", status: "Completed" }),
       ],
       total: 2,
     }));
-    apiMock.post.mockResolvedValue({ data: { message: "Reservation cancelled." } });
-    renderWithProviders(<AdminReservationsPage />, {
-      route: "/admin/reservations?user_id=5",
-      path: "/admin/reservations",
+    apiMock.post.mockResolvedValue({ data: { message: "Order cancelled." } });
+    renderWithProviders(<AdminOrdersPage />, {
+      route: "/admin/orders?user_id=5",
+      path: "/admin/orders",
       user: admin,
-      get: { "/admin/reservations": respond },
+      get: { "/admin/orders": respond },
     });
 
-    expect(await findInTable("Piletina")).toBeInTheDocument();
+    expect(await findInTable("#K7PM")).toHaveAttribute("href", "/admin/orders/20");
     expect(respond).toHaveBeenCalledWith(expect.objectContaining({ user_id: "5" }));
-    expect(within(screen.getByRole("table")).getByText(t("admin.reservations.late"))).toBeInTheDocument();
-    const cancelButtons = within(screen.getByRole("table")).getAllByRole("button", { name: t("admin.reservations.cancel") });
+    expect(within(screen.getByRole("table")).getByText(t("admin.orders.late"))).toBeInTheDocument();
+    const cancelButtons = within(screen.getByRole("table")).getAllByRole("button", { name: t("admin.orders.cancel") });
     expect(cancelButtons).toHaveLength(1);
 
     await userEvent.click(cancelButtons[0]!);
     const dialog = screen.getByRole("dialog");
-    expect(within(dialog).getByText(t("admin.reservations.cancelTextConfirmed", { name: "Piletina" }))).toBeInTheDocument();
-    await userEvent.click(within(dialog).getByRole("button", { name: t("admin.reservations.cancel") }));
+    expect(
+      within(dialog).getByText(t("admin.orders.cancelTextConfirmed", { code: "#K7PM", store: "Market Centar" })),
+    ).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole("button", { name: t("admin.orders.cancel") }));
     expect(apiMock.post).not.toHaveBeenCalled();
 
     await userEvent.type(within(dialog).getByLabelText(t("admin.common.reasonLabel")), "Spor oko cijene");
-    await userEvent.click(within(dialog).getByRole("button", { name: t("admin.reservations.cancel") }));
-    expect(apiMock.post).toHaveBeenCalledWith("/admin/reservations/20/cancel", { reason: "Spor oko cijene" });
+    await userEvent.click(within(dialog).getByRole("button", { name: t("admin.orders.cancel") }));
+    expect(apiMock.post).toHaveBeenCalledWith("/admin/orders/20/cancel", { reason: "Spor oko cijene" });
     await waitFor(() => expect(respond).toHaveBeenCalledTimes(2));
+  });
+});
+
+describe("AdminOrderDetailsPage", () => {
+  const details = makeOrderDetails({
+    id: 20,
+    status: "Confirmed",
+    store: { id: 5, business_name: "Market Centar", city: "Sarajevo", address: null, phone: null, pickup_hours: null },
+    restaurant: { id: 6, business_name: "Restoran Ukus", city: "Tuzla", address: null, phone: null, pickup_hours: null },
+  });
+
+  it("shows both parties with links to their user pages and cancels with a reason", async () => {
+    const respond = vi.fn(() => ({ order: details }));
+    apiMock.post.mockResolvedValue({ data: { message: "Order cancelled." } });
+    renderWithProviders(<AdminOrderDetailsPage />, {
+      route: "/admin/orders/20",
+      path: "/admin/orders/:id",
+      user: admin,
+      get: { "/admin/orders/20": respond },
+    });
+
+    expect(await screen.findByRole("heading", { name: t("orders.title", { code: "#K7PM" }) })).toBeInTheDocument();
+    const userLinks = screen.getAllByRole("link", { name: t("orders.viewUser") });
+    expect(userLinks.map((link) => link.getAttribute("href"))).toEqual(["/admin/users/5", "/admin/users/6"]);
+    // No product links: the admin reads the order only.
+    expect(screen.queryByRole("link", { name: "Piletina" })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: t("admin.orders.cancel") }));
+    const dialog = screen.getByRole("dialog");
+    await userEvent.type(within(dialog).getByLabelText(t("admin.common.reasonLabel")), "Spor");
+    await userEvent.click(within(dialog).getByRole("button", { name: t("admin.orders.cancel") }));
+    expect(apiMock.post).toHaveBeenCalledWith("/admin/orders/20/cancel", { reason: "Spor" });
+    await waitFor(() => expect(respond).toHaveBeenCalledTimes(2));
+  });
+
+  it("offers no cancel for a closed order", async () => {
+    renderWithProviders(<AdminOrderDetailsPage />, {
+      route: "/admin/orders/20",
+      path: "/admin/orders/:id",
+      user: admin,
+      get: { "/admin/orders/20": { order: { ...details, status: "Completed" } } },
+    });
+    expect(await screen.findByRole("heading", { name: t("orders.title", { code: "#K7PM" }) })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t("admin.orders.cancel") })).not.toBeInTheDocument();
   });
 });

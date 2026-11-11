@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import {
   Ban,
   Building2,
-  CalendarCheck,
+  ReceiptText,
   CircleCheck,
   Clock,
   HeartHandshake,
@@ -291,9 +291,9 @@ function AdminUserDetailsPage() {
                   {t("admin.userDetails.viewProducts")}
                 </Link>
               )}
-              <Link to={`/admin/reservations?user_id=${user.id}`} className={secondaryButton}>
-                <CalendarCheck className="h-4 w-4" />
-                {t("admin.userDetails.viewReservations")}
+              <Link to={`/admin/orders?user_id=${user.id}`} className={secondaryButton}>
+                <ReceiptText className="h-4 w-4" />
+                {t("admin.userDetails.viewOrders")}
               </Link>
               <Link to={`/admin/donations?donor_id=${user.id}`} className={secondaryButton}>
                 <HeartHandshake className="h-4 w-4" />
@@ -308,9 +308,9 @@ function AdminUserDetailsPage() {
                 <StatCard icon={PackageCheck} label={t("admin.userDetails.activeProducts")} value={counts.active_products} tone="green" />
               </>
             )}
-            <StatCard icon={CalendarCheck} label={t("admin.userDetails.reservations")} value={counts.reservations} />
-            <StatCard icon={Clock} label={t("admin.userDetails.pendingReservations")} value={counts.pending_reservations} tone="amber" />
-            <StatCard icon={CircleCheck} label={t("admin.userDetails.completedReservations")} value={counts.completed_reservations} tone="green" />
+            <StatCard icon={ReceiptText} label={t("admin.userDetails.orders")} value={counts.orders} />
+            <StatCard icon={Clock} label={t("admin.userDetails.pendingOrders")} value={counts.pending_orders} tone="amber" />
+            <StatCard icon={CircleCheck} label={t("admin.userDetails.completedOrders")} value={counts.completed_orders} tone="green" />
             <StatCard icon={HeartHandshake} label={t("admin.userDetails.donations")} value={counts.donations} />
           </div>
         </section>

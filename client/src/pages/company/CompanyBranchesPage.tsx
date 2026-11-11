@@ -145,7 +145,7 @@ function CompanyBranchesPage() {
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5" />
-                    {t("company.branches.pendingReservations", { count: branch.pending_reservations })}
+                    {t("company.branches.pendingOrders", { count: branch.pending_orders })}
                   </span>
                 </div>
                 <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-orange-600">

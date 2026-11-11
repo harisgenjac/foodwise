@@ -348,7 +348,7 @@ test.describe("admin", () => {
       "/admin/users",
       "/admin/products",
       "/admin/donations",
-      "/admin/reservations",
+      "/admin/orders",
       "/admin/actions",
       "/admin/announcements",
       "/admin/companies",
@@ -397,7 +397,7 @@ test.describe("admin", () => {
     for (const [path, name] of [
       ["/admin/products", "Ukloni"],
       ["/admin/donations", "Ukloni"],
-      ["/admin/reservations", "Otkaži"],
+      ["/admin/orders", "Otkaži"],
       ["/admin/announcements", "Završi"],
     ] as const) {
       await page.goto(path);

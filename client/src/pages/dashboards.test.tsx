@@ -40,8 +40,8 @@ describe("StoreDashboardPage", () => {
   it("shows the server's numbers on the stat cards", async () => {
     renderStore({
       active_products: 17,
-      pending_reservations: 4,
-      successful_reservations: 25,
+      pending_orders: 4,
+      successful_orders: 25,
       saved: { kg: 12.5, l: 3, pieces: 8 },
     });
 
@@ -58,7 +58,7 @@ describe("StoreDashboardPage", () => {
   });
 
   it("shows the other non-zero units of food saved as chips", async () => {
-    renderStore({ active_products: 0, pending_reservations: 0, successful_reservations: 0, saved: { kg: 0, l: 12, pieces: 40 } });
+    renderStore({ active_products: 0, pending_orders: 0, successful_orders: 0, saved: { kg: 0, l: 12, pieces: 40 } });
 
     expect(await screen.findByText("Hljeb")).toBeInTheDocument();
     expect(statValue(t("dashboard.statSavedFood"))).toBe("12 l");
@@ -66,7 +66,7 @@ describe("StoreDashboardPage", () => {
   });
 
   it("shows no chips when food was saved in a single unit", async () => {
-    renderStore({ active_products: 0, pending_reservations: 0, successful_reservations: 0, saved: { kg: 5, l: 0, pieces: 0 } });
+    renderStore({ active_products: 0, pending_orders: 0, successful_orders: 0, saved: { kg: 5, l: 0, pieces: 0 } });
 
     expect(await screen.findByText("Hljeb")).toBeInTheDocument();
     expect(statValue(t("dashboard.statSavedFood"))).toBe("5 kg");
@@ -74,7 +74,7 @@ describe("StoreDashboardPage", () => {
   });
 
   it("asks only for the 3 newest available products and orders", async () => {
-    renderStore({ active_products: 0, pending_reservations: 0, successful_reservations: 0, saved: { kg: 0, l: 0, pieces: 0 } });
+    renderStore({ active_products: 0, pending_orders: 0, successful_orders: 0, saved: { kg: 0, l: 0, pieces: 0 } });
 
     expect(await screen.findByText(/Jogurt/)).toBeInTheDocument();
     expect(screen.getByText("Sir")).toBeInTheDocument();
@@ -92,7 +92,7 @@ describe("StoreDashboardPage", () => {
   });
 
   it("titles the orders section New orders and links it to Orders", async () => {
-    renderStore({ active_products: 0, pending_reservations: 0, successful_reservations: 0, saved: { kg: 0, l: 0, pieces: 0 } });
+    renderStore({ active_products: 0, pending_orders: 0, successful_orders: 0, saved: { kg: 0, l: 0, pieces: 0 } });
 
     expect(await screen.findByRole("heading", { name: t("dashboard.recentOrdersTitle") })).toHaveTextContent("Nove narudžbe");
     expect(screen.getByRole("link", { name: t("dashboard.viewAllOrders") })).toHaveAttribute("href", "/orders");
@@ -116,7 +116,7 @@ describe("RestaurantDashboardPage", () => {
     });
 
   it("shows the server's numbers and the marketplace total on the stat cards", async () => {
-    renderRestaurant({ pending_reservations: 3, successful_reservations: 21, savings: 146.5 });
+    renderRestaurant({ pending_orders: 3, successful_orders: 21, savings: 146.5 });
 
     expect(await screen.findByText(/Jogurt/)).toBeInTheDocument();
     expect(statValue(t("dashboard.statAvailableOffers"))).toBe("58");
@@ -126,7 +126,7 @@ describe("RestaurantDashboardPage", () => {
   });
 
   it("asks for the 3 offers closest to expiry and the first 3 orders", async () => {
-    renderRestaurant({ pending_reservations: 0, successful_reservations: 0, savings: 0 });
+    renderRestaurant({ pending_orders: 0, successful_orders: 0, savings: 0 });
 
     expect(await screen.findByText("Hljeb")).toBeInTheDocument();
     expect(paramsOf("/products")).toEqual({ sort: "expiry", radius: "10", limit: 3 });
@@ -135,7 +135,7 @@ describe("RestaurantDashboardPage", () => {
   });
 
   it("titles the orders section My orders, like the page its link opens", async () => {
-    renderRestaurant({ pending_reservations: 0, successful_reservations: 0, savings: 0 });
+    renderRestaurant({ pending_orders: 0, successful_orders: 0, savings: 0 });
 
     expect(await screen.findByRole("heading", { name: t("dashboard.myOrdersTitle") })).toHaveTextContent(
       "Moje narudžbe",
@@ -163,7 +163,7 @@ describe("RestaurantDashboardPage", () => {
         path: "/dashboard",
         user: makeUser({ role: "RESTAURANT" }),
         get: {
-          "/dashboard/stats": { stats: { pending_reservations: 0, successful_reservations: 0, savings: 0 } },
+          "/dashboard/stats": { stats: { pending_orders: 0, successful_orders: 0, savings: 0 } },
           "/products": ({ radius, limit }: { radius: string; limit: number }) => ({
             products: byRadius[radius]!.products.slice(0, limit),
             total: byRadius[radius]!.products.length,

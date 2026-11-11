@@ -9,7 +9,7 @@ const admin = makeUser({ role: "ADMIN" });
 const STATS: AdminStats = {
   users: { stores: 3, restaurants: 2, admins: 1, blocked: 1, incomplete_profiles: 0 },
   products: { active: 6, sold: 2, expired: 1, removed: 1 },
-  reservations: { Pending: 2, Confirmed: 3, Completed: 1, Rejected: 1, Cancelled: 1 },
+  orders: { Pending: 2, Confirmed: 3, Completed: 1, Rejected: 1, Cancelled: 1 },
   saved: { kg: 41.5, l: 12, pieces: 30, value: 520, savings: 310 },
   donations: { available: 4, expired: 1, removed: 0 },
   credits: {
@@ -89,7 +89,7 @@ describe("AdminDashboardPage", () => {
 
     const panel = (await screen.findByText(t("admin.dashboard.attentionTitle"))).closest("section") as HTMLElement;
     const links = within(panel).getAllByRole("link");
-    // Pending reservations and the blocked account are in the stats but do not wait for the admin.
+    // Pending orders and the blocked account are in the stats but do not wait for the admin.
     expect(links).toHaveLength(1);
     expect(links[0]).toHaveAccessibleName(t("admin.dashboard.attention.pendingRequests", { count: 2 }));
     expect(links[0]).toHaveAttribute("href", "/admin/credit-requests?status=PENDING");

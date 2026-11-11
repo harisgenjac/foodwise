@@ -5,7 +5,7 @@ import axios from "axios";
 import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
-  CalendarCheck,
+  ReceiptText,
   CalendarPlus,
   CircleCheck,
   Clock,
@@ -39,10 +39,10 @@ import type { Order, Product, User, Favorites } from "../types/index.js";
 
 interface StoreStats {
   sold_articles: string;
-  successful_reservations: string;
+  successful_orders: string;
 }
-interface MyReservationsCount {
-  my_reservations_count: string;
+interface MyOrdersCount {
+  my_orders_count: string;
 }
 
 type Tab = "products" | "reservations";
@@ -53,7 +53,7 @@ function StoreDetailsPage() {
   const { id } = useParams();
   const [store, setStore] = useState<User | null>(null);
   const [stats, setStats] = useState<StoreStats | null>(null);
-  const [myReservations, setMyReservations] = useState<MyReservationsCount | null>(null);
+  const [myOrders, setMyOrders] = useState<MyOrdersCount | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("products");
@@ -67,11 +67,11 @@ function StoreDetailsPage() {
     try {
       const response = await api.get(`/users/stores/${id}`);
       const storeData: User = response.data.store;
-      const reservationsData: MyReservationsCount = response.data.myReservations;
+      const myOrdersData: MyOrdersCount = response.data.myOrders;
       const statsData: StoreStats = response.data.stats;
       setStore(storeData);
       setStats(statsData);
-      setMyReservations(reservationsData);
+      setMyOrders(myOrdersData);
     } catch (err) {
       console.error(err);
     } finally {
@@ -151,7 +151,7 @@ function StoreDetailsPage() {
     );
   }
 
-  if (!store || !stats || !myReservations) {
+  if (!store || !stats || !myOrders) {
     return (
       <div className="mx-auto max-w-5xl space-y-6 pb-10">
         <Breadcrumbs items={[section]} />
@@ -250,14 +250,14 @@ function StoreDetailsPage() {
           <StatCard icon={ShoppingBag} label={t("store.soldProducts")} value={stats.sold_articles} />
           <StatCard
             icon={CircleCheck}
-            label={t("store.successfullyReservations")}
-            value={stats.successful_reservations}
+            label={t("store.successfulOrders")}
+            value={stats.successful_orders}
             tone="amber"
           />
           <StatCard
-            icon={CalendarCheck}
-            label={t("store.mineReservations")}
-            value={myReservations.my_reservations_count}
+            icon={ReceiptText}
+            label={t("store.myOrders")}
+            value={myOrders.my_orders_count}
             tone="gray"
           />
         </div>

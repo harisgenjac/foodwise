@@ -15,7 +15,7 @@ import BrowseProductsPage from './pages/BrowseProductsPage.js';
 import StoresPage from './pages/StoresPage.js'
 import StoreDetailsPage from './pages/StoreDetailsPage.js';
 import MyOrdersPage from './pages/MyOrdersPage.js';
-import OrdersRedirect from './components/OrdersRedirect.js';
+import OrdersRedirect, { AdminOrdersRedirect } from './components/OrdersRedirect.js';
 import MyProfilePage from './pages/MyProfilePage.js'
 import DonateFoodPage from './pages/DonateFoodPage.js';
 import AddDonationPage from './pages/AddDonationPage.js';
@@ -33,7 +33,8 @@ import AdminUserDetailsPage from './pages/admin/AdminUserDetailsPage.js';
 import AdminCreateUserPage from './pages/admin/AdminCreateUserPage.js';
 import AdminProductsPage from './pages/admin/AdminProductsPage.js';
 import AdminDonationsPage from './pages/admin/AdminDonationsPage.js';
-import AdminReservationsPage from './pages/admin/AdminReservationsPage.js';
+import AdminOrdersPage from './pages/admin/AdminOrdersPage.js';
+import AdminOrderDetailsPage from './pages/admin/AdminOrderDetailsPage.js';
 import AdminAnnouncementsPage from './pages/admin/AdminAnnouncementsPage.js';
 import AdminActionsPage from './pages/admin/AdminActionsPage.js';
 import AdminCreditsPage from './pages/admin/AdminCreditsPage.js';
@@ -96,7 +97,9 @@ function App() {
         <Route path="/admin/users/:id" element={<ProtectedRoute role="ADMIN"><AdminUserDetailsPage /></ProtectedRoute>} />
         <Route path="/admin/products" element={<ProtectedRoute role="ADMIN"><AdminProductsPage /></ProtectedRoute>} />
         <Route path="/admin/donations" element={<ProtectedRoute role="ADMIN"><AdminDonationsPage /></ProtectedRoute>} />
-        <Route path="/admin/reservations" element={<ProtectedRoute role="ADMIN"><AdminReservationsPage /></ProtectedRoute>} />
+        <Route path="/admin/orders" element={<ProtectedRoute role="ADMIN"><AdminOrdersPage /></ProtectedRoute>} />
+        <Route path="/admin/orders/:id" element={<ProtectedRoute role="ADMIN"><AdminOrderDetailsPage /></ProtectedRoute>} />
+        <Route path="/admin/reservations" element={<ProtectedRoute role="ADMIN"><AdminOrdersRedirect /></ProtectedRoute>} />
         <Route path="/admin/announcements" element={<ProtectedRoute role="ADMIN"><AdminAnnouncementsPage /></ProtectedRoute>} />
         <Route path="/admin/actions" element={<ProtectedRoute role="ADMIN"><AdminActionsPage /></ProtectedRoute>} />
         <Route path="/admin/credits" element={<ProtectedRoute role="ADMIN"><AdminCreditsPage /></ProtectedRoute>} />

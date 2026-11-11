@@ -123,8 +123,8 @@ describe("Store details breadcrumbs", () => {
   it("puts the store under Stores", async () => {
     renderStore({
       store: STORE,
-      stats: { sold_articles: "0", successful_reservations: "0" },
-      myReservations: { my_reservations_count: "0" },
+      stats: { sold_articles: "0", successful_orders: "0" },
+      myOrders: { my_orders_count: "0" },
     });
 
     await expectTrail([
@@ -155,9 +155,9 @@ describe("Admin user details breadcrumbs", () => {
     const counts = {
       products: 0,
       active_products: 0,
-      reservations: 0,
-      pending_reservations: 0,
-      completed_reservations: 0,
+      orders: 0,
+      pending_orders: 0,
+      completed_orders: 0,
       donations: 0,
     };
     renderUser({ user: ADMIN, counts, actions: [] });

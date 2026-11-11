@@ -83,7 +83,7 @@ describe("server texts", () => {
     /^Your password was changed with a password reset link.$/,
     /\(KM\)$/,
     /^Food saved \(/,
-    /^(Bakery Products|Dairy Products|Frozen Food|Favorites only|Pickup date|Reservation no\.)$/,
+    /^(Bakery Products|Dairy Products|Frozen Food|Favorites only|Pickup date)$/,
     /^(Broj|Datum|Pekarski|Smrznuta|Mliječni|Spašena) /,
     /^(GET|POST|PUT|PATCH|DELETE) \/api\//,
     /^(SELECT|UPDATE|INSERT|DELETE|WITH|FROM|FOR|COALESCE|CASE|SAVEPOINT|RELEASE|ROLLBACK)[ (]/,

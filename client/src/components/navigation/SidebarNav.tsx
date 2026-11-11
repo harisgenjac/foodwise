@@ -5,7 +5,6 @@ import api from "../../api/axios.js";
 import { useTranslation } from "react-i18next";
 import {
   Building2,
-  CalendarCheck,
   ClipboardList,
   ReceiptText,
   Coins,
@@ -118,7 +117,7 @@ function SidebarNav({ expanded, locked = false, onNavigate, replace = false }: S
     { to: "/admin/users/new", label: t("sidebar.adminNewUser"), icon: UserPlus },
     { to: "/admin/companies", label: t("sidebar.adminCompanies"), icon: Building2 },
     { to: "/admin/products", label: t("sidebar.adminProducts"), icon: Package },
-    { to: "/admin/reservations", label: t("sidebar.adminReservations"), icon: CalendarCheck },
+    { to: "/admin/orders", label: t("sidebar.adminOrders"), icon: ReceiptText },
     { to: "/admin/donations", label: t("sidebar.adminDonations"), icon: HeartHandshake },
     { to: "/admin/credits", label: t("sidebar.adminCredits"), icon: Coins },
     { to: "/admin/credit-requests", label: t("sidebar.adminCreditRequests"), icon: Inbox, badge: pendingRequests },
