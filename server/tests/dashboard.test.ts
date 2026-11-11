@@ -45,13 +45,13 @@ describe("GET /api/dashboard/stats", () => {
   it("returns zeros for a store and a restaurant without data", async () => {
     expect(await stats(storeA)).toEqual({
       active_products: 0,
-      pending_reservations: 0,
-      successful_reservations: 0,
+      pending_orders: 0,
+      successful_orders: 0,
       saved: { kg: 0, l: 0, pieces: 0 },
     });
     expect(await stats(restaurantA)).toEqual({
-      pending_reservations: 0,
-      successful_reservations: 0,
+      pending_orders: 0,
+      successful_orders: 0,
       savings: 0,
     });
   });
@@ -88,8 +88,8 @@ describe("GET /api/dashboard/stats", () => {
 
     expect(await stats(storeA)).toEqual({
       active_products: 6,
-      pending_reservations: 2,
-      successful_reservations: 7,
+      pending_orders: 2,
+      successful_orders: 7,
       saved: { kg: 1.5, l: 0.25, pieces: 4 },
     });
   });
@@ -107,8 +107,8 @@ describe("GET /api/dashboard/stats", () => {
 
     // Only the Completed one saves: (10 − 4) × 1.5 = 9; the Confirmed one is not picked up yet.
     expect(await stats(restaurantA)).toEqual({
-      pending_reservations: 1,
-      successful_reservations: 2,
+      pending_orders: 1,
+      successful_orders: 2,
       savings: 9,
     });
   });

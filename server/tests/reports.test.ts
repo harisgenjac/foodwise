@@ -41,6 +41,25 @@ const insertPickup = async (
   return itemId;
 };
 
+// The order code of an item as the sales report shows it (#K7PM).
+const codeOf = async (itemId: number) =>
+  `#${(await pool.query<{ code: string }>(
+    "SELECT orders.code FROM orders JOIN reservations ON reservations.order_id = orders.id WHERE reservations.id = $1",
+    [itemId],
+  )).rows[0]!.code}`;
+
+// A second picked-up item in the order of `itemId` (same restaurant and pickup moment).
+const addItem = async (itemId: number, productId: number, quantity: number, unitPrice: number) => {
+  await pool.query(
+    `INSERT INTO reservations
+       (order_id, product_id, restaurant_id, quantity, ordered_quantity, unit_price, status, pickup_date, picked_up_at)
+     SELECT reservations.order_id, $2, reservations.restaurant_id, $3, $3, $4, 'Completed',
+            reservations.pickup_date, reservations.picked_up_at
+     FROM reservations WHERE reservations.id = $1`,
+    [itemId, productId, quantity, unitPrice],
+  );
+};
+
 // Parses the CSV body into rows of cells (no quoted fields are used in these tests).
 const parse = (text: string) =>
   text
@@ -119,7 +138,7 @@ describe("Reports", () => {
 
       expect(headers).toEqual([
         "Datum preuzimanja",
-        "Broj rezervacije",
+        "Narudžba",
         "Proizvod",
         "Kategorija",
         "Restoran",
@@ -132,8 +151,8 @@ describe("Reports", () => {
         "Ušteda (KM)",
       ]);
       expect(rows).toEqual([
-        [futureDate(-3), String(first), "Piletina", "Meso", "Restoran A", "Tuzla", "2", "kg", "6,50", "10", "13", "7"],
-        [futureDate(-1), String(second), "Piletina", "Meso", "Restoran A", "Tuzla", "1,50", "kg", "6", "10", "9", "6"],
+        [futureDate(-3), await codeOf(first), "Piletina", "Meso", "Restoran A", "Tuzla", "2", "kg", "6,50", "10", "13", "7"],
+        [futureDate(-1), await codeOf(second), "Piletina", "Meso", "Restoran A", "Tuzla", "1,50", "kg", "6", "10", "9", "6"],
         ["Ukupno", "", "", "", "", "", "", "", "", "", "22", "13"],
       ]);
     });
@@ -147,9 +166,9 @@ describe("Reports", () => {
       const response = await restaurant.get("/api/reports/sales").query({ ...period(), lang: "en" });
       const [headers, ...rows] = parse(response.text);
 
-      expect(headers?.slice(0, 6)).toEqual(["Pickup date", "Reservation no.", "Product", "Category", "Store", "City"]);
+      expect(headers?.slice(0, 6)).toEqual(["Pickup date", "Order", "Product", "Category", "Store", "City"]);
       expect(rows).toEqual([
-        [futureDate(-1), String(mine), "Mlijeko", "Dairy Products", "Market A", "Sarajevo", "4", "l", "5", "10", "20", "20"],
+        [futureDate(-1), await codeOf(mine), "Mlijeko", "Dairy Products", "Market A", "Sarajevo", "4", "l", "5", "10", "20", "20"],
         ["Total", "", "", "", "", "", "", "", "", "", "20", "20"],
       ]);
     });
@@ -207,6 +226,18 @@ describe("Reports", () => {
         [await month(40), "4", "2", "0,50", "1,50", "5", "1025", "1025"],
         ["Ukupno", "5", "2", "2,50", "1,50", "5", "1035", "1035"],
       ]);
+    });
+
+    it("counts an order picked up with several items as one pickup", async () => {
+      const kg = await createProduct(store, { unit: "kg", quantity: 100, original_price: 10 });
+      const pieces = await createProduct(store, { unit: "kom", quantity: 100, original_price: 10 });
+      const item = await insertPickup(kg.id, RESTAURANT_A, { daysAgo: 2, quantity: 2, unitPrice: 5 });
+      await addItem(item, pieces.id, 3, 5);
+
+      const [, ...rows] = parse((await store.get("/api/reports/impact").query(period())).text);
+      expect(rows.at(-1)).toEqual(["Ukupno", "1", "1", "2", "0", "3", "25", "25"]);
+      const sales = parse((await store.get("/api/reports/sales").query(period())).text);
+      expect(sales.slice(1, 3).map((row) => row[1])).toEqual([await codeOf(item), await codeOf(item)]);
     });
 
     it("counts stores for a restaurant and returns a zero total for an empty period", async () => {

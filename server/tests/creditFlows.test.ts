@@ -280,7 +280,7 @@ describe("restaurant: orders cost no credits", () => {
     it("cancels without any refund, and keeps the store's credit when it removes a product", async () => {
       const accepted = await reserve(restaurant, productId, 2);
       await acceptItem(store, accepted);
-      expect((await admin.post(`/api/admin/reservations/${accepted}/cancel`).send({ reason: "Dispute" })).status).toBe(200);
+      expect((await admin.post(`/api/admin/orders/${await orderOf(accepted)}/cancel`).send({ reason: "Dispute" })).status).toBe(200);
       await reserve(restaurant, productId, 2);
       expect((await admin.delete(`/api/admin/products/${productId}`).send({ reason: "Rules" })).status).toBe(200);
       expect(await ledger("PRODUCT_REFUND", productId)).toHaveLength(0);

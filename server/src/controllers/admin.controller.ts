@@ -16,10 +16,8 @@ import {
 } from "../utils/accounts.js";
 import { PRODUCT_STATUSES } from "./products.controller.js";
 import { DONATION_STATUSES, DONATION_TYPES } from "../utils/validateDonation.js";
-import { RESERVATION_STATUSES, findReservation } from "../services/reservationItems.js";
+import { ORDER_STATUSES } from "../services/orders/status.js";
 import { cancelPendingItemsOfProducts, cancelPendingOrders, lockOrdersHoldingProducts } from "../services/orders/cascades.js";
-import { adminCancelOrder } from "../services/orders/actions.js";
-import { HttpError } from "../utils/httpError.js";
 import { updateProfile } from "./users.controller.js";
 import { isValidDateTime } from "../utils/dates.js";
 import { CITY_NAME, parseCityFilter } from "../utils/cities.js";
@@ -68,7 +66,6 @@ export const RECENT_ACTIONS_LIMIT = 20;
 // The sortable columns of each admin table (`?sort=<key>&dir=asc|desc`, see parseSort).
 const USER_SORTS = { created_at: "users.created_at" };
 const PRODUCT_SORTS = { discounted_price: "products.discounted_price", expiry_date: "products.expiry_date" };
-const RESERVATION_SORTS = { pickup_date: "reservations.pickup_date" };
 const DONATION_SORTS = { expiry_date: "donation_offers.expiry_date" };
 
 const USER_COLUMNS = `users.id, users.email, users.role, users.first_name, users.last_name,
@@ -160,9 +157,7 @@ export const getStats = async (req: Request, res: Response) => {
          COUNT(*) FILTER (WHERE products.status = 'Removed') AS removed
        FROM products`,
     );
-    const reservations = await pool.query(
-      `SELECT reservations.status, COUNT(*) AS count FROM reservations GROUP BY reservations.status`,
-    );
+    const orders = await pool.query(`SELECT orders.status, COUNT(*) AS count FROM orders GROUP BY orders.status`);
     const saved = await getSavedTotals();
     const donations = await pool.query(
       `SELECT
@@ -208,18 +203,16 @@ export const getStats = async (req: Request, res: Response) => {
 
     const toNumbers = (row: Record<string, string>) =>
       Object.fromEntries(Object.entries(row).map(([key, value]) => [key, Number(value)]));
-    const reservationCounts = Object.fromEntries(
-      ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"].map((status) => [status, 0]),
-    );
-    for (const row of reservations.rows) {
-      reservationCounts[row.status] = Number(row.count);
+    const orderCounts = Object.fromEntries(ORDER_STATUSES.map((status) => [status, 0]));
+    for (const row of orders.rows) {
+      orderCounts[row.status] = Number(row.count);
     }
 
     return res.status(200).json({
       stats: {
         users: toNumbers(users.rows[0]),
         products: toNumbers(products.rows[0]),
-        reservations: reservationCounts,
+        orders: orderCounts,
         saved,
         donations: toNumbers(donations.rows[0]),
         credits: {
@@ -310,17 +303,14 @@ export const getUserDetails = async (req: Request, res: Response) => {
          (SELECT COUNT(*) FROM products
           WHERE products.store_id = $1 AND products.status = 'Available'
             AND products.expiry_date >= CURRENT_DATE) AS active_products,
-         (SELECT COUNT(*) FROM reservations
-          JOIN products ON reservations.product_id = products.id
-          WHERE products.store_id = $1 OR reservations.restaurant_id = $1) AS reservations,
-         (SELECT COUNT(*) FROM reservations
-          JOIN products ON reservations.product_id = products.id
-          WHERE (products.store_id = $1 OR reservations.restaurant_id = $1)
-            AND reservations.status = 'Pending') AS pending_reservations,
-         (SELECT COUNT(*) FROM reservations
-          JOIN products ON reservations.product_id = products.id
-          WHERE (products.store_id = $1 OR reservations.restaurant_id = $1)
-            AND reservations.status = 'Completed') AS completed_reservations,
+         (SELECT COUNT(*) FROM orders
+          WHERE orders.store_id = $1 OR orders.restaurant_id = $1) AS orders,
+         (SELECT COUNT(*) FROM orders
+          WHERE (orders.store_id = $1 OR orders.restaurant_id = $1)
+            AND orders.status = 'Pending') AS pending_orders,
+         (SELECT COUNT(*) FROM orders
+          WHERE (orders.store_id = $1 OR orders.restaurant_id = $1)
+            AND orders.status = 'Completed') AS completed_orders,
          (SELECT COUNT(*) FROM donation_offers
           WHERE donation_offers.donor_id = $1 AND donation_offers.status != 'Removed') AS donations`,
       [targetId],
@@ -523,7 +513,7 @@ export const resetPassword = async (req: Request, res: Response) => {
 };
 
 // Blocking signs the user out at once (authenticate reads is_blocked), hides a store's offers
-// and cancels the user's Pending reservations on both sides. An admin cannot block their own
+// and cancels the user's Pending orders on both sides. An admin cannot block their own
 // account, so at least one active admin always remains.
 export const blockUser = async (req: Request, res: Response) => {
   const targetId = parseId(req.params.id);
@@ -561,8 +551,7 @@ export const blockUser = async (req: Request, res: Response) => {
       [reason, targetId],
     );
     // The other party of each order is told; the blocked user cannot sign in anyway.
-    // (cancelledReservations counts orders; PR 4 renames it to cancelledOrders with the admin screens.)
-    const cancelledReservations = await cancelPendingOrders(
+    const cancelledOrders = await cancelPendingOrders(
       client,
       "orders.restaurant_id = $1 OR orders.store_id = $1",
       [targetId],
@@ -575,7 +564,7 @@ export const blockUser = async (req: Request, res: Response) => {
     await client.query("COMMIT");
     return res
       .status(200)
-      .json({ message: "Account blocked.", user: result.rows[0], cancelledReservations });
+      .json({ message: "Account blocked.", user: result.rows[0], cancelledOrders });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
     console.error("Error while blocking user:", error);
@@ -915,119 +904,6 @@ export const getAdminActions = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error while fetching admin actions:", error);
     return res.status(500).json({ error: "An error occurred while fetching admin actions." });
-  }
-};
-
-export const getAdminReservations = async (req: Request, res: Response) => {
-  const { q, status, user_id } = req.query;
-  const page = parsePage(req.query, ADMIN_PAGE_SIZE);
-  const orderBy = parseSort(
-    req.query,
-    RESERVATION_SORTS,
-    "reservations.created_at DESC, reservations.id DESC",
-    "reservations.id DESC",
-  );
-  if (!page || !orderBy) {
-    return res.status(400).json({ error: "Invalid filter." });
-  }
-
-  let from = `FROM reservations
-    JOIN products ON reservations.product_id = products.id
-    JOIN users AS stores ON products.store_id = stores.id
-    JOIN users AS restaurants ON reservations.restaurant_id = restaurants.id
-    WHERE true`;
-  const values: (string | number | boolean)[] = [];
-  if (status) {
-    if (typeof status !== "string" || !RESERVATION_STATUSES.includes(status)) {
-      return res.status(400).json({ error: "Invalid filter." });
-    }
-    values.push(status);
-    from += ` AND reservations.status = $${values.length}`;
-  }
-  if (user_id) {
-    const userId = parseId(user_id);
-    if (userId === null) {
-      return res.status(400).json({ error: "Invalid filter." });
-    }
-    values.push(userId);
-    from += ` AND (products.store_id = $${values.length} OR reservations.restaurant_id = $${values.length})`;
-  }
-  if (q) {
-    values.push(`%${q}%`);
-    const p = `$${values.length}`;
-    from += ` AND (products.name ILIKE ${p} OR stores.business_name ILIKE ${p} OR stores.email ILIKE ${p}
-      OR restaurants.business_name ILIKE ${p} OR restaurants.email ILIKE ${p})`;
-  }
-
-  try {
-    const { rows, total } = await listPage(
-      `reservations.id, reservations.status, reservations.quantity, reservations.unit_price,
-       reservations.pickup_date, reservations.picked_up_at, reservations.created_at,
-       reservations.status = 'Confirmed' AND reservations.pickup_date::date < CURRENT_DATE AS is_overdue,
-       products.id AS product_id, products.name AS product_name, products.unit,
-       stores.id AS store_id, stores.business_name AS store_name, stores.email AS store_email,
-       restaurants.id AS restaurant_id, restaurants.business_name AS restaurant_name,
-       restaurants.email AS restaurant_email`,
-      from,
-      orderBy,
-      values,
-      page,
-    );
-    return res.status(200).json({ reservations: rows, total });
-  } catch (error) {
-    console.error("Error while fetching reservations:", error);
-    return res.status(500).json({ error: "An error occurred while fetching reservations." });
-  }
-};
-
-// Resolves a dispute: the reservation's whole order (Pending or Confirmed) is cancelled and both
-// sides are told why. Cancelling a Confirmed one puts its quantity back on offer (a product it sold
-// out is available again). TEMPORARY (orders PR 3a): PR 4 replaces it with POST /admin/orders/:id/cancel.
-export const cancelReservation = async (req: Request, res: Response) => {
-  const reservationId = parseId(req.params.id);
-  if (reservationId === null) {
-    return res.status(404).json({ error: "Reservation not found." });
-  }
-  const reason = parseReason(req.body.reason);
-  if (!reason) {
-    return res.status(400).json({ error: REASON_ERROR });
-  }
-
-  let client;
-  try {
-    client = await pool.connect();
-    await client.query("BEGIN");
-    const reservation = await findReservation(client, reservationId);
-    if (!reservation) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Reservation not found." });
-    }
-    if (!["Pending", "Confirmed"].includes(reservation.status)) {
-      await client.query("ROLLBACK");
-      return res
-        .status(400)
-        .json({ error: "Only pending or accepted reservations can be cancelled." });
-    }
-
-    await adminCancelOrder(client, req.user!.id, reservation.order_id, reason);
-    await logAdminAction(client, {
-      adminId: req.user!.id,
-      action: "CANCEL_ORDER",
-      targetUserId: reservation.restaurant_id,
-      targetProductId: reservation.product_id,
-      targetReservationId: reservationId,
-      targetOrderId: reservation.order_id,
-      reason,
-    });
-    await client.query("COMMIT");
-    return res.status(200).json({ message: "Reservation cancelled." });
-  } catch (error) {
-    if (client) await client.query("ROLLBACK");
-    if (error instanceof HttpError) return res.status(error.status).json(error.body());
-    console.error("Error while cancelling reservation:", error);
-    return res.status(500).json({ error: "An error occurred while cancelling the reservation." });
-  } finally {
-    if (client) client.release();
   }
 };
 

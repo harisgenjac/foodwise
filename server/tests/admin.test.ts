@@ -337,8 +337,8 @@ describe("Admin", () => {
       expect(response.body.counts).toMatchObject({
         products: 1,
         active_products: 1,
-        reservations: 1,
-        pending_reservations: 1,
+        orders: 1,
+        pending_orders: 1,
         donations: 0,
       });
       expect(response.body.actions).toEqual([
@@ -390,7 +390,7 @@ describe("Admin", () => {
       const response = await admin
         .post(`/api/admin/users/${product.store_id}/block`)
         .send({ reason: "Kršenje pravila" });
-      expect(response.body.cancelledReservations).toBe(1);
+      expect(response.body.cancelledOrders).toBe(1);
       expect(await reservationStatus(pending)).toBe("Cancelled");
       expect(await reservationStatus(confirmed)).toBe("Confirmed");
 
@@ -548,75 +548,119 @@ describe("Admin", () => {
     });
   });
 
-  describe("reservations", () => {
+  describe("orders", () => {
     const productStatus = async (id: number) =>
       (await pool.query("SELECT status FROM products WHERE id = $1", [id])).rows[0].status;
+    const orderStatus = async (id: number) =>
+      (await pool.query("SELECT status FROM orders WHERE id = $1", [id])).rows[0].status;
+    const codeOf = async (id: number) =>
+      (await pool.query<{ code: string }>("SELECT code FROM orders WHERE id = $1", [id])).rows[0]!.code;
 
-    it("lists every reservation with both parties and filters", async () => {
-      const product = await createProduct(store, { name: "Admin reservation product" });
-      const pending = await reserve(restaurant, product.id, 2);
-      const confirmed = await reserve(restaurant, product.id, 3);
-      await acceptItem(store, confirmed);
+    it("lists every order with both parties, its items and filters", async () => {
+      const product = await createProduct(store, { name: "Admin order product" });
+      const other = await createProduct(store, { name: "Admin order second" });
+      const sent = await restaurant.post("/api/orders").send({
+        pickup_at: futurePickup(),
+        accept_partial: true,
+        items: [
+          { product_id: product.id, quantity: 2, unit_price: 5 },
+          { product_id: other.id, quantity: 1, unit_price: 5 },
+        ],
+      });
+      expect(sent.status).toBe(201);
+      const pending = sent.body.order.id as number;
+      const confirmedItem = await reserve(restaurant, product.id, 3);
+      await acceptItem(store, confirmedItem);
+      const confirmed = await orderOf(confirmedItem);
 
-      const all = await admin.get(`/api/admin/reservations?user_id=${product.store_id}`);
+      const all = await admin.get(`/api/admin/orders?user_id=${product.store_id}`);
       expect(all.status).toBe(200);
       expect(all.body.total).toBe(2);
-      expect(all.body.reservations[0]).toMatchObject({
-        product_name: "Admin reservation product",
+      const row = all.body.orders.find((order: { id: number }) => order.id === pending);
+      expect(row).toMatchObject({
+        code: await codeOf(pending),
+        status: "Pending",
+        item_count: 2,
         store_email: STORE,
         restaurant_email: RESTAURANT,
         is_overdue: false,
       });
+      expect(row.items.map((item: { product_name: string }) => item.product_name)).toEqual([
+        "Admin order product",
+        "Admin order second",
+      ]);
 
-      const asRestaurant = await admin.get(`/api/admin/reservations?user_id=${await userId(RESTAURANT)}&status=Pending`);
-      expect(asRestaurant.body.reservations.map((row: { id: number }) => row.id)).toEqual([pending]);
+      const asRestaurant = await admin.get(`/api/admin/orders?user_id=${await userId(RESTAURANT)}&status=Pending`);
+      expect(asRestaurant.body.orders.map((order: { id: number }) => order.id)).toEqual([pending]);
 
-      const search = await admin.get(`/api/admin/reservations?q=${encodeURIComponent(RESTAURANT)}`);
-      expect(search.body.total).toBe(2);
+      const byEmail = await admin.get(`/api/admin/orders?q=${encodeURIComponent(RESTAURANT)}`);
+      expect(byEmail.body.total).toBe(2);
+      const byProduct = await admin.get(`/api/admin/orders?q=${encodeURIComponent("order second")}`);
+      expect(byProduct.body.orders.map((order: { id: number }) => order.id)).toEqual([pending]);
+      const code = await codeOf(confirmed);
+      const byCode = await admin.get(`/api/admin/orders?q=${encodeURIComponent(`#${code.toLowerCase()}`)}`);
+      expect(byCode.body.orders.map((order: { id: number }) => order.id)).toContain(confirmed);
 
-      expect((await admin.get("/api/admin/reservations?status=Lost")).status).toBe(400);
-      expect((await admin.get("/api/admin/reservations?user_id=abc")).status).toBe(400);
-      expect((await store.get("/api/admin/reservations")).status).toBe(403);
+      expect((await admin.get("/api/admin/orders?status=Lost")).status).toBe(400);
+      expect((await admin.get("/api/admin/orders?user_id=abc")).status).toBe(400);
+      expect((await admin.get("/api/admin/orders?sort=total")).status).toBe(400);
+      expect((await store.get("/api/admin/orders")).status).toBe(403);
     });
 
-    it("cancels a Pending reservation and tells both sides why", async () => {
-      const product = await createProduct(store);
-      const pending = await reserve(restaurant, product.id, 2);
+    it("shows any order's details with its items, parties and history", async () => {
+      const product = await createProduct(store, { name: "Admin details product" });
+      const order = await orderOf(await reserve(restaurant, product.id, 2));
 
-      const noReason = await admin.post(`/api/admin/reservations/${pending}/cancel`);
+      const response = await admin.get(`/api/admin/orders/${order}`);
+      expect(response.status).toBe(200);
+      expect(response.body.order).toMatchObject({
+        id: order,
+        store: expect.objectContaining({ id: product.store_id }),
+        restaurant: expect.objectContaining({ id: await userId(RESTAURANT) }),
+        items: [expect.objectContaining({ product_name: "Admin details product" })],
+        history: [expect.objectContaining({ to_status: "Pending" })],
+      });
+      expect((await admin.get("/api/admin/orders/999999")).status).toBe(404);
+      expect((await admin.get("/api/admin/orders/abc")).status).toBe(404);
+      expect((await store.get(`/api/admin/orders/${order}`)).status).toBe(403);
+    });
+
+    it("cancels a Pending order and tells both sides why", async () => {
+      const product = await createProduct(store);
+      const item = await reserve(restaurant, product.id, 2);
+      const order = await orderOf(item);
+
+      const noReason = await admin.post(`/api/admin/orders/${order}/cancel`);
       expect(noReason.status).toBe(400);
       expect(noReason.body.error).toBe("A reason is required (at most 500 characters).");
 
-      const response = await admin.post(`/api/admin/reservations/${pending}/cancel`).send({ reason: "Spor oko cijene" });
+      const response = await admin.post(`/api/admin/orders/${order}/cancel`).send({ reason: "Spor oko cijene" });
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe("Reservation cancelled.");
-      expect(await reservationStatus(pending)).toBe("Cancelled");
+      expect(response.body.message).toBe("Order cancelled.");
+      expect(response.body.order.status).toBe("Cancelled");
+      expect(await reservationStatus(item)).toBe("Cancelled");
 
       for (const email of [STORE, RESTAURANT]) {
         expect(await notificationsOf(email)).toContainEqual(
-          expect.objectContaining({
-            type: "ORDER_CANCELLED_BY_ADMIN",
-            order_id: await orderOf(pending),
-            details: "Spor oko cijene",
-          }),
+          expect.objectContaining({ type: "ORDER_CANCELLED_BY_ADMIN", order_id: order, details: "Spor oko cijene" }),
         );
       }
-      expect(await actions()).toEqual([
-        expect.objectContaining({ action: "CANCEL_ORDER", reason: "Spor oko cijene", target_product_id: product.id }),
-      ]);
+      expect(await actions()).toEqual([expect.objectContaining({ action: "CANCEL_ORDER", reason: "Spor oko cijene" })]);
+      const history = (await admin.get(`/api/admin/orders/${order}`)).body.order.history;
+      expect(history.at(-1)).toMatchObject({ to_status: "Cancelled", source: "ADMIN", reason: "Spor oko cijene" });
 
-      // The store sees the cancellation in its history too, through its product.
+      // The store sees the cancellation in its history too, through the order.
       const storeHistory = await admin.get(`/api/admin/users/${product.store_id}`);
       expect(storeHistory.body.actions).toEqual([expect.objectContaining({ action: "CANCEL_ORDER" })]);
     });
 
-    it("puts a Confirmed reservation's quantity back on offer", async () => {
+    it("puts a Confirmed order's quantity back on offer", async () => {
       const product = await createProduct(store, { quantity: 5 });
       const confirmed = await reserve(restaurant, product.id, 5);
       await acceptItem(store, confirmed);
       expect(await productStatus(product.id)).toBe("Sold");
 
-      await admin.post(`/api/admin/reservations/${confirmed}/cancel`).send({ reason: "Prodavnica nema robu" });
+      await admin.post(`/api/admin/orders/${await orderOf(confirmed)}/cancel`).send({ reason: "Prodavnica nema robu" });
       expect(await reservationStatus(confirmed)).toBe("Cancelled");
       expect(await productStatus(product.id)).toBe("Available");
       await expect(reserve(restaurant, product.id, 5)).resolves.toEqual(expect.any(Number));
@@ -628,12 +672,14 @@ describe("Admin", () => {
       await acceptItem(store, confirmed);
       await pool.query("UPDATE products SET expiry_date = CURRENT_DATE - 1 WHERE id = $1", [product.id]);
 
-      const response = await admin.post(`/api/admin/reservations/${confirmed}/cancel`).send({ reason: "Istekao rok" });
+      const response = await admin
+        .post(`/api/admin/orders/${await orderOf(confirmed)}/cancel`)
+        .send({ reason: "Istekao rok" });
       expect(response.status).toBe(200);
       expect(await productStatus(product.id)).toBe("Sold");
     });
 
-    it("refuses reservations that are already closed, and missing ones", async () => {
+    it("refuses orders that are already closed, and missing ones", async () => {
       const product = await createProduct(store, { quantity: 10 });
       const completed = await reserve(restaurant, product.id, 1);
       await acceptItem(store, completed);
@@ -643,14 +689,17 @@ describe("Admin", () => {
       const cancelled = await reserve(restaurant, product.id, 1);
       await itemOrderAction(restaurant, cancelled, "cancel");
 
-      for (const id of [completed, rejected, cancelled]) {
-        const response = await admin.post(`/api/admin/reservations/${id}/cancel`).send({ reason: "Test" });
+      for (const item of [completed, rejected, cancelled]) {
+        const order = await orderOf(item);
+        const before = await orderStatus(order);
+        const response = await admin.post(`/api/admin/orders/${order}/cancel`).send({ reason: "Test" });
         expect(response.status).toBe(400);
-        expect(response.body.error).toBe("Only pending or accepted reservations can be cancelled.");
+        expect(response.body.error).toBe("Only pending or accepted orders can be cancelled.");
+        expect(await orderStatus(order)).toBe(before);
       }
-      const missing = await admin.post("/api/admin/reservations/999999/cancel").send({ reason: "Test" });
+      const missing = await admin.post("/api/admin/orders/999999/cancel").send({ reason: "Test" });
       expect(missing.status).toBe(404);
-      expect(missing.body.error).toBe("Reservation not found.");
+      expect(missing.body.error).toBe("Order not found.");
       expect(await actions()).toEqual([]);
     });
   });
@@ -662,7 +711,7 @@ describe("Admin", () => {
       const { stats } = response.body;
       expect(stats.users.admins).toBeGreaterThanOrEqual(1);
       expect(typeof stats.products.active).toBe("number");
-      expect(Object.keys(stats.reservations)).toEqual(["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"]);
+      expect(Object.keys(stats.orders)).toEqual(["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"]);
       expect(typeof stats.saved.kg).toBe("number");
       expect(typeof stats.donations.available).toBe("number");
     });

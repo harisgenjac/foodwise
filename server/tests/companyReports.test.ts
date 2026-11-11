@@ -145,7 +145,7 @@ describe("company reports", () => {
       expect(rows[0]).toEqual([
         "Poslovnica",
         "Datum preuzimanja",
-        "Broj rezervacije",
+        "Narudžba",
         "Proizvod",
         "Kategorija",
         "Restoran",
@@ -171,7 +171,7 @@ describe("company reports", () => {
       expect(response.headers["content-disposition"]).toBe(
         `attachment; filename="company-sales-${period().from}-${period().to}.csv"`,
       );
-      expect(rows[0]!.slice(0, 3)).toEqual(["Branch", "Pickup date", "Reservation no."]);
+      expect(rows[0]!.slice(0, 3)).toEqual(["Branch", "Pickup date", "Order"]);
       expect(rows.slice(1, -1).map((row) => row[0])).toEqual(["Coreports Breza"]);
       expect(rows.at(-1)!.slice(-2)).toEqual(["6", "9"]);
     });

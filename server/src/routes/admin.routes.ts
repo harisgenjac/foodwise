@@ -3,7 +3,6 @@ import {
   blockUser,
   resendInvitation,
   sendResetLink,
-  cancelReservation,
   createAnnouncement,
   endAnnouncement,
   getAnnouncements,
@@ -11,7 +10,6 @@ import {
   getAdminActions,
   getAdminDonations,
   getAdminProducts,
-  getAdminReservations,
   getStats,
   getUserDetails,
   getUsers,
@@ -41,6 +39,7 @@ import {
   deactivateBranchByAdmin,
   reactivateBranchByAdmin,
 } from "../controllers/adminCompanies.controller.js";
+import { cancelAdminOrder, getAdminOrder, getAdminOrders } from "../controllers/adminOrders.controller.js";
 import { getPlans } from "../controllers/credits.controller.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
 import { rateLimiters } from "../middleware/rateLimit.middleware.js";
@@ -64,8 +63,9 @@ router.get("/products", getAdminProducts);
 router.delete("/products/:id", removeProduct);
 router.get("/donations", getAdminDonations);
 router.delete("/donations/:id", removeDonation);
-router.get("/reservations", getAdminReservations);
-router.post("/reservations/:id/cancel", cancelReservation);
+router.get("/orders", getAdminOrders);
+router.get("/orders/:id", getAdminOrder);
+router.post("/orders/:id/cancel", cancelAdminOrder);
 router.get("/announcements", getAnnouncements);
 router.post("/announcements", createAnnouncement);
 router.post("/announcements/:id/end", endAnnouncement);

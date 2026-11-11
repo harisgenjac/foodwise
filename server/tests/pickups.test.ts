@@ -207,7 +207,7 @@ describe("Pickups", () => {
       await itemOrderAction(store, id, "complete");
 
       const response = await restaurant.get(`/api/users/stores/${await userId(STORE_A)}`);
-      expect(response.body.stats.successful_reservations).toBe("1");
+      expect(response.body.stats.successful_orders).toBe("1");
     });
 
     it.each(["Pending", "Rejected", "Cancelled"])("returns 400 for a %s order", async (status) => {

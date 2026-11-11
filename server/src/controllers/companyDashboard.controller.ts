@@ -99,10 +99,10 @@ export const getCompanyDashboard = async (req: Request, res: Response) => {
         deactivated: branches.filter((branch) => branch.status === "deactivated").length,
       },
       credits: { used: credits.totals.used, total: credits.totals.total },
-      reservations: {
-        total: sum((branch) => branch.reservations_this_month),
+      orders: {
+        total: sum((branch) => branch.orders_this_month),
         picked_up: sum((branch) => branch.completed_this_month),
-        pending: sum((branch) => branch.pending_reservations),
+        pending: sum((branch) => branch.pending_orders),
       },
       saved: {
         kg: round(sum((branch) => branch.saved_this_month.kg), 3),

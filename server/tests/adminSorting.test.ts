@@ -19,6 +19,7 @@ import {
   registerAndLogin,
   userId,
   reserve,
+  orderOf,
 } from "./helpers.js";
 
 const ADMIN = "sorting-admin@test.com";
@@ -130,20 +131,20 @@ describe("sorting the admin tables", () => {
     expect(ids(response.body.products)).toEqual([second.id, first.id]);
   });
 
-  it("sorts reservations by pickup date", async () => {
+  it("sorts orders by pickup time", async () => {
     const store = await registerAndLogin(STORE, "STORE");
     const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
     const product = await createProduct(store, { name: "Sortres", quantity: 10 });
-    const reserveOn = (days: number) => reserve(restaurant, product.id, 1, futurePickup(days));
+    const reserveOn = async (days: number) => orderOf(await reserve(restaurant, product.id, 1, futurePickup(days)));
     const later = await reserveOn(3);
     const soon = await reserveOn(1);
     const middle = await reserveOn(2);
     const list = async (query: Record<string, string>) =>
-      ids((await admin.get("/api/admin/reservations").query({ q: "Sortres", ...query })).body.reservations);
+      ids((await admin.get("/api/admin/orders").query({ q: "Sortres", ...query })).body.orders);
 
-    expect(await list({ sort: "pickup_date", dir: "asc" })).toEqual([soon, middle, later]);
-    expect(await list({ sort: "pickup_date", dir: "desc" })).toEqual([later, middle, soon]);
-    expect(await list({ sort: "pickup_date", status: "Pending" })).toEqual([soon, middle, later]);
+    expect(await list({ sort: "pickup_at", dir: "asc" })).toEqual([soon, middle, later]);
+    expect(await list({ sort: "pickup_at", dir: "desc" })).toEqual([later, middle, soon]);
+    expect(await list({ sort: "pickup_at", status: "Pending" })).toEqual([soon, middle, later]);
     // Default: newest first.
     expect(await list({})).toEqual([middle, soon, later]);
   });
@@ -164,7 +165,7 @@ describe("sorting the admin tables", () => {
   it.each([
     ["/api/admin/users", "created_at"],
     ["/api/admin/products", "expiry_date"],
-    ["/api/admin/reservations", "pickup_date"],
+    ["/api/admin/orders", "pickup_at"],
     ["/api/admin/donations", "expiry_date"],
     ["/api/admin/credits/overview", "used"],
   ])("%s rejects an unknown sort key or direction", async (url, validKey) => {

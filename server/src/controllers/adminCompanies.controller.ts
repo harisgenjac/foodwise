@@ -319,8 +319,7 @@ export const blockCompany = async (req: Request, res: Response) => {
       (await client.query<{ id: number }>(companyStores, [companyId])).rows.map((store) => store.id),
     );
     // The other party of each order is told; the company's users cannot sign in anyway.
-    // (cancelledReservations counts orders; PR 4 renames it to cancelledOrders with the admin screens.)
-    const cancelledReservations = await cancelPendingOrders(
+    const cancelledOrders = await cancelPendingOrders(
       client,
       `orders.store_id IN (${companyStores}) OR orders.restaurant_id IN (${companyStores})`,
       [companyId],
@@ -337,7 +336,7 @@ export const blockCompany = async (req: Request, res: Response) => {
     return res.status(200).json({
       message: "Company blocked.",
       company: { ...row, branch_count: Number(row.branch_count) },
-      cancelledReservations,
+      cancelledOrders,
     });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
@@ -453,7 +452,7 @@ const changeBranchActivation = async (req: Request, res: Response, deactivate: b
       await client.query("ROLLBACK");
       return res.status(404).json({ error: BRANCH_NOT_FOUND });
     }
-    let closed = { cancelledReservations: 0, withdrawnRequests: 0 };
+    let closed = { cancelledOrders: 0, withdrawnRequests: 0 };
     if (deactivate) {
       closed = await deactivateBranch(client, branch, req.user!.id);
     } else {

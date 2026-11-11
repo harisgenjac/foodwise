@@ -100,7 +100,7 @@ describe("blocking", () => {
   it("cancels a blocked restaurant's whole Pending orders and tells the store once per order", async () => {
     const { orderId } = await twoItemOrder(true);
     const response = await admin.post(`/api/admin/users/${await userId(RESTAURANT)}/block`).send({ reason: "Test" });
-    expect(response.body.cancelledReservations).toBe(1);
+    expect(response.body.cancelledOrders).toBe(1);
     expect(await state(orderId)).toEqual({ order: "Cancelled", items: ["Cancelled", "Cancelled"] });
     const storeNotes = (await store.get("/api/notifications")).body.notifications.filter(
       (n: { type: string }) => n.type === "ORDER_CANCELLED_BY_ADMIN",
@@ -116,21 +116,21 @@ describe("an admin's cancel", () => {
     expect((await acceptItem(store, reservationId)).status).toBe(200);
     expect((await pool.query("SELECT status FROM products WHERE id = $1", [product.id])).rows[0].status).toBe("Sold");
 
-    const response = await admin.post(`/api/admin/reservations/${reservationId}/cancel`).send({ reason: "Spor" });
-    expect(response.status).toBe(200);
     const orderId = await orderOf(reservationId);
+    const response = await admin.post(`/api/admin/orders/${orderId}/cancel`).send({ reason: "Spor" });
+    expect(response.status).toBe(200);
     expect(await state(orderId)).toEqual({ order: "Cancelled", items: ["Cancelled"] });
     expect((await pool.query("SELECT status FROM products WHERE id = $1", [product.id])).rows[0].status).toBe("Available");
     const action = await pool.query("SELECT action, target_order_id, target_reservation_id FROM admin_actions WHERE reason = 'Spor'");
-    expect(action.rows).toEqual([{ action: "CANCEL_ORDER", target_order_id: orderId, target_reservation_id: reservationId }]);
+    expect(action.rows).toEqual([{ action: "CANCEL_ORDER", target_order_id: orderId, target_reservation_id: null }]);
     const history = await pool.query(
       "SELECT source, actor_id, reason FROM order_status_history WHERE order_id = $1 AND to_status = 'Cancelled'",
       [orderId],
     );
     expect(history.rows).toEqual([{ source: "ADMIN", actor_id: await userId(ADMIN), reason: "Spor" }]);
 
-    const again = await admin.post(`/api/admin/reservations/${reservationId}/cancel`).send({ reason: "Spor" });
-    expect(again.body.error).toBe("Only pending or accepted reservations can be cancelled.");
+    const again = await admin.post(`/api/admin/orders/${orderId}/cancel`).send({ reason: "Spor" });
+    expect(again.body.error).toBe("Only pending or accepted orders can be cancelled.");
   });
 });
 

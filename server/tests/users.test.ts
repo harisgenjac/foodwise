@@ -209,8 +209,8 @@ describe("Users routes", () => {
       expect(response.body.store.email).toBeUndefined();
       expect(response.body.products).toBeUndefined();
       // Accepted but not picked up yet: not counted.
-      expect(response.body.stats.successful_reservations).toBe("0");
-      expect(response.body.myReservations.my_reservations_count).toBe("0");
+      expect(response.body.stats.successful_orders).toBe("0");
+      expect(response.body.myOrders.my_orders_count).toBe("0");
 
       const products = await restaurant.get("/api/products").query({ store_id: await userId(STORE) });
       expect(products.body.total).toBe(1);
@@ -228,8 +228,8 @@ describe("Users routes", () => {
 
       const response = await restaurant.get(`/api/users/stores/${await userId(STORE)}`);
       expect(response.status).toBe(200);
-      expect(response.body.stats.successful_reservations).toBe("1");
-      expect(response.body.myReservations.my_reservations_count).toBe("1");
+      expect(response.body.stats.successful_orders).toBe("1");
+      expect(response.body.myOrders.my_orders_count).toBe("1");
     });
 
     it("returns 403 for a STORE", async () => {
