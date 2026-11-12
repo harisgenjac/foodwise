@@ -37,45 +37,6 @@ export interface ShopSale {
   created_by_email: string | null;
 }
 
-// One item row as the admin's reservations and the headquarters' branch page still list it (until
-// orders PR 4 moves them to orders); the restaurant's and store's screens use Order.
-export interface Reservation {
-  id: number;
-  product_id: number;
-  restaurant_id: number;
-  quantity: string;
-  status: "Pending" | "Confirmed" | "Completed" | "Rejected" | "Cancelled";
-  pickup_date: string;
-  created_at: string;
-  updated_at: string;
-  // Set when the store marks the reservation as picked up (Completed).
-  picked_up_at?: string | null;
-  // Confirmed and the pickup day is before today (a passed time on the same day is not late).
-  is_overdue?: boolean;
-  product_name?: string;
-  description?: string;
-  discounted_price?: string;
-  original_price?: string;
-  category?: string;
-  unit?: string;
-  business_name?: string;
-  city?: string;
-  store_id?: number;
-  // Both parties (admin lists).
-  store_address?: string | null;
-  store_phone?: string | null;
-  store_pickup_hours?: string | null;
-  restaurant_name?: string | null;
-  restaurant_city?: string | null;
-  restaurant_address?: string | null;
-  restaurant_phone?: string | null;
-  // Whole days since a missed pickup date, and the other party's contact.
-  days_overdue?: number;
-  party_phone?: string | null;
-  party_address?: string | null;
-  party_pickup_hours?: string | null;
-}
-
 export type OrderStatus = "Pending" | "Confirmed" | "Completed" | "Rejected" | "Cancelled";
 export type ChangeReason = "NOT_ENOUGH_STOCK" | "QUALITY" | "OTHER";
 export type SendChangeKind = "QUANTITY_REDUCED" | "PRICE_LOWERED" | "NOT_SENT_SOLD_OUT" | "NOT_SENT_PRICE_RAISED";
@@ -252,7 +213,7 @@ export interface Branch {
   email: string;
   status: BranchStatus;
   active_products: number;
-  pending_reservations: number;
+  pending_orders: number;
   created_at: string;
 }
 
@@ -281,8 +242,8 @@ export interface BranchDetails {
   };
   stats: {
     active_products: number;
-    pending_reservations: number;
-    reservations_this_month: number;
+    pending_orders: number;
+    orders_this_month: number;
     completed_this_month: number;
     saved_this_month: { kg: number; l: number; pieces: number };
     value_this_month: number;
@@ -403,18 +364,19 @@ export interface DonationFormValues {
   serving_temperature: string;
 }
 
-// Dashboard stat cards (GET /dashboard/stats), all numbers. `successful_reservations` = accepted
-// (Confirmed + Completed); `saved` and `savings` = picked up (Completed) only.
+// Dashboard stat cards (GET /dashboard/stats), all numbers. The counts are orders:
+// `successful_orders` = accepted (Confirmed + Completed); `saved` and `savings` = the picked-up
+// (Completed) items only.
 export interface StoreDashboardStats {
   active_products: number;
-  pending_reservations: number;
-  successful_reservations: number;
+  pending_orders: number;
+  successful_orders: number;
   saved: { kg: number; l: number; pieces: number };
 }
 
 export interface RestaurantDashboardStats {
-  pending_reservations: number;
-  successful_reservations: number;
+  pending_orders: number;
+  successful_orders: number;
   savings: number;
 }
 
@@ -422,7 +384,7 @@ export interface RestaurantDashboardStats {
 export interface AdminStats {
   users: { stores: number; restaurants: number; admins: number; blocked: number; incomplete_profiles: number };
   products: { active: number; sold: number; expired: number; removed: number };
-  reservations: Record<Reservation["status"], number>;
+  orders: Record<OrderStatus, number>;
   saved: { kg: number; l: number; pieces: number; value: number; savings: number };
   donations: { available: number; expired: number; removed: number };
   // Subscriptions and credits of the current credit month.
@@ -520,9 +482,9 @@ export interface AdminAnnouncement extends Announcement {
 export interface AdminUserCounts {
   products: number;
   active_products: number;
-  reservations: number;
-  pending_reservations: number;
-  completed_reservations: number;
+  orders: number;
+  pending_orders: number;
+  completed_orders: number;
   donations: number;
 }
 
@@ -561,22 +523,10 @@ export interface AdminDonation {
   donor_role: Role;
 }
 
-export interface AdminReservation {
-  id: number;
-  status: Reservation["status"];
-  quantity: string;
-  unit_price: string;
-  pickup_date: string;
-  picked_up_at: string | null;
-  created_at: string;
-  is_overdue: boolean;
-  product_id: number;
-  product_name: string;
-  unit: string;
-  store_id: number;
+// A row of GET /admin/orders: the order with both businesses.
+export interface AdminOrder extends Omit<Order, "business_name" | "city"> {
   store_name: string | null;
   store_email: string;
-  restaurant_id: number;
   restaurant_name: string | null;
   restaurant_email: string;
 }
@@ -704,8 +654,8 @@ export interface CompanyDashboardBranch {
   available: number;
   open_requests: CreditRequest[];
   active_products: number;
-  pending_reservations: number;
-  reservations_this_month: number;
+  pending_orders: number;
+  orders_this_month: number;
   completed_this_month: number;
   saved_this_month: { kg: number; l: number; pieces: number };
   value_this_month: number;
@@ -723,7 +673,7 @@ export interface CompanyDashboard {
   totals: {
     branches: { active: number; all: number; deactivated: number };
     credits: { used: number; total: number };
-    reservations: { total: number; picked_up: number; pending: number };
+    orders: { total: number; picked_up: number; pending: number };
     saved: { kg: number; l: number; pieces: number; value: number };
   };
   branches: CompanyDashboardBranch[];

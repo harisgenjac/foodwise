@@ -3,10 +3,11 @@ import pool from "../config/db.js";
 import { isValidDate } from "../utils/dates.js";
 import type { CsvCell } from "../utils/csv.js";
 import { type ReportLanguage, categoryLabel, totalLabel } from "../utils/reportLabels.js";
+import { formatOrderCode } from "./orders/codes.js";
 
 // The report queries and helpers shared by a store's or restaurant's own reports (/api/reports)
 // and the headquarters' company reports (/api/company/reports). Every report counts only
-// picked-up (Completed) reservations, by the day they were picked up.
+// picked-up (Completed) order items, by the day they were picked up; pickups count orders.
 
 // Longest period a report may cover: one (leap) year, both days included.
 export const MAX_PERIOD_DAYS = 366;
@@ -41,6 +42,13 @@ export interface PickupScope {
   partyJoin: string;
 }
 
+// Items belong to the caller through the product (store) or the item (restaurant); `parties` is the
+// other side of the handover.
+export const pickupOwnership = (role: string): PickupScope =>
+  role === "STORE"
+    ? { owner: "products.store_id = $1", partyJoin: "reservations.restaurant_id = parties.id" }
+    : { owner: "reservations.restaurant_id = $1", partyJoin: "products.store_id = parties.id" };
+
 // The pickups of a set of stores (a company's branches); the other party is the restaurant.
 export const storesScope = (): PickupScope => ({
   owner: "products.store_id = ANY($1::int[])",
@@ -48,9 +56,10 @@ export const storesScope = (): PickupScope => ({
 });
 
 // Food saved in one row: g/kg as kg, ml/l as l, kom and pak as pieces (like the dashboard's
-// "food saved" card), the value paid and the savings against the original price.
+// "food saved" card), the value paid and the savings against the original price. A pickup is an
+// order (all its accepted items are handed over at once).
 export const IMPACT_COLUMNS = `
-  COUNT(reservations.id) AS pickups,
+  COUNT(DISTINCT reservations.order_id) AS pickups,
   COUNT(DISTINCT parties.id) AS partners,
   COALESCE(SUM(CASE products.unit
     WHEN 'kg' THEN reservations.quantity
@@ -68,7 +77,7 @@ export const PICKED_UP_IN_PERIOD = `reservations.status = 'Completed'
 interface SalesRow {
   branch_name?: string;
   picked_up_on: string;
-  id: number;
+  code: string;
   product_name: string;
   category: string;
   party_name: string;
@@ -81,7 +90,7 @@ interface SalesRow {
   savings: string;
 }
 
-// One row per picked-up reservation in the period plus a totals row. Quantities are in different
+// One row per picked-up order item in the period (with its order's code) plus a totals row. Quantities are in different
 // units, so only the money columns are summed. With `withBranch` the store's name comes first.
 export const salesRows = async (
   scope: PickupScope,
@@ -94,7 +103,7 @@ export const salesRows = async (
     `SELECT
        ${withBranch ? "stores.business_name AS branch_name," : ""}
        to_char(reservations.picked_up_at, 'YYYY-MM-DD') AS picked_up_on,
-       reservations.id,
+       orders.code,
        products.name AS product_name,
        products.category,
        COALESCE(parties.business_name, parties.first_name || ' ' || parties.last_name, parties.email) AS party_name,
@@ -106,13 +115,14 @@ export const salesRows = async (
        ROUND(reservations.unit_price * reservations.quantity, 2) AS total,
        ROUND(GREATEST(products.original_price - reservations.unit_price, 0) * reservations.quantity, 2) AS savings
      FROM reservations
+     JOIN orders ON orders.id = reservations.order_id
      JOIN products ON reservations.product_id = products.id
      JOIN users AS stores ON stores.id = products.store_id
      JOIN users AS parties ON ${scope.partyJoin}
      LEFT JOIN cities ON cities.id = parties.city_id
      WHERE ${scope.owner}
        AND ${PICKED_UP_IN_PERIOD}
-     ORDER BY reservations.picked_up_at ASC, reservations.id ASC`,
+     ORDER BY reservations.picked_up_at ASC, orders.id ASC, reservations.id ASC`,
     [owner, period.from, period.to],
   );
 
@@ -120,7 +130,7 @@ export const salesRows = async (
   const rows: CsvCell[][] = result.rows.map((row) => [
     ...branch(row),
     row.picked_up_on,
-    row.id,
+    formatOrderCode(row.code),
     row.product_name,
     categoryLabel(lang, row.category),
     row.party_name,

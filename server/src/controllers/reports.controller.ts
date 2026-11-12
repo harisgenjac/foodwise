@@ -1,10 +1,9 @@
 import type { Request, Response } from "express";
-import { pickupOwnership } from "../services/reservationItems.js";
 import { toCsv } from "../utils/csv.js";
 import { impactHeaders, parseReportLanguage, salesHeaders } from "../utils/reportLabels.js";
-import { impactRows, parsePeriod, salesRows, sendCsv } from "../services/reports.js";
+import { impactRows, parsePeriod, pickupOwnership, salesRows, sendCsv } from "../services/reports.js";
 
-// Picked-up (Completed) reservations in the period: what a store sold or a restaurant bought.
+// Picked-up (Completed) order items in the period: what a store sold or a restaurant bought.
 export const getSalesReport = async (req: Request, res: Response) => {
   const { id: userId, role } = req.user!;
   const period = parsePeriod(req.query);
@@ -23,7 +22,7 @@ export const getSalesReport = async (req: Request, res: Response) => {
   }
 };
 
-// Food saved per month through picked-up reservations.
+// Food saved per month through picked-up orders.
 export const getImpactReport = async (req: Request, res: Response) => {
   const { id: userId, role } = req.user!;
   const period = parsePeriod(req.query);

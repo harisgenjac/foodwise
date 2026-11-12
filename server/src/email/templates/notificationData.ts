@@ -127,7 +127,7 @@ export const NOTIFICATION_EMAIL_DATA = `jsonb_build_object(
   'productName', COALESCE(products.name, donation_offers.name),
   'unit', COALESCE(products.unit, donation_offers.unit),
   'quantity', reservations.quantity::text,
-  'pickupAt', to_char(COALESCE(orders.pickup_at, reservations.pickup_date), 'YYYY-MM-DD"T"HH24:MI'),
+  'pickupAt', to_char(orders.pickup_at, 'YYYY-MM-DD"T"HH24:MI'),
   'restaurantName', COALESCE(order_restaurants.business_name, restaurants.business_name),
   'storeName', COALESCE(order_stores.business_name, stores.business_name),
   'orderCode', orders.code::text,

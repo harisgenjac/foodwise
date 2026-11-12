@@ -14,7 +14,6 @@ import type {
   OrderDetails,
   OrderItem,
   Product,
-  Reservation,
   User,
 } from "../types/index.js";
 
@@ -130,25 +129,6 @@ export const makeProduct = (overrides: Partial<Product> = {}): Product => ({
   created_at: "2030-01-01T00:00:00.000Z",
   updated_at: "2030-01-01T00:00:00.000Z",
   days_until_expiry: 3,
-  business_name: "Market Centar",
-  city: "Sarajevo",
-  ...overrides,
-});
-
-export const makeReservation = (overrides: Partial<Reservation> = {}): Reservation => ({
-  id: 20,
-  product_id: 10,
-  restaurant_id: 1,
-  quantity: "2",
-  status: "Pending",
-  pickup_date: "2030-01-01T10:00:00.000Z",
-  created_at: "2030-01-01T00:00:00.000Z",
-  updated_at: "2030-01-01T00:00:00.000Z",
-  product_name: "Piletina",
-  unit: "kg",
-  discounted_price: "5.00",
-  original_price: "10.00",
-  category: "Meat",
   business_name: "Market Centar",
   city: "Sarajevo",
   ...overrides,

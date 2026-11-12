@@ -88,8 +88,8 @@ function StoreDashboardPage() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard icon={Package} label={t("dashboard.statActiveProducts")} value={stats?.active_products ?? 0} />
-        <StatCard icon={Hourglass} label={t("dashboard.statPending")} value={stats?.pending_reservations ?? 0} tone="amber" />
-        <StatCard icon={CheckCircle2} label={t("dashboard.statConfirmed")} value={stats?.successful_reservations ?? 0} tone="green" />
+        <StatCard icon={Hourglass} label={t("dashboard.statPending")} value={stats?.pending_orders ?? 0} tone="amber" />
+        <StatCard icon={CheckCircle2} label={t("dashboard.statConfirmed")} value={stats?.successful_orders ?? 0} tone="green" />
         <StatCard
           icon={Leaf}
           label={t("dashboard.statSavedFood")}

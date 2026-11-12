@@ -244,7 +244,7 @@ describe("Branches", () => {
         () => other.get(`/api/company/branches/${branchId}`),
         () => other.put(`/api/company/branches/${branchId}`).send({}),
         () => other.get(`/api/company/branches/${branchId}/products`),
-        () => other.get(`/api/company/branches/${branchId}/reservations`),
+        () => other.get(`/api/company/branches/${branchId}/orders`),
         () => other.patch(`/api/company/branches/${branchId}/password`).send({ password: "lozinka123" }),
         () => other.post(`/api/company/branches/${branchId}/deactivate`),
         () => other.post(`/api/company/branches/${branchId}/reactivate`),
@@ -286,7 +286,7 @@ describe("Branches", () => {
         email: BRANCH,
         status: "active",
         active_products: 1,
-        pending_reservations: 1,
+        pending_orders: 1,
       });
       expect((await hq.get("/api/company/branches?q=tuzla")).body.total).toBe(1);
       expect((await hq.get(`/api/company/branches?city_id=${await cityId("Kladanj")}`)).body.total).toBe(1);
@@ -297,7 +297,7 @@ describe("Branches", () => {
       expect((await hq.get("/api/company/me")).body.company).toMatchObject({ branch_count: 2, active_branch_count: 1 });
     });
 
-    it("shows the branch's products, reservations and stats read-only", async () => {
+    it("shows the branch's products, orders and stats read-only", async () => {
       const branch = await login(BRANCH);
       const product = await createProduct(branch, { quantity: 10 });
       const reservation = await reserve(restaurant, product.id, 2);
@@ -305,15 +305,16 @@ describe("Branches", () => {
       const products = await hq.get(`/api/company/branches/${branchId}/products?status=Available`);
       expect(products.body.products.map((row: { id: number }) => row.id)).toEqual([product.id]);
       expect(products.body).toEqual((await branch.get("/api/products/mine?status=Available")).body);
-      const reservations = await hq.get(`/api/company/branches/${branchId}/reservations?status=Pending`);
-      expect(reservations.body.reservations.map((row: { id: number }) => row.id)).toEqual([reservation]);
+      const orders = await hq.get(`/api/company/branches/${branchId}/orders?status=Pending`);
+      expect(orders.body.orders.map((row: { id: number }) => row.id)).toEqual([await orderOf(reservation)]);
+      expect(orders.body).toEqual((await branch.get("/api/orders/store?status=Pending")).body);
       expect((await hq.get(`/api/company/branches/${branchId}/products?status=Nope`)).status).toBe(400);
 
       const details = await hq.get(`/api/company/branches/${branchId}`);
       expect(details.body.stats).toEqual({
         active_products: 1,
-        pending_reservations: 1,
-        reservations_this_month: 1,
+        pending_orders: 1,
+        orders_this_month: 1,
         completed_this_month: 0,
         saved_this_month: { kg: 0, l: 0, pieces: 0 },
         value_this_month: 0,
@@ -403,7 +404,7 @@ describe("Branches", () => {
 
       const response = await hq.post(`/api/company/branches/${branchId}/deactivate`);
       expect(response.status).toBe(200);
-      expect(response.body).toEqual({ message: "Branch deactivated.", cancelledReservations: 1, withdrawnRequests: 0 });
+      expect(response.body).toEqual({ message: "Branch deactivated.", cancelledOrders: 1, withdrawnRequests: 0 });
       expect(await reservationStatus(pending)).toBe("Cancelled");
       expect(await notificationsOf(RESTAURANT)).toContainEqual(
         expect.objectContaining({ type: "ORDER_CANCELLED_STORE_CLOSED", order_id: await orderOf(pending), details: null }),

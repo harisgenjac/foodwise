@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, CalendarCheck, Coins, Leaf, Store } from "lucide-react";
+import { ArrowRight, ReceiptText, Coins, Leaf, Store } from "lucide-react";
 import api from "../../api/axios.js";
 import { useAuth } from "../../context/AuthContext.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
@@ -113,7 +113,7 @@ function CompanyOverviewPage() {
       header: t("company.overview.columnPending"),
       className: "hidden lg:table-cell",
       cellClassName: "tabular-nums",
-      cell: (branch) => branch.pending_reservations,
+      cell: (branch) => branch.pending_orders,
     },
     {
       id: "pickedUp",
@@ -178,15 +178,15 @@ function CompanyOverviewPage() {
               />
             </StatCard>
             <StatCard
-              icon={CalendarCheck}
-              label={t("company.overview.statReservations")}
-              value={totals.reservations.total}
+              icon={ReceiptText}
+              label={t("company.overview.statOrders")}
+              value={totals.orders.total}
               tone="amber"
             >
               <p className="mt-1 text-xs text-gray-500">
-                {t("company.overview.reservationsDetail", {
-                  pickedUp: totals.reservations.picked_up,
-                  pending: totals.reservations.pending,
+                {t("company.overview.ordersDetail", {
+                  pickedUp: totals.orders.picked_up,
+                  pending: totals.orders.pending,
                 })}
               </p>
             </StatCard>

@@ -371,7 +371,7 @@ export const getStoreDetails = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Store not found." });
     }
 
-    // The store's offers are paged through GET /products?store_id=. Both reservation counts are
+    // The store's offers are paged through GET /products?store_id=. Both order counts are
     // picked-up (Completed) only: a Confirmed one can still become a missed pickup. A product counts
     // as sold only when restaurants bought some of it: one sold out only in the store's own shop
     // (Sold in shop) is not an app sale.
@@ -383,23 +383,22 @@ export const getStoreDetails = async (req: Request, res: Response) => {
                      WHERE reservations.product_id = products.id
                        AND reservations.status IN ('Confirmed', 'Completed'))
      ) AS sold_articles,
-     (SELECT COUNT(*) FROM reservations r JOIN products p ON r.product_id = p.id WHERE p.store_id = $1 AND r.status = 'Completed') AS successful_reservations
+     (SELECT COUNT(*) FROM orders WHERE orders.store_id = $1 AND orders.status = 'Completed') AS successful_orders
    FROM products WHERE store_id = $1`,
       [storeId],
     );
 
-    const myReservations = await pool.query(
-      `SELECT COUNT(*) AS my_reservations_count
-   FROM reservations r
-   JOIN products p ON r.product_id = p.id
-   WHERE p.store_id = $1 AND r.restaurant_id = $2 AND r.status = 'Completed'`,
+    const myOrders = await pool.query(
+      `SELECT COUNT(*) AS my_orders_count
+   FROM orders
+   WHERE orders.store_id = $1 AND orders.restaurant_id = $2 AND orders.status = 'Completed'`,
       [storeId, req.user!.id],
     );
     return res.status(200).json({
       message: "Store fetched successfully",
       store: result.rows[0],
       stats: stats.rows[0],
-      myReservations: myReservations.rows[0],
+      myOrders: myOrders.rows[0],
     });
   } catch (error) {
     console.error("Error while fetching store:", error);

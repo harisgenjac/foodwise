@@ -1,7 +1,7 @@
 import type { Request } from "express";
 import pool from "../../config/db.js";
 import { parseId } from "../../utils/params.js";
-import { CARD_PAGE_SIZE, listPage, parsePage } from "../../utils/pagination.js";
+import { ADMIN_PAGE_SIZE, CARD_PAGE_SIZE, listPage, parsePage, parseSort } from "../../utils/pagination.js";
 import { parseCityFilter } from "../../utils/cities.js";
 import { parseOrderCode } from "./codes.js";
 import { ORDER_STATUSES } from "./status.js";
@@ -202,7 +202,61 @@ export const listStoreOrders = async (storeId: number, query: Request["query"]) 
   return { orders: rows, total };
 };
 
-export const PICKUP_SCOPES = ["today", "upcoming", "completed"];
+const ADMIN_SORTS = { pickup_at: "orders.pickup_at" };
+
+// Every order on the platform for the admin (GET /admin/orders), newest first: filters by status,
+// by a user on either side, and a search over the product names, both businesses (name or email)
+// and the code. Null for an invalid filter, page or sort.
+export const listAdminOrders = async (query: Request["query"]) => {
+  const { q, status, user_id } = query;
+  const page = parsePage(query, ADMIN_PAGE_SIZE);
+  const orderBy = parseSort(query, ADMIN_SORTS, "orders.created_at DESC, orders.id DESC", "orders.id DESC");
+  if (!page || !orderBy) return null;
+  let from = `FROM orders
+    JOIN users AS stores ON stores.id = orders.store_id
+    JOIN users AS restaurants ON restaurants.id = orders.restaurant_id
+    ${LINES}
+    WHERE true`;
+  const values: (string | number)[] = [];
+  if (status) {
+    if (!isOrderStatus(status)) return null;
+    values.push(status);
+    from += ` AND orders.status = $${values.length}`;
+  }
+  if (user_id) {
+    const userId = parseId(user_id);
+    if (userId === null) return null;
+    values.push(userId);
+    from += ` AND (orders.store_id = $${values.length} OR orders.restaurant_id = $${values.length})`;
+  }
+  if (typeof q === "string" && q.trim()) {
+    values.push(`%${q.trim()}%`);
+    const p = `$${values.length}`;
+    let match = `${productNameMatches(p)} OR stores.business_name ILIKE ${p} OR stores.email ILIKE ${p}
+      OR restaurants.business_name ILIKE ${p} OR restaurants.email ILIKE ${p}`;
+    // Text that can be a code (with or without #) also finds the orders whose code starts with it.
+    const code = parseOrderCode(q);
+    if (code !== null) {
+      values.push(`${code}%`);
+      match += ` OR orders.code LIKE $${values.length}`;
+    }
+    from += ` AND (${match})`;
+  } else if (q !== undefined && typeof q !== "string") {
+    return null;
+  }
+  const { rows, total } = await listPage(
+    `${ORDER_COLUMNS},
+     stores.business_name AS store_name, stores.email AS store_email,
+     restaurants.business_name AS restaurant_name, restaurants.email AS restaurant_email`,
+    from,
+    orderBy,
+    values,
+    page,
+  );
+  return { orders: rows, total };
+};
+
+export const PICKUP_SCOPES =["today", "upcoming", "completed"];
 
 // The pickups page: the caller's orders through orders.store_id (store) or restaurant_id;
 // `parties` is the other side of the handover.
@@ -285,9 +339,10 @@ const PARTY_COLUMNS = (alias: string, cityAlias: string) => `json_build_object(
     'pickup_hours', ${alias}.pickup_hours
   )`;
 
-// One order for one of its two parties (null for anyone else): the order, its items with the
-// store's changes, both parties, the changes made at sending and the history.
-export const getOrderDetails = async (orderId: number, userId: number) => {
+// One order for one of its two parties (null for anyone else), or for the admin (`userId` null):
+// the order, its items with the store's changes, both parties, the changes made at sending and
+// the history.
+export const getOrderDetails = async (orderId: number, userId: number | null) => {
   const result = await pool.query(
     `SELECT ${ORDER_COLUMNS}, orders.send_changes,
        ${PARTY_COLUMNS("stores", "store_cities")} AS store,
@@ -298,7 +353,7 @@ export const getOrderDetails = async (orderId: number, userId: number) => {
      LEFT JOIN cities AS store_cities ON store_cities.id = stores.city_id
      LEFT JOIN cities AS restaurant_cities ON restaurant_cities.id = restaurants.city_id
      ${LINES}
-     WHERE orders.id = $1 AND (orders.store_id = $2 OR orders.restaurant_id = $2)`,
+     WHERE orders.id = $1 AND ($2::int IS NULL OR orders.store_id = $2 OR orders.restaurant_id = $2)`,
     [orderId, userId],
   );
   const order = result.rows[0];

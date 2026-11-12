@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
-  CalendarCheck,
+  ReceiptText,
   Coins,
   HeartHandshake,
   Inbox,
@@ -28,7 +28,7 @@ import type { AdminStats } from "../../types/index.js";
 
 // Bar colors by meaning, ordered so that easily confused hues (amber/red, amber/green) are not
 // neighbours; gray marks closed or removed items. Every bar has a legend with counts.
-const RESERVATION_COLORS = {
+const ORDER_COLORS = {
   Confirmed: "bg-green-600",
   Completed: "bg-blue-600",
   Pending: "bg-amber-600",
@@ -65,7 +65,7 @@ function AdminDashboardPage() {
     value.toLocaleString(i18n.language, { maximumFractionDigits: digits });
   const money = (value: number) =>
     `${value.toLocaleString(i18n.language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} KM`;
-  const reservationStatuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
+  const orderStatuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
   const productStatuses = t("productStatus", { returnObjects: true }) as Record<string, string>;
   const donationStatuses = t("donations.statuses", { returnObjects: true }) as Record<string, string>;
   const monthNames = t("dashboard.months", { returnObjects: true }) as string[];
@@ -194,17 +194,17 @@ function AdminDashboardPage() {
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <OverviewPanel
-          title={t("admin.dashboard.reservationsSection")}
-          icon={CalendarCheck}
-          link={{ to: "/admin/reservations", label: viewAll }}
+          title={t("admin.dashboard.ordersSection")}
+          icon={ReceiptText}
+          link={{ to: "/admin/orders", label: viewAll }}
         >
           <DistributionBar
-            label={t("admin.dashboard.reservationsSection")}
-            totalLabel={t("admin.dashboard.total", { count: sum(stats.reservations) })}
-            items={(Object.keys(RESERVATION_COLORS) as (keyof typeof RESERVATION_COLORS)[]).map((status) => ({
-              label: reservationStatuses[status] ?? status,
-              value: stats.reservations[status],
-              color: RESERVATION_COLORS[status],
+            label={t("admin.dashboard.ordersSection")}
+            totalLabel={t("admin.dashboard.total", { count: sum(stats.orders) })}
+            items={(Object.keys(ORDER_COLORS) as (keyof typeof ORDER_COLORS)[]).map((status) => ({
+              label: orderStatuses[status] ?? status,
+              value: stats.orders[status],
+              color: ORDER_COLORS[status],
             }))}
           />
         </OverviewPanel>

@@ -4,10 +4,10 @@ import { useLocation } from "react-router-dom";
 import AdminProductsPage from "./AdminProductsPage.js";
 import AdminCreditsPage from "./AdminCreditsPage.js";
 import AdminUsersPage from "./AdminUsersPage.js";
-import AdminReservationsPage from "./AdminReservationsPage.js";
+import AdminOrdersPage from "./AdminOrdersPage.js";
 import AdminDonationsPage from "./AdminDonationsPage.js";
-import { apiMock, makeDonation, makeUser, renderWithProviders, t } from "../../test/utils.js";
-import type { AdminCreditUser, AdminDonation, AdminProduct, AdminReservation, Plan } from "../../types/index.js";
+import { apiMock, makeDonation, makeOrder, makeUser, renderWithProviders, t } from "../../test/utils.js";
+import type { AdminCreditUser, AdminDonation, AdminProduct, AdminOrder, Plan } from "../../types/index.js";
 
 // jsdom renders both the table (md up) and the phone cards (DataTable); list checks use the table.
 const findInTable = async (text: string) => within(await screen.findByRole("table")).getByText(text);
@@ -51,22 +51,11 @@ const CREDIT_ROW: AdminCreditUser = {
   available: 40,
 };
 
-const RESERVATION: AdminReservation = {
-  id: 20,
-  status: "Pending",
-  quantity: "2",
-  unit_price: "5.00",
-  pickup_date: "2030-01-01T10:00:00",
-  picked_up_at: null,
-  created_at: "2026-10-01T10:00:00.000Z",
-  is_overdue: false,
-  product_id: 10,
-  product_name: "Piletina",
-  unit: "kg",
-  store_id: 5,
+const { business_name: _business, city: _city, ...ORDER_BASE } = makeOrder();
+const ORDER: AdminOrder = {
+  ...ORDER_BASE,
   store_name: "Market Centar",
   store_email: "market@test.com",
-  restaurant_id: 6,
   restaurant_name: "Bistro",
   restaurant_email: "bistro@test.com",
 };
@@ -199,7 +188,7 @@ describe("sortable admin tables", () => {
 
   it.each([
     ["users", AdminUsersPage, "/admin/users", { users: [{ ...makeUser({ id: 4, role: "STORE" }), created_at: "2026-10-01T10:00:00.000Z" }] }, "admin.users.columnCreated", "created_at"],
-    ["reservations", AdminReservationsPage, "/admin/reservations", { reservations: [RESERVATION] }, "admin.reservations.columnPickup", "pickup_date"],
+    ["orders", AdminOrdersPage, "/admin/orders", { orders: [ORDER] }, "admin.orders.columnPickup", "pickup_at"],
     ["donations", AdminDonationsPage, "/admin/donations", { donations: [DONATION] }, "admin.donations.columnExpiry", "expiry_date"],
   ])("makes the %s table sortable", async (_name, Page, url, rows, label, sortKey) => {
     renderWithProviders(

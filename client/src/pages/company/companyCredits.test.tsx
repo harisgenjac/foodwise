@@ -227,8 +227,8 @@ describe("the branch page's credits card", () => {
     },
     stats: {
       active_products: 0,
-      pending_reservations: 0,
-      reservations_this_month: 0,
+      pending_orders: 0,
+      orders_this_month: 0,
       completed_this_month: 0,
       saved_this_month: { kg: 0, l: 0, pieces: 0 },
       value_this_month: 0,

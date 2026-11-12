@@ -4,7 +4,6 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import {
-  CalendarCheck,
   CircleCheck,
   Clock,
   Eye,
@@ -18,6 +17,7 @@ import {
   PencilLine,
   Phone,
   Power,
+  ReceiptText,
   Store,
 } from "lucide-react";
 import api, { assetUrl } from "../../api/axios.js";
@@ -28,7 +28,7 @@ import LoadErrorState from "../../components/product/LoadErrorState.js";
 import DetailItem from "../../components/product/DetailItem.js";
 import StatCard from "../../components/dashboard/StatCard.js";
 import DashboardProductCard from "../../components/dashboard/DashboardProductCard.js";
-import DashboardReservationCard from "../../components/dashboard/DashboardReservationCard.js";
+import OrderCard from "../../components/order/OrderCard.js";
 import ConfirmModal from "../../components/common/ConfirmModal.js";
 import SetPasswordModal from "../../components/admin/SetPasswordModal.js";
 import EditBranchModal from "../../components/company/EditBranchModal.js";
@@ -42,25 +42,25 @@ import { CARD_PAGE_SIZE } from "../../utils/pagination.js";
 import { BRANCH_STATUS_STYLES } from "../../utils/branches.js";
 import { formatSavedFood } from "../../utils/savedFood.js";
 import { formatDateTime } from "../../utils/admin.js";
-import type { BranchDetails, Product, Reservation } from "../../types/index.js";
+import type { BranchDetails, Order, Product } from "../../types/index.js";
 
 type Dialog = "edit" | "password" | "invitation" | "deactivate" | "reactivate" | null;
-type Tab = "products" | "reservations";
+type Tab = "products" | "orders";
 
 const PRODUCT_STATUSES = ["Available", "Sold", "Expired"];
-const RESERVATION_STATUSES = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
+const ORDER_STATUSES = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
 
 const errorMessage = (err: unknown) => (axios.isAxiosError(err) ? err.response?.data?.error : null);
 
-// The branch's products or reservations, read-only: the branch itself handles them.
+// The branch's products or orders, read-only: the branch itself handles them.
 function BranchActivity({ branchId, tab }: { branchId: number; tab: Tab }) {
   const { t } = useTranslation();
   const [status, setStatus] = useState("");
   const isProducts = tab === "products";
   const { limit, loadMore } = usePagedLimit(CARD_PAGE_SIZE, status);
   // The page remounts this component per tab, so `tab` never changes within one instance.
-  const list = useFetch<Product | Reservation>(`/company/branches/${branchId}/${tab}`, tab, { status, limit });
-  const statuses = isProducts ? PRODUCT_STATUSES : RESERVATION_STATUSES;
+  const list = useFetch<Product | Order>(`/company/branches/${branchId}/${tab}`, tab, { status, limit });
+  const statuses = isProducts ? PRODUCT_STATUSES : ORDER_STATUSES;
   const labels = t(isProducts ? "productStatus" : "reservationStatus", { returnObjects: true }) as Record<string, string>;
 
   return (
@@ -88,8 +88,8 @@ function BranchActivity({ branchId, tab }: { branchId: number; tab: Tab }) {
         <LoadErrorState />
       ) : list.data.length === 0 ? (
         <EmptyState
-          icon={isProducts ? Package : CalendarCheck}
-          title={t(isProducts ? "company.branchDetails.noProducts" : "company.branchDetails.noReservations")}
+          icon={isProducts ? Package : ReceiptText}
+          title={t(isProducts ? "company.branchDetails.noProducts" : "company.branchDetails.noOrders")}
           subtitle={t("company.branchDetails.readOnly")}
         />
       ) : (
@@ -100,13 +100,9 @@ function BranchActivity({ branchId, tab }: { branchId: number; tab: Tab }) {
                   // An empty actions slot: no details link or buttons, the headquarters only reads.
                   <DashboardProductCard key={product.id} product={product} actions={<></>} />
                 ))
-              : (list.data as Reservation[]).map((reservation) => (
-                  <DashboardReservationCard
-                    key={reservation.id}
-                    reservation={reservation}
-                    partyLabel={t("reservations.buyer")}
-                    actions={<></>}
-                  />
+              : (list.data as Order[]).map((order) => (
+                  // No details link: the order page belongs to the branch and the restaurant.
+                  <OrderCard key={order.id} order={order} partyLabel={t("reservations.buyer")} actions={<></>} />
                 ))}
           </div>
           <LoadMore shown={list.data.length} total={list.total ?? list.data.length} fetching={list.fetching} onLoadMore={loadMore} />
@@ -117,7 +113,7 @@ function BranchActivity({ branchId, tab }: { branchId: number; tab: Tab }) {
 }
 
 // A branch as its headquarters sees it: the data the headquarters manages (name, city, address,
-// phone, login password), this month's numbers, read-only products and reservations, and
+// phone, login password), this month's numbers, read-only products and orders, and
 // deactivating or reactivating the branch.
 function CompanyBranchDetailsPage() {
   const { id } = useParams();
@@ -199,7 +195,7 @@ function CompanyBranchDetailsPage() {
     "inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50";
   const tabs: { key: Tab; label: string; icon: typeof Package }[] = [
     { key: "products", label: t("company.branchDetails.productsTab"), icon: Package },
-    { key: "reservations", label: t("company.branchDetails.reservationsTab"), icon: CalendarCheck },
+    { key: "orders", label: t("company.branchDetails.ordersTab"), icon: ReceiptText },
   ];
 
   return (
@@ -285,8 +281,8 @@ function CompanyBranchDetailsPage() {
           <StatCard icon={Package} label={t("company.branchDetails.activeProducts")} value={stats.active_products} />
           <StatCard
             icon={Hourglass}
-            label={t("company.branchDetails.pendingReservations")}
-            value={stats.pending_reservations}
+            label={t("company.branchDetails.pendingOrders")}
+            value={stats.pending_orders}
             tone="amber"
           />
           <StatCard

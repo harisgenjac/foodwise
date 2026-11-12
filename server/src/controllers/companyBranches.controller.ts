@@ -9,7 +9,7 @@ import {
   BRANCH_NOT_FOUND,
   BRANCH_STATUS,
   BRANCH_STATUSES,
-  PENDING_RESERVATIONS,
+  PENDING_ORDERS,
   createBranch,
   deactivateBranch,
   findCompanyBranch,
@@ -22,11 +22,11 @@ import {
   updateBranch,
 } from "../services/branches.js";
 import { listStoreProducts } from "./products.controller.js";
-import { listStoreReservations } from "../services/reservationItems.js";
+import { listStoreOrders } from "../services/orders/queries.js";
 
 // The headquarters (COMPANY) manages its company's branches. Every branch route answers 404 for a
 // branch of another company, so their existence is not revealed. The headquarters only reads a
-// branch's products and reservations; the branch itself handles them.
+// branch's products and orders; the branch itself handles them.
 
 // The caller's company (a COMPANY user always has one, see the users_company_matches_role CHECK).
 export const callerCompanyId = async (req: Request): Promise<number> => {
@@ -104,7 +104,7 @@ export const getBranches = async (req: Request, res: Response) => {
     }
     const { rows, total } = await listPage(
       `users.id, users.business_name, cities.name AS city, users.address, users.email,
-       ${BRANCH_STATUS} AS status, ${ACTIVE_PRODUCTS}, ${PENDING_RESERVATIONS}, users.created_at`,
+       ${BRANCH_STATUS} AS status, ${ACTIVE_PRODUCTS}, ${PENDING_ORDERS}, users.created_at`,
       from,
       "users.business_name ASC, users.id DESC",
       values,
@@ -113,7 +113,7 @@ export const getBranches = async (req: Request, res: Response) => {
     const branches = rows.map((row) => ({
       ...row,
       active_products: Number(row.active_products),
-      pending_reservations: Number(row.pending_reservations),
+      pending_orders: Number(row.pending_orders),
     }));
     return res.status(200).json({ message: "Branches fetched successfully.", branches, total });
   } catch (error) {
@@ -173,19 +173,20 @@ export const getBranchProducts = async (req: Request, res: Response) => {
   }
 };
 
-export const getBranchReservations = async (req: Request, res: Response) => {
+// The branch's orders, read-only: the same list and filters as the branch's own Orders page.
+export const getBranchOrders = async (req: Request, res: Response) => {
   try {
     const branch = await findCompanyBranch(pool, await callerCompanyId(req), req.params.id);
     if (!branch) {
       return res.status(404).json({ error: BRANCH_NOT_FOUND });
     }
-    const result = await listStoreReservations(branch.id, req.query);
+    const result = await listStoreOrders(branch.id, req.query);
     if (!result) {
       return res.status(400).json({ error: "Invalid filter." });
     }
-    return res.status(200).json({ message: "Reservations fetched successfully.", ...result });
+    return res.status(200).json({ message: "Orders fetched successfully.", ...result });
   } catch (error) {
-    return fail(res, error, "An error occurred while fetching reservations.");
+    return fail(res, error, "An error occurred while fetching orders.");
   }
 };
 

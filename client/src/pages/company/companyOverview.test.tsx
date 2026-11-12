@@ -45,8 +45,8 @@ const branch = (overrides: Partial<CompanyDashboardBranch>): CompanyDashboardBra
   available: 40,
   open_requests: [],
   active_products: 4,
-  pending_reservations: 1,
-  reservations_this_month: 6,
+  pending_orders: 1,
+  orders_this_month: 6,
   completed_this_month: 5,
   saved_this_month: { kg: 12.5, l: 0, pieces: 3 },
   value_this_month: 40,
@@ -67,7 +67,7 @@ const DASHBOARD: CompanyDashboard = {
   totals: {
     branches: { active: 3, all: 4, deactivated: 1 },
     credits: { used: 29, total: 70 },
-    reservations: { total: 9, picked_up: 7, pending: 2 },
+    orders: { total: 9, picked_up: 7, pending: 2 },
     saved: { kg: 12.5, l: 1.5, pieces: 3, value: 52.4 },
   },
   branches: [
@@ -184,9 +184,9 @@ describe("CompanyOverviewPage", () => {
       "aria-valuenow",
       "41",
     );
-    const reservations = statCard(t("company.overview.statReservations"));
-    expect(reservations).toHaveTextContent("9");
-    expect(reservations).toHaveTextContent(t("company.overview.reservationsDetail", { pickedUp: 7, pending: 2 }));
+    const orders = statCard(t("company.overview.statOrders"));
+    expect(orders).toHaveTextContent("9");
+    expect(orders).toHaveTextContent(t("company.overview.ordersDetail", { pickedUp: 7, pending: 2 }));
     const saved = statCard(t("company.overview.statSaved"));
     expect(saved).toHaveTextContent("52.40 KM");
     expect(within(saved).getAllByRole("listitem").map((chip) => chip.textContent)).toEqual(["12.5 kg", "1.5 l", "3 kom"]);
@@ -206,7 +206,7 @@ describe("CompanyOverviewPage", () => {
     expect(within(screen.getByTestId("dashboard-branch-23")).getByText(t("company.credits.noPlan"))).toBeInTheDocument();
   });
 
-  it("shows each branch as a card on phones: city, status, plan, usage, offers and pending reservations", async () => {
+  it("shows each branch as a card on phones: city, status, plan, usage, offers and pending orders", async () => {
     renderPage();
     const cards = await screen.findAllByTestId("data-card");
     const visoko = within(cards[0]!);

@@ -5,7 +5,7 @@ import {
   deactivateCompanyBranch,
   getBranchDetails,
   getBranchProducts,
-  getBranchReservations,
+  getBranchOrders,
   getBranches,
   reactivateCompanyBranch,
   resendCompanyBranchInvitation,
@@ -49,7 +49,7 @@ router.post("/branches", createCompanyBranch);
 router.get("/branches/:id", getBranchDetails);
 router.put("/branches/:id", updateCompanyBranch);
 router.get("/branches/:id/products", getBranchProducts);
-router.get("/branches/:id/reservations", getBranchReservations);
+router.get("/branches/:id/orders", getBranchOrders);
 router.patch("/branches/:id/password", rateLimiters.password, setCompanyBranchPassword);
 router.post("/branches/:id/invitation", resendCompanyBranchInvitation);
 router.post("/branches/:id/deactivate", deactivateCompanyBranch);

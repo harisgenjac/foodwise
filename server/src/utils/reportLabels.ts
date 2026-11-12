@@ -41,7 +41,7 @@ export const salesHeaders = (lang: ReportLanguage, role: Role): string[] =>
   lang === "en"
     ? [
         "Pickup date",
-        "Reservation no.",
+        "Order",
         "Product",
         "Category",
         role === "STORE" ? "Restaurant" : "Store",
@@ -55,7 +55,7 @@ export const salesHeaders = (lang: ReportLanguage, role: Role): string[] =>
       ]
     : [
         "Datum preuzimanja",
-        "Broj rezervacije",
+        "Narudžba",
         "Proizvod",
         "Kategorija",
         role === "STORE" ? "Restoran" : "Prodavnica",

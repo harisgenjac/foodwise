@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import CompanyBranchesPage from "./CompanyBranchesPage.js";
 import CompanyCreateBranchPage from "./CompanyCreateBranchPage.js";
 import CompanyBranchDetailsPage from "./CompanyBranchDetailsPage.js";
-import { apiMock, axiosError, makeProduct, makeReservation, makeUser, renderWithProviders, t } from "../../test/utils.js";
+import { apiMock, axiosError, makeOrder, makeOrderItem, makeProduct, makeUser, renderWithProviders, t } from "../../test/utils.js";
 import type { Branch, BranchDetails, Company } from "../../types/index.js";
 
 const hq = makeUser({ id: 9, role: "COMPANY", company_id: 3, company_name: "Bingo d.o.o.", phone: "035 000" });
@@ -26,7 +26,7 @@ const visoko: Branch = {
   email: "bingo.visoko@test.com",
   status: "active",
   active_products: 4,
-  pending_reservations: 1,
+  pending_orders: 1,
   created_at: "2026-10-01T10:00:00.000Z",
 };
 
@@ -55,8 +55,8 @@ const details = (overrides: Partial<BranchDetails["branch"]> = {}): BranchDetail
   },
   stats: {
     active_products: 4,
-    pending_reservations: 1,
-    reservations_this_month: 9,
+    pending_orders: 1,
+    orders_this_month: 9,
     completed_this_month: 7,
     saved_this_month: { kg: 12.5, l: 0, pieces: 3 },
     value_this_month: 40,
@@ -198,8 +198,8 @@ describe("CompanyBranchDetailsPage", () => {
       get: {
         "/company/branches/21": data,
         "/company/branches/21/products": () => ({ products: [makeProduct({ id: 5, name: "Mlijeko" })], total: 1 }),
-        "/company/branches/21/reservations": () => ({
-          reservations: [makeReservation({ id: 7, product_name: "Hljeb", status: "Pending" })],
+        "/company/branches/21/orders": () => ({
+          orders: [makeOrder({ id: 7, items: [makeOrderItem({ product_name: "Hljeb" })], business_name: "Restoran Ukus" })],
           total: 1,
         }),
         ...extra,
@@ -215,7 +215,7 @@ describe("CompanyBranchDetailsPage", () => {
     expect(screen.getByText("7")).toBeInTheDocument();
   });
 
-  it("lists products and reservations without any actions, with a status filter per tab", async () => {
+  it("lists products and orders without any actions, with a status filter per tab", async () => {
     const products = vi.fn(() => ({ products: [makeProduct({ id: 5, name: "Mlijeko" })], total: 1 }));
     renderPage(details(), { "/company/branches/21/products": products });
 
@@ -225,9 +225,13 @@ describe("CompanyBranchDetailsPage", () => {
     await userEvent.selectOptions(screen.getByLabelText(t("company.branchDetails.statusFilter")), "Sold");
     await waitFor(() => expect(products).toHaveBeenLastCalledWith(expect.objectContaining({ status: "Sold" })));
 
-    await userEvent.click(screen.getByRole("tab", { name: t("company.branchDetails.reservationsTab") }));
-    expect(await screen.findByText("Hljeb")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: t("reservations.accept") })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("tab", { name: t("company.branchDetails.ordersTab") }));
+    const order = await screen.findByTestId("order-card");
+    expect(within(order).getByText(/Hljeb/)).toBeInTheDocument();
+    expect(within(order).getByText(/#K7PM/)).toBeInTheDocument();
+    // The order page belongs to the branch and the restaurant: no details link or buttons.
+    expect(within(order).queryByRole("link")).not.toBeInTheDocument();
+    expect(within(order).queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("edits the name, city, address and phone", async () => {

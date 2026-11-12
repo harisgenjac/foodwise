@@ -37,9 +37,8 @@ export const BRANCH_STATUSES = ["active", "deactivated", "blocked"];
 export const ACTIVE_PRODUCTS = `(SELECT COUNT(*) FROM products
   WHERE products.store_id = users.id AND products.status = 'Available'
     AND products.expiry_date >= CURRENT_DATE) AS active_products`;
-export const PENDING_RESERVATIONS = `(SELECT COUNT(*) FROM reservations
-  JOIN products ON reservations.product_id = products.id
-  WHERE products.store_id = users.id AND reservations.status = 'Pending') AS pending_reservations`;
+export const PENDING_ORDERS = `(SELECT COUNT(*) FROM orders
+  WHERE orders.store_id = users.id AND orders.status = 'Pending') AS pending_orders`;
 
 export const BRANCH_NOT_FOUND = "Branch not found.";
 
@@ -223,14 +222,14 @@ export const deactivateBranch = async (
     branch.id,
   ]);
   const withdrawnRequests = await closeBranchCredits(client, branch.id);
-  const cancelledReservations = await cancelPendingOrders(
+  const cancelledOrders = await cancelPendingOrders(
     client,
     "orders.store_id = $1",
     [branch.id],
     (order) => order.restaurant_id,
     { storeClosed: true },
   );
-  return { cancelledReservations, withdrawnRequests };
+  return { cancelledOrders, withdrawnRequests };
 };
 
 // Its products that have not expired show again through the visibility condition.
@@ -262,16 +261,17 @@ export const getBranchProfile = async (db: Pool | PoolClient, branchId: number) 
 
 export interface BranchStats {
   active_products: number;
-  pending_reservations: number;
-  reservations_this_month: number;
+  pending_orders: number;
+  orders_this_month: number;
   completed_this_month: number;
   saved_this_month: { kg: number; l: number; pieces: number };
   value_this_month: number;
 }
 
 // Numbers for the branch page and the headquarters' dashboard, per branch. This month is the
-// local calendar month (APP_TIMEZONE), like the store dashboard. Pending reservations are the ones
-// open now; picked-up ones, food saved and its value count only Completed reservations.
+// local calendar month (APP_TIMEZONE), like the store dashboard. Pending orders are the ones open
+// now; orders this month by when they were sent, picked up ones by their pickup. Food saved and
+// its value count the items picked up this month (their accepted quantities).
 export const getBranchesStats = async (
   db: Pool | PoolClient,
   branchIds: number[],
@@ -282,10 +282,14 @@ export const getBranchesStats = async (
        (SELECT COUNT(*) FROM products
         WHERE products.store_id = branches.id AND products.status = 'Available'
           AND products.expiry_date >= CURRENT_DATE) AS active_products,
-       COUNT(reservations.id) FILTER (WHERE reservations.status = 'Pending') AS pending_reservations,
-       COUNT(reservations.id) FILTER (WHERE reservations.created_at >= date_trunc('month', CURRENT_DATE))
-         AS reservations_this_month,
-       COUNT(reservations.id) FILTER (WHERE ${thisMonth}) AS completed_this_month,
+       (SELECT COUNT(*) FROM orders
+        WHERE orders.store_id = branches.id AND orders.status = 'Pending') AS pending_orders,
+       (SELECT COUNT(*) FROM orders
+        WHERE orders.store_id = branches.id AND orders.created_at >= date_trunc('month', CURRENT_DATE))
+         AS orders_this_month,
+       (SELECT COUNT(*) FROM orders
+        WHERE orders.store_id = branches.id AND orders.status = 'Completed'
+          AND orders.picked_up_at >= date_trunc('month', CURRENT_DATE)) AS completed_this_month,
        ${savedUnits(thisMonth)},
        COALESCE(ROUND(SUM(reservations.unit_price * reservations.quantity) FILTER (WHERE ${thisMonth}), 2), 0)
          AS value_this_month
@@ -300,8 +304,8 @@ export const getBranchesStats = async (
       row.id as number,
       {
         active_products: Number(row.active_products),
-        pending_reservations: Number(row.pending_reservations),
-        reservations_this_month: Number(row.reservations_this_month),
+        pending_orders: Number(row.pending_orders),
+        orders_this_month: Number(row.orders_this_month),
         completed_this_month: Number(row.completed_this_month),
         saved_this_month: { kg: Number(row.kg), l: Number(row.l), pieces: Number(row.pieces) },
         value_this_month: Number(row.value_this_month),

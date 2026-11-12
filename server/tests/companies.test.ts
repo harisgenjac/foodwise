@@ -301,7 +301,7 @@ describe("Companies", () => {
       await restaurant.post("/api/favorites").send({ store_id: product.store_id });
 
       const response = await admin.post(`/api/admin/companies/${companyId}/block`).send({ reason: "Kršenje" });
-      expect(response.body.cancelledReservations).toBe(1);
+      expect(response.body.cancelledOrders).toBe(1);
       expect(await reservationStatus(pending)).toBe("Cancelled");
       expect(await reservationStatus(confirmed)).toBe("Confirmed");
       // The restaurant is told without the reason.

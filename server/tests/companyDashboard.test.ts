@@ -240,7 +240,7 @@ describe("GET /api/company/dashboard", () => {
 
     it("counts this month's reservations and picked-up food, deactivated branches included", async () => {
       const body = await dashboard();
-      expect(body.totals.reservations).toEqual({ total: 6, picked_up: 5, pending: 1 });
+      expect(body.totals.orders).toEqual({ total: 6, picked_up: 5, pending: 1 });
       // kg: 2 + 0.5 + 1 (closed); l: 1.5; pieces: 3. Value: 10 + 5 + 6 + 6 + 3.
       expect(body.totals.saved).toEqual({ kg: 3.5, l: 1.5, pieces: 3, value: 30 });
       expect(body.totals.credits).toEqual({ used: 3, total: 10 });
@@ -256,9 +256,9 @@ describe("GET /api/company/dashboard", () => {
         expect(row).toMatchObject(stats);
         const { credits } = (await hq.get(`/api/company/branches/${row.id}/credits`)).body;
         expect([row.used, row.total]).toEqual([credits.used, credits.total]);
-        sums.reservations += stats.reservations_this_month;
+        sums.reservations += stats.orders_this_month;
         sums.completed += stats.completed_this_month;
-        sums.pending += stats.pending_reservations;
+        sums.pending += stats.pending_orders;
         sums.kg += stats.saved_this_month.kg;
         sums.l += stats.saved_this_month.l;
         sums.pieces += stats.saved_this_month.pieces;
@@ -266,7 +266,7 @@ describe("GET /api/company/dashboard", () => {
         sums.used += credits.used;
         sums.total += credits.total;
       }
-      expect(body.totals.reservations).toEqual({
+      expect(body.totals.orders).toEqual({
         total: sums.reservations,
         picked_up: sums.completed,
         pending: sums.pending,
