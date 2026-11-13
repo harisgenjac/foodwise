@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
   ReceiptText,
-  CalendarPlus,
+  ShoppingCart,
   CircleCheck,
   Clock,
   Hourglass,
@@ -28,7 +28,7 @@ import Breadcrumbs, { BreadcrumbPlaceholder } from "../components/Breadcrumbs.js
 import EmptyState from "../components/product/EmptyState.js";
 import SortSelect, { STORE_PROFILE_SORT_OPTIONS, type StoreProfileSort } from "../components/product/SortSelect.js";
 import DetailItem from "../components/product/DetailItem.js";
-import ReserveProductModal from "../components/product/ReserveProductModal.js";
+import AddToCartModal from "../components/cart/AddToCartModal.js";
 import StatCard from "../components/dashboard/StatCard.js";
 import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
 import OrderCard from "../components/order/OrderCard.js";
@@ -118,7 +118,6 @@ function StoreDetailsPage() {
     data: productsList,
     total: productsTotal,
     fetching: productsFetching,
-    refetch: refetchProducts,
   } = useFetch<Product>("/products", "products", { store_id: id!, sort: productSort, limit: products.limit });
 
   const reservations = usePagedLimit(CARD_PAGE_SIZE, `${id}-${reservationStatus}`);
@@ -127,14 +126,13 @@ function StoreDetailsPage() {
     total: reservationsTotal,
     loading: reservationsLoading,
     fetching: reservationsFetching,
-    refetch: refetchReservations,
   } = useFetch<Order>("/orders/mine", "orders", {
     store_id: id!,
     status: reservationStatus,
     limit: reservations.limit,
   });
   // The tab's count: every order here, whatever status pill is selected.
-  const { total: reservationsCount, refetch: refetchReservationsCount } = useFetch<Order>(
+  const { total: reservationsCount } = useFetch<Order>(
     "/orders/mine",
     "orders",
     { store_id: id!, limit: 1 },
@@ -324,8 +322,8 @@ function StoreDetailsPage() {
                         onClick={() => setSelectedProduct(product)}
                         className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-orange-500 py-2.5 text-sm font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
                       >
-                        <CalendarPlus className="h-4 w-4" />
-                        {t("myProducts.reserveButton")}
+                        <ShoppingCart className="h-4 w-4" />
+                        {t("cart.add")}
                       </button>
                     )}
                   </>
@@ -395,16 +393,10 @@ function StoreDetailsPage() {
       )}
 
       {selectedProduct && (
-        <ReserveProductModal
+        <AddToCartModal
           product={selectedProduct}
           storeLine={[store.business_name, store.city].filter(Boolean).join(" · ")}
           onClose={() => setSelectedProduct(null)}
-          onReserved={() => {
-            fetchStoreDetails();
-            refetchProducts();
-            refetchReservations();
-            refetchReservationsCount();
-          }}
         />
       )}
     </div>

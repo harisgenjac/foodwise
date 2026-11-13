@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
   CalendarClock,
-  CalendarPlus,
+  ShoppingCart,
   MapPin,
   Search,
   SearchX,
@@ -22,7 +22,7 @@ import SortSelect, {
 } from "../components/product/SortSelect.js";
 import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
-import ReserveProductModal from "../components/product/ReserveProductModal.js";
+import AddToCartModal from "../components/cart/AddToCartModal.js";
 import { inputStyle } from "../components/form/FormField.js";
 import CitySelect from "../components/form/CitySelect.js";
 import RadiusSelect from "../components/product/RadiusSelect.js";
@@ -59,7 +59,6 @@ function BrowseProductsPage() {
     loading,
     fetching,
     error,
-    refetch,
   } = useFetch<Product>("/products", "products", { ...query, limit });
 
   // The sort is not a filter, so it stays.
@@ -195,8 +194,8 @@ function BrowseProductsPage() {
                     onClick={() => setSelectedProduct(product)}
                     className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-orange-500 py-2.5 text-sm font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
                   >
-                    <CalendarPlus className="h-4 w-4" />
-                    {t("myProducts.reserveButton")}
+                    <ShoppingCart className="h-4 w-4" />
+                    {t("cart.add")}
                   </button>
                 </>
               }
@@ -212,10 +211,9 @@ function BrowseProductsPage() {
       )}
 
       {selectedProduct && (
-        <ReserveProductModal
+        <AddToCartModal
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
-          onReserved={refetch}
         />
       )}
     </div>

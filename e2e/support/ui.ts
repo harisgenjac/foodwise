@@ -1,5 +1,6 @@
 // Small UI helpers shared by the specs. Kept as plain functions, not page objects.
 import { expect, type Page } from "@playwright/test";
+import { API_URL } from "./accounts.js";
 import { sarajevoDate } from "./dates.js";
 
 // Toasts are role="status", and so is the credit banner, so they are told apart by text.
@@ -82,29 +83,55 @@ export const expectAvailableCredits = async (page: Page, expected: number) => {
   await expect(await availableOnCreditsPage(page)).toHaveText(String(expected));
 };
 
-// The restaurant orders a product from its marketplace card through the order dialog (pickup
-// tomorrow at `time`) and closes the result step. Returns the order's code shown there (K7PM).
+// Empties the restaurant's cart through the API with the page's own session. The seeded
+// restaurant is shared by the specs, so a spec that orders starts from an empty cart.
+export const emptyCart = async (page: Page) => {
+  const response = await page.request.delete(`${API_URL}/api/cart`);
+  expect(response.ok(), `DELETE /api/cart → ${response.status()}`).toBe(true);
+};
+
+// Puts a product from its marketplace card into the cart ("Dodaj u korpu").
+export const addToCart = async (page: Page, productName: string, quantity: string) => {
+  const card = await searchMarketplace(page, productName);
+  await expect(card).toHaveCount(1);
+  await card.getByRole("button", { name: "Dodaj u korpu" }).click();
+  const dialog = page.getByRole("dialog", { name: /^(Dodaj u korpu|Izmijeni količinu u korpi)$/ });
+  await dialog.getByLabel("Količina").fill(quantity);
+  await dialog.getByRole("button", { name: /^(Dodaj u korpu|Sačuvaj)$/ }).click();
+  await expect(dialog).toBeHidden();
+};
+
+// Opens the cart, picks the pickup (tomorrow at `time`) and sends the order. Returns the code
+// from the confirmation (K7PM); the confirmation stays on screen for the caller to check.
+export const checkout = async (page: Page, { time = "12:00", acceptPartial = true }: { time?: string; acceptPartial?: boolean } = {}) => {
+  if (!page.url().endsWith("/cart")) await page.goto("/cart");
+  await page.getByLabel("Datum preuzimanja").fill(sarajevoDate(1));
+  await page.getByLabel("Datum preuzimanja").press("Enter");
+  await page.getByLabel("Vrijeme preuzimanja").fill(time);
+  const partial = page.getByRole("checkbox", { name: /Prihvatam djelimičnu isporuku/ });
+  if (acceptPartial) await partial.check();
+  else await partial.uncheck();
+  await page.getByRole("button", { name: "Pošalji narudžbu" }).click();
+};
+
+// The code in the "Narudžba #K7PM je poslana" heading.
+export const sentOrderCode = async (page: Page) => {
+  const heading = page.getByRole("heading", { level: 1, name: /^Narudžba #[A-Z0-9]{4} je poslana$/ });
+  await expect(heading).toBeVisible();
+  return /#([A-Z0-9]{4})/.exec((await heading.textContent()) ?? "")![1]!;
+};
+
+// The restaurant orders one product: an empty cart, the product added from its marketplace card,
+// and the checkout (pickup tomorrow at `time`). Returns the order's code.
 export const orderFromMarketplace = async (
   page: Page,
   productName: string,
   { quantity, time = "12:00", acceptPartial = true }: { quantity: string; time?: string; acceptPartial?: boolean },
 ) => {
-  const card = await searchMarketplace(page, productName);
-  await expect(card).toHaveCount(1);
-  await card.getByRole("button", { name: "Naruči" }).click();
-  const dialog = page.getByRole("dialog", { name: "Naruči" });
-  await dialog.getByLabel("Datum preuzimanja").fill(sarajevoDate(1));
-  await dialog.getByLabel("Datum preuzimanja").press("Enter");
-  await dialog.getByLabel("Vrijeme preuzimanja").fill(time);
-  await dialog.getByLabel("Količina").fill(quantity);
-  if (!acceptPartial) await dialog.getByRole("checkbox", { name: /Prihvatam djelimičnu isporuku/ }).uncheck();
-  await dialog.getByRole("button", { name: "Pošalji narudžbu" }).click();
-  const sent = page.getByRole("dialog", { name: /^Narudžba #[A-Z0-9]{4} je poslana$/ });
-  await expect(sent).toBeVisible();
-  const code = /#([A-Z0-9]{4})/.exec((await sent.getByRole("heading").first().textContent()) ?? "")![1]!;
-  await sent.getByRole("button", { name: "Zatvori" }).click();
-  await expect(sent).toBeHidden();
-  return code;
+  await emptyCart(page);
+  await addToCart(page, productName, quantity);
+  await checkout(page, { time, acceptPartial });
+  return sentOrderCode(page);
 };
 
 // The store's card of an order on Narudžbe, found by a product in it.

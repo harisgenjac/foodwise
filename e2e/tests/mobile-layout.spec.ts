@@ -10,7 +10,7 @@ test.use({ viewport: { width: WIDTH, height: 812 }, hasTouch: true });
 
 // Only stores have a Credits page: restaurants pay no credits.
 const STORE_PAGES = ["/dashboard", "/my-products", "/add-product", "/import-products", "/orders", "/credits"];
-const RESTAURANT_PAGES = ["/dashboard", "/browse-products", "/stores", "/my-orders"];
+const RESTAURANT_PAGES = ["/dashboard", "/browse-products", "/stores", "/my-orders", "/cart"];
 const SHARED_PAGES = ["/pickups", "/reports", "/my-profile", "/donate-food", "/donate-food/new", "/sponsor", "/notifications"];
 
 const bottomBar = (page: Page) => page.getByRole("navigation", { name: "Glavna navigacija" });
@@ -228,11 +228,11 @@ test.describe("dialogs on a short phone (667 px)", () => {
   test.describe("restaurant", () => {
     test.use({ storageState: storageState("restaurant") });
 
-    test("the order dialog shows its buttons, and Back closes it on the same page", async ({ page }) => {
+    test("the add-to-cart dialog shows its buttons, and Back closes it on the same page", async ({ page }) => {
       await page.goto(`/products/${productId}`);
-      await page.getByRole("button", { name: "Naruči" }).click();
-      const dialog = page.getByRole("dialog", { name: "Naruči" });
-      await expectButtonsOnScreen(page, dialog, ["Otkaži", "Pošalji narudžbu"]);
+      await page.getByRole("button", { name: "Dodaj u korpu" }).click();
+      const dialog = page.getByRole("dialog", { name: "Dodaj u korpu" });
+      await expectButtonsOnScreen(page, dialog, ["Otkaži", "Dodaj u korpu"]);
 
       // The Android back button: the dialog closes and the page stays.
       await page.goBack();

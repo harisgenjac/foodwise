@@ -7,6 +7,8 @@ import i18n from "../i18n/config.js";
 import { AuthProvider } from "../context/AuthContext.jsx";
 import type { Notification } from "../context/NotificationsContext.js";
 import type {
+  Cart,
+  CartLine,
   City,
   CreditSummary,
   DonationOffer,
@@ -82,6 +84,8 @@ export function renderWithProviders(
   mockGet({
     "/users/me": user ? { user } : axiosError(401, "Niste prijavljeni."),
     "/cities": { cities: CITIES },
+    // The layout loads a restaurant's cart on every page.
+    "/cart": { cart: makeCart([]) },
     ...get,
   });
   return render(
@@ -131,6 +135,38 @@ export const makeProduct = (overrides: Partial<Product> = {}): Product => ({
   days_until_expiry: 3,
   business_name: "Market Centar",
   city: "Sarajevo",
+  ...overrides,
+});
+
+export const makeCartLine = (overrides: Partial<CartLine> = {}): CartLine => ({
+  product_id: 1,
+  name: "Piletina",
+  category: "Meat",
+  unit: "kg",
+  expiry_date: "2030-01-10",
+  original_price: "10.00",
+  discounted_price: "5.00",
+  quantity: "2",
+  unit_price_seen: "5.00",
+  available_quantity: "10",
+  added_at: "2026-11-13T10:00:00.000Z",
+  ...overrides,
+  flags: {
+    unavailable: false,
+    unavailable_reason: null,
+    quantity_exceeds: false,
+    price_lowered: false,
+    price_raised: false,
+    ...overrides.flags,
+  },
+});
+
+export const makeCart = (items: CartLine[] = [makeCartLine()], overrides: Partial<Cart> = {}): Cart => ({
+  store: items.length > 0 ? { id: 2, business_name: "Prodavnica Merkator" } : null,
+  items,
+  totals: { lines: items.length, total: "10.00" },
+  pending_orders: 0,
+  max_pending_orders: 10,
   ...overrides,
 });
 

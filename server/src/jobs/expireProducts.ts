@@ -44,6 +44,17 @@ export const expireProducts = async (): Promise<number> => {
       console.log(`Expired ${expiredIds.length} products and cancelled their pending items in ${touched} orders.`);
     }
 
+    // Cart lines of an expired or removed product stay one day, so the restaurant still sees why
+    // a line became unavailable, then go (docs/orders-design.md, section 4). Lines of a blocked
+    // store stay: unblocking brings them back.
+    await client.query(
+      `DELETE FROM cart_items
+       USING products
+       WHERE products.id = cart_items.product_id
+         AND (products.expiry_date < CURRENT_DATE - 1
+              OR (products.status = 'Removed' AND products.updated_at < LOCALTIMESTAMP - INTERVAL '1 day'))`,
+    );
+
     // Donation offers have no recipients yet, so expiring them needs no notification.
     await client.query(
       `UPDATE donation_offers

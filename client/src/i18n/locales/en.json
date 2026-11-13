@@ -46,7 +46,10 @@
     "expandSidebar": "Expand menu",
     "logoutError": "Logging out failed. Please try again.",
     "branchOf": "{{branch}} · part of {{company}}",
-    "openMenu": "Open menu"
+    "openMenu": "Open menu",
+    "cartLabel": "Cart",
+    "cartLabelCount_one": "Cart, {{count}} product",
+    "cartLabelCount_other": "Cart, {{count}} products"
   },
   "bottomNav": {
     "label": "Main navigation",
@@ -184,8 +187,7 @@
     "store": "Store",
     "availableQuantity": "Available Quantity",
     "totalQuantity": "Total Quantity",
-    "daysUntilExpiry": "Days Until Expiry",
-    "reserveButton": "Order"
+    "daysUntilExpiry": "Days Until Expiry"
   },
   "myReservations": {
     "placeholderMax": "Maximum",
@@ -1901,17 +1903,73 @@
       }
     },
     "send": {
-      "title": "Order",
       "submit": "Send order",
-      "acceptPartial": "I accept partial fulfilment: the store may accept a smaller quantity.",
-      "soldOut": "The product sold out in the meantime; the order was not sent.",
-      "priceRaised": "The price went up to {{price}} (it was {{old}}). The order was not sent; confirm the new price.",
-      "confirmNewPrice": "Order at the new price",
-      "lessStock": "Not enough in stock. {{amount}} is left; the order was not sent.",
+      "acceptPartial": "I accept partial fulfilment: the store may accept a smaller quantity or only some items.",
       "sentTitle": "Order {{code}} was sent",
-      "sentText": "Amount {{total}}. {{store}} will answer the order.",
-      "toMyOrders": "My orders",
-      "close": "Close"
+      "sentText": "Amount {{total}}. {{store}} will answer the order."
+    }
+  },
+  "cart": {
+    "title": "Cart",
+    "subtitle": "Products of one store, sent as one order.",
+    "add": "Add to cart",
+    "save": "Save",
+    "addTitle": "Add to cart",
+    "changeTitle": "Change the quantity in the cart",
+    "added": "{{name}}: added to the cart.",
+    "updated": "{{name}}: the quantity in the cart was changed.",
+    "updateError": "The cart was not changed. Please try again.",
+    "quantityRange": "Enter a quantity above zero, at most what is available.",
+    "notHeld": "Products in the cart are not reserved until you send the order.",
+    "otherStore": {
+      "title": "Empty the cart?",
+      "message": "The cart has products from {{store}}. An order can only be from one store.",
+      "confirm": "Empty and add",
+      "cancel": "Cancel"
+    },
+    "empty": {
+      "title": "The cart is empty",
+      "subtitle": "Add products from one store's offer and send them as one order.",
+      "action": "Browse offers"
+    },
+    "linesLabel": "Products in the cart",
+    "unavailable": "No longer available",
+    "reasons": {
+      "SOLD_OUT": "sold out",
+      "EXPIRED": "past its expiry date",
+      "REMOVED": "removed from the offer",
+      "STORE_UNAVAILABLE": "the store is not available right now"
+    },
+    "removeUnavailable": "Remove unavailable",
+    "remove": "Remove {{name}} from the cart",
+    "emptyCart": "Empty the cart",
+    "emptyConfirm": {
+      "title": "Empty the cart?",
+      "message": "Every product will be removed from the cart."
+    },
+    "quantityLabel": "Quantity: {{name}}",
+    "lessStock": "Only {{amount}} left.",
+    "reduceTo": "Reduce to {{amount}}",
+    "priceLowered": "Price lowered",
+    "priceRaised": "The price went up to {{price}} (it was {{old}}). This product is not sent until you accept it.",
+    "acceptPrice": "Accept the new price",
+    "notSentLine": "The order was not sent because of this item.",
+    "addMore": "Add more products from this store",
+    "checkout": {
+      "title": "Order",
+      "total": "Total",
+      "pickupUntil": "Pickup by {{date}} at the latest (the earliest expiry in the cart).",
+      "pending": "You have {{pending}} of at most {{max}} orders waiting for the stores' answer.",
+      "nothingToSend": "No product in the cart can be ordered right now.",
+      "notSent": "The order was not sent. Fix the marked items or accept partial fulfilment.",
+      "sendError": "The order was not sent. Please try again."
+    },
+    "sent": {
+      "pickup": "Pickup: {{date}}",
+      "leftInCart": "Products that were not sent stayed in the cart.",
+      "backToCart": "Back to the cart",
+      "toOffers": "Back to the offers",
+      "viewOrder": "View the order"
     }
   }
 }

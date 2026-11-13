@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
   CalendarClock,
-  CalendarPlus,
+  ShoppingCart,
   Clock,
   HandHeart,
   Hourglass,
@@ -29,7 +29,7 @@ import type { BreadcrumbItem } from "../components/Breadcrumbs.js";
 import EmptyState from "../components/product/EmptyState.js";
 import ConfirmModal from "../components/common/ConfirmModal.js";
 import DetailItem from "../components/product/DetailItem.js";
-import ReserveProductModal from "../components/product/ReserveProductModal.js";
+import AddToCartModal from "../components/cart/AddToCartModal.js";
 import DonateProductModal from "../components/donation/DonateProductModal.js";
 import SoldInShopModal from "../components/product/SoldInShopModal.js";
 import ShopSalesCard from "../components/product/ShopSalesCard.js";
@@ -323,8 +323,8 @@ function ProductDetailsPage() {
                 onClick={() => setReserving(true)}
                 className="mt-auto inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
               >
-                <CalendarPlus className="h-4 w-4" />
-                {t("myProducts.reserveButton")}
+                <ShoppingCart className="h-4 w-4" />
+                {t("cart.add")}
               </button>
             ) : (
               <p className="mt-auto flex items-center gap-2 rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-600">
@@ -421,10 +421,9 @@ function ProductDetailsPage() {
       )}
 
       {reserving && (
-        <ReserveProductModal
+        <AddToCartModal
           product={product}
           onClose={() => setReserving(false)}
-          onReserved={fetchProduct}
         />
       )}
     </div>
