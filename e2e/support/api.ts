@@ -108,8 +108,8 @@ export const orderCode = async (api: APIRequestContext, productName: string) => 
   return orders[0]!.code;
 };
 
-// Sends one order of several products of one store (the dialog orders one product; the cart comes
-// later), each at its shown price, pickup tomorrow at 12:00.
+// Sends one order of several products of one store straight through the API (the screens send it
+// from the cart), each at its shown price, pickup tomorrow at 12:00.
 export const sendOrderOf = async (
   api: APIRequestContext,
   lines: { productId: number; quantity: number; unitPrice: number }[],
@@ -136,6 +136,18 @@ export const acceptOrder = async (api: APIRequestContext, orderId: number) => {
     }),
   );
 };
+// The store records an amount sold in its own shop ("Sold in shop"), which lowers the free quantity.
+export const recordShopSale = async (api: APIRequestContext, productId: number, quantity: number) =>
+  ok(await api.post(`/api/products/${productId}/shop-sales`, { data: { quantity } }));
+
+// The store changes a product's discounted price (quantity and expiry date stay as published).
+export const setProductPrice = async (api: APIRequestContext, productId: number, discountedPrice: number) => {
+  const { product } = await ok<{ product: Record<string, unknown> }>(await api.get(`/api/products/${productId}`));
+  const fields = ["name", "description", "category", "original_price", "quantity", "unit", "expiry_date"] as const;
+  const data = Object.fromEntries(fields.filter((field) => product[field] != null).map((field) => [field, product[field]]));
+  return ok(await api.put(`/api/products/${productId}`, { data: { ...data, discounted_price: discountedPrice } }));
+};
+
 export const completeOrder = async (api: APIRequestContext, orderId: number) =>
   ok(await api.post(`/api/orders/${orderId}/complete`));
 
