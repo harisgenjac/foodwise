@@ -2,9 +2,8 @@ import type { PoolClient } from "pg";
 import { HttpError } from "../../utils/httpError.js";
 import { isValidDateTime } from "../../utils/dates.js";
 import { parseId, parseNumber } from "../../utils/params.js";
-import { visibleStore } from "../../utils/visibility.js";
 import { createNotification } from "../../utils/notifications.js";
-import { freeQuantity } from "../stock.js";
+import { freeQuantity, sellableProduct } from "../stock.js";
 import { formatOrderCode, insertOrder, type OrderRow } from "./codes.js";
 import { recordOrderCreated } from "./status.js";
 
@@ -90,11 +89,8 @@ interface LockedProduct {
   store_id: number;
   name: string;
   unit: string;
-  status: string;
   discounted_price: string;
-  is_expired: boolean;
-  store_visible: boolean;
-  store_name: string | null;
+  sellable: boolean;
 }
 
 // Prices are compared in whole cents, so 3.5 and "3.50" are the same price.
@@ -132,9 +128,8 @@ export const sendOrder = async (client: PoolClient, restaurantId: number, input:
   // Every product locked in ascending id, so orders sharing products cannot deadlock.
   const productIds = input.lines.map((line) => line.productId).sort((a, b) => a - b);
   const locked = await client.query<LockedProduct>(
-    `SELECT products.id, products.store_id, products.name, products.unit, products.status,
-            products.discounted_price, products.expiry_date < CURRENT_DATE AS is_expired,
-            ${visibleStore("stores")} AS store_visible, stores.business_name AS store_name
+    `SELECT products.id, products.store_id, products.name, products.unit, products.discounted_price,
+            ${sellableProduct("products", "stores")} AS sellable
      FROM products
      JOIN users AS stores ON stores.id = products.store_id
      WHERE products.id = ANY($1::int[])
@@ -158,8 +153,7 @@ export const sendOrder = async (client: PoolClient, restaurantId: number, input:
   for (const line of input.lines) {
     const product = products.get(line.productId)!;
     const price = parseFloat(product.discounted_price);
-    const sellable = product.status === "Available" && !product.is_expired && product.store_visible;
-    const available = sellable ? await freeQuantity(client, product.id) : 0;
+    const available = product.sellable ? await freeQuantity(client, product.id) : 0;
     const change = (kind: SendChangeKind, sent: number): SendChange => ({
       product_id: product.id,
       name: product.name,
@@ -225,6 +219,11 @@ export const sendOrder = async (client: PoolClient, restaurantId: number, input:
     );
     items.push(inserted.rows[0]!);
   }
+  // The sent products leave the cart; lines not sent stay there with their flag (GET /cart).
+  await client.query("DELETE FROM cart_items WHERE cart_items.restaurant_id = $1 AND cart_items.product_id = ANY($2::int[])", [
+    restaurantId,
+    sendable.map((entry) => entry.product.id),
+  ]);
   await recordOrderCreated(client, order.id, { source: "RESTAURANT", actorId: restaurantId });
   await createNotification(client, {
     userId: storeId,

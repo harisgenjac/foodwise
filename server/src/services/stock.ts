@@ -1,5 +1,6 @@
 import type { Pool, PoolClient } from "pg";
 import { createNotification } from "../utils/notifications.js";
+import { visibleStore } from "../utils/visibility.js";
 
 // A product's stock, in one place. Quantity leaves the offer in two ways:
 // - held by order items (the `reservations` table until the orders cleanup renames it): Pending,
@@ -24,6 +25,13 @@ export const soldInShop = (alias: string) => `COALESCE(
 
 export const availableQuantity = (alias: string) =>
   `(${alias}.quantity - ${heldByReservations(alias)} - ${soldInShop(alias)})`;
+
+// Whether restaurants can order the product row `alias` of the store row `storeAlias` at all
+// (before its free quantity): Available, not past its expiry date, and the store visible (not
+// blocked, its company not blocked, not a deactivated branch). Sending an order and the cart use
+// the same rule.
+export const sellableProduct = (alias: string, storeAlias: string) =>
+  `(${alias}.status = 'Available' AND ${alias}.expiry_date >= CURRENT_DATE AND ${visibleStore(storeAlias)})`;
 
 // The free quantity of one product, as a number. The caller holds the product's row lock when it
 // writes based on it (reserving, a shop sale), so nothing can take the same quantity meanwhile.

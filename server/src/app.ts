@@ -5,6 +5,7 @@ import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
 import productsRoutes from "./routes/products.routes.js";
 import ordersRoutes from "./routes/orders.routes.js";
+import cartRoutes from "./routes/cart.routes.js";
 import notificationsRoutes from "./routes/notifications.routes.js"
 import usersRoute from "./routes/users.routes.js";
 import favoritesRoute from './routes/favorites.routes.js'
@@ -49,6 +50,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/orders", ordersRoutes);
+app.use("/api/cart", cartRoutes);
 app.use("/api/users", usersRoute)
 app.use('/api/notifications', notificationsRoutes)
 app.use('/api/favorites', favoritesRoute)

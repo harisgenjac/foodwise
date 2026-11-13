@@ -12,6 +12,7 @@ import bcrypt from "bcrypt";
 import type { PoolClient } from "pg";
 import pool from "../config/db.js";
 import { ORDER_CODE_ALPHABET, ORDER_CODE_LENGTH } from "../services/orders/codes.js";
+import { availableQuantity, sellableProduct } from "../services/stock.js";
 import { APP_TIMEZONE, todayInAppTimezone } from "../utils/dates.js";
 import { creditMonth, nextMonth } from "../utils/creditTime.js";
 import {
@@ -1294,6 +1295,36 @@ async function seed() {
       reason: "Više propuštenih preuzimanja bez obavještenja prodavnice.",
     });
     await logAction(client, mainAdmin, "UNBLOCK_USER", at(blockedUntil, 10), { userId: blocked.id });
+
+    // ----- A cart -----
+    // Restoran Ukus has three lines of the store with the most products on offer; the last one
+    // was added at a lower price, so the cart shows "the price went up".
+    console.log("Creating a cart...");
+    const ukus = byEmail("restoran.ukus@demo.com");
+    const cartProducts = await client.query<{ id: number; discounted_price: string; available: string }>(
+      `WITH offer AS (
+         SELECT products.id, products.store_id, products.discounted_price, ${availableQuantity("products")} AS available
+         FROM products JOIN users AS stores ON stores.id = products.store_id
+         WHERE ${sellableProduct("products", "stores")}
+       ), best_store AS (
+         SELECT offer.store_id FROM offer WHERE offer.available > 0
+         GROUP BY offer.store_id ORDER BY COUNT(*) DESC, offer.store_id LIMIT 1
+       )
+       SELECT offer.id, offer.discounted_price, offer.available
+       FROM offer JOIN best_store ON best_store.store_id = offer.store_id
+       WHERE offer.available > 0
+       ORDER BY offer.id LIMIT 3`,
+    );
+    for (const [index, product] of cartProducts.rows.entries()) {
+      const price = parseFloat(product.discounted_price);
+      const seenPrice = index === 2 ? Math.round(price * 85) / 100 : price;
+      const quantity = Math.max(1, Math.min(Math.floor(parseFloat(product.available) / 2), 5));
+      await client.query(
+        `INSERT INTO cart_items (restaurant_id, product_id, quantity, unit_price_seen, added_at)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [ukus.id, product.id, Math.min(quantity, parseFloat(product.available)), seenPrice, recentTime(3)],
+      );
+    }
 
     await client.query("COMMIT");
     await printSummary(stores, restaurants, orderStatusCount);
