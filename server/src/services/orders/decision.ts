@@ -2,7 +2,7 @@ import type { PoolClient } from "pg";
 import { HttpError } from "../../utils/httpError.js";
 import { parseId, parseNumber } from "../../utils/params.js";
 import { createNotification } from "../../utils/notifications.js";
-import { markSoldIfFullyConfirmed } from "../stock.js";
+import { absorbShopShortage, markSoldIfFullyConfirmed } from "../stock.js";
 import { formatOrderCode } from "./codes.js";
 import { lockOrder, lockOrderItems, recordItemChanges, syncOrderStatus, type ItemRow } from "./status.js";
 
@@ -126,6 +126,35 @@ const parseDecisions = (
   return decisions;
 };
 
+// The amount as it reads in a message: "2 kg", "2.5 kg".
+const amountText = (value: number, unit: string) => `${Math.round(value * 1000) / 1000} ${unit}`;
+
+// The till sold food that Pending items hold (products.shop_shortage): an item can accept at most
+// its quantity minus the shortage, so the store reduces or rejects it. Without partial fulfilment
+// the whole order must then be rejected.
+const checkShopShortage = (decisions: ItemDecision[], acceptPartial: boolean) => {
+  for (const decision of decisions) {
+    const shortage = parseFloat(decision.item.shop_shortage);
+    if (shortage <= 0 || decision.action === "REJECT") continue;
+    const ordered = parseFloat(decision.item.quantity);
+    const max = ordered - shortage;
+    if (decision.quantity <= max) continue;
+    const product = decision.item.product_name;
+    if (!acceptPartial) {
+      const left = amountText(Math.max(max, 0), decision.item.unit);
+      throw new HttpError(400, `This order must be rejected: ${product} was sold in your shop (only ${left} left).`);
+    }
+    if (max <= 0) {
+      throw new HttpError(400, `Not enough in stock for ${product}: it was sold in your shop and must be rejected.`);
+    }
+    const maxText = amountText(max, decision.item.unit);
+    throw new HttpError(
+      400,
+      `Not enough in stock for ${product}: at most ${maxText} can be accepted after the sale in your shop. Accept less or reject it.`,
+    );
+  }
+};
+
 // The decision inside the caller's transaction. `storeId` must own the order (anyone else: 404).
 export const decideOrder = async (
   client: PoolClient,
@@ -146,6 +175,7 @@ export const decideOrder = async (
   if (decisions.some((decision) => decision.action !== "REJECT" && decision.item.is_expired)) {
     throw new HttpError(400, "An expired product cannot be accepted.");
   }
+  checkShopShortage(decisions, order.accept_partial);
 
   for (const decision of decisions) {
     await client.query(
@@ -169,6 +199,10 @@ export const decideOrder = async (
        VALUES ($1, $2, $3, $4, $5)`,
       [decision.item.product_id, order.store_id, decision.shopSale, storeId, order.id],
     );
+  }
+  // What the till already sold of the quantity this decision freed becomes a shop sale by itself.
+  for (const decision of decisions) {
+    await absorbShopShortage(client, decision.item.product_id, { orderId: order.id, actorId: storeId });
   }
   for (const decision of decisions) {
     if (decision.action === "REJECT" && decision.shopSale === 0) continue;

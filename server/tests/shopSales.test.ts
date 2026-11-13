@@ -69,13 +69,18 @@ describe("recording a sale in the shop", () => {
     expect(parseFloat(mine.sold_in_shop)).toBe(5);
   });
 
-  it("takes only the free quantity, never what reservations hold", async () => {
+  it("takes the free quantity as a sale, never what accepted orders hold", async () => {
     const product = await createProduct(store, { quantity: 10 });
+    const accepted = await reserve(restaurant, product.id, 3);
+    await acceptItem(store, accepted);
     await reserve(restaurant, product.id, 4);
-    const tooMuch = await sellInShop(product.id, 6.5);
+    // 3 kg are promised to an accepted order; free 3 + 4 in a pending order can be sold.
+    const tooMuch = await sellInShop(product.id, 7.5);
     expect(tooMuch.status).toBe(400);
-    expect(tooMuch.body.error).toBe("You can record at most the free quantity (6).");
-    expect((await sellInShop(product.id, 6)).status).toBe(201);
+    expect(tooMuch.body.error).toBe("You can record at most 7 kg: the rest is in accepted orders.");
+    const sale = await sellInShop(product.id, 3);
+    expect(sale.status).toBe(201);
+    expect(sale.body).toMatchObject({ recorded: 3, shop_shortage: 0, available_quantity: 0 });
     // The pending order still holds 4, so the product stays Available with nothing free.
     expect(await available(product.id)).toBe(0);
     expect(await productStatus(product.id)).toBe("Available");
@@ -170,6 +175,101 @@ describe("recording a sale in the shop", () => {
     const expired = await sellInShop(product.id, 1);
     expect(expired.status).toBe(400);
     expect(expired.body.error).toBe("Only available products can be recorded as sold in the shop.");
+  });
+});
+
+// The till sold food that Pending orders hold: 10 kg on offer, an order of 6 kg, 8 kg sold at the
+// till, so 2 kg is really left.
+describe("selling more than is free (the shop's shortage)", () => {
+  const send = (productId: number, quantity: number, acceptPartial = true) =>
+    restaurant.post("/api/orders").send({
+      pickup_at: futurePickup(),
+      accept_partial: acceptPartial,
+      items: [{ product_id: productId, quantity, unit_price: 5 }],
+    });
+  const shortageOf = async (productId: number) =>
+    parseFloat((await pool.query("SELECT shop_shortage FROM products WHERE id = $1", [productId])).rows[0].shop_shortage);
+  const shopSold = async (productId: number) =>
+    parseFloat(
+      (await pool.query("SELECT COALESCE(SUM(quantity), 0) AS sold FROM product_shop_sales WHERE product_id = $1", [productId]))
+        .rows[0].sold,
+    );
+  const decide = (orderId: number, items: Record<string, unknown>[]) =>
+    store.post(`/api/orders/${orderId}/decision`).send({ items });
+
+  it("records the free part, keeps the rest as a shortage and lists the pending orders", async () => {
+    const product = await createProduct(store, { name: "Jabuke", quantity: 10 });
+    const order = (await send(product.id, 6)).body.order;
+    const sale = await sellInShop(product.id, 8);
+    expect(sale.status).toBe(201);
+    expect(sale.body).toMatchObject({ recorded: 4, shop_shortage: 4, available_quantity: 0, status: "Available" });
+    expect(sale.body.pending_orders).toEqual([
+      { id: order.id, code: order.code, restaurant_name: expect.any(String), quantity: "6" },
+    ]);
+    expect(await shopSold(product.id)).toBe(4);
+    // Only the store sees the shortage.
+    const own = (await store.get(`/api/products/${product.id}`)).body.product;
+    expect(own).toMatchObject({ shop_shortage: "4", pending_quantity: "6" });
+    const theirs = (await restaurant.get(`/api/products/${product.id}`)).body.product;
+    expect(theirs.shop_shortage).toBeUndefined();
+    const details = (await restaurant.get(`/api/orders/${order.id}`)).body.order;
+    expect(details.items[0].shop_shortage).toBeUndefined();
+    expect((await store.get(`/api/orders/${order.id}`)).body.order.items[0].shop_shortage).toBe("4");
+  });
+
+  it("does not let the store accept more than is left, and turns the freed part into a shop sale", async () => {
+    const product = await createProduct(store, { name: "Jabuke", quantity: 10 });
+    const order = (await send(product.id, 6)).body.order;
+    await sellInShop(product.id, 8);
+    const item = order.items[0].id;
+
+    const all = await decide(order.id, [{ item_id: item, action: "ACCEPT" }]);
+    expect(all.status).toBe(400);
+    expect(all.body.error).toBe(
+      "Not enough in stock for Jabuke: at most 2 kg can be accepted after the sale in your shop. Accept less or reject it.",
+    );
+    const tooMuch = await decide(order.id, [{ item_id: item, action: "ACCEPT_LESS", quantity: 3, reason: "NOT_ENOUGH_STOCK" }]);
+    expect(tooMuch.status).toBe(400);
+
+    const less = await decide(order.id, [{ item_id: item, action: "ACCEPT_LESS", quantity: 2, reason: "NOT_ENOUGH_STOCK" }]);
+    expect(less.status).toBe(200);
+    // 2 accepted + 8 sold in the shop: nothing is offered again, and the product is sold out.
+    expect(await shortageOf(product.id)).toBe(0);
+    expect(await shopSold(product.id)).toBe(8);
+    expect(await available(product.id, store)).toBe(0);
+    expect(await productStatus(product.id)).toBe("Sold");
+    const fromOrder = await pool.query("SELECT quantity, order_id FROM product_shop_sales WHERE product_id = $1 AND order_id IS NOT NULL", [product.id]);
+    expect(fromOrder.rows).toEqual([{ quantity: "4", order_id: order.id }]);
+  });
+
+  it("requires rejecting an item the shop sold entirely, and the whole order without partial fulfilment", async () => {
+    const product = await createProduct(store, { name: "Jabuke", quantity: 10 });
+    const partial = (await send(product.id, 3)).body.order;
+    const whole = (await send(product.id, 3, false)).body.order;
+    await sellInShop(product.id, 7);
+    expect(await shortageOf(product.id)).toBe(3);
+
+    const rejectedItem = await decide(partial.id, [{ item_id: partial.items[0].id, action: "ACCEPT" }]);
+    expect(rejectedItem.body.error).toBe("Not enough in stock for Jabuke: it was sold in your shop and must be rejected.");
+    const rejectedOrder = await decide(whole.id, [{ item_id: whole.items[0].id, action: "ACCEPT" }]);
+    expect(rejectedOrder.body.error).toBe("This order must be rejected: Jabuke was sold in your shop (only 0 kg left).");
+
+    // Rejecting one order covers the shortage; the other can then be accepted in full.
+    const reject = await store.post(`/api/orders/${whole.id}/decision`).send({ reject_order: true, reason: "NOT_ENOUGH_STOCK" });
+    expect(reject.status).toBe(200);
+    expect(await shortageOf(product.id)).toBe(0);
+    expect((await decide(partial.id, [{ item_id: partial.items[0].id, action: "ACCEPT" }])).status).toBe(200);
+    expect(await available(product.id, store)).toBe(0);
+  });
+
+  it("covers the shortage when the restaurant cancels the order", async () => {
+    const product = await createProduct(store, { quantity: 10 });
+    const order = (await send(product.id, 6)).body.order;
+    await sellInShop(product.id, 8);
+    expect((await restaurant.post(`/api/orders/${order.id}/cancel`)).status).toBe(200);
+    expect(await shortageOf(product.id)).toBe(0);
+    expect(await shopSold(product.id)).toBe(8);
+    expect(await available(product.id, store)).toBe(2);
   });
 });
 

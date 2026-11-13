@@ -1,5 +1,6 @@
 import type { PoolClient } from "pg";
 import type { OrderRow } from "./codes.js";
+import { absorbShopShortage } from "../stock.js";
 
 // Order and item statuses (docs/orders-design.md, section 2). An item is today's reservation row.
 // The order's status is never set directly: syncOrderStatus derives it from its items after every
@@ -105,6 +106,8 @@ export interface ItemRow {
   product_status: string;
   store_id: number;
   is_expired: boolean;
+  // Food the till sold that Pending items hold (see absorbShopShortage).
+  shop_shortage: string;
 }
 
 // The order's items with their products, the products locked in ascending id (the caller holds
@@ -115,7 +118,7 @@ export const lockOrderItems = async (client: PoolClient, orderId: number) => {
             reservations.quantity, reservations.ordered_quantity, reservations.unit_price, reservations.status,
             products.name AS product_name, products.unit, products.quantity AS product_quantity,
             products.status AS product_status, products.store_id,
-            products.expiry_date < CURRENT_DATE AS is_expired
+            products.shop_shortage, products.expiry_date < CURRENT_DATE AS is_expired
      FROM reservations
      JOIN products ON products.id = reservations.product_id
      WHERE reservations.order_id = $1
@@ -141,5 +144,10 @@ export const moveItems = async (
      RETURNING reservations.id, reservations.product_id`,
     [orderId, from, to],
   );
+  // Freed Pending quantity first covers what the till already sold (products.shop_shortage).
+  if (from.includes("Pending") && (to === "Cancelled" || to === "Rejected")) {
+    const productIds = [...new Set(result.rows.map((row) => row.product_id))].sort((a, b) => a - b);
+    for (const productId of productIds) await absorbShopShortage(client, productId, { orderId });
+  }
   return result.rows;
 };

@@ -9,7 +9,7 @@ import { cityDistance, parseCityFilter, parseRadius, userCityId } from '../utils
 import { chargeForProduct, chargeForProducts, refundForProduct } from '../services/creditService.js';
 import { visibleStore } from '../utils/visibility.js';
 import { companyName } from '../utils/branding.js';
-import { availableQuantity, soldInShop } from '../services/stock.js';
+import { availableQuantity, pendingHeld, soldInShop } from '../services/stock.js';
 
 export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
 
@@ -253,7 +253,9 @@ export const getProducts = async (req: Request, res: Response) => {
 
     const { rows, total } = await listPage("listed.*", from, SORT_ORDERS[sortKey]!, values, page);
 
-    return res.status(200).json({ products: rows, total, outside_radius_count: outsideRadiusCount });
+    // The shop's shortage is the store's own business (only its product details show it).
+    const products = rows.map(({ shop_shortage: _shortage, ...product }) => product);
+    return res.status(200).json({ products, total, outside_radius_count: outsideRadiusCount });
   } catch (error) {
     console.error("Error while fetching products:", error);
     return res
@@ -280,6 +282,7 @@ export const getProductById = async (req: Request, res: Response) => {
     users.pickup_hours AS store_pickup_hours,
     ${availableQuantity("products")} AS available_quantity,
     ${soldInShop("products")} AS sold_in_shop,
+    ${pendingHeld("products")} AS pending_quantity,
      products.expiry_date - CURRENT_DATE AS days_until_expiry
    FROM products
    JOIN users ON products.store_id = users.id
@@ -291,11 +294,12 @@ export const getProductById = async (req: Request, res: Response) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Product not found." });
     }
-    // What the store sold in its own shop is its business: others see only the lower availability.
-    const { sold_in_shop, ...product } = result.rows[0];
-    return res
-      .status(200)
-      .json({ product: product.store_id === req.user!.id ? { ...product, sold_in_shop } : product });
+    // What the store sold in its own shop (and what its till sold of Pending orders) is its
+    // business: others see only the lower availability.
+    const { sold_in_shop, shop_shortage, pending_quantity, ...product } = result.rows[0];
+    return res.status(200).json({
+      product: product.store_id === req.user!.id ? { ...product, sold_in_shop, shop_shortage, pending_quantity } : product,
+    });
   } catch (error) {
     console.error("Error while fetching products:", error);
     return res
@@ -346,7 +350,8 @@ export const listStoreProducts = async (storeId: number, query: Request["query"]
 
   // The free quantity (what a sale in the shop can still take) and what the store sold in its shop.
   const { rows, total } = await listPage(
-    `products.*, ${availableQuantity("products")} AS available_quantity, ${soldInShop("products")} AS sold_in_shop`,
+    `products.*, ${availableQuantity("products")} AS available_quantity, ${soldInShop("products")} AS sold_in_shop,
+     ${pendingHeld("products")} AS pending_quantity`,
     from,
     MINE_SORT_ORDERS[sortKey]!,
     values,

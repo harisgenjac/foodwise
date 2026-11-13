@@ -1,13 +1,16 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import { parseId, parseNumber } from "../utils/params.js";
-import { freeQuantity, markSoldIfFullyConfirmed } from "../services/stock.js";
+import { freeQuantity, markSoldIfFullyConfirmed, pendingHeld } from "../services/stock.js";
 
 // Sold in shop: a store also sells at its own till, so the app's stock can be higher than what is
 // really left. The store records the amount it sold there, which lowers the product's free quantity
 // (available = quantity − reservations − sold in shop). An entry is never edited or deleted (a
 // mistake means publishing a new product), never gives a credit back and is never an app sale:
-// reports, statistics, "products sold" and food saved ignore it. Quantity held by reservations
+// reports, statistics, "products sold" and food saved ignore it. Only the free quantity becomes a
+// sale at once. Beyond it the till may have sold food that Pending orders hold: that part is kept
+// as the product's shop_shortage, the store's decision on those orders cannot accept it, and
+// freed Pending quantity turns it into sales (absorbShopShortage). What accepted orders hold
 // cannot be taken here.
 
 // The amount as it would read in the message: 2.5, not 2.50.
@@ -30,8 +33,8 @@ export const recordShopSale = async (req: Request, res: Response) => {
     await client.query("BEGIN");
     // The product lock keeps a reservation from taking the same quantity in between.
     const result = await client.query(
-      `SELECT products.id, products.store_id, products.name, products.quantity, products.status,
-         products.expiry_date < CURRENT_DATE AS is_expired
+      `SELECT products.id, products.store_id, products.name, products.quantity, products.unit, products.status,
+         products.shop_shortage, products.expiry_date < CURRENT_DATE AS is_expired
        FROM products WHERE products.id = $1 FOR UPDATE`,
       [productId],
     );
@@ -49,27 +52,61 @@ export const recordShopSale = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Only available products can be recorded as sold in the shop." });
     }
     const free = await freeQuantity(client, productId);
-    if (quantity > free) {
+    // The till may also have sold food that Pending orders hold (the store then reduces or rejects
+    // them when it decides); what accepted orders hold is promised and cannot be sold here.
+    const held = await client.query<{ pending: string }>(
+      `SELECT ${pendingHeld("products")} AS pending FROM products WHERE products.id = $1`,
+      [productId],
+    );
+    const shortage = parseFloat(product.shop_shortage);
+    const max = free + Math.max(parseFloat(held.rows[0]!.pending) - shortage, 0);
+    if (quantity > max) {
       await client.query("ROLLBACK");
-      return res.status(400).json({ error: `You can record at most the free quantity (${formatAmount(free)}).` });
+      const maxText = `${formatAmount(max)} ${product.unit}`;
+      return res.status(400).json({ error: `You can record at most ${maxText}: the rest is in accepted orders.` });
     }
 
-    const sale = await client.query(
-      `INSERT INTO product_shop_sales (product_id, store_id, quantity, created_by)
-       VALUES ($1, $2, $3, $2)
-       RETURNING id, product_id, quantity, created_at`,
-      [productId, product.store_id, quantity],
-    );
+    // The free part is a sale at once; the rest is the shortage the Pending orders must give up.
+    const recorded = Math.min(quantity, free);
+    const missing = quantity - recorded;
+    const sale =
+      recorded > 0
+        ? await client.query(
+            `INSERT INTO product_shop_sales (product_id, store_id, quantity, created_by)
+             VALUES ($1, $2, $3, $2)
+             RETURNING id, product_id, quantity, created_at`,
+            [productId, product.store_id, recorded],
+          )
+        : null;
+    if (missing > 0) {
+      await client.query("UPDATE products SET shop_shortage = products.shop_shortage + $2 WHERE products.id = $1", [
+        productId,
+        missing,
+      ]);
+    }
     // Nothing free left and no pending reservation holding any: sold out, like any product. The
     // store did it itself, so it gets no "sold out" notification.
     const soldOut = await markSoldIfFullyConfirmed(client, product, { notify: false });
     const available = await freeQuantity(client, productId);
+    // The Pending orders holding the product: the store must reduce or reject them for the shortage.
+    const pendingOrders = await client.query(
+      `SELECT orders.id, orders.code, restaurants.business_name AS restaurant_name, reservations.quantity
+       FROM reservations
+       JOIN orders ON orders.id = reservations.order_id
+       JOIN users AS restaurants ON restaurants.id = orders.restaurant_id
+       WHERE reservations.product_id = $1 AND reservations.status = 'Pending'
+       ORDER BY orders.created_at, orders.id`,
+      [productId],
+    );
     await client.query("COMMIT");
     return res.status(201).json({
       message: "Sale in the shop recorded.",
-      sale: sale.rows[0],
+      sale: sale?.rows[0] ?? null,
+      recorded,
+      shop_shortage: shortage + missing,
       available_quantity: available,
       status: soldOut ? "Sold" : product.status,
+      pending_orders: pendingOrders.rows,
     });
   } catch (error) {
     if (client) await client.query("ROLLBACK");

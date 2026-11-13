@@ -93,6 +93,44 @@ export const releaseSoldProduct = async (client: PoolClient, productId: number) 
   }
 };
 
+// What Pending items hold of the product row `alias` (a number, COALESCEd to 0).
+export const pendingHeld = (alias: string) => `COALESCE(
+  (SELECT SUM(reservations.quantity) FROM reservations
+   WHERE reservations.product_id = ${alias}.id AND reservations.status = 'Pending'), 0)`;
+
+// The shop's shortage (products.shop_shortage) is food the till sold that Pending items still
+// hold. Whenever Pending quantity is freed, this turns as much of it as is now free into a shop
+// sale (with the order that freed it), so that food never comes back on offer. Locks the product
+// row; the caller already holds the order's lock (orders first, then products).
+export const absorbShopShortage = async (
+  client: PoolClient,
+  productId: number,
+  { orderId = null, actorId = null }: { orderId?: number | null; actorId?: number | null } = {},
+) => {
+  const result = await client.query<{ id: number; store_id: number; name: string; quantity: string; shop_shortage: string; status: string }>(
+    `SELECT products.id, products.store_id, products.name, products.quantity, products.shop_shortage, products.status
+     FROM products WHERE products.id = $1 FOR UPDATE`,
+    [productId],
+  );
+  const product = result.rows[0];
+  const shortage = parseFloat(product?.shop_shortage ?? "0");
+  if (!product || shortage <= 0) return 0;
+  const taken = Math.min(shortage, await freeQuantity(client, productId));
+  if (taken <= 0) return 0;
+  await client.query(
+    `INSERT INTO product_shop_sales (product_id, store_id, quantity, created_by, order_id)
+     VALUES ($1, $2, $3, $4, $5)`,
+    [product.id, product.store_id, taken, actorId, orderId],
+  );
+  await client.query(
+    "UPDATE products SET shop_shortage = GREATEST(products.shop_shortage - $2, 0) WHERE products.id = $1",
+    [product.id, taken],
+  );
+  // The store sold it itself, so a product that is now covered needs no "sold out" notification.
+  if (product.status === "Available") await markSoldIfFullyConfirmed(client, product, { notify: false });
+  return taken;
+};
+
 // What Pending, Confirmed and Completed reservations hold of one product, as a number.
 export const reservedQuantity = async (db: Db, productId: number): Promise<number> => {
   const result = await db.query<{ held: string }>(
