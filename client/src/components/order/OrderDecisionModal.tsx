@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Check, X } from "lucide-react";
+import { ArrowLeft, Check, TriangleAlert, X } from "lucide-react";
 import api from "../../api/axios.js";
 import Modal, { ModalBody, ModalFooter, ModalHeader } from "../product/Modal.js";
 import { inputStyle } from "../form/FormField.js";
@@ -51,6 +51,27 @@ const EMPTY_LINE: Line = { action: "ACCEPT", quantity: "", reason: "", note: "",
 const ordered = (item: OrderItem) => Number(item.quantity);
 const price = (item: OrderItem) => Number(item.unit_price);
 
+// The store's till sold food this item holds (products.shop_shortage): the item can accept at most
+// its quantity minus that, and nothing when the till sold it all.
+const shortageOf = (item: OrderItem) => Number(item.shop_shortage ?? 0);
+const maxAcceptable = (item: OrderItem) => Math.max(ordered(item) - shortageOf(item), 0);
+
+// An item the till sold part of starts on "accept less" with what is left (or "reject" when
+// nothing is), with "not enough in stock" as the reason.
+const initialLine = (item: OrderItem): Line => {
+  if (shortageOf(item) <= 0) return EMPTY_LINE;
+  const max = maxAcceptable(item);
+  return max > 0
+    ? { ...EMPTY_LINE, action: "ACCEPT_LESS", quantity: String(Math.round(max * 1000) / 1000), reason: "NOT_ENOUGH_STOCK" }
+    : { ...EMPTY_LINE, action: "REJECT", reason: "NOT_ENOUGH_STOCK" };
+};
+
+// The line accepts more than the till left (an error key or null).
+const shortageError = (item: OrderItem, line: Line) =>
+  shortageOf(item) > 0 && line.action !== "REJECT" && acceptedOf(item, line) > maxAcceptable(item)
+    ? "orders.decision.errors.shortage"
+    : null;
+
 // The accepted quantity a line stands for (NaN while the field is not a number).
 const acceptedOf = (item: OrderItem, line: Line) =>
   line.action === "ACCEPT" ? ordered(item) : line.action === "REJECT" ? 0 : Number(line.quantity);
@@ -72,6 +93,8 @@ const saleError = (sale: boolean, quantity: string, freed: number) => {
 };
 
 const lineError = (item: OrderItem, line: Line) => {
+  const shortage = shortageError(item, line);
+  if (shortage) return shortage;
   if (line.action === "ACCEPT") return null;
   if (line.action === "ACCEPT_LESS") {
     const accepted = Number(line.quantity);
@@ -101,7 +124,7 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided }: OrderDeci
   // Where the summary goes back to.
   const [confirming, setConfirming] = useState<"decide" | "reject">("decide");
   const [lines, setLines] = useState<Record<number, Line>>(() =>
-    Object.fromEntries(items.map((item) => [item.id, EMPTY_LINE])),
+    Object.fromEntries(items.map((item) => [item.id, initialLine(item)])),
   );
   const [rejection, setRejection] = useState<Rejection>({ reason: "", note: "", sales: {} });
   const [showErrors, setShowErrors] = useState(false);
@@ -133,7 +156,26 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided }: OrderDeci
     ),
   };
 
+  // The till sold food of these items: their toast says what to do (the server checks it too).
+  const shortageItems = items.filter((item) => shortageOf(item) > 0);
+  const shortageToast = (item: OrderItem) => {
+    const max = maxAcceptable(item);
+    toast.error(
+      !order.accept_partial
+        ? t("orders.decision.mustRejectOrder", { product: item.product_name, left: formatAmount(max, item.unit) })
+        : max > 0
+          ? t("orders.decision.acceptAtMost", { product: item.product_name, amount: formatAmount(max, item.unit) })
+          : t("orders.decision.mustRejectItem", { product: item.product_name }),
+    );
+  };
+
   const toConfirm = (from: "decide" | "reject") => {
+    const tooMuch = from === "decide" ? items.find((item) => shortageError(item, lineOf(item))) : undefined;
+    if (tooMuch) {
+      setShowErrors(true);
+      shortageToast(tooMuch);
+      return;
+    }
     const invalid =
       from === "decide"
         ? items.some((item) => lineError(item, lineOf(item)))
@@ -149,6 +191,11 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided }: OrderDeci
 
   // Partial fulfilment off: "Accept all" goes straight to the summary.
   const acceptAll = () => {
+    const sold = shortageItems[0];
+    if (sold) {
+      shortageToast(sold);
+      return;
+    }
     setLines(Object.fromEntries(items.map((item) => [item.id, EMPTY_LINE])));
     setConfirming("decide");
     setStep("confirm");
@@ -281,6 +328,20 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided }: OrderDeci
     </div>
   );
 
+  // The warning on an item the till sold part of.
+  const shortageNote = (item: OrderItem) => {
+    if (shortageOf(item) <= 0) return null;
+    const max = maxAcceptable(item);
+    return (
+      <p data-testid="shortage-note" className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+        {max > 0
+          ? t("orders.decision.shortage", { amount: formatAmount(max, item.unit) })
+          : t("orders.decision.shortageAll")}
+      </p>
+    );
+  };
+
   const itemHeader = (item: OrderItem) => (
     <div className="flex items-baseline justify-between gap-3">
       <div className="min-w-0">
@@ -302,6 +363,7 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided }: OrderDeci
         return (
           <section key={item.id} data-testid="decision-line" className="space-y-3 rounded-xl border border-gray-100 p-3">
             {itemHeader(item)}
+            {shortageNote(item)}
             <div role="radiogroup" aria-label={item.product_name} className="grid grid-cols-3 gap-1 rounded-xl bg-gray-50 p-1">
               {(["ACCEPT", "ACCEPT_LESS", "REJECT"] as const).map((action) => (
                 <button
@@ -338,7 +400,7 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided }: OrderDeci
                   />
                   <span className="text-sm text-gray-500">{t(`units.${item.unit}`, { defaultValue: item.unit })}</span>
                 </div>
-                {showErrors && error === "orders.decision.errors.quantity" && (
+                {showErrors && (error === "orders.decision.errors.quantity" || error === "orders.decision.errors.shortage") && (
                   <p role="alert" className="text-sm text-red-600">
                     {t(error)}
                   </p>
@@ -367,10 +429,13 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided }: OrderDeci
     </div>
   ) : (
     <div className="space-y-3">
-      <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">{t("orders.decision.wholeOnly")}</p>
+      <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
+        {shortageItems.length > 0 ? t("orders.decision.wholeOnlySold") : t("orders.decision.wholeOnly")}
+      </p>
       {items.map((item) => (
-        <div key={item.id} className="rounded-xl border border-gray-100 p-3">
+        <div key={item.id} className="space-y-2 rounded-xl border border-gray-100 p-3">
           {itemHeader(item)}
+          {shortageNote(item)}
         </div>
       ))}
     </div>

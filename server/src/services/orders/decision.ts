@@ -199,6 +199,11 @@ export const decideOrder = async (
        VALUES ($1, $2, $3, $4, $5)`,
       [decision.item.product_id, order.store_id, decision.shopSale, storeId, order.id],
     );
+    // The till's shortage is what the store means when it records the difference: it is covered.
+    await client.query(
+      "UPDATE products SET shop_shortage = GREATEST(products.shop_shortage - $2, 0) WHERE products.id = $1",
+      [decision.item.product_id, decision.shopSale],
+    );
   }
   // What the till already sold of the quantity this decision freed becomes a shop sale by itself.
   for (const decision of decisions) {

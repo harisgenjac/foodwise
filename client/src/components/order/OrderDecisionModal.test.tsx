@@ -146,3 +146,66 @@ describe("OrderDecisionModal", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });
+
+// The store's till sold 4 kg of the 6 kg this order holds (products.shop_shortage).
+describe("OrderDecisionModal after a sale in the shop", () => {
+  const apples = (shortage: string, acceptPartial = true) =>
+    makeOrder({
+      id: 9,
+      code: "J4BL",
+      accept_partial: acceptPartial,
+      items: [
+        makeOrderItem({ id: 51, product_id: 3, product_name: "Jabuke", quantity: "6", ordered_quantity: "6", unit_price: "2.00", shop_shortage: shortage }),
+      ],
+    });
+
+  it("starts on accepting what is left, with not enough in stock, and saves it", async () => {
+    apiMock.post.mockResolvedValue({ data: { message: "Order decision saved." } });
+    renderModal(apples("4"));
+    expect(within(line("Jabuke")).getByTestId("shortage-note")).toHaveTextContent(
+      t("orders.decision.shortage", { amount: "2 kg" }),
+    );
+    expect(within(line("Jabuke")).getByRole("radio", { name: t("orders.decision.actions.ACCEPT_LESS") })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(within(line("Jabuke")).getByLabelText(t("orders.decision.acceptedQuantity", { product: "Jabuke" }))).toHaveValue(2);
+    expect(reasonOf("Jabuke")).toHaveValue("NOT_ENOUGH_STOCK");
+
+    await userEvent.click(button("orders.decision.confirmDecision"));
+    await userEvent.click(button("orders.decision.save"));
+    expect(apiMock.post).toHaveBeenCalledWith("/orders/9/decision", {
+      items: [{ item_id: 51, action: "ACCEPT_LESS", quantity: 2, reason: "NOT_ENOUGH_STOCK" }],
+    });
+  });
+
+  it("says with a toast that the store cannot accept everything", async () => {
+    const errorToast = vi.spyOn(toast, "error");
+    renderModal(apples("4"));
+    await choose("Jabuke", "ACCEPT");
+    await userEvent.click(button("orders.decision.confirmDecision"));
+    expect(errorToast).toHaveBeenCalledWith(t("orders.decision.acceptAtMost", { product: "Jabuke", amount: "2 kg" }));
+    expect(apiMock.post).not.toHaveBeenCalled();
+  });
+
+  it("starts on rejecting an item the till sold entirely", () => {
+    renderModal(apples("6"));
+    expect(within(line("Jabuke")).getByTestId("shortage-note")).toHaveTextContent(t("orders.decision.shortageAll"));
+    expect(within(line("Jabuke")).getByRole("radio", { name: t("orders.decision.actions.REJECT") })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+  });
+
+  it("without partial fulfilment, says the order must be rejected", async () => {
+    const errorToast = vi.spyOn(toast, "error");
+    renderModal(apples("4", false));
+    expect(screen.getByText(t("orders.decision.wholeOnlySold"))).toBeInTheDocument();
+    await userEvent.click(button("orders.decision.acceptAll"));
+    expect(errorToast).toHaveBeenCalledWith(t("orders.decision.mustRejectOrder", { product: "Jabuke", left: "2 kg" }));
+    expect(screen.queryByText(t("orders.decision.irreversible"))).not.toBeInTheDocument();
+    // Rejecting stays possible.
+    await userEvent.click(button("orders.decision.rejectOrder"));
+    expect(screen.getByRole("heading", { name: t("orders.decision.rejectTitle", { code: "#J4BL" }) })).toBeInTheDocument();
+  });
+});

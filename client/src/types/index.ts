@@ -16,6 +16,10 @@ export interface Product {
   // What the store sold in its own shop ("Sold in shop"); only for the store, on its product details
   // and my products (DECIMAL as a string).
   sold_in_shop?: string;
+  // Only for the store: what Pending orders hold, and what its till sold of that (the shop's
+  // shortage, which those orders must give up when the store decides).
+  pending_quantity?: string;
+  shop_shortage?: string;
   days_until_expiry?: number;
   // For a restaurant: straight-line km from its city to the store's (null without a city on either side).
   distance_km?: number | null;
@@ -60,6 +64,9 @@ export interface OrderItem {
   picked_up_at?: string | null;
   original_price?: string;
   expiry_date?: string;
+  // Only for the store and the admin on GET /orders/:id: what the store's till sold of the
+  // product beyond the free quantity (the item can accept at most its quantity minus this).
+  shop_shortage?: string;
 }
 
 // What sending changed on a line (orders.send_changes and the send response's `changes`).

@@ -262,6 +262,19 @@ describe("selling more than is free (the shop's shortage)", () => {
     expect(await available(product.id, store)).toBe(0);
   });
 
+  it("counts the difference the store records as sold in the shop against the shortage", async () => {
+    const product = await createProduct(store, { name: "Jabuke", quantity: 10 });
+    const order = (await send(product.id, 6)).body.order;
+    await sellInShop(product.id, 8);
+    const decided = await decide(order.id, [
+      { item_id: order.items[0].id, action: "ACCEPT_LESS", quantity: 2, reason: "NOT_ENOUGH_STOCK", record_shop_sale: 4 },
+    ]);
+    expect(decided.status).toBe(200);
+    expect(await shortageOf(product.id)).toBe(0);
+    expect(await shopSold(product.id)).toBe(8);
+    expect(await productStatus(product.id)).toBe("Sold");
+  });
+
   it("covers the shortage when the restaurant cancels the order", async () => {
     const product = await createProduct(store, { quantity: 10 });
     const order = (await send(product.id, 6)).body.order;

@@ -143,3 +143,58 @@ describe("Sold in shop on My products", () => {
     expect(within(screen.getByRole("dialog")).getByText("Slobodno")).toBeInTheDocument();
   });
 });
+
+// The till sold food that a Pending order holds: 10 kg, an order of 6 kg, 8 kg sold at the till.
+describe("SoldInShopModal beyond the free quantity", () => {
+  const apples = makeProduct({
+    id: 11,
+    store_id: 2,
+    name: "Jabuke",
+    quantity: "10",
+    available_quantity: "4",
+    pending_quantity: "6",
+    shop_shortage: "0",
+  });
+
+  it("takes up to the free and the pending quantity, says what happens, and lists the orders to reduce", async () => {
+    apiMock.post.mockResolvedValue({
+      data: {
+        message: "Sale in the shop recorded.",
+        recorded: 4,
+        shop_shortage: 4,
+        pending_orders: [{ id: 55, code: "K7PM", restaurant_name: "Restoran Ukus", quantity: "6" }],
+      },
+    });
+    const onClose = vi.fn();
+    const onRecorded = vi.fn();
+    renderWithProviders(<SoldInShopModal product={apples} onClose={onClose} onRecorded={onRecorded} />, {
+      route: "/",
+      path: "/",
+      user: STORE,
+    });
+    const unit = t("units.kg");
+
+    await userEvent.type(amountField(), "10.5");
+    await next();
+    expect(amountField()).toHaveAccessibleDescription(t("soldInShop.tooMuch"));
+    await userEvent.clear(amountField());
+    await userEvent.type(amountField(), "8");
+    await next();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveTextContent(t("soldInShop.confirmAfter", { after: "0", before: "4", unit }));
+    expect(dialog).toHaveTextContent(t("soldInShop.confirmShortage", { free: "4", rest: "4", unit }));
+
+    await userEvent.click(within(dialog).getByRole("button", { name: t("soldInShop.confirmButton") }));
+    expect(await screen.findByRole("heading", { name: t("soldInShop.shortageTitle") })).toBeInTheDocument();
+    expect(screen.getByText(t("soldInShop.shortageText", { product: "Jabuke", amount: "4", unit }))).toBeInTheDocument();
+    const link = screen.getByRole("link", {
+      name: t("soldInShop.shortageOrder", { code: "#K7PM", restaurant: "Restoran Ukus", amount: "6", unit }),
+    });
+    expect(link).toHaveAttribute("href", "/orders/55");
+    // The list refreshes once the store closes the step.
+    expect(onRecorded).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: t("soldInShop.close") }));
+    expect(onClose).toHaveBeenCalled();
+    expect(onRecorded).toHaveBeenCalled();
+  });
+});
