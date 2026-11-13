@@ -5,7 +5,6 @@ import { parseId } from "../utils/params.js";
 import {
   clearCart,
   clearUnavailableLines,
-  countCartLines,
   deleteCartItem,
   getCart,
   parseCartItemBody,
@@ -27,15 +26,6 @@ export const getCartRoute = async (req: Request, res: Response) => {
   try {
     const cart = await getCart(req.user!.id);
     return res.status(200).json({ message: "Cart fetched successfully.", cart });
-  } catch (error) {
-    return fail(res, error, "An error occurred while fetching the cart.");
-  }
-};
-
-export const getCartCountRoute = async (req: Request, res: Response) => {
-  try {
-    const count = await countCartLines(req.user!.id);
-    return res.status(200).json({ message: "Cart fetched successfully.", count });
   } catch (error) {
     return fail(res, error, "An error occurred while fetching the cart.");
   }

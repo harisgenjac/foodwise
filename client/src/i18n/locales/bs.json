@@ -46,7 +46,11 @@
     "expandSidebar": "Prikaži meni",
     "logoutError": "Odjava nije uspjela. Pokušajte ponovo.",
     "branchOf": "{{branch}} · dio {{company}}",
-    "openMenu": "Otvori meni"
+    "openMenu": "Otvori meni",
+    "cartLabel": "Korpa",
+    "cartLabelCount_one": "Korpa, {{count}} proizvod",
+    "cartLabelCount_few": "Korpa, {{count}} proizvoda",
+    "cartLabelCount_other": "Korpa, {{count}} proizvoda"
   },
   "bottomNav": {
     "label": "Glavna navigacija",
@@ -187,8 +191,7 @@
     "store": "Prodavnica",
     "availableQuantity": "Dostupna količina",
     "totalQuantity": "Ukupna količina",
-    "daysUntilExpiry": "Dana do isteka",
-    "reserveButton": "Naruči"
+    "daysUntilExpiry": "Dana do isteka"
   },
   "myReservations": {
     "placeholderMax": "Maksimalno",
@@ -1945,17 +1948,73 @@
       }
     },
     "send": {
-      "title": "Naruči",
       "submit": "Pošalji narudžbu",
-      "acceptPartial": "Prihvatam djelimičnu isporuku: prodavnica može prihvatiti manju količinu.",
-      "soldOut": "Proizvod je u međuvremenu rasprodan, narudžba nije poslana.",
-      "priceRaised": "Cijena je porasla na {{price}} (bila je {{old}}). Narudžba nije poslana; potvrdite novu cijenu.",
-      "confirmNewPrice": "Naruči po novoj cijeni",
-      "lessStock": "Nema dovoljno na stanju. Dostupno je još {{amount}}; narudžba nije poslana.",
+      "acceptPartial": "Prihvatam djelimičnu isporuku: prodavnica može prihvatiti manju količinu ili samo neke stavke.",
       "sentTitle": "Narudžba {{code}} je poslana",
-      "sentText": "Iznos {{total}}. {{store}} će odgovoriti na narudžbu.",
-      "toMyOrders": "Moje narudžbe",
-      "close": "Zatvori"
+      "sentText": "Iznos {{total}}. {{store}} će odgovoriti na narudžbu."
+    }
+  },
+  "cart": {
+    "title": "Korpa",
+    "subtitle": "Proizvodi jedne prodavnice, poslani kao jedna narudžba.",
+    "add": "Dodaj u korpu",
+    "save": "Sačuvaj",
+    "addTitle": "Dodaj u korpu",
+    "changeTitle": "Izmijeni količinu u korpi",
+    "added": "{{name}}: dodano u korpu.",
+    "updated": "{{name}}: količina u korpi je izmijenjena.",
+    "updateError": "Korpa nije izmijenjena. Pokušajte ponovo.",
+    "quantityRange": "Unesite količinu veću od nule, najviše koliko je dostupno.",
+    "notHeld": "Proizvodi u korpi nisu rezervisani dok ne pošaljete narudžbu.",
+    "otherStore": {
+      "title": "Isprazniti korpu?",
+      "message": "U korpi su proizvodi iz {{store}}. Narudžba može biti samo iz jedne prodavnice.",
+      "confirm": "Isprazni i dodaj",
+      "cancel": "Odustani"
+    },
+    "empty": {
+      "title": "Korpa je prazna",
+      "subtitle": "Dodajte proizvode iz ponude jedne prodavnice i pošaljite ih kao jednu narudžbu.",
+      "action": "Pregledaj ponudu"
+    },
+    "linesLabel": "Proizvodi u korpi",
+    "unavailable": "Više nije dostupno",
+    "reasons": {
+      "SOLD_OUT": "rasprodano",
+      "EXPIRED": "istekao rok trajanja",
+      "REMOVED": "uklonjeno iz ponude",
+      "STORE_UNAVAILABLE": "prodavnica trenutno nije dostupna"
+    },
+    "removeUnavailable": "Ukloni nedostupne",
+    "remove": "Ukloni {{name}} iz korpe",
+    "emptyCart": "Isprazni korpu",
+    "emptyConfirm": {
+      "title": "Isprazniti korpu?",
+      "message": "Svi proizvodi će biti uklonjeni iz korpe."
+    },
+    "quantityLabel": "Količina: {{name}}",
+    "lessStock": "Dostupno još samo {{amount}}.",
+    "reduceTo": "Smanji na {{amount}}",
+    "priceLowered": "Cijena je snižena",
+    "priceRaised": "Cijena je porasla na {{price}} (bila je {{old}}). Dok je ne prihvatite, ovaj proizvod se ne šalje.",
+    "acceptPrice": "Prihvati novu cijenu",
+    "notSentLine": "Zbog ove stavke narudžba nije poslana.",
+    "addMore": "Dodaj još proizvoda iz ove prodavnice",
+    "checkout": {
+      "title": "Narudžba",
+      "total": "Ukupno",
+      "pickupUntil": "Preuzimanje najkasnije {{date}} (najraniji rok trajanja u korpi).",
+      "pending": "Imate {{pending}} od najviše {{max}} narudžbi koje čekaju odgovor prodavnice.",
+      "nothingToSend": "Nijedan proizvod u korpi se trenutno ne može naručiti.",
+      "notSent": "Narudžba nije poslana. Ispravite označene stavke ili prihvatite djelimičnu isporuku.",
+      "sendError": "Narudžba nije poslana. Pokušajte ponovo."
+    },
+    "sent": {
+      "pickup": "Preuzimanje: {{date}}",
+      "leftInCart": "Proizvodi koji nisu poslani ostali su u korpi.",
+      "backToCart": "Nazad u korpu",
+      "toOffers": "Nazad na ponudu",
+      "viewOrder": "Pogledaj narudžbu"
     }
   }
 }

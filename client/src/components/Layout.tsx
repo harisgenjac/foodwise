@@ -12,6 +12,7 @@ import AnnouncementBanner from './AnnouncementBanner.js';
 import Footer from './Footer.js';
 import { NotificationsProvider } from '../context/NotificationsContext.js';
 import { CreditsProvider } from '../context/CreditsContext.js';
+import { CartProvider } from '../context/CartContext.js';
 import CreditBanner from './credits/CreditBanner.js';
 
 // The desktop rail's open/collapsed state. Phones ignore it: their drawer always starts closed.
@@ -56,6 +57,8 @@ function Layout() {
     <NotificationsProvider enabled={!setup.needsPassword}>
       {/* Only stores pay credits (restaurants order for free), and only once the account is set up. */}
       <CreditsProvider enabled={user?.role === "STORE" && !setup.locked}>
+      {/* Only restaurants order, from one cart. */}
+      <CartProvider enabled={user?.role === "RESTAURANT" && !setup.locked}>
         <div className="flex min-h-dvh flex-col bg-gray-50">
           <Header
             isSidebarOpen={isSidebarOpen}
@@ -87,6 +90,7 @@ function Layout() {
             <BottomNav role={bottomNavRole} onOpenMore={openMenu} isMoreOpen={isMenuOpen} locked={setup.locked} />
           )}
         </div>
+      </CartProvider>
       </CreditsProvider>
     </NotificationsProvider>
   );

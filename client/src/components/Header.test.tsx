@@ -4,7 +4,18 @@ import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import Header from "./Header.js";
 import { NotificationsProvider } from "../context/NotificationsContext.js";
-import { LocationDisplay, apiMock, axiosError, makeNotification, makeUser, renderWithProviders, t } from "../test/utils.js";
+import { CartProvider } from "../context/CartContext.js";
+import {
+  LocationDisplay,
+  apiMock,
+  axiosError,
+  makeCart,
+  makeCartLine,
+  makeNotification,
+  makeUser,
+  renderWithProviders,
+  t,
+} from "../test/utils.js";
 
 const user = makeUser({ role: "STORE" });
 
@@ -118,5 +129,35 @@ describe("Header for a branch", () => {
       await screen.findByText(t("header.branchOf", { branch: "Bingo Visoko", company: "Bingo d.o.o." })),
     ).toBeInTheDocument();
     expect(screen.queryByText(t("auth.storeRole"))).not.toBeInTheDocument();
+  });
+});
+
+describe("Header cart", () => {
+  const renderFor = (role: "RESTAURANT" | "STORE", cart = makeCart([makeCartLine({ product_id: 1 }), makeCartLine({ product_id: 2 })])) =>
+    renderWithProviders(
+      <CartProvider enabled={role === "RESTAURANT"}>
+        <NotificationsProvider enabled={false}>
+          <Header isSidebarOpen onToggleSidebar={() => {}} />
+        </NotificationsProvider>
+      </CartProvider>,
+      { route: "/dashboard", path: "/dashboard", user: makeUser({ role }), get: { "/cart": { cart } } },
+    );
+
+  it("shows restaurants a link to the cart with the number of lines", async () => {
+    renderFor("RESTAURANT");
+    const link = await screen.findByRole("link", { name: t("header.cartLabelCount", { count: 2 }) });
+    expect(link).toHaveAttribute("href", "/cart");
+    expect(link).toHaveTextContent("2");
+  });
+
+  it("shows no badge for an empty cart", async () => {
+    renderFor("RESTAURANT", makeCart([]));
+    expect(await screen.findByRole("link", { name: t("header.cartLabel") })).toBeInTheDocument();
+  });
+
+  it("has no cart for stores", async () => {
+    renderFor("STORE");
+    await screen.findByRole("button", { name: /Amir Hodžić/ });
+    expect(screen.queryByRole("link", { name: t("header.cartLabel") })).not.toBeInTheDocument();
   });
 });

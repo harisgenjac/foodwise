@@ -14,10 +14,12 @@ import {
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
+  ShoppingCart,
   UserRound,
 } from "lucide-react";
 import logo from "../assets/logoApp.png";
 import { useNotifications } from "../context/NotificationsContext.js";
+import { useCart } from "../context/CartContext.js";
 import LanguageSwitcher from "./LanguageSwitcher.js";
 import NotificationItem from "./notifications/NotificationItem.js";
 import { MOBILE_DRAWER_ID } from "./navigation/MobileDrawer.js";
@@ -43,6 +45,7 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
   // Logo URL that failed to load, so the avatar falls back to initials; a new upload gets a new URL.
   const [failedLogo, setFailedLogo] = useState<string | null>(null);
   const { notifications, unreadCount, markAllAsRead } = useNotifications();
+  const { count: cartCount } = useCart();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const notifRef = useRef<HTMLDivElement>(null);
@@ -159,6 +162,25 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
 
       <div className="flex shrink-0 items-center sm:gap-1">
         <LanguageSwitcher />
+
+        {user?.role === "RESTAURANT" && (
+          <Link
+            to="/cart"
+            aria-label={cartCount > 0 ? t("header.cartLabelCount", { count: cartCount }) : t("header.cartLabel")}
+            aria-disabled={locked || undefined}
+            tabIndex={locked ? -1 : undefined}
+            className={`relative flex h-11 w-11 items-center justify-center md:h-auto md:w-auto md:p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-colors ${
+              locked ? "pointer-events-none opacity-40" : ""
+            }`}
+          >
+            <ShoppingCart className="h-5 w-5" strokeWidth={1.8} />
+            {cartCount > 0 && (
+              <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
+                {cartCount > 9 ? "9+" : cartCount}
+              </span>
+            )}
+          </Link>
+        )}
 
         <div className="relative" ref={notifRef}>
           <button

@@ -90,7 +90,6 @@ describe("/api/cart", () => {
       flags: { unavailable: false, unavailable_reason: null, quantity_exceeds: false, price_lowered: false, price_raised: false },
     });
     expect(current.totals).toEqual({ lines: 2, total: "30.40" });
-    expect((await restaurant.get("/api/cart/count")).body.count).toBe(2);
 
     // A cart line holds no stock.
     const product = await restaurant.get(`/api/products/${chicken.id}`);

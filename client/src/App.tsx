@@ -15,6 +15,7 @@ import BrowseProductsPage from './pages/BrowseProductsPage.js';
 import StoresPage from './pages/StoresPage.js'
 import StoreDetailsPage from './pages/StoreDetailsPage.js';
 import MyOrdersPage from './pages/MyOrdersPage.js';
+import CartPage from './pages/CartPage.js';
 import OrdersRedirect, { AdminOrdersRedirect } from './components/OrdersRedirect.js';
 import MyProfilePage from './pages/MyProfilePage.js'
 import DonateFoodPage from './pages/DonateFoodPage.js';
@@ -76,6 +77,7 @@ function App() {
         <Route path="/stores" element={<ProtectedRoute role="RESTAURANT"><StoresPage /></ProtectedRoute>} />
         <Route path="/stores/:id" element={<ProtectedRoute role="RESTAURANT"><StoreDetailsPage /></ProtectedRoute>} />
         <Route path="/my-orders" element={<ProtectedRoute role="RESTAURANT"><MyOrdersPage /></ProtectedRoute>} />
+        <Route path="/cart" element={<ProtectedRoute role="RESTAURANT"><CartPage /></ProtectedRoute>} />
         <Route path="/pickups" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><PickupsPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><ReportsPage /></ProtectedRoute>} />
         <Route path="/credits" element={<ProtectedRoute role="STORE"><CreditsPage /></ProtectedRoute>} />

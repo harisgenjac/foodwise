@@ -740,3 +740,42 @@ export interface City {
   id: number;
   name: string;
 }
+
+// The restaurant's cart (GET /cart): lines of one store with the product's live state.
+export type UnavailableReason = "SOLD_OUT" | "EXPIRED" | "REMOVED" | "STORE_UNAVAILABLE";
+
+export interface CartFlags {
+  unavailable: boolean;
+  unavailable_reason: UnavailableReason | null;
+  // The free quantity is below the line's quantity.
+  quantity_exceeds: boolean;
+  // The current price against the one the restaurant saw (unit_price_seen).
+  price_lowered: boolean;
+  price_raised: boolean;
+}
+
+export interface CartLine {
+  product_id: number;
+  name: string;
+  category: string;
+  unit: string;
+  expiry_date: string;
+  original_price: string;
+  // The current price.
+  discounted_price: string;
+  quantity: string;
+  unit_price_seen: string;
+  // "0" for an unavailable line.
+  available_quantity: string;
+  added_at: string;
+  flags: CartFlags;
+}
+
+export interface Cart {
+  store: { id: number; business_name: string | null } | null;
+  items: CartLine[];
+  // What would be sent now (available lines without a higher price, at most the free quantity).
+  totals: { lines: number; total: string };
+  pending_orders: number;
+  max_pending_orders: number;
+}

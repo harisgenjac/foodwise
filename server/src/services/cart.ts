@@ -150,15 +150,6 @@ export const getCart = async (restaurantId: number, db: Db = pool): Promise<Cart
   };
 };
 
-// The number of lines, for the header's cart icon.
-export const countCartLines = async (restaurantId: number): Promise<number> => {
-  const result = await pool.query<{ count: string }>(
-    "SELECT COUNT(*) AS count FROM cart_items WHERE cart_items.restaurant_id = $1",
-    [restaurantId],
-  );
-  return Number(result.rows[0]!.count);
-};
-
 export interface PutCartItemInput {
   quantity: number;
   replace: boolean;

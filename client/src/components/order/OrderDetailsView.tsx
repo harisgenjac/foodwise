@@ -8,7 +8,6 @@ import {
   CalendarPlus,
   Clock,
   History,
-  Info,
   ListChecks,
   MapPin,
   PackageCheck,
@@ -27,9 +26,9 @@ import {
   lineTotal,
   ORDER_STATUS_STYLES,
   orderedLineTotal,
-  sendChangeText,
 } from "../../utils/orders.js";
 import type { OrderDetails, OrderParty } from "../../types/index.js";
+import SendChangesList from "./SendChangesList.js";
 
 const dateTimeFormat: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" };
 const formatDateTime = (value: string) => new Date(value).toLocaleString(undefined, dateTimeFormat);
@@ -170,19 +169,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
           )}
         </dl>
 
-        {order.send_changes.length > 0 && (
-          <div className="rounded-xl bg-blue-50 p-4 text-sm text-blue-900">
-            <p className="mb-1 flex items-center gap-2 font-semibold">
-              <Info className="h-4 w-4" />
-              {t("orders.sendChangesTitle")}
-            </p>
-            <ul className="list-disc space-y-0.5 pl-6">
-              {order.send_changes.map((change) => (
-                <li key={`${change.product_id}-${change.kind}`}>{sendChangeText(change, t)}</li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <SendChangesList changes={order.send_changes} />
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

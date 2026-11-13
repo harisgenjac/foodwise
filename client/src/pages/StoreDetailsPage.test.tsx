@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import StoreDetailsPage from "./StoreDetailsPage.js";
 import { apiMock, makeProduct, makeUser, renderWithProviders, t } from "../test/utils.js";
@@ -110,22 +110,16 @@ describe("StoreDetailsPage orders tab count", () => {
     expect(reservationsTab()).toHaveTextContent("5");
   });
 
-  it("updates the total after a new order", async () => {
-    myTotal = 5;
-    apiMock.post.mockResolvedValue({
-      data: { order: { code: "K7PM", items: [{ quantity: "3", unit_price: "5.00" }] }, changes: [] },
-    });
+  it("adds a product to the cart from the store's offer", async () => {
+    apiMock.put.mockResolvedValue({ data: { cart: { store: null, items: [], totals: { lines: 1, total: "15.00" }, pending_orders: 0, max_pending_orders: 10 } } });
     renderPage(1);
-    await waitFor(() => expect(reservationsTab()).toHaveTextContent("5"));
+    await userEvent.click(await screen.findByRole("button", { name: t("cart.add") }));
+    const dialog = screen.getByRole("dialog");
+    await userEvent.type(within(dialog).getByLabelText(t("dashboard.quantity"), { exact: false }), "3");
+    await userEvent.click(within(dialog).getByRole("button", { name: t("cart.add") }));
 
-    await userEvent.click(screen.getByRole("button", { name: t("myProducts.reserveButton") }));
-    await userEvent.type(screen.getByLabelText(t("myReservations.pickupDate")), "01/01/2030");
-    await userEvent.type(screen.getByLabelText(t("myReservations.pickupTime")), "10:00");
-    await userEvent.type(screen.getByLabelText(t("dashboard.quantity"), { exact: false }), "3");
-    myTotal = 6;
-    await userEvent.click(screen.getByRole("button", { name: t("orders.send.submit") }));
-
-    await waitFor(() => expect(reservationsTab()).toHaveTextContent("6"));
+    await waitFor(() => expect(apiMock.put).toHaveBeenCalledWith("/cart/items/1", { quantity: 3 }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
 
