@@ -1771,10 +1771,10 @@
     "text": "Record an amount you sold at your own till, so restaurants see what is really left.",
     "free": "Free now: {{amount}} {{unit}}",
     "quantity": "Amount sold in the shop",
-    "hint": "Only the free quantity can be recorded. Quantity in pending or accepted orders stays reserved.",
-    "nothingFree": "Nothing is free right now: everything left is in orders.",
+    "hint": "Enter everything you sold at the till. The free quantity is recorded at once; if you also sold from pending orders, you reduce or reject them when you decide. Quantity in accepted orders stays reserved.",
+    "nothingFree": "Nothing is free right now: everything left is in accepted orders.",
     "positive": "Enter an amount above zero.",
-    "tooMuch": "That is more than the free quantity.",
+    "tooMuch": "That is more than is free and in pending orders.",
     "next": "Continue",
     "cancel": "Cancel",
     "confirmAmount": "Sold in shop: {{amount}} {{unit}}.",
@@ -1785,7 +1785,13 @@
     "error": "The sale was not recorded. Please try again.",
     "stockLabel": "sold in shop",
     "historyTitle": "Sold in your shop",
-    "historyTotal": "{{amount}} {{unit}} in total. Restaurants see only the lower available quantity."
+    "historyTotal": "{{amount}} {{unit}} in total. Restaurants see only the lower available quantity.",
+    "confirmShortage": "{{free}} {{unit}} is recorded at once. The other {{rest}} {{unit}} is in pending orders: you must reduce or reject them when you decide.",
+    "shortageTitle": "Orders to reduce",
+    "shortageText": "{{product}}: you sold {{amount}} {{unit}} in the shop that pending orders hold. When you decide, accept less or reject them:",
+    "shortageOrder": "Order {{code}} · {{restaurant}} · {{amount}} {{unit}}",
+    "close": "Close",
+    "shortageLabel": "missing in pending orders"
   },
   "orders": {
     "title": "Order {{code}}",
@@ -1899,8 +1905,15 @@
         "reason": "Choose a reason.",
         "note": "Describe the reason (at most 300 characters).",
         "quantity": "The accepted quantity must be more than zero and less than ordered.",
-        "sale": "The amount sold in the shop is not valid."
-      }
+        "sale": "The amount sold in the shop is not valid.",
+        "shortage": "You cannot accept more than is left after the sale in your shop."
+      },
+      "shortage": "More was sold in your shop than was free: you can accept at most {{amount}}.",
+      "shortageAll": "Your shop sold everything this item holds: you must reject it.",
+      "wholeOnlySold": "The restaurant accepts only the whole order, and part of it was sold in your shop: you must reject the order.",
+      "acceptAtMost": "{{product}}: after the sale in your shop you can accept at most {{amount}}. Accept less or reject it.",
+      "mustRejectItem": "{{product}} was sold in your shop: you must reject this item.",
+      "mustRejectOrder": "This order must be rejected: {{product}} was sold in your shop (only {{left}} left)."
     },
     "send": {
       "submit": "Send order",

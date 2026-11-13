@@ -140,6 +140,8 @@ function ProductDetailsPage() {
   const available = parseFloat(product.available_quantity ?? product.quantity);
   // The owner also sees what it sold in its own shop; for restaurants that is part of "reserved".
   const soldInShop = isOwner ? parseFloat(product.sold_in_shop ?? "0") : 0;
+  // What the till sold of Pending orders: the store must still reduce or reject them.
+  const shopShortage = isOwner ? parseFloat(product.shop_shortage ?? "0") : 0;
   const reserved = Math.max(quantity - available - soldInShop, 0);
   const availablePercent = quantity > 0 ? Math.round((available / quantity) * 100) : 0;
   const originalPrice = Number(product.original_price);
@@ -262,6 +264,14 @@ function ProductDetailsPage() {
                   <>
                     <span className="text-gray-300"> · </span>
                     {t("soldInShop.stockLabel")}: {soldInShop} {unit}
+                  </>
+                )}
+                {shopShortage > 0 && (
+                  <>
+                    <span className="text-gray-300"> · </span>
+                    <span className="font-medium text-amber-700">
+                      {t("soldInShop.shortageLabel")}: {shopShortage} {unit}
+                    </span>
                   </>
                 )}
               </span>

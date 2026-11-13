@@ -363,7 +363,7 @@ export const getOrderDetails = async (orderId: number, userId: number | null) =>
             reservations.unit_price, reservations.status, reservations.decided_at,
             reservations.change_reason, reservations.change_note, reservations.picked_up_at,
             products.name AS product_name, products.category, products.unit, products.original_price,
-            products.expiry_date
+            products.expiry_date, products.shop_shortage
      FROM reservations
      JOIN products ON products.id = reservations.product_id
      WHERE reservations.order_id = $1
@@ -381,5 +381,8 @@ export const getOrderDetails = async (orderId: number, userId: number | null) =>
      ORDER BY order_status_history.created_at, order_status_history.id`,
     [orderId],
   );
-  return { ...order, items: items.rows, history: history.rows };
+  // What the store's till sold of the order's products is for the store (and the admin) only.
+  const forStore = userId === null || userId === order.store_id;
+  const lines = forStore ? items.rows : items.rows.map(({ shop_shortage: _shortage, ...item }) => item);
+  return { ...order, items: lines, history: history.rows };
 };

@@ -1812,10 +1812,10 @@
     "text": "Upišite količinu koju ste prodali na svojoj kasi, da restorani vide koliko je stvarno ostalo.",
     "free": "Slobodno sada: {{amount}} {{unit}}",
     "quantity": "Količina prodana u radnji",
-    "hint": "Može se upisati samo slobodna količina. Količina u narudžbama na čekanju ili prihvaćenim ostaje rezervisana.",
-    "nothingFree": "Trenutno ništa nije slobodno: sve što je ostalo je u narudžbama.",
+    "hint": "Upišite sve što ste prodali na kasi. Slobodna količina se upiše odmah; ako ste prodali i od narudžbi na čekanju, njih ćete smanjiti ili odbiti pri odluci. Količina u prihvaćenim narudžbama ostaje rezervisana.",
+    "nothingFree": "Trenutno ništa nije slobodno: sve što je ostalo je u prihvaćenim narudžbama.",
     "positive": "Upišite količinu veću od nule.",
-    "tooMuch": "To je više od slobodne količine.",
+    "tooMuch": "To je više nego što je slobodno i u narudžbama na čekanju.",
     "next": "Nastavi",
     "cancel": "Odustani",
     "confirmAmount": "Prodano u radnji: {{amount}} {{unit}}.",
@@ -1826,7 +1826,13 @@
     "error": "Prodaja nije upisana. Pokušajte ponovo.",
     "stockLabel": "prodano u radnji",
     "historyTitle": "Prodano u vašoj radnji",
-    "historyTotal": "Ukupno {{amount}} {{unit}}. Restorani vide samo manju dostupnu količinu."
+    "historyTotal": "Ukupno {{amount}} {{unit}}. Restorani vide samo manju dostupnu količinu.",
+    "confirmShortage": "Odmah se upisuje {{free}} {{unit}}. Preostalih {{rest}} {{unit}} je u narudžbama na čekanju: pri odluci ih morate smanjiti ili odbiti.",
+    "shortageTitle": "Narudžbe treba smanjiti",
+    "shortageText": "{{product}}: u radnji ste prodali {{amount}} {{unit}} koje drže narudžbe na čekanju. Kad budete odlučivali, prihvatite manje ili ih odbijte:",
+    "shortageOrder": "Narudžba {{code}} · {{restaurant}} · {{amount}} {{unit}}",
+    "close": "Zatvori",
+    "shortageLabel": "nedostaje u narudžbama na čekanju"
   },
   "orders": {
     "title": "Narudžba {{code}}",
@@ -1944,8 +1950,15 @@
         "reason": "Odaberite razlog.",
         "note": "Opišite razlog (najviše 300 znakova).",
         "quantity": "Prihvaćena količina mora biti veća od nule i manja od naručene.",
-        "sale": "Količina prodana u radnji nije ispravna."
-      }
+        "sale": "Količina prodana u radnji nije ispravna.",
+        "shortage": "Ne možete prihvatiti više nego što je ostalo nakon prodaje u radnji."
+      },
+      "shortage": "U vašoj radnji je prodano više nego što je bilo slobodno: možete prihvatiti najviše {{amount}}.",
+      "shortageAll": "U vašoj radnji je prodano sve što ova stavka drži: morate je odbiti.",
+      "wholeOnlySold": "Restoran prihvata samo cijelu narudžbu, a dio je prodan u vašoj radnji: narudžbu morate odbiti.",
+      "acceptAtMost": "{{product}}: nakon prodaje u radnji možete prihvatiti najviše {{amount}}. Prihvatite manje ili odbijte.",
+      "mustRejectItem": "{{product}} je prodan u vašoj radnji: ovu stavku morate odbiti.",
+      "mustRejectOrder": "Ova narudžba se mora odbiti: {{product}} je prodan u vašoj radnji (ostalo je samo {{left}})."
     },
     "send": {
       "submit": "Pošalji narudžbu",
