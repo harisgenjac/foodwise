@@ -1297,7 +1297,7 @@ async function seed() {
     await logAction(client, mainAdmin, "UNBLOCK_USER", at(blockedUntil, 10), { userId: blocked.id });
 
     // ----- A cart -----
-    // Restoran Ukus has three lines of the store with the most products on offer; the last one
+    // Restoran Ukus has three lines of the store with the most products on offer; the third one
     // was added at a lower price, so the cart shows "the price went up".
     console.log("Creating a cart...");
     const ukus = byEmail("restoran.ukus@demo.com");
