@@ -151,6 +151,11 @@ export const setProductPrice = async (api: APIRequestContext, productId: number,
 export const completeOrder = async (api: APIRequestContext, orderId: number) =>
   ok(await api.post(`/api/orders/${orderId}/complete`));
 
+// The restaurant withdraws its Pending order. For cleanup: the seeded restaurant is shared, and
+// orders left Pending count towards its limit of 10.
+export const cancelOrder = async (api: APIRequestContext, orderId: number) =>
+  ok(await api.post(`/api/orders/${orderId}/cancel`));
+
 // A new store (or restaurant) in Visoko with a complete profile, its own password set and no plan,
 // logged in. For tests that need a state the shared seeded accounts lose after one run (here: no
 // plan yet), so the test survives retries and --repeat-each.

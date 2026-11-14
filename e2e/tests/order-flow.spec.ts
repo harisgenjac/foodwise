@@ -1,9 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { ACCOUNTS, runId, storageState } from "../support/accounts.js";
-import { orderFromMarketplace, storeOrderCard, toast } from "../support/ui.js";
-
-// A pickup of the order, found by its product.
-const pickupCard = (page: Page, productName: string) => page.getByTestId("pickup-card").filter({ hasText: productName });
+import { orderFromMarketplace, pickupCard, storeOrderCard, toast } from "../support/ui.js";
 
 test("a store publishes a product, a restaurant orders it and the store hands it over", async ({ browser }) => {
   const productName = `E2E Mlijeko ${runId()}`;

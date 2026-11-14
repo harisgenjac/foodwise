@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
-import { ACCOUNTS, API_URL, runId, storageState } from "../support/accounts.js";
-import { apiAs, createProduct, recordShopSale, setProductPrice } from "../support/api.js";
-import { addToCart, checkout, emptyCart, sentOrderCode, toast } from "../support/ui.js";
+import { ACCOUNTS, runId, storageState } from "../support/accounts.js";
+import { apiAs, cancelOrder, createProduct, recordShopSale, setProductPrice } from "../support/api.js";
+import { addToCart, checkout, emptyCart, sentOrderId, toast } from "../support/ui.js";
 
 // The restaurant's cart (docs/orders-design.md, sections 4 and 5): one store per cart, the flags of
 // lines whose offer changed, and what sending does with them with partial fulfilment on and off.
@@ -9,13 +9,6 @@ import { addToCart, checkout, emptyCart, sentOrderCode, toast } from "../support
 // and cancels the orders it sent (they would count towards the pending-order limit).
 
 const cartLine = (page: Page, name: string) => page.getByTestId("cart-line").filter({ hasText: name });
-
-// The id of the order on the confirmation, from its "Pogledaj narudžbu" link.
-const sentOrderId = async (page: Page) => {
-  await sentOrderCode(page);
-  const href = await page.getByRole("link", { name: "Pogledaj narudžbu" }).getAttribute("href");
-  return Number(/\/orders\/(\d+)$/.exec(href ?? "")![1]);
-};
 
 test.describe("cart", () => {
   let restaurant: Page;
@@ -29,7 +22,9 @@ test.describe("cart", () => {
 
   test.afterEach(async () => {
     await emptyCart(restaurant);
-    for (const orderId of sentOrders.splice(0)) await restaurant.request.post(`${API_URL}/api/orders/${orderId}/cancel`);
+    const api = await apiAs("restaurant");
+    for (const orderId of sentOrders.splice(0)) await cancelOrder(api, orderId);
+    await api.dispose();
     await restaurant.context().close();
   });
 
