@@ -67,6 +67,9 @@ describe("GET /api/dashboard/stats", () => {
     await pool.query("UPDATE products SET status = 'Sold' WHERE id = $1", [sold.id]);
     const removed = await createProduct(storeA);
     await pool.query("UPDATE products SET status = 'Removed' WHERE id = $1", [removed.id]);
+    // Past its expiry date but not yet marked Expired by the nightly job: not active.
+    const stale = await createProduct(storeA);
+    await pool.query("UPDATE products SET expiry_date = CURRENT_DATE - 1 WHERE id = $1", [stale.id]);
 
     await insertReservation(kg.id, RESTAURANT_A, "Confirmed", 2.5);
     await insertReservation(kg.id, RESTAURANT_B, "Completed", 1);

@@ -26,6 +26,7 @@ import { getSavedTotals } from "../services/impactStats.js";
 import { creditMonth, nextMonth } from "../utils/creditTime.js";
 import type { Role } from "../types/auth.js";
 import { notBlocked } from "../utils/visibility.js";
+import { availableQuantity } from "../services/stock.js";
 import { sendInvitation, sendPasswordResetLink } from "../services/accountEmails.js";
 
 // Every role an admin can filter by. COMPANY accounts are created with their company
@@ -647,7 +648,7 @@ export const getAdminProducts = async (req: Request, res: Response) => {
   try {
     const { rows, total } = await listPage(
       `products.id, products.store_id, products.name, products.category, products.quantity,
-       products.unit, products.original_price, products.discounted_price, products.expiry_date,
+       ${availableQuantity("products")} AS available_quantity, products.unit, products.original_price, products.discounted_price, products.expiry_date,
        products.status, products.created_at, users.business_name, users.email AS store_email,
        NOT ${notBlocked("users")} AS store_is_blocked`,
       from,

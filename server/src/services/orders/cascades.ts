@@ -2,6 +2,7 @@ import type { PoolClient } from "pg";
 import { createNotification } from "../../utils/notifications.js";
 import { formatOrderCode, type OrderRow } from "./codes.js";
 import { moveItems, recordItemChanges, syncOrderStatus, type OrderEvent } from "./status.js";
+import { absorbShopShortage } from "../stock.js";
 
 // What happens to orders when something outside them changes (docs/orders-design.md, section 8):
 // a blocked user or company, a deactivated branch, an expired or removed product. Only Pending
@@ -86,13 +87,17 @@ export const cancelPendingItemsOfProducts = async (
   event: OrderEvent,
 ) => {
   for (const order of orders) {
-    const dropped = await client.query<{ id: number }>(
+    const dropped = await client.query<{ id: number; product_id: number }>(
       `UPDATE reservations SET status = 'Cancelled'
        WHERE reservations.order_id = $1 AND reservations.status = 'Pending'
          AND reservations.product_id = ANY($2::int[])
-       RETURNING reservations.id`,
+       RETURNING reservations.id, reservations.product_id`,
       [order.id, productIds],
     );
+    // Like moveItems: the freed quantity first covers what the till already sold, so the shop's
+    // shortage is recorded as a sale with this order.
+    const droppedProducts = [...new Set(dropped.rows.map((row) => row.product_id))].sort((a, b) => a - b);
+    for (const productId of droppedProducts) await absorbShopShortage(client, productId, { orderId: order.id });
     // All or nothing: the rest of the order goes too.
     const rest = order.accept_partial ? [] : await moveItems(client, order.id, ["Pending"], "Cancelled");
     const updated = await syncOrderStatus(client, order.id, event);

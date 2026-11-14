@@ -10,6 +10,7 @@ import bcrypt from "bcrypt";
 import { hashPassword, validatePassword } from "../utils/accounts.js";
 import { CITY_NAME, cityDistance, cityExists, parseCityFilter, parseRadius, userCityId } from "../utils/cities.js";
 import { visibleStore } from "../utils/visibility.js";
+import { onOffer } from "../services/stock.js";
 import { companyName, storeDescription, storeLogo } from "../utils/branding.js";
 
 const LOGO_URL_PREFIX = "/uploads/logos/";
@@ -281,9 +282,7 @@ export const getStores = async (req: Request, res: Response) => {
      users.address, ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
      users.opening_hours, users.pickup_hours, users.phone, ${companyName("users")} AS company_name,
      (SELECT COUNT(*) FROM products
-      WHERE products.store_id = users.id
-        AND products.status = 'Available'
-        AND products.expiry_date >= CURRENT_DATE) AS active_products`;
+      WHERE products.store_id = users.id AND ${onOffer("products", "users")}) AS active_products`;
     let query = `FROM users
      LEFT JOIN cities ON cities.id = users.city_id
      LEFT JOIN cities AS from_city ON from_city.id = $1::integer
