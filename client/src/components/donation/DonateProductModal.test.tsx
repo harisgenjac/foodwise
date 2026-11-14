@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import toast from "react-hot-toast";
 import DonateProductModal from "./DonateProductModal.js";
@@ -41,6 +41,19 @@ describe("DonateProductModal", () => {
     renderModal(product);
 
     expect(await screen.findByDisplayValue("3")).toBeInTheDocument();
+  });
+
+  it("closes with an error instead of offering the published quantity when loading fails", async () => {
+    const error = vi.spyOn(toast, "error");
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mockGet({ "/products/4": axiosError(500) });
+    const product = makeProduct({ id: 4, quantity: "10" });
+    delete product.available_quantity;
+    const { onClose } = renderModal(product);
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(error).toHaveBeenCalledWith(t("donations.fromProduct.loadError"));
+    expect(screen.queryByDisplayValue("10")).not.toBeInTheDocument();
   });
 
   it("requires a price for a paid donation and sends nothing without it", async () => {

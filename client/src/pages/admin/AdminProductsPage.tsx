@@ -93,7 +93,11 @@ function AdminProductsPage() {
         <>
           <p className="font-medium text-gray-900">{product.name}</p>
           <p className="text-xs text-gray-500">
-            {parseFloat(product.quantity)} {units[product.unit] || product.unit}
+            {t("admin.products.quantity", {
+              available: Math.max(parseFloat(product.available_quantity), 0),
+              quantity: parseFloat(product.quantity),
+              unit: units[product.unit] || product.unit,
+            })}
           </p>
         </>
       ),

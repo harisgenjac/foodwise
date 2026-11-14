@@ -33,6 +33,12 @@ export const availableQuantity = (alias: string) =>
 export const sellableProduct = (alias: string, storeAlias: string) =>
   `(${alias}.status = 'Available' AND ${alias}.expiry_date >= CURRENT_DATE AND ${visibleStore(storeAlias)})`;
 
+// Whether the product row `alias` is on the marketplace right now: sellable and with some free
+// quantity (Pending orders and shop sales can take all of it while it stays Available). The
+// marketplace list applies the same two conditions; counts restaurants see use this.
+export const onOffer = (alias: string, storeAlias: string) =>
+  `(${sellableProduct(alias, storeAlias)} AND ${availableQuantity(alias)} > 0)`;
+
 // The free quantity of one product, as a number. The caller holds the product's row lock when it
 // writes based on it (reserving, a shop sale), so nothing can take the same quantity meanwhile.
 export const freeQuantity = async (db: Db, productId: number): Promise<number> => {

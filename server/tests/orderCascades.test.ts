@@ -71,6 +71,26 @@ describe("the expiry job", () => {
     expect(types).toContain("ORDER_EXPIRED");
     expect(types).not.toContain("ORDER_ITEMS_EXPIRED");
   });
+
+  it("records the shop's shortage as a sale with the order it frees", async () => {
+    const { orderId, a } = await twoItemOrder(true);
+    // 10 kg, 2 kg in the order: the till sold all 10, so 2 kg are the shortage.
+    const sale = await store.post(`/api/products/${a.id}/shop-sales`).send({ quantity: 10 });
+    expect(sale.body).toMatchObject({ recorded: 8, shop_shortage: 2 });
+    await pool.query("UPDATE products SET expiry_date = CURRENT_DATE - 1 WHERE id = $1", [a.id]);
+    await expireProducts();
+    expect(await state(orderId)).toEqual({ order: "Pending", items: ["Cancelled", "Pending"] });
+    const product = await pool.query("SELECT shop_shortage FROM products WHERE id = $1", [a.id]);
+    expect(parseFloat(product.rows[0].shop_shortage)).toBe(0);
+    const sales = await pool.query(
+      "SELECT quantity, order_id FROM product_shop_sales WHERE product_id = $1 ORDER BY id",
+      [a.id],
+    );
+    expect(sales.rows.map((row) => [parseFloat(row.quantity), row.order_id])).toEqual([
+      [8, null],
+      [2, orderId],
+    ]);
+  });
 });
 
 describe("moderation", () => {

@@ -501,6 +501,8 @@ export interface AdminProduct {
   name: string;
   category: string;
   quantity: string;
+  // The free quantity (orders and shop sales taken off); below 0 never shown.
+  available_quantity: string;
   unit: string;
   original_price: string;
   discounted_price: string;

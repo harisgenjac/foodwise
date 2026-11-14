@@ -23,7 +23,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       const products = await pool.query(
         `SELECT COUNT(*) AS active_products
          FROM products
-         WHERE products.store_id = $1 AND products.status = 'Available'`,
+         WHERE products.store_id = $1 AND products.status = 'Available'
+           AND products.expiry_date >= CURRENT_DATE`,
         [userId],
       );
       const orders = await pool.query(

@@ -137,6 +137,20 @@ describe("Users routes", () => {
       expect(response.body.stores[0].active_products).toBe("2");
     });
 
+    it("counts only products with a free quantity, like the store's offers on the marketplace", async () => {
+      await createProduct(store);
+      // A pending order and a sale in the shop take all of it: still Available, but not on offer.
+      const taken = await createProduct(store, { quantity: 10 });
+      await reserve(restaurant, taken.id, 6);
+      expect((await store.post(`/api/products/${taken.id}/shop-sales`).send({ quantity: 4 })).status).toBe(201);
+      expect((await pool.query("SELECT status FROM products WHERE id = $1", [taken.id])).rows[0].status).toBe("Available");
+
+      const response = await restaurant.get("/api/users/stores").query({ business_name: PROFILE.business_name });
+      expect(response.body.stores[0].active_products).toBe("1");
+      const offers = await restaurant.get(`/api/products?store_id=${await userId(STORE)}`);
+      expect(offers.body.products).toHaveLength(1);
+    });
+
     it("filters by city_id and lists only stores", async () => {
       await restaurant.put("/api/users/me").send({ ...PROFILE, business_name: "Restoran" });
       const other = await registerAndLogin(STORE_2, "STORE");

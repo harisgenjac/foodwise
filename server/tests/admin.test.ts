@@ -520,6 +520,16 @@ describe("Admin", () => {
       expect((await admin.get("/api/admin/products?status=Gone")).status).toBe(400);
     });
 
+    it("shows the free quantity: orders and shop sales taken off", async () => {
+      const product = await createProduct(store, { name: "Admin free product", quantity: 10 });
+      await reserve(restaurant, product.id, 3);
+      expect((await store.post(`/api/products/${product.id}/shop-sales`).send({ quantity: 4 })).status).toBe(201);
+      const response = await admin.get("/api/admin/products?q=Admin free product");
+      expect(response.status).toBe(200);
+      expect(parseFloat(response.body.products[0].quantity)).toBe(10);
+      expect(parseFloat(response.body.products[0].available_quantity)).toBe(3);
+    });
+
     it("removes a donation and tells the donor why", async () => {
       const donation = await createDonation(restaurant, { name: "Admin donation" });
       const list = await admin.get("/api/admin/donations?q=Admin donation");
