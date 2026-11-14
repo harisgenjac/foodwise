@@ -49,7 +49,7 @@ Design, decisions and PR split: `docs/orders-design.md` (agreed Nov 6, 2026). De
 - [x] Accepting per item: accept all, a smaller quantity or reject, with a reason; freed quantity returns to the offer; if all are rejected, the order is `Rejected` (Nov 10, 2026: the store's decision dialog with reasons and shop sales, the order pages for both sides).
 - [x] Restaurants without credits: remove charging, subscription and banners for restaurants, adjust the admin credits overview. Add a limit on pending orders. (Credits part done Nov 6, 2026; the limit of 10 pending orders Nov 10, 2026.)
 - [x] Adapt existing features: Pickups, details, notifications, reports, admin reservations and cancelling, blocking and moderation. (Nov 10, 2026: pickups, order details, notifications and emails, blocking, moderation and expiry work on orders; Nov 11, 2026, orders PR 4: the admin's orders, the headquarters' branch orders, statistics and reports.)
-- [ ] E2E tests for the cart and orders.
+- [x] E2E tests for the cart and orders. (Nov 15, 2026: besides the specs each orders PR added, editing the cart and a late pickup date, a restaurant withdrawing an order and the store's code search, a missed pickup cancelled by the store, and the pending-order limit.)
 
 ### Phase 2: Delivery with a mock provider
 
