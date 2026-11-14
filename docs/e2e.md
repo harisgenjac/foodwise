@@ -12,13 +12,15 @@ e2e/
 ├── support/
 │   ├── accounts.ts       seeded accounts, password, URLs, storageState paths, runId(), uniqueName(prefix)
 │   ├── api.ts            API clients and arrange helpers (apiAs, apiLogin, myId, createProduct, createDonation, cityId, sendOrder,
-│   │                     sendOrderOf (several products), acceptOrder, completeOrder, orderCode, recordShopSale,
-│   │                     setProductPrice, createStoreWithoutPlan)
+│   │                     sendOrderOf (several products), acceptOrder, completeOrder, cancelOrder, orderCode,
+│   │                     recordShopSale, setProductPrice, createStoreWithoutPlan)
 │   ├── ui.ts             UI helpers (toast, dialogWith, loginViaForm, submitLoginForm, changeTemporaryPassword,
 │   │                     fillProductForm, searchMarketplace, expectNotInMarketplace, emptyCart (the page's session,
-│   │                     through the API), addToCart, checkout, sentOrderCode, orderFromMarketplace (empty cart, one
-│   │                     product added, checkout; returns the code), storeOrderCard, credits)
+│   │                     through the API), addToCart, checkout, sentOrderCode, sentOrderId, orderFromMarketplace (empty
+│   │                     cart, one product added, checkout; returns the code), storeOrderCard, pickupCard, credits)
 │   ├── seed.ts           the e2e seed
+│   ├── db.ts             direct database changes, only for a state the API cannot make: makePickupOverdue(orderId)
+│   │                     (the API takes pickups from today on); guarded like the seed (a *_e2e_db database)
 │   ├── dates.ts          sarajevoDate(days) → dd/mm/yyyy (UI), isoDate(days) → yyyy-mm-dd (API), both in Europe/Sarajevo
 │   └── mailpit.ts        MAILPIT_URL, waitForEmail(query): polls Mailpit's search API until exactly one email matches, returns it in full; countEmails(query)
 └── tests/
@@ -28,6 +30,10 @@ e2e/
     ├── order-reject.spec.ts           restaurant orders through the cart (no credit text in the "Dodaj u korpu" dialog) → store rejects the whole order with "Kvalitet" → History row "Odbijeno", the reason on the order page, the notification → full quantity offered again; /credits sends a restaurant to the dashboard
     ├── admin-orders.spec.ts           a two-product order accepted (API) → the admin finds it on /admin/orders by its code (lower case), opens it (both parties, two items) → cancels with a reason (toast, Otkazano, the reason in the history, no Cancel any more) → the restaurant's notification, the quantity back on offer
     ├── cart.spec.ts                   the seeded restaurant's cart (emptied before and after each test; the orders it sent are cancelled, so they do not count towards the pending limit): another store's product asks "Isprazniti korpu?" and replaces the cart (header "Korpa, 1 proizvod"); partial fulfilment on: a higher price shown in the cart, then shop sales while the cart is open → one line sent reduced, one not sent as sold out, the higher price not sent, all listed on the confirmation, the two left in the cart (accept the new price, remove unavailable); partial off: nothing sent, the line marked with "Dostupno još samo 3 kg.", reduced and sent
+    ├── cart-edit.spec.ts              the seeded restaurant's cart (emptied before and after; sends nothing): two products of one store → a line's quantity changed (the line and checkout totals, kept after a reload) → a pickup date after the earliest expiry ("Preuzimanje najkasnije …") refused with "Datum mora biti između danas i datuma isteka." → a line removed (header "Korpa, 1 proizvod") → "Isprazni korpu" with its confirmation → "Korpa je prazna"
+    ├── order-cancel.spec.ts           restaurant orders through the cart → withdraws it on My orders ("Otkazati ovu narudžbu?", toast, "Otkazano" in Historija) → the store's notification opens the order (no "Odluči") → the store's code search finds it with "#" and in lower case → the full quantity on offer again
+    ├── missed-pickup.spec.ts          an order of the whole 10 kg accepted (API), its pickup moved two days back (`makePickupOverdue`) → the store's Pickups show "Zakašnjelo" and "Kasni 2 dana" → cancelled ("Otkazati zakašnjelo preuzimanje?", toast) → the restaurant's notification opens the cancelled order → the 10 kg on offer again
+    ├── pending-limit.spec.ts          a fresh restaurant (`createStoreWithoutPlan("RESTAURANT")`) with 8 pending orders (API, another product, since sending removes a product from the cart) → the cart's "Imate 8 od najviše 10 …" → 10 pending: the 11th refused with the limit toast, the line kept → one cancelled, the cart sends; its orders are cancelled at the end
     ├── order-partial.spec.ts          a two-product order with partial fulfilment (API) → the store accepts 4 of 6 kg (not enough in stock, 2 kg recorded as sold in the shop) and rejects the other (quality), the new total and the summary → the restaurant sees "1/2 prihvaćeno", "6 kg → 4 kg" with the reason, the struck rejected line and old total, the notification → the offer shows 4 kg and the full 10 kg
     ├── email-settings.spec.ts         brezaStore turns email notifications off on My profile (toast, still off after a reload) → an order (API) → on again → another order → Mailpit has the second email (with the footer's turn-off link) and none for the first; at 375 px `/my-profile#email-notifications` shows the switch on screen, at least 44 px high. brezaStore is switched back on in afterEach. Skipped locally without MAILPIT_URL
     ├── invitation.spec.ts             admin creates a store with the default invitation (no password field) → "Još se nije prijavio" and Resend invitation → the email in Mailpit → the store opens /set-password from it, sets its password → My profile, signed in, profile still to fill in → the link no longer works, the password logs in → the admin no longer sees Resend invitation; the expired-link page at 375 px. Skipped locally without MAILPIT_URL
@@ -109,6 +115,7 @@ Config:
   - `apiAs(role)` is an API client with a seeded role's session; `apiLogin(email, password)` logs any account in.
   - An `APIRequestContext` sends no `Origin` or `Referer`, so the server's origin check lets its writes through. If you ever add an `Origin` header, it must be exactly `http://localhost:4173`.
   - The API takes dates as `yyyy-mm-dd` (`isoDate(days)`); the UI's `DateInput` takes `dd/mm/yyyy` (`sarajevoDate(days)`).
+- A state the API refuses to make (a pickup day already past) is set in the database with a helper in `support/db.ts`, never with SQL inside a spec. Keep that file to such cases.
 - Keep helpers small and shared (`support/api.ts`, `support/ui.ts`, `uniqueName(prefix)`), not a page-object layer.
 - Long flows wrap their parts in `test.step()` with short Bosnian names (e.g. `"Prodavnica odbija zahtjev"`), so the report shows where a test failed.
 - Credit balances are asserted through the UI, never the database: `availableCredits(page)` and `expectAvailableCredits(page, n)` read "Dostupno" on the Credits page, and the dialogs show `Ovo troši 1 kredit (preostalo: N)`. Read the starting number at run time; the seeded accounts' balances change with every test.
