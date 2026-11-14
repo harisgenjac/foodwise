@@ -27,7 +27,8 @@ function DonateProductModal({ product, onClose, onDonated }: DonateProductModalP
   const titleId = useId();
   const units = t("units", { returnObjects: true }) as Record<string, string>;
   const unit = units[product.unit] || product.unit;
-  // My products lists come without the reserved amount, so the modal reads the product itself.
+  // The free quantity (orders and shop sales taken off). My products sends it; otherwise the modal
+  // reads the product itself, and never falls back to the published quantity.
   const [available, setAvailable] = useState<number | null>(
     product.available_quantity !== undefined ? parseFloat(product.available_quantity) : null,
   );
@@ -42,13 +43,13 @@ function DonateProductModal({ product, onClose, onDonated }: DonateProductModalP
     const fetchAvailable = async () => {
       try {
         const response = await api.get(`/products/${product.id}`);
-        const amount = parseFloat(response.data.product.available_quantity ?? product.quantity);
+        const amount = parseFloat(response.data.product.available_quantity ?? "0");
         setAvailable(amount);
         setQuantity(String(amount));
       } catch (err) {
         console.error("Error fetching product:", err);
-        setAvailable(parseFloat(product.quantity));
-        setQuantity(product.quantity);
+        toast.error(t("donations.fromProduct.loadError"));
+        onClose();
       }
     };
     fetchAvailable();

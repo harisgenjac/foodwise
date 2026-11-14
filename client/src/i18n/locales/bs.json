@@ -915,7 +915,8 @@
       "confirm": "Prebaci",
       "success": "Proizvod je prebačen u donacije.",
       "error": "Prebacivanje u donacije nije uspjelo.",
-      "nothingAvailable": "Nema slobodne količine: sve je već naručeno."
+      "nothingAvailable": "Nema slobodne količine: sve je već naručeno.",
+      "loadError": "Slobodnu količinu nije moguće učitati. Pokušajte ponovo."
     }
   },
   "admin": {
@@ -1136,6 +1137,7 @@
       "search": "Proizvod ili prodavnica",
       "allStatuses": "-- Svi statusi --",
       "columnProduct": "Proizvod",
+      "quantity": "Slobodno {{available}} od {{quantity}} {{unit}}",
       "columnStore": "Prodavnica",
       "columnPrice": "Cijena",
       "columnExpiry": "Rok trajanja",

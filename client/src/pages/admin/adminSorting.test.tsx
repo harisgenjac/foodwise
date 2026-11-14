@@ -25,6 +25,7 @@ const PRODUCT: AdminProduct = {
   name: "Piletina",
   category: "Meat",
   quantity: "8",
+  available_quantity: "8",
   unit: "kg",
   original_price: "10.00",
   discounted_price: "5.00",

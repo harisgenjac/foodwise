@@ -306,6 +306,7 @@ describe("AdminProductsPage", () => {
     name: "Piletina",
     category: "Meat",
     quantity: "8",
+    available_quantity: "3",
     unit: "kg",
     original_price: "10.00",
     discounted_price: "5.00",
@@ -316,6 +317,16 @@ describe("AdminProductsPage", () => {
     store_email: "market@test.com",
     store_is_blocked: false,
   };
+
+  it("shows the free quantity next to the published one", async () => {
+    renderWithProviders(<AdminProductsPage />, {
+      route: "/admin/products",
+      path: "/admin/products",
+      user: admin,
+      get: { "/admin/products": { products: [product], total: 1 } },
+    });
+    expect(await findInTable(t("admin.products.quantity", { available: 3, quantity: 8, unit: t("units.kg") }))).toBeInTheDocument();
+  });
 
   it("filters by the store from the link and removes a product with a reason", async () => {
     const respond = vi.fn(() => ({ products: [product], total: 1 }));
@@ -348,6 +359,7 @@ describe("AdminProductsPage on phones (cards)", () => {
       name: "Piletina",
       category: "Meat",
       quantity: "8",
+      available_quantity: "8",
       unit: "kg",
       original_price: "10.00",
       discounted_price: "5.00",
