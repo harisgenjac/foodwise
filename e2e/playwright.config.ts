@@ -50,7 +50,7 @@ export default defineConfig({
     {
       name: "webkit-iphone",
       use: { ...devices["iPhone 13"] },
-      testMatch: /(mobile-layout|product-image|order-image)\.spec\.ts/,
+      testMatch: /(mobile-layout|product-image|order-image|store-page)\.spec\.ts/,
       dependencies: ["setup"],
     },
   ],
