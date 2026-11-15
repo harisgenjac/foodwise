@@ -17,7 +17,7 @@ import {
   insertUser,
   registerAndLogin,
   orderOf,
-  reserve,
+  orderOne,
   userId,
   type Agent,
   acceptItem,
@@ -81,16 +81,16 @@ afterEach(async () => {
 const codeOf = async (orderId: number): Promise<string> =>
   (await pool.query("SELECT code FROM orders WHERE id = $1", [orderId])).rows[0].code;
 
-const reserveChicken = async (quantity = 4) => {
+const orderChicken = async (quantity = 4) => {
   const product = await createProduct(store, { name: "Piletina", unit: "kg" });
-  const reservationId = await reserve(restaurant, product.id, quantity);
-  const orderId = await orderOf(reservationId);
-  return { product, reservationId, orderId, code: await codeOf(orderId) };
+  const orderItemId = await orderOne(restaurant, product.id, quantity);
+  const orderId = await orderOf(orderItemId);
+  return { product, orderItemId, orderId, code: await codeOf(orderId) };
 };
 
 describe("queueing", () => {
   it("queues one email to the store with the order, in the same transaction as the notification", async () => {
-    const { orderId } = await reserveChicken();
+    const { orderId } = await orderChicken();
     const rows = await queueRows();
     expect(rows).toHaveLength(1);
     const pickupDay = futurePickup().slice(0, 10);
@@ -105,7 +105,6 @@ describe("queueing", () => {
       sent_at: null,
       data: {
         recipientRole: "STORE",
-        reservationId: null,
         orderId,
         productId: null,
         donationId: null,
@@ -149,8 +148,8 @@ describe("queueing", () => {
   });
 
   it("queues the email of every later notification too", async () => {
-    const { reservationId } = await reserveChicken();
-    expect((await acceptItem(store, reservationId)).status).toBe(200);
+    const { orderItemId } = await orderChicken();
+    expect((await acceptItem(store, orderItemId)).status).toBe(200);
     const rows = await queueRows();
     expect(rows.map((row) => [row.template, row.recipient])).toEqual([
       ["ORDER_CREATED", STORE],
@@ -159,7 +158,7 @@ describe("queueing", () => {
   });
 
   it("queues nothing for a blocked user, an untyped notification or no notifications", async () => {
-    const { orderId } = await reserveChicken();
+    const { orderId } = await orderChicken();
     await pool.query("DELETE FROM email_queue");
     await insertUser(BLOCKED_STORE, "STORE", "Blocked Store");
     const blockedId = await userId(BLOCKED_STORE);
@@ -183,7 +182,7 @@ describe("queueing", () => {
 
 describe("sending", () => {
   it("sends a due email and marks it SENT", async () => {
-    const { code, orderId } = await reserveChicken();
+    const { code, orderId } = await orderChicken();
     const { transport, sent, send } = fakeTransport();
     const now = new Date();
 
@@ -208,7 +207,7 @@ describe("sending", () => {
   });
 
   it("sends to EMAIL_REDIRECT_TO with the real recipient in the subject", async () => {
-    const { code } = await reserveChicken();
+    const { code } = await orderChicken();
     const { transport, sent } = fakeTransport();
     await processEmailQueue({ transport, config: { ...CONFIG, redirectTo: "inbox@example.com" } });
     expect(sent[0]).toMatchObject({
@@ -220,7 +219,7 @@ describe("sending", () => {
   });
 
   it("renders the email in the row's language", async () => {
-    const { code } = await reserveChicken();
+    const { code } = await orderChicken();
     await pool.query("UPDATE email_queue SET language = 'en'");
     const { transport, sent } = fakeTransport();
     await processEmailQueue({ transport, config: CONFIG });
@@ -228,7 +227,7 @@ describe("sending", () => {
   });
 
   it("does not send an email whose next attempt is later", async () => {
-    await reserveChicken();
+    await orderChicken();
     const now = new Date();
     await pool.query("UPDATE email_queue SET next_attempt_at = $1", [secondsLater(now, 60)]);
     const { transport, sent } = fakeTransport();
@@ -240,8 +239,8 @@ describe("sending", () => {
 
   it("sends at most one batch per pass, oldest first", async () => {
     const product = await createProduct(store, { name: "Mlijeko", unit: "l", quantity: 10 });
-    const first = await reserve(restaurant, product.id, 1);
-    const second = await reserve(restaurant, product.id, 1);
+    const first = await orderOne(restaurant, product.id, 1);
+    const second = await orderOne(restaurant, product.id, 1);
     const { transport, sent } = fakeTransport();
     await processEmailQueue({ transport, config: CONFIG, batchSize: 1 });
     expect(sent).toHaveLength(1);
@@ -253,7 +252,7 @@ describe("sending", () => {
 
 describe("retries", () => {
   it("waits longer after every failure and gives up after the last attempt", async () => {
-    await reserveChicken();
+    await orderChicken();
     const { transport, send } = fakeTransport(new Error("connect ECONNREFUSED 127.0.0.1:1025"));
     let now = new Date();
 
@@ -287,7 +286,7 @@ describe("retries", () => {
   });
 
   it("sends on a later attempt after a failure", async () => {
-    await reserveChicken();
+    await orderChicken();
     const now = new Date();
     await processEmailQueue({ transport: fakeTransport(new Error("timeout")).transport, config: CONFIG, now });
     const { transport, sent } = fakeTransport();
@@ -301,11 +300,11 @@ describe("retries", () => {
   });
 
   it("fails at once for an unknown template or data that does not fit", async () => {
-    await reserveChicken();
-    await reserveChicken();
+    await orderChicken();
+    await orderChicken();
     const [first, second] = await queueRows();
     await pool.query("UPDATE email_queue SET template = 'NO_SUCH_TEMPLATE' WHERE id = $1", [first!.id]);
-    await pool.query(`UPDATE email_queue SET data = '{"reservationId": "x"}' WHERE id = $1`, [second!.id]);
+    await pool.query(`UPDATE email_queue SET data = '{"orderId": "x"}' WHERE id = $1`, [second!.id]);
     const { transport, send } = fakeTransport();
     expect(await processEmailQueue({ transport, config: CONFIG })).toEqual({ sent: 0, retrying: 0, failed: 2, skipped: 0 });
     expect(send).not.toHaveBeenCalled();
@@ -318,7 +317,7 @@ describe("retries", () => {
   });
 
   it("gives an email back to the queue when its worker stopped mid-send", async () => {
-    await reserveChicken();
+    await orderChicken();
     const now = new Date();
     await pool.query("UPDATE email_queue SET status = 'SENDING', attempts = 1, locked_at = $1", [
       secondsLater(now, -11 * 60),
@@ -330,7 +329,7 @@ describe("retries", () => {
   });
 
   it("leaves an email that is being sent right now alone", async () => {
-    await reserveChicken();
+    await orderChicken();
     const now = new Date();
     await pool.query("UPDATE email_queue SET status = 'SENDING', attempts = 1, locked_at = $1", [
       secondsLater(now, -60),
@@ -342,19 +341,19 @@ describe("retries", () => {
   });
 });
 
-describe("a failing email service never breaks the reservation", () => {
-  it("keeps the reservation and the notification", async () => {
-    const { reservationId } = await reserveChicken();
+describe("a failing email service never breaks the order item", () => {
+  it("keeps the order item and the notification", async () => {
+    const { orderItemId } = await orderChicken();
     const { transport } = fakeTransport(new Error("Resend responded with 500: Internal error"));
     await processEmailQueue({ transport, config: CONFIG });
 
-    const order = await restaurant.get(`/api/orders/${await orderOf(reservationId)}`);
+    const order = await restaurant.get(`/api/orders/${await orderOf(orderItemId)}`);
     expect(order.status).toBe(200);
     expect(order.body.order.status).toBe("Pending");
     const notifications = await store.get("/api/notifications");
     expect(notifications.body.notifications.map((n: { type: string }) => n.type)).toContain("ORDER_CREATED");
     // The store can still accept it.
-    expect((await acceptItem(store, reservationId)).status).toBe(200);
+    expect((await acceptItem(store, orderItemId)).status).toBe(200);
     expect((await queueRows())[0]).toMatchObject({ status: "PENDING", attempts: 1 });
   });
 
@@ -371,7 +370,7 @@ describe("a failing email service never breaks the reservation", () => {
       query.mockRestore();
     }
     // The next pass works again.
-    await reserveChicken();
+    await orderChicken();
     await worker.tick();
     expect(transport.send).toHaveBeenCalledTimes(1);
   });

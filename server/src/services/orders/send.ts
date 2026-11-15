@@ -208,14 +208,13 @@ export const sendOrder = async (client: PoolClient, restaurantId: number, input:
   });
   const items: SentOrder["items"] = [];
   for (const entry of sendable) {
-    // unit_price keeps the agreed price, even if the store edits the product later. pickup_date
-    // repeats the order's pickup until the orders cleanup drops it from the items.
+    // unit_price keeps the agreed price, even if the store edits the product later.
     const inserted = await client.query<SentOrder["items"][number]>(
-      `INSERT INTO reservations
-         (order_id, product_id, restaurant_id, quantity, ordered_quantity, unit_price, status, pickup_date)
-       VALUES ($1, $2, $3, $4, $4, $5, 'Pending', $6)
-       RETURNING reservations.id, reservations.product_id, reservations.quantity, reservations.unit_price`,
-      [order.id, entry.product.id, restaurantId, entry.quantity, entry.price, input.pickupAt],
+      `INSERT INTO order_items
+         (order_id, product_id, restaurant_id, quantity, ordered_quantity, unit_price, status)
+       VALUES ($1, $2, $3, $4, $4, $5, 'Pending')
+       RETURNING order_items.id, order_items.product_id, order_items.quantity, order_items.unit_price`,
+      [order.id, entry.product.id, restaurantId, entry.quantity, entry.price],
     );
     items.push(inserted.rows[0]!);
   }

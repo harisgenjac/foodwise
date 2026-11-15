@@ -9,8 +9,8 @@ const RESTAURANT_A = "dashboard-restaurant-a@test.com";
 const RESTAURANT_B = "dashboard-restaurant-b@test.com";
 const ADMIN = "dashboard-admin@test.com";
 
-// Reservations are inserted directly so every status can be set; unit_price is the agreed price.
-const insertReservation = async (
+// Order items are inserted directly so every status can be set; unit_price is the agreed price.
+const insertItem = async (
   productId: number,
   restaurantEmail: string,
   status: string,
@@ -56,7 +56,7 @@ describe("GET /api/dashboard/stats", () => {
     });
   });
 
-  it("counts the store's own active products, reservations and picked-up food saved by unit", async () => {
+  it("counts the store's own active products, order items and picked-up food saved by unit", async () => {
     const kg = await createProduct(storeA, { unit: "kg", quantity: 100 });
     const g = await createProduct(storeA, { unit: "g", quantity: 5000 });
     const l = await createProduct(storeA, { unit: "l", quantity: 100 });
@@ -71,23 +71,23 @@ describe("GET /api/dashboard/stats", () => {
     const stale = await createProduct(storeA);
     await pool.query("UPDATE products SET expiry_date = CURRENT_DATE - 1 WHERE id = $1", [stale.id]);
 
-    await insertReservation(kg.id, RESTAURANT_A, "Confirmed", 2.5);
-    await insertReservation(kg.id, RESTAURANT_B, "Completed", 1);
-    await insertReservation(g.id, RESTAURANT_A, "Completed", 500);
-    await insertReservation(l.id, RESTAURANT_A, "Confirmed", 3);
-    await insertReservation(ml.id, RESTAURANT_A, "Completed", 250);
-    await insertReservation(kom.id, RESTAURANT_A, "Completed", 4);
-    await insertReservation(pak.id, RESTAURANT_A, "Confirmed", 2);
+    await insertItem(kg.id, RESTAURANT_A, "Confirmed", 2.5);
+    await insertItem(kg.id, RESTAURANT_B, "Completed", 1);
+    await insertItem(g.id, RESTAURANT_A, "Completed", 500);
+    await insertItem(l.id, RESTAURANT_A, "Confirmed", 3);
+    await insertItem(ml.id, RESTAURANT_A, "Completed", 250);
+    await insertItem(kom.id, RESTAURANT_A, "Completed", 4);
+    await insertItem(pak.id, RESTAURANT_A, "Confirmed", 2);
     // Not saved: confirmed (not picked up yet), pending, rejected and cancelled quantities.
-    await insertReservation(kg.id, RESTAURANT_A, "Pending", 10);
-    await insertReservation(kg.id, RESTAURANT_B, "Pending", 10);
-    await insertReservation(kg.id, RESTAURANT_A, "Rejected", 10);
-    await insertReservation(kg.id, RESTAURANT_A, "Cancelled", 10);
+    await insertItem(kg.id, RESTAURANT_A, "Pending", 10);
+    await insertItem(kg.id, RESTAURANT_B, "Pending", 10);
+    await insertItem(kg.id, RESTAURANT_A, "Rejected", 10);
+    await insertItem(kg.id, RESTAURANT_A, "Cancelled", 10);
 
     // Another store's data is never counted.
     const other = await createProduct(storeB);
-    await insertReservation(other.id, RESTAURANT_A, "Completed", 7);
-    await insertReservation(other.id, RESTAURANT_A, "Pending", 1);
+    await insertItem(other.id, RESTAURANT_A, "Completed", 7);
+    await insertItem(other.id, RESTAURANT_A, "Pending", 1);
 
     expect(await stats(storeA)).toEqual({
       active_products: 6,
@@ -97,16 +97,16 @@ describe("GET /api/dashboard/stats", () => {
     });
   });
 
-  it("sums the restaurant's own reservations and picked-up savings at the agreed price", async () => {
+  it("sums the restaurant's own order items and picked-up savings at the agreed price", async () => {
     const product = await createProduct(storeA, { original_price: 10, discounted_price: 6, quantity: 100 });
-    await insertReservation(product.id, RESTAURANT_A, "Confirmed", 2, 6);
-    await insertReservation(product.id, RESTAURANT_A, "Completed", 1.5, 4);
-    await insertReservation(product.id, RESTAURANT_A, "Pending", 3, 6);
-    await insertReservation(product.id, RESTAURANT_A, "Rejected", 5, 6);
-    await insertReservation(product.id, RESTAURANT_A, "Cancelled", 5, 6);
-    // Another restaurant's reservations are never counted.
-    await insertReservation(product.id, RESTAURANT_B, "Completed", 10, 6);
-    await insertReservation(product.id, RESTAURANT_B, "Pending", 1, 6);
+    await insertItem(product.id, RESTAURANT_A, "Confirmed", 2, 6);
+    await insertItem(product.id, RESTAURANT_A, "Completed", 1.5, 4);
+    await insertItem(product.id, RESTAURANT_A, "Pending", 3, 6);
+    await insertItem(product.id, RESTAURANT_A, "Rejected", 5, 6);
+    await insertItem(product.id, RESTAURANT_A, "Cancelled", 5, 6);
+    // Another restaurant's order items are never counted.
+    await insertItem(product.id, RESTAURANT_B, "Completed", 10, 6);
+    await insertItem(product.id, RESTAURANT_B, "Pending", 1, 6);
 
     // Only the Completed one saves: (10 − 4) × 1.5 = 9; the Confirmed one is not picked up yet.
     expect(await stats(restaurantA)).toEqual({
@@ -118,7 +118,7 @@ describe("GET /api/dashboard/stats", () => {
 
   it("uses the product's current full price for the savings", async () => {
     const product = await createProduct(storeA, { original_price: 10, discounted_price: 6, quantity: 100 });
-    await insertReservation(product.id, RESTAURANT_A, "Completed", 2, 6);
+    await insertItem(product.id, RESTAURANT_A, "Completed", 2, 6);
     await pool.query("UPDATE products SET original_price = 12 WHERE id = $1", [product.id]);
 
     expect((await stats(restaurantA)).savings).toBe(12);

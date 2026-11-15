@@ -48,7 +48,7 @@ const itemRows = async (orderId: number) =>
   (
     await pool.query(
       `SELECT id, status, quantity, ordered_quantity, change_reason, change_note, decided_at IS NOT NULL AS decided
-       FROM reservations WHERE order_id = $1 ORDER BY id`,
+       FROM order_items WHERE order_id = $1 ORDER BY id`,
       [orderId],
     )
   ).rows.map((row) => ({ ...row, quantity: Number(row.quantity), ordered_quantity: Number(row.ordered_quantity) }));

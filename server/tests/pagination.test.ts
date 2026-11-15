@@ -49,7 +49,7 @@ const expectStablePages = async (agent: Agent, url: string, key: string, query: 
   return ids;
 };
 
-const insertReservation = async (productId: number, status: string, days = 1) => {
+const insertItem = async (productId: number, status: string, days = 1) => {
   await insertOrderItem({
     productId,
     restaurantId: await userId(RESTAURANT),
@@ -125,13 +125,13 @@ describe("Pagination", () => {
     beforeEach(async () => {
       const product = await createProduct(store, { quantity: 1000 });
       for (const status of ["Pending", "Pending", "Confirmed", "Completed", "Rejected", "Cancelled"]) {
-        await insertReservation(product.id, status);
-        await insertReservation(product.id, status);
+        await insertItem(product.id, status);
+        await insertItem(product.id, status);
       }
       // Two more Completed and one Confirmed pickup today, 15 rows in all.
-      await insertReservation(product.id, "Completed");
-      await insertReservation(product.id, "Completed");
-      await insertReservation(product.id, "Confirmed", 0);
+      await insertItem(product.id, "Completed");
+      await insertItem(product.id, "Completed");
+      await insertItem(product.id, "Confirmed", 0);
     });
 
     it("GET /orders/mine and /store return 12 by default with the total", async () => {

@@ -18,7 +18,7 @@ const setBusiness = async (email: string, businessName: string, city: string) =>
   );
 };
 
-// Inserts a reservation picked up `daysAgo` days before today (the API cannot backdate a pickup).
+// Inserts a order item picked up `daysAgo` days before today (the API cannot backdate a pickup).
 const insertPickup = async (
   productId: number,
   restaurantEmail: string,
@@ -44,18 +44,17 @@ const insertPickup = async (
 // The order code of an item as the sales report shows it (#K7PM).
 const codeOf = async (itemId: number) =>
   `#${(await pool.query<{ code: string }>(
-    "SELECT orders.code FROM orders JOIN reservations ON reservations.order_id = orders.id WHERE reservations.id = $1",
+    "SELECT orders.code FROM orders JOIN order_items ON order_items.order_id = orders.id WHERE order_items.id = $1",
     [itemId],
   )).rows[0]!.code}`;
 
 // A second picked-up item in the order of `itemId` (same restaurant and pickup moment).
 const addItem = async (itemId: number, productId: number, quantity: number, unitPrice: number) => {
   await pool.query(
-    `INSERT INTO reservations
-       (order_id, product_id, restaurant_id, quantity, ordered_quantity, unit_price, status, pickup_date, picked_up_at)
-     SELECT reservations.order_id, $2, reservations.restaurant_id, $3, $3, $4, 'Completed',
-            reservations.pickup_date, reservations.picked_up_at
-     FROM reservations WHERE reservations.id = $1`,
+    `INSERT INTO order_items
+       (order_id, product_id, restaurant_id, quantity, ordered_quantity, unit_price, status, picked_up_at)
+     SELECT order_items.order_id, $2, order_items.restaurant_id, $3, $3, $4, 'Completed', order_items.picked_up_at
+     FROM order_items WHERE order_items.id = $1`,
     [itemId, productId, quantity, unitPrice],
   );
 };
@@ -123,7 +122,7 @@ describe("Reports", () => {
       );
     });
 
-    it("lists the store's picked-up reservations in the period with the restaurant and totals", async () => {
+    it("lists the store's picked-up order items in the period with the restaurant and totals", async () => {
       const product = await createProduct(store, { name: "Piletina", category: "Meat", original_price: 10, quantity: 50 });
       const first = await insertPickup(product.id, RESTAURANT_A, { daysAgo: 3, quantity: 2, unitPrice: 6.5 });
       const second = await insertPickup(product.id, RESTAURANT_A, { daysAgo: 1, quantity: 1.5, unitPrice: 6 });

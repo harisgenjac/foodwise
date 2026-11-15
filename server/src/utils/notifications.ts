@@ -64,7 +64,6 @@ interface NewNotification {
   userId: number;
   type: NotificationType;
   message: string;
-  reservationId?: number | null;
   orderId?: number | null;
   productId?: number | null;
   donationId?: number | null;
@@ -86,7 +85,6 @@ export const createNotification = async (
     userId,
     type,
     message,
-    reservationId = null,
     orderId = null,
     productId = null,
     donationId = null,
@@ -97,10 +95,10 @@ export const createNotification = async (
 ) => {
   const inserted = await db.query<{ id: number }>(
     `INSERT INTO notifications
-       (user_id, type, message, reservation_id, order_id, product_id, donation_id, credit_request_id, branch_id, details)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       (user_id, type, message, order_id, product_id, donation_id, credit_request_id, branch_id, details)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING notifications.id`,
-    [userId, type, message, reservationId, orderId, productId, donationId, creditRequestId, branchId, details],
+    [userId, type, message, orderId, productId, donationId, creditRequestId, branchId, details],
   );
   await enqueueNotificationEmails(db, insertedIds(inserted));
 };

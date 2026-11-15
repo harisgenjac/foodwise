@@ -204,7 +204,6 @@ interface AdminActionTargets {
   userId?: number;
   productId?: number;
   donationId?: number;
-  reservationId?: number;
   orderId?: number;
   announcementId?: number;
   creditRequestId?: number;
@@ -215,16 +214,15 @@ interface AdminActionTargets {
 const logAction = async (client: PoolClient, admin: Admin, action: string, createdAt: Date, targets: AdminActionTargets = {}) => {
   await client.query(
     `INSERT INTO admin_actions
-       (admin_id, action, target_user_id, target_product_id, target_donation_id, target_reservation_id,
+       (admin_id, action, target_user_id, target_product_id, target_donation_id,
         target_order_id, target_announcement_id, target_credit_request_id, target_company_id, reason, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
     [
       admin.id,
       action,
       targets.userId ?? null,
       targets.productId ?? null,
       targets.donationId ?? null,
-      targets.reservationId ?? null,
       targets.orderId ?? null,
       targets.announcementId ?? null,
       targets.creditRequestId ?? null,
@@ -723,12 +721,12 @@ async function seed() {
       for (const line of o.lines) {
         const decided = line.status !== "Pending" && o.decidedAt ? o.decidedAt : null;
         const item = await client.query<{ id: number }>(
-          `INSERT INTO reservations
-             (order_id, product_id, restaurant_id, quantity, ordered_quantity, unit_price, status, pickup_date,
+          `INSERT INTO order_items
+             (order_id, product_id, restaurant_id, quantity, ordered_quantity, unit_price, status,
               picked_up_at, decided_at, change_reason, change_note, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
           [
-            id, line.product.id, o.restaurant.id, line.quantity, line.ordered, line.product.price, line.status, o.pickupAt,
+            id, line.product.id, o.restaurant.id, line.quantity, line.ordered, line.product.price, line.status,
             line.status === "Completed" ? (o.pickedUpAt ?? null) : null, decided, line.reason ?? null, line.note ?? null,
             o.createdAt, o.updatedAt,
           ],
@@ -904,7 +902,7 @@ async function seed() {
         });
         await notify(client, restaurant.id, "ORDER_ACCEPTED", `Your order #${order.code} was accepted.`, decided, { orderId: order.id });
         await logAction(client, admin, "CANCEL_ORDER", cancelledAt, {
-          orderId: order.id, reservationId: order.itemIds[0]!, productId: lines[0]!.product.id, userId: restaurant.id, reason,
+          orderId: order.id, productId: lines[0]!.product.id, userId: restaurant.id, reason,
         });
         for (const userId of [restaurant.id, store.id]) {
           await notify(client, userId, "ORDER_CANCELLED_BY_ADMIN", `Order #${order.code} was cancelled by the platform administrator.`, cancelledAt, {

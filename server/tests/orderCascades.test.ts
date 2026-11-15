@@ -1,7 +1,7 @@
 import pool from "../src/config/db.js";
 import { expireProducts } from "../src/jobs/expireProducts.js";
 import { sendReminders } from "../src/jobs/notificationReminders.js";
-import { type Agent, cleanupUsers, createProduct, futurePickup, orderOf, registerAndLogin, reserve, userId, acceptItem } from "./helpers.js";
+import { type Agent, cleanupUsers, createProduct, futurePickup, orderOf, registerAndLogin, orderOne, userId, acceptItem } from "./helpers.js";
 
 // What happens to orders when something outside them changes: an expired or removed product, a
 // blocked user, an admin's cancel, the pickup reminder (docs/orders-design.md, section 8).
@@ -41,7 +41,7 @@ const twoItemOrder = async (acceptPartial: boolean) => {
 
 const state = async (orderId: number) => {
   const order = await pool.query("SELECT status FROM orders WHERE id = $1", [orderId]);
-  const items = await pool.query("SELECT status FROM reservations WHERE order_id = $1 ORDER BY product_id", [orderId]);
+  const items = await pool.query("SELECT status FROM order_items WHERE order_id = $1 ORDER BY product_id", [orderId]);
   return { order: order.rows[0].status, items: items.rows.map((row) => row.status) };
 };
 
@@ -132,17 +132,17 @@ describe("blocking", () => {
 describe("an admin's cancel", () => {
   it("cancels the whole Confirmed order, offers its products again and logs CANCEL_ORDER", async () => {
     const product = await createProduct(store, { quantity: 2 });
-    const reservationId = await reserve(restaurant, product.id, 2);
-    expect((await acceptItem(store, reservationId)).status).toBe(200);
+    const orderItemId = await orderOne(restaurant, product.id, 2);
+    expect((await acceptItem(store, orderItemId)).status).toBe(200);
     expect((await pool.query("SELECT status FROM products WHERE id = $1", [product.id])).rows[0].status).toBe("Sold");
 
-    const orderId = await orderOf(reservationId);
+    const orderId = await orderOf(orderItemId);
     const response = await admin.post(`/api/admin/orders/${orderId}/cancel`).send({ reason: "Spor" });
     expect(response.status).toBe(200);
     expect(await state(orderId)).toEqual({ order: "Cancelled", items: ["Cancelled"] });
     expect((await pool.query("SELECT status FROM products WHERE id = $1", [product.id])).rows[0].status).toBe("Available");
-    const action = await pool.query("SELECT action, target_order_id, target_reservation_id FROM admin_actions WHERE reason = 'Spor'");
-    expect(action.rows).toEqual([{ action: "CANCEL_ORDER", target_order_id: orderId, target_reservation_id: null }]);
+    const action = await pool.query("SELECT action, target_order_id FROM admin_actions WHERE reason = 'Spor'");
+    expect(action.rows).toEqual([{ action: "CANCEL_ORDER", target_order_id: orderId }]);
     const history = await pool.query(
       "SELECT source, actor_id, reason FROM order_status_history WHERE order_id = $1 AND to_status = 'Cancelled'",
       [orderId],
@@ -160,7 +160,7 @@ describe("the pickup reminder", () => {
     await pool.query("UPDATE orders SET pickup_at = CURRENT_DATE + time '18:00' WHERE id = $1", [orderId]);
     const response = await store.post(`/api/orders/${orderId}/decision`).send({
       items: (
-        await pool.query("SELECT id FROM reservations WHERE order_id = $1", [orderId])
+        await pool.query("SELECT id FROM order_items WHERE order_id = $1", [orderId])
       ).rows.map((row) => ({ item_id: row.id, action: "ACCEPT" })),
     });
     expect(response.status).toBe(200);

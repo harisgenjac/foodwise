@@ -11,7 +11,6 @@ const APP_URL = "https://app.example.com";
 // Nothing linked; each case fills in what its notification links to.
 const EMPTY: NotificationEmailData = {
   recipientRole: "STORE",
-  reservationId: null,
   orderId: null,
   productId: null,
   donationId: null,
@@ -20,7 +19,6 @@ const EMPTY: NotificationEmailData = {
   announcementId: null,
   productName: null,
   unit: null,
-  quantity: null,
   pickupAt: null,
   restaurantName: null,
   storeName: null,

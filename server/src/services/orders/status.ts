@@ -2,7 +2,7 @@ import type { PoolClient } from "pg";
 import type { OrderRow } from "./codes.js";
 import { absorbShopShortage } from "../stock.js";
 
-// Order and item statuses (docs/orders-design.md, section 2). An item is today's reservation row.
+// Order and item statuses (docs/orders-design.md, section 2). An item is an order_items row.
 // The order's status is never set directly: syncOrderStatus derives it from its items after every
 // item change, in the same transaction, and records the change in order_status_history.
 
@@ -65,7 +65,7 @@ export const recordItemChanges = async (
 // the order's row lock. Returns the order as it is now.
 export const syncOrderStatus = async (client: PoolClient, orderId: number, event: OrderEvent) => {
   const items = await client.query<{ status: string }>(
-    "SELECT reservations.status FROM reservations WHERE reservations.order_id = $1",
+    "SELECT order_items.status FROM order_items WHERE order_items.order_id = $1",
     [orderId],
   );
   const next = deriveOrderStatus(items.rows.map((item) => item.status));
@@ -114,14 +114,14 @@ export interface ItemRow {
 // the order's lock already).
 export const lockOrderItems = async (client: PoolClient, orderId: number) => {
   const result = await client.query<ItemRow>(
-    `SELECT reservations.id, reservations.order_id, reservations.product_id, reservations.restaurant_id,
-            reservations.quantity, reservations.ordered_quantity, reservations.unit_price, reservations.status,
+    `SELECT order_items.id, order_items.order_id, order_items.product_id, order_items.restaurant_id,
+            order_items.quantity, order_items.ordered_quantity, order_items.unit_price, order_items.status,
             products.name AS product_name, products.unit, products.quantity AS product_quantity,
             products.status AS product_status, products.store_id,
             products.shop_shortage, products.expiry_date < CURRENT_DATE AS is_expired
-     FROM reservations
-     JOIN products ON products.id = reservations.product_id
-     WHERE reservations.order_id = $1
+     FROM order_items
+     JOIN products ON products.id = order_items.product_id
+     WHERE order_items.order_id = $1
      ORDER BY products.id
      FOR UPDATE OF products`,
     [orderId],
@@ -138,10 +138,10 @@ export const moveItems = async (
   { pickedUp = false }: { pickedUp?: boolean } = {},
 ) => {
   const result = await client.query<{ id: number; product_id: number }>(
-    `UPDATE reservations
+    `UPDATE order_items
      SET status = $3${pickedUp ? ", picked_up_at = NOW()" : ""}
-     WHERE reservations.order_id = $1 AND reservations.status = ANY($2::reservation_status[])
-     RETURNING reservations.id, reservations.product_id`,
+     WHERE order_items.order_id = $1 AND order_items.status = ANY($2::order_item_status[])
+     RETURNING order_items.id, order_items.product_id`,
     [orderId, from, to],
   );
   // Freed Pending quantity first covers what the till already sold (products.shop_shortage).

@@ -245,7 +245,7 @@
   "Product cannot be deleted because it is sold or expired.": "Proizvod se ne može obrisati jer je prodan ili istekao.",
   "Product created successfully.": "Proizvod je uspješno kreiran.",
   "Product deleted successfully.": "Proizvod je uspješno obrisan.",
-  "Product has active reservations and cannot be deleted.": "Proizvod ima aktivne narudžbe i ne može se obrisati.",
+  "Product has active orders and cannot be deleted.": "Proizvod ima aktivne narudžbe i ne može se obrisati.",
   "Product has expired and cannot be returned to the offer.": "Proizvod je istekao i ne može se vratiti u ponudu.",
   "Product is already removed.": "Proizvod je već uklonjen.",
   "Product moved to donations.": "Proizvod je premješten u donacije.",

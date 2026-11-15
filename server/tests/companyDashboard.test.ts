@@ -48,8 +48,8 @@ const insertProduct = async (storeId: number, unit = "kg", originalPrice = 10) =
   return result.rows[0]!.id;
 };
 
-// A reservation of a new product of the store: picked up this month (or last month), or still open.
-const insertReservation = async (
+// A order item of a new product of the store: picked up this month (or last month), or still open.
+const insertItem = async (
   storeId: number,
   restaurantEmail: string,
   { status = "Completed", lastMonth = false, quantity = 2, unitPrice = 5, unit = "kg" } = {},
@@ -228,17 +228,17 @@ describe("GET /api/company/dashboard", () => {
   describe("totals", () => {
     beforeEach(async () => {
       await useCredits(centarId, 3);
-      await insertReservation(centarId, RESTAURANT_A, { quantity: 2, unitPrice: 5 });
-      await insertReservation(centarId, RESTAURANT_B, { quantity: 500, unitPrice: 0.01, unit: "g" });
-      await insertReservation(centarId, RESTAURANT_A, { status: "Pending" });
-      await insertReservation(brezaId, RESTAURANT_A, { quantity: 3, unitPrice: 2, unit: "kom" });
-      await insertReservation(brezaId, RESTAURANT_B, { quantity: 1.5, unitPrice: 4, unit: "l" });
-      await insertReservation(brezaId, RESTAURANT_B, { lastMonth: true, quantity: 7 });
-      await insertReservation(closedId, RESTAURANT_A, { quantity: 1, unitPrice: 3 });
-      await insertReservation(otherBranchId, RESTAURANT_A, { quantity: 9, unitPrice: 9 });
+      await insertItem(centarId, RESTAURANT_A, { quantity: 2, unitPrice: 5 });
+      await insertItem(centarId, RESTAURANT_B, { quantity: 500, unitPrice: 0.01, unit: "g" });
+      await insertItem(centarId, RESTAURANT_A, { status: "Pending" });
+      await insertItem(brezaId, RESTAURANT_A, { quantity: 3, unitPrice: 2, unit: "kom" });
+      await insertItem(brezaId, RESTAURANT_B, { quantity: 1.5, unitPrice: 4, unit: "l" });
+      await insertItem(brezaId, RESTAURANT_B, { lastMonth: true, quantity: 7 });
+      await insertItem(closedId, RESTAURANT_A, { quantity: 1, unitPrice: 3 });
+      await insertItem(otherBranchId, RESTAURANT_A, { quantity: 9, unitPrice: 9 });
     });
 
-    it("counts this month's reservations and picked-up food, deactivated branches included", async () => {
+    it("counts this month's order items and picked-up food, deactivated branches included", async () => {
       const body = await dashboard();
       expect(body.totals.orders).toEqual({ total: 6, picked_up: 5, pending: 1 });
       // kg: 2 + 0.5 + 1 (closed); l: 1.5; pieces: 3. Value: 10 + 5 + 6 + 6 + 3.
@@ -250,13 +250,13 @@ describe("GET /api/company/dashboard", () => {
 
     it("matches the branch pages and the credit balances", async () => {
       const body = await dashboard();
-      const sums = { reservations: 0, completed: 0, pending: 0, kg: 0, l: 0, pieces: 0, value: 0, used: 0, total: 0 };
+      const sums = { orders: 0, completed: 0, pending: 0, kg: 0, l: 0, pieces: 0, value: 0, used: 0, total: 0 };
       for (const row of body.branches) {
         const { stats } = (await hq.get(`/api/company/branches/${row.id}`)).body;
         expect(row).toMatchObject(stats);
         const { credits } = (await hq.get(`/api/company/branches/${row.id}/credits`)).body;
         expect([row.used, row.total]).toEqual([credits.used, credits.total]);
-        sums.reservations += stats.orders_this_month;
+        sums.orders += stats.orders_this_month;
         sums.completed += stats.completed_this_month;
         sums.pending += stats.pending_orders;
         sums.kg += stats.saved_this_month.kg;
@@ -267,7 +267,7 @@ describe("GET /api/company/dashboard", () => {
         sums.total += credits.total;
       }
       expect(body.totals.orders).toEqual({
-        total: sums.reservations,
+        total: sums.orders,
         picked_up: sums.completed,
         pending: sums.pending,
       });

@@ -19,8 +19,6 @@ export interface OrderLineData {
 // has no such link. The same joins as GET /api/notifications, plus the order's parties and lines.
 export interface NotificationEmailData {
   recipientRole: string;
-  // Old reservation notifications only (no code writes reservation_id any more).
-  reservationId: number | null;
   orderId: number | null;
   productId: number | null;
   donationId: number | null;
@@ -30,9 +28,7 @@ export interface NotificationEmailData {
   // The product's, or the donation's for DONATION_REMOVED_BY_ADMIN.
   productName: string | null;
   unit: string | null;
-  // The reservation's quantity (NUMERIC as text).
-  quantity: string | null;
-  // The order's (or reservation's) pickup, local time, YYYY-MM-DDTHH:MI.
+  // The order's pickup, local time, YYYY-MM-DDTHH:MI.
   pickupAt: string | null;
   restaurantName: string | null;
   storeName: string | null;
@@ -55,7 +51,6 @@ export interface NotificationEmailData {
 const STRING_FIELDS = [
   "productName",
   "unit",
-  "quantity",
   "pickupAt",
   "restaurantName",
   "storeName",
@@ -71,7 +66,6 @@ const STRING_FIELDS = [
   "branchName",
 ] as const;
 const NUMBER_FIELDS = [
-  "reservationId",
   "orderId",
   "productId",
   "donationId",
@@ -117,7 +111,6 @@ export const parseNotificationData = (data: unknown, template: string): Notifica
 // jsonb_build_object takes at most 100 arguments (50 keys).
 export const NOTIFICATION_EMAIL_DATA = `jsonb_build_object(
   'recipientRole', recipients.role::text,
-  'reservationId', notifications.reservation_id,
   'orderId', notifications.order_id,
   'productId', notifications.product_id,
   'donationId', notifications.donation_id,
@@ -126,9 +119,8 @@ export const NOTIFICATION_EMAIL_DATA = `jsonb_build_object(
   'announcementId', notifications.announcement_id,
   'productName', COALESCE(products.name, donation_offers.name),
   'unit', COALESCE(products.unit, donation_offers.unit),
-  'quantity', reservations.quantity::text,
   'pickupAt', to_char(orders.pickup_at, 'YYYY-MM-DD"T"HH24:MI'),
-  'restaurantName', COALESCE(order_restaurants.business_name, restaurants.business_name),
+  'restaurantName', order_restaurants.business_name,
   'storeName', COALESCE(order_stores.business_name, stores.business_name),
   'orderCode', orders.code::text,
   'orderLines', (
@@ -142,7 +134,7 @@ export const NOTIFICATION_EMAIL_DATA = `jsonb_build_object(
       'reason', line_items.change_reason::text,
       'note', line_items.change_note
     ) ORDER BY line_items.id)
-    FROM reservations AS line_items
+    FROM order_items AS line_items
     JOIN products AS line_products ON line_products.id = line_items.product_id
     WHERE line_items.order_id = orders.id
   ),
@@ -160,13 +152,11 @@ export const NOTIFICATION_EMAIL_DATA = `jsonb_build_object(
 
 export const NOTIFICATION_EMAIL_FROM = `notifications
   JOIN users AS recipients ON recipients.id = notifications.user_id
-  LEFT JOIN reservations ON reservations.id = notifications.reservation_id
   LEFT JOIN orders ON orders.id = notifications.order_id
   LEFT JOIN users AS order_stores ON order_stores.id = orders.store_id
   LEFT JOIN users AS order_restaurants ON order_restaurants.id = orders.restaurant_id
   LEFT JOIN products ON products.id = notifications.product_id
   LEFT JOIN donation_offers ON donation_offers.id = notifications.donation_id
-  LEFT JOIN users AS restaurants ON restaurants.id = reservations.restaurant_id
   LEFT JOIN users AS stores ON stores.id = products.store_id
   LEFT JOIN announcements ON announcements.id = notifications.announcement_id
   LEFT JOIN credit_requests ON credit_requests.id = notifications.credit_request_id

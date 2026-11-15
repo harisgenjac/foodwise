@@ -11,7 +11,7 @@ import {
   login,
   PASSWORD,
   registerAndLogin,
-  reserve,
+  orderOne,
   userId,
   orderOf,
   acceptItem,
@@ -35,7 +35,7 @@ const notificationsOf = async (email: string) =>
   (
     await pool.query(
       `SELECT notifications.type, notifications.details, notifications.product_id,
-         notifications.donation_id, notifications.reservation_id, notifications.order_id
+         notifications.donation_id, notifications.order_id
        FROM notifications JOIN users ON notifications.user_id = users.id
        WHERE users.email = $1 ORDER BY notifications.id`,
       [email],
@@ -53,8 +53,8 @@ const actions = async () =>
     )
   ).rows;
 
-const reservationStatus = async (id: number) =>
-  (await pool.query("SELECT status FROM reservations WHERE id = $1", [id])).rows[0].status;
+const itemStatus = async (id: number) =>
+  (await pool.query("SELECT status FROM order_items WHERE id = $1", [id])).rows[0].status;
 
 describe("Admin", () => {
   beforeEach(async () => {
@@ -327,7 +327,7 @@ describe("Admin", () => {
 
     it("shows a user with counts and the admin actions on them", async () => {
       const product = await createProduct(store);
-      await reserve(restaurant, product.id, 2);
+      await orderOne(restaurant, product.id, 2);
       const storeId = await userId(STORE);
       await admin.patch(`/api/admin/users/${storeId}/password`).send({ password: "nova-lozinka" });
 
@@ -380,10 +380,10 @@ describe("Admin", () => {
       ]);
     });
 
-    it("hides a blocked store and cancels Pending reservations but keeps Confirmed ones", async () => {
+    it("hides a blocked store and cancels Pending order items but keeps Confirmed ones", async () => {
       const product = await createProduct(store, { quantity: 10 });
-      const pending = await reserve(restaurant, product.id, 2);
-      const confirmed = await reserve(restaurant, product.id, 3);
+      const pending = await orderOne(restaurant, product.id, 2);
+      const confirmed = await orderOne(restaurant, product.id, 3);
       await acceptItem(store, confirmed);
       await restaurant.post("/api/favorites").send({ store_id: product.store_id });
 
@@ -391,8 +391,8 @@ describe("Admin", () => {
         .post(`/api/admin/users/${product.store_id}/block`)
         .send({ reason: "Kršenje pravila" });
       expect(response.body.cancelledOrders).toBe(1);
-      expect(await reservationStatus(pending)).toBe("Cancelled");
-      expect(await reservationStatus(confirmed)).toBe("Confirmed");
+      expect(await itemStatus(pending)).toBe("Cancelled");
+      expect(await itemStatus(confirmed)).toBe("Confirmed");
 
       // The restaurant is told; it never sees the admin's reason.
       expect(await notificationsOf(RESTAURANT)).toContainEqual(
@@ -424,13 +424,13 @@ describe("Admin", () => {
       expect((await actions()).map((row) => row.action)).toEqual(["BLOCK_USER", "UNBLOCK_USER"]);
     });
 
-    it("cancels a blocked restaurant's Pending reservations and tells the store", async () => {
+    it("cancels a blocked restaurant's Pending order items and tells the store", async () => {
       const product = await createProduct(store);
-      const pending = await reserve(restaurant, product.id, 2);
+      const pending = await orderOne(restaurant, product.id, 2);
       const restaurantId = await userId(RESTAURANT);
 
       await admin.post(`/api/admin/users/${restaurantId}/block`).send({ reason: "Ne dolazi po robu" });
-      expect(await reservationStatus(pending)).toBe("Cancelled");
+      expect(await itemStatus(pending)).toBe("Cancelled");
       expect(await notificationsOf(STORE)).toContainEqual(
         expect.objectContaining({ type: "ORDER_CANCELLED_BY_ADMIN", order_id: await orderOf(pending) }),
       );
@@ -467,10 +467,10 @@ describe("Admin", () => {
   });
 
   describe("moderation", () => {
-    it("removes a product, cancels its Pending reservations and tells the store why", async () => {
+    it("removes a product, cancels its Pending order items and tells the store why", async () => {
       const product = await createProduct(store, { quantity: 10 });
-      const pending = await reserve(restaurant, product.id, 2);
-      const confirmed = await reserve(restaurant, product.id, 3);
+      const pending = await orderOne(restaurant, product.id, 2);
+      const confirmed = await orderOne(restaurant, product.id, 3);
       await acceptItem(store, confirmed);
 
       const noReason = await admin.delete(`/api/admin/products/${product.id}`);
@@ -480,8 +480,8 @@ describe("Admin", () => {
       expect(response.status).toBe(200);
       expect(response.body.message).toBe("Product removed.");
       expect(response.body.product.status).toBe("Removed");
-      expect(await reservationStatus(pending)).toBe("Cancelled");
-      expect(await reservationStatus(confirmed)).toBe("Confirmed");
+      expect(await itemStatus(pending)).toBe("Cancelled");
+      expect(await itemStatus(confirmed)).toBe("Confirmed");
 
       expect(await notificationsOf(STORE)).toContainEqual(
         expect.objectContaining({ type: "PRODUCT_REMOVED_BY_ADMIN", product_id: product.id, details: "Neispravan opis" }),
@@ -522,7 +522,7 @@ describe("Admin", () => {
 
     it("shows the free quantity: orders and shop sales taken off", async () => {
       const product = await createProduct(store, { name: "Admin free product", quantity: 10 });
-      await reserve(restaurant, product.id, 3);
+      await orderOne(restaurant, product.id, 3);
       expect((await store.post(`/api/products/${product.id}/shop-sales`).send({ quantity: 4 })).status).toBe(201);
       const response = await admin.get("/api/admin/products?q=Admin free product");
       expect(response.status).toBe(200);
@@ -579,7 +579,7 @@ describe("Admin", () => {
       });
       expect(sent.status).toBe(201);
       const pending = sent.body.order.id as number;
-      const confirmedItem = await reserve(restaurant, product.id, 3);
+      const confirmedItem = await orderOne(restaurant, product.id, 3);
       await acceptItem(store, confirmedItem);
       const confirmed = await orderOf(confirmedItem);
 
@@ -619,7 +619,7 @@ describe("Admin", () => {
 
     it("shows any order's details with its items, parties and history", async () => {
       const product = await createProduct(store, { name: "Admin details product" });
-      const order = await orderOf(await reserve(restaurant, product.id, 2));
+      const order = await orderOf(await orderOne(restaurant, product.id, 2));
 
       const response = await admin.get(`/api/admin/orders/${order}`);
       expect(response.status).toBe(200);
@@ -637,7 +637,7 @@ describe("Admin", () => {
 
     it("cancels a Pending order and tells both sides why", async () => {
       const product = await createProduct(store);
-      const item = await reserve(restaurant, product.id, 2);
+      const item = await orderOne(restaurant, product.id, 2);
       const order = await orderOf(item);
 
       const noReason = await admin.post(`/api/admin/orders/${order}/cancel`);
@@ -648,7 +648,7 @@ describe("Admin", () => {
       expect(response.status).toBe(200);
       expect(response.body.message).toBe("Order cancelled.");
       expect(response.body.order.status).toBe("Cancelled");
-      expect(await reservationStatus(item)).toBe("Cancelled");
+      expect(await itemStatus(item)).toBe("Cancelled");
 
       for (const email of [STORE, RESTAURANT]) {
         expect(await notificationsOf(email)).toContainEqual(
@@ -666,19 +666,19 @@ describe("Admin", () => {
 
     it("puts a Confirmed order's quantity back on offer", async () => {
       const product = await createProduct(store, { quantity: 5 });
-      const confirmed = await reserve(restaurant, product.id, 5);
+      const confirmed = await orderOne(restaurant, product.id, 5);
       await acceptItem(store, confirmed);
       expect(await productStatus(product.id)).toBe("Sold");
 
       await admin.post(`/api/admin/orders/${await orderOf(confirmed)}/cancel`).send({ reason: "Prodavnica nema robu" });
-      expect(await reservationStatus(confirmed)).toBe("Cancelled");
+      expect(await itemStatus(confirmed)).toBe("Cancelled");
       expect(await productStatus(product.id)).toBe("Available");
-      await expect(reserve(restaurant, product.id, 5)).resolves.toEqual(expect.any(Number));
+      await expect(orderOne(restaurant, product.id, 5)).resolves.toEqual(expect.any(Number));
     });
 
     it("keeps an expired sold-out product Sold", async () => {
       const product = await createProduct(store, { quantity: 5 });
-      const confirmed = await reserve(restaurant, product.id, 5);
+      const confirmed = await orderOne(restaurant, product.id, 5);
       await acceptItem(store, confirmed);
       await pool.query("UPDATE products SET expiry_date = CURRENT_DATE - 1 WHERE id = $1", [product.id]);
 
@@ -691,12 +691,12 @@ describe("Admin", () => {
 
     it("refuses orders that are already closed, and missing ones", async () => {
       const product = await createProduct(store, { quantity: 10 });
-      const completed = await reserve(restaurant, product.id, 1);
+      const completed = await orderOne(restaurant, product.id, 1);
       await acceptItem(store, completed);
       await itemOrderAction(store, completed, "complete");
-      const rejected = await reserve(restaurant, product.id, 1);
+      const rejected = await orderOne(restaurant, product.id, 1);
       await rejectItem(store, rejected);
-      const cancelled = await reserve(restaurant, product.id, 1);
+      const cancelled = await orderOne(restaurant, product.id, 1);
       await itemOrderAction(restaurant, cancelled, "cancel");
 
       for (const item of [completed, rejected, cancelled]) {
@@ -726,17 +726,17 @@ describe("Admin", () => {
       expect(typeof stats.donations.available).toBe("number");
     });
 
-    it("counts food saved, value and savings over picked-up (Completed) reservations only", async () => {
+    it("counts food saved, value and savings over picked-up (Completed) order items only", async () => {
       const savedNow = async () => (await admin.get("/api/admin/stats")).body.stats.saved;
       const before = await savedNow();
 
       const product = await createProduct(store, { unit: "l", quantity: 20, original_price: 10, discounted_price: 4 });
-      const confirmed = await reserve(restaurant, product.id, 3);
+      const confirmed = await orderOne(restaurant, product.id, 3);
       await acceptItem(store, confirmed);
-      const completed = await reserve(restaurant, product.id, 2);
+      const completed = await orderOne(restaurant, product.id, 2);
       await acceptItem(store, completed);
       await itemOrderAction(store, completed, "complete");
-      await reserve(restaurant, product.id, 5); // Pending: not saved yet
+      await orderOne(restaurant, product.id, 5); // Pending: not saved yet
 
       const after = await savedNow();
       expect(after.l).toBeCloseTo(before.l + 2); // the Confirmed 3 l are not picked up yet

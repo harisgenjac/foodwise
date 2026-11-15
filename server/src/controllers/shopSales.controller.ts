@@ -5,7 +5,7 @@ import { freeQuantity, markSoldIfFullyConfirmed, pendingHeld } from "../services
 
 // Sold in shop: a store also sells at its own till, so the app's stock can be higher than what is
 // really left. The store records the amount it sold there, which lowers the product's free quantity
-// (available = quantity − reservations − sold in shop). An entry is never edited or deleted (a
+// (available = quantity − order items − sold in shop). An entry is never edited or deleted (a
 // mistake means publishing a new product), never gives a credit back and is never an app sale:
 // reports, statistics, "products sold" and food saved ignore it. Only the free quantity becomes a
 // sale at once. Beyond it the till may have sold food that Pending orders hold: that part is kept
@@ -31,7 +31,7 @@ export const recordShopSale = async (req: Request, res: Response) => {
   try {
     client = await pool.connect();
     await client.query("BEGIN");
-    // The product lock keeps a reservation from taking the same quantity in between.
+    // The product lock keeps a order item from taking the same quantity in between.
     const result = await client.query(
       `SELECT products.id, products.store_id, products.name, products.quantity, products.unit, products.status,
          products.shop_shortage, products.expiry_date < CURRENT_DATE AS is_expired
@@ -84,17 +84,17 @@ export const recordShopSale = async (req: Request, res: Response) => {
         missing,
       ]);
     }
-    // Nothing free left and no pending reservation holding any: sold out, like any product. The
+    // Nothing free left and no pending order item holding any: sold out, like any product. The
     // store did it itself, so it gets no "sold out" notification.
     const soldOut = await markSoldIfFullyConfirmed(client, product, { notify: false });
     const available = await freeQuantity(client, productId);
     // The Pending orders holding the product: the store must reduce or reject them for the shortage.
     const pendingOrders = await client.query(
-      `SELECT orders.id, orders.code, restaurants.business_name AS restaurant_name, reservations.quantity
-       FROM reservations
-       JOIN orders ON orders.id = reservations.order_id
+      `SELECT orders.id, orders.code, restaurants.business_name AS restaurant_name, order_items.quantity
+       FROM order_items
+       JOIN orders ON orders.id = order_items.order_id
        JOIN users AS restaurants ON restaurants.id = orders.restaurant_id
-       WHERE reservations.product_id = $1 AND reservations.status = 'Pending'
+       WHERE order_items.product_id = $1 AND order_items.status = 'Pending'
        ORDER BY orders.created_at, orders.id`,
       [productId],
     );

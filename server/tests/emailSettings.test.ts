@@ -12,7 +12,7 @@ import {
   insertUser,
   login,
   registerAndLogin,
-  reserve,
+  orderOne,
   userId,
   type Agent,
   orderOf,
@@ -139,26 +139,26 @@ describe("notification emails follow it", () => {
   it("queues nothing for a user who turned it off, but the notification is still there", async () => {
     await setEmails(store, false);
     const product = await createProduct(store, { name: "Kefir" });
-    const reservationId = await reserve(restaurant, product.id, 1);
+    const orderItemId = await orderOne(restaurant, product.id, 1);
     expect(await queueRows()).toEqual([]);
     const notifications = (await store.get("/api/notifications")).body.notifications;
-    expect(notifications.map((n: { order_id: number }) => n.order_id)).toContain(await orderOf(reservationId));
+    expect(notifications.map((n: { order_id: number }) => n.order_id)).toContain(await orderOf(orderItemId));
 
     // The restaurant still gets its own emails.
-    expect((await acceptItem(store, reservationId)).status).toBe(200);
+    expect((await acceptItem(store, orderItemId)).status).toBe(200);
     expect((await queueRows()).map((row) => [row.template, row.recipient])).toEqual([
       ["ORDER_ACCEPTED", RESTAURANT],
     ]);
 
-    // On again: the next reservation's email is queued.
+    // On again: the next order item's email is queued.
     await setEmails(store, true);
-    await reserve(restaurant, product.id, 1);
+    await orderOne(restaurant, product.id, 1);
     expect((await queueRows()).map((row) => row.template)).toEqual(["ORDER_ACCEPTED", "ORDER_CREATED"]);
   });
 
   it("skips an email queued before the user turned it off", async () => {
     const product = await createProduct(store, { name: "Kefir" });
-    await reserve(restaurant, product.id, 1);
+    await orderOne(restaurant, product.id, 1);
     await setEmails(store, false);
     const { transport, sent } = fakeTransport();
 
@@ -183,7 +183,7 @@ describe("notification emails follow it", () => {
 
   it("skips an email whose recipient was blocked after it was queued", async () => {
     const product = await createProduct(store, { name: "Kefir" });
-    await reserve(restaurant, product.id, 1);
+    await orderOne(restaurant, product.id, 1);
     await pool.query("UPDATE users SET is_blocked = true WHERE email = $1", [STORE]);
     const { transport, sent } = fakeTransport();
     expect((await processEmailQueue({ transport, config: CONFIG })).skipped).toBe(1);
@@ -193,7 +193,7 @@ describe("notification emails follow it", () => {
 
   it("links to the switch in the footer of every notification email", async () => {
     const product = await createProduct(store, { name: "Kefir" });
-    await reserve(restaurant, product.id, 1);
+    await orderOne(restaurant, product.id, 1);
     const { transport, sent } = fakeTransport();
     await processEmailQueue({ transport, config: CONFIG });
     expect(sent[0]!.text).toContain("Isključite email obavijesti: https://app.example.com/my-profile#email-notifications");

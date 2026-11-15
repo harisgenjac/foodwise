@@ -18,7 +18,7 @@ import {
   login,
   registerAndLogin,
   userId,
-  reserve,
+  orderOne,
   orderOf,
 } from "./helpers.js";
 
@@ -135,10 +135,10 @@ describe("sorting the admin tables", () => {
     const store = await registerAndLogin(STORE, "STORE");
     const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
     const product = await createProduct(store, { name: "Sortres", quantity: 10 });
-    const reserveOn = async (days: number) => orderOf(await reserve(restaurant, product.id, 1, futurePickup(days)));
-    const later = await reserveOn(3);
-    const soon = await reserveOn(1);
-    const middle = await reserveOn(2);
+    const orderOn = async (days: number) => orderOf(await orderOne(restaurant, product.id, 1, futurePickup(days)));
+    const later = await orderOn(3);
+    const soon = await orderOn(1);
+    const middle = await orderOn(2);
     const list = async (query: Record<string, string>) =>
       ids((await admin.get("/api/admin/orders").query({ q: "Sortres", ...query })).body.orders);
 

@@ -163,7 +163,7 @@ export const createDonation = async (donor: Agent, overrides: Record<string, unk
 
 // Sends a one-item order at the product's current price with partial fulfilment off (the
 // restaurant gets exactly what it asked for or nothing). Returns the item's id.
-export const reserve = async (restaurant: Agent, productId: number, quantity: number, pickupAt = futurePickup()) => {
+export const orderOne = async (restaurant: Agent, productId: number, quantity: number, pickupAt = futurePickup()) => {
   const price = await pool.query<{ discounted_price: string }>("SELECT discounted_price FROM products WHERE id = $1", [
     productId,
   ]);
@@ -235,18 +235,18 @@ export const insertOrderItem = async ({
     order = inserted.rows[0];
   }
   const item = await pool.query<{ id: number }>(
-    `INSERT INTO reservations
-       (order_id, product_id, restaurant_id, quantity, ordered_quantity, unit_price, status, pickup_date, picked_up_at, created_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::reservation_status, (${pickupAt})::timestamp, ${pickedUp}, ${createdAt})
-     RETURNING reservations.id`,
+    `INSERT INTO order_items
+       (order_id, product_id, restaurant_id, quantity, ordered_quantity, unit_price, status, picked_up_at, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::order_item_status, ${pickedUp}, ${createdAt})
+     RETURNING order_items.id`,
     [order.id, productId, restaurantId, quantity, orderedQuantity, unitPrice, status],
   );
   return { orderId: order.id, itemId: item.rows[0]!.id };
 };
 
-// The order of an item (a reservation row).
+// The order of an item.
 export const orderOf = async (itemId: number): Promise<number> =>
-  (await pool.query<{ order_id: number }>("SELECT order_id FROM reservations WHERE id = $1", [itemId])).rows[0]!
+  (await pool.query<{ order_id: number }>("SELECT order_id FROM order_items WHERE id = $1", [itemId])).rows[0]!
     .order_id;
 
 // The audit log and announcements go first because they keep an admin from being deleted

@@ -4,7 +4,7 @@ import {
   cleanupUsers,
   createProduct,
   registerAndLogin,
-  reserve,
+  orderOne,
   type Agent,
   acceptItem,
   itemOrderAction,
@@ -20,12 +20,12 @@ let store: Agent;
 let restaurant: Agent;
 
 // A one-item order of `quantity`; returns the order's id.
-const order = async (agent: Agent, productId: number, quantity = 1) => orderOf(await reserve(agent, productId, quantity));
+const order = async (agent: Agent, productId: number, quantity = 1) => orderOf(await orderOne(agent, productId, quantity));
 
 // Moves a one-item order and its item to a status straight in the database.
 const setStatus = async (orderId: number, status: string) => {
   await pool.query("UPDATE orders SET status = $2 WHERE id = $1", [orderId, status]);
-  await pool.query("UPDATE reservations SET status = $2 WHERE order_id = $1", [orderId, status]);
+  await pool.query("UPDATE order_items SET status = $2 WHERE order_id = $1", [orderId, status]);
 };
 
 // The order lists' filters, sorts, scopes and summary (GET /api/orders/mine, /mine/summary, /store).
@@ -44,7 +44,7 @@ describe("order lists", () => {
       const product = await createProduct(store, { name: "Piletina" });
       const own = await order(restaurant, product.id);
       const restaurantB = await registerAndLogin(RESTAURANT_B, "RESTAURANT");
-      await reserve(restaurantB, product.id, 1);
+      await orderOne(restaurantB, product.id, 1);
 
       const response = await restaurant.get("/api/orders/mine");
       expect(response.status).toBe(200);
@@ -61,7 +61,7 @@ describe("order lists", () => {
       const chicken = await createProduct(store, { name: "Piletina" });
       const milk = await createProduct(store, { name: "Mlijeko" });
       const pending = await order(restaurant, chicken.id);
-      const cancelledItem = await reserve(restaurant, milk.id, 1);
+      const cancelledItem = await orderOne(restaurant, milk.id, 1);
       await itemOrderAction(restaurant, cancelledItem, "cancel");
       const cancelled = await orderOf(cancelledItem);
 
@@ -178,11 +178,11 @@ describe("order lists", () => {
     it("combines with the name, store and paging filters", async () => {
       const ids = await seed();
       const other = await createProduct(store, { name: "Mlijeko" });
-      await reserve(restaurant, other.id, 1);
+      await orderOne(restaurant, other.id, 1);
       const storeB = await registerAndLogin(STORE_B, "STORE");
       await pool.query("UPDATE users SET business_name = 'Druga radnja' WHERE email = $1", [STORE_B]);
       const elsewhere = await createProduct(storeB, { name: "Piletina" });
-      await reserve(restaurant, elsewhere.id, 1);
+      await orderOne(restaurant, elsewhere.id, 1);
 
       const page = await restaurant
         .get("/api/orders/mine")
@@ -203,9 +203,9 @@ describe("order lists", () => {
       for (const status of statuses) {
         await setStatus(await order(restaurant, product.id), status);
       }
-      await reserve(restaurant, milk.id, 1);
+      await orderOne(restaurant, milk.id, 1);
       const restaurantB = await registerAndLogin(RESTAURANT_B, "RESTAURANT");
-      await reserve(restaurantB, product.id, 1);
+      await orderOne(restaurantB, product.id, 1);
 
       // scope and status are ignored: the summary always counts every status.
       const response = await restaurant
@@ -238,14 +238,14 @@ describe("order lists", () => {
   describe("GET /api/orders/store", () => {
     it("returns the store's orders only, Pending first", async () => {
       const product = await createProduct(store);
-      const firstItem = await reserve(restaurant, product.id, 1);
+      const firstItem = await orderOne(restaurant, product.id, 1);
       const second = await order(restaurant, product.id);
       await acceptItem(store, firstItem);
       const first = await orderOf(firstItem);
 
       const storeB = await registerAndLogin(STORE_B, "STORE");
       const foreign = await createProduct(storeB);
-      await reserve(restaurant, foreign.id, 1);
+      await orderOne(restaurant, foreign.id, 1);
 
       const response = await store.get("/api/orders/store");
       expect(response.status).toBe(200);
@@ -254,8 +254,8 @@ describe("order lists", () => {
 
     it("filters by status", async () => {
       const product = await createProduct(store);
-      const acceptedItem = await reserve(restaurant, product.id, 1);
-      await reserve(restaurant, product.id, 1);
+      const acceptedItem = await orderOne(restaurant, product.id, 1);
+      await orderOne(restaurant, product.id, 1);
       await acceptItem(store, acceptedItem);
       const accepted = await orderOf(acceptedItem);
 
@@ -270,7 +270,7 @@ describe("order lists", () => {
       await pool.query("UPDATE users SET city_id = $1 WHERE email = $2", [zenica, RESTAURANT_B]);
       const product = await createProduct(store);
       const inTuzla = await order(restaurant, product.id);
-      await reserve(restaurantB, product.id, 1);
+      await orderOne(restaurantB, product.id, 1);
 
       const response = await store.get("/api/orders/store").query({ city_id: tuzla });
       expect(response.status).toBe(200);

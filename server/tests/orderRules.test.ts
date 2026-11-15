@@ -73,21 +73,21 @@ describe("Order rules", () => {
   describe("accept and cancel", () => {
     it("lets only one of a simultaneous accept and cancel succeed", async () => {
       const product = await createProduct(store);
-      const reservationId = itemOf(await send(product.id, 10));
+      const orderItemId = itemOf(await send(product.id, 10));
 
       const [accept, cancel] = await Promise.all([
-        acceptItem(store, reservationId),
-        itemOrderAction(restaurant, reservationId, "cancel"),
+        acceptItem(store, orderItemId),
+        itemOrderAction(restaurant, orderItemId, "cancel"),
       ]);
       expect([accept.status, cancel.status].sort()).toEqual([200, 400]);
 
-      const reservation = await orderDetails(reservationId);
+      const details = await orderDetails(orderItemId);
       const current = (await store.get(`/api/products/${product.id}`)).body.product;
       if (accept.status === 200) {
-        expect(reservation.status).toBe("Confirmed");
+        expect(details.status).toBe("Confirmed");
         expect(current.status).toBe("Sold");
       } else {
-        expect(reservation.status).toBe("Cancelled");
+        expect(details.status).toBe("Cancelled");
         expect(current.status).toBe("Available");
       }
     });
@@ -96,14 +96,14 @@ describe("Order rules", () => {
   describe("PUT /api/products/:id with orders", () => {
     it("keeps the ordered price after the store changes the product price", async () => {
       const product = await createProduct(store);
-      const reservationId = itemOf(await send(product.id, 2));
+      const orderItemId = itemOf(await send(product.id, 2));
 
       const update = await store
         .put(`/api/products/${product.id}`)
         .send(productPayload({ discounted_price: 8 }));
       expect(update.status).toBe(200);
 
-      const order = await orderDetails(reservationId);
+      const order = await orderDetails(orderItemId);
       expect(parseFloat(order.items[0].unit_price)).toBe(5);
     });
 

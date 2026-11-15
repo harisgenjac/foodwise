@@ -172,7 +172,7 @@ export const getProducts = async (req: Request, res: Response) => {
     let values: (string | number | null)[] = [fromCity];
 
     // Inner query: marketplace products with their remaining quantity and distance; the outer
-    // queries drop fully reserved ones, apply the radius, count the rest and return one page.
+    // queries drop fully ordered ones, apply the radius, count the rest and return one page.
     let query = `
       SELECT
         products.*,
@@ -400,7 +400,7 @@ export const updateProduct = async (req: Request, res: Response) => {
     client = await pool.connect();
     await client.query("BEGIN");
 
-    // The lock keeps the edit from interleaving with reservations created or accepted meanwhile.
+    // The lock keeps the edit from interleaving with order items created or accepted meanwhile.
     const existing = await client.query(
       "SELECT * FROM products WHERE id = $1 FOR UPDATE",
       [productId],
@@ -480,8 +480,8 @@ export const deleteProduct = async (req: Request, res: Response) => {
   try {
     client = await pool.connect();
     await client.query("BEGIN");
-    // The lock keeps a reservation from being created between the checks and the delete, so a
-    // product with an active reservation can never be removed through this route.
+    // The lock keeps an order from taking the product between the checks and the delete, so a
+    // product with an active order item can never be removed through this route.
     const existing = await client.query("SELECT * FROM products WHERE id = $1 FOR UPDATE", [
       productId,
     ]);
@@ -496,15 +496,15 @@ export const deleteProduct = async (req: Request, res: Response) => {
         .status(403)
         .json({ error: "You are not allowed to delete this product." });
     }
-    const activeReservations = await client.query(
-      "SELECT id FROM reservations WHERE product_id = $1 AND status IN ('Pending', 'Confirmed')",
+    const activeOrderItems = await client.query(
+      "SELECT order_items.id FROM order_items WHERE order_items.product_id = $1 AND order_items.status IN ('Pending', 'Confirmed')",
       [productId],
     );
 
-    if (activeReservations.rows.length > 0) {
+    if (activeOrderItems.rows.length > 0) {
       await client.query("ROLLBACK");
       return res.status(400).json({
-        error: "Product has active reservations and cannot be deleted.",
+        error: "Product has active orders and cannot be deleted.",
       });
     }
     if (["Sold", "Expired", "Removed"].includes(existing.rows[0].status)) {
@@ -517,8 +517,8 @@ export const deleteProduct = async (req: Request, res: Response) => {
       "UPDATE products SET status = 'Removed' WHERE id = $1 RETURNING *",
       [productId],
     );
-    // Refunded only on the credit day of the charge and only if nothing was reserved (a
-    // picked-up reservation counts); otherwise the credit stays spent.
+    // Refunded only on the credit day of the charge and only if nothing was ordered (a
+    // picked-up order item counts); otherwise the credit stays spent.
     const refund = await refundForProduct(client, productId, { actor: "USER", userId: req.user!.id });
     await client.query("COMMIT");
     return res.status(200).json({

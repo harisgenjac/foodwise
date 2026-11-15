@@ -52,8 +52,8 @@ export const lockOrdersHoldingProducts = async (client: PoolClient, productIds: 
     `SELECT orders.* FROM orders
      WHERE orders.status = 'Pending'
        AND orders.id IN (
-         SELECT reservations.order_id FROM reservations
-         WHERE reservations.product_id = ANY($1::int[]) AND reservations.status = 'Pending'
+         SELECT order_items.order_id FROM order_items
+         WHERE order_items.product_id = ANY($1::int[]) AND order_items.status = 'Pending'
        )
      ORDER BY orders.id
      FOR UPDATE`,
@@ -88,10 +88,10 @@ export const cancelPendingItemsOfProducts = async (
 ) => {
   for (const order of orders) {
     const dropped = await client.query<{ id: number; product_id: number }>(
-      `UPDATE reservations SET status = 'Cancelled'
-       WHERE reservations.order_id = $1 AND reservations.status = 'Pending'
-         AND reservations.product_id = ANY($2::int[])
-       RETURNING reservations.id, reservations.product_id`,
+      `UPDATE order_items SET status = 'Cancelled'
+       WHERE order_items.order_id = $1 AND order_items.status = 'Pending'
+         AND order_items.product_id = ANY($2::int[])
+       RETURNING order_items.id, order_items.product_id`,
       [order.id, productIds],
     );
     // Like moveItems: the freed quantity first covers what the till already sold, so the shop's
