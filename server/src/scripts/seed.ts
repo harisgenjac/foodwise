@@ -16,6 +16,7 @@ import { availableQuantity, sellableProduct } from "../services/stock.js";
 import { APP_TIMEZONE, todayInAppTimezone } from "../utils/dates.js";
 import { creditMonth, nextMonth } from "../utils/creditTime.js";
 import { suggestedImageFor } from "../utils/productImages.js";
+import { WEEKDAYS, type Schedule } from "../utils/schedule.js";
 import {
   adjustCredits,
   chargeForProduct,
@@ -325,6 +326,15 @@ async function seed() {
       return id;
     };
 
+    // seedData.ts writes hours as "07:00–22:00"; a business gets them as weekly hours, every day
+    // the same (none for an empty value). The free-text hour columns stay empty, as for a business
+    // that already entered its weekly hours.
+    const weekly = (hours: string): Schedule | null => {
+      const [open, close] = hours.split("–");
+      if (!open || !close) return null;
+      return Object.fromEntries(WEEKDAYS.map((day) => [day, { open, close }])) as Schedule;
+    };
+
     const createBusiness = async (data: SeedBusiness, role: "STORE" | "RESTAURANT", index: number): Promise<Business> => {
       const createdAt = at(addDays(startDay, Math.floor(index * (role === "STORE" ? 0.5 : 0.6))), between(9, 16));
       const companyName = role === "STORE" ? (data as SeedStore).company : undefined;
@@ -332,11 +342,13 @@ async function seed() {
       if (companyId === undefined) throw new Error(`Unknown seed company: ${companyName}`);
       const result = await client.query<{ id: number }>(
         `INSERT INTO users (first_name, last_name, email, password_hash, role, business_name, city_id, phone, address,
-                            opening_hours, pickup_hours, description, company_id, created_at)
+                            opening_schedule, pickup_schedule, description, company_id, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
         [
           data.first_name, data.last_name, data.email, passwordHash, role, data.business_name, cityId(data.city), data.phone,
-          data.address, data.opening_hours, data.pickup_hours || null, data.description ?? null, companyId, createdAt,
+          data.address, JSON.stringify(weekly(data.opening_hours)),
+          role === "STORE" ? JSON.stringify(weekly(data.pickup_hours)) : null,
+          data.description ?? null, companyId, createdAt,
         ],
       );
       const id = result.rows[0]!.id;

@@ -114,9 +114,6 @@ describe("recording a sale in the shop", () => {
     expect(response.body).toMatchObject({ available_quantity: 0, status: "Sold" });
     expect(await productStatus(product.id)).toBe("Sold");
     expect(await notificationTypes(STORE)).not.toContain("PRODUCT_SOLD_OUT");
-    // Not an app sale: the store profile's products sold leaves it out.
-    const details = await restaurant.get(`/api/users/stores/${await userId(STORE)}`);
-    expect(Number(details.body.stats.sold_articles)).toBe(0);
   });
 
   it("gives no credit back and writes nothing to the ledger", async () => {

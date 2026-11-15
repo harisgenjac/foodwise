@@ -302,6 +302,7 @@ export const getProductById = async (req: Request, res: Response) => {
     users.address AS store_address,
     users.phone AS store_phone,
     users.pickup_hours AS store_pickup_hours,
+    users.pickup_schedule AS store_pickup_schedule,
     ${availableQuantity("products")} AS available_quantity,
     ${soldInShop("products")} AS sold_in_shop,
     ${pendingHeld("products")} AS pending_quantity,

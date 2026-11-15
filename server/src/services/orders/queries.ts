@@ -280,6 +280,7 @@ export const listPickupOrders = async (userId: number, role: string, query: Requ
     GREATEST(CURRENT_DATE - orders.pickup_at::date, 0) AS days_overdue,
     parties.business_name, cities.name AS city, parties.phone AS party_phone,
     parties.address AS party_address, parties.pickup_hours AS party_pickup_hours,
+    parties.pickup_schedule AS party_pickup_schedule,
     ${storeLogo("parties")} AS party_logo_url`;
   let from = `FROM orders
     JOIN users AS parties ON ${partyJoin}
@@ -341,6 +342,7 @@ const PARTY_COLUMNS = (alias: string, cityAlias: string) => `json_build_object(
     'address', ${alias}.address,
     'phone', ${alias}.phone,
     'pickup_hours', ${alias}.pickup_hours,
+    'pickup_schedule', ${alias}.pickup_schedule,
     'logo_url', ${storeLogo(alias)}
   )`;
 

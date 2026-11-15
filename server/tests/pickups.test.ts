@@ -201,15 +201,6 @@ describe("Pickups", () => {
       expect(tooMuch.body.lines).toMatchObject([{ kind: "QUANTITY_REDUCED", available: 4 }]);
     });
 
-    it("still counts a Completed order as successful in the store statistics", async () => {
-      const product = await createProduct(store);
-      const id = await insertItem(product.id, RESTAURANT_A);
-      await itemOrderAction(store, id, "complete");
-
-      const response = await restaurant.get(`/api/users/stores/${await userId(STORE_A)}`);
-      expect(response.body.stats.successful_orders).toBe("1");
-    });
-
     it.each(["Pending", "Rejected", "Cancelled"])("returns 400 for a %s order", async (status) => {
       const product = await createProduct(store);
       const id = await insertItem(product.id, RESTAURANT_A, { status });

@@ -246,6 +246,7 @@ export const getBranchProfile = async (db: Pool | PoolClient, branchId: number) 
   const result = await db.query(
     `SELECT users.id, users.email, users.first_name, users.last_name, users.business_name, users.city_id,
        cities.name AS city, users.address, users.phone, users.opening_hours, users.pickup_hours,
+       users.opening_schedule, users.pickup_schedule,
        ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
        users.logo_url IS NOT NULL AS has_own_logo,
        ${BRANCH_STATUS} AS status, users.is_blocked, users.deactivated_at,
