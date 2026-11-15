@@ -52,6 +52,13 @@ export const seedE2e = async (databaseUrl: string) => {
     );
     const adminId = adminRow.rows[0]!.id;
 
+    // Weekly hours (server/src/utils/schedule.ts). Open all day every day, so the store page says
+    // "open now" whenever a test runs; pickup 10:00–18:00 every day.
+    const everyDay = (open: string, close: string) =>
+      JSON.stringify(Object.fromEntries(["mon", "tue", "wed", "thu", "fri", "sat", "sun"].map((day) => [day, { open, close }])));
+    const OPEN_ALL_DAY = everyDay("00:00", "24:00");
+    const PICKUP_HOURS = everyDay("10:00", "18:00");
+
     // A store or restaurant with a complete profile (a branch when companyId is set).
     const insertBusiness = async (
       account: Business,
@@ -63,10 +70,13 @@ export const seedE2e = async (databaseUrl: string) => {
       const user = await client.query<{ id: number }>(
         `INSERT INTO users
            (first_name, last_name, email, password_hash, role, business_name, city_id, address, phone,
-            opening_hours, pickup_hours, company_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, '061 000 000', '08:00 - 20:00', '10:00 - 18:00', $9)
+            opening_schedule, pickup_schedule, company_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, '061 000 000', $9, $10, $11)
          RETURNING id`,
-        [account.firstName, account.lastName, account.email, hash, role, account.businessName, cityId(city), address, companyId],
+        [
+          account.firstName, account.lastName, account.email, hash, role, account.businessName, cityId(city), address,
+          OPEN_ALL_DAY, role === "STORE" ? PICKUP_HOURS : null, companyId,
+        ],
       );
       return user.rows[0]!.id;
     };

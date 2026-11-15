@@ -33,6 +33,7 @@ export interface Product {
   store_address?: string | null;
   store_phone?: string | null;
   store_pickup_hours?: string | null;
+  store_pickup_schedule?: Schedule | null;
 }
 
 // One "Sold in shop" entry (GET /products/:id/shop-sales).
@@ -120,6 +121,7 @@ export interface Order {
   party_phone?: string | null;
   party_address?: string | null;
   party_pickup_hours?: string | null;
+  party_pickup_schedule?: Schedule | null;
 }
 
 export interface OrderParty {
@@ -129,6 +131,7 @@ export interface OrderParty {
   address: string | null;
   phone: string | null;
   pickup_hours: string | null;
+  pickup_schedule: Schedule | null;
   logo_url: string | null;
 }
 
@@ -155,6 +158,8 @@ export interface OrderDetails extends Omit<Order, "business_name" | "city"> {
 // COMPANY = a store chain's headquarters login (see Company).
 export type Role = "STORE" | "RESTAURANT" | "ADMIN" | "COMPANY";
 
+import type { Schedule } from "../utils/schedule.js";
+
 export interface User {
   id: number;
   // Null until the user fills in the profile (an admin creates accounts with only an email).
@@ -170,8 +175,16 @@ export interface User {
   city_id?: number | null;
   // On GET /users/stores: km from the restaurant's city.
   distance_km?: number | null;
+  // Old free-text hours, kept as a hint until the business enters weekly hours.
   opening_hours?: string;
   pickup_hours?: string;
+  // Weekly hours (utils/schedule.ts); null until entered. Pickup hours are a store's only.
+  opening_schedule?: Schedule | null;
+  pickup_schedule?: Schedule | null;
+  // A store's cover image on its store page.
+  cover_url?: string | null;
+  // Only on GET /users/stores/:id: open now by the weekly hours (null without them).
+  open_now?: boolean | null;
   description?: string;
   phone?: string;
   created_at?: string;
@@ -245,6 +258,8 @@ export interface BranchDetails {
     phone: string | null;
     opening_hours: string | null;
     pickup_hours: string | null;
+    opening_schedule: Schedule | null;
+    pickup_schedule: Schedule | null;
     logo_url: string | null;
     description: string | null;
     status: BranchStatus;

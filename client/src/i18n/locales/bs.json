@@ -355,14 +355,8 @@
     "noStoresTitle": "Još nijedna prodavnica nije registrovana",
     "noStoresSubtitle": "Kada bude registrovana prodavnica, ovdje će biti prikazana.",
     "storeNotFound": "Prodavnica nije pronađena.",
-    "activeProducts": "Aktivnih proizvoda",
-    "soldProducts": "Prodano artikala",
-    "successfulOrders": "Uspješno isporučeno (preuzeto)",
-    "myOrders": "Vaše narudžbe ovdje (preuzete)",
     "productsTab": "Proizvodi",
-    "ordersTab": "Moje narudžbe",
     "storeNoProducts": "Ova prodavnica trenutno nema dostupnih proizvoda.",
-    "restaurantNoRes": "Nemate narudžbi kod ove prodavnice.",
     "subtitle": "Pronađite prodavnice u svojoj blizini i pogledajte njihovu ponudu.",
     "count_one": "{{count}} prodavnica",
     "count_few": "{{count}} prodavnice",
@@ -378,15 +372,38 @@
     "inFavorites": "U omiljenim",
     "noFavoritesTitle": "Nemate omiljenih prodavnica",
     "noFavoritesSubtitle": "Dodajte prodavnicu u omiljene klikom na srce na njenoj kartici.",
-    "contactTitle": "Kontakt i radno vrijeme",
     "backToStores": "Nazad na prodavnice",
     "storeNotFoundSubtitle": "Prodavnica ne postoji ili više nije dostupna.",
     "storeNoProductsSubtitle": "Provjerite ponovo kasnije ili pogledajte ponudu drugih prodavnica.",
     "browseOtherOffers": "Pogledaj sve ponude",
-    "restaurantNoResSubtitle": "Kada naručite proizvod iz ove prodavnice, narudžba će se pojaviti ovdje.",
-    "noStatusResultsSubtitle": "Nemate narudžbi s ovim statusom kod ove prodavnice.",
-    "allStatuses": "Sve",
-    "chainLabel": "dio {{company}}"
+    "chainLabel": "dio {{company}}",
+    "page": {
+      "available": "Dostupno: {{amount}}",
+      "cartBar_one": "Korpa · {{count}} proizvod · {{total}}",
+      "cartBar_few": "Korpa · {{count}} proizvoda · {{total}}",
+      "cartBar_other": "Korpa · {{count}} proizvoda · {{total}}",
+      "cartTitle": "Korpa",
+      "cartEmpty": "Korpa je prazna. Dodajte proizvode dugmetom +.",
+      "cartOtherStore_one": "U korpi je {{count}} proizvod iz prodavnice {{store}}. Narudžba može biti samo iz jedne prodavnice.",
+      "cartOtherStore_few": "U korpi su {{count}} proizvoda iz prodavnice {{store}}. Narudžba može biti samo iz jedne prodavnice.",
+      "cartOtherStore_other": "U korpi je {{count}} proizvoda iz prodavnice {{store}}. Narudžba može biti samo iz jedne prodavnice.",
+      "openCart": "Otvori korpu",
+      "lineUnavailable": "Više nije dostupno",
+      "pickupToday": "Preuzimanje danas: {{hours}}",
+      "openNow": "Otvoreno",
+      "closedNow": "Zatvoreno",
+      "activeOffers": "Aktivne ponude",
+      "expiringToday": "Ističe danas",
+      "maxDiscount": "Najveći popust",
+      "tabsLabel": "Stranica prodavnice",
+      "infoTab": "Informacije",
+      "searchPlaceholder": "Pretraga u ovoj prodavnici",
+      "categoriesLabel": "Kategorije",
+      "allCategories": "Sve",
+      "noResultsSubtitle": "Nijedan proizvod ove prodavnice ne odgovara pretrazi.",
+      "expiringSoon": "Ističe uskoro",
+      "about": "O prodavnici"
+    }
   },
   "categories": {
     "Meat": "Meso",
@@ -2032,5 +2049,49 @@
     "galleryOption": "Predložena slika {{number}}",
     "select": "Odaberi sliku",
     "cancel": "Odustani"
+  },
+  "schedule": {
+    "closed": "zatvoreno",
+    "copyMonday": "Kopiraj ponedjeljak na sve dane",
+    "legacyHint": "Ranije uneseno: „{{text}}”. Unesite sedmično vrijeme ispod, kako bi restorani vidjeli da li ste trenutno otvoreni.",
+    "notEntered": "Sedmično vrijeme još nije uneseno. Sačuvajte ga, kako bi restorani vidjeli da li ste trenutno otvoreni.",
+    "openOn": "Otvoreno: {{day}}",
+    "opensAt": "{{day}}: otvara u",
+    "closesAt": "{{day}}: zatvara u",
+    "invalid": "Provjerite vrijeme: svaki otvoreni dan mora se zatvarati nakon otvaranja.",
+    "days": {
+      "mon": "Ponedjeljak",
+      "tue": "Utorak",
+      "wed": "Srijeda",
+      "thu": "Četvrtak",
+      "fri": "Petak",
+      "sat": "Subota",
+      "sun": "Nedjelja"
+    },
+    "short": {
+      "mon": "Pon",
+      "tue": "Uto",
+      "wed": "Sri",
+      "thu": "Čet",
+      "fri": "Pet",
+      "sat": "Sub",
+      "sun": "Ned"
+    }
+  },
+  "cover": {
+    "alt": "Naslovna slika prodavnice",
+    "add": "Dodaj naslovnu sliku",
+    "change": "Promijeni naslovnu sliku",
+    "upload": "Postavi naslovnu sliku",
+    "remove": "Ukloni naslovnu sliku",
+    "saved": "Naslovna slika je postavljena.",
+    "hint": "Naslovna slika se prikazuje na vrhu vaše stranice prodavnice (JPG, PNG ili WEBP, najviše 5 MB)."
+  },
+  "stepper": {
+    "label": "Količina u korpi: {{name}}",
+    "add": "Dodaj u korpu: {{name}}",
+    "increase": "Povećaj količinu: {{name}}",
+    "decrease": "Smanji količinu: {{name}}",
+    "remove": "Ukloni iz korpe: {{name}}"
   }
 }

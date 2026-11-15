@@ -184,3 +184,66 @@ describe("MyProfilePage for a branch", () => {
     expect(await screen.findByText(new RegExp(t("user.usesCompanyLogo")))).toBeInTheDocument();
   });
 });
+
+describe("MyProfilePage weekly hours and cover", () => {
+  const store = makeUser({
+    role: "STORE",
+    business_name: "Market Centar",
+    city: "Sarajevo",
+    city_id: 1,
+    phone: "033 111",
+    address: "Titova 1",
+    opening_hours: "07-22 svaki dan",
+  });
+  const renderStore = (user = store) =>
+    renderWithProviders(<MyProfilePage />, { route: "/my-profile", path: "/my-profile", user });
+
+  beforeEach(() => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  it("shows the old text as a hint and sends no weekly hours until they are entered", async () => {
+    apiMock.put.mockResolvedValue({ data: { message: "Profile updated successfully." } });
+    renderStore();
+    expect(await screen.findByText(t("schedule.legacyHint", { text: "07-22 svaki dan" }))).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: t("user.saveButton") }));
+    const body = apiMock.put.mock.calls[0]![1] as Record<string, unknown>;
+    expect(body).not.toHaveProperty("opening_schedule");
+    expect(body).not.toHaveProperty("pickup_schedule");
+    expect(body).not.toHaveProperty("opening_hours");
+  });
+
+  it("sends the weekly hours once entered (a closed Sunday)", async () => {
+    apiMock.put.mockResolvedValue({ data: { message: "Profile updated successfully." } });
+    renderStore();
+    await screen.findByDisplayValue("Market Centar");
+    const [opening] = screen.getAllByLabelText(t("schedule.openOn", { day: t("schedule.days.sun") }));
+    await userEvent.click(opening!);
+    await userEvent.click(screen.getByRole("button", { name: t("user.saveButton") }));
+    const body = apiMock.put.mock.calls[0]![1] as { opening_schedule: Record<string, unknown> };
+    expect(body.opening_schedule).toMatchObject({ mon: { open: "08:00", close: "20:00" }, sun: null });
+    expect(body).not.toHaveProperty("pickup_schedule");
+  });
+
+  it("gives a restaurant no pickup hours", async () => {
+    renderWithProviders(<MyProfilePage />, { route: "/my-profile", path: "/my-profile", user: restaurant });
+    await screen.findByDisplayValue("Bistro Most");
+    expect(screen.getAllByRole("group", { name: t("user.workingHours") })).toHaveLength(1);
+    expect(screen.queryByRole("group", { name: t("user.pickupHours") })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(t("cover.upload"))).not.toBeInTheDocument();
+  });
+
+  it("uploads and removes the store's cover image", async () => {
+    apiMock.post.mockResolvedValue({ data: { cover_url: "/uploads/covers/2-1-ab.png" } });
+    apiMock.delete.mockResolvedValue({ data: { message: "Naslovna slika je uklonjena." } });
+    renderStore();
+    await screen.findByDisplayValue("Market Centar");
+    await userEvent.upload(screen.getByLabelText(t("cover.upload")), new File(["x"], "c.png", { type: "image/png" }));
+    expect(apiMock.post).toHaveBeenCalledWith("/users/me/cover", expect.any(FormData));
+    expect(await screen.findByAltText(t("cover.alt"))).toHaveAttribute("src", expect.stringContaining("/uploads/covers/"));
+
+    await userEvent.click(screen.getByRole("button", { name: t("cover.remove") }));
+    expect(apiMock.delete).toHaveBeenCalledWith("/users/me/cover");
+    await waitFor(() => expect(screen.queryByAltText(t("cover.alt"))).not.toBeInTheDocument());
+  });
+});

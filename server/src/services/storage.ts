@@ -9,12 +9,13 @@ import { HttpError } from "../utils/httpError.js";
 // tests and the e2e server never touch (or clean up) the files of the dev server.
 // - logos: store, restaurant and company logos
 // - products: product and template images
+// - covers: the store page's cover image
 
-export type UploadKind = "logos" | "products";
+export type UploadKind = "logos" | "products" | "covers";
 
 export const UPLOADS_DIR = process.env.UPLOADS_DIR || "uploads";
 export const UPLOADS_URL_PREFIX = "/uploads";
-const KINDS: UploadKind[] = ["logos", "products"];
+const KINDS: UploadKind[] = ["logos", "products", "covers"];
 
 // The stored extension comes from the checked MIME type, never from the client's file name.
 export const IMAGE_EXTENSIONS: Record<string, string> = {

@@ -71,12 +71,14 @@ Agreed Nov 15, 2026. One-store orders made the category image and the flat produ
 - [x] The order card shows small thumbnails of the first 2–3 products next to the title. (Nov 15, 2026: `OrderItemThumbnails`, only on the order card; the history row and the pickup card are too dense.)
 
 **Store page** (the most important page now)
-- [ ] Structured opening and pickup hours: per weekday closed or one from–to interval, edited on My profile; the old free text stays as a hint until the store saves structured hours, then the text columns are dropped.
-- [ ] Header: a cover image uploaded on My profile (same rules as the product upload, a plain fallback without one), logo, name, address, pickup hours and "Open now / Closed".
-- [ ] Short stats: active offers, expiring today, biggest discount (they replace the old four stats).
-- [ ] Tabs Products and Information (address, opening and pickup hours, description, contact); the "My orders" tab goes away (orders stay on My orders).
-- [ ] Products: search within the store, category chips, an "Expiring soon" section first, then products grouped by category. Each card has the image, discount, expiry, available quantity, price and a + button that turns into a quantity stepper.
-- [ ] Cart: on phones a cart bar at the bottom ("Korpa · 3 proizvoda · 45,00 KM") that opens `/cart`; on desktop the cart as a panel on the right with checkout and "Accept partial fulfilment". Favorites stay on the store page.
+- [x] Structured opening and pickup hours: per weekday closed or one from–to interval, edited on My profile; the old free text stays as a hint until the store saves structured hours, then the text columns are dropped. (Nov 16, 2026: `users.opening_schedule` / `pickup_schedule`, `WeeklyHoursEditor` on My profile and in the admin's profile dialog; the old text columns are still there.)
+- [x] Header: a cover image uploaded on My profile (same rules as the product upload, a plain fallback without one), logo, name, address, pickup hours and "Open now / Closed". (Nov 16, 2026: `POST/DELETE /api/users/me/cover`, `open_now` on the store page.)
+- [x] Short stats: active offers, expiring today, biggest discount (they replace the old four stats). (Nov 16, 2026.)
+- [x] Tabs Products and Information (address, opening and pickup hours, description, contact); the "My orders" tab goes away (orders stay on My orders). (Nov 16, 2026.)
+- [x] Products: search within the store, category chips, an "Expiring soon" section first, then products grouped by category. Each card has the image, discount, expiry, available quantity, price and a + button that turns into a quantity stepper. (Nov 16, 2026: `StoreProductCard`, `QuantityStepper`, `useAddToCart`.)
+- [x] Cart: on phones a cart bar at the bottom ("Korpa · 3 proizvoda · 45,00 KM") that opens `/cart`; on desktop the cart as a panel on the right with checkout and "Accept partial fulfilment". Favorites stay on the store page. (Nov 16, 2026: `StoreCartBar`, `StoreCartPanel`.)
+
+- [ ] Drop the free-text `opening_hours` and `pickup_hours` columns once the businesses have entered weekly hours (a migration; My profile and the admin's dialog then lose the hint).
 
 **Search ("Pretraga")** (replaces "Browse products" for restaurants)
 - [ ] Results grouped by store: a header with the store's logo (or a generic store image), name, city and a link to the store page, and below it the matching products.

@@ -43,6 +43,8 @@ const details = (overrides: Partial<BranchDetails["branch"]> = {}): BranchDetail
     phone: "032 400",
     opening_hours: "07–21",
     pickup_hours: null,
+    opening_schedule: null,
+    pickup_schedule: null,
     logo_url: "/uploads/logos/company-3.png",
     description: "Lanac",
     status: "active",

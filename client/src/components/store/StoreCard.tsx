@@ -7,6 +7,7 @@ import FavoriteButton from "./FavoriteButton.js";
 import ChainLabel from "./ChainLabel.js";
 import { formatCityDistance } from "../../utils/radius.js";
 import type { User } from "../../types/index.js";
+import { hoursText } from "../../utils/schedule.js";
 
 interface StoreCardProps {
   store: User;
@@ -20,7 +21,7 @@ function StoreCard({ store, isFavorite, onToggleFavorite }: StoreCardProps) {
   const activeProducts = parseInt(store.active_products ?? "0", 10);
   const contacts: { icon: LucideIcon; value: string | undefined }[] = [
     { icon: MapPin, value: store.address },
-    { icon: Clock, value: store.opening_hours },
+    { icon: Clock, value: hoursText(store.opening_schedule, store.opening_hours, t) ?? undefined },
     { icon: Phone, value: store.phone },
   ];
 

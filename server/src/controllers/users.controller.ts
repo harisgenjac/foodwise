@@ -11,14 +11,15 @@ import { visibleStore } from "../utils/visibility.js";
 import { onOffer } from "../services/stock.js";
 import { companyName, storeDescription, storeLogo } from "../utils/branding.js";
 import { removeStoredFile, saveImage } from "../services/storage.js";
+import { isOpenAt, parseSchedule } from "../utils/schedule.js";
 
 export const getUser = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
     const result = await pool.query(
       `SELECT users.id, users.first_name, users.last_name, users.email, users.role, users.business_name,
-         users.logo_url, users.address, users.city_id, cities.name AS city, users.opening_hours,
-         users.pickup_hours, users.description, users.phone, users.must_change_password, users.email_notifications,
+         users.logo_url, users.cover_url, users.address, users.city_id, cities.name AS city, users.opening_hours,
+         users.pickup_hours, users.opening_schedule, users.pickup_schedule, users.description, users.phone, users.must_change_password, users.email_notifications,
          users.created_at,
          users.company_id, companies.name AS company_name, companies.logo_url AS company_logo_url,
          companies.description AS company_description
@@ -69,6 +70,9 @@ export interface UserFields {
   city_id: unknown;
   opening_hours?: string;
   pickup_hours?: string;
+  // Weekly hours (utils/schedule.ts); not sent keeps the stored ones, null clears them.
+  opening_schedule?: unknown;
+  pickup_schedule?: unknown;
   description?: string;
   phone: string;
 }
@@ -90,8 +94,8 @@ function validateUserFields(fields: UserFields) {
   }
 }
 
-const PROFILE_COLUMNS = `id, first_name, last_name, email, role, business_name, logo_url, address, city_id,
-  ${CITY_NAME}, opening_hours, pickup_hours, description, phone`;
+const PROFILE_COLUMNS = `id, first_name, last_name, email, role, business_name, logo_url, cover_url, address, city_id,
+  ${CITY_NAME}, opening_hours, pickup_hours, opening_schedule, pickup_schedule, description, phone`;
 
 type ProfileResult = { error: string; user?: never } | { user: Record<string, unknown> | undefined; error?: never };
 
@@ -151,6 +155,15 @@ export const updateProfile = async (
   if (cityId === null || !(await cityExists(db, cityId))) {
     return { error: "Invalid city." };
   }
+  const openingSchedule = parseSchedule(body.opening_schedule);
+  if (openingSchedule && "invalid" in openingSchedule) {
+    return { error: "Opening hours are not valid." };
+  }
+  // Only a store has pickup hours (restaurants hand nothing over).
+  const pickupSchedule = role === "STORE" ? parseSchedule(body.pickup_schedule) : undefined;
+  if (pickupSchedule && "invalid" in pickupSchedule) {
+    return { error: "Pickup hours are not valid." };
+  }
   const {
     first_name,
     last_name,
@@ -173,7 +186,9 @@ export const updateProfile = async (
        opening_hours = COALESCE($7, opening_hours),
        pickup_hours = COALESCE($8, pickup_hours),
        description = COALESCE($9, description),
-       phone = $10
+       phone = $10,
+       opening_schedule = CASE WHEN $12::boolean THEN $13::jsonb ELSE opening_schedule END,
+       pickup_schedule = CASE WHEN $14::boolean THEN $15::jsonb ELSE pickup_schedule END
      WHERE id = $11
      RETURNING ${PROFILE_COLUMNS}`,
     [
@@ -188,6 +203,10 @@ export const updateProfile = async (
       description,
       phone,
       userId,
+      openingSchedule !== undefined,
+      openingSchedule ? JSON.stringify(openingSchedule.value) : null,
+      pickupSchedule !== undefined,
+      pickupSchedule ? JSON.stringify(pickupSchedule.value) : null,
     ],
   );
   return { user: result.rows[0] };
@@ -264,7 +283,8 @@ export const getStores = async (req: Request, res: Response) => {
     const distance = cityDistance("from_city.id", "users.city_id");
     const columns = `users.id, users.business_name, users.city_id, cities.name AS city, ${distance} AS distance_km,
      users.address, ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
-     users.opening_hours, users.pickup_hours, users.phone, ${companyName("users")} AS company_name,
+     users.opening_hours, users.pickup_hours, users.opening_schedule, users.pickup_schedule, users.phone,
+     ${companyName("users")} AS company_name,
      (SELECT COUNT(*) FROM products
       WHERE products.store_id = users.id AND ${onOffer("products", "users")}) AS active_products`;
     let query = `FROM users
@@ -343,8 +363,9 @@ export const getStoreDetails = async (req: Request, res: Response) => {
 
     const result = await pool.query(
       `SELECT users.id, users.business_name, users.city_id, cities.name AS city, users.address,
-       ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
-       users.opening_hours, users.pickup_hours, users.phone, ${companyName("users")} AS company_name
+       ${storeLogo("users")} AS logo_url, users.cover_url, ${storeDescription("users")} AS description,
+       users.opening_hours, users.pickup_hours, users.opening_schedule, users.pickup_schedule,
+       users.phone, ${companyName("users")} AS company_name
        FROM users LEFT JOIN cities ON cities.id = users.city_id
        WHERE users.id = $1 AND users.role = 'STORE' AND ${visibleStore("users")}`,
       [storeId],
@@ -353,41 +374,66 @@ export const getStoreDetails = async (req: Request, res: Response) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Store not found." });
     }
+    const store = result.rows[0];
 
-    // The store's offers are paged through GET /products?store_id=. Both order counts are
-    // picked-up (Completed) only: a Confirmed one can still become a missed pickup. A product counts
-    // as sold only when restaurants bought some of it: one sold out only in the store's own shop
-    // (Sold in shop) is not an app sale.
+    // The store page's short stats over what is on offer now (the marketplace's rules): the
+    // offers, those expiring today and the biggest discount in whole percent (0 without offers).
+    // The offers themselves come from GET /products?store_id=.
     const stats = await pool.query(
       `SELECT
-     COUNT(DISTINCT id) FILTER (
-       WHERE status = 'Sold'
-         AND EXISTS (SELECT 1 FROM order_items
-                     WHERE order_items.product_id = products.id
-                       AND order_items.status IN ('Confirmed', 'Completed'))
-     ) AS sold_articles,
-     (SELECT COUNT(*) FROM orders WHERE orders.store_id = $1 AND orders.status = 'Completed') AS successful_orders
-   FROM products WHERE store_id = $1`,
+         COUNT(*)::int AS active_offers,
+         (COUNT(*) FILTER (WHERE products.expiry_date = CURRENT_DATE))::int AS expiring_today,
+         COALESCE(ROUND(MAX(
+           (products.original_price - products.discounted_price) / products.original_price * 100
+         )), 0)::int AS max_discount
+       FROM products
+       JOIN users ON users.id = products.store_id
+       WHERE products.store_id = $1 AND products.expiry_date >= CURRENT_DATE AND ${onOffer("products", "users")}`,
       [storeId],
     );
 
-    const myOrders = await pool.query(
-      `SELECT COUNT(*) AS my_orders_count
-   FROM orders
-   WHERE orders.store_id = $1 AND orders.restaurant_id = $2 AND orders.status = 'Completed'`,
-      [storeId, req.user!.id],
-    );
     return res.status(200).json({
       message: "Store fetched successfully",
-      store: result.rows[0],
+      // Whether the store is open now by its weekly hours; null without them.
+      store: { ...store, open_now: isOpenAt(store.opening_schedule) },
       stats: stats.rows[0],
-      myOrders: myOrders.rows[0],
     });
   } catch (error) {
     console.error("Error while fetching store:", error);
     return res
       .status(500)
       .json({ error: "An error occurred while fetching the store." });
+  }
+};
+
+// The store page's cover image (stores only), with the same rules as a logo; the previous file is
+// deleted. Without one the page shows a plain banner.
+export const uploadCover = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No image was uploaded." });
+    }
+    const userId = req.user!.id;
+    const coverUrl = await saveImage("covers", req.file, `${userId}-`);
+    const previous = await pool.query("SELECT users.cover_url FROM users WHERE users.id = $1", [userId]);
+    await pool.query("UPDATE users SET cover_url = $1 WHERE users.id = $2", [coverUrl, userId]);
+    await removeStoredFile(previous.rows[0]?.cover_url);
+    return res.status(200).json({ message: "Image uploaded successfully.", cover_url: coverUrl });
+  } catch (error) {
+    console.error("Error while uploading image:", error);
+    return res.status(500).json({ error: "An error occurred while uploading the image." });
+  }
+};
+
+export const removeCover = async (req: Request, res: Response) => {
+  try {
+    const previous = await pool.query("SELECT users.cover_url FROM users WHERE users.id = $1", [req.user!.id]);
+    await pool.query("UPDATE users SET cover_url = NULL WHERE users.id = $1", [req.user!.id]);
+    await removeStoredFile(previous.rows[0]?.cover_url);
+    return res.status(200).json({ message: "Cover image removed." });
+  } catch (error) {
+    console.error("Error while removing cover image:", error);
+    return res.status(500).json({ error: "An error occurred while removing the cover image." });
   }
 };
 

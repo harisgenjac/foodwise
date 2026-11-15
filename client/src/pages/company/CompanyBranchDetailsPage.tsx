@@ -42,6 +42,7 @@ import { CARD_PAGE_SIZE } from "../../utils/pagination.js";
 import { BRANCH_STATUS_STYLES } from "../../utils/branches.js";
 import { formatSavedFood } from "../../utils/savedFood.js";
 import { formatDateTime } from "../../utils/admin.js";
+import { hoursText } from "../../utils/schedule.js";
 import type { BranchDetails, Order, Product } from "../../types/index.js";
 
 type Dialog = "edit" | "password" | "invitation" | "deactivate" | "reactivate" | null;
@@ -263,7 +264,7 @@ function CompanyBranchDetailsPage() {
           />
           <DetailItem icon={Phone} label={t("user.phone")} value={branch.phone || "—"} />
           <DetailItem icon={Mail} label={t("company.branchDetails.login")} value={branch.email} />
-          <DetailItem icon={Clock} label={t("user.workingHours")} value={branch.opening_hours || "—"} />
+          <DetailItem icon={Clock} label={t("user.workingHours")} value={hoursText(branch.opening_schedule, branch.opening_hours, t) || "—"} />
           <DetailItem
             icon={CircleCheck}
             label={t("company.branchDetails.staff")}

@@ -447,8 +447,8 @@ describe("AdminOrderDetailsPage", () => {
   const details = makeOrderDetails({
     id: 20,
     status: "Confirmed",
-    store: { id: 5, business_name: "Market Centar", city: "Sarajevo", address: null, phone: null, pickup_hours: null, logo_url: null },
-    restaurant: { id: 6, business_name: "Restoran Ukus", city: "Tuzla", address: null, phone: null, pickup_hours: null, logo_url: null },
+    store: { id: 5, business_name: "Market Centar", city: "Sarajevo", address: null, phone: null, pickup_hours: null, pickup_schedule: null, logo_url: null },
+    restaurant: { id: 6, business_name: "Restoran Ukus", city: "Tuzla", address: null, phone: null, pickup_hours: null, pickup_schedule: null, logo_url: null },
   });
 
   it("shows both parties with links to their user pages and cancels with a reason", async () => {
