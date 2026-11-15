@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, ArrowRight } from "lucide-react";
-import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
+import OrderImage from "./OrderImage.js";
+import OrderItemThumbnails from "./OrderItemThumbnails.js";
 import { formatRelativeTime } from "../../utils/notifications.js";
 import { formatMoney, formatOrderCode, itemsSummary, ORDER_STATUS_STYLES } from "../../utils/orders.js";
 import StoreNameLink from "../store/StoreNameLink.js";
@@ -24,8 +25,6 @@ interface OrderCardProps {
 function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = false }: OrderCardProps) {
   const { t, i18n } = useTranslation();
   const statuses = t("orderStatus", { returnObjects: true }) as Record<string, string>;
-  const category = order.items[0]?.category;
-  const image = (category && CATEGORY_IMAGES[category]) || CATEGORY_IMAGES.Other;
   const code = formatOrderCode(order.code);
 
   return (
@@ -34,8 +33,11 @@ function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = fals
       className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="relative h-32 overflow-hidden">
-        <img src={image} alt="" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-        <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/25 via-transparent to-transparent" />
+        <OrderImage
+          logoUrl={order.party_logo_url}
+          className="h-full w-full"
+          imageClassName="transition-transform duration-500 group-hover:scale-105"
+        />
         <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
           <span className={`rounded-full px-2 py-1 text-xs font-semibold ${ORDER_STATUS_STYLES[order.status]}`}>
             {statuses[order.status] || order.status}
@@ -55,9 +57,12 @@ function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = fals
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-4">
-        <div className="min-w-0">
-          <h3 className="text-lg font-bold text-gray-800">{t("orders.title", { code })}</h3>
-          <p className="truncate text-sm text-gray-500">{itemsSummary(order, t)}</p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-lg font-bold text-gray-800">{t("orders.title", { code })}</h3>
+            <p className="truncate text-sm text-gray-500">{itemsSummary(order, t)}</p>
+          </div>
+          <OrderItemThumbnails order={order} />
         </div>
 
         <dl className="flex flex-col gap-2 rounded-xl bg-gray-50 p-3 text-sm">

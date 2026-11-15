@@ -29,6 +29,7 @@ import {
 } from "../../utils/orders.js";
 import type { OrderDetails, OrderParty } from "../../types/index.js";
 import SendChangesList from "./SendChangesList.js";
+import OrderImage from "./OrderImage.js";
 
 const dateTimeFormat: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" };
 const formatDateTime = (value: string) => new Date(value).toLocaleString(undefined, dateTimeFormat);
@@ -64,6 +65,8 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
   const subtitle = isAdmin
     ? `${order.store.business_name ?? "-"} → ${order.restaurant.business_name ?? "-"}`
     : (viewer === "STORE" ? order.restaurant : order.store).business_name;
+  // The other party's logo (the admin sees the store's).
+  const partyLogo = (viewer === "STORE" ? order.restaurant : order.store).logo_url;
 
   const historyText = (entry: OrderDetails["history"][number]) => {
     const status = statuses[entry.to_status] || entry.to_status;
@@ -129,7 +132,9 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
     <>
       <section className="space-y-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
+          <div className="flex min-w-0 items-start gap-4">
+            <OrderImage logoUrl={partyLogo} className="h-16 w-16 shrink-0 rounded-xl border border-gray-100 sm:h-20 sm:w-20" />
+            <div className="min-w-0">
             <div className="mb-2 flex flex-wrap gap-2">
               <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${ORDER_STATUS_STYLES[order.status]}`}>
                 {statuses[order.status] || order.status}
@@ -148,6 +153,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">{t("orders.title", { code })}</h1>
             <p className="mt-1 text-gray-600">{subtitle}</p>
+            </div>
           </div>
           <div className="text-right">
             <p className="text-xs text-gray-500">{t("orders.total")}</p>

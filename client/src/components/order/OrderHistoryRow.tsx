@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronRight } from "lucide-react";
-import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
+import OrderImage from "./OrderImage.js";
 import { formatMoney, formatOrderCode, itemsSummary, ORDER_STATUS_STYLES } from "../../utils/orders.js";
 import type { Order } from "../../types/index.js";
 
@@ -10,8 +10,6 @@ import type { Order } from "../../types/index.js";
 function OrderHistoryRow({ order }: { order: Order }) {
   const { t, i18n } = useTranslation();
   const statuses = t("orderStatus", { returnObjects: true }) as Record<string, string>;
-  const category = order.items[0]?.category;
-  const image = (category && CATEGORY_IMAGES[category]) || CATEGORY_IMAGES.Other;
   const time = new Date(order.created_at).toLocaleTimeString(i18n.language, {
     hour: "2-digit",
     minute: "2-digit",
@@ -24,7 +22,7 @@ function OrderHistoryRow({ order }: { order: Order }) {
       className="group flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-orange-50/50 focus-visible:bg-orange-50 focus-visible:outline-none sm:flex-row sm:items-center sm:gap-4"
     >
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        <img src={image} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+        <OrderImage logoUrl={order.party_logo_url} className="h-10 w-10 shrink-0 rounded-lg" />
         <div className="min-w-0">
           <p className="truncate font-semibold text-gray-800">
             {formatOrderCode(order.code)} · {itemsSummary(order, t)}

@@ -12,7 +12,7 @@ import {
   Store,
   UtensilsCrossed,
 } from "lucide-react";
-import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
+import OrderImage from "../order/OrderImage.js";
 import { formatMoney, formatOrderCode, itemsSummary } from "../../utils/orders.js";
 import type { Order } from "../../types/index.js";
 
@@ -38,8 +38,6 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
   const isOverdue = Boolean(order.is_overdue);
   const pickup = new Date(order.pickup_at);
   const pickedUpAt = new Date(order.picked_up_at ?? order.updated_at);
-  const category = order.items[0]?.category;
-  const image = (category && CATEGORY_IMAGES[category]) || CATEGORY_IMAGES.Other;
   const PartyIcon = isStore ? UtensilsCrossed : Store;
   const daysOverdue = order.days_overdue ?? 0;
 
@@ -75,10 +73,10 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
       </div>
 
       <div className="flex min-w-0 flex-1 gap-4 p-4">
-        <img
-          src={image}
-          alt=""
-          className="h-16 w-16 shrink-0 rounded-xl object-cover transition-transform duration-500 group-hover:scale-105"
+        <OrderImage
+          logoUrl={order.party_logo_url}
+          className="h-16 w-16 shrink-0 rounded-xl"
+          imageClassName="transition-transform duration-500 group-hover:scale-105"
         />
         <div className="min-w-0 flex-1 space-y-2">
           <div>
