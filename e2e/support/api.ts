@@ -36,6 +36,8 @@ type NewProduct = {
   original_price?: number;
   discounted_price?: number;
   expiry_date?: string;
+  // "suggested:<key>" or an upload; none by default (the generic image).
+  image_url?: string;
 };
 
 // Publishes a product as a store (costs the store 1 credit). Defaults: Dairy, 4 → 2 KM, 10 kg,
