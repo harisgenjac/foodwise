@@ -4,6 +4,8 @@ export interface Product {
   name: string;
   description: string;
   category: string;
+  // The product's own image: null, "suggested:<key>" or an upload (see utils/productImages.ts).
+  image_url: string | null;
   original_price: string;
   discounted_price: string;
   quantity: string;
@@ -302,6 +304,8 @@ export interface ProductFormValues {
   quantity: string;
   unit: string;
   expiry_date: string;
+  // "" for no image; otherwise like Product.image_url.
+  image_url: string;
 }
 
 // One rejected row of a CSV product import; `row` is the line number in the file (the header is line 1).
@@ -321,6 +325,7 @@ export interface ProductTemplate {
   discounted_price: string | null;
   quantity: string | null;
   shelf_life_days: number | null;
+  image_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -763,6 +768,7 @@ export interface CartLine {
   product_id: number;
   name: string;
   category: string;
+  image_url: string | null;
   unit: string;
   expiry_date: string;
   original_price: string;

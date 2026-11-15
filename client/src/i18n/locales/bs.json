@@ -2014,5 +2014,23 @@
       "toOffers": "Nazad na ponudu",
       "viewOrder": "Pogledaj narudžbu"
     }
+  },
+  "productImage": {
+    "title": "Slika proizvoda",
+    "hint": "JPG, PNG ili WEBP, najviše 5 MB. Bez slike se prikazuje opća slika proizvoda.",
+    "upload": "Postavi sliku",
+    "uploading": "Postavljanje...",
+    "suggested": "Predložene slike",
+    "remove": "Ukloni sliku",
+    "current": "Trenutna slika proizvoda",
+    "none": "Proizvod nema sliku",
+    "invalidType": "Dozvoljene su samo JPG, PNG i WEBP slike.",
+    "tooLarge": "Slika može imati najviše 5 MB.",
+    "uploadError": "Slika nije postavljena. Pokušajte ponovo.",
+    "galleryTitle": "Predložene slike",
+    "gallerySubtitle": "Odaberite sliku koja najbolje prikazuje proizvod.",
+    "galleryOption": "Predložena slika {{number}}",
+    "select": "Odaberi sliku",
+    "cancel": "Odustani"
   }
 }

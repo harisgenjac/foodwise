@@ -47,6 +47,7 @@ function EditProductPage() {
         quantity: data.quantity,
         unit: data.unit,
         expiry_date: data.expiry_date.slice(0, 10),
+        image_url: data.image_url ?? "",
       });
     } catch (err) {
       console.error("Error fetching product:", err);
@@ -69,7 +70,7 @@ function EditProductPage() {
     if (!validate()) return;
     setSaving(true);
     try {
-      const response = await api.put("/products/" + id, form);
+      const response = await api.put("/products/" + id, { ...form, image_url: form.image_url || null });
       toast.success(response.data.message);
       navigate("/my-products");
     } catch (err) {

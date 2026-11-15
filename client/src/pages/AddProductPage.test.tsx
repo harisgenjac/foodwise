@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import toast from "react-hot-toast";
 import AddProductPage from "./AddProductPage.js";
 import { dateInDays } from "../utils/expiry.js";
+import { productImageSrc } from "../utils/productImages.js";
 import { apiMock, axiosError, creditError, makeUser, renderWithProviders, t } from "../test/utils.js";
 import type { ProductTemplate } from "../types/index.js";
 
@@ -17,6 +18,7 @@ const TEMPLATE: ProductTemplate = {
   discounted_price: "1.20",
   quantity: "40",
   shelf_life_days: 2,
+  image_url: "suggested:dairy",
   created_at: "2030-01-01T00:00:00.000Z",
   updated_at: "2030-01-01T00:00:00.000Z",
 };
@@ -122,6 +124,7 @@ describe("AddProductPage", () => {
       quantity: "20",
       unit: "kom",
       expiry_date: dateInDays(1),
+      image_url: null,
     });
     expect(apiMock.post).toHaveBeenCalledTimes(1);
     expect(success).toHaveBeenCalledWith(t("product.addedSuccess"));
@@ -208,6 +211,33 @@ describe("AddProductPage", () => {
 
     await userEvent.click(templateButton);
     expect(screen.getByLabelText(t("product.name"))).toHaveValue("");
+  });
+
+  it("takes the template's image and publishes the product with it", async () => {
+    apiMock.post.mockResolvedValue({ data: {} });
+    renderPage([TEMPLATE]);
+    await userEvent.click(await screen.findByRole("button", { name: new RegExp(TEMPLATE.name) }));
+    expect(screen.getByAltText(t("productImage.current"))).toHaveAttribute("src", productImageSrc("suggested:dairy"));
+
+    await userEvent.click(screen.getByRole("button", { name: t("product.addButton") }));
+    expect(apiMock.post).toHaveBeenCalledWith("/products", expect.objectContaining({ image_url: "suggested:dairy" }));
+  });
+
+  it("saves the chosen image with the template", async () => {
+    apiMock.post.mockResolvedValue({ data: { template: { ...TEMPLATE, id: 99, name: "Jogurt" } } });
+    renderPage();
+    await fillForm();
+    await userEvent.click(screen.getByRole("button", { name: t("productImage.suggested") }));
+    await userEvent.click(screen.getByRole("button", { name: t("productImage.galleryOption", { number: 1 }) }));
+    await userEvent.click(screen.getByRole("button", { name: t("productImage.select") }));
+    await userEvent.click(screen.getByText(t("templates.saveToggle")));
+    await userEvent.click(screen.getByRole("button", { name: t("product.addButton") }));
+
+    expect(apiMock.post).toHaveBeenCalledWith("/products", expect.objectContaining({ image_url: "suggested:meat" }));
+    expect(apiMock.post).toHaveBeenCalledWith(
+      "/product-templates",
+      expect.objectContaining({ image_url: "suggested:meat" }),
+    );
   });
 
   it("deletes a template after confirming", async () => {

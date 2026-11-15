@@ -1969,5 +1969,23 @@
       "toOffers": "Back to the offers",
       "viewOrder": "View the order"
     }
+  },
+  "productImage": {
+    "title": "Product image",
+    "hint": "JPG, PNG or WEBP, at most 5 MB. Without an image, a generic product image is shown.",
+    "upload": "Upload image",
+    "uploading": "Uploading...",
+    "suggested": "Suggested images",
+    "remove": "Remove image",
+    "current": "Current product image",
+    "none": "The product has no image",
+    "invalidType": "Only JPG, PNG and WEBP images are allowed.",
+    "tooLarge": "The image can be at most 5 MB.",
+    "uploadError": "The image was not uploaded. Please try again.",
+    "galleryTitle": "Suggested images",
+    "gallerySubtitle": "Choose the image that shows the product best.",
+    "galleryOption": "Suggested image {{number}}",
+    "select": "Select image",
+    "cancel": "Cancel"
   }
 }
