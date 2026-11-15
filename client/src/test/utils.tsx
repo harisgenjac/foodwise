@@ -177,6 +177,7 @@ export const makeOrderItem = (overrides: Partial<OrderItem> = {}): OrderItem => 
   product_id: 10,
   product_name: "Piletina",
   category: "Meat",
+  image_url: "suggested:meat",
   unit: "kg",
   quantity: "2",
   ordered_quantity: "2",
@@ -217,8 +218,8 @@ export const makeOrderDetails = (overrides: Partial<OrderDetails> = {}): OrderDe
   return {
     ...order,
     send_changes: [],
-    store: { id: 2, business_name: "Market Centar", city: "Sarajevo", address: "Titova 1", phone: "033 111 222", pickup_hours: "8-16" },
-    restaurant: { id: 1, business_name: "Restoran Ukus", city: "Sarajevo", address: "Ferhadija 2", phone: "061 222 333", pickup_hours: null },
+    store: { id: 2, business_name: "Market Centar", city: "Sarajevo", address: "Titova 1", phone: "033 111 222", pickup_hours: "8-16", logo_url: null },
+    restaurant: { id: 1, business_name: "Restoran Ukus", city: "Sarajevo", address: "Ferhadija 2", phone: "061 222 333", pickup_hours: null, logo_url: null },
     history: [],
     ...overrides,
   };

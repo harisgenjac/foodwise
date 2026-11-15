@@ -66,9 +66,9 @@ Agreed Nov 15, 2026. One-store orders made the category image and the flat produ
 - [x] Existing products and templates get their category's suggested image once (migration); the seed gives demo products suggested images. Donations keep their current images. (Nov 15, 2026: migration `1793000000036`.)
 
 **Order image** (an order can have many products)
-- [ ] Every place that shows an order uses the other party's logo: a restaurant sees the store's logo, a store sees the restaurant's logo (order cards, order history rows, Pickups, order details, the dashboards' recent orders; notifications show icons, not images).
-- [ ] With no logo, or if it fails to load, one generic order illustration (the same for every order, no initials).
-- [ ] The order card shows small thumbnails of the first 2–3 products next to the title.
+- [x] Every place that shows an order uses the other party's logo: a restaurant sees the store's logo, a store sees the restaurant's logo (order cards, order history rows, Pickups, order details, the dashboards' recent orders; notifications show icons, not images). (Nov 15, 2026: `party_logo_url` on the lists and pickups, `logo_url` on both parties of the order page; `OrderImage`.)
+- [x] With no logo, or if it fails to load, one generic order illustration (the same for every order, no initials). (Nov 15, 2026.)
+- [x] The order card shows small thumbnails of the first 2–3 products next to the title. (Nov 15, 2026: `OrderItemThumbnails`, only on the order card; the history row and the pickup card are too dense.)
 
 **Store page** (the most important page now)
 - [ ] Structured opening and pickup hours: per weekday closed or one from–to interval, edited on My profile; the old free text stays as a hint until the store saves structured hours, then the text columns are dropped.

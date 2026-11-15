@@ -54,6 +54,8 @@ export interface OrderItem {
   product_id: number;
   product_name: string;
   category: string;
+  // The product's own image (see Product.image_url).
+  image_url: string | null;
   unit: string;
   quantity: string;
   ordered_quantity: string;
@@ -111,6 +113,8 @@ export interface Order {
   // The other party (the store on the restaurant's lists, the restaurant on the store's).
   business_name?: string;
   city?: string | null;
+  // The other party's logo (a branch without one: its company's); on the order lists and pickups.
+  party_logo_url?: string | null;
   // Only on GET /orders/pickups.
   days_overdue?: number;
   party_phone?: string | null;
@@ -125,6 +129,7 @@ export interface OrderParty {
   address: string | null;
   phone: string | null;
   pickup_hours: string | null;
+  logo_url: string | null;
 }
 
 // One row of the order's timeline: the order's status (item_id null) or one item's.

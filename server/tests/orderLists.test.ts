@@ -292,4 +292,45 @@ describe("order lists", () => {
     });
   });
 
+
+  // Every order view shows the other side's logo and the products' own images.
+  describe("logos and images", () => {
+    const setLogo = (email: string, logo: string | null) =>
+      pool.query("UPDATE users SET logo_url = $2 WHERE email = $1", [email, logo]);
+
+    it("give each side the other one's logo and the items' images", async () => {
+      await setLogo(STORE_A, "/uploads/logos/store.png");
+      await setLogo(RESTAURANT_A, "/uploads/logos/restaurant.png");
+      const product = await createProduct(store, { name: "Hljeb", image_url: "suggested:bakery" });
+      const itemId = await orderOne(restaurant, product.id, 1);
+      const orderId = await orderOf(itemId);
+
+      const mine = await restaurant.get("/api/orders/mine");
+      expect(mine.body.orders[0]).toMatchObject({
+        party_logo_url: "/uploads/logos/store.png",
+        items: [expect.objectContaining({ image_url: "suggested:bakery" })],
+      });
+      const storeList = await store.get("/api/orders/store");
+      expect(storeList.body.orders[0].party_logo_url).toBe("/uploads/logos/restaurant.png");
+
+      const details = await restaurant.get(`/api/orders/${orderId}`);
+      expect(details.body.order.store.logo_url).toBe("/uploads/logos/store.png");
+      expect(details.body.order.restaurant.logo_url).toBe("/uploads/logos/restaurant.png");
+      expect(details.body.order.items[0].image_url).toBe("suggested:bakery");
+
+      await acceptItem(store, itemId);
+      const pickups = await store.get("/api/orders/pickups").query({ scope: "upcoming" });
+      expect(pickups.body.orders[0].party_logo_url).toBe("/uploads/logos/restaurant.png");
+      const restaurantPickups = await restaurant.get("/api/orders/pickups").query({ scope: "upcoming" });
+      expect(restaurantPickups.body.orders[0].party_logo_url).toBe("/uploads/logos/store.png");
+    });
+
+    it("are null without a logo or an image", async () => {
+      const product = await createProduct(store);
+      await order(restaurant, product.id);
+      const mine = await restaurant.get("/api/orders/mine");
+      expect(mine.body.orders[0].party_logo_url).toBeNull();
+      expect(mine.body.orders[0].items[0].image_url).toBeNull();
+    });
+  });
 });
