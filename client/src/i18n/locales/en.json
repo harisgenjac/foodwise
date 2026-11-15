@@ -3,7 +3,6 @@
     "dashboard": "Home",
     "myProfile": "My Profile",
     "stores": "Stores",
-    "browseProducts": "Browse Products",
     "myProducts": "My Products",
     "addProduct": "Add Product",
     "donateFood": "Donate Food",
@@ -31,7 +30,8 @@
     "menu": "Menu",
     "closeMenu": "Close menu",
     "orders": "Orders",
-    "myOrders": "My orders"
+    "myOrders": "My orders",
+    "search": "Search"
   },
   "breadcrumbs": {
     "label": "Breadcrumb",
@@ -55,10 +55,10 @@
     "label": "Main navigation",
     "dashboard": "Home",
     "myProducts": "Products",
-    "browseProducts": "Offers",
     "pickups": "Pickups",
     "more": "More",
-    "orders": "Orders"
+    "orders": "Orders",
+    "search": "Search"
   },
   "auth": {
     "welcomeBack": "Welcome back",
@@ -121,10 +121,6 @@
     "selectCategory": "-- Select a category --",
     "originalPrice": "Original Price",
     "discountedPrice": "Discounted Price",
-    "browseTitle": "Products",
-    "browseSubtitle": "Find discounted products from stores near you.",
-    "offersCount_one": "{{count}} available offer",
-    "offersCount_other": "{{count}} available offers",
     "available": "Available",
     "quantity": "Quantity",
     "unit": "Unit",
@@ -2046,5 +2042,12 @@
     "increase": "Increase the quantity: {{name}}",
     "decrease": "Decrease the quantity: {{name}}",
     "remove": "Remove from the cart: {{name}}"
+  },
+  "search": {
+    "title": "Search",
+    "subtitle": "Offers from stores nearby, grouped by store. An order always comes from one store.",
+    "storeCount_one": "{{count}} store",
+    "storeCount_other": "{{count}} stores",
+    "seeAll": "All ({{count}})"
   }
 }

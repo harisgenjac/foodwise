@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, PackageCheck, ReceiptText, ShoppingBasket } from "lucide-react";
+import { LayoutDashboard, Package, PackageCheck, ReceiptText, Search } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export interface BottomNavItem {
@@ -21,7 +21,7 @@ export const BOTTOM_NAV_ITEMS: Record<BottomNavRole, BottomNavItem[]> = {
   ],
   RESTAURANT: [
     { to: "/dashboard", labelKey: "bottomNav.dashboard", icon: LayoutDashboard },
-    { to: "/browse-products", labelKey: "bottomNav.browseProducts", icon: ShoppingBasket },
+    { to: "/search", labelKey: "bottomNav.search", icon: Search },
     { to: "/my-orders", labelKey: "bottomNav.orders", icon: ReceiptText },
     { to: "/pickups", labelKey: "bottomNav.pickups", icon: PackageCheck },
   ],

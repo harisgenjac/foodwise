@@ -107,7 +107,7 @@ function ProductDetailsPage() {
     ? { label: t("sidebar.myProducts"), to: "/my-products" }
     : fromStore
       ? { label: t("sidebar.stores"), to: "/stores" }
-      : { label: t("sidebar.browseProducts"), to: "/browse-products" };
+      : { label: t("sidebar.search"), to: "/search" };
 
   if (loading) {
     return (
@@ -127,7 +127,7 @@ function ProductDetailsPage() {
           title={t("myProducts.productNotFoundTitle")}
           subtitle={t("myProducts.notFoundSubtitle")}
           action={{
-            to: isStore ? "/my-products" : "/browse-products",
+            to: isStore ? "/my-products" : "/search",
             label: t("myProducts.backToList"),
           }}
         />

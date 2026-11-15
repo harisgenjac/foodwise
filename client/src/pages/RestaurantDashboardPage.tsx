@@ -96,7 +96,7 @@ const RestaurantDashboardPage = () => {
         title={t("dashboard.greeting", { name: user?.first_name ?? "" })}
         subtitle={t("dashboard.restaurantSubtitle")}
         details={details || undefined}
-        action={{ to: "/browse-products", label: t("dashboard.browseOffers"), icon: ShoppingBasket }}
+        action={{ to: "/search", label: t("dashboard.browseOffers"), icon: ShoppingBasket }}
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -110,7 +110,7 @@ const RestaurantDashboardPage = () => {
         <SectionCard
           title={t("dashboard.bestOffersTitle")}
           icon={ShoppingBasket}
-          viewAll={{ to: "/browse-products", label: t("dashboard.viewAllProducts") }}
+          viewAll={{ to: "/search", label: t("dashboard.viewAllProducts") }}
           isEmpty={bestOffers.length === 0}
           empty={{ icon: ShoppingBasket, text: t("dashboard.noProducts") }}
         >
@@ -129,7 +129,7 @@ const RestaurantDashboardPage = () => {
           empty={{
             icon: ReceiptText,
             text: t("dashboard.noOrders"),
-            action: { to: "/browse-products", label: t("dashboard.browseOffers") },
+            action: { to: "/search", label: t("dashboard.browseOffers") },
           }}
         >
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">

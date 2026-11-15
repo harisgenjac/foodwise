@@ -11,7 +11,7 @@ import MyProductsPage from './pages/MyProductsPage.js';
 import ImportProductsPage from './pages/ImportProductsPage.js';
 import EditProductPage from './pages/EditProductPage.js';
 import StoreOrdersPage from './pages/StoreOrdersPage.js';
-import BrowseProductsPage from './pages/BrowseProductsPage.js';
+import SearchPage from './pages/SearchPage.js';
 import StoresPage from './pages/StoresPage.js'
 import StoreDetailsPage from './pages/StoreDetailsPage.js';
 import MyOrdersPage from './pages/MyOrdersPage.js';
@@ -72,7 +72,9 @@ function App() {
         <Route path="/my-products" element={<ProtectedRoute role="STORE"><MyProductsPage /></ProtectedRoute>} />
         <Route path="/edit-product/:id" element={<ProtectedRoute role="STORE"><EditProductPage /></ProtectedRoute>} />
         <Route path="/orders" element={<ProtectedRoute role="STORE"><StoreOrdersPage /></ProtectedRoute>} />
-        <Route path="/browse-products" element={<ProtectedRoute role="RESTAURANT"><BrowseProductsPage /></ProtectedRoute>} />
+        <Route path="/search" element={<ProtectedRoute role="RESTAURANT"><SearchPage /></ProtectedRoute>} />
+        {/* Browse products became Search; old links and bookmarks still land there. */}
+        <Route path="/browse-products" element={<Navigate to="/search" replace />} />
         <Route path="/stores" element={<ProtectedRoute role="RESTAURANT"><StoresPage /></ProtectedRoute>} />
         <Route path="/stores/:id" element={<ProtectedRoute role="RESTAURANT"><StoreDetailsPage /></ProtectedRoute>} />
         <Route path="/my-orders" element={<ProtectedRoute role="RESTAURANT"><MyOrdersPage /></ProtectedRoute>} />

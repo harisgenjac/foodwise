@@ -116,7 +116,7 @@ function CartPage() {
               </button>
             ) : (
               <Link
-                to="/browse-products"
+                to="/search"
                 className="flex-1 rounded-xl bg-gray-100 py-2.5 text-center font-medium text-gray-700 transition-colors hover:bg-gray-200"
               >
                 {t("cart.sent.toOffers")}
@@ -155,7 +155,7 @@ function CartPage() {
           icon={ShoppingCart}
           title={t("cart.empty.title")}
           subtitle={t("cart.empty.subtitle")}
-          action={{ to: "/browse-products", label: t("cart.empty.action") }}
+          action={{ to: "/search", label: t("cart.empty.action") }}
         />
       </div>
     );
@@ -228,7 +228,7 @@ function CartPage() {
           </ul>
 
           <Link
-            to={cart.store ? `/stores/${cart.store.id}` : "/browse-products"}
+            to={cart.store ? `/stores/${cart.store.id}` : "/search"}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-700 hover:text-orange-800"
           >
             <ShoppingBasket className="h-4 w-4" />

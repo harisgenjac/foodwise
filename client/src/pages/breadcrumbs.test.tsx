@@ -44,10 +44,10 @@ describe("Product details breadcrumbs", () => {
     ]);
   });
 
-  it("puts a restaurant's product under Browse products", async () => {
+  it("puts a restaurant's product under Search", async () => {
     renderProduct(RESTAURANT);
     await expectTrail([
-      [t("sidebar.browseProducts"), "/browse-products"],
+      [t("sidebar.search"), "/search"],
       ["Piletina", null],
     ]);
   });
@@ -80,7 +80,7 @@ describe("Product details breadcrumbs", () => {
     renderProduct(RESTAURANT, { product: axiosError(404, "Product not found.") });
 
     await screen.findByText(t("myProducts.productNotFoundTitle"));
-    await expectTrail([[t("sidebar.browseProducts"), "/browse-products"]]);
+    await expectTrail([[t("sidebar.search"), "/search"]]);
   });
 });
 

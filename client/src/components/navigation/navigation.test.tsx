@@ -160,8 +160,8 @@ describe("BottomNav", () => {
   it("shows the restaurant's pages from the config", async () => {
     renderLayout(restaurant);
     await waitFor(() => expect(bottomBar()).toBeInTheDocument());
-    expect(itemLinks()).toEqual(["/dashboard", "/browse-products", "/my-orders", "/pickups"]);
-    expect(within(bottomBar()!).getByRole("link", { name: t("bottomNav.browseProducts") })).toBeInTheDocument();
+    expect(itemLinks()).toEqual(["/dashboard", "/search", "/my-orders", "/pickups"]);
+    expect(within(bottomBar()!).getByRole("link", { name: t("bottomNav.search") })).toBeInTheDocument();
   });
 
   it("marks only the current page as active", async () => {
