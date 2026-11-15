@@ -4,6 +4,7 @@ import { parseId } from "../../utils/params.js";
 import { ADMIN_PAGE_SIZE, CARD_PAGE_SIZE, listPage, parsePage, parseSort } from "../../utils/pagination.js";
 import { parseCityFilter } from "../../utils/cities.js";
 import { parseOrderCode } from "./codes.js";
+import { storeLogo } from "../../utils/branding.js";
 import { ORDER_STATUSES } from "./status.js";
 
 // The order lists and details of /api/orders: the order lists (filters, sorts, scopes,
@@ -26,6 +27,7 @@ const LINES = `JOIN LATERAL (
              'product_id', order_items.product_id,
              'product_name', products.name,
              'category', products.category,
+             'image_url', products.image_url,
              'unit', products.unit,
              'quantity', order_items.quantity::text,
              'ordered_quantity', order_items.ordered_quantity::text,
@@ -124,7 +126,8 @@ export const listMineOrders = async (restaurantId: number, query: Request["query
   // "active" is what still needs the restaurant's attention.
   if (scope === "active") from += ` AND orders.status IN ('Pending', 'Confirmed')`;
   const { rows, total } = await listPage(
-    `${ORDER_COLUMNS}, stores.business_name, cities.name AS city`,
+    // party_logo_url: the other side's logo (a branch without one shows its company's).
+    `${ORDER_COLUMNS}, stores.business_name, cities.name AS city, ${storeLogo("stores")} AS party_logo_url`,
     from,
     sort ?? MINE_SORTS.status!,
     filters.values,
@@ -193,7 +196,7 @@ export const listStoreOrders = async (storeId: number, query: Request["query"]) 
     from += ` AND restaurants.city_id = $${values.length}`;
   }
   const { rows, total } = await listPage(
-    `${ORDER_COLUMNS}, restaurants.business_name, cities.name AS city`,
+    `${ORDER_COLUMNS}, restaurants.business_name, cities.name AS city, ${storeLogo("restaurants")} AS party_logo_url`,
     from,
     "CASE WHEN orders.status = 'Pending' THEN 0 ELSE 1 END, orders.created_at DESC, orders.id DESC",
     values,
@@ -276,7 +279,8 @@ export const listPickupOrders = async (userId: number, role: string, query: Requ
   const columns = `${ORDER_COLUMNS},
     GREATEST(CURRENT_DATE - orders.pickup_at::date, 0) AS days_overdue,
     parties.business_name, cities.name AS city, parties.phone AS party_phone,
-    parties.address AS party_address, parties.pickup_hours AS party_pickup_hours`;
+    parties.address AS party_address, parties.pickup_hours AS party_pickup_hours,
+    ${storeLogo("parties")} AS party_logo_url`;
   let from = `FROM orders
     JOIN users AS parties ON ${partyJoin}
     LEFT JOIN cities ON cities.id = parties.city_id
@@ -336,7 +340,8 @@ const PARTY_COLUMNS = (alias: string, cityAlias: string) => `json_build_object(
     'city', ${cityAlias}.name,
     'address', ${alias}.address,
     'phone', ${alias}.phone,
-    'pickup_hours', ${alias}.pickup_hours
+    'pickup_hours', ${alias}.pickup_hours,
+    'logo_url', ${storeLogo(alias)}
   )`;
 
 // One order for one of its two parties (null for anyone else), or for the admin (`userId` null):
@@ -362,7 +367,7 @@ export const getOrderDetails = async (orderId: number, userId: number | null) =>
     `SELECT order_items.id, order_items.product_id, order_items.quantity, order_items.ordered_quantity,
             order_items.unit_price, order_items.status, order_items.decided_at,
             order_items.change_reason, order_items.change_note, order_items.picked_up_at,
-            products.name AS product_name, products.category, products.unit, products.original_price,
+            products.name AS product_name, products.category, products.image_url, products.unit, products.original_price,
             products.expiry_date, products.shop_shortage
      FROM order_items
      JOIN products ON products.id = order_items.product_id
