@@ -3,6 +3,7 @@ import app from './app.js';
 import { startExpirationJob } from './jobs/expireProducts.js';
 import { startReminderJob } from './jobs/notificationReminders.js';
 import { startCreditRenewalJob } from './jobs/creditRenewals.js';
+import { startUploadCleanupJob } from './jobs/cleanupUploads.js';
 import { EmailConfigError, loadEmailConfig, type EmailConfig } from './email/config.js';
 import { startEmailWorker } from './email/queue.js';
 
@@ -27,6 +28,7 @@ console.log(
 startExpirationJob();
 startReminderJob();
 startCreditRenewalJob();
+startUploadCleanupJob();
 startEmailWorker(emailConfig);
 
 app.listen(PORT, () => {

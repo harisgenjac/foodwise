@@ -1,6 +1,8 @@
 import fs from "fs";
+import path from "path";
 import request from "supertest";
 import app from "../src/app.js";
+import { UPLOADS_DIR } from "../src/services/storage.js";
 import pool from "../src/config/db.js";
 import {
   cityId,
@@ -270,7 +272,7 @@ describe("Users routes", () => {
 
     afterEach(() => {
       for (const url of uploaded.splice(0)) {
-        fs.rmSync(`.${url}`, { force: true });
+        fs.rmSync(path.join(UPLOADS_DIR, "logos", path.basename(url)), { force: true });
       }
     });
 
@@ -281,10 +283,10 @@ describe("Users routes", () => {
         .attach("logo", PNG, { filename: "logo.png", contentType: "image/png" });
       expect(response.status).toBe(200);
       expect(response.body.message).toBe("Image uploaded successfully.");
-      expect(response.body.logo_url).toMatch(/^\/uploads\/logos\/\d+-\d+\.png$/);
+      expect(response.body.logo_url).toMatch(/^\/uploads\/logos\/\d+-\d+-[0-9a-f]+\.png$/);
       uploaded.push(response.body.logo_url);
 
-      expect(fs.existsSync(`.${response.body.logo_url}`)).toBe(true);
+      expect(fs.existsSync(path.join(UPLOADS_DIR, "logos", path.basename(response.body.logo_url)))).toBe(true);
       const profile = await store.get("/api/users/me");
       expect(profile.body.user.logo_url).toBe(response.body.logo_url);
     });

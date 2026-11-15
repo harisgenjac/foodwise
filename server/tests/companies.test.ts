@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import request from "supertest";
 import app from "../src/app.js";
+import { UPLOADS_DIR } from "../src/services/storage.js";
 import pool from "../src/config/db.js";
 import {
   type Agent,
@@ -468,8 +469,8 @@ describe("Companies", () => {
         .post("/api/company/me/logo")
         .attach("logo", PNG_BYTES, { filename: "a.png", contentType: "image/png" });
       expect(first.status).toBe(200);
-      expect(first.body.logo_url).toMatch(/^\/uploads\/logos\/company-\d+-\d+\.png$/);
-      const firstFile = path.join("uploads", "logos", path.basename(first.body.logo_url));
+      expect(first.body.logo_url).toMatch(/^\/uploads\/logos\/company-\d+-\d+-[0-9a-f]+\.png$/);
+      const firstFile = path.join(UPLOADS_DIR, "logos", path.basename(first.body.logo_url));
       expect(fs.existsSync(firstFile)).toBe(true);
 
       const second = await hq
@@ -480,7 +481,7 @@ describe("Companies", () => {
       expect(fs.existsSync(firstFile)).toBe(false);
       expect((await hq.get("/api/company/me")).body.company.logo_url).toBe(second.body.logo_url);
       expect((await hq.get("/api/users/me")).body.user.company_logo_url).toBe(second.body.logo_url);
-      await fs.promises.unlink(path.join("uploads", "logos", path.basename(second.body.logo_url)));
+      await fs.promises.unlink(path.join(UPLOADS_DIR, "logos", path.basename(second.body.logo_url)));
     });
 
     it("gets announcements for stores and everyone, not for restaurants", async () => {

@@ -1,5 +1,3 @@
-import fs from "fs";
-import path from "path";
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import type { Pool, PoolClient } from "pg";
@@ -12,21 +10,7 @@ import { CITY_NAME, cityDistance, cityExists, parseCityFilter, parseRadius, user
 import { visibleStore } from "../utils/visibility.js";
 import { onOffer } from "../services/stock.js";
 import { companyName, storeDescription, storeLogo } from "../utils/branding.js";
-
-const LOGO_URL_PREFIX = "/uploads/logos/";
-
-// Deletes a replaced logo. Only plain file names under uploads/logos are touched.
-export const removeLogoFile = async (logoUrl: string | null | undefined) => {
-  if (!logoUrl || !logoUrl.startsWith(LOGO_URL_PREFIX)) return;
-  const fileName = logoUrl.slice(LOGO_URL_PREFIX.length);
-  if (fileName !== path.basename(fileName)) return;
-  try {
-    await fs.promises.unlink(path.join("uploads", "logos", fileName));
-  } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "ENOENT") return;
-    console.error("Error while deleting old logo:", error);
-  }
-};
+import { removeStoredFile, saveImage } from "../services/storage.js";
 
 export const getUser = async (req: Request, res: Response) => {
   try {
@@ -414,14 +398,14 @@ export const uploadLogo = async (req: Request, res: Response) => {
     }
 
     const userId = req.user!.id;
-    const logoUrl = `/uploads/logos/${req.file.filename}`;
+    const logoUrl = await saveImage("logos", req.file, `${userId}-`);
 
     const previous = await pool.query(`SELECT logo_url FROM users WHERE id = $1`, [userId]);
     const result = await pool.query(
       `UPDATE users SET logo_url = $1 WHERE id = $2 RETURNING id, logo_url`,
       [logoUrl, userId],
     );
-    await removeLogoFile(previous.rows[0]?.logo_url);
+    await removeStoredFile(previous.rows[0]?.logo_url);
 
     return res.status(200).json({
       message: "Image uploaded successfully.",
@@ -440,7 +424,7 @@ export const removeLogo = async (req: Request, res: Response) => {
   try {
     const previous = await pool.query("SELECT users.logo_url FROM users WHERE users.id = $1", [req.user!.id]);
     await pool.query("UPDATE users SET logo_url = NULL WHERE users.id = $1", [req.user!.id]);
-    await removeLogoFile(previous.rows[0]?.logo_url);
+    await removeStoredFile(previous.rows[0]?.logo_url);
     return res.status(200).json({ message: "Logo removed." });
   } catch (error) {
     console.error("Error while removing logo:", error);

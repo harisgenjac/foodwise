@@ -15,6 +15,7 @@ import { ORDER_CODE_ALPHABET, ORDER_CODE_LENGTH } from "../services/orders/codes
 import { availableQuantity, sellableProduct } from "../services/stock.js";
 import { APP_TIMEZONE, todayInAppTimezone } from "../utils/dates.js";
 import { creditMonth, nextMonth } from "../utils/creditTime.js";
+import { suggestedImageFor } from "../utils/productImages.js";
 import {
   adjustCredits,
   chargeForProduct,
@@ -583,11 +584,12 @@ async function seed() {
         await client.query(
           `INSERT INTO product_templates
              (store_id, name, description, category, unit, original_price, discounted_price, quantity, shelf_life_days,
-              created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)`,
+              created_at, updated_at, image_url)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, $11)`,
           [
             store.id, template.name, template.description, template.category, template.unit, originalPrice,
             roundPrice(originalPrice * 0.55), randomInt(...template.quantity), randomInt(3, 7), createdAt,
+            suggestedImageFor(template.category),
           ],
         );
       }
@@ -609,9 +611,12 @@ async function seed() {
       const result = await client.query<{ id: number }>(
         `INSERT INTO products
            (store_id, name, description, category, original_price, discounted_price, quantity, unit, expiry_date,
-            created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10) RETURNING id`,
-        [store.id, template.name, template.description, template.category, originalPrice, price, quantity, template.unit, expiry, postedAt],
+            created_at, updated_at, image_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, $11) RETURNING id`,
+        [
+          store.id, template.name, template.description, template.category, originalPrice, price, quantity, template.unit,
+          expiry, postedAt, suggestedImageFor(template.category),
+        ],
       );
       const product: SimProduct = {
         id: result.rows[0]!.id, store, name: template.name, unit: template.unit, category: template.category,

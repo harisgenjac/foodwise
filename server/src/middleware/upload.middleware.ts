@@ -1,19 +1,11 @@
 import multer from 'multer';
-import fs from 'fs';
 import path from 'path';
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { HttpError } from '../utils/httpError.js';
+import { IMAGE_EXTENSIONS } from '../services/storage.js';
 
-const uploadDir = 'uploads/logos';
-const MAX_LOGO_SIZE_MB = 5;
+export const MAX_IMAGE_SIZE_MB = 5;
 export const MAX_CSV_SIZE_MB = 1;
-
-// The stored extension comes from the checked MIME type, never from the client's file name.
-const EXTENSIONS: Record<string, string> = {
-  'image/jpeg': '.jpg',
-  'image/png': '.png',
-  'image/webp': '.webp',
-};
 
 // Browsers and operating systems disagree on the type of a .csv file (Excel on Windows sends vnd.ms-excel).
 const CSV_MIME_TYPES = [
@@ -24,27 +16,13 @@ const CSV_MIME_TYPES = [
   'application/octet-stream',
 ];
 
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req: Request, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req: Request, file, cb) => {
-    // A company headquarters uploads its company's logo, so its files are named apart.
-    const prefix = req.user!.role === 'COMPANY' ? 'company-' : '';
-    const uniqueName = `${prefix}${req.user!.id}-${Date.now()}${EXTENSIONS[file.mimetype]}`;
-    cb(null, uniqueName);
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: MAX_LOGO_SIZE_MB * 1024 * 1024 },
+// Images are checked here (type and size) and kept in memory; the controller hands them to
+// services/storage.ts, the one place that knows where files are stored.
+const imageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_IMAGE_SIZE_MB * 1024 * 1024 },
   fileFilter: (req: Request, file, cb) => {
-    if (file.mimetype in EXTENSIONS) {
+    if (file.mimetype in IMAGE_EXTENSIONS) {
       cb(null, true);
     } else {
       cb(new HttpError(400, 'Only JPEG, PNG and WEBP images are allowed.'));
@@ -87,16 +65,18 @@ const handleUpload =
     });
   };
 
-export const uploadLogoFile = handleUpload(
-  upload.single('logo'),
-  `The image can be at most ${MAX_LOGO_SIZE_MB}MB.`,
-  'The image was not uploaded correctly.',
-);
+const uploadImageFile = (field: string) =>
+  handleUpload(
+    imageUpload.single(field),
+    `The image can be at most ${MAX_IMAGE_SIZE_MB}MB.`,
+    'The image was not uploaded correctly.',
+  );
+
+export const uploadLogoFile = uploadImageFile('logo');
+export const uploadProductImageFile = uploadImageFile('image');
 
 export const uploadCsvFile = handleUpload(
   csvUpload.single('file'),
   `The file can be at most ${MAX_CSV_SIZE_MB}MB.`,
   'The file was not uploaded correctly.',
 );
-
-export default upload;
