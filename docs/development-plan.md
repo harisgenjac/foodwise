@@ -58,12 +58,12 @@ Design, decisions and PR split: `docs/orders-design.md` (agreed Nov 6, 2026). De
 Agreed Nov 15, 2026. One-store orders made the category image and the flat product list stale, and the store page becomes the main place to order. These changes keep the existing look and components; layouts are designed for phones first and also work on desktop. Split into four PRs (product image, order image, store page, Search).
 
 **Product image** (the category no longer decides the image)
-- [ ] A product has its own image; the category never sets or changes it. A product without an image shows one generic product image.
-- [ ] Add product and Edit product: "Upload image" (JPG, PNG or WEBP, at most 5 MB, checked on the server too) or "Suggested images" (a dialog with the current category photos as one plain gallery; click to select, then "Select image"). No camera option for now.
-- [ ] Uploads are stored like logos (local `uploads/`), behind one storage module that is easy to swap for cloud storage at the deploy. Replacing or removing an image deletes the old file (unless a template or another product still uses it).
-- [ ] The image stays editable after publishing (unlike quantity and expiry).
-- [ ] Templates remember the image. CSV import gives products the generic image for now.
-- [ ] Existing products and templates get their category's suggested image once (migration); the seed gives demo products suggested images. Donations keep their current images.
+- [x] A product has its own image; the category never sets or changes it. A product without an image shows one generic product image. (Nov 15, 2026: `products.image_url`, the generic image as `ProductImage`'s fallback.)
+- [x] Add product and Edit product: "Upload image" (JPG, PNG or WEBP, at most 5 MB, checked on the server too) or "Suggested images" (a dialog with the current category photos as one plain gallery; click to select, then "Select image"). No camera option for now. (Nov 15, 2026: `ProductImagePicker` and `SuggestedImagesModal`; `POST /api/products/images`.)
+- [x] Uploads are stored like logos (local `uploads/`), behind one storage module that is easy to swap for cloud storage at the deploy. Replacing or removing an image deletes the old file (unless a template or another product still uses it). (Nov 15, 2026: `services/storage.ts`, also for logos; a daily job deletes uploads a form never saved.)
+- [x] The image stays editable after publishing (unlike quantity and expiry). (Nov 15, 2026.)
+- [x] Templates remember the image. CSV import gives products the generic image for now. (Nov 15, 2026.)
+- [x] Existing products and templates get their category's suggested image once (migration); the seed gives demo products suggested images. Donations keep their current images. (Nov 15, 2026: migration `1793000000036`.)
 
 **Order image** (an order can have many products)
 - [ ] Every place that shows an order uses the other party's logo: a restaurant sees the store's logo, a store sees the restaurant's logo (order cards, order history rows, Pickups, order details, the dashboards' recent orders; notifications show icons, not images).
@@ -286,7 +286,7 @@ Older ideas moved here from `product.md`. Agreed as possible directions, not pla
 
 - [ ] Public launch (deploy) with proper image storage.
 - [ ] Help, Terms of use and Privacy pages (the footer links are placeholders today).
-- [ ] Real product photos instead of category images (in progress: see "Before Phase 2: order and store UI").
+- [x] Real product photos instead of category images (Nov 15, 2026: see "Before Phase 2: order and store UI").
 - [ ] Donation images: a donation gets its own image instead of the category photo.
 
 ### Emails
