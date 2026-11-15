@@ -55,6 +55,8 @@ Design, decisions and PR split: `docs/orders-design.md` (agreed Nov 6, 2026). De
 
 ### Before Phase 2: order and store UI
 
+**Done** (Nov 16, 2026, PRs #101–#104), except dropping the old free-text hour columns, which waits until the businesses have entered weekly hours.
+
 Agreed Nov 15, 2026. One-store orders made the category image and the flat product list stale, and the store page becomes the main place to order. These changes keep the existing look and components; layouts are designed for phones first and also work on desktop. Split into four PRs (product image, order image, store page, Search).
 
 **Product image** (the category no longer decides the image)
@@ -81,12 +83,12 @@ Agreed Nov 15, 2026. One-store orders made the category image and the flat produ
 - [ ] Drop the free-text `opening_hours` and `pickup_hours` columns once the businesses have entered weekly hours (a migration; My profile and the admin's dialog then lose the hint).
 
 **Search ("Pretraga")** (replaces "Browse products" for restaurants)
-- [ ] Results grouped by store: a header with the store's logo (or a generic store image), name, city and a link to the store page, and below it the matching products.
-- [ ] Filters: text, city, category, expiring (today, tomorrow, 3 days) and sorting; empty and no-results states.
-- [ ] Adding to the cart from the results with a + button that turns into a quantity stepper; a different store than the cart's asks "Empty the cart?" as today.
-- [ ] The navigation item (sidebar and bottom bar) and the route are renamed; the old route redirects.
+- [x] Results grouped by store: a header with the store's logo (or a generic store image), name, city and a link to the store page, and below it the matching products. (Nov 16, 2026: `GET /api/products/by-store`, `SearchPage`.)
+- [x] Filters: text, city, category, expiring (today, tomorrow, 3 days) and sorting; empty and no-results states. (Nov 16, 2026; the nearby radius stays too.)
+- [x] Adding to the cart from the results with a + button that turns into a quantity stepper; a different store than the cart's asks "Empty the cart?" as today. (Nov 16, 2026.)
+- [x] The navigation item (sidebar and bottom bar) and the route are renamed; the old route redirects. (Nov 16, 2026: `/search`, "Pretraga".)
 
-- [ ] Tests for every part (unit and e2e, including the phone viewport) and the docs updated.
+- [x] Tests for every part (unit and e2e, including the phone viewport) and the docs updated. (Nov 16, 2026: server and client tests and e2e specs on desktop and the iPhone project for each part.)
 
 ### Phase 2: Delivery with a mock provider
 
