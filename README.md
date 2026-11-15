@@ -6,12 +6,12 @@ A B2B marketplace where **stores** sell food that is close to its expiry date at
 
 ## Features
 
-- **Stores** list near-expiry products (price, discounted price, quantity, expiry date), accept or reject reservations, and see their statistics.
-- **Restaurants** browse and filter offers, view store profiles, save favorite stores, reserve a quantity with a pickup time, and track reservation status.
+- **Stores** list near-expiry products (price, discounted price, quantity, expiry date), accept (in full or in part) or reject orders, and see their statistics.
+- **Restaurants** browse and filter offers, view store profiles, save favorite stores, collect offers of one store in a cart and send it as an order with a pickup time, and track order status.
 - **Admins** create store, restaurant and admin accounts, block and unblock accounts, remove offers that break the rules, and see platform statistics and an audit log. There is no public registration for stores and restaurants.
-- Partial reservations, with available quantity calculated so two restaurants can never reserve more than exists.
-- In-app notifications for every reservation change.
-- A daily job marks expired products and cancels their open reservations.
+- Partial orders, with available quantity calculated so two restaurants can never order more than exists.
+- In-app notifications for every order change.
+- A daily job marks expired products and cancels their pending orders.
 - Bosnian and English UI.
 
 ## Tech stack
@@ -122,9 +122,9 @@ No real email is ever sent from development or tests. Without any email variable
    SMTP_PORT=1025
    ```
 3. Restart the server (`npm run dev`); it logs `Emails: smtp`.
-4. Make a reservation as a restaurant and open the inbox at http://localhost:8025: the store's "Nova rezervacija" email is there within a few seconds.
+4. Send an order as a restaurant and open the inbox at http://localhost:8025: the store's "Nova narudžba" email is there within a few seconds.
 
-Emails go through a queue in the database (`email_queue`), sent by a background worker every 5 seconds with retries, so a failing email service never breaks a reservation. Every in-app notification also creates an email (all in Bosnian for now).
+Emails go through a queue in the database (`email_queue`), sent by a background worker every 5 seconds with retries, so a failing email service never breaks an order. Every in-app notification also creates an email (all in Bosnian for now).
 
 ## Enabling Resend later
 
@@ -191,7 +191,7 @@ After `npm run seed`, every demo account uses the password `To12345678`:
 | Company HQ (Bingo d.o.o.) | `bingo@demo.com` |
 | Bingo branches (5) | `bingo.sarajevo@demo.com`, `bingo.visoko@demo.com`, `bingo.kakanj@demo.com`, `bingo.zenica@demo.com`, `bingo.tuzla@demo.com` |
 
-The seed deletes all existing data and rebuilds the last two months of activity: products, reservations in every status, donations, subscriptions and credits, notifications and announcements.
+The seed deletes all existing data and rebuilds the last two months of activity: products, orders in every status, donations, subscriptions and credits, notifications and announcements.
 
 ## Project structure
 

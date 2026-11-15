@@ -6,7 +6,7 @@ FoodWise ("Još vrijedi") is a B2B marketplace where stores sell near-expiry foo
 
 | Task involves | Read |
 |---|---|
-| Server code: API endpoints, DB schema, migrations, auth, reservation logic, cron, uploads, backend tests, seed | `docs/backend.md` |
+| Server code: API endpoints, DB schema, migrations, auth, order logic, cron, uploads, backend tests, seed | `docs/backend.md` |
 | Client code: pages, components, hooks, routing, i18n, styling, types | `docs/frontend.md` |
 | The app as it is today: users and roles, how it behaves, business rules, the humanitarian purpose, naming and tone | `docs/product.md` |
 | The future: planned features, phases, ideas backlog, decided-against items, open questions | `docs/development-plan.md` |
