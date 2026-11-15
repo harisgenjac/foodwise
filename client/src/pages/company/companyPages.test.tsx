@@ -45,7 +45,7 @@ describe("Company headquarters", () => {
           totals: {
             branches: { active: 0, all: 0, deactivated: 0 },
             credits: { used: 0, total: 0 },
-            reservations: { total: 0, picked_up: 0, pending: 0 },
+            orders: { total: 0, picked_up: 0, pending: 0 },
             saved: { kg: 0, l: 0, pieces: 0, value: 0 },
           },
           branches: [],

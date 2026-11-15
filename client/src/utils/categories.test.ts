@@ -4,7 +4,7 @@ import { CATEGORY_IMAGES } from "./categoryImages.js";
 import { CATEGORY_LABELS } from "./categories.js";
 import { UNIT_LABELS } from "./units.js";
 import { PRODUCT_STATUS_STYLES } from "./productStatus.js";
-import { RESERVATION_STATUS_STYLES } from "./reservationStatus.js";
+import { ORDER_STATUS_STYLES } from "./orders.js";
 import bs from "../i18n/locales/bs.json";
 import en from "../i18n/locales/en.json";
 
@@ -37,15 +37,15 @@ describe("unit lookups", () => {
 });
 
 describe("status styles", () => {
-  it("styles every product and reservation status", () => {
+  it("styles every product and order status", () => {
     expect(Object.keys(PRODUCT_STATUS_STYLES).sort()).toEqual(["Available", "Expired", "Removed", "Sold"]);
-    expect(Object.keys(RESERVATION_STATUS_STYLES).sort()).toEqual(["Cancelled", "Completed", "Confirmed", "Pending", "Rejected"]);
+    expect(Object.keys(ORDER_STATUS_STYLES).sort()).toEqual(["Cancelled", "Completed", "Confirmed", "Pending", "Rejected"]);
   });
 
-  it("translates every reservation status", () => {
-    for (const status of Object.keys(RESERVATION_STATUS_STYLES)) {
-      expect(bs.reservationStatus).toHaveProperty(status);
-      expect(en.reservationStatus).toHaveProperty(status);
+  it("translates every order status", () => {
+    for (const status of Object.keys(ORDER_STATUS_STYLES)) {
+      expect(bs.orderStatus).toHaveProperty(status);
+      expect(en.orderStatus).toHaveProperty(status);
     }
   });
 });

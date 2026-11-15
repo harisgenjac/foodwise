@@ -128,7 +128,7 @@ function AddToCartModal({ product, storeLine, onClose }: AddToCartModalProps) {
                 min="0.01"
                 step="any"
                 max={available}
-                placeholder={`${t("myReservations.placeholderMax")}: ${parseFloat(available)}`}
+                placeholder={`${t("orderForm.placeholderMax")}: ${parseFloat(available)}`}
                 value={quantity}
                 onChange={(e) => setTypedQuantity(e.target.value)}
                 onBlur={blur("quantity")}
@@ -146,7 +146,7 @@ function AddToCartModal({ product, storeLine, onClose }: AddToCartModalProps) {
             onClick={onClose}
             className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
           >
-            {t("myReservations.cancelButton")}
+            {t("orderForm.cancelButton")}
           </button>
           <button
             type="submit"

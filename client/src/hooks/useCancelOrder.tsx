@@ -32,7 +32,7 @@ export function useCancelOrder(onDone: () => void) {
     } catch (err) {
       console.error(err);
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
-      toast.error(message || t("reservations.actionError"));
+      toast.error(message || t("orders.actionError"));
     } finally {
       setBusy(false);
     }
@@ -45,7 +45,7 @@ export function useCancelOrder(onDone: () => void) {
       title={t("orders.cancelConfirmation")}
       message={t("orders.cancelConfirmationText", { code: formatOrderCode(pending.code), business: pending.storeName })}
       confirmLabel={t("orders.cancelButton")}
-      cancelLabel={t("reservations.keepButton")}
+      cancelLabel={t("orders.keepButton")}
       busy={busy}
       onConfirm={confirm}
       onClose={() => setPending(null)}

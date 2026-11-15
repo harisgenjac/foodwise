@@ -35,14 +35,14 @@ const renderPage = (total: number) =>
   });
 
 // The list's request (it always sends `status`), not the tab count's.
-const lastReservationsParams = () =>
+const lastOrdersParams = () =>
   apiMock.get.mock.calls
     .filter(
       ([url, config]) =>
         url === "/orders/mine" && (config?.params as Record<string, unknown> | undefined)?.status !== undefined,
     )
     .at(-1)?.[1]?.params;
-const reservationsTab = () => screen.getByRole("button", { name: new RegExp(t("store.reservationsTab")) });
+const ordersTab = () => screen.getByRole("button", { name: new RegExp(t("store.ordersTab")) });
 
 beforeEach(() => {
   myTotal = 0;
@@ -82,7 +82,7 @@ describe("StoreDetailsPage offers sort", () => {
   it("shows no sort on the orders tab", async () => {
     renderPage(3);
     await screen.findByText("Ponuda 1");
-    await userEvent.click(screen.getByRole("button", { name: new RegExp(t("store.reservationsTab")) }));
+    await userEvent.click(screen.getByRole("button", { name: new RegExp(t("store.ordersTab")) }));
     expect(screen.queryByLabelText(t("filters.sortBy"))).not.toBeInTheDocument();
   });
 });
@@ -92,7 +92,7 @@ describe("StoreDetailsPage orders tab count", () => {
     myTotal = 5;
     renderPage(1);
     await screen.findByText("Ponuda 1");
-    await waitFor(() => expect(reservationsTab()).toHaveTextContent("5"));
+    await waitFor(() => expect(ordersTab()).toHaveTextContent("5"));
     expect(apiMock.get).toHaveBeenCalledWith("/orders/mine", {
       params: { store_id: "2", limit: 1 },
       signal: expect.any(AbortSignal),
@@ -102,12 +102,12 @@ describe("StoreDetailsPage orders tab count", () => {
   it("keeps the total when a status filter is selected", async () => {
     myTotal = 5;
     renderPage(1);
-    await waitFor(() => expect(reservationsTab()).toHaveTextContent("5"));
+    await waitFor(() => expect(ordersTab()).toHaveTextContent("5"));
 
-    await userEvent.click(reservationsTab());
-    await userEvent.click(screen.getByRole("button", { name: t("reservationStatus.Pending") }));
-    await waitFor(() => expect(lastReservationsParams()).toMatchObject({ status: "Pending" }));
-    expect(reservationsTab()).toHaveTextContent("5");
+    await userEvent.click(ordersTab());
+    await userEvent.click(screen.getByRole("button", { name: t("orderStatus.Pending") }));
+    await waitFor(() => expect(lastOrdersParams()).toMatchObject({ status: "Pending" }));
+    expect(ordersTab()).toHaveTextContent("5");
   });
 
   it("adds a product to the cart from the store's offer", async () => {

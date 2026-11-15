@@ -30,7 +30,7 @@ const RestaurantDashboardPage = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
 
-  // The stat cards come from the server over all reservations; the list is only the first few orders.
+  // The stat cards come from the server over all orders; the list is only the first few orders.
   const fetchStats = async () => {
     try {
       const response = await api.get("/dashboard/stats");

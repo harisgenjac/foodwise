@@ -50,9 +50,9 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
     pickupDate: !pickupDate
       ? REQUIRED
       : pickupDate < minPickup || pickupDate > maxPickup
-        ? "myReservations.pickupDateOutOfRange"
+        ? "orderForm.pickupDateOutOfRange"
         : undefined,
-    pickupTime: isBlank(pickupTime) ? REQUIRED : parsedTime ? undefined : "myReservations.invalidTime",
+    pickupTime: isBlank(pickupTime) ? REQUIRED : parsedTime ? undefined : "orderForm.invalidTime",
   });
   // The limit is shown once it is close (design: from 8 of 10 on).
   const showPending = cart.pending_orders >= cart.max_pending_orders - 2;
@@ -104,7 +104,7 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
 
       <div className="grid grid-cols-2 gap-3">
         <DateInput
-          label={t("myReservations.pickupDate")}
+          label={t("orderForm.pickupDate")}
           value={pickupDate}
           onChange={setPickupDate}
           min={minPickup}
@@ -113,11 +113,11 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
           error={errorFor("pickupDate")}
           onBlur={blur("pickupDate")}
         />
-        <FormField label={t("myReservations.pickupTime")} icon={Clock} required error={errorFor("pickupTime")}>
+        <FormField label={t("orderForm.pickupTime")} icon={Clock} required error={errorFor("pickupTime")}>
           <input
             type="text"
             inputMode="numeric"
-            placeholder={t("myReservations.timePlaceholder")}
+            placeholder={t("orderForm.timePlaceholder")}
             maxLength={5}
             value={pickupTime}
             onChange={(e) => setPickupTime(formatTimeTyping(e.target.value, pickupTime))}

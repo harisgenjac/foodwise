@@ -185,7 +185,7 @@
     "notFoundSubtitle": "Proizvod ne postoji ili je uklonjen iz ponude.",
     "backToList": "Nazad na proizvode",
     "stockTitle": "Stanje zaliha",
-    "reservedQuantity": "Naručeno",
+    "orderedQuantity": "Naručeno",
     "createdAt": "Dodano",
     "notAvailable": "Ovaj proizvod trenutno nije dostupan za narudžbu.",
     "store": "Prodavnica",
@@ -193,7 +193,7 @@
     "totalQuantity": "Ukupna količina",
     "daysUntilExpiry": "Dana do isteka"
   },
-  "myReservations": {
+  "orderForm": {
     "placeholderMax": "Maksimalno",
     "pickupDate": "Datum preuzimanja",
     "pickupTime": "Vrijeme preuzimanja",
@@ -201,40 +201,6 @@
     "invalidTime": "Unesite vrijeme u formatu HH:MM (00:00–23:59).",
     "pickupDateOutOfRange": "Datum mora biti između danas i datuma isteka.",
     "cancelButton": "Otkaži"
-  },
-  "reservations": {
-    "noResultsTitle": "Nema rezultata",
-    "noResultsSubtitle": "Pokušajte promijeniti ili ukloniti filtere.",
-    "buyer": "Kupac",
-    "acceptButton": "Prihvati",
-    "rejectButton": "Odbij",
-    "cancelShortButton": "Otkaži",
-    "keepButton": "Odustani",
-    "actionError": "Greška prilikom akcije.",
-    "total": "Ukupno",
-    "createdAt": "Kreirano",
-    "pickupHours": "Vrijeme preuzimanja",
-    "viewStore": "Pogledaj prodavnicu",
-    "seller": "Prodavač",
-    "tabs": {
-      "active": "Aktivne",
-      "history": "Historija"
-    },
-    "period": {
-      "all": "Poslano: sve",
-      "today": "Poslano danas",
-      "last7Days": "Zadnjih 7 dana",
-      "thisMonth": "Ovaj mjesec"
-    },
-    "sortPendingFirst": "Prvo na čekanju",
-    "sortPickupSoonest": "Najskorije preuzimanje",
-    "showHistory": "Pogledaj historiju",
-    "acceptSummary": {
-      "product": "Proizvod",
-      "quantity": "Količina",
-      "restaurant": "Restoran",
-      "pickup": "Preuzimanje"
-    }
   },
   "filters": {
     "searchByName": "Pretraga po imenu",
@@ -394,7 +360,7 @@
     "successfulOrders": "Uspješno isporučeno (preuzeto)",
     "myOrders": "Vaše narudžbe ovdje (preuzete)",
     "productsTab": "Proizvodi",
-    "reservationsTab": "Moje narudžbe",
+    "ordersTab": "Moje narudžbe",
     "storeNoProducts": "Ova prodavnica trenutno nema dostupnih proizvoda.",
     "restaurantNoRes": "Nemate narudžbi kod ove prodavnice.",
     "subtitle": "Pronađite prodavnice u svojoj blizini i pogledajte njihovu ponudu.",
@@ -557,7 +523,7 @@
     "Expired": "Isteklo",
     "Removed": "Uklonjeno"
   },
-  "reservationStatus": {
+  "orderStatus": {
     "Pending": "Na čekanju",
     "Confirmed": "Potvrđeno",
     "Completed": "Preuzeto",
@@ -933,7 +899,6 @@
       "UNBLOCK_USER": "Deblokiran nalog",
       "REMOVE_PRODUCT": "Uklonjen proizvod",
       "REMOVE_DONATION": "Uklonjena donacija",
-      "CANCEL_RESERVATION": "Otkazana rezervacija",
       "CANCEL_ORDER": "Otkazana narudžba",
       "UPDATE_PROFILE": "Uređen profil",
       "CREATE_ANNOUNCEMENT": "Poslano obavještenje",
@@ -1350,9 +1315,7 @@
         "TOPUP_GRANT": "Dodatni krediti",
         "ADMIN_ADJUSTMENT": "Ispravka administratora",
         "PRODUCT_CHARGE": "Objava proizvoda",
-        "PRODUCT_REFUND": "Povrat za proizvod",
-        "RESERVATION_CHARGE": "Rezervacija",
-        "RESERVATION_REFUND": "Povrat za rezervaciju"
+        "PRODUCT_REFUND": "Povrat za proizvod"
       }
     },
     "companies": {
@@ -1967,7 +1930,27 @@
       "acceptPartial": "Prihvatam djelimičnu isporuku: prodavnica može prihvatiti manju količinu ili samo neke stavke.",
       "sentTitle": "Narudžba {{code}} je poslana",
       "sentText": "Iznos {{total}}. {{store}} će odgovoriti na narudžbu."
-    }
+    },
+    "buyer": "Kupac",
+    "cancelShortButton": "Otkaži",
+    "keepButton": "Odustani",
+    "actionError": "Greška prilikom akcije.",
+    "pickupHours": "Vrijeme preuzimanja",
+    "viewStore": "Pogledaj prodavnicu",
+    "seller": "Prodavač",
+    "tabs": {
+      "active": "Aktivne",
+      "history": "Historija"
+    },
+    "period": {
+      "all": "Poslano: sve",
+      "today": "Poslano danas",
+      "last7Days": "Zadnjih 7 dana",
+      "thisMonth": "Ovaj mjesec"
+    },
+    "sortPendingFirst": "Prvo na čekanju",
+    "sortPickupSoonest": "Najskorije preuzimanje",
+    "showHistory": "Pogledaj historiju"
   },
   "cart": {
     "title": "Korpa",

@@ -16,7 +16,6 @@ import StoresPage from './pages/StoresPage.js'
 import StoreDetailsPage from './pages/StoreDetailsPage.js';
 import MyOrdersPage from './pages/MyOrdersPage.js';
 import CartPage from './pages/CartPage.js';
-import OrdersRedirect, { AdminOrdersRedirect } from './components/OrdersRedirect.js';
 import MyProfilePage from './pages/MyProfilePage.js'
 import DonateFoodPage from './pages/DonateFoodPage.js';
 import AddDonationPage from './pages/AddDonationPage.js';
@@ -89,10 +88,6 @@ function App() {
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/products/:id" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><ProductDetailsPage /></ProtectedRoute>} />
         <Route path="/orders/:id" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><OrderDetailsPage /></ProtectedRoute>} />
-        {/* Old reservation links from earlier emails and notifications. */}
-        <Route path="/reservations" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><OrdersRedirect /></ProtectedRoute>} />
-        <Route path="/my-reservations" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><OrdersRedirect /></ProtectedRoute>} />
-        <Route path="/reservation/:id" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><OrdersRedirect /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute role="ADMIN"><AdminDashboardPage /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute role="ADMIN"><AdminUsersPage /></ProtectedRoute>} />
         <Route path="/admin/users/new" element={<ProtectedRoute role="ADMIN"><AdminCreateUserPage /></ProtectedRoute>} />
@@ -101,7 +96,6 @@ function App() {
         <Route path="/admin/donations" element={<ProtectedRoute role="ADMIN"><AdminDonationsPage /></ProtectedRoute>} />
         <Route path="/admin/orders" element={<ProtectedRoute role="ADMIN"><AdminOrdersPage /></ProtectedRoute>} />
         <Route path="/admin/orders/:id" element={<ProtectedRoute role="ADMIN"><AdminOrderDetailsPage /></ProtectedRoute>} />
-        <Route path="/admin/reservations" element={<ProtectedRoute role="ADMIN"><AdminOrdersRedirect /></ProtectedRoute>} />
         <Route path="/admin/announcements" element={<ProtectedRoute role="ADMIN"><AdminAnnouncementsPage /></ProtectedRoute>} />
         <Route path="/admin/actions" element={<ProtectedRoute role="ADMIN"><AdminActionsPage /></ProtectedRoute>} />
         <Route path="/admin/credits" element={<ProtectedRoute role="ADMIN"><AdminCreditsPage /></ProtectedRoute>} />

@@ -13,7 +13,7 @@ import type { Product } from "../../types/index.js";
 interface DashboardProductCardProps {
   product: Product;
   showStore?: boolean;
-  // Replaces the default "Details" link, e.g. with edit/delete or reserve buttons.
+  // Replaces the default "Details" link, e.g. with edit/delete or order buttons.
   actions?: ReactNode;
 }
 

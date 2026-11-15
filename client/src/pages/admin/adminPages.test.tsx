@@ -28,9 +28,9 @@ const store = makeUser({
 const counts = {
   products: 3,
   active_products: 2,
-  reservations: 4,
-  pending_reservations: 1,
-  completed_reservations: 2,
+  orders: 4,
+  pending_orders: 1,
+  completed_orders: 2,
   donations: 1,
 };
 

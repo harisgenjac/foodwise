@@ -52,7 +52,6 @@ export interface Notification {
   message: string;
   is_read: boolean;
   created_at: string;
-  reservation_id: number | null;
   product_id: number | null;
   donation_id?: number | null;
   // Free text from the server, shown after the translated text (an admin's reason).
@@ -80,7 +79,6 @@ export interface Notification {
   // The product's name, or the donation's for donation notifications.
   product_name: string | null;
   unit: string | null;
-  quantity: string | null;
 }
 
 interface NotificationsContextType {

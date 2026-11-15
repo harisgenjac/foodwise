@@ -9,11 +9,11 @@ interface DistributionBarProps {
   items: DistributionItem[];
   // Shown next to the total, e.g. "8 total".
   totalLabel: string;
-  // The accessible name of the bar, e.g. "Reservations by status".
+  // The accessible name of the bar, e.g. "Orders by status".
   label: string;
 }
 
-// How a total splits into parts (reservations by status, subscriptions by plan): one stacked bar
+// How a total splits into parts (orders by status, subscriptions by plan): one stacked bar
 // with a 2px gap between segments, and a legend with every part's count, so identity never rests
 // on color alone. Parts with 0 stay in the legend but take no space in the bar.
 function DistributionBar({ items, totalLabel, label }: DistributionBarProps) {

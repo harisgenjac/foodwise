@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Coins } from "lucide-react";
 import { useCredits } from "../../context/CreditsContext.js";
 
-// "This will use 1 credit (N left)" next to the add-product and reservation buttons;
+// "This will use 1 credit (N left)" next to the add-product and order buttons;
 // `perProduct` for the CSV import, where every row costs one. Hidden without credit data.
 function CreditHint({ perProduct = false, className = "" }: { perProduct?: boolean; className?: string }) {
   const { credits } = useCredits();

@@ -47,7 +47,7 @@ function BrowseProductsPage() {
     string,
     string
   >;
-  // The server leaves out fully reserved products and pages the rest; "Load more" raises the
+  // The server leaves out fully ordered products and pages the rest; "Load more" raises the
   // limit, and any filter or sort change starts again from the first page.
   const filters = { category, name, city_id: cityId, expiryWithinDays, radius };
   const query = { ...filters, sort };

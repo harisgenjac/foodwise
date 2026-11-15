@@ -61,7 +61,7 @@ function BranchActivity({ branchId, tab }: { branchId: number; tab: Tab }) {
   // The page remounts this component per tab, so `tab` never changes within one instance.
   const list = useFetch<Product | Order>(`/company/branches/${branchId}/${tab}`, tab, { status, limit });
   const statuses = isProducts ? PRODUCT_STATUSES : ORDER_STATUSES;
-  const labels = t(isProducts ? "productStatus" : "reservationStatus", { returnObjects: true }) as Record<string, string>;
+  const labels = t(isProducts ? "productStatus" : "orderStatus", { returnObjects: true }) as Record<string, string>;
 
   return (
     <div className="space-y-4">
@@ -102,7 +102,7 @@ function BranchActivity({ branchId, tab }: { branchId: number; tab: Tab }) {
                 ))
               : (list.data as Order[]).map((order) => (
                   // No details link: the order page belongs to the branch and the restaurant.
-                  <OrderCard key={order.id} order={order} partyLabel={t("reservations.buyer")} actions={<></>} />
+                  <OrderCard key={order.id} order={order} partyLabel={t("orders.buyer")} actions={<></>} />
                 ))}
           </div>
           <LoadMore shown={list.data.length} total={list.total ?? list.data.length} fetching={list.fetching} onLoadMore={loadMore} />

@@ -91,8 +91,6 @@ export const getNotificationLink = (notification: Notification, role: User["role
   if (notification.type === "PASSWORD_CHANGED") return "/my-profile";
   if (role === "COMPANY" && notification.branch_id) return `/company/branches/${notification.branch_id}`;
   if (notification.order_id) return `/orders/${notification.order_id}`;
-  // An old reservation notification: its id is not an order's, so the role's list.
-  if (notification.reservation_id) return role === "STORE" ? "/orders" : "/my-orders";
   if (notification.product_id) return `/products/${notification.product_id}`;
   if (notification.donation_id) return "/donate-food";
   // The full announcement text is in the banner on every page.
@@ -164,7 +162,6 @@ export const getNotificationText = (notification: Notification, t: TFunction, la
       ? notification.message
       : t(`notifications.types.${notification.type}`, {
           product: notification.product_name,
-          quantity: notification.quantity ? parseFloat(notification.quantity) : "",
           unit: notification.unit ?? "",
           defaultValue: notification.message,
         });

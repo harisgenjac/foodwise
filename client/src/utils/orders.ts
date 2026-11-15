@@ -1,12 +1,18 @@
 import type { TFunction } from "i18next";
 import type { ChangeReason, Order, OrderItem, OrderStatus, SendChange } from "../types/index.js";
-import { RESERVATION_STATUS_STYLES } from "./reservationStatus.js";
 
 // The order's short code as people see it: "#K7PM". Unique only within a store, so it is always
 // shown with the store's or the restaurant's name.
 export const formatOrderCode = (code: string) => `#${code}`;
 
-export const ORDER_STATUS_STYLES: Record<OrderStatus, string> = RESERVATION_STATUS_STYLES;
+// Order and item statuses share these pills.
+export const ORDER_STATUS_STYLES: Record<OrderStatus, string> = {
+  Pending: "bg-amber-50 text-amber-700",
+  Confirmed: "bg-green-50 text-green-700",
+  Completed: "bg-gray-100 text-gray-700",
+  Rejected: "bg-red-50 text-red-600",
+  Cancelled: "bg-red-50 text-red-600",
+};
 
 export const CHANGE_REASONS: ChangeReason[] = ["NOT_ENOUGH_STOCK", "QUALITY", "OTHER"];
 

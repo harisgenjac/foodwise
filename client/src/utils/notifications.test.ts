@@ -32,29 +32,23 @@ describe("getNotificationMeta", () => {
 describe("getNotificationLink", () => {
   it("links to the order first, then the product", () => {
     expect(getNotificationLink(makeOrderNotification({ product_id: 9 }), "STORE")).toBe("/orders/20");
-    expect(getNotificationLink(makeNotification({ reservation_id: null, product_id: 9 }), "STORE")).toBe("/products/9");
-  });
-
-  it("opens the role's order list for an old reservation notification", () => {
-    const old = makeNotification({ reservation_id: 5, product_id: 9 });
-    expect(getNotificationLink(old, "STORE")).toBe("/orders");
-    expect(getNotificationLink(old, "RESTAURANT")).toBe("/my-orders");
+    expect(getNotificationLink(makeNotification({ product_id: 9 }), "STORE")).toBe("/products/9");
   });
 
   it("falls back to the role's order list", () => {
-    const bare = makeNotification({ reservation_id: null, product_id: null });
+    const bare = makeNotification({ product_id: null });
     expect(getNotificationLink(bare, "STORE")).toBe("/orders");
     expect(getNotificationLink(bare, "RESTAURANT")).toBe("/my-orders");
     expect(getNotificationLink(bare, undefined)).toBe("/my-orders");
   });
 
   it("sends a donation notification to the donations page", () => {
-    const removed = makeNotification({ type: "DONATION_REMOVED_BY_ADMIN", reservation_id: null, product_id: null, donation_id: 7 });
+    const removed = makeNotification({ type: "DONATION_REMOVED_BY_ADMIN", product_id: null, donation_id: 7 });
     expect(getNotificationLink(removed, "RESTAURANT")).toBe("/donate-food");
   });
 
   it("sends credit request notifications to the admin requests page or the Credits page", () => {
-    const base = { reservation_id: null, product_id: null, credit_request_id: 4 };
+    const base = { product_id: null, credit_request_id: 4 };
     expect(getNotificationLink(makeNotification({ ...base, type: "CREDIT_REQUEST_CREATED" }), "ADMIN")).toBe(
       "/admin/credit-requests",
     );
@@ -63,7 +57,7 @@ describe("getNotificationLink", () => {
   });
 
   it("sends renewal and expiry notices to the matching My profile section", () => {
-    const base = { reservation_id: null, product_id: null, credit_request_id: 4 };
+    const base = { product_id: null, credit_request_id: 4 };
     const link = (overrides: Partial<Notification>) => getNotificationLink(makeNotification({ ...base, ...overrides }), "STORE");
     expect(link({ type: "CREDIT_RENEWAL_CREATED", credit_request_type: "SUBSCRIPTION" })).toBe("/my-profile#subscription");
     expect(link({ type: "CREDIT_REQUEST_EXPIRED", credit_request_type: "SUBSCRIPTION" })).toBe("/my-profile#subscription");
@@ -91,7 +85,7 @@ describe("getNotificationText", () => {
   });
 
   it("adds the admin's reason after the translated text", () => {
-    const removed = makeNotification({ type: "PRODUCT_REMOVED_BY_ADMIN", reservation_id: null, details: "Neispravan opis" });
+    const removed = makeNotification({ type: "PRODUCT_REMOVED_BY_ADMIN", details: "Neispravan opis" });
     expect(getNotificationText(removed, t)).toBe(
       `${t("notifications.types.PRODUCT_REMOVED_BY_ADMIN", { product: "Piletina" })} ${t("notifications.reason", { reason: "Neispravan opis" })}`,
     );
@@ -121,7 +115,7 @@ describe("getNotificationText", () => {
   });
 
   it("describes renewals, expired requests and a renewal that could not be created", () => {
-    const credit = { product_name: null, reservation_id: null, product_id: null };
+    const credit = { product_name: null, product_id: null };
     const renewal = makeNotification({ ...credit, type: "CREDIT_RENEWAL_CREATED", credit_request_type: "SUBSCRIPTION", credit_amount: 50 });
     expect(getNotificationText(renewal, t)).toBe(t("notifications.credits.renewalCreated", { credits: 50 }));
     const expired = makeNotification({ ...credit, type: "CREDIT_REQUEST_EXPIRED", credit_request_type: "TOPUP", credit_amount: 20 });
@@ -187,7 +181,6 @@ describe("branch notifications", () => {
   const branchNotification = (overrides: Partial<Notification> = {}) =>
     makeNotification({
       type: "BRANCH_BLOCKED",
-      reservation_id: null,
       product_id: null,
       product_name: null,
       branch_id: 21,
@@ -213,7 +206,6 @@ describe("branch notifications", () => {
 describe("branch credit notifications", () => {
   const credit = (overrides: Partial<Notification>) =>
     makeNotification({
-      reservation_id: null,
       product_id: null,
       product_name: null,
       credit_request_id: 31,
@@ -255,7 +247,6 @@ describe("branch credit notifications", () => {
 describe("branch credit notifications", () => {
   const credit = (overrides: Partial<Notification>) =>
     makeNotification({
-      reservation_id: null,
       product_id: null,
       product_name: null,
       credit_request_id: 31,

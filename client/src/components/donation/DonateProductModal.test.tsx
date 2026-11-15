@@ -90,7 +90,7 @@ describe("DonateProductModal", () => {
     });
   });
 
-  it("blocks moving when everything is reserved", () => {
+  it("blocks moving when everything is ordered", () => {
     renderModal(makeProduct({ available_quantity: "0" }));
     expect(screen.getByText(t("donations.fromProduct.nothingAvailable"))).toBeInTheDocument();
     expect(confirmButton()).toBeDisabled();

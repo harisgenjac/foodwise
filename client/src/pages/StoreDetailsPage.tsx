@@ -45,9 +45,9 @@ interface MyOrdersCount {
   my_orders_count: string;
 }
 
-type Tab = "products" | "reservations";
+type Tab = "products" | "orders";
 
-const RESERVATION_STATUSES: Order["status"][] = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
+const ORDER_STATUSES: Order["status"][] = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
 
 function StoreDetailsPage() {
   const { id } = useParams();
@@ -57,11 +57,11 @@ function StoreDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("products");
-  const [reservationStatus, setReservationStatus] = useState("");
+  const [orderStatus, setOrderStatus] = useState("");
   const [productSort, setProductSort] = useState<StoreProfileSort>("newest");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { t } = useTranslation();
-  const reservationStatuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
+  const orderStatuses = t("orderStatus", { returnObjects: true }) as Record<string, string>;
 
   const fetchStoreDetails = async () => {
     try {
@@ -120,19 +120,19 @@ function StoreDetailsPage() {
     fetching: productsFetching,
   } = useFetch<Product>("/products", "products", { store_id: id!, sort: productSort, limit: products.limit });
 
-  const reservations = usePagedLimit(CARD_PAGE_SIZE, `${id}-${reservationStatus}`);
+  const ordersPaging = usePagedLimit(CARD_PAGE_SIZE, `${id}-${orderStatus}`);
   const {
-    data: reservationsList,
-    total: reservationsTotal,
-    loading: reservationsLoading,
-    fetching: reservationsFetching,
+    data: ordersList,
+    total: ordersTotal,
+    loading: ordersLoading,
+    fetching: ordersFetching,
   } = useFetch<Order>("/orders/mine", "orders", {
     store_id: id!,
-    status: reservationStatus,
-    limit: reservations.limit,
+    status: orderStatus,
+    limit: ordersPaging.limit,
   });
   // The tab's count: every order here, whatever status pill is selected.
-  const { total: reservationsCount } = useFetch<Order>(
+  const { total: ordersCount } = useFetch<Order>(
     "/orders/mine",
     "orders",
     { store_id: id!, limit: 1 },
@@ -167,13 +167,13 @@ function StoreDetailsPage() {
   const activeProducts = productsTotal ?? productsList.length;
   const tabs: { key: Tab; label: string; count?: number }[] = [
     { key: "products", label: t("store.productsTab"), count: activeProducts },
-    { key: "reservations", label: t("store.reservationsTab"), count: reservationsCount ?? undefined },
+    { key: "orders", label: t("store.ordersTab"), count: ordersCount ?? undefined },
   ];
   const statusFilters = [
     { value: "", label: t("store.allStatuses") },
-    ...RESERVATION_STATUSES.map((status) => ({
+    ...ORDER_STATUSES.map((status) => ({
       value: status,
-      label: reservationStatuses[status] || status,
+      label: orderStatuses[status] || status,
     })),
   ];
 
@@ -342,16 +342,16 @@ function StoreDetailsPage() {
         />
       )}
 
-      {activeTab === "reservations" && (
+      {activeTab === "orders" && (
         <div className="space-y-6">
           <div className="flex flex-wrap gap-2">
             {statusFilters.map((filter) => (
               <button
                 key={filter.value}
                 type="button"
-                onClick={() => setReservationStatus(filter.value)}
+                onClick={() => setOrderStatus(filter.value)}
                 className={`min-h-11 sm:min-h-0 cursor-pointer rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                  reservationStatus === filter.value
+                  orderStatus === filter.value
                     ? "border-orange-500 bg-orange-500 text-white"
                     : "border-gray-200 bg-white text-gray-600 hover:border-orange-300 hover:text-orange-600"
                 }`}
@@ -361,15 +361,15 @@ function StoreDetailsPage() {
             ))}
           </div>
 
-          {reservationsLoading ? (
+          {ordersLoading ? (
             <LoadingSpinner />
-          ) : reservationsList.length === 0 && reservationStatus ? (
+          ) : ordersList.length === 0 && orderStatus ? (
             <EmptyState
               icon={ClipboardList}
               title={t("store.noResultsTitle")}
               subtitle={t("store.noStatusResultsSubtitle")}
             />
-          ) : reservationsList.length === 0 ? (
+          ) : ordersList.length === 0 ? (
             <EmptyState
               icon={ClipboardList}
               title={t("store.restaurantNoRes")}
@@ -377,17 +377,17 @@ function StoreDetailsPage() {
             />
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {reservationsList.map((order) => (
+              {ordersList.map((order) => (
                 <OrderCard key={order.id} order={order} partyLabel={t("myProducts.store")} />
               ))}
             </div>
           )}
 
           <LoadMore
-            shown={reservationsList.length}
-            total={reservationsTotal ?? reservationsList.length}
-            fetching={reservationsFetching}
-            onLoadMore={reservations.loadMore}
+            shown={ordersList.length}
+            total={ordersTotal ?? ordersList.length}
+            fetching={ordersFetching}
+            onLoadMore={ordersPaging.loadMore}
           />
         </div>
       )}

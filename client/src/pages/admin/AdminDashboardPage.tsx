@@ -65,7 +65,7 @@ function AdminDashboardPage() {
     value.toLocaleString(i18n.language, { maximumFractionDigits: digits });
   const money = (value: number) =>
     `${value.toLocaleString(i18n.language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} KM`;
-  const orderStatuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
+  const orderStatuses = t("orderStatus", { returnObjects: true }) as Record<string, string>;
   const productStatuses = t("productStatus", { returnObjects: true }) as Record<string, string>;
   const donationStatuses = t("donations.statuses", { returnObjects: true }) as Record<string, string>;
   const monthNames = t("dashboard.months", { returnObjects: true }) as string[];

@@ -94,7 +94,7 @@ describe("OrderDetailsPage", () => {
   it("shows the store to the restaurant and the restaurant to the store", async () => {
     renderPage(RESTAURANT);
     expect(await screen.findByText("Titova 1, Sarajevo")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: t("reservations.viewStore") })).toHaveAttribute("href", "/stores/2");
+    expect(screen.getByRole("link", { name: t("orders.viewStore") })).toHaveAttribute("href", "/stores/2");
   });
 
   it("lets the store hand over an accepted order", async () => {

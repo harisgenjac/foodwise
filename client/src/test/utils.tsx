@@ -23,7 +23,7 @@ export const apiMock = vi.mocked(api);
 export const t = i18n.t.bind(i18n);
 
 // A rejected axios call as the server sends it: `{ error }` with a status.
-// The server's 402 when a product or reservation needs a credit the user does not have.
+// The server's 402 when a product or order needs a credit the user does not have.
 export const creditError = (hasActiveSubscription: boolean) =>
   new AxiosError("Request failed", "402", undefined, undefined, {
     status: 402,
@@ -229,11 +229,9 @@ export const makeNotification = (overrides: Partial<Notification> = {}): Notific
   message: "Piletina is sold out.",
   is_read: false,
   created_at: new Date().toISOString(),
-  reservation_id: null,
   product_id: 10,
   product_name: "Piletina",
   unit: "kg",
-  quantity: null,
   ...overrides,
 });
 

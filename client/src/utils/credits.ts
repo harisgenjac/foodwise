@@ -34,7 +34,7 @@ export const CREDIT_REQUEST_STATUS_STYLES: Record<CreditRequestStatus, string> =
   COMPANY_REJECTED: "bg-red-50 text-red-700",
 };
 
-// The server's 402 when a product or reservation needs a credit the user does not have.
+// The server's 402 when a product or order needs a credit the user does not have.
 export interface CreditError {
   hasActiveSubscription: boolean;
   // Where the user can fix it: the subscription or the top-up section of My profile.

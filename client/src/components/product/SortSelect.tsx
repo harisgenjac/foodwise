@@ -34,13 +34,13 @@ export const MARKETPLACE_SORT_OPTIONS = [
 export type MarketplaceSort = (typeof MARKETPLACE_SORT_OPTIONS)[number]["value"];
 
 // The `GET /orders/mine` sorts offered on the restaurant's Active orders.
-export const MY_RESERVATIONS_SORT_OPTIONS = [
+export const MY_ORDERS_SORT_OPTIONS = [
   { value: "newest", label: "filters.sortNewest" },
-  { value: "status", label: "reservations.sortPendingFirst" },
-  { value: "pickup", label: "reservations.sortPickupSoonest" },
+  { value: "status", label: "orders.sortPendingFirst" },
+  { value: "pickup", label: "orders.sortPickupSoonest" },
 ] as const satisfies readonly SortOption[];
 
-export type MyReservationsSort = (typeof MY_RESERVATIONS_SORT_OPTIONS)[number]["value"];
+export type MyOrdersSort = (typeof MY_ORDERS_SORT_OPTIONS)[number]["value"];
 
 interface SortSelectProps<T extends string> {
   value: T;

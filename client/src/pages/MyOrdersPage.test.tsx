@@ -36,12 +36,12 @@ const listCalls = () => apiMock.get.mock.calls.filter(([url]) => url === "/order
 const lastListParams = () => listCalls().at(-1)?.[1]?.params;
 const summaryCalls = () => apiMock.get.mock.calls.filter(([url]) => url === "/orders/mine/summary");
 
-const tab = (key: "active" | "history") => screen.getByRole("tab", { name: new RegExp(t(`reservations.tabs.${key}`)) });
+const tab = (key: "active" | "history") => screen.getByRole("tab", { name: new RegExp(t(`orders.tabs.${key}`)) });
 const statusSelect = () => screen.getByLabelText(t("orders.selectStatus"));
 const statusOptions = () => within(statusSelect()).getAllByRole("option").map((option) => option.getAttribute("value"));
-const periodSelect = () => screen.getByLabelText(t("reservations.period.all"));
-const queryPeriodSelect = () => screen.queryByLabelText(t("reservations.period.all"));
-const cancelButton = () => screen.getByRole("button", { name: t("reservations.cancelShortButton") });
+const periodSelect = () => screen.getByLabelText(t("orders.period.all"));
+const queryPeriodSelect = () => screen.queryByLabelText(t("orders.period.all"));
+const cancelButton = () => screen.getByRole("button", { name: t("orders.cancelShortButton") });
 
 describe("MyOrdersPage", () => {
   it("opens on Active with the active scope, newest first, 12 at a time", async () => {
@@ -62,7 +62,7 @@ describe("MyOrdersPage", () => {
     await screen.findByText(/Piletina/);
 
     expect(statusOptions()).toEqual(["", "Pending", "Confirmed"]);
-    await userEvent.selectOptions(statusSelect(), t("reservationStatus.Confirmed"));
+    await userEvent.selectOptions(statusSelect(), t("orderStatus.Confirmed"));
     await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "active", status: "Confirmed" }));
   });
 
@@ -89,7 +89,7 @@ describe("MyOrdersPage", () => {
 
     expect(await screen.findByText(/Piletina/)).toBeInTheDocument();
     expect(screen.getByText(/Mlijeko/)).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: t("reservations.cancelShortButton") })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: t("orders.cancelShortButton") })).toHaveLength(1);
   });
 
   it("shows when each active order was sent", async () => {
@@ -102,7 +102,7 @@ describe("MyOrdersPage", () => {
     renderPage([order(1)]);
     await screen.findByText(/Piletina/);
 
-    await userEvent.selectOptions(screen.getByLabelText(t("filters.sortBy")), t("reservations.sortPickupSoonest"));
+    await userEvent.selectOptions(screen.getByLabelText(t("filters.sortBy")), t("orders.sortPickupSoonest"));
     await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "active", sort: "pickup" }));
 
     await userEvent.type(screen.getByPlaceholderText(t("orders.searchProduct")), "pile");
@@ -117,7 +117,7 @@ describe("MyOrdersPage", () => {
     expect(await screen.findByText(t("orders.activeEmptyTitle"))).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: t("dashboard.browseOffers") }).length).toBeGreaterThan(0);
 
-    await userEvent.click(screen.getByRole("button", { name: t("reservations.showHistory") }));
+    await userEvent.click(screen.getByRole("button", { name: t("orders.showHistory") }));
     expect(tab("history")).toHaveAttribute("aria-selected", "true");
     await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all" }));
   });
@@ -157,7 +157,7 @@ describe("MyOrdersPage", () => {
       expect(screen.getByRole("link", { name: /Jogurt/ })).toHaveAttribute("href", "/orders/31");
       expect(screen.getByRole("link", { name: /Hljeb/ })).toHaveAttribute("href", "/orders/30");
       expect(screen.getByText("4.50 KM")).toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: t("reservations.cancelShortButton") })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: t("orders.cancelShortButton") })).not.toBeInTheDocument();
       expect(screen.queryByLabelText(t("filters.sortBy"))).not.toBeInTheDocument();
     });
 
@@ -204,12 +204,12 @@ describe("MyOrdersPage", () => {
     it("offers every status on History and clears the status on each tab switch", async () => {
       renderHistory();
       await screen.findByText(/Aktivna/);
-      await userEvent.selectOptions(statusSelect(), t("reservationStatus.Pending"));
+      await userEvent.selectOptions(statusSelect(), t("orderStatus.Pending"));
 
       await userEvent.click(tab("history"));
       expect(statusSelect()).toHaveValue("");
       expect(statusOptions()).toEqual(["", "Pending", "Confirmed", "Completed", "Rejected", "Cancelled"]);
-      await userEvent.selectOptions(statusSelect(), t("reservationStatus.Rejected"));
+      await userEvent.selectOptions(statusSelect(), t("orderStatus.Rejected"));
       await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all", status: "Rejected" }));
 
       await userEvent.click(tab("active"));
@@ -221,10 +221,10 @@ describe("MyOrdersPage", () => {
       renderHistory();
       await screen.findByText(/Aktivna/);
 
-      await userEvent.selectOptions(screen.getByLabelText(t("filters.sortBy")), t("reservations.sortPickupSoonest"));
+      await userEvent.selectOptions(screen.getByLabelText(t("filters.sortBy")), t("orders.sortPickupSoonest"));
       await userEvent.type(screen.getByPlaceholderText(t("orders.searchProduct")), "jog");
       await userEvent.type(screen.getByPlaceholderText(t("filters.searchByStore")), "centar");
-      await userEvent.selectOptions(statusSelect(), t("reservationStatus.Confirmed"));
+      await userEvent.selectOptions(statusSelect(), t("orderStatus.Confirmed"));
       await waitFor(() =>
         expect(lastListParams()).toMatchObject({ scope: "active", name: "jog", business_name: "centar", status: "Confirmed" }),
       );
@@ -238,7 +238,7 @@ describe("MyOrdersPage", () => {
       expect(statusSelect()).toHaveValue("");
       expect(screen.queryByRole("button", { name: t("filters.clear") })).not.toBeInTheDocument();
 
-      await userEvent.selectOptions(periodSelect(), t("reservations.period.last7Days"));
+      await userEvent.selectOptions(periodSelect(), t("orders.period.last7Days"));
       await userEvent.type(screen.getByPlaceholderText(t("orders.searchProduct")), "hlj");
       await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all", name: "hlj", period: "7d" }));
 
@@ -262,7 +262,7 @@ describe("MyOrdersPage", () => {
       expect(screen.queryAllByRole("button", { pressed: false })).toHaveLength(0);
       expect(screen.queryAllByRole("button", { pressed: true })).toHaveLength(0);
 
-      await userEvent.selectOptions(statusSelect(), t("reservationStatus.Rejected"));
+      await userEvent.selectOptions(statusSelect(), t("orderStatus.Rejected"));
       await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all", status: "Rejected" }));
     });
 
@@ -270,8 +270,8 @@ describe("MyOrdersPage", () => {
       renderHistory();
       await screen.findByText(/Aktivna/);
       await userEvent.click(tab("history"));
-      await userEvent.selectOptions(statusSelect(), t("reservationStatus.Completed"));
-      await userEvent.selectOptions(periodSelect(), t("reservations.period.today"));
+      await userEvent.selectOptions(statusSelect(), t("orderStatus.Completed"));
+      await userEvent.selectOptions(periodSelect(), t("orders.period.today"));
 
       await userEvent.click(screen.getByRole("button", { name: t("filters.clear") }));
       expect(tab("history")).toHaveAttribute("aria-selected", "true");
@@ -285,7 +285,7 @@ describe("MyOrdersPage", () => {
     apiMock.post.mockResolvedValue({ data: { message: "Order cancelled." } });
     renderPage([order(5, "Piletina", { status: "Pending" })]);
 
-    await userEvent.click(await screen.findByRole("button", { name: t("reservations.cancelShortButton") }));
+    await userEvent.click(await screen.findByRole("button", { name: t("orders.cancelShortButton") }));
     const dialog = screen.getByRole("dialog");
     await userEvent.click(within(dialog).getByRole("button", { name: t("orders.cancelButton") }));
 
@@ -299,8 +299,8 @@ describe("MyOrdersPage", () => {
   it("keeps the order when the user changes their mind", async () => {
     renderPage([order(5, "Piletina", { status: "Pending" })]);
 
-    await userEvent.click(await screen.findByRole("button", { name: t("reservations.cancelShortButton") }));
-    await userEvent.click(screen.getByRole("button", { name: t("reservations.keepButton") }));
+    await userEvent.click(await screen.findByRole("button", { name: t("orders.cancelShortButton") }));
+    await userEvent.click(screen.getByRole("button", { name: t("orders.keepButton") }));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(apiMock.post).not.toHaveBeenCalled();
@@ -313,7 +313,7 @@ describe("MyOrdersPage", () => {
     apiMock.post.mockRejectedValue(axiosError(400, "Only pending orders can be cancelled."));
     renderPage([order(5, "Piletina", { status: "Pending" })]);
 
-    await userEvent.click(await screen.findByRole("button", { name: t("reservations.cancelShortButton") }));
+    await userEvent.click(await screen.findByRole("button", { name: t("orders.cancelShortButton") }));
     await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: t("orders.cancelButton") }));
 
     expect(error).toHaveBeenCalledWith("Only pending orders can be cancelled.");

@@ -23,7 +23,7 @@ interface OrderCardProps {
 // One order on a list or dashboard: its code, products, the other party, total and pickup.
 function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = false }: OrderCardProps) {
   const { t, i18n } = useTranslation();
-  const statuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
+  const statuses = t("orderStatus", { returnObjects: true }) as Record<string, string>;
   const category = order.items[0]?.category;
   const image = (category && CATEGORY_IMAGES[category]) || CATEGORY_IMAGES.Other;
   const code = formatOrderCode(order.code);
