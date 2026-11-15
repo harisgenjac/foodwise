@@ -11,7 +11,7 @@ import ConfirmModal from "../common/ConfirmModal.js";
 import { useFormValidation } from "../../hooks/useFormValidation.js";
 import { useCart } from "../../context/CartContext.js";
 import { isBlank, REQUIRED } from "../../utils/validation.js";
-import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
+import ProductImage from "../product/ProductImage.js";
 import type { Product } from "../../types/index.js";
 
 interface AddToCartModalProps {
@@ -102,8 +102,8 @@ function AddToCartModal({ product, storeLine, onClose }: AddToCartModalProps) {
       <form ref={formRef} noValidate onSubmit={handleSubmit} className={modalFormStyle}>
         <ModalBody>
           <div className="mb-5 flex items-center gap-3 rounded-xl bg-gray-50 p-3">
-            <img
-              src={CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES.Other}
+            <ProductImage
+              imageUrl={product.image_url}
               alt={product.name}
               className="h-14 w-14 shrink-0 rounded-lg object-cover"
             />

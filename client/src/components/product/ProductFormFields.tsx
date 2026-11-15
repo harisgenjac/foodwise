@@ -3,6 +3,7 @@ import { AlertCircle, CalendarDays, FileText, Lock, Package, Scale, Tag } from "
 import FormSection from "../form/FormSection.js";
 import FormField, { inputStyle } from "../form/FormField.js";
 import PickerField from "../form/PickerField.js";
+import ProductImagePicker from "./ProductImagePicker.js";
 import { isBlank, REQUIRED, type FieldErrors } from "../../utils/validation.js";
 import { getCategoryIcon } from "../../utils/categoryIcons.js";
 import { dateInDays } from "../../utils/expiry.js";
@@ -19,15 +20,16 @@ export const EMPTY_PRODUCT_FORM: ProductFormValues = {
   quantity: "",
   unit: "",
   expiry_date: "",
+  image_url: "",
 };
 
 export type ProductField = keyof ProductFormValues;
 
-// Every field but the description is required (the server checks the values too).
+// Every field but the description and the image is required (the server checks the values too).
 export const validateProductForm = (form: ProductFormValues): FieldErrors<ProductField> => {
   const errors: FieldErrors<ProductField> = {};
   for (const field of Object.keys(form) as ProductField[]) {
-    if (field !== "description" && isBlank(form[field] ?? "")) errors[field] = REQUIRED;
+    if (field !== "description" && field !== "image_url" && isBlank(form[field] ?? "")) errors[field] = REQUIRED;
   }
   return errors;
 };
@@ -44,7 +46,7 @@ interface ProductFormFieldsProps {
   onBlur?: (field: ProductField) => () => void;
 }
 
-// The three form sections shared by AddProductPage and EditProductPage.
+// The form sections shared by AddProductPage and EditProductPage.
 function ProductFormFields({
   values,
   onChange,
@@ -114,6 +116,8 @@ function ProductFormFields({
           </PickerField>
         </div>
       </FormSection>
+
+      <ProductImagePicker value={values.image_url} onChange={(value) => onChange("image_url", value)} />
 
       <FormSection title={t("product.priceSection")} icon={Tag}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

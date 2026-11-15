@@ -22,6 +22,7 @@ import companyRoutes from './routes/company.routes.js'
 import { HttpError } from "./utils/httpError.js";
 import { allowedOrigins, checkOrigin } from "./middleware/origin.middleware.js";
 import { rateLimiters } from "./middleware/rateLimit.middleware.js";
+import { UPLOADS_DIR, UPLOADS_URL_PREFIX } from "./services/storage.js";
 
 const app = express();
 
@@ -65,7 +66,7 @@ app.use('/api/stats', statsRoutes)
 app.use('/api/cities', citiesRoutes)
 app.use('/api/company', companyRoutes)
 // nosniff: browsers must not treat an uploaded file as anything but its declared type.
-app.use('/uploads', express.static('uploads', {
+app.use(UPLOADS_URL_PREFIX, express.static(UPLOADS_DIR, {
   setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),
 }));
 

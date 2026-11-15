@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, Store } from "lucide-react";
-import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
+import ProductImage from "../product/ProductImage.js";
 import { getDaysUntilExpiry } from "../../utils/expiry.js";
 import { PRODUCT_STATUS_STYLES } from "../../utils/productStatus.js";
 import { formatCityDistance } from "../../utils/radius.js";
@@ -29,8 +29,8 @@ function DashboardProductCard({ product, showStore = false, actions }: Dashboard
   return (
     <div data-testid="product-card" className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
       <div className="relative h-36 overflow-hidden">
-        <img
-          src={CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES.Other}
+        <ProductImage
+          imageUrl={product.image_url}
           alt={product.name}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />

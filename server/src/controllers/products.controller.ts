@@ -10,6 +10,8 @@ import { chargeForProduct, chargeForProducts, refundForProduct } from '../servic
 import { visibleStore } from '../utils/visibility.js';
 import { companyName } from '../utils/branding.js';
 import { availableQuantity, pendingHeld, soldInShop } from '../services/stock.js';
+import { saveImage } from '../services/storage.js';
+import { parseProductImage, productImageNamePrefix, releaseProductImage } from '../utils/productImages.js';
 
 export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
 
@@ -60,10 +62,14 @@ export const createProduct = async (req: Request, res: Response) => {
     if (validationError) {
       return res.status(400).json({ error: validationError });
     }
+    const image = await parseProductImage(req.body?.image_url, store_id);
+    if (image && "error" in image) {
+      return res.status(400).json({ error: image.error });
+    }
     client = await pool.connect();
     await client.query("BEGIN");
     const result = await client.query(
-      "INSERT INTO products (store_id, name, description, category, original_price, discounted_price, quantity, unit, expiry_date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
+      "INSERT INTO products (store_id, name, description, category, original_price, discounted_price, quantity, unit, expiry_date, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *",
       [
         store_id,
         name.trim(),
@@ -74,6 +80,7 @@ export const createProduct = async (req: Request, res: Response) => {
         quantity,
         unit,
         expiry_date,
+        image?.value ?? null,
       ],
     );
     // Publishing costs 1 credit, charged in the same transaction: without credits the product
@@ -157,6 +164,21 @@ export const importProducts = async (req: Request, res: Response) => {
       .json({ error: "An error occurred while importing products." });
   } finally {
     if (client) client.release();
+  }
+};
+
+// Uploads a product or template image before the form is saved; the form then sends the
+// returned image_url. A file no product or template takes up is deleted by the daily cleanup.
+export const uploadProductImage = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No image was uploaded." });
+    }
+    const imageUrl = await saveImage("products", req.file, productImageNamePrefix(req.user!.id));
+    return res.status(201).json({ message: "Image uploaded successfully.", image_url: imageUrl });
+  } catch (error) {
+    console.error("Error while uploading image:", error);
+    return res.status(500).json({ error: "An error occurred while uploading the image." });
   }
 };
 
@@ -394,6 +416,12 @@ export const updateProduct = async (req: Request, res: Response) => {
   if (validationError) {
     return res.status(400).json({ error: validationError });
   }
+  // Unlike the quantity and expiry date, the image stays editable after publishing.
+  // Not sent: the image stays as it is.
+  const image = await parseProductImage(req.body?.image_url, req.user!.id);
+  if (image && "error" in image) {
+    return res.status(400).json({ error: image.error });
+  }
 
   let client;
   try {
@@ -440,8 +468,8 @@ export const updateProduct = async (req: Request, res: Response) => {
     const result = await client.query(
       `UPDATE products
        SET name = $1, description = $2, category = $3, original_price = $4,
-           discounted_price = $5, unit = $6
-       WHERE id = $7
+           discounted_price = $5, unit = $6, image_url = $7
+       WHERE id = $8
        RETURNING *`,
       [
         name.trim(),
@@ -450,11 +478,15 @@ export const updateProduct = async (req: Request, res: Response) => {
         original_price,
         discounted_price,
         unit,
+        image ? image.value : existing.rows[0].image_url,
         productId,
       ],
     );
 
     await client.query("COMMIT");
+    if (image && image.value !== existing.rows[0].image_url) {
+      await releaseProductImage(pool, existing.rows[0].image_url);
+    }
     return res.status(200).json({
       message: "Product updated successfully.",
       product: result.rows[0],

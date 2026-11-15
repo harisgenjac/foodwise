@@ -45,11 +45,12 @@ export default defineConfig({
       dependencies: ["setup"],
     },
     // Safari on an iPhone (WebKit with the iPhone's user agent, touch and mobile viewport rules),
-    // for the phone layout only. The spec sets its own viewport sizes.
+    // for the phone layout (whose spec sets its own viewport sizes) and the specs that check a
+    // flow at phone width too.
     {
       name: "webkit-iphone",
       use: { ...devices["iPhone 13"] },
-      testMatch: /mobile-layout\.spec\.ts/,
+      testMatch: /(mobile-layout|product-image)\.spec\.ts/,
       dependencies: ["setup"],
     },
   ],
@@ -61,6 +62,8 @@ export default defineConfig({
       name: "backend",
       cwd: "../server",
       command: "npm run build && npx node-pg-migrate up && node dist/server.js",
+      // Its uploads stay apart from the dev server's files (see server/src/services/storage.ts).
+      env: { UPLOADS_DIR: "uploads-e2e" },
       // An unauthenticated 401 counts as up.
       url: `${API_URL}/api/cities`,
       reuseExistingServer: false,

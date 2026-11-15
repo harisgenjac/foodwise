@@ -6,6 +6,9 @@ node_modules/
 !.env.example
 dist/
 uploads/*
+# The tests' and the e2e server's own upload folders (UPLOADS_DIR).
+uploads-test/
+uploads-e2e/
 !uploads/logos/
 uploads/logos/*
 !uploads/logos/.gitkeep

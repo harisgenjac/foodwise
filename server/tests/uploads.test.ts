@@ -2,13 +2,14 @@ import fs from "fs";
 import path from "path";
 import request from "supertest";
 import app from "../src/app.js";
+import { UPLOADS_DIR } from "../src/services/storage.js";
 import { type Agent, cleanupUsers, registerAndLogin } from "./helpers.js";
 
 const EMAILS = ["store-a@test.com"];
 // A minimal PNG signature is enough: the server checks the declared type, not the pixels.
 const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
-const logoPath = (logoUrl: string) => path.join("uploads", "logos", path.basename(logoUrl));
+const logoPath = (logoUrl: string) => path.join(UPLOADS_DIR, "logos", path.basename(logoUrl));
 
 let store: Agent;
 let uploaded: string[] = [];

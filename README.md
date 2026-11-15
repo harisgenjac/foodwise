@@ -69,6 +69,7 @@ Create `server/.env.test` with the same variables, pointing `DATABASE_URL` at `f
 | `CLIENT_ORIGIN` | no | Frontend origin(s) allowed by CORS and the origin check (comma-separated list allowed), default `http://localhost:5173` |
 | `TRUST_PROXY` | no | Number of proxies in front of the server, so rate limits see the client's IP; off by default, `1` on Render |
 | `APP_TIMEZONE` | no | Business time zone for expiry dates and the scheduled jobs, default `Europe/Sarajevo` |
+| `UPLOADS_DIR` | no | Folder for uploaded logos and product images, default `uploads` (the tests and the e2e server set their own) |
 | `EMAIL_PROVIDER` | no | `log` (default: emails are only written to the console), `smtp` (Mailpit locally) or `resend` |
 | `EMAIL_FROM` | for `resend` | Sender, e.g. `FoodWise <no-reply@example.com>`; default `FoodWise <no-reply@foodwise.local>` |
 | `EMAIL_REDIRECT_TO` | for `resend` outside production | Sends every email to this address instead, with `[to: real@address]` in front of the subject |

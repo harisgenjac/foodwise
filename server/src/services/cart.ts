@@ -32,6 +32,7 @@ interface CartRow {
   store_name: string | null;
   name: string;
   category: string;
+  image_url: string | null;
   unit: string;
   status: string;
   expiry_date: string;
@@ -50,6 +51,7 @@ export interface CartLine {
   product_id: number;
   name: string;
   category: string;
+  image_url: string | null;
   unit: string;
   expiry_date: string;
   original_price: string;
@@ -91,6 +93,7 @@ const toLine = (row: CartRow): CartLine => {
     product_id: row.product_id,
     name: row.name,
     category: row.category,
+    image_url: row.image_url,
     unit: row.unit,
     expiry_date: row.expiry_date,
     original_price: row.original_price,
@@ -111,7 +114,7 @@ const toLine = (row: CartRow): CartLine => {
 
 const CART_LINES = `
   SELECT cart_items.product_id, products.store_id, stores.business_name AS store_name,
-         products.name, products.category, products.unit, products.status, products.expiry_date,
+         products.name, products.category, products.image_url, products.unit, products.status, products.expiry_date,
          products.original_price, products.discounted_price,
          cart_items.quantity, cart_items.unit_price_seen, cart_items.added_at,
          ${sellableProduct("products", "stores")} AS sellable,

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, Ban, Trash2 } from "lucide-react";
-import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
+import ProductImage from "../product/ProductImage.js";
 import { formatAmount, formatMoney } from "../../utils/orders.js";
 import type { CartLine } from "../../types/index.js";
 
@@ -48,8 +48,8 @@ function CartLineRow({ line, blockedSending, busy, onSetQuantity, onRemove }: Ca
         blockedSending ? "border-red-200" : "border-gray-100"
       }`}
     >
-      <img
-        src={CATEGORY_IMAGES[line.category] || CATEGORY_IMAGES.Other}
+      <ProductImage
+        imageUrl={line.image_url}
         alt=""
         className={`h-16 w-16 shrink-0 rounded-xl object-cover ${flags.unavailable ? "opacity-50 grayscale" : ""}`}
       />

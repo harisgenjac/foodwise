@@ -10,7 +10,7 @@ import FormField, { inputStyle } from "../form/FormField.js";
 import RequiredHint from "../form/RequiredHint.js";
 import { useFormValidation } from "../../hooks/useFormValidation.js";
 import { isBlank, REQUIRED } from "../../utils/validation.js";
-import { CATEGORY_IMAGES } from "../../utils/categoryImages.js";
+import ProductImage from "../product/ProductImage.js";
 import { donationDiscountPercent } from "../../utils/donations.js";
 import type { DonationType, Product } from "../../types/index.js";
 
@@ -91,8 +91,8 @@ function DonateProductModal({ product, onClose, onDonated }: DonateProductModalP
       <form ref={formRef} noValidate onSubmit={handleDonate} className={modalFormStyle}>
         <ModalBody>
           <div className="mb-5 flex items-center gap-3 rounded-xl bg-gray-50 p-3">
-            <img
-              src={CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES.Other}
+            <ProductImage
+              imageUrl={product.image_url}
               alt={product.name}
               className="h-14 w-14 shrink-0 rounded-lg object-cover"
             />

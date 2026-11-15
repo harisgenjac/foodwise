@@ -44,6 +44,7 @@ e2e/
     ├── nearby-offers.spec.ts          Breza (7 km) and Tuzla (73 km) products → default 10 km shows Breza + "more further away" hint → "Svi gradovi" shows Tuzla → city Tuzla shows it at 5 km
     ├── shop-shortage.spec.ts          10 kg, an order of 6 kg (API), the store records 8 kg sold in its shop → the confirmation splits 4 kg now and 4 kg in pending orders → the step links the order → the decision starts on 2 kg, accepting everything shows the toast, 2 kg are accepted → the restaurant sees 2 kg with "Nema dovoljno na stanju"; without partial fulfilment the note and the toast say the order must be rejected
     ├── sold-in-shop.spec.ts           store records 4 of 10 kg as sold in its shop through the confirmation (amount, before and after, cannot be undone) → the entry list → the restaurant sees 6 kg
+    ├── product-image.spec.ts          store adds a product with an uploaded image (preview, then the card) → Edit product: a suggested image from the gallery (Select disabled until a click) replaces it → a product created without an image shows the generic image. Runs in the `chromium` and `webkit-iphone` projects
     ├── csv-import.spec.ts             store imports a 3-row CSV → My products, −3 credits → a CSV with an invalid row shows the row error, imports nothing, credits unchanged
     ├── block-store.spec.ts            admin blocks blockStore with a reason → its session ends, login shows the reason → offer hidden → unblock → offer back
     ├── donations.spec.ts              store moves a product's free quantity to donations → shown on "Doniraj hranu", gone from the marketplace → removed and returned to the offer
@@ -72,6 +73,7 @@ MAILPIT_URL=http://localhost:8025
 
 - `CLIENT_ORIGIN` must be the preview server's origin. The origin check refuses writes from any other origin.
 - The frontend and the API both run on `localhost`, so the `sameSite: "strict"` cookie is sent. Don't mix in `127.0.0.1`.
+- The backend web server gets `UPLOADS_DIR=uploads-e2e` from `playwright.config.ts` (not from `.env.e2e`), so its uploaded images stay in `server/uploads-e2e/` and its daily cleanup never touches the dev server's files.
 - `DISABLE_RATE_LIMITS=true` turns the server's rate limiters off, as Vitest does with `NODE_ENV=test`. The server logs a warning when it is set. Never set it on a deployment.
 - The email lines make the e2e server send every email to Mailpit (SMTP on 1025), and `MAILPIT_URL` is where the tests read them (`support/mailpit.ts`). Mailpit must be running: `docker compose up -d mailpit` from the root, or the `mailpit` binary (see the README). Without the email lines the server falls back to the `log` transport and `order-email.spec.ts` is skipped; the other tests do not need Mailpit. CI runs Mailpit as a service container (`axllent/mailpit:v1.32.0`). Other specs that send orders also send emails to Mailpit; the email test finds its own by the recipient and the unique product name in the message.
 
@@ -99,7 +101,7 @@ MAILPIT_URL=http://localhost:8025
    - All emails end in `@foodwise.test`. Every seeded account uses the password `E2e-pass-123` (`support/accounts.ts`).
    - Every store (the branch too; not the restaurant, which pays no credits, nor the HQ) gets an approved Standard plan (50 credits) for the current credit month: an `APPROVED` request, the subscription and the `PLAN_GRANT`, with auto-renew off. The cities, plans and packages come from the migrations, and every date is relative to today.
 3. **`setup` project** (`tests/auth.setup.ts`): logs each seeded role in through `POST /api/auth/login` and saves its cookie to `e2e/.auth/<role>.json`. Tests start from these sessions with `test.use({ storageState: storageState("store") })`, or `browser.newContext({ storageState })` when a test needs two roles. The login form is used only where logging in is part of the flow: `loginViaForm` in `first-login.spec.ts` and `store-chain.spec.ts`, and `submitLoginForm` for the refused logins in `block-store.spec.ts` and `branch-deactivation.spec.ts`.
-4. **`chromium` project:** the specs, one worker. **`webkit-iphone` project:** `mobile-layout.spec.ts` again in WebKit with `devices["iPhone 13"]` (Safari's engine, user agent, touch and mobile viewport), so iOS layout fixes are checked without an iPhone. The spec runs at 375 px; `MOBILE_WIDTH=390 npx playwright test tests/mobile-layout.spec.ts` runs the same checks at 390 px (CI uses 375). It is still an emulation: the real iOS toolbar and keyboard are not reproduced.
+4. **`chromium` project:** the specs, one worker. **`webkit-iphone` project:** `mobile-layout.spec.ts` and `product-image.spec.ts` again in WebKit with `devices["iPhone 13"]` (Safari's engine, user agent, touch and mobile viewport), so iOS layout fixes are checked without an iPhone. The spec runs at 375 px; `MOBILE_WIDTH=390 npx playwright test tests/mobile-layout.spec.ts` runs the same checks at 390 px (CI uses 375). It is still an emulation: the real iOS toolbar and keyboard are not reproduced.
 
 Config:
 - Retries: 1 on CI, 0 locally.
@@ -172,7 +174,7 @@ Ports 3100 and 4173 must be free, but the normal dev servers can keep running.
 
 The `E2E` job in `.github/workflows/ci.yml` runs when `server/`, `client/` or `e2e/` changed (or the workflow or root package files):
 - It runs a `postgres:15` service with `food_saver_e2e_db` and writes `.env.e2e` with test-only values.
-- It runs `npm ci` in all three packages and caches the Chromium download (`~/.cache/ms-playwright`, keyed by the Playwright version). It installs Chromium with `--with-deps` on a cache miss, and only the system dependencies on a hit.
+- It runs `npm ci` in all three packages and caches the Chromium and WebKit downloads (`~/.cache/ms-playwright`, keyed by the Playwright version). It installs both with `--with-deps` on a cache miss, and only the system dependencies on a hit.
 - It runs `npm run typecheck` and `npm run e2e` in `e2e/`.
 
 On failure, it uploads the `e2e-report` artifact (`playwright-report/` and `test-results/`, kept 14 days). To inspect it:

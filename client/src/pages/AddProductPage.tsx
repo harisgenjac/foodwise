@@ -64,6 +64,7 @@ function AddProductPage() {
       discounted_price: template.discounted_price ?? "",
       quantity: template.quantity ?? "",
       expiry_date: template.shelf_life_days !== null ? dateInDays(template.shelf_life_days) : "",
+      image_url: template.image_url ?? "",
     });
     setAppliedTemplateId(template.id);
     reset();
@@ -94,6 +95,7 @@ function AddProductPage() {
         discounted_price: form.discounted_price,
         quantity: form.quantity,
         shelf_life_days: Math.max(0, daysFromToday(form.expiry_date)),
+        image_url: form.image_url || null,
       });
       const saved: ProductTemplate = response.data.template;
       setTemplates((current) => [saved, ...current.filter((item) => item.id !== saved.id)]);
@@ -110,7 +112,7 @@ function AddProductPage() {
     setSaving(true);
     setCreditError(null);
     try {
-      await api.post("/products", form);
+      await api.post("/products", { ...form, image_url: form.image_url || null });
       toast.success(t("product.addedSuccess"));
       if (saveAsTemplate) {
         await saveTemplate();

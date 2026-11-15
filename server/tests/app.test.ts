@@ -1,6 +1,8 @@
 import fs from "fs";
+import path from "path";
 import request from "supertest";
 import app from "../src/app.js";
+import { UPLOADS_DIR } from "../src/services/storage.js";
 
 describe("App", () => {
   it("returns 401 for a protected route without a token", async () => {
@@ -32,13 +34,13 @@ describe("App", () => {
 
   it("serves uploaded files under /uploads", async () => {
     const name = `test-static-${Date.now()}.txt`;
-    fs.writeFileSync(`uploads/logos/${name}`, "logo");
+    fs.writeFileSync(path.join(UPLOADS_DIR, "logos", name), "logo");
     try {
       const response = await request(app).get(`/uploads/logos/${name}`);
       expect(response.status).toBe(200);
       expect(response.text).toBe("logo");
     } finally {
-      fs.unlinkSync(`uploads/logos/${name}`);
+      fs.unlinkSync(path.join(UPLOADS_DIR, "logos", name));
     }
   });
 });

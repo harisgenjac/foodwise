@@ -1,7 +1,7 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import { BRANCH_COUNT, parseCompanyDescription } from "./adminCompanies.controller.js";
-import { removeLogoFile } from "./users.controller.js";
+import { removeStoredFile, saveImage } from "../services/storage.js";
 
 // The company of the signed-in headquarters user (COMPANY role). The name is changed only by an
 // admin; the headquarters edits the description and the logo.
@@ -64,7 +64,6 @@ export const uploadCompanyLogo = async (req: Request, res: Response) => {
     if (!req.file) {
       return res.status(400).json({ error: "No image was uploaded." });
     }
-    const logoUrl = `/uploads/logos/${req.file.filename}`;
     const previous = await pool.query(
       `SELECT companies.id, companies.logo_url
        FROM companies JOIN users ON users.company_id = companies.id
@@ -73,14 +72,15 @@ export const uploadCompanyLogo = async (req: Request, res: Response) => {
     );
     const company = previous.rows[0];
     if (!company) {
-      await removeLogoFile(logoUrl);
       return res.status(404).json({ error: "Company not found." });
     }
+    // A headquarters uploads its company's logo, so its files are named apart from users' logos.
+    const logoUrl = await saveImage("logos", req.file, `company-${req.user!.id}-`);
     const result = await pool.query(
       "UPDATE companies SET logo_url = $1 WHERE companies.id = $2 RETURNING companies.logo_url",
       [logoUrl, company.id],
     );
-    await removeLogoFile(company.logo_url);
+    await removeStoredFile(company.logo_url);
     return res.status(200).json({ message: "Image uploaded successfully.", logo_url: result.rows[0].logo_url });
   } catch (error) {
     console.error("Error while uploading image:", error);

@@ -20,6 +20,7 @@ function ProductPreview({ values }: ProductPreviewProps) {
     name: values.name || t("product.previewName"),
     description: values.description || t("product.previewDescription"),
     category: values.category || "Other",
+    image_url: values.image_url || null,
     original_price: values.original_price || "0",
     discounted_price: values.discounted_price || "0",
     quantity: values.quantity || "0",

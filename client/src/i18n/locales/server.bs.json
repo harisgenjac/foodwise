@@ -353,5 +353,7 @@
   "Your company is blocked.": "Vaša firma je blokirana.",
   "Your company manages your plan.": "Vašim paketom upravlja centrala.",
   "Your password was changed. You can log in now.": "Lozinka je promijenjena. Sada se možete prijaviti.",
-  "Your password was set. Welcome to FoodWise.": "Lozinka je postavljena. Dobrodošli na FoodWise."
+  "Your password was set. Welcome to FoodWise.": "Lozinka je postavljena. Dobrodošli na FoodWise.",
+  "Image is not valid.": "Slika nije ispravna.",
+  "Only JPEG, PNG and WEBP images are allowed.": "Dozvoljene su samo JPEG, PNG i WEBP slike."
 }

@@ -33,7 +33,7 @@ import AddToCartModal from "../components/cart/AddToCartModal.js";
 import DonateProductModal from "../components/donation/DonateProductModal.js";
 import SoldInShopModal from "../components/product/SoldInShopModal.js";
 import ShopSalesCard from "../components/product/ShopSalesCard.js";
-import { CATEGORY_IMAGES } from "../utils/categoryImages.js";
+import ProductImage from "../components/product/ProductImage.js";
 import { PRODUCT_STATUS_STYLES } from "../utils/productStatus.js";
 import { getDaysUntilExpiry } from "../utils/expiry.js";
 import ChainLabel from "../components/store/ChainLabel.js";
@@ -173,8 +173,8 @@ function ProductDetailsPage() {
 
       <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm md:flex">
         <div className="relative h-56 shrink-0 md:h-auto md:w-2/5">
-          <img
-            src={CATEGORY_IMAGES[product.category] || CATEGORY_IMAGES.Other}
+          <ProductImage
+            imageUrl={product.image_url}
             alt={product.name}
             className="h-full w-full object-cover"
           />
