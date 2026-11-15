@@ -53,6 +53,39 @@ Design, decisions and PR split: `docs/orders-design.md` (agreed Nov 6, 2026). De
 - [x] Adapt existing features: Pickups, details, notifications, reports, admin reservations and cancelling, blocking and moderation. (Nov 10, 2026: pickups, order details, notifications and emails, blocking, moderation and expiry work on orders; Nov 11, 2026, orders PR 4: the admin's orders, the headquarters' branch orders, statistics and reports.)
 - [x] E2E tests for the cart and orders. (Nov 15, 2026: besides the specs each orders PR added, editing the cart and a late pickup date, a restaurant withdrawing an order and the store's code search, a missed pickup cancelled by the store, and the pending-order limit.)
 
+### Before Phase 2: order and store UI
+
+Agreed Nov 15, 2026. One-store orders made the category image and the flat product list stale, and the store page becomes the main place to order. These changes keep the existing look and components; layouts are designed for phones first and also work on desktop. Split into four PRs (product image, order image, store page, Search).
+
+**Product image** (the category no longer decides the image)
+- [ ] A product has its own image; the category never sets or changes it. A product without an image shows one generic product image.
+- [ ] Add product and Edit product: "Upload image" (JPG, PNG or WEBP, at most 5 MB, checked on the server too) or "Suggested images" (a dialog with the current category photos as one plain gallery; click to select, then "Select image"). No camera option for now.
+- [ ] Uploads are stored like logos (local `uploads/`), behind one storage module that is easy to swap for cloud storage at the deploy. Replacing or removing an image deletes the old file (unless a template or another product still uses it).
+- [ ] The image stays editable after publishing (unlike quantity and expiry).
+- [ ] Templates remember the image. CSV import gives products the generic image for now.
+- [ ] Existing products and templates get their category's suggested image once (migration); the seed gives demo products suggested images. Donations keep their current images.
+
+**Order image** (an order can have many products)
+- [ ] Every place that shows an order uses the other party's logo: a restaurant sees the store's logo, a store sees the restaurant's logo (order cards, order history rows, Pickups, order details, the dashboards' recent orders; notifications show icons, not images).
+- [ ] With no logo, or if it fails to load, one generic order illustration (the same for every order, no initials).
+- [ ] The order card shows small thumbnails of the first 2–3 products next to the title.
+
+**Store page** (the most important page now)
+- [ ] Structured opening and pickup hours: per weekday closed or one from–to interval, edited on My profile; the old free text stays as a hint until the store saves structured hours, then the text columns are dropped.
+- [ ] Header: a cover image uploaded on My profile (same rules as the product upload, a plain fallback without one), logo, name, address, pickup hours and "Open now / Closed".
+- [ ] Short stats: active offers, expiring today, biggest discount (they replace the old four stats).
+- [ ] Tabs Products and Information (address, opening and pickup hours, description, contact); the "My orders" tab goes away (orders stay on My orders).
+- [ ] Products: search within the store, category chips, an "Expiring soon" section first, then products grouped by category. Each card has the image, discount, expiry, available quantity, price and a + button that turns into a quantity stepper.
+- [ ] Cart: on phones a cart bar at the bottom ("Korpa · 3 proizvoda · 45,00 KM") that opens `/cart`; on desktop the cart as a panel on the right with checkout and "Accept partial fulfilment". Favorites stay on the store page.
+
+**Search ("Pretraga")** (replaces "Browse products" for restaurants)
+- [ ] Results grouped by store: a header with the store's logo (or a generic store image), name, city and a link to the store page, and below it the matching products.
+- [ ] Filters: text, city, category, expiring (today, tomorrow, 3 days) and sorting; empty and no-results states.
+- [ ] Adding to the cart from the results with a + button that turns into a quantity stepper; a different store than the cart's asks "Empty the cart?" as today.
+- [ ] The navigation item (sidebar and bottom bar) and the route are renamed; the old route redirects.
+
+- [ ] Tests for every part (unit and e2e, including the phone viewport) and the docs updated.
+
 ### Phase 2: Delivery with a mock provider
 
 - [ ] Exact addresses with coordinates for stores and restaurants, and a delivery address.
@@ -253,7 +286,8 @@ Older ideas moved here from `product.md`. Agreed as possible directions, not pla
 
 - [ ] Public launch (deploy) with proper image storage.
 - [ ] Help, Terms of use and Privacy pages (the footer links are placeholders today).
-- [ ] Real product photos instead of category images.
+- [ ] Real product photos instead of category images (in progress: see "Before Phase 2: order and store UI").
+- [ ] Donation images: a donation gets its own image instead of the category photo.
 
 ### Emails
 
