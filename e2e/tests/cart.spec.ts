@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { ACCOUNTS, runId, storageState } from "../support/accounts.js";
 import { apiAs, cancelOrder, createProduct, recordShopSale, setProductPrice } from "../support/api.js";
-import { addToCart, checkout, emptyCart, sentOrderId, toast } from "../support/ui.js";
+import { addToCart, checkout, emptyCart, open, sentOrderId, settleOverlays, toast } from "../support/ui.js";
 
 // The restaurant's cart (docs/orders-design.md, sections 4 and 5): one store per cart, the flags of
 // lines whose offer changed, and what sending does with them with partial fulfilment on and off.
@@ -43,7 +43,7 @@ test.describe("cart", () => {
     await expect(restaurant.getByRole("link", { name: "Korpa, 1 proizvod" })).toBeVisible();
 
     const card = restaurant.getByTestId("product-card").filter({ hasText: theirs });
-    await restaurant.goto("/browse-products");
+    await open(restaurant, "/browse-products");
     await restaurant.getByPlaceholder("Pretraga po imenu").fill(theirs);
     await card.getByRole("button", { name: "Dodaj u korpu" }).click();
     const dialog = restaurant.getByRole("dialog", { name: "Dodaj u korpu" });
@@ -57,6 +57,8 @@ test.describe("cart", () => {
     await question.getByRole("button", { name: "Isprazni i dodaj" }).click();
     await expect(toast(restaurant, `${theirs}: dodano u korpu.`)).toBeVisible();
 
+    // A link clicked before the closed dialogs' Back lands would be undone by it.
+    await settleOverlays(restaurant);
     await restaurant.getByRole("link", { name: "Korpa, 1 proizvod" }).click();
     await expect(restaurant.getByRole("link", { name: ACCOUNTS.brezaStore.businessName })).toBeVisible();
     await expect(cartLine(restaurant, theirs)).toBeVisible();
@@ -79,7 +81,7 @@ test.describe("cart", () => {
 
     // The cheese gets more expensive before the cart is opened: the cart shows it.
     await setProductPrice(storeApi, cheeseProduct.id, 3.5);
-    await restaurant.goto("/cart");
+    await open(restaurant, "/cart");
     await expect(cartLine(restaurant, cheese).getByText("Cijena je porasla na 3.50 KM (bila je 3.00 KM).", { exact: false })).toBeVisible();
 
     // While the cart is open, the store sells in its shop: chicken down to 2 kg, the milk sold out.
@@ -110,7 +112,7 @@ test.describe("cart", () => {
     const breadProduct = await createProduct(storeApi, { name: bread, quantity: 5 });
 
     await addToCart(restaurant, bread, "5");
-    await restaurant.goto("/cart");
+    await open(restaurant, "/cart");
     await expect(cartLine(restaurant, bread)).toBeVisible();
     await recordShopSale(storeApi, breadProduct.id, 2);
     await storeApi.dispose();

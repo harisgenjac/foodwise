@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { ACCOUNTS, PASSWORD, runId, storageState } from "../support/accounts.js";
 import { apiAs, createProduct, myId } from "../support/api.js";
-import { expectNotInMarketplace, searchMarketplace, submitLoginForm, toast } from "../support/ui.js";
+import { expectNotInMarketplace, open, searchMarketplace, submitLoginForm, toast } from "../support/ui.js";
 
 // Only this test uses blockStore. Whatever happens, it ends unblocked, so a retry or the next
 // run starts from a working account (its saved session works again once it is unblocked).
@@ -31,12 +31,12 @@ test("a blocked store loses its session and its offers until the admin unblocks 
 
   await test.step("Prodavnica je prijavljena, restoran vidi ponudu", async () => {
     await expect(await searchMarketplace(restaurant, productName)).toHaveCount(1);
-    await store.goto("/my-products");
+    await open(store, "/my-products");
     await expect(store.getByRole("heading", { level: 1, name: "Moji Proizvodi" })).toBeVisible();
   });
 
   await test.step("Admin blokira prodavnicu s razlogom", async () => {
-    await admin.goto(`/admin/users/${blockStoreId}`);
+    await open(admin, `/admin/users/${blockStoreId}`);
     await admin.getByRole("button", { name: "Blokiraj nalog" }).click();
     const dialog = admin.getByRole("dialog", { name: "Blokirati nalog?" });
     await dialog.getByLabel("Razlog").fill(reason);
@@ -46,7 +46,7 @@ test("a blocked store loses its session and its offers until the admin unblocks 
   });
 
   await test.step("Sesija prodavnice je prekinuta, prijava pokazuje razlog", async () => {
-    await store.goto("/my-products");
+    await open(store, "/my-products");
     await expect(store).toHaveURL(/\/login$/);
     await submitLoginForm(store, ACCOUNTS.blockStore.email, PASSWORD);
     await expect(store.getByText(`Vaš nalog je blokiran. Razlog: ${reason}`)).toBeVisible();

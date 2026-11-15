@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { storageState, uniqueName } from "../support/accounts.js";
 import { apiAs, createProduct } from "../support/api.js";
-import { toast } from "../support/ui.js";
+import { open, toast } from "../support/ui.js";
 
 // "Prodano u radnji": the store records what it sold at its own till; after a confirmation that
 // shows the amount and the free quantity before and after, restaurants see only what is left.
@@ -17,7 +17,7 @@ test("a store records a sale in its shop and restaurants see less available", as
   const restaurant = await restaurantContext.newPage();
 
   await test.step("Prodavnica upisuje 4 kg prodana u radnji i potvrđuje", async () => {
-    await store.goto(`/products/${product.id}`);
+    await open(store, `/products/${product.id}`);
     await store.getByRole("button", { name: "Prodano u radnji" }).click();
     const dialog = store.getByRole("dialog");
     await dialog.getByLabel("Količina prodana u radnji").fill("4");
@@ -31,7 +31,7 @@ test("a store records a sale in its shop and restaurants see less available", as
   });
 
   await test.step("Restoran vidi samo 6 kg dostupno", async () => {
-    await restaurant.goto(`/products/${product.id}`);
+    await open(restaurant, `/products/${product.id}`);
     await expect(restaurant.getByText("6 kilogram (kg)").first()).toBeVisible();
     await expect(restaurant.getByText("Prodano u vašoj radnji")).toHaveCount(0);
   });

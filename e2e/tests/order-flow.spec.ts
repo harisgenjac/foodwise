@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ACCOUNTS, runId, storageState } from "../support/accounts.js";
-import { orderFromMarketplace, pickupCard, storeOrderCard, toast } from "../support/ui.js";
+import { open, orderFromMarketplace, pickupCard, reload, storeOrderCard, toast } from "../support/ui.js";
 
 test("a store publishes a product, a restaurant orders it and the store hands it over", async ({ browser }) => {
   const productName = `E2E Mlijeko ${runId()}`;
@@ -10,7 +10,7 @@ test("a store publishes a product, a restaurant orders it and the store hands it
   const restaurant = await restaurantContext.newPage();
 
   // The store publishes a product.
-  await store.goto("/add-product");
+  await open(store, "/add-product");
   await store.getByLabel("Naziv proizvoda").fill(productName);
   await store.getByRole("button", { name: "Mliječni proizvodi" }).click();
   await store.getByLabel("Originalna cijena").fill("4");
@@ -41,7 +41,7 @@ test("a store publishes a product, a restaurant orders it and the store hands it
     [store, ACCOUNTS.restaurant.businessName],
     [restaurant, ACCOUNTS.store.businessName],
   ] as const) {
-    await page.goto("/pickups");
+    await open(page, "/pickups");
     await page.getByRole("tab", { name: /Nadolazeće/ }).click();
     await expect(page.getByRole("heading", { level: 2, name: "Sutra" })).toBeVisible();
     await expect(pickupCard(page, productName).getByText(otherParty)).toBeVisible();
@@ -57,10 +57,10 @@ test("a store publishes a product, a restaurant orders it and the store hands it
   await expect(toast(store, "Narudžba je označena kao preuzeta.")).toBeVisible();
 
   // The restaurant sees it as picked up and gets the notification, which opens the order.
-  await restaurant.reload();
+  await reload(restaurant);
   await restaurant.getByRole("tab", { name: /Preuzeto/ }).click();
   await expect(pickupCard(restaurant, productName).getByText(/^Preuzeto /)).toBeVisible();
-  await restaurant.goto("/notifications");
+  await open(restaurant, "/notifications");
   await restaurant.getByText(`Preuzimanje narudžbe #${code} je potvrđeno.`).click();
   await expect(restaurant.getByRole("heading", { level: 1, name: `Narudžba #${code}` })).toBeVisible();
   await expect(restaurant.getByText("Preuzeto", { exact: true }).first()).toBeVisible();

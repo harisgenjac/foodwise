@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { runId, storageState } from "../support/accounts.js";
 import { acceptOrder, apiAs, createProduct, sendOrderOf } from "../support/api.js";
-import { searchMarketplace, toast } from "../support/ui.js";
+import { open, searchMarketplace, toast } from "../support/ui.js";
 
 // An admin settles a dispute: finds an accepted order by its code, reads it with both parties and
 // cancels the whole order with a reason. Both sides are told why and the quantities go back on offer.
@@ -30,7 +30,7 @@ test("the admin finds an order by code and cancels it with a reason", async ({ b
   const restaurant = await restaurantContext.newPage();
 
   await test.step("Admin traži narudžbu po kodu i otvara je", async () => {
-    await admin.goto("/admin/orders");
+    await open(admin, "/admin/orders");
     await admin.getByPlaceholder("Proizvod, prodavnica, restoran ili kod").fill(code.toLowerCase());
     const row = admin.getByRole("row").filter({ hasText: chicken });
     await expect(row.getByText("Potvrđeno", { exact: true })).toBeVisible();
@@ -53,7 +53,7 @@ test("the admin finds an order by code and cancels it with a reason", async ({ b
   });
 
   await test.step("Restoran dobija obavijest, a količina se vraća u ponudu", async () => {
-    await restaurant.goto("/notifications");
+    await open(restaurant, "/notifications");
     await expect(restaurant.getByText(`Narudžbu ${code} je otkazao administrator platforme.`)).toBeVisible();
     const card = await searchMarketplace(restaurant, chicken);
     await expect(card.getByText("4 kilogram (kg)")).toBeVisible();

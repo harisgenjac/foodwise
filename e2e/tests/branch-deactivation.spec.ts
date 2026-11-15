@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { ACCOUNTS, PASSWORD, storageState, uniqueName } from "../support/accounts.js";
 import { acceptOrder, apiAs, completeOrder, createProduct, myId, sendOrder } from "../support/api.js";
-import { expectNotInMarketplace, searchMarketplace, submitLoginForm, toast } from "../support/ui.js";
+import { expectNotInMarketplace, open, searchMarketplace, submitLoginForm, toast } from "../support/ui.js";
 
 // Only this test uses the seeded company's branch. Whatever happens, it ends active and without
 // the accepted pickup it created, so a retry or the next run can deactivate it again.
@@ -48,7 +48,7 @@ test("headquarters can deactivate a branch only after its accepted pickups, and 
   });
 
   await test.step("Centrala ne može deaktivirati poslovnicu s prihvaćenim preuzimanjem", async () => {
-    await hq.goto(`/company/branches/${branchId}`);
+    await open(hq, `/company/branches/${branchId}`);
     await expect(hq.getByRole("heading", { level: 1, name: ACCOUNTS.branch.businessName })).toBeVisible();
     await hq.getByRole("button", { name: "Deaktiviraj" }).click();
     await deactivateDialog.getByRole("button", { name: "Deaktiviraj" }).click();

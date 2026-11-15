@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { ACCOUNTS, storageState, uniqueName } from "../support/accounts.js";
 import { apiAs, createProduct, orderCode, sendOrder } from "../support/api.js";
 import { MAILPIT_URL, countEmails, waitForEmail } from "../support/mailpit.js";
-import { toast } from "../support/ui.js";
+import { open, reload, toast } from "../support/ui.js";
 
 // The store switches its email notifications off on My profile: a new order sends it no
 // email. Switched on again, the next one does. Uses brezaStore (only nearby-offers.spec.ts reads its
@@ -40,13 +40,13 @@ test("a store with email notifications off gets no email, and gets one again onc
   expect(MAILPIT_URL, "MAILPIT_URL must be set in CI").toBeTruthy();
 
   await test.step("Prodavnica isključuje email obavijesti na Moj profil", async () => {
-    await page.goto("/my-profile");
+    await open(page, "/my-profile");
     await expect(emailSwitch(page)).toHaveAttribute("aria-checked", "true");
     await emailSwitch(page).click();
     await expect(toast(page, "Email obavijesti su isključene.")).toBeVisible();
     await expect(emailSwitch(page)).toHaveAttribute("aria-checked", "false");
     // Saved: still off after a reload.
-    await page.reload();
+    await reload(page);
     await expect(emailSwitch(page)).toHaveAttribute("aria-checked", "false");
   });
 
@@ -75,7 +75,7 @@ test("a store with email notifications off gets no email, and gets one again onc
 
 test("the emails' footer link opens My profile at the switch, on a phone too", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 });
-  await page.goto("/my-profile#email-notifications");
+  await open(page, "/my-profile#email-notifications");
   const theSwitch = emailSwitch(page);
   await expect(theSwitch).toBeInViewport();
   const box = await theSwitch.boundingBox();

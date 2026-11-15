@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { PASSWORD, runId, storageState } from "../support/accounts.js";
-import { dialogWith, changeTemporaryPassword, fillProductForm, loginViaForm, toast } from "../support/ui.js";
+import { changeTemporaryPassword, dialogWith, fillProductForm, loginViaForm, open, toast } from "../support/ui.js";
 
 test("a chain's branch in Breza publishes a product that a restaurant in Visoko sees with the chain label", async ({
   browser,
@@ -24,7 +24,7 @@ test("a chain's branch in Breza publishes a product that a restaurant in Visoko 
   const gate = (page: Page) => page.getByRole("dialog", { name: "Dovršite podešavanje naloga" });
 
   await test.step("Admin kreira firmu s pristupom za centralu", async () => {
-    await admin.goto("/admin/companies/new");
+    await open(admin, "/admin/companies/new");
     await admin.getByLabel("Naziv firme").fill(company);
     await admin.getByLabel("Email centrale").fill(hq.email);
     await admin.getByRole("radio", { name: /Postavi privremenu lozinku/ }).click();
@@ -45,12 +45,12 @@ test("a chain's branch in Breza publishes a product that a restaurant in Visoko 
     await hqPage.getByLabel("Telefon").fill("061 333 444");
     await hqPage.getByRole("button", { name: "Sačuvaj" }).click();
     await expect(toast(hqPage, "Profil uspješno ažuriran.")).toBeVisible();
-    await hqPage.goto("/dashboard");
+    await open(hqPage, "/dashboard");
     await expect(gate(hqPage)).toBeHidden();
   });
 
   await test.step("Centrala otvara poslovnicu u Brezi i traži plan za nju", async () => {
-    await hqPage.goto("/company/branches/new");
+    await open(hqPage, "/company/branches/new");
     await hqPage.getByLabel("Naziv poslovnice").fill(branch);
     const city = hqPage.getByLabel("Grad");
     await expect(city.getByRole("option", { name: "Breza" })).toBeAttached();
@@ -74,7 +74,7 @@ test("a chain's branch in Breza publishes a product that a restaurant in Visoko 
   });
 
   await test.step("Admin odobrava plan poslovnice", async () => {
-    await admin.goto("/admin/credit-requests");
+    await open(admin, "/admin/credit-requests");
     const row = admin.getByRole("row").filter({ hasText: branch });
     await expect(row.getByText("Na čekanju")).toBeVisible();
     await row.getByRole("button", { name: "Odobri" }).click();
@@ -98,7 +98,7 @@ test("a chain's branch in Breza publishes a product that a restaurant in Visoko 
   });
 
   await test.step("Poslovnica objavljuje proizvod", async () => {
-    await branchPage.goto("/add-product");
+    await open(branchPage, "/add-product");
     await expect(gate(branchPage)).toBeHidden();
     await fillProductForm(branchPage, productName);
     await branchPage.getByRole("button", { name: "Dodaj proizvod" }).click();
@@ -106,7 +106,7 @@ test("a chain's branch in Breza publishes a product that a restaurant in Visoko 
   });
 
   await test.step("Restoran u Visokom vidi proizvod s oznakom lanca", async () => {
-    await restaurant.goto("/browse-products");
+    await open(restaurant, "/browse-products");
     await restaurant.getByPlaceholder("Pretraga po imenu").fill(productName);
     const card = restaurant
       .getByTestId("product-card")

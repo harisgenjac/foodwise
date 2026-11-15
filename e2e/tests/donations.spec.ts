@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { storageState, uniqueName } from "../support/accounts.js";
 import { apiAs, createProduct } from "../support/api.js";
 import { sarajevoDate, isoDate } from "../support/dates.js";
-import { dialogWith, expectNotInMarketplace, searchMarketplace, toast } from "../support/ui.js";
+import { dialogWith, expectNotInMarketplace, open, searchMarketplace, toast } from "../support/ui.js";
 
 test("a store donates a product's free quantity and returns it to the offer", async ({ browser }) => {
   const productName = uniqueName("E2E Donacija");
@@ -23,7 +23,7 @@ test("a store donates a product's free quantity and returns it to the offer", as
   });
 
   await test.step("Prodavnica prebacuje cijelu slobodnu količinu u donacije", async () => {
-    await store.goto("/my-products");
+    await open(store, "/my-products");
     await store.getByPlaceholder("Pretraga po imenu").fill(productName);
     const card = store.getByTestId("product-card").filter({ has: store.getByRole("heading", { name: productName }) });
     await card.getByRole("button", { name: "Prebaci u donaciju" }).click();
@@ -35,7 +35,7 @@ test("a store donates a product's free quantity and returns it to the offer", as
   });
 
   await test.step("Donacija je na stranici Doniraj hranu, ponuda nestaje", async () => {
-    await store.goto("/donate-food");
+    await open(store, "/donate-food");
     await expect(store.getByRole("heading", { level: 1, name: "Doniraj hranu" })).toBeVisible();
     await expect(donationCard).toHaveCount(1);
     for (const text of ["Iz ponude", "Besplatno", "Povrće", "5 kilogram (kg)", sarajevoDate(4)]) {

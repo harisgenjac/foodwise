@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { ACCOUNTS, storageState, uniqueName } from "../support/accounts.js";
 import { acceptOrder, apiAs, createProduct, sendOrder } from "../support/api.js";
 import { makePickupOverdue } from "../support/db.js";
-import { pickupCard, searchMarketplace, toast } from "../support/ui.js";
+import { open, pickupCard, searchMarketplace, toast } from "../support/ui.js";
 
 test("a store cancels a pickup the restaurant missed and the food is offered again", async ({ browser }) => {
   const productName = uniqueName("E2E Burek");
@@ -25,7 +25,7 @@ test("a store cancels a pickup the restaurant missed and the food is offered aga
   const restaurant = await restaurantContext.newPage();
 
   await test.step("Prodavnica vidi zakašnjelo preuzimanje i otkazuje ga", async () => {
-    await store.goto("/pickups");
+    await open(store, "/pickups");
     await expect(store.getByRole("heading", { name: /^Zakašnjelo/ })).toBeVisible();
     const card = pickupCard(store, productName);
     await expect(card.getByText("Kasni 2 dana")).toBeVisible();
@@ -39,7 +39,7 @@ test("a store cancels a pickup the restaurant missed and the food is offered aga
   });
 
   await test.step("Restoran dobija obavijest, a narudžba je otkazana", async () => {
-    await restaurant.goto("/notifications");
+    await open(restaurant, "/notifications");
     await restaurant.getByText(`Narudžba #${code} je otkazana jer nije preuzeta na vrijeme.`).click();
     await expect(restaurant.getByRole("heading", { level: 1, name: `Narudžba #${code}` })).toBeVisible();
     await expect(restaurant.getByText("Otkazano", { exact: true }).first()).toBeVisible();

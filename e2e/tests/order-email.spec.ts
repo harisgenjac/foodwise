@@ -3,7 +3,7 @@ import { ACCOUNTS, APP_URL, storageState, uniqueName } from "../support/accounts
 import { apiAs, createProduct } from "../support/api.js";
 import { sarajevoDate } from "../support/dates.js";
 import { MAILPIT_URL, waitForEmail } from "../support/mailpit.js";
-import { orderFromMarketplace } from "../support/ui.js";
+import { open, orderFromMarketplace } from "../support/ui.js";
 
 // Locally the test needs Mailpit (docs/e2e.md); CI always runs it.
 test.skip(
@@ -47,7 +47,7 @@ test("the store gets an email for a new order, and its link opens the order", as
 
     const storeContext = await browser.newContext({ storageState: storageState("store") });
     const store = await storeContext.newPage();
-    await store.goto(link!);
+    await open(store, link!);
     await expect(store.getByRole("heading", { level: 1, name: `Narudžba #${code}` })).toBeVisible();
     await expect(store.getByTestId("order-item").getByText(productName)).toBeVisible();
     await expect(store.getByRole("button", { name: "Odluči" })).toBeVisible();
