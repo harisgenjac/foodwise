@@ -5,7 +5,7 @@ import {
   createProduct,
   futurePickup,
   registerAndLogin,
-  reserve,
+  orderOne,
   userId,
   acceptItem,
   rejectItem,
@@ -71,9 +71,9 @@ describe("recording a sale in the shop", () => {
 
   it("takes the free quantity as a sale, never what accepted orders hold", async () => {
     const product = await createProduct(store, { quantity: 10 });
-    const accepted = await reserve(restaurant, product.id, 3);
+    const accepted = await orderOne(restaurant, product.id, 3);
     await acceptItem(store, accepted);
-    await reserve(restaurant, product.id, 4);
+    await orderOne(restaurant, product.id, 4);
     // 3 kg are promised to an accepted order; free 3 + 4 in a pending order can be sold.
     const tooMuch = await sellInShop(product.id, 7.5);
     expect(tooMuch.status).toBe(400);
@@ -96,12 +96,12 @@ describe("recording a sale in the shop", () => {
 
   it("frees the pending quantity again when the store rejects, and sells out when it accepts", async () => {
     const product = await createProduct(store, { quantity: 10 });
-    const rejected = await reserve(restaurant, product.id, 4);
+    const rejected = await orderOne(restaurant, product.id, 4);
     await sellInShop(product.id, 6);
     await rejectItem(store, rejected);
     expect(await available(product.id)).toBe(4);
 
-    const accepted = await reserve(restaurant, product.id, 4);
+    const accepted = await orderOne(restaurant, product.id, 4);
     expect((await acceptItem(store, accepted)).status).toBe(200);
     // 4 accepted + 6 sold in the shop cover the 10.
     expect(await productStatus(product.id)).toBe("Sold");
@@ -141,14 +141,14 @@ describe("recording a sale in the shop", () => {
   it("returning a fully moved donation counts the shop sales", async () => {
     const product = await createProduct(store, { quantity: 10 });
     await sellInShop(product.id, 7);
-    // The 3 kg still free go to donations: nothing is reserved, so the product leaves the offer.
+    // The 3 kg still free go to donations: nothing is ordered, so the product leaves the offer.
     const moved = await store.post(`/api/donations/from-product/${product.id}`).send({ donation_type: "FREE" });
     expect(moved.status).toBe(201);
     expect(await productStatus(product.id)).toBe("Removed");
 
     const returned = await store.post(`/api/donations/${moved.body.donation.id}/return-to-product`);
     expect(returned.status).toBe(200);
-    // Rebuilt as donation 3 + reservations 0 + sold in shop 7, so exactly the 3 kg are free again.
+    // Rebuilt as donation 3 + order items 0 + sold in shop 7, so exactly the 3 kg are free again.
     expect(parseFloat(returned.body.product.quantity)).toBe(10);
     expect(returned.body.product.status).toBe("Available");
     expect(await available(product.id)).toBe(3);

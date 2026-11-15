@@ -1,7 +1,7 @@
 import { expect, request, test } from "@playwright/test";
 import { API_URL, uniqueName } from "../support/accounts.js";
 import { apiAs, cancelOrder, createProduct, createStoreWithoutPlan, sendOrder } from "../support/api.js";
-import { addToCart, checkout, toast } from "../support/ui.js";
+import { addToCart, checkout, open, reload, toast } from "../support/ui.js";
 
 // At most 10 Pending orders per restaurant (docs/orders-design.md, section 6): the cart warns from
 // 8 on and the 11th is refused. A fresh restaurant, so the count starts at zero (the seeded one
@@ -25,13 +25,13 @@ test("the cart warns near the pending-order limit and refuses the order past it"
     await test.step("Osam narudžbi čeka odgovor: korpa upozorava", async () => {
       for (let i = 0; i < 8; i++) sent.push((await sendOrder(restaurantApi, filler.id, 1)).id);
       await addToCart(page, productName, "1");
-      await page.goto("/cart");
+      await open(page, "/cart");
       await expect(page.getByText("Imate 8 od najviše 10 narudžbi koje čekaju odgovor prodavnice.")).toBeVisible();
     });
 
     await test.step("Deset narudžbi čeka odgovor: jedanaesta se ne šalje", async () => {
       for (let i = 0; i < 2; i++) sent.push((await sendOrder(restaurantApi, filler.id, 1)).id);
-      await page.reload();
+      await reload(page);
       await expect(page.getByText("Imate 10 od najviše 10 narudžbi koje čekaju odgovor prodavnice.")).toBeVisible();
       await checkout(page);
       await expect(

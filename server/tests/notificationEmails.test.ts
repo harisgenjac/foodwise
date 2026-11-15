@@ -21,7 +21,7 @@ import {
   login,
   registerAndLogin,
   orderOf,
-  reserve,
+  orderOne,
   userId,
   type Agent,
   acceptItem,
@@ -99,7 +99,7 @@ it("every declared notification type has an email template", async () => {
 
 it("createNotification queues the email of every type, and each renders in both languages", async () => {
   const product = await createProduct(store, { name: "Jogurt", unit: "kom", quantity: 10 });
-  const orderId = await orderOf(await reserve(restaurant, product.id, 2));
+  const orderId = await orderOf(await orderOne(restaurant, product.id, 2));
   const donation = await createDonation(store, { name: "Hljeb" });
   const restaurantId = await userId(RESTAURANT);
   const branchId = await userId(BRANCH);
@@ -186,12 +186,12 @@ it("createNotification queues the email of every type, and each renders in both 
 
 it("the actions of both sides queue their emails with the right links", async () => {
   const product = await createProduct(store, { name: "Mlijeko", unit: "l", quantity: 10 });
-  const first = await reserve(restaurant, product.id, 2);
-  const second = await reserve(restaurant, product.id, 3);
+  const first = await orderOne(restaurant, product.id, 2);
+  const second = await orderOne(restaurant, product.id, 3);
   expect((await acceptItem(store, first)).status).toBe(200);
   expect((await rejectItem(store, second)).status).toBe(200);
   expect((await itemOrderAction(store, first, "complete")).status).toBe(200);
-  const third = await reserve(restaurant, product.id, 1);
+  const third = await orderOne(restaurant, product.id, 1);
   expect((await itemOrderAction(restaurant, third, "cancel")).status).toBe(200);
 
   expect((await emailsTo(STORE)).map((row) => row.template)).toEqual([
@@ -216,7 +216,7 @@ it("the actions of both sides queue their emails with the right links", async ()
 
 it("an admin's reason is in the email, as in the notification", async () => {
   const product = await createProduct(store, { name: "Sir" });
-  const reservationId = await reserve(restaurant, product.id, 1);
+  const orderItemId = await orderOne(restaurant, product.id, 1);
   await pool.query("DELETE FROM email_queue");
   const removed = await admin.delete(`/api/admin/products/${product.id}`).send({ reason: "Neispravan opis" });
   expect(removed.status).toBe(200);
@@ -228,9 +228,9 @@ it("an admin's reason is in the email, as in the notification", async () => {
   expect(bs.text).toContain("Razlog: Neispravan opis");
   expect(en.text).toContain("Reason: Neispravan opis");
   expect(bs.text).toContain(`Otvori proizvod: ${APP_URL}/products/${product.id}`);
-  // The restaurant's pending reservation was cancelled with it.
+  // The restaurant's pending order item was cancelled with it.
   expect((await emailsTo(RESTAURANT)).map((row) => row.template)).toEqual(["ORDER_CANCELLED_BY_ADMIN"]);
-  expect(reservationId).toBeGreaterThan(0);
+  expect(orderItemId).toBeGreaterThan(0);
 
   const donation = await createDonation(store, { name: "Kifle" });
   expect((await admin.delete(`/api/admin/donations/${donation.id}`).send({ reason: "Duplikat" })).status).toBe(200);
@@ -327,10 +327,10 @@ it("the headquarters' bulk notifications and the admins' email go through the qu
 
 it("the reminder and expiry jobs queue their emails", async () => {
   const tomorrow = await createProduct(store, { name: "Kajmak", expiry_date: futureDate(1) });
-  await reserve(restaurant, tomorrow.id, 1);
+  await orderOne(restaurant, tomorrow.id, 1);
   const today = await createProduct(store, { name: "Burek", expiry_date: futureDate(0) });
-  const reserved = await reserve(restaurant, today.id, 1, `${futureDate(0)}T12:00:00`);
-  expect((await acceptItem(store, reserved)).status).toBe(200);
+  const ordered = await orderOne(restaurant, today.id, 1, `${futureDate(0)}T12:00:00`);
+  expect((await acceptItem(store, ordered)).status).toBe(200);
   const expired = await pool.query<{ id: number }>(
     `INSERT INTO products (store_id, name, category, original_price, discounted_price, quantity, unit, expiry_date)
      VALUES ($1, 'Stari sir', 'Dairy', 2, 1, 5, 'kg', CURRENT_DATE - 1) RETURNING id`,
@@ -365,7 +365,7 @@ it("the reminder and expiry jobs queue their emails", async () => {
 
 it("blocked users and deleted accounts get no emails", async () => {
   const product = await createProduct(store, { name: "Med" });
-  await reserve(restaurant, product.id, 1);
+  await orderOne(restaurant, product.id, 1);
   expect(await emailsTo(STORE)).toHaveLength(1);
 
   // A blocked store: its notifications are still stored, but no email is queued.

@@ -8,7 +8,7 @@ import { callerCompanyId, fail } from "./companyBranches.controller.js";
 
 // The headquarters' overview: what waits for its decision, the company's totals and one row per
 // branch. It only reads what the credits page and the branch pages already show: credit figures
-// follow the credit month (listCompanyBranchCredits), reservations and food saved the business
+// follow the credit month (listCompanyBranchCredits), order items and food saved the business
 // month (getBranchesStats, like the store dashboard). Deactivated and blocked branches stay in the
 // rows and totals with their status, but only active branches need a plan or credits.
 

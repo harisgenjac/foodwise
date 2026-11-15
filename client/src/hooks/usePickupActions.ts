@@ -38,7 +38,7 @@ export function usePickupActions(onDone: () => void) {
     } catch (err) {
       console.error(err);
       const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
-      toast.error(message || t("reservations.actionError"));
+      toast.error(message || t("orders.actionError"));
     } finally {
       setBusy(false);
     }

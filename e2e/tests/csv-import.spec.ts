@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { runId, storageState } from "../support/accounts.js";
 import { sarajevoDate } from "../support/dates.js";
-import { availableCredits, expectAvailableCredits, toast } from "../support/ui.js";
+import { availableCredits, expectAvailableCredits, open, toast } from "../support/ui.js";
 
 test.use({ storageState: storageState("store") });
 
@@ -16,7 +16,7 @@ const csvFile = (rows: [string, string, string][]) => {
 };
 
 const myProducts = async (page: Page, prefix: string) => {
-  await page.goto("/my-products");
+  await open(page, "/my-products");
   await page.getByPlaceholder("Pretraga po imenu").fill(prefix);
   return page.getByTestId("product-card").filter({ hasText: prefix });
 };
@@ -27,7 +27,7 @@ test("a store imports products from a CSV, and a CSV with an invalid row imports
   await test.step("Ispravan CSV: 3 proizvoda, 3 kredita", async () => {
     const prefix = `E2E Uvoz ${id}`;
     const before = await availableCredits(page);
-    await page.goto("/import-products");
+    await open(page, "/import-products");
     await page.getByLabel("Odaberite CSV fajl").setInputFiles(
       csvFile([
         [`${prefix} Mlijeko`, "Dairy", "l"],
@@ -53,7 +53,7 @@ test("a store imports products from a CSV, and a CSV with an invalid row imports
   await test.step("CSV s neispravnim redom: greške po redovima, ništa se ne uvozi", async () => {
     const prefix = `E2E Neispravan ${id}`;
     const before = await availableCredits(page);
-    await page.goto("/import-products");
+    await open(page, "/import-products");
     // Row 1 is the header, so the second product is row 3.
     await page.getByLabel("Odaberite CSV fajl").setInputFiles(
       csvFile([
@@ -69,7 +69,7 @@ test("a store imports products from a CSV, and a CSV with an invalid row imports
     await expect(errorRow.getByRole("cell").first()).toHaveText("3");
     await expect(page.getByRole("dialog")).toBeHidden();
 
-    await page.goto("/my-products");
+    await open(page, "/my-products");
     await page.getByPlaceholder("Pretraga po imenu").fill(prefix);
     await expect(page.getByText("Nema rezultata", { exact: true })).toBeVisible();
     await expectAvailableCredits(page, before);

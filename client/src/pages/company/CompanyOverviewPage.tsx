@@ -18,7 +18,7 @@ import { formatSavedFood } from "../../utils/savedFood.js";
 import type { CompanyDashboard, CompanyDashboardBranch } from "../../types/index.js";
 
 // The headquarters' start page ("Pregled"): what waits for its decision, this month's totals of
-// the company and a row per branch. Credits follow the credit month, reservations and food saved
+// the company and a row per branch. Credits follow the credit month, orders and food saved
 // the business month, like the Credits page and the store dashboard.
 function CompanyOverviewPage() {
   const { t } = useTranslation();
@@ -47,7 +47,7 @@ function CompanyOverviewPage() {
   const newBranch = { to: "/company/branches/new", label: t("company.branches.newBranch"), icon: Store };
   const savedUnits = formatSavedFood(totals.saved, t("dashboard.piecesShort"));
   // Phone cards: the branch and its city, the status pill, the plan, the credit usage, the active
-  // offers and the pending reservations.
+  // offers and the pending orders.
   const columns: DataColumn<CompanyDashboardBranch>[] = [
     {
       id: "branch",

@@ -3,28 +3,28 @@ import { createNotification } from "../utils/notifications.js";
 import { visibleStore } from "../utils/visibility.js";
 
 // A product's stock, in one place. Quantity leaves the offer in two ways:
-// - held by order items (the `reservations` table until the orders cleanup renames it): Pending,
+// - held by order items (the `order_items` table): Pending,
 //   Confirmed and Completed ones, each with its current quantity (the accepted one once the store
 //   decided; picked-up food is gone; Rejected and Cancelled ones give their quantity back);
 // - sold in the store's own shop (Sold in shop, product_shop_sales), which only ever lowers it.
 // available = quantity − held − sold in shop. A product is sold out (status Sold) once Confirmed
-// and Completed reservations plus shop sales cover its quantity; Pending ones do not count there,
+// and Completed order items plus shop sales cover its quantity; Pending ones do not count there,
 // because the store has not agreed to them yet.
 
 type Db = Pool | PoolClient;
 
 // SQL expressions for a product row aliased `alias` (each a number, COALESCEd to 0).
-export const heldByReservations = (alias: string) => `COALESCE(
-  (SELECT SUM(reservations.quantity) FROM reservations
-   WHERE reservations.product_id = ${alias}.id
-     AND reservations.status IN ('Pending', 'Confirmed', 'Completed')), 0)`;
+export const heldByOrderItems = (alias: string) => `COALESCE(
+  (SELECT SUM(order_items.quantity) FROM order_items
+   WHERE order_items.product_id = ${alias}.id
+     AND order_items.status IN ('Pending', 'Confirmed', 'Completed')), 0)`;
 
 export const soldInShop = (alias: string) => `COALESCE(
   (SELECT SUM(product_shop_sales.quantity) FROM product_shop_sales
    WHERE product_shop_sales.product_id = ${alias}.id), 0)`;
 
 export const availableQuantity = (alias: string) =>
-  `(${alias}.quantity - ${heldByReservations(alias)} - ${soldInShop(alias)})`;
+  `(${alias}.quantity - ${heldByOrderItems(alias)} - ${soldInShop(alias)})`;
 
 // Whether restaurants can order the product row `alias` of the store row `storeAlias` at all
 // (before its free quantity): Available, not past its expiry date, and the store visible (not
@@ -40,7 +40,7 @@ export const onOffer = (alias: string, storeAlias: string) =>
   `(${sellableProduct(alias, storeAlias)} AND ${availableQuantity(alias)} > 0)`;
 
 // The free quantity of one product, as a number. The caller holds the product's row lock when it
-// writes based on it (reserving, a shop sale), so nothing can take the same quantity meanwhile.
+// writes based on it (ordering, a shop sale), so nothing can take the same quantity meanwhile.
 export const freeQuantity = async (db: Db, productId: number): Promise<number> => {
   const result = await db.query<{ available: string }>(
     `SELECT ${availableQuantity("products")} AS available FROM products WHERE products.id = $1`,
@@ -49,12 +49,12 @@ export const freeQuantity = async (db: Db, productId: number): Promise<number> =
   return parseFloat(result.rows[0]?.available ?? "0");
 };
 
-// What keeps a product sold out: Confirmed and Completed reservations plus shop sales.
+// What keeps a product sold out: Confirmed and Completed order items plus shop sales.
 export const soldOutCover = async (db: Db, productId: number): Promise<number> => {
   const result = await db.query<{ covered: string }>(
     `SELECT COALESCE(
-       (SELECT SUM(reservations.quantity) FROM reservations
-        WHERE reservations.product_id = products.id AND reservations.status IN ('Confirmed', 'Completed')), 0)
+       (SELECT SUM(order_items.quantity) FROM order_items
+        WHERE order_items.product_id = products.id AND order_items.status IN ('Confirmed', 'Completed')), 0)
        + ${soldInShop("products")} AS covered
      FROM products WHERE products.id = $1`,
     [productId],
@@ -101,8 +101,8 @@ export const releaseSoldProduct = async (client: PoolClient, productId: number) 
 
 // What Pending items hold of the product row `alias` (a number, COALESCEd to 0).
 export const pendingHeld = (alias: string) => `COALESCE(
-  (SELECT SUM(reservations.quantity) FROM reservations
-   WHERE reservations.product_id = ${alias}.id AND reservations.status = 'Pending'), 0)`;
+  (SELECT SUM(order_items.quantity) FROM order_items
+   WHERE order_items.product_id = ${alias}.id AND order_items.status = 'Pending'), 0)`;
 
 // The shop's shortage (products.shop_shortage) is food the till sold that Pending items still
 // hold. Whenever Pending quantity is freed, this turns as much of it as is now free into a shop
@@ -137,10 +137,10 @@ export const absorbShopShortage = async (
   return taken;
 };
 
-// What Pending, Confirmed and Completed reservations hold of one product, as a number.
-export const reservedQuantity = async (db: Db, productId: number): Promise<number> => {
+// What Pending, Confirmed and Completed order items hold of one product, as a number.
+export const heldQuantity = async (db: Db, productId: number): Promise<number> => {
   const result = await db.query<{ held: string }>(
-    `SELECT ${heldByReservations("products")} AS held FROM products WHERE products.id = $1`,
+    `SELECT ${heldByOrderItems("products")} AS held FROM products WHERE products.id = $1`,
     [productId],
   );
   return parseFloat(result.rows[0]?.held ?? "0");

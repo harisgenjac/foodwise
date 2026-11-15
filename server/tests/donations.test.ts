@@ -7,7 +7,7 @@ import {
   donationPayload,
   futureDate,
   registerAndLogin,
-  reserve,
+  orderOne,
   type Agent,
   acceptItem,
 } from "./helpers.js";
@@ -225,9 +225,9 @@ describe("Donations routes", () => {
       expect(parseFloat(offer.body.product.available_quantity)).toBe(6);
     });
 
-    it("donates only the unreserved quantity and keeps pending reservations", async () => {
+    it("donates only the unordered quantity and keeps pending order items", async () => {
       const product = await createProduct(storeA, { quantity: 10 });
-      const reservationId = await reserve(restaurant, product.id, 3);
+      const orderItemId = await orderOne(restaurant, product.id, 3);
 
       const response = await storeA
         .post(`/api/donations/from-product/${product.id}`)
@@ -237,14 +237,14 @@ describe("Donations routes", () => {
 
       const row = await pool.query("SELECT status, quantity FROM products WHERE id = $1", [product.id]);
       expect(row.rows[0]).toMatchObject({ status: "Available", quantity: "3" });
-      const reservation = await pool.query("SELECT status FROM reservations WHERE id = $1", [reservationId]);
-      expect(reservation.rows[0].status).toBe("Pending");
+      const item = await pool.query("SELECT status FROM order_items WHERE id = $1", [orderItemId]);
+      expect(item.rows[0].status).toBe("Pending");
     });
 
-    it("sells the product out when confirmed reservations cover the rest", async () => {
+    it("sells the product out when confirmed order items cover the rest", async () => {
       const product = await createProduct(storeA, { quantity: 10 });
-      const reservationId = await reserve(restaurant, product.id, 4);
-      await acceptItem(storeA, reservationId);
+      const orderItemId = await orderOne(restaurant, product.id, 4);
+      await acceptItem(storeA, orderItemId);
 
       const response = await storeA
         .post(`/api/donations/from-product/${product.id}`)
@@ -394,8 +394,8 @@ describe("Donations routes", () => {
 
     it("makes a sold-out product available again", async () => {
       const product = await createProduct(storeA, { quantity: 10 });
-      const reservationId = await reserve(restaurant, product.id, 4);
-      await acceptItem(storeA, reservationId);
+      const orderItemId = await orderOne(restaurant, product.id, 4);
+      await acceptItem(storeA, orderItemId);
       const donationId = await moveToDonations(product.id);
       expect((await productRow(product.id)).status).toBe("Sold");
 

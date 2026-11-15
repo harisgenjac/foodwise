@@ -179,9 +179,9 @@ export const decideOrder = async (
 
   for (const decision of decisions) {
     await client.query(
-      `UPDATE reservations
+      `UPDATE order_items
        SET status = $2, quantity = $3, decided_at = NOW(), change_reason = $4, change_note = $5
-       WHERE reservations.id = $1`,
+       WHERE order_items.id = $1`,
       [
         decision.item.id,
         decision.action === "REJECT" ? "Rejected" : "Confirmed",

@@ -77,10 +77,10 @@ describe("POST /api/orders", () => {
     expect(order.items).toHaveLength(2);
 
     const items = await pool.query(
-      `SELECT reservations.product_id, reservations.quantity, reservations.ordered_quantity, reservations.unit_price,
-              reservations.status, products.store_id
-       FROM reservations JOIN products ON products.id = reservations.product_id
-       WHERE reservations.order_id = $1 ORDER BY reservations.product_id`,
+      `SELECT order_items.product_id, order_items.quantity, order_items.ordered_quantity, order_items.unit_price,
+              order_items.status, products.store_id
+       FROM order_items JOIN products ON products.id = order_items.product_id
+       WHERE order_items.order_id = $1 ORDER BY order_items.product_id`,
       [order.id],
     );
     expect(items.rows.map((row) => [row.product_id, Number(row.quantity), Number(row.ordered_quantity), row.unit_price, row.status])).toEqual([
@@ -426,7 +426,7 @@ describe("actions on a whole order", () => {
       message: "Order marked as picked up.",
       order: { status: "Completed" },
     });
-    const item = await pool.query("SELECT status, picked_up_at FROM reservations WHERE id = $1", [picked.itemId]);
+    const item = await pool.query("SELECT status, picked_up_at FROM order_items WHERE id = $1", [picked.itemId]);
     expect(item.rows[0].status).toBe("Completed");
     expect(item.rows[0].picked_up_at).not.toBeNull();
     const notConfirmed = await store.post(`/api/orders/${picked.orderId}/complete`);

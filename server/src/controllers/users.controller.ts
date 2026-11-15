@@ -378,9 +378,9 @@ export const getStoreDetails = async (req: Request, res: Response) => {
       `SELECT
      COUNT(DISTINCT id) FILTER (
        WHERE status = 'Sold'
-         AND EXISTS (SELECT 1 FROM reservations
-                     WHERE reservations.product_id = products.id
-                       AND reservations.status IN ('Confirmed', 'Completed'))
+         AND EXISTS (SELECT 1 FROM order_items
+                     WHERE order_items.product_id = products.id
+                       AND order_items.status IN ('Confirmed', 'Completed'))
      ) AS sold_articles,
      (SELECT COUNT(*) FROM orders WHERE orders.store_id = $1 AND orders.status = 'Completed') AS successful_orders
    FROM products WHERE store_id = $1`,

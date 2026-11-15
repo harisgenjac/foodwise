@@ -10,7 +10,7 @@ import {
 } from "../utils/validateDonation.js";
 import { parseId, parseNumber } from "../utils/params.js";
 import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
-import { freeQuantity, heldByReservations, markSoldIfFullyConfirmed, reservedQuantity, soldInShop } from "../services/stock.js";
+import { freeQuantity, heldByOrderItems, markSoldIfFullyConfirmed, heldQuantity, soldInShop } from "../services/stock.js";
 import { HttpError } from "../utils/httpError.js";
 import { chargeForProduct, hasOpenProductCharge, refundForProduct } from "../services/creditService.js";
 
@@ -237,8 +237,8 @@ export const deleteDonation = async (req: Request, res: Response) => {
   }
 };
 
-// Moves the unreserved part of a marketplace product into a donation offer. Reserved
-// quantity (Pending, Confirmed, Completed) stays with the product and its reservations.
+// Moves the unordered part of a marketplace product into a donation offer. Ordered
+// quantity (Pending, Confirmed, Completed) stays with the product and its order items.
 export const donateProduct = async (req: Request, res: Response) => {
   const productId = parseId(req.params.productId);
   if (productId === null) {
@@ -257,7 +257,7 @@ export const donateProduct = async (req: Request, res: Response) => {
     client = await pool.connect();
     await client.query("BEGIN");
 
-    // The lock keeps reservations from being created or accepted while the quantity moves.
+    // The lock keeps order items from being created or accepted while the quantity moves.
     const products = await client.query(
       "SELECT *, expiry_date < CURRENT_DATE AS is_expired FROM products WHERE id = $1 FOR UPDATE",
       [productId],
@@ -284,9 +284,9 @@ export const donateProduct = async (req: Request, res: Response) => {
       return res.status(400).json({ error: priceError });
     }
 
-    // The free quantity: reservations and shop sales keep theirs.
+    // The free quantity: order items and shop sales keep theirs.
     const available = await freeQuantity(client, productId);
-    const totalReserved = await reservedQuantity(client, productId);
+    const totalHeld = await heldQuantity(client, productId);
     const donatedQuantity = requestedQuantity ?? available;
     if (available <= 0 || donatedQuantity > available) {
       await client.query("ROLLBACK");
@@ -338,7 +338,7 @@ export const donateProduct = async (req: Request, res: Response) => {
         );
 
     let creditRefunded = false;
-    if (totalReserved === 0 && donatedQuantity === available) {
+    if (totalHeld === 0 && donatedQuantity === available) {
       // Everything went to donations: the product leaves the marketplace. Like a delete, that
       // gives the credit back on the day it was charged (donations never cost credits). A partial
       // move keeps the product on offer, so its credit stays spent.
@@ -402,7 +402,7 @@ export const returnDonationToProduct = async (req: Request, res: Response) => {
       return res.status(403).json({ error: "You are not allowed to edit this donation." });
     }
 
-    // Lock the product so reservations can't change its stock while the quantity comes back.
+    // Lock the product so order items can't change its stock while the quantity comes back.
     const products = donation.source_product_id
       ? await client.query(
           "SELECT id, status, category, expiry_date < CURRENT_DATE AS is_expired FROM products WHERE id = $1 FOR UPDATE",
@@ -424,14 +424,14 @@ export const returnDonationToProduct = async (req: Request, res: Response) => {
     }
 
     // A Removed product kept its old quantity when everything was moved, so it is rebuilt from
-    // what reservations still hold and what the store sold in its shop, plus the donation (so the
+    // what order items still hold and what the store sold in its shop, plus the donation (so the
     // donation is exactly what becomes free again); otherwise the donated amount is simply added back.
     const updated =
       product.status === "Removed"
         ? await client.query(
             `UPDATE products
              SET status = 'Available',
-                 quantity = $1::decimal + ${heldByReservations("products")} + ${soldInShop("products")}
+                 quantity = $1::decimal + ${heldByOrderItems("products")} + ${soldInShop("products")}
              WHERE id = $2 RETURNING *`,
             [donation.quantity, product.id],
           )

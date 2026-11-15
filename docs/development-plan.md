@@ -38,6 +38,8 @@ A restaurant orders from a cart with one store and chooses delivery (Korpa) or p
 
 ### Phase 1: Orders and cart (pickup only)
 
+**Done** (Nov 15, 2026): every task below is ticked, and the cleanup renamed `reservations` to `order_items` and removed the reservation-era leftovers (`orders-design.md`, section 11, PR 6).
+
 Design, decisions and PR split: `docs/orders-design.md` (agreed Nov 6, 2026). Decided there: a random 4-character order code (`#K7PM`) instead of a sequence, a server-side cart, at most 10 pending orders per restaurant, a fulfilment method on the order (only pickup now), partial fulfilment over items and quantities with reasons (also at sending), "Sold in shop" for stock sold at the store's own till, and no single-item cancels or partial pickups.
 
 - [x] `orders` table above reservations (`order_id` on the reservation), with a fulfilment method (pickup only for now), and status history (who, when, source) (Nov 10, 2026: the order model and `/api/orders` on the server; the screens come in the next PR).

@@ -16,7 +16,7 @@ export interface SeedBusiness {
   description?: string;
   // Pickup window in hours (local time), used for pickup dates.
   pickup: [number, number];
-  // Chance per day that the business acts (a store publishes a product, a restaurant reserves).
+  // Chance per day that the business acts (a store publishes a product, a restaurant orders).
   activity: number;
 }
 
@@ -287,7 +287,7 @@ export const ANNOUNCEMENTS = [
     title_bs: "Dobrodošli na Još vrijedi",
     body_bs: "Hvala što ste s nama od prvog dana. Objavite višak hrane, a restorani će ga rezervisati u nekoliko klikova.",
     title_en: "Welcome to FoodWise",
-    body_en: "Thank you for joining from day one. Publish your surplus food and restaurants will reserve it in a few clicks.",
+    body_en: "Thank you for joining from day one. Publish your surplus food and restaurants will order it in a few clicks.",
   },
   {
     audience: "ALL" as const,

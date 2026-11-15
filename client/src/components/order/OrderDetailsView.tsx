@@ -57,7 +57,7 @@ const sectionTitle = (Icon: typeof Store, title: string) => (
 // parties and the history (the order page of both parties and the admin's order page).
 function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
   const { t } = useTranslation();
-  const statuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
+  const statuses = t("orderStatus", { returnObjects: true }) as Record<string, string>;
   const isAdmin = viewer === "ADMIN";
   const code = formatOrderCode(order.code);
   const totalChanged = Math.round(Number(order.total) * 100) !== Math.round(Number(order.ordered_total) * 100);
@@ -80,11 +80,11 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
     const link = isAdmin
       ? { to: `/admin/users/${party.id}`, label: t("orders.viewUser") }
       : isStoreParty
-        ? { to: `/stores/${order.store_id}`, label: t("reservations.viewStore") }
+        ? { to: `/stores/${order.store_id}`, label: t("orders.viewStore") }
         : null;
     return (
       <section key={kind} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        {sectionTitle(isStoreParty ? Store : UtensilsCrossed, isStoreParty ? t("reservations.seller") : t("reservations.buyer"))}
+        {sectionTitle(isStoreParty ? Store : UtensilsCrossed, isStoreParty ? t("orders.seller") : t("orders.buyer"))}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">
             <p className="text-lg font-bold text-gray-900">{party.business_name || "-"}</p>
@@ -103,7 +103,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
             {isStoreParty && party.pickup_hours && (
               <p className="flex items-center gap-2 text-sm text-gray-600">
                 <Clock className="h-4 w-4 shrink-0 text-gray-400" />
-                {t("reservations.pickupHours")}: {party.pickup_hours}
+                {t("orders.pickupHours")}: {party.pickup_hours}
               </p>
             )}
           </div>

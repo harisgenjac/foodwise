@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { runId, storageState } from "../support/accounts.js";
 import { apiAs, createProduct, sendOrderOf } from "../support/api.js";
-import { searchMarketplace, toast } from "../support/ui.js";
+import { open, searchMarketplace, toast } from "../support/ui.js";
 
 // A restaurant orders two products with partial fulfilment accepted; the store accepts less of one
 // (not enough in stock, the difference sold in its shop) and rejects the other (quality).
@@ -29,7 +29,7 @@ test("the store accepts part of an order with reasons, and the restaurant sees t
   const restaurant = await restaurantContext.newPage();
 
   await test.step("Prodavnica prihvata 4 kg piletine i odbija mlijeko", async () => {
-    await store.goto(`/orders/${order.id}`);
+    await open(store, `/orders/${order.id}`);
     await store.getByRole("button", { name: "Odluči" }).click();
     const dialog = store.getByRole("dialog", { name: `Odluka o narudžbi ${code}` });
     const chickenLine = dialog.getByTestId("decision-line").filter({ hasText: chicken });
@@ -52,7 +52,7 @@ test("the store accepts part of an order with reasons, and the restaurant sees t
   });
 
   await test.step("Restoran vidi djelimično prihvaćenu narudžbu s razlozima i novim iznosom", async () => {
-    await restaurant.goto("/my-orders");
+    await open(restaurant, "/my-orders");
     const card = restaurant.getByTestId("order-card").filter({ hasText: `Narudžba ${code}` });
     await expect(card.getByText("1/2 prihvaćeno")).toBeVisible();
     await card.getByRole("link", { name: "Detalji" }).click();
@@ -68,7 +68,7 @@ test("the store accepts part of an order with reasons, and the restaurant sees t
     await expect(milkRow.getByText("Kvalitet")).toBeVisible();
     await expect(restaurant.getByText("20.00 KM")).toHaveClass(/line-through/);
 
-    await restaurant.goto("/notifications");
+    await open(restaurant, "/notifications");
     await expect(restaurant.getByText(`Vaša narudžba ${code} je djelimično prihvaćena.`)).toBeVisible();
   });
 

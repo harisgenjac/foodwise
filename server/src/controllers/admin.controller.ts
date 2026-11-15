@@ -43,7 +43,6 @@ export const ADMIN_ACTIONS = [
   "UNBLOCK_USER",
   "REMOVE_PRODUCT",
   "REMOVE_DONATION",
-  "CANCEL_RESERVATION",
   "CANCEL_ORDER",
   "UPDATE_PROFILE",
   "CREATE_ANNOUNCEMENT",
@@ -85,7 +84,6 @@ interface AdminAction {
   targetUserId?: number | null;
   targetProductId?: number | null;
   targetDonationId?: number | null;
-  targetReservationId?: number | null;
   targetOrderId?: number | null;
   targetAnnouncementId?: number | null;
   targetCreditRequestId?: number | null;
@@ -102,7 +100,6 @@ export const logAdminAction = async (
     targetUserId = null,
     targetProductId = null,
     targetDonationId = null,
-    targetReservationId = null,
     targetOrderId = null,
     targetAnnouncementId = null,
     targetCreditRequestId = null,
@@ -112,16 +109,15 @@ export const logAdminAction = async (
 ) => {
   await db.query(
     `INSERT INTO admin_actions
-       (admin_id, action, target_user_id, target_product_id, target_donation_id, target_reservation_id,
+       (admin_id, action, target_user_id, target_product_id, target_donation_id,
         target_order_id, target_announcement_id, target_credit_request_id, target_company_id, reason)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
     [
       adminId,
       action,
       targetUserId,
       targetProductId,
       targetDonationId,
-      targetReservationId,
       targetOrderId,
       targetAnnouncementId,
       targetCreditRequestId,
@@ -319,17 +315,14 @@ export const getUserDetails = async (req: Request, res: Response) => {
     const countsRow = counts.rows[0];
     const actions = await pool.query(
       `SELECT admin_actions.id, admin_actions.action, admin_actions.reason, admin_actions.created_at,
-         admin_actions.target_product_id, admin_actions.target_donation_id, admin_actions.target_reservation_id,
-         admin_actions.target_order_id,
+         admin_actions.target_product_id, admin_actions.target_donation_id, admin_actions.target_order_id,
          admins.email AS admin_email, products.name AS product_name, donation_offers.name AS donation_name
        FROM admin_actions
        JOIN users AS admins ON admin_actions.admin_id = admins.id
        LEFT JOIN products ON admin_actions.target_product_id = products.id
        LEFT JOIN donation_offers ON admin_actions.target_donation_id = donation_offers.id
-       -- A cancelled order (or an old cancelled reservation) targets the restaurant; the store sees
-       -- it through the order (or the product).
+       -- A cancelled order targets the restaurant; the store sees it through the order.
        WHERE admin_actions.target_user_id = $1
-          OR (admin_actions.action = 'CANCEL_RESERVATION' AND products.store_id = $1)
           OR (admin_actions.action = 'CANCEL_ORDER'
               AND admin_actions.target_order_id IN (SELECT orders.id FROM orders WHERE orders.store_id = $1))
        ORDER BY admin_actions.created_at DESC, admin_actions.id DESC
@@ -892,7 +885,6 @@ export const getAdminActions = async (req: Request, res: Response) => {
        admin_actions.target_user_id, targets.email AS target_email, targets.business_name AS target_business_name,
        admin_actions.target_product_id, products.name AS product_name,
        admin_actions.target_donation_id, donation_offers.name AS donation_name,
-       admin_actions.target_reservation_id,
        admin_actions.target_announcement_id, announcements.title_bs AS announcement_title,
        admin_actions.target_credit_request_id,
        admin_actions.target_company_id, companies.name AS company_name`,

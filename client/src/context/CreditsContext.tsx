@@ -14,7 +14,7 @@ interface CreditsContextValue {
 const CreditsContext = createContext<CreditsContextValue | null>(null);
 
 // One shared copy of GET /credits/me for the banners, the form hints and the profile section.
-// It reloads on every page change (a product or reservation just spent a credit) and when the
+// It reloads on every page change (a product or order just spent a credit) and when the
 // window regains focus (an admin may have approved a request meanwhile).
 export function CreditsProvider({ enabled, children }: { enabled: boolean; children: React.ReactNode }) {
   const [credits, setCredits] = useState<CreditSummary | null>(null);

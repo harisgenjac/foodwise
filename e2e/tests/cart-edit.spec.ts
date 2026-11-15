@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { runId, storageState } from "../support/accounts.js";
 import { apiAs, createProduct } from "../support/api.js";
 import { isoDate, sarajevoDate } from "../support/dates.js";
-import { addToCart, emptyCart } from "../support/ui.js";
+import { addToCart, emptyCart, open, reload } from "../support/ui.js";
 
 // Editing the cart before sending (docs/orders-design.md, section 4): a line's quantity, removing a
 // line, emptying the cart, and a pickup date after the earliest expiry date. The seeded restaurant
@@ -41,7 +41,7 @@ test.describe("editing the cart", () => {
       await addToCart(restaurant, cheese, "2");
       await addToCart(restaurant, yogurt, "3");
       await expect(restaurant.getByRole("link", { name: "Korpa, 2 proizvoda" })).toBeVisible();
-      await restaurant.goto("/cart");
+      await open(restaurant, "/cart");
       await expect(restaurant.getByTestId("cart-line")).toHaveCount(2);
       await expect(total).toHaveText("7.00 KM");
     });
@@ -53,7 +53,7 @@ test.describe("editing the cart", () => {
       await expect(cartLine(restaurant, cheese).getByText("10.00 KM")).toBeVisible();
       await expect(total).toHaveText("13.00 KM");
       // Still 5 after a reload: the cart is kept on the server.
-      await restaurant.reload();
+      await reload(restaurant);
       await expect(cartLine(restaurant, cheese).getByLabel(`Količina: ${cheese}`)).toHaveValue("5");
     });
 

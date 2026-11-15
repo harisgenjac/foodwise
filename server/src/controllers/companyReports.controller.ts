@@ -97,9 +97,9 @@ export const getCompanyBranchesReport = companyReport({
       `SELECT GROUPING(users.id) AS is_total, users.business_name AS branch_name, ${BRANCH_STATUS} AS status,
          ${IMPACT_COLUMNS}
        FROM users
-       LEFT JOIN (reservations
-         JOIN products ON reservations.product_id = products.id
-         JOIN users AS parties ON reservations.restaurant_id = parties.id)
+       LEFT JOIN (order_items
+         JOIN products ON order_items.product_id = products.id
+         JOIN users AS parties ON order_items.restaurant_id = parties.id)
          ON products.store_id = users.id AND ${PICKED_UP_IN_PERIOD}
        WHERE users.id = ANY($1::int[])
        GROUP BY GROUPING SETS ((users.id, users.business_name, users.deactivated_at, users.is_blocked), ())

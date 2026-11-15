@@ -15,7 +15,6 @@ export const getNotifications = async (req: Request, res: Response) => {
         notifications.message,
         notifications.is_read,
         notifications.created_at,
-        notifications.reservation_id,
         notifications.product_id,
         notifications.donation_id,
         notifications.details,
@@ -24,7 +23,6 @@ export const getNotifications = async (req: Request, res: Response) => {
         announcements.title_en AS announcement_title_en,
         COALESCE(products.name, donation_offers.name) AS product_name,
         COALESCE(products.unit, donation_offers.unit) AS unit,
-        reservations.quantity,
         notifications.credit_request_id,
         credit_requests.request_type AS credit_request_type,
         credit_requests.credits AS credit_amount,
@@ -34,14 +32,13 @@ export const getNotifications = async (req: Request, res: Response) => {
         branches.business_name AS branch_name,
         notifications.order_id,
         orders.code AS order_code,
-        (SELECT COUNT(*) FROM reservations WHERE reservations.order_id = orders.id)::int AS order_item_count,
+        (SELECT COUNT(*) FROM order_items WHERE order_items.order_id = orders.id)::int AS order_item_count,
         order_stores.business_name AS order_store_name,
         order_restaurants.business_name AS order_restaurant_name
       FROM notifications
       LEFT JOIN products ON notifications.product_id = products.id
       LEFT JOIN donation_offers ON notifications.donation_id = donation_offers.id
       LEFT JOIN announcements ON notifications.announcement_id = announcements.id
-      LEFT JOIN reservations ON notifications.reservation_id = reservations.id
       LEFT JOIN credit_requests ON notifications.credit_request_id = credit_requests.id
       LEFT JOIN users AS requesters ON credit_requests.user_id = requesters.id
       LEFT JOIN companies AS requester_companies ON requesters.company_id = requester_companies.id

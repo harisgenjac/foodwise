@@ -414,7 +414,6 @@ export type AdminActionType =
   | "UNBLOCK_USER"
   | "REMOVE_PRODUCT"
   | "REMOVE_DONATION"
-  | "CANCEL_RESERVATION"
   | "CANCEL_ORDER"
   | "UPDATE_PROFILE"
   | "CREATE_ANNOUNCEMENT"
@@ -447,7 +446,6 @@ export interface AdminAction {
   product_name: string | null;
   target_donation_id: number | null;
   donation_name: string | null;
-  target_reservation_id?: number | null;
   target_announcement_id?: number | null;
   announcement_title?: string | null;
   target_company_id?: number | null;
@@ -731,12 +729,10 @@ export interface CreditTransaction {
     | "TOPUP_GRANT"
     | "ADMIN_ADJUSTMENT"
     | "PRODUCT_CHARGE"
-    | "PRODUCT_REFUND"
-    | "RESERVATION_CHARGE"
-    | "RESERVATION_REFUND";
+    | "PRODUCT_REFUND";
   reason: string | null;
   category: string | null;
-  related_entity_type: "product" | "reservation" | "credit_request" | null;
+  related_entity_type: "product" | "credit_request" | null;
   related_entity_id: number | null;
   refunds_transaction_id: number | null;
   actor: "USER" | "ADMIN" | "SYSTEM";

@@ -280,7 +280,7 @@ export const updateCompany = async (req: Request, res: Response) => {
 };
 
 // Blocking a company blocks every user of it at once (login, authenticate and the store
-// visibility read the company's flag) and cancels the Pending reservations of its stores on
+// visibility read the company's flag) and cancels the Pending order items of its stores on
 // both sides, like blocking each store would. users.is_blocked is not touched, so unblocking
 // the company leaves a store an admin blocked on its own still blocked.
 export const blockCompany = async (req: Request, res: Response) => {

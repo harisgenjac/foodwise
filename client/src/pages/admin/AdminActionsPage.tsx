@@ -22,7 +22,6 @@ const ACTION_STYLES: Record<AdminAction["action"], string> = {
   UNBLOCK_USER: "bg-green-50 text-green-700",
   REMOVE_PRODUCT: "bg-red-50 text-red-600",
   REMOVE_DONATION: "bg-red-50 text-red-600",
-  CANCEL_RESERVATION: "bg-amber-50 text-amber-700",
   CANCEL_ORDER: "bg-amber-50 text-amber-700",
   UPDATE_PROFILE: "bg-blue-50 text-blue-700",
   CREATE_ANNOUNCEMENT: "bg-blue-50 text-blue-700",
@@ -76,10 +75,7 @@ function AdminActionsPage() {
         <>
           {row.announcement_title && <p className="font-medium text-gray-900">{row.announcement_title}</p>}
           {(row.product_name || row.donation_name) && (
-            <p className="font-medium text-gray-900">
-              {row.product_name || row.donation_name}
-              {row.target_reservation_id && <span className="font-normal text-gray-500"> · #{row.target_reservation_id}</span>}
-            </p>
+            <p className="font-medium text-gray-900">{row.product_name || row.donation_name}</p>
           )}
           {row.target_company_id && (
             <Link to={`/admin/companies/${row.target_company_id}`} className="font-medium text-gray-900 hover:text-orange-600">

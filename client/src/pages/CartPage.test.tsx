@@ -29,8 +29,8 @@ const notSentError = (lines: unknown[]) =>
   });
 
 const fillPickup = async (date = "05/01/2030", time = "10:00") => {
-  await userEvent.type(screen.getByLabelText(t("myReservations.pickupDate")), date);
-  await userEvent.type(screen.getByLabelText(t("myReservations.pickupTime")), time);
+  await userEvent.type(screen.getByLabelText(t("orderForm.pickupDate")), date);
+  await userEvent.type(screen.getByLabelText(t("orderForm.pickupTime")), time);
 };
 
 const lines = () => screen.getAllByTestId("cart-line");
@@ -47,7 +47,7 @@ describe("CartPage", () => {
     expect(screen.getByRole("link", { name: t("cart.empty.action") })).toHaveAttribute("href", "/browse-products");
   });
 
-  it("shows the store, the lines and that nothing is reserved", async () => {
+  it("shows the store, the lines and that nothing is held", async () => {
     cart = makeCart([makeCartLine({ product_id: 1, name: "Piletina" }), makeCartLine({ product_id: 2, name: "Hljeb", quantity: "3", discounted_price: "1.20", unit_price_seen: "1.20" })]);
     renderPage();
     expect(await screen.findByRole("link", { name: "Prodavnica Merkator" })).toHaveAttribute("href", "/stores/2");
@@ -121,7 +121,7 @@ describe("CartPage", () => {
     expect(await screen.findByText(t("cart.checkout.pickupUntil", { date: formatDisplayDate("2030-01-04") }))).toBeInTheDocument();
     await fillPickup("05/01/2030");
     await userEvent.click(screen.getByRole("button", { name: t("orders.send.submit") }));
-    expect(await screen.findByText(t("myReservations.pickupDateOutOfRange"))).toBeInTheDocument();
+    expect(await screen.findByText(t("orderForm.pickupDateOutOfRange"))).toBeInTheDocument();
     expect(apiMock.post).not.toHaveBeenCalled();
   });
 

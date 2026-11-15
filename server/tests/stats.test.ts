@@ -7,8 +7,8 @@ const STORE = "stats-store@test.com";
 const RESTAURANT = "stats-restaurant@test.com";
 const ADMIN = "stats-admin@test.com";
 
-// Reservations are inserted directly so every status can be set.
-const insertReservation = async (productId: number, status: string, quantity: number) => {
+// Order items are inserted directly so every status can be set.
+const insertItem = async (productId: number, status: string, quantity: number) => {
   await insertOrderItem({ productId, restaurantId: await userId(RESTAURANT), quantity, status });
 };
 
@@ -49,21 +49,21 @@ describe("GET /api/stats/impact", () => {
     }
   });
 
-  it("counts kg and g over picked-up (Completed) reservations only, like the admin statistics", async () => {
+  it("counts kg and g over picked-up (Completed) order items only, like the admin statistics", async () => {
     const before = await impactKg(store);
 
     const kg = await createProduct(store, { unit: "kg", quantity: 100 });
     const g = await createProduct(store, { unit: "g", quantity: 5000 });
     const l = await createProduct(store, { unit: "l", quantity: 100 });
     const kom = await createProduct(store, { unit: "kom", quantity: 100 });
-    await insertReservation(kg.id, "Completed", 2);
-    await insertReservation(kg.id, "Confirmed", 0.5);
-    await insertReservation(g.id, "Completed", 1500);
-    await insertReservation(kg.id, "Pending", 10);
-    await insertReservation(kg.id, "Cancelled", 10);
-    await insertReservation(kg.id, "Rejected", 10);
-    await insertReservation(l.id, "Completed", 7);
-    await insertReservation(kom.id, "Completed", 7);
+    await insertItem(kg.id, "Completed", 2);
+    await insertItem(kg.id, "Confirmed", 0.5);
+    await insertItem(g.id, "Completed", 1500);
+    await insertItem(kg.id, "Pending", 10);
+    await insertItem(kg.id, "Cancelled", 10);
+    await insertItem(kg.id, "Rejected", 10);
+    await insertItem(l.id, "Completed", 7);
+    await insertItem(kom.id, "Completed", 7);
 
     const after = await impactKg(restaurant);
     expect(after - before).toBeCloseTo(3.5, 5);

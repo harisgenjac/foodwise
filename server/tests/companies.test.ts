@@ -13,7 +13,7 @@ import {
   insertUser,
   login,
   registerAndLogin,
-  reserve,
+  orderOne,
   userId,
   orderOf,
   acceptItem,
@@ -39,8 +39,8 @@ let admin: Agent;
 let restaurant: Agent;
 let companyId: number;
 
-const reservationStatus = async (id: number) =>
-  (await pool.query("SELECT status FROM reservations WHERE id = $1", [id])).rows[0].status;
+const itemStatus = async (id: number) =>
+  (await pool.query("SELECT status FROM order_items WHERE id = $1", [id])).rows[0].status;
 
 const notificationsOf = async (email: string) =>
   (
@@ -295,15 +295,15 @@ describe("Companies", () => {
       await insertUser(BRANCH, "STORE", "Companies Branch", 1000, companyId);
       const branch = await login(BRANCH);
       const product = await createProduct(branch, { quantity: 10 });
-      const pending = await reserve(restaurant, product.id, 2);
-      const confirmed = await reserve(restaurant, product.id, 3);
+      const pending = await orderOne(restaurant, product.id, 2);
+      const confirmed = await orderOne(restaurant, product.id, 3);
       await acceptItem(branch, confirmed);
       await restaurant.post("/api/favorites").send({ store_id: product.store_id });
 
       const response = await admin.post(`/api/admin/companies/${companyId}/block`).send({ reason: "Kršenje" });
       expect(response.body.cancelledOrders).toBe(1);
-      expect(await reservationStatus(pending)).toBe("Cancelled");
-      expect(await reservationStatus(confirmed)).toBe("Confirmed");
+      expect(await itemStatus(pending)).toBe("Cancelled");
+      expect(await itemStatus(confirmed)).toBe("Confirmed");
       // The restaurant is told without the reason.
       expect(await notificationsOf(RESTAURANT)).toContainEqual(
         expect.objectContaining({ type: "ORDER_CANCELLED_BY_ADMIN", order_id: await orderOf(pending), details: null }),

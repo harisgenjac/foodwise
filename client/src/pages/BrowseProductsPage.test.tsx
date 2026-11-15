@@ -196,7 +196,7 @@ describe("BrowseProductsPage", () => {
     expect(within(dialog).getByRole("heading", { name: t("cart.addTitle") })).toBeInTheDocument();
     expect(within(dialog).getByText("Piletina")).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: t("myReservations.cancelButton") }));
+    await userEvent.click(screen.getByRole("button", { name: t("orderForm.cancelButton") }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 

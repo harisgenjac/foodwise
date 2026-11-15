@@ -21,9 +21,9 @@ import OrderHistoryRow from "../components/order/OrderHistoryRow.js";
 import ProductPageHeader, { CountPill } from "../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../components/product/FilterBar.js";
 import SortSelect, {
-  MY_RESERVATIONS_SORT_OPTIONS,
+  MY_ORDERS_SORT_OPTIONS,
   ResultsBar,
-  type MyReservationsSort,
+  type MyOrdersSort,
 } from "../components/product/SortSelect.js";
 import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
@@ -43,9 +43,9 @@ const STATUSES: Status[] = ["Pending", "Confirmed", "Completed", "Rejected", "Ca
 // The statuses an order on the Active tab can have.
 const ACTIVE_STATUSES: Status[] = ["Pending", "Confirmed"];
 const PERIODS = [
-  { value: "today", label: "reservations.period.today" },
-  { value: "7d", label: "reservations.period.last7Days" },
-  { value: "month", label: "reservations.period.thisMonth" },
+  { value: "today", label: "orders.period.today" },
+  { value: "7d", label: "orders.period.last7Days" },
+  { value: "month", label: "orders.period.thisMonth" },
 ];
 
 // The tab counts: every order (History) and every active one (Active), without filters.
@@ -64,7 +64,7 @@ function MyOrdersPage() {
   const [period, setPeriod] = useState("");
   const [status, setStatus] = useState("");
   // Only on Active; History is always newest first.
-  const [sort, setSort] = useState<MyReservationsSort>("newest");
+  const [sort, setSort] = useState<MyOrdersSort>("newest");
   const [summary, setSummary] = useState<OrderSummary | null>(null);
   const { t } = useTranslation();
 
@@ -129,8 +129,8 @@ function MyOrdersPage() {
   const totalCount = total ?? orders.length;
 
   const tabs: { key: Tab; label: string; icon: typeof CalendarClock; count?: number }[] = [
-    { key: "active", label: t("reservations.tabs.active"), icon: CalendarClock, ...(summary && { count: summary.active }) },
-    { key: "history", label: t("reservations.tabs.history"), icon: History, ...(summary && { count: summary.total }) },
+    { key: "active", label: t("orders.tabs.active"), icon: CalendarClock, ...(summary && { count: summary.active }) },
+    { key: "history", label: t("orders.tabs.history"), icon: History, ...(summary && { count: summary.total }) },
   ];
 
   const noResults = (
@@ -166,7 +166,7 @@ function MyOrdersPage() {
           title={t("orders.activeEmptyTitle")}
           subtitle={t("orders.activeEmptySubtitle")}
           action={{ to: "/browse-products", label: t("dashboard.browseOffers") }}
-          secondaryAction={{ label: t("reservations.showHistory"), onClick: () => switchTab("history") }}
+          secondaryAction={{ label: t("orders.showHistory"), onClick: () => switchTab("history") }}
         />
       );
     }
@@ -189,7 +189,7 @@ function MyOrdersPage() {
           <OrderCard
             key={order.id}
             order={order}
-            partyLabel={t("reservations.seller")}
+            partyLabel={t("orders.seller")}
             showCreatedAt
             linkStore
             actions={
@@ -210,7 +210,7 @@ function MyOrdersPage() {
                     className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                   >
                     <X className="h-4 w-4" />
-                    {t("reservations.cancelShortButton")}
+                    {t("orders.cancelShortButton")}
                   </button>
                 </>
               ) : undefined
@@ -289,12 +289,12 @@ function MyOrdersPage() {
         {isHistory && (
           <FilterField icon={CalendarRange}>
             <select
-              aria-label={t("reservations.period.all")}
+              aria-label={t("orders.period.all")}
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
               className={inputStyle}
             >
-              <option value="">{t("reservations.period.all")}</option>
+              <option value="">{t("orders.period.all")}</option>
               {PERIODS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {t(option.label)}
@@ -313,7 +313,7 @@ function MyOrdersPage() {
             <option value="">{t("orders.selectStatus")}</option>
             {(isHistory ? STATUSES : ACTIVE_STATUSES).map((value) => (
               <option key={value} value={value}>
-                {t(`reservationStatus.${value}`)}
+                {t(`orderStatus.${value}`)}
               </option>
             ))}
           </select>
@@ -325,7 +325,7 @@ function MyOrdersPage() {
           <CountPill>{countText}</CountPill>
         ) : (
           <ResultsBar count={countText}>
-            <SortSelect value={sort} onChange={setSort} options={MY_RESERVATIONS_SORT_OPTIONS} />
+            <SortSelect value={sort} onChange={setSort} options={MY_ORDERS_SORT_OPTIONS} />
           </ResultsBar>
         ))}
 

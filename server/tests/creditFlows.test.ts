@@ -11,7 +11,7 @@ import {
   login,
   productPayload,
   registerAndLogin,
-  reserve,
+  orderOne,
   userId,
   insertOrderItem,
   orderOf,
@@ -142,7 +142,7 @@ describe("store: 1 credit per published product", () => {
     expect(await ledger("PRODUCT_REFUND", product.id)).toHaveLength(0);
   });
 
-  it("keeps the credit when a deleted product had a picked-up reservation", async () => {
+  it("keeps the credit when a deleted product had a picked-up order item", async () => {
     const product = await createProduct(store);
     await insertOrderItem({ productId: product.id, restaurantId, quantity: 2, status: "Completed", pickupAt: "NOW()" });
     const response = await store.delete(`/api/products/${product.id}`);
@@ -250,21 +250,20 @@ describe("restaurant: orders cost no credits", () => {
   });
 
   it("orders without a subscription or credits, and nothing is charged", async () => {
-    await reserve(restaurant, productId, 2);
+    await orderOne(restaurant, productId, 2);
     expect(await restaurantLedger()).toEqual([]);
   });
 
   it("writes nothing to the ledger when an order is cancelled, rejected, missed or expires", async () => {
-    const cancelled = await reserve(restaurant, productId, 1);
+    const cancelled = await orderOne(restaurant, productId, 1);
     expect((await itemOrderAction(restaurant, cancelled, "cancel")).status).toBe(200);
-    const rejected = await reserve(restaurant, productId, 1);
+    const rejected = await orderOne(restaurant, productId, 1);
     expect((await rejectItem(store, rejected)).status).toBe(200);
-    const missed = await reserve(restaurant, productId, 1);
+    const missed = await orderOne(restaurant, productId, 1);
     await acceptItem(store, missed);
     await pool.query("UPDATE orders SET pickup_at = NOW() - INTERVAL '2 days' WHERE id = $1", [await orderOf(missed)]);
-    await pool.query("UPDATE reservations SET pickup_date = NOW() - INTERVAL '2 days' WHERE id = $1", [missed]);
     expect((await itemOrderAction(store, missed, "cancel-overdue")).status).toBe(200);
-    await reserve(restaurant, productId, 1);
+    await orderOne(restaurant, productId, 1);
     await pool.query("UPDATE products SET expiry_date = CURRENT_DATE - 1 WHERE id = $1", [productId]);
     await expireProducts();
     expect(await restaurantLedger()).toEqual([]);
@@ -278,14 +277,14 @@ describe("restaurant: orders cost no credits", () => {
     });
 
     it("cancels without any refund, and keeps the store's credit when it removes a product", async () => {
-      const accepted = await reserve(restaurant, productId, 2);
+      const accepted = await orderOne(restaurant, productId, 2);
       await acceptItem(store, accepted);
       expect((await admin.post(`/api/admin/orders/${await orderOf(accepted)}/cancel`).send({ reason: "Dispute" })).status).toBe(200);
-      await reserve(restaurant, productId, 2);
+      await orderOne(restaurant, productId, 2);
       expect((await admin.delete(`/api/admin/products/${productId}`).send({ reason: "Rules" })).status).toBe(200);
       expect(await ledger("PRODUCT_REFUND", productId)).toHaveLength(0);
       const other = (await createProduct(store)).id;
-      await reserve(restaurant, other, 1);
+      await orderOne(restaurant, other, 1);
       expect((await admin.post(`/api/admin/users/${storeId}/block`).send({ reason: "Fraud" })).status).toBe(200);
       expect(await restaurantLedger()).toEqual([]);
     });

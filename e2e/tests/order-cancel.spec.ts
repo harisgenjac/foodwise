@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { ACCOUNTS, storageState, uniqueName } from "../support/accounts.js";
 import { apiAs, createProduct } from "../support/api.js";
-import { orderFromMarketplace, searchMarketplace, toast } from "../support/ui.js";
+import { open, orderFromMarketplace, searchMarketplace, toast } from "../support/ui.js";
 
 test("a restaurant withdraws a pending order and the store finds it by its code", async ({ browser }) => {
   const productName = uniqueName("E2E Pavlaka");
@@ -19,7 +19,7 @@ test("a restaurant withdraws a pending order and the store finds it by its code"
   );
 
   await test.step("Restoran otkazuje narudžbu na čekanju", async () => {
-    await restaurant.goto("/my-orders");
+    await open(restaurant, "/my-orders");
     await restaurant.getByPlaceholder("Pretraga po proizvodu").fill(productName);
     const card = restaurant.getByTestId("order-card").filter({ hasText: productName });
     await expect(card.getByText("Na čekanju")).toBeVisible();
@@ -36,14 +36,14 @@ test("a restaurant withdraws a pending order and the store finds it by its code"
   });
 
   await test.step("Prodavnica dobija obavijest i nalazi narudžbu po kodu", async () => {
-    await store.goto("/notifications");
+    await open(store, "/notifications");
     await store.getByText(`${ACCOUNTS.restaurant.businessName} je otkazao narudžbu #${code}.`).click();
     await expect(store.getByRole("heading", { level: 1, name: `Narudžba #${code}` })).toBeVisible();
     await expect(store.getByRole("button", { name: "Odluči" })).toHaveCount(0);
 
     // The code search takes it with or without "#", in any case.
     for (const typed of [`#${code}`, code.toLowerCase()]) {
-      await store.goto("/orders");
+      await open(store, "/orders");
       await store.getByLabel("Kod narudžbe").fill(typed);
       const card = store.getByTestId("order-card");
       await expect(card).toHaveCount(1);

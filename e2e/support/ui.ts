@@ -3,6 +3,26 @@ import { expect, type Page } from "@playwright/test";
 import { API_URL } from "./accounts.js";
 import { sarajevoDate } from "./dates.js";
 
+// A dialog that closes goes back over its own history entry (so the phone's Back closes dialogs,
+// see useOverlay in the client). That Back runs a moment later, and a navigation started before it
+// lands is aborted (net::ERR_ABORTED). This waits until the history has no more overlay entries
+// than overlays are open (a dialog left open on purpose keeps its entry).
+export const settleOverlays = (page: Page) =>
+  page.waitForFunction(() => {
+    const depth = (window.history.state as { overlayDepth?: number } | null)?.overlayDepth ?? 0;
+    return depth <= document.querySelectorAll('[aria-modal="true"]').length;
+  });
+
+// page.goto and page.reload after any dialog that may just have closed. Specs navigate with these.
+export const open = async (page: Page, url: string) => {
+  await settleOverlays(page);
+  await page.goto(url);
+};
+export const reload = async (page: Page) => {
+  await settleOverlays(page);
+  await page.reload();
+};
+
 // Toasts are role="status", and so is the credit banner, so they are told apart by text.
 export const toast = (page: Page, text: string | RegExp) => page.getByRole("status").filter({ hasText: text });
 
@@ -17,7 +37,7 @@ export const loginViaForm = async (page: Page, email: string, password: string) 
 
 // The forced change of an admin-set temporary password, on My profile.
 export const changeTemporaryPassword = async (page: Page, temporaryPassword: string, newPassword: string) => {
-  await page.goto("/my-profile");
+  await open(page, "/my-profile");
   await page.getByLabel("Trenutna lozinka").fill(temporaryPassword);
   await page.getByLabel("Nova lozinka", { exact: true }).fill(newPassword);
   await page.getByLabel("Ponovite novu lozinku").fill(newPassword);
@@ -28,7 +48,7 @@ export const changeTemporaryPassword = async (page: Page, temporaryPassword: str
 // Searches the marketplace by (part of) a product name and returns the matching cards. The search
 // is debounced, so assert on the result (toHaveCount, toBeVisible), never read it right away.
 export const searchMarketplace = async (page: Page, name: string) => {
-  await page.goto("/browse-products");
+  await open(page, "/browse-products");
   await page.getByPlaceholder("Pretraga po imenu").fill(name);
   return page.getByTestId("product-card").filter({ hasText: name });
 };
@@ -43,7 +63,7 @@ export const expectNotInMarketplace = async (page: Page, name: string) => {
 
 // Submits the login form and stays wherever the app lands (a refused login stays on /login).
 export const submitLoginForm = async (page: Page, email: string, password: string) => {
-  await page.goto("/login");
+  await open(page, "/login");
   await page.getByLabel("Email", { exact: true }).fill(email);
   await page.getByLabel("Lozinka").fill(password);
   await page.getByRole("button", { name: "Prijavi se" }).click();
@@ -64,7 +84,7 @@ export const fillProductForm = async (page: Page, name: string) => {
 // The "Dostupno" figure on the Credits page. A full page load starts without credits (spinner),
 // so the number is never a stale one from an earlier page.
 const availableOnCreditsPage = async (page: Page) => {
-  await page.goto("/credits");
+  await open(page, "/credits");
   return page
     .getByRole("region", { name: "Ovaj mjesec" })
     .locator("div")
@@ -99,12 +119,13 @@ export const addToCart = async (page: Page, productName: string, quantity: strin
   await dialog.getByLabel("Količina").fill(quantity);
   await dialog.getByRole("button", { name: /^(Dodaj u korpu|Sačuvaj)$/ }).click();
   await expect(dialog).toBeHidden();
+  await settleOverlays(page);
 };
 
 // Opens the cart, picks the pickup (tomorrow at `time`) and sends the order. Returns the code
 // from the confirmation (K7PM); the confirmation stays on screen for the caller to check.
 export const checkout = async (page: Page, { time = "12:00", acceptPartial = true }: { time?: string; acceptPartial?: boolean } = {}) => {
-  if (!page.url().endsWith("/cart")) await page.goto("/cart");
+  if (!page.url().endsWith("/cart")) await open(page, "/cart");
   await page.getByLabel("Datum preuzimanja").fill(sarajevoDate(1));
   await page.getByLabel("Datum preuzimanja").press("Enter");
   await page.getByLabel("Vrijeme preuzimanja").fill(time);
@@ -146,7 +167,7 @@ export const orderFromMarketplace = async (
 
 // The store's card of an order on Narudžbe, found by a product in it.
 export const storeOrderCard = async (page: Page, productName: string) => {
-  await page.goto("/orders");
+  await open(page, "/orders");
   await page.getByPlaceholder("Pretraga po proizvodu").fill(productName);
   const card = page.getByTestId("order-card").filter({ hasText: productName });
   await expect(card).toHaveCount(1);

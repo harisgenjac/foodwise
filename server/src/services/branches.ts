@@ -276,7 +276,7 @@ export const getBranchesStats = async (
   db: Pool | PoolClient,
   branchIds: number[],
 ): Promise<Map<number, BranchStats>> => {
-  const thisMonth = "reservations.status = 'Completed' AND reservations.picked_up_at >= date_trunc('month', CURRENT_DATE)";
+  const thisMonth = "order_items.status = 'Completed' AND order_items.picked_up_at >= date_trunc('month', CURRENT_DATE)";
   const result = await db.query(
     `SELECT branches.id,
        (SELECT COUNT(*) FROM products
@@ -291,11 +291,11 @@ export const getBranchesStats = async (
         WHERE orders.store_id = branches.id AND orders.status = 'Completed'
           AND orders.picked_up_at >= date_trunc('month', CURRENT_DATE)) AS completed_this_month,
        ${savedUnits(thisMonth)},
-       COALESCE(ROUND(SUM(reservations.unit_price * reservations.quantity) FILTER (WHERE ${thisMonth}), 2), 0)
+       COALESCE(ROUND(SUM(order_items.unit_price * order_items.quantity) FILTER (WHERE ${thisMonth}), 2), 0)
          AS value_this_month
      FROM unnest($1::int[]) AS branches(id)
      LEFT JOIN products ON products.store_id = branches.id
-     LEFT JOIN reservations ON reservations.product_id = products.id
+     LEFT JOIN order_items ON order_items.product_id = products.id
      GROUP BY branches.id`,
     [branchIds],
   );

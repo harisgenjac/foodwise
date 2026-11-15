@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { PASSWORD, runId } from "../support/accounts.js";
 import { createStoreWithoutPlan } from "../support/api.js";
 import { MAILPIT_URL, waitForEmail } from "../support/mailpit.js";
-import { loginViaForm, submitLoginForm } from "../support/ui.js";
+import { loginViaForm, open, submitLoginForm } from "../support/ui.js";
 
 // Forgot password, end to end: the store asks for a link on the login page, opens it from the
 // email in Mailpit, sets a new password, its other session is signed out, and it logs in with the
@@ -20,7 +20,7 @@ test("a store resets its forgotten password with the emailed link", async ({ bro
   const otherDevice = await browser.newContext({ storageState: store.storageState });
 
   await test.step("Prodavnica traži link na stranici za prijavu", async () => {
-    await page.goto("/login");
+    await open(page, "/login");
     await page.getByRole("link", { name: "Zaboravili ste lozinku?" }).click();
     await expect(page).toHaveURL(/\/forgot-password$/);
     await page.getByLabel("Email", { exact: true }).fill(store.email);
@@ -39,7 +39,7 @@ test("a store resets its forgotten password with the emailed link", async ({ bro
   });
 
   await test.step("Prodavnica otvara link i postavlja novu lozinku", async () => {
-    await page.goto(link);
+    await open(page, link);
     await page.getByLabel("Nova lozinka", { exact: true }).fill(newPassword);
     await page.getByLabel("Ponovite novu lozinku").fill(newPassword);
     await page.getByRole("button", { name: "Spremi novu lozinku" }).click();
@@ -49,11 +49,11 @@ test("a store resets its forgotten password with the emailed link", async ({ bro
 
   await test.step("Druga prijava je odjavljena, a link se ne može ponovo iskoristiti", async () => {
     const other = await otherDevice.newPage();
-    await other.goto("/dashboard");
+    await open(other, "/dashboard");
     await expect(other).toHaveURL(/\/login$/);
     await otherDevice.close();
 
-    await page.goto(link);
+    await open(page, link);
     await expect(page.getByRole("heading", { name: "Link više ne vrijedi" })).toBeVisible();
   });
 
@@ -71,7 +71,7 @@ test("a store resets its forgotten password with the emailed link", async ({ bro
 
 test("the forgot password page fits a phone", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 });
-  await page.goto("/forgot-password");
+  await open(page, "/forgot-password");
   const submit = page.getByRole("button", { name: "Pošalji link" });
   await expect(submit).toBeInViewport({ ratio: 1 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);

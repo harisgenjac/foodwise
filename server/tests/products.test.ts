@@ -6,7 +6,7 @@ import {
   futureDate,
   productPayload,
   registerAndLogin,
-  reserve,
+  orderOne,
   type Agent,
   type Product,
 } from "./helpers.js";
@@ -112,14 +112,14 @@ describe("Products routes", () => {
       expect(response.body.error).toBe("Product not found.");
     });
 
-    it("returns 400 when the product has an active reservation", async () => {
+    it("returns 400 when the product has an active order item", async () => {
       const product = await createProduct(store);
       const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
-      await reserve(restaurant, product.id, 1);
+      await orderOne(restaurant, product.id, 1);
 
       const response = await store.delete(`/api/products/${product.id}`);
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Product has active reservations and cannot be deleted.");
+      expect(response.body.error).toBe("Product has active orders and cannot be deleted.");
     });
 
     it.each(["Sold", "Expired", "Removed"])("returns 400 for a %s product", async (status) => {

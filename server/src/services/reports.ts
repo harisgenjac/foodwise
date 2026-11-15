@@ -46,33 +46,33 @@ export interface PickupScope {
 // other side of the handover.
 export const pickupOwnership = (role: string): PickupScope =>
   role === "STORE"
-    ? { owner: "products.store_id = $1", partyJoin: "reservations.restaurant_id = parties.id" }
-    : { owner: "reservations.restaurant_id = $1", partyJoin: "products.store_id = parties.id" };
+    ? { owner: "products.store_id = $1", partyJoin: "order_items.restaurant_id = parties.id" }
+    : { owner: "order_items.restaurant_id = $1", partyJoin: "products.store_id = parties.id" };
 
 // The pickups of a set of stores (a company's branches); the other party is the restaurant.
 export const storesScope = (): PickupScope => ({
   owner: "products.store_id = ANY($1::int[])",
-  partyJoin: "reservations.restaurant_id = parties.id",
+  partyJoin: "order_items.restaurant_id = parties.id",
 });
 
 // Food saved in one row: g/kg as kg, ml/l as l, kom and pak as pieces (like the dashboard's
 // "food saved" card), the value paid and the savings against the original price. A pickup is an
 // order (all its accepted items are handed over at once).
 export const IMPACT_COLUMNS = `
-  COUNT(DISTINCT reservations.order_id) AS pickups,
+  COUNT(DISTINCT order_items.order_id) AS pickups,
   COUNT(DISTINCT parties.id) AS partners,
   COALESCE(SUM(CASE products.unit
-    WHEN 'kg' THEN reservations.quantity
-    WHEN 'g' THEN reservations.quantity / 1000 END), 0) AS kg,
+    WHEN 'kg' THEN order_items.quantity
+    WHEN 'g' THEN order_items.quantity / 1000 END), 0) AS kg,
   COALESCE(SUM(CASE products.unit
-    WHEN 'l' THEN reservations.quantity
-    WHEN 'ml' THEN reservations.quantity / 1000 END), 0) AS l,
-  COALESCE(SUM(CASE WHEN products.unit IN ('kom', 'pak') THEN reservations.quantity END), 0) AS pieces,
-  ROUND(SUM(reservations.unit_price * reservations.quantity), 2) AS value,
-  ROUND(SUM(GREATEST(products.original_price - reservations.unit_price, 0) * reservations.quantity), 2) AS savings`;
+    WHEN 'l' THEN order_items.quantity
+    WHEN 'ml' THEN order_items.quantity / 1000 END), 0) AS l,
+  COALESCE(SUM(CASE WHEN products.unit IN ('kom', 'pak') THEN order_items.quantity END), 0) AS pieces,
+  ROUND(SUM(order_items.unit_price * order_items.quantity), 2) AS value,
+  ROUND(SUM(GREATEST(products.original_price - order_items.unit_price, 0) * order_items.quantity), 2) AS savings`;
 
-export const PICKED_UP_IN_PERIOD = `reservations.status = 'Completed'
-  AND reservations.picked_up_at::date BETWEEN $2 AND $3`;
+export const PICKED_UP_IN_PERIOD = `order_items.status = 'Completed'
+  AND order_items.picked_up_at::date BETWEEN $2 AND $3`;
 
 interface SalesRow {
   branch_name?: string;
@@ -102,27 +102,27 @@ export const salesRows = async (
   const result = await pool.query<SalesRow>(
     `SELECT
        ${withBranch ? "stores.business_name AS branch_name," : ""}
-       to_char(reservations.picked_up_at, 'YYYY-MM-DD') AS picked_up_on,
+       to_char(order_items.picked_up_at, 'YYYY-MM-DD') AS picked_up_on,
        orders.code,
        products.name AS product_name,
        products.category,
        COALESCE(parties.business_name, parties.first_name || ' ' || parties.last_name, parties.email) AS party_name,
        cities.name AS city,
-       reservations.quantity,
+       order_items.quantity,
        products.unit,
-       reservations.unit_price,
+       order_items.unit_price,
        products.original_price,
-       ROUND(reservations.unit_price * reservations.quantity, 2) AS total,
-       ROUND(GREATEST(products.original_price - reservations.unit_price, 0) * reservations.quantity, 2) AS savings
-     FROM reservations
-     JOIN orders ON orders.id = reservations.order_id
-     JOIN products ON reservations.product_id = products.id
+       ROUND(order_items.unit_price * order_items.quantity, 2) AS total,
+       ROUND(GREATEST(products.original_price - order_items.unit_price, 0) * order_items.quantity, 2) AS savings
+     FROM order_items
+     JOIN orders ON orders.id = order_items.order_id
+     JOIN products ON order_items.product_id = products.id
      JOIN users AS stores ON stores.id = products.store_id
      JOIN users AS parties ON ${scope.partyJoin}
      LEFT JOIN cities ON cities.id = parties.city_id
      WHERE ${scope.owner}
        AND ${PICKED_UP_IN_PERIOD}
-     ORDER BY reservations.picked_up_at ASC, orders.id ASC, reservations.id ASC`,
+     ORDER BY order_items.picked_up_at ASC, orders.id ASC, order_items.id ASC`,
     [owner, period.from, period.to],
   );
 
@@ -186,14 +186,14 @@ export const impactRows = async (
 ): Promise<CsvCell[][]> => {
   const result = await pool.query<ImpactRow>(
     `SELECT
-       to_char(reservations.picked_up_at, 'YYYY-MM') AS month,
+       to_char(order_items.picked_up_at, 'YYYY-MM') AS month,
        ${IMPACT_COLUMNS}
-     FROM reservations
-     JOIN products ON reservations.product_id = products.id
+     FROM order_items
+     JOIN products ON order_items.product_id = products.id
      JOIN users AS parties ON ${scope.partyJoin}
      WHERE ${scope.owner}
        AND ${PICKED_UP_IN_PERIOD}
-     GROUP BY GROUPING SETS ((to_char(reservations.picked_up_at, 'YYYY-MM')), ())
+     GROUP BY GROUPING SETS ((to_char(order_items.picked_up_at, 'YYYY-MM')), ())
      ORDER BY month ASC NULLS LAST`,
     [owner, period.from, period.to],
   );

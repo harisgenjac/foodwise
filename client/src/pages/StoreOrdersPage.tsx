@@ -123,7 +123,7 @@ function StoreOrdersPage() {
             <option value="">{t("orders.selectStatus")}</option>
             {STATUSES.map((value) => (
               <option key={value} value={value}>
-                {t(`reservationStatus.${value}`)}
+                {t(`orderStatus.${value}`)}
               </option>
             ))}
           </select>
@@ -144,7 +144,7 @@ function StoreOrdersPage() {
             <OrderCard
               key={order.id}
               order={order}
-              partyLabel={t("reservations.buyer")}
+              partyLabel={t("orders.buyer")}
               actions={
                 order.status === "Pending" ? (
                   <>

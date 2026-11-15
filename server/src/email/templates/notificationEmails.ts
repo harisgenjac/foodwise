@@ -18,8 +18,6 @@ interface Copy {
 // The values a text can use, already formatted for the language.
 interface Values {
   product: string;
-  // "2,5 kg"
-  amount: string;
   branch: string;
   credits: string;
   // "Bingo d.o.o. → Bingo Tuzla" for a branch's request.
@@ -544,7 +542,6 @@ export const SYSTEM_NOTIFICATION_TYPES: readonly NotificationType[] = ["PASSWORD
 
 // Where the button goes, like getNotificationLink on the client (the same order of checks).
 type LinkKind =
-  | "reservation"
   | "order"
   | "product"
   | "donations"
@@ -562,7 +559,6 @@ export const notificationLink = (type: NotificationType, d: NotificationEmailDat
     return { path: `/company/branches/${d.branchId}`, kind: "branch" };
   }
   if (d.orderId !== null) return { path: `/orders/${d.orderId}`, kind: "order" };
-  if (d.reservationId !== null) return { path: `/reservation/${d.reservationId}`, kind: "reservation" };
   if (d.productId !== null) return { path: `/products/${d.productId}`, kind: "product" };
   if (d.donationId !== null) return { path: "/donate-food", kind: "donations" };
   if (d.announcementId !== null) return { path: "/dashboard", kind: "dashboard" };
@@ -586,7 +582,6 @@ export const notificationLink = (type: NotificationType, d: NotificationEmailDat
 
 const BUTTONS: Record<EmailLanguage, Record<LinkKind, string>> = {
   bs: {
-    reservation: "Otvori rezervaciju",
     order: "Otvori narudžbu",
     product: "Otvori proizvod",
     donations: "Otvori donacije",
@@ -598,7 +593,6 @@ const BUTTONS: Record<EmailLanguage, Record<LinkKind, string>> = {
     list: "Otvori narudžbe",
   },
   en: {
-    reservation: "Open reservation",
     order: "Open order",
     product: "Open product",
     donations: "Open donations",
@@ -615,7 +609,6 @@ const LABELS: Record<EmailLanguage, Record<string, string>> = {
   bs: {
     product: "Proizvod",
     donation: "Donacija",
-    quantity: "Količina",
     restaurant: "Restoran",
     store: "Prodavnica",
     pickup: "Preuzimanje",
@@ -630,7 +623,6 @@ const LABELS: Record<EmailLanguage, Record<string, string>> = {
   en: {
     product: "Product",
     donation: "Donation",
-    quantity: "Quantity",
     restaurant: "Restaurant",
     store: "Store",
     pickup: "Pickup",
@@ -659,15 +651,14 @@ const CREDIT_TYPES = new Set<NotificationType>([
 ]);
 
 // The label/value rows under the text: whatever the notification links to.
-const detailRows = (type: NotificationType, d: NotificationEmailData, lang: EmailLanguage, amount: string | null) => {
+const detailRows = (type: NotificationType, d: NotificationEmailData, lang: EmailLanguage) => {
   const label = LABELS[lang];
   const rows: { label: string; value: string }[] = [];
   if (d.productName !== null && type !== "PLATFORM_ANNOUNCEMENT") {
     rows.push({ label: d.donationId !== null ? label.donation! : label.product!, value: d.productName });
   }
   if (d.orderId !== null && d.orderCode !== null) rows.push({ label: label.order!, value: `#${d.orderCode}` });
-  if (d.reservationId !== null || d.orderId !== null) {
-    if (d.reservationId !== null && amount !== null) rows.push({ label: label.quantity!, value: amount });
+  if (d.orderId !== null) {
     // The other party.
     if (d.recipientRole === "STORE" && d.restaurantName) rows.push({ label: label.restaurant!, value: d.restaurantName });
     if (d.recipientRole === "RESTAURANT" && d.storeName) rows.push({ label: label.store!, value: d.storeName });
@@ -738,11 +729,8 @@ const orderTotals = (lines: OrderLineData[]) => ({
 
 const renderNotificationEmail = (type: NotificationType) => (raw: unknown, lang: EmailLanguage, appUrl: string) => {
   const d = parseNotificationData(raw, type);
-  const amount =
-    d.quantity !== null && d.unit !== null ? `${formatQuantity(d.quantity, lang)} ${unitLabel(d.unit, lang)}` : null;
   const values: Values = {
     product: d.productName ?? "–",
-    amount: amount ?? "",
     branch: d.branchName ?? d.creditRequester ?? "–",
     credits: d.credits === null ? "–" : String(d.credits),
     requester: requesterName(d) || "–",
@@ -776,7 +764,7 @@ const renderNotificationEmail = (type: NotificationType) => (raw: unknown, lang:
     subject: copy.subject,
     heading: copy.heading,
     intro: copy.intro,
-    details: detailRows(type, d, lang, amount),
+    details: detailRows(type, d, lang),
     ...(lines.length > 0 ? { lines: orderLines(lines, lang) } : {}),
     // No total when nothing is left (a rejected or cancelled order).
     ...(lines.some(isLive)

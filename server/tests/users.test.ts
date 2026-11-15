@@ -7,7 +7,7 @@ import {
   cleanupUsers,
   createProduct,
   registerAndLogin,
-  reserve,
+  orderOne,
   userId,
   type Agent,
   insertOrderItem,
@@ -141,7 +141,7 @@ describe("Users routes", () => {
       await createProduct(store);
       // A pending order and a sale in the shop take all of it: still Available, but not on offer.
       const taken = await createProduct(store, { quantity: 10 });
-      await reserve(restaurant, taken.id, 6);
+      await orderOne(restaurant, taken.id, 6);
       expect((await store.post(`/api/products/${taken.id}/shop-sales`).send({ quantity: 4 })).status).toBe(201);
       expect((await pool.query("SELECT status FROM products WHERE id = $1", [taken.id])).rows[0].status).toBe("Available");
 
@@ -210,8 +210,8 @@ describe("Users routes", () => {
       await store.put("/api/users/me").send(PROFILE);
       const product = await createProduct(store, { quantity: 4 });
       const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
-      const reservation = await reserve(restaurant, product.id, 2);
-      await acceptItem(store, reservation);
+      const itemId = await orderOne(restaurant, product.id, 2);
+      await acceptItem(store, itemId);
 
       const response = await restaurant.get(`/api/users/stores/${await userId(STORE)}`);
       expect(response.status).toBe(200);
@@ -232,7 +232,7 @@ describe("Users routes", () => {
       expect(parseFloat(products.body.products[0].available_quantity)).toBe(2);
     });
 
-    it("counts only picked-up (Completed) reservations, not Pending, Confirmed, Rejected or Cancelled", async () => {
+    it("counts only picked-up (Completed) order items, not Pending, Confirmed, Rejected or Cancelled", async () => {
       const store = await registerAndLogin(STORE, "STORE");
       const product = await createProduct(store, { quantity: 10 });
       const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");

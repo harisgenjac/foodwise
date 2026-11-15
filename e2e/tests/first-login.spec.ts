@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ACCOUNTS, runId, storageState } from "../support/accounts.js";
-import { toast } from "../support/ui.js";
+import { open, toast } from "../support/ui.js";
 
 test.use({ storageState: storageState("admin") });
 
@@ -13,7 +13,7 @@ test("a new restaurant changes its temporary password and fills in its profile b
   const gate = page.getByRole("dialog", { name: "Dovršite podešavanje naloga" });
 
   // The admin creates the restaurant account.
-  await page.goto("/admin/users/new");
+  await open(page, "/admin/users/new");
   await page.getByRole("radio", { name: "Restoran" }).click();
   await page.getByLabel("Email", { exact: true }).fill(email);
   // An invitation is the default; this restaurant gets a temporary password instead.
@@ -49,7 +49,7 @@ test("a new restaurant changes its temporary password and fills in its profile b
 
   // The profile gate still blocks the app until the required fields are saved.
   await expect(page.getByText(/Popunite obavezne podatke: Ime, Prezime/)).toBeVisible();
-  await page.goto("/dashboard");
+  await open(page, "/dashboard");
   await expect(gate).toBeVisible();
   await expect(gate.getByText(/Popunite obavezne podatke/)).toBeVisible();
   await gate.getByRole("link", { name: "Idi na Moj profil" }).click();

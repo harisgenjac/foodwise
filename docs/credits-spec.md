@@ -1,15 +1,15 @@
 # Feature spec: Credit-based subscription system
 
-> **Changed Nov 6, 2026:** restaurants no longer pay credits (orders design, `docs/orders-design.md`). Only stores have plans, top-ups, a balance and the Credits page; reserving is free and nothing is refunded to a restaurant. The restaurant rules below are kept as history.
+> **Changed Nov 6, 2026:** restaurants no longer pay credits (orders design, `docs/orders-design.md`). Only stores have plans, top-ups, a balance and the Credits page; ordering is free and nothing is refunded to a restaurant. The restaurant rules below are kept as history (they were written for reservations, which are now order items in `order_items`); the orders cleanup removed the `RESERVATION_CHARGE` / `RESERVATION_REFUND` types and their ledger rows.
 
 ## How to work (read first)
 You already know this project. Before writing any code:
 
-1. Re-read the relevant parts of the codebase (schema/migrations, product and reservation models
+1. Re-read the relevant parts of the codebase (schema/migrations, product and order models
    and statuses, routes, auth/role middleware, sidebar, My Profile page, admin pages, notifications).
 2. **Check every rule below against the app's current rules and code.** If a rule conflicts with
    how the app works today, breaks an existing flow, or is not possible with the current data model
-   (e.g. product statuses, how reservations are confirmed/rejected/expired, how categories are stored),
+   (e.g. product statuses, how orders are confirmed/rejected/expired, how categories are stored),
    **do not silently work around it. List each conflict, explain why, and propose options so we can
    clarify it together.** Same if any rule is ambiguous: ask, don't assume.
 3. Write a short implementation plan (files to create/change, migrations, order of work) and
@@ -19,12 +19,12 @@ You already know this project. Before writing any code:
    (the phases below are a starting point). Finish each part completely, stop, summarize what changed
    and how I can test it, then wait for me before the next part. Never leave a part half-done.
 
-General: don't break existing product/reservation flows, follow existing conventions, and comment
+General: don't break existing product/order flows, follow existing conventions, and comment
 the key logic (credit checks, refund eligibility, DB transactions) explaining *why*.
 
 ## Context
-B2B marketplace: stores list near-expiry food, restaurants reserve it. Both roles can also add
-donations (separate per role; a restaurant cannot reserve a store's donation). Roles: STORE,
+B2B marketplace: stores list near-expiry food, restaurants order it. Both roles can also add
+donations (separate per role; a restaurant cannot order a store's donation). Roles: STORE,
 RESTAURANT, ADMIN. Stack: Node.js + Express + PostgreSQL, React frontend.
 
 We are adding monthly credits. Payment is offline for now: users send a request, an admin
@@ -58,17 +58,17 @@ approves it. Card payments, auto-approval and invoicing come later, so keep the 
 4. **Day boundary:** a new day starts at **00:00 in `Europe/London`** (= 01:00 in Sarajevo), so the
    day has changed everywhere in Europe. Compute this on the backend only, timezone-aware (DST-safe).
 5. Every refund references its original charge; a charge can be refunded at most once.
-6. When credits run out, existing products and reservations stay visible and fully functional.
+6. When credits run out, existing products and orders stay visible and fully functional.
    Credits only limit new actions.
 
 ## STORE: 1 credit per published (non-donation) product
 1. Creating a regular product charges 1 credit immediately. Balance 0 → reject.
 2. Creating a donation product: no charge.
-3. Regular → donation, no reservations, same day: refund. After the day boundary: no refund.
+3. Regular → donation, no orders, same day: refund. After the day boundary: no refund.
 4. Donation → regular, or re-activating a product: charge 1 credit again. Balance 0 → block.
    (Ask me how "re-activation" maps to the current product statuses.)
-5. Deleting a product with no reservations, same day: refund. After the day boundary: no refund.
-6. Products with reservations cannot be deleted (verify this is enforced on the backend).
+5. Deleting a product with no orders, same day: refund. After the day boundary: no refund.
+6. Products with active orders cannot be deleted (verify this is enforced on the backend).
    Safety rule: if one is deleted anyway, the credit stays charged.
 7. After publishing, **only quantity and expiry date are locked** (disable in UI AND reject in API).
    All other fields stay editable.
@@ -87,7 +87,7 @@ approves it. Card payments, auto-approval and invoicing come later, so keep the 
   (id, user_id, subscription_id, amount +/-, type, reason, related_entity_type, related_entity_id,
    refunds_transaction_id nullable UNIQUE, created_by user/admin/system, created_at)
   Types: PLAN_GRANT, TOPUP_GRANT, ADMIN_ADJUSTMENT, PRODUCT_CHARGE, PRODUCT_REFUND,
-         RESERVATION_CHARGE, RESERVATION_REFUND.
+         RESERVATION_CHARGE, RESERVATION_REFUND (restaurant history, removed in the orders cleanup).
 - `credit_requests` (id, user_id, request_type SUBSCRIPTION/TOPUP, plan_id nullable,
   topup_package_id nullable, period_month, auto_renew, status PENDING/APPROVED/REJECTED,
   admin_note, created_at, reviewed_by, reviewed_at).
@@ -104,7 +104,7 @@ approves it. Card payments, auto-approval and invoicing come later, so keep the 
   active subscription row locked (`SELECT ... FOR UPDATE`), so parallel requests can't both spend
   the last credit.
 - All credit logic lives in one service (e.g. `creditService`: `chargeForProduct`,
-  `refundForProduct`, `chargeForReservation`, `refundForReservation`, `grantPlan`, `grantTopup`,
+  `refundForProduct`, `chargeForReservation`, `refundForReservation` (restaurant history, removed), `grantPlan`, `grantTopup`,
   `getBalance`, `isRefundEligible`). Routes never touch the ledger directly.
 - No-credit error: HTTP 402
   `{ code: "INSUFFICIENT_CREDITS", hasActiveSubscription: boolean, message, actionUrl }`

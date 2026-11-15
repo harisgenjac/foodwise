@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { runId, storageState, type SeededRole } from "../support/accounts.js";
 import { apiAs, createDonation, createProduct, createStoreWithoutPlan, myId, requestSubscription, sendOrder } from "../support/api.js";
+import { open } from "../support/ui.js";
 
 // Phone width: every store and restaurant page fits the screen, with the bottom bar instead of the
 // sidebar (docs/mobile-review.md, the navigation shell).
@@ -16,7 +17,7 @@ const SHARED_PAGES = ["/pickups", "/reports", "/my-profile", "/donate-food", "/d
 const bottomBar = (page: Page) => page.getByRole("navigation", { name: "Glavna navigacija" });
 
 const expectPhoneLayout = async (page: Page, path: string) => {
-  await page.goto(path);
+  await open(page, path);
   await page.waitForLoadState("networkidle");
   await expect(bottomBar(page), path).toBeVisible();
   await expect(page.getByRole("complementary", { name: "Meni" }), path).toBeHidden();
@@ -30,7 +31,7 @@ const expectPhoneLayout = async (page: Page, path: string) => {
 // iOS zooms into a focused field whose text is under 16 px; every visible text field on the page
 // must be at least that large.
 const expectNoSmallFieldText = async (page: Page, path: string) => {
-  await page.goto(path);
+  await open(page, path);
   await page.waitForLoadState("networkidle");
   const small = await page.evaluate(() =>
     [...document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea")]
@@ -62,7 +63,7 @@ const expectTapTargets = async (scope: Locator, label: string) => {
 // The dashboard's stat cards sit two to a row on a phone; every label is shown whole (it wraps
 // instead of ending in "…").
 const expectStatLabelsWhole = async (page: Page) => {
-  await page.goto("/dashboard");
+  await open(page, "/dashboard");
   const labels = page.getByTestId("stat-label");
   await expect(labels.first()).toBeVisible();
   const cut = await labels.evaluateAll((all) =>
@@ -74,7 +75,7 @@ const expectStatLabelsWhole = async (page: Page) => {
 // Below sm the search stays on screen and the other filters wait behind the Filters button; the
 // panel opens under the bar, counts what is set and closes with the results button.
 const expectFilterPanel = async (page: Page, path: string, search: string) => {
-  await page.goto(path);
+  await open(page, path);
   await page.waitForLoadState("networkidle");
   const bar = page.getByTestId("filter-bar");
   const category = bar.getByRole("combobox").filter({ has: page.locator('option[value="Dairy"]') });
@@ -139,18 +140,18 @@ test.describe("store", () => {
     await expectTapTargets(page.getByRole("navigation", { name: "Podnožje" }), "footer");
 
     // The three Pickups tabs share one row.
-    await page.goto("/pickups");
+    await open(page, "/pickups");
     const tabs = page.getByRole("tablist").getByRole("tab");
     await expect(tabs).toHaveCount(3);
     const tops = await tabs.evaluateAll((all) => all.map((tab) => Math.round(tab.getBoundingClientRect().top)));
     expect(new Set(tops).size, "Pickups tabs on one row").toBe(1);
     await expectTapTargets(page.getByRole("tablist"), "/pickups tabs");
 
-    await page.goto("/reports");
+    await open(page, "/reports");
     await expectTapTargets(page.locator("button[aria-pressed]"), "/reports presets");
-    await page.goto("/credits");
+    await open(page, "/credits");
     await expectTapTargets(page.getByRole("tablist"), "/credits tabs");
-    await page.goto("/add-product");
+    await open(page, "/add-product");
     for (const name of ["Danas", "Sutra"]) {
       await expectTapTargets(page.getByRole("button", { name, exact: true }), `/add-product ${name}`);
     }
@@ -168,7 +169,7 @@ test.describe("store", () => {
     }
     await storeApi.dispose();
 
-    await page.goto("/add-product");
+    await open(page, "/add-product");
     const toggle = page.getByRole("button", { name: /^Predlošci \(\d+\)/ });
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
     await expect(page.getByRole("button", { name: /^E2E Predložak 1 / })).toBeHidden();
@@ -193,7 +194,7 @@ test.describe("store", () => {
   });
 
   test("the notification panel fits the screen and closes on Escape", async ({ page }) => {
-    await page.goto("/dashboard");
+    await open(page, "/dashboard");
     await page.getByRole("button", { name: "Notifikacije" }).click();
     const panel = page.getByTestId("notifications-panel");
     await expect(panel).toBeVisible();
@@ -229,7 +230,7 @@ test.describe("dialogs on a short phone (667 px)", () => {
     test.use({ storageState: storageState("restaurant") });
 
     test("the add-to-cart dialog shows its buttons, and Back closes it on the same page", async ({ page }) => {
-      await page.goto(`/products/${productId}`);
+      await open(page, `/products/${productId}`);
       await page.getByRole("button", { name: "Dodaj u korpu" }).click();
       const dialog = page.getByRole("dialog", { name: "Dodaj u korpu" });
       await expectButtonsOnScreen(page, dialog, ["Otkaži", "Dodaj u korpu"]);
@@ -251,7 +252,7 @@ test.describe("dialogs on a short phone (667 px)", () => {
     });
 
     test("the subscribe dialog shows its buttons", async ({ page }) => {
-      await page.goto("/my-profile#subscription");
+      await open(page, "/my-profile#subscription");
       const standard = page.locator("#plan-options > div").filter({ has: page.getByText("Standard", { exact: true }) });
       await standard.getByRole("button", { name: "Odaberi" }).click();
       await expectButtonsOnScreen(page, page.getByRole("dialog", { name: "Pretplata: Standard" }), ["Odustani", "Pošalji zahtjev"]);
@@ -262,7 +263,7 @@ test.describe("dialogs on a short phone (667 px)", () => {
     test.use({ storageState: storageState("admin") });
 
     test("the confirm dialog with a reason shows its buttons", async ({ page }) => {
-      await page.goto(`/admin/users/${restaurantId}`);
+      await open(page, `/admin/users/${restaurantId}`);
       await page.getByRole("button", { name: "Blokiraj nalog" }).click();
       const dialog = page.getByRole("dialog", { name: "Blokirati nalog?" });
       await dialog.getByLabel("Razlog").focus();
@@ -272,7 +273,7 @@ test.describe("dialogs on a short phone (667 px)", () => {
     });
 
     test("the edit profile dialog scrolls to its last field, with the buttons in view", async ({ page }) => {
-      await page.goto(`/admin/users/${storeId}`);
+      await open(page, `/admin/users/${storeId}`);
       await page.getByRole("button", { name: "Uredi profil" }).click();
       const dialog = page.getByRole("dialog", { name: "Uredi profil korisnika" });
       await expectButtonsOnScreen(page, dialog, ["Odustani", "Sačuvaj profil"]);
@@ -294,7 +295,7 @@ test.describe("dialogs on a short phone (667 px)", () => {
 // No page wider than the screen, and every button and link of every card fully on screen (no
 // sideways scrolling). Lists show cards below md, not their table.
 const expectPhonePage = async (page: Page, path: string, { cards = false } = {}) => {
-  await page.goto(path);
+  await open(page, path);
   await page.waitForLoadState("networkidle");
   const { scrollWidth, innerWidth } = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
@@ -358,7 +359,7 @@ test.describe("admin", () => {
       await expectPhonePage(page, path, { cards: true });
     }
     await expect(page.getByRole("combobox", { name: "Sortiraj po" })).toHaveCount(0);
-    await page.goto("/admin/credits");
+    await open(page, "/admin/credits");
     await expect(page.getByRole("combobox", { name: "Sortiraj po" })).toBeVisible();
   });
 
@@ -372,7 +373,7 @@ test.describe("admin", () => {
       expect(created.ok()).toBe(true);
     }
     await admin.dispose();
-    await page.goto("/admin/users");
+    await open(page, "/admin/users");
     const pagination = page.getByRole("navigation", { name: "Stranice" });
     await expect(pagination).toBeVisible();
     await expectTapTargets(pagination, "pagination");
@@ -400,7 +401,7 @@ test.describe("admin", () => {
       ["/admin/orders", "Otkaži"],
       ["/admin/announcements", "Završi"],
     ] as const) {
-      await page.goto(path);
+      await open(page, path);
       const button = page.getByTestId("data-card").getByRole("button", { name, exact: true }).first();
       await button.scrollIntoViewIfNeeded();
       await expect(button, path).toBeInViewport({ ratio: 1 });
@@ -409,7 +410,7 @@ test.describe("admin", () => {
   });
 
   test("a pending request's approve and reject buttons are on screen without sideways scrolling", async ({ page }) => {
-    await page.goto("/admin/credit-requests?status=PENDING");
+    await open(page, "/admin/credit-requests?status=PENDING");
     const card = page.getByTestId("data-card").filter({ hasText: businessName });
     for (const name of ["Odobri", "Odbij"]) {
       const button = card.getByRole("button", { name, exact: true });
@@ -443,7 +444,7 @@ test.describe("company headquarters", () => {
       await expectPhonePage(page, path, { cards: true });
     }
     // Choose plan and Add credits on the branch card.
-    await page.goto("/company/credits");
+    await open(page, "/company/credits");
     const card = page.getByTestId("data-card").first();
     for (const name of ["Izaberi paket", "Dodaj kredite"]) {
       const button = card.getByRole("button", { name, exact: true });
@@ -474,7 +475,7 @@ test.describe("restaurant", () => {
 
   test("stat labels are not cut, and the order tabs are 44 px", async ({ page }) => {
     await expectStatLabelsWhole(page);
-    await page.goto("/my-orders");
+    await open(page, "/my-orders");
     await expectTapTargets(page.getByRole("tablist"), "/my-orders tabs");
   });
 
@@ -484,7 +485,7 @@ test.describe("restaurant", () => {
   });
 
   test("More opens the menu drawer and Escape closes it", async ({ page }) => {
-    await page.goto("/dashboard");
+    await open(page, "/dashboard");
     await bottomBar(page).getByRole("button", { name: "Više" }).click();
     const drawer = page.getByRole("dialog", { name: "Meni" });
     await expect(drawer.getByRole("link", { name: "Prodavnice" })).toBeVisible();

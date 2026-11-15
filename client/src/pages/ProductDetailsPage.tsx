@@ -46,7 +46,7 @@ function ProductDetailsPage() {
   const location = useLocation();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [reserving, setReserving] = useState(false);
+  const [ordering, setOrdering] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [donating, setDonating] = useState(false);
@@ -138,11 +138,11 @@ function ProductDetailsPage() {
   const isOwner = isStore && product.store_id === user?.id;
   const quantity = parseFloat(product.quantity);
   const available = parseFloat(product.available_quantity ?? product.quantity);
-  // The owner also sees what it sold in its own shop; for restaurants that is part of "reserved".
+  // The owner also sees what it sold in its own shop; for restaurants that is part of "ordered".
   const soldInShop = isOwner ? parseFloat(product.sold_in_shop ?? "0") : 0;
   // What the till sold of Pending orders: the store must still reduce or reject them.
   const shopShortage = isOwner ? parseFloat(product.shop_shortage ?? "0") : 0;
-  const reserved = Math.max(quantity - available - soldInShop, 0);
+  const inOrders = Math.max(quantity - available - soldInShop, 0);
   const availablePercent = quantity > 0 ? Math.round((available / quantity) * 100) : 0;
   const originalPrice = Number(product.original_price);
   const discountedPrice = Number(product.discounted_price);
@@ -158,7 +158,7 @@ function ProductDetailsPage() {
         ? t("product.expiresTomorrow")
         : t("product.expiresInDays", { count: daysUntilExpiry });
   const isUrgent = daysUntilExpiry <= 3;
-  const canReserve =
+  const canOrder =
     user?.role === "RESTAURANT" && product.status === "Available" && available > 0;
   // The server refuses to delete Sold, Expired or Removed products.
   const canDelete = product.status === "Available";
@@ -259,7 +259,7 @@ function ProductDetailsPage() {
             <div className="mb-1.5 flex items-center justify-between text-sm">
               <span className="font-medium text-gray-700">{t("myProducts.stockTitle")}</span>
               <span className="text-gray-500">
-                {t("myProducts.reservedQuantity")}: {reserved} {unit}
+                {t("myProducts.orderedQuantity")}: {inOrders} {unit}
                 {soldInShop > 0 && (
                   <>
                     <span className="text-gray-300"> · </span>
@@ -327,10 +327,10 @@ function ProductDetailsPage() {
           )}
 
           {user?.role === "RESTAURANT" &&
-            (canReserve ? (
+            (canOrder ? (
               <button
                 type="button"
-                onClick={() => setReserving(true)}
+                onClick={() => setOrdering(true)}
                 className="mt-auto inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
               >
                 <ShoppingCart className="h-4 w-4" />
@@ -378,7 +378,7 @@ function ProductDetailsPage() {
               {product.store_pickup_hours && (
                 <p className="flex items-center gap-2 text-sm text-gray-600">
                   <Clock className="h-4 w-4 shrink-0 text-gray-400" />
-                  {t("reservations.pickupHours")}: {product.store_pickup_hours}
+                  {t("orders.pickupHours")}: {product.store_pickup_hours}
                 </p>
               )}
             </div>
@@ -388,7 +388,7 @@ function ProductDetailsPage() {
                 to={`/stores/${product.store_id}`}
                 className="group inline-flex w-fit shrink-0 items-center gap-1.5 rounded-xl bg-orange-50 px-4 py-2.5 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
               >
-                {t("reservations.viewStore")}
+                {t("orders.viewStore")}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
             )}
@@ -430,10 +430,10 @@ function ProductDetailsPage() {
         />
       )}
 
-      {reserving && (
+      {ordering && (
         <AddToCartModal
           product={product}
-          onClose={() => setReserving(false)}
+          onClose={() => setOrdering(false)}
         />
       )}
     </div>

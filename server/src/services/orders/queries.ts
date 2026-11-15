@@ -6,7 +6,7 @@ import { parseCityFilter } from "../../utils/cities.js";
 import { parseOrderCode } from "./codes.js";
 import { ORDER_STATUSES } from "./status.js";
 
-// The order lists and details of /api/orders: today's reservation lists (filters, sorts, scopes,
+// The order lists and details of /api/orders: the order lists (filters, sorts, scopes,
 // paging) over orders. A list row is the order with its items and totals:
 // - ordered_total: what the order sent (unit_price × ordered_quantity);
 // - total: the current amount (unit_price × quantity of every item the store did not reject): what
@@ -15,26 +15,26 @@ import { ORDER_STATUSES } from "./status.js";
 
 const LINES = `JOIN LATERAL (
     SELECT COUNT(*) AS item_count,
-           COUNT(*) FILTER (WHERE reservations.status IN ('Confirmed', 'Completed')) AS accepted_count,
-           COALESCE(SUM(reservations.unit_price * reservations.ordered_quantity), 0) AS ordered_total,
-           COALESCE(SUM(reservations.unit_price * reservations.quantity)
-             FILTER (WHERE reservations.status <> 'Rejected'), 0) AS current_total,
-           COALESCE(BOOL_OR(reservations.status = 'Rejected'
-             OR reservations.quantity < reservations.ordered_quantity), false) AS has_changes,
+           COUNT(*) FILTER (WHERE order_items.status IN ('Confirmed', 'Completed')) AS accepted_count,
+           COALESCE(SUM(order_items.unit_price * order_items.ordered_quantity), 0) AS ordered_total,
+           COALESCE(SUM(order_items.unit_price * order_items.quantity)
+             FILTER (WHERE order_items.status <> 'Rejected'), 0) AS current_total,
+           COALESCE(BOOL_OR(order_items.status = 'Rejected'
+             OR order_items.quantity < order_items.ordered_quantity), false) AS has_changes,
            json_agg(json_build_object(
-             'id', reservations.id,
-             'product_id', reservations.product_id,
+             'id', order_items.id,
+             'product_id', order_items.product_id,
              'product_name', products.name,
              'category', products.category,
              'unit', products.unit,
-             'quantity', reservations.quantity::text,
-             'ordered_quantity', reservations.ordered_quantity::text,
-             'unit_price', reservations.unit_price::text,
-             'status', reservations.status
-           ) ORDER BY reservations.id) AS items
-    FROM reservations
-    JOIN products ON products.id = reservations.product_id
-    WHERE reservations.order_id = orders.id
+             'quantity', order_items.quantity::text,
+             'ordered_quantity', order_items.ordered_quantity::text,
+             'unit_price', order_items.unit_price::text,
+             'status', order_items.status
+           ) ORDER BY order_items.id) AS items
+    FROM order_items
+    JOIN products ON products.id = order_items.product_id
+    WHERE order_items.order_id = orders.id
   ) AS lines ON true`;
 
 const ORDER_COLUMNS = `
@@ -49,9 +49,9 @@ const ORDER_COLUMNS = `
 
 // An order containing a product whose name matches $n.
 const productNameMatches = (param: string) => `EXISTS (
-    SELECT 1 FROM reservations
-    JOIN products ON products.id = reservations.product_id
-    WHERE reservations.order_id = orders.id AND products.name ILIKE ${param})`;
+    SELECT 1 FROM order_items
+    JOIN products ON products.id = order_items.product_id
+    WHERE order_items.order_id = orders.id AND products.name ILIKE ${param})`;
 
 // An empty value means "not set", as the client sends unused parameters.
 const optionalParam = (value: unknown, allowed: Record<string, string>): string | null | undefined => {
@@ -359,15 +359,15 @@ export const getOrderDetails = async (orderId: number, userId: number | null) =>
   const order = result.rows[0];
   if (!order) return null;
   const items = await pool.query(
-    `SELECT reservations.id, reservations.product_id, reservations.quantity, reservations.ordered_quantity,
-            reservations.unit_price, reservations.status, reservations.decided_at,
-            reservations.change_reason, reservations.change_note, reservations.picked_up_at,
+    `SELECT order_items.id, order_items.product_id, order_items.quantity, order_items.ordered_quantity,
+            order_items.unit_price, order_items.status, order_items.decided_at,
+            order_items.change_reason, order_items.change_note, order_items.picked_up_at,
             products.name AS product_name, products.category, products.unit, products.original_price,
             products.expiry_date, products.shop_shortage
-     FROM reservations
-     JOIN products ON products.id = reservations.product_id
-     WHERE reservations.order_id = $1
-     ORDER BY reservations.id`,
+     FROM order_items
+     JOIN products ON products.id = order_items.product_id
+     WHERE order_items.order_id = $1
+     ORDER BY order_items.id`,
     [orderId],
   );
   const history = await pool.query(
@@ -375,8 +375,8 @@ export const getOrderDetails = async (orderId: number, userId: number | null) =>
             order_status_history.to_status, order_status_history.source, order_status_history.reason,
             order_status_history.created_at, products.name AS product_name
      FROM order_status_history
-     LEFT JOIN reservations ON reservations.id = order_status_history.item_id
-     LEFT JOIN products ON products.id = reservations.product_id
+     LEFT JOIN order_items ON order_items.id = order_status_history.item_id
+     LEFT JOIN products ON products.id = order_items.product_id
      WHERE order_status_history.order_id = $1
      ORDER BY order_status_history.created_at, order_status_history.id`,
     [orderId],

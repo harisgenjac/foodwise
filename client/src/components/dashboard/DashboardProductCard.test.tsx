@@ -16,19 +16,19 @@ describe("DashboardProductCard", () => {
   });
 
   it("opens only the store page when the store name is clicked", async () => {
-    const onReserve = vi.fn();
+    const onOrder = vi.fn();
     renderWithProviders(
       <DashboardProductCard
         product={makeProduct()}
         showStore
-        actions={<button type="button" onClick={onReserve}>Reserve</button>}
+        actions={<button type="button" onClick={onOrder}>Order</button>}
       />,
     );
 
     await userEvent.click(screen.getByRole("link", { name: "Market Centar" }));
 
     expect(screen.getByTestId("location")).toHaveTextContent("/stores/2");
-    expect(onReserve).not.toHaveBeenCalled();
+    expect(onOrder).not.toHaveBeenCalled();
   });
 
   it("has no store line without showStore", () => {

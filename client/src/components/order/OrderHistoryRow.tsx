@@ -9,7 +9,7 @@ import type { Order } from "../../types/index.js";
 // On phones it stacks into two lines (code, products and store, then time, total and status).
 function OrderHistoryRow({ order }: { order: Order }) {
   const { t, i18n } = useTranslation();
-  const statuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
+  const statuses = t("orderStatus", { returnObjects: true }) as Record<string, string>;
   const category = order.items[0]?.category;
   const image = (category && CATEGORY_IMAGES[category]) || CATEGORY_IMAGES.Other;
   const time = new Date(order.created_at).toLocaleTimeString(i18n.language, {

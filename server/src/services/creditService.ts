@@ -91,7 +91,7 @@ export const findActiveSubscription = async (
 
 // Locks the user's subscription row for the month. Every charge goes through this lock, so two
 // parallel requests for the same user run one after the other and cannot both spend the last
-// credit. Callers lock their product/reservation first and this second, always in that order,
+// credit. Callers lock their product first and this second, always in that order,
 // so the locks cannot deadlock.
 const lockActiveSubscription = async (client: PoolClient, userId: number, periodMonth: string) => {
   const result = await client.query<{ id: number }>(
@@ -113,7 +113,7 @@ const TOTALS_COLUMNS = `
      WHERE entry.refunds_transaction_id IS NOT NULL AND charge.period_month <> entry.period_month), 0)
   )::int AS total,
   (COALESCE(-SUM(entry.amount) FILTER (
-     WHERE entry.type IN ('PRODUCT_CHARGE', 'RESERVATION_CHARGE')), 0)
+     WHERE entry.type = 'PRODUCT_CHARGE'), 0)
    - COALESCE(SUM(entry.amount) FILTER (
      WHERE entry.refunds_transaction_id IS NOT NULL AND charge.period_month = entry.period_month), 0)
   )::int AS used`;
@@ -214,7 +214,7 @@ export const getUsageHistory = async (db: Db, userId: number, year: number) => {
   const categories = await db.query<{ category: string | null; used: number }>(
     `SELECT charge.category, COUNT(*)::int AS used
      FROM credit_transactions charge
-     WHERE charge.user_id = $1 AND charge.type IN ('PRODUCT_CHARGE', 'RESERVATION_CHARGE')
+     WHERE charge.user_id = $1 AND charge.type = 'PRODUCT_CHARGE'
        AND charge.period_month >= $2 AND charge.period_month < $3
        AND NOT EXISTS (
          SELECT 1 FROM credit_transactions refund
@@ -316,7 +316,7 @@ export const chargeForProducts = (client: PoolClient, storeId: number, products:
 
 export type RefundResult =
   | { refunded: true; transaction: CreditTransaction }
-  | { refunded: false; reason: "NO_CHARGE" | "DAY_PASSED" | "HAS_RESERVATIONS" | "ALREADY_REFUNDED" };
+  | { refunded: false; reason: "NO_CHARGE" | "DAY_PASSED" | "HAS_ORDERS" | "ALREADY_REFUNDED" };
 
 // The newest charge of a product that has not been refunded yet. A product can be charged more
 // than once (published, moved to donations and refunded, returned to the offer).
@@ -364,10 +364,10 @@ const refund = async (
 };
 
 // A store's product leaves the offer (deleted, or moved to donations completely). Refunded only
-// on the day of the charge and only if nothing was reserved: once a restaurant has a pending,
-// accepted or picked-up reservation, the listing has done its job and the credit stays spent.
-// Rejected and cancelled reservations do not count, because nothing was sold. The caller holds
-// the product row lock, so no reservation can be created while this decides.
+// on the day of the charge and only if nothing was ordered: once a restaurant has a pending,
+// accepted or picked-up order item, the listing has done its job and the credit stays spent.
+// Rejected and cancelled items do not count, because nothing was sold. The caller holds the
+// product row lock, so no order can take it while this decides.
 export const refundForProduct = async (
   client: PoolClient,
   productId: number,
@@ -378,13 +378,13 @@ export const refundForProduct = async (
   if (!original) return { refunded: false, reason: "NO_CHARGE" };
   if (!isRefundEligible(original.created_at, now)) return { refunded: false, reason: "DAY_PASSED" };
 
-  const reservations = await client.query(
-    `SELECT 1 FROM reservations
-     WHERE product_id = $1 AND status IN ('Pending', 'Confirmed', 'Completed')
+  const ordered = await client.query(
+    `SELECT 1 FROM order_items
+     WHERE order_items.product_id = $1 AND order_items.status IN ('Pending', 'Confirmed', 'Completed')
      LIMIT 1`,
     [productId],
   );
-  if (reservations.rows.length > 0) return { refunded: false, reason: "HAS_RESERVATIONS" };
+  if (ordered.rows.length > 0) return { refunded: false, reason: "HAS_ORDERS" };
 
   return refund(client, original, by, now);
 };

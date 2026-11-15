@@ -20,8 +20,8 @@ export const sendReminders = async (): Promise<{ expiringSoon: number; pickupTod
        WHERE products.status = 'Available'
          AND products.expiry_date = CURRENT_DATE + 1
          AND EXISTS (
-           SELECT 1 FROM reservations
-           WHERE reservations.product_id = products.id AND reservations.status = 'Pending'
+           SELECT 1 FROM order_items
+           WHERE order_items.product_id = products.id AND order_items.status = 'Pending'
          )
          AND NOT EXISTS (
            SELECT 1 FROM notifications

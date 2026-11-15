@@ -14,7 +14,7 @@ import {
   login,
   PASSWORD,
   registerAndLogin,
-  reserve,
+  orderOne,
   userId,
   orderOf,
   acceptItem,
@@ -39,8 +39,8 @@ let restaurant: Agent;
 let companyId: number;
 let branchId: number;
 
-const reservationStatus = async (id: number) =>
-  (await pool.query("SELECT status FROM reservations WHERE id = $1", [id])).rows[0].status;
+const itemStatus = async (id: number) =>
+  (await pool.query("SELECT status FROM order_items WHERE id = $1", [id])).rows[0].status;
 
 const notificationsOf = async (email: string) =>
   (
@@ -275,7 +275,7 @@ describe("Branches", () => {
       await pool.query("UPDATE users SET city_id = $1 WHERE email = $2", [await cityId("Kladanj"), OTHER_BRANCH]);
       const branch = await login(BRANCH);
       const product = await createProduct(branch);
-      await reserve(restaurant, product.id, 1);
+      await orderOne(restaurant, product.id, 1);
 
       const list = await hq.get("/api/company/branches");
       expect(list.status).toBe(200);
@@ -300,13 +300,13 @@ describe("Branches", () => {
     it("shows the branch's products, orders and stats read-only", async () => {
       const branch = await login(BRANCH);
       const product = await createProduct(branch, { quantity: 10 });
-      const reservation = await reserve(restaurant, product.id, 2);
+      const itemId = await orderOne(restaurant, product.id, 2);
 
       const products = await hq.get(`/api/company/branches/${branchId}/products?status=Available`);
       expect(products.body.products.map((row: { id: number }) => row.id)).toEqual([product.id]);
       expect(products.body).toEqual((await branch.get("/api/products/mine?status=Available")).body);
       const orders = await hq.get(`/api/company/branches/${branchId}/orders?status=Pending`);
-      expect(orders.body.orders.map((row: { id: number }) => row.id)).toEqual([await orderOf(reservation)]);
+      expect(orders.body.orders.map((row: { id: number }) => row.id)).toEqual([await orderOf(itemId)]);
       expect(orders.body).toEqual((await branch.get("/api/orders/store?status=Pending")).body);
       expect((await hq.get(`/api/company/branches/${branchId}/products?status=Nope`)).status).toBe(400);
 
@@ -321,7 +321,7 @@ describe("Branches", () => {
       });
 
       // The headquarters cannot act as the store.
-      expect((await acceptItem(hq, reservation)).status).toBe(403);
+      expect((await acceptItem(hq, itemId)).status).toBe(403);
       expect((await hq.put(`/api/products/${product.id}`).send({})).status).toBe(403);
       expect((await hq.post(`/api/company/branches/${branchId}/products`).send({})).status).toBe(404);
     });
@@ -384,7 +384,7 @@ describe("Branches", () => {
       const branch = await login(BRANCH);
       const product = await createProduct(branch, { quantity: 10 });
       for (const quantity of [1, 2]) {
-        const id = await reserve(restaurant, product.id, quantity);
+        const id = await orderOne(restaurant, product.id, quantity);
         await acceptItem(branch, id);
       }
       const response = await hq.post(`/api/company/branches/${branchId}/deactivate`);
@@ -399,13 +399,13 @@ describe("Branches", () => {
     it("cancels Pending orders, hides the branch and blocks its login until reactivated", async () => {
       const branch = await login(BRANCH);
       const product = await createProduct(branch, { quantity: 10 });
-      const pending = await reserve(restaurant, product.id, 2);
+      const pending = await orderOne(restaurant, product.id, 2);
       await restaurant.post("/api/favorites").send({ store_id: branchId });
 
       const response = await hq.post(`/api/company/branches/${branchId}/deactivate`);
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ message: "Branch deactivated.", cancelledOrders: 1, withdrawnRequests: 0 });
-      expect(await reservationStatus(pending)).toBe("Cancelled");
+      expect(await itemStatus(pending)).toBe("Cancelled");
       expect(await notificationsOf(RESTAURANT)).toContainEqual(
         expect.objectContaining({ type: "ORDER_CANCELLED_STORE_CLOSED", order_id: await orderOf(pending), details: null }),
       );

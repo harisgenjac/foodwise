@@ -21,7 +21,7 @@ interface DonateProductModalProps {
   onDonated: () => void;
 }
 
-// "Move to donations": the unreserved quantity of a store's product becomes a donation offer.
+// "Move to donations": the unordered quantity of a store's product becomes a donation offer.
 function DonateProductModal({ product, onClose, onDonated }: DonateProductModalProps) {
   const { t } = useTranslation();
   const titleId = useId();

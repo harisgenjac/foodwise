@@ -180,7 +180,7 @@
     "notFoundSubtitle": "The product does not exist or has been removed.",
     "backToList": "Back to products",
     "stockTitle": "Stock",
-    "reservedQuantity": "Ordered",
+    "orderedQuantity": "Ordered",
     "createdAt": "Added",
     "notAvailable": "This product is currently not available to order.",
     "productNotFoundTitle": "Product not found.",
@@ -189,7 +189,7 @@
     "totalQuantity": "Total Quantity",
     "daysUntilExpiry": "Days Until Expiry"
   },
-  "myReservations": {
+  "orderForm": {
     "placeholderMax": "Maximum",
     "pickupDate": "Pickup Date",
     "pickupTime": "Pickup time",
@@ -197,40 +197,6 @@
     "invalidTime": "Enter a time as HH:MM (00:00–23:59).",
     "pickupDateOutOfRange": "The date must be between today and the expiry date.",
     "cancelButton": "Cancel"
-  },
-  "reservations": {
-    "noResultsTitle": "No results",
-    "noResultsSubtitle": "Try changing or removing the filters.",
-    "buyer": "Buyer",
-    "acceptButton": "Accept",
-    "rejectButton": "Reject",
-    "cancelShortButton": "Cancel",
-    "keepButton": "Go back",
-    "actionError": "Error performing action.",
-    "total": "Total",
-    "createdAt": "Created",
-    "pickupHours": "Pickup hours",
-    "viewStore": "View store",
-    "seller": "Seller",
-    "tabs": {
-      "active": "Active",
-      "history": "History"
-    },
-    "period": {
-      "all": "Sent: any time",
-      "today": "Sent today",
-      "last7Days": "Last 7 days",
-      "thisMonth": "This month"
-    },
-    "sortPendingFirst": "Pending first",
-    "sortPickupSoonest": "Pickup soonest",
-    "showHistory": "View history",
-    "acceptSummary": {
-      "product": "Product",
-      "quantity": "Quantity",
-      "restaurant": "Restaurant",
-      "pickup": "Pickup"
-    }
   },
   "filters": {
     "searchByName": "Search by name",
@@ -383,7 +349,7 @@
     "successfulOrders": "Successful deliveries (picked up)",
     "myOrders": "Your orders here (picked up)",
     "productsTab": "Products",
-    "reservationsTab": "My orders",
+    "ordersTab": "My orders",
     "storeNoProducts": "This store currently has no available products.",
     "restaurantNoRes": "You have no orders with this store.",
     "subtitle": "Find stores near you and browse their offers.",
@@ -544,7 +510,7 @@
     "Expired": "Expired",
     "Removed": "Removed"
   },
-  "reservationStatus": {
+  "orderStatus": {
     "Pending": "Pending",
     "Confirmed": "Confirmed",
     "Completed": "Picked up",
@@ -912,7 +878,6 @@
       "UNBLOCK_USER": "Account unblocked",
       "REMOVE_PRODUCT": "Product removed",
       "REMOVE_DONATION": "Donation removed",
-      "CANCEL_RESERVATION": "Reservation cancelled",
       "CANCEL_ORDER": "Order cancelled",
       "UPDATE_PROFILE": "Profile edited",
       "CREATE_ANNOUNCEMENT": "Announcement sent",
@@ -1317,9 +1282,7 @@
         "TOPUP_GRANT": "Extra credits",
         "ADMIN_ADJUSTMENT": "Admin adjustment",
         "PRODUCT_CHARGE": "Product published",
-        "PRODUCT_REFUND": "Product refund",
-        "RESERVATION_CHARGE": "Reservation",
-        "RESERVATION_REFUND": "Reservation refund"
+        "PRODUCT_REFUND": "Product refund"
       }
     },
     "companies": {
@@ -1922,7 +1885,27 @@
       "acceptPartial": "I accept partial fulfilment: the store may accept a smaller quantity or only some items.",
       "sentTitle": "Order {{code}} was sent",
       "sentText": "Amount {{total}}. {{store}} will answer the order."
-    }
+    },
+    "buyer": "Buyer",
+    "cancelShortButton": "Cancel",
+    "keepButton": "Go back",
+    "actionError": "Error performing action.",
+    "pickupHours": "Pickup hours",
+    "viewStore": "View store",
+    "seller": "Seller",
+    "tabs": {
+      "active": "Active",
+      "history": "History"
+    },
+    "period": {
+      "all": "Sent: any time",
+      "today": "Sent today",
+      "last7Days": "Last 7 days",
+      "thisMonth": "This month"
+    },
+    "sortPendingFirst": "Pending first",
+    "sortPickupSoonest": "Pickup soonest",
+    "showHistory": "View history"
   },
   "cart": {
     "title": "Cart",

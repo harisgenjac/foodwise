@@ -46,7 +46,7 @@ function AdminOrdersPage() {
   });
   useKeepPageInRange(page, total, setPage);
 
-  const statuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
+  const statuses = t("orderStatus", { returnObjects: true }) as Record<string, string>;
   const hasActiveFilters = Boolean(q || status);
 
   const cancelButton = (order: AdminOrder, card: boolean) =>

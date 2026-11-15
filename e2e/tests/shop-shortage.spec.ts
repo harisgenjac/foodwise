@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { runId, storageState } from "../support/accounts.js";
 import { apiAs, createProduct, sendOrder, sendOrderOf } from "../support/api.js";
-import { toast } from "../support/ui.js";
+import { open, toast } from "../support/ui.js";
 
 // The till sells food that a pending order holds: 10 kg of apples, an order of 6 kg, 8 kg sold at
 // the till, so only 2 kg is left. "Prodano u radnji" takes all 8 kg (4 kg free at once, 4 kg the
@@ -9,7 +9,7 @@ import { toast } from "../support/ui.js";
 
 // The store records `amount` as sold in its shop on the product page and confirms it.
 const sellInShop = async (store: Page, productId: number, amount: string) => {
-  await store.goto(`/products/${productId}`);
+  await open(store, `/products/${productId}`);
   await store.getByRole("button", { name: "Prodano u radnji" }).click();
   const dialog = store.getByRole("dialog", { name: "Prodano u vašoj radnji" });
   await dialog.getByLabel("Količina prodana u radnji").fill(amount);
@@ -66,13 +66,13 @@ test("the store sold part of an order at its till: it can accept only what is le
   });
 
   await test.step("Restoran dobija 2 kg, a jabuke više nisu u ponudi", async () => {
-    await restaurant.goto(`/orders/${order.id}`);
+    await open(restaurant, `/orders/${order.id}`);
     await expect(restaurant.getByText("Djelimično prihvaćena")).toBeVisible();
     const row = restaurant.getByTestId("order-item").filter({ hasText: apples });
     await expect(row.getByText("2 kg")).toBeVisible();
     await expect(row.getByText("Nema dovoljno na stanju")).toBeVisible();
     // 2 kg accepted + 8 kg sold in the shop: sold out.
-    await store.goto(`/products/${product.id}`);
+    await open(store, `/products/${product.id}`);
     await expect(store.getByText("Prodano", { exact: true }).first()).toBeVisible();
   });
 
@@ -94,7 +94,7 @@ test("without partial fulfilment, an order the till sold part of must be rejecte
   const store = await storeContext.newPage();
   await (await sellInShop(store, product.id, "8")).getByRole("button", { name: "Zatvori" }).click();
 
-  await store.goto(`/orders/${order.id}`);
+  await open(store, `/orders/${order.id}`);
   await store.getByRole("button", { name: "Odluči" }).click();
   const dialog = store.getByRole("dialog", { name: `Odluka o narudžbi #${order.code}` });
   await expect(

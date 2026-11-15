@@ -108,7 +108,7 @@ describe("AdminDashboardPage", () => {
     const plans = await screen.findByRole("img", { name: /Basic 1, Standard 3, Pro 0/ });
     // Pro has no subscriptions: it stays in the legend but takes no space in the bar.
     expect(within(plans).getAllByTestId("distribution-segment")).toHaveLength(2);
-    const statuses = t("reservationStatus", { returnObjects: true }) as Record<string, string>;
+    const statuses = t("orderStatus", { returnObjects: true }) as Record<string, string>;
     expect(screen.getByRole("img", { name: new RegExp(`${statuses.Pending} 2`) })).toBeInTheDocument();
     expect(screen.getByText(t("admin.dashboard.total", { count: 8 }))).toBeInTheDocument();
     expect(screen.getByText(t("admin.dashboard.subscriptionsTotal", { count: 4 }))).toBeInTheDocument();

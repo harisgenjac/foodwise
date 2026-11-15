@@ -7,7 +7,7 @@ import {
   productPayload,
   registerAndLogin,
   userId,
-  reserve,
+  orderOne,
 } from "./helpers.js";
 
 const EMAILS = ["store-a@test.com", "restaurant-a@test.com", "ana.case@test.com", "validation-admin@test.com"];
@@ -97,13 +97,13 @@ describe("Input validation", () => {
   });
 
   describe("GET /api/products pagination", () => {
-    it("pages the results, reports the total and leaves out fully reserved products", async () => {
+    it("pages the results, reports the total and leaves out fully ordered products", async () => {
       const ids: number[] = [];
       for (let i = 0; i < 4; i += 1) {
         const response = await store.post("/api/products").send(productPayload({ name: `Paginacija ${i}` }));
         ids.push(response.body.product.id);
       }
-      await reserve(restaurant, ids[0]!, 10);
+      await orderOne(restaurant, ids[0]!, 10);
 
       const firstPage = await restaurant.get("/api/products?name=Paginacija&limit=2");
       expect(firstPage.status).toBe(200);

@@ -10,7 +10,7 @@ import {
   grantTopup,
   refundForProduct,
 } from "../src/services/creditService.js";
-import { cleanupUsers, giveSubscription, insertUser, userId, insertOrderItem, reserve } from "./helpers.js";
+import { cleanupUsers, giveSubscription, insertUser, userId, insertOrderItem, orderOne } from "./helpers.js";
 
 const STORE = "credits-store@test.com";
 const RESTAURANT = "credits-restaurant@test.com";
@@ -47,7 +47,7 @@ const expectedFailure = (): never => {
 let storeId: number;
 let restaurantId: number;
 let nextEntityId = 1;
-// Charges only need an entity id; the product refund rule looks up reservations by product id.
+// Charges only need an entity id; the product refund rule looks up order items by product id.
 const freshId = () => 900000 + nextEntityId++;
 
 const ledgerRows = async (id: number) =>
@@ -166,7 +166,7 @@ describe("refunds", () => {
     expect(late).toEqual({ refunded: false, reason: "DAY_PASSED" });
   });
 
-  it("keeps the product credit once something was reserved, but ignores rejected reservations", async () => {
+  it("keeps the product credit once something was ordered, but ignores rejected order items", async () => {
     await giveSubscription(storeId, 5);
     const insertProduct = async () =>
       (
@@ -177,7 +177,7 @@ describe("refunds", () => {
           [storeId],
         )
       ).rows[0]!.id;
-    const reserve = (productId: number, status: string) =>
+    const orderOne = (productId: number, status: string) =>
       insertOrderItem({ productId, restaurantId, quantity: 1, status, pickupAt: "NOW()" });
 
     const pending = await insertProduct();
@@ -186,12 +186,12 @@ describe("refunds", () => {
       await chargeForProduct(client, storeId, { id: pending, category: "Meat" });
       await chargeForProduct(client, storeId, { id: rejected, category: "Meat" });
     });
-    await reserve(pending, "Pending");
-    await reserve(rejected, "Rejected");
+    await orderOne(pending, "Pending");
+    await orderOne(rejected, "Rejected");
 
     expect(await inTransaction((client) => refundForProduct(client, pending, USER_ACTION(storeId)))).toEqual({
       refunded: false,
-      reason: "HAS_RESERVATIONS",
+      reason: "HAS_ORDERS",
     });
     expect((await inTransaction((client) => refundForProduct(client, rejected, USER_ACTION(storeId)))).refunded).toBe(true);
   });
