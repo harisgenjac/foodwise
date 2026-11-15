@@ -1,5 +1,5 @@
 import express from "express";
-import { createProduct, importProducts, getProducts, getProductById, getMineProducts, updateProduct, deleteProduct, uploadProductImage } from "../controllers/products.controller.js";
+import { createProduct, importProducts, getProducts, getProductById, getMineProducts, updateProduct, deleteProduct, uploadProductImage, getProductsByStore } from "../controllers/products.controller.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
 import { uploadCsvFile, uploadProductImageFile } from "../middleware/upload.middleware.js";
 import { rateLimiters } from "../middleware/rateLimit.middleware.js";
@@ -13,6 +13,8 @@ router.post('/import', authenticate, authorize('STORE'), rateLimiters.upload, up
 // A product or template image, uploaded before the form is saved.
 router.post('/images', authenticate, authorize('STORE'), rateLimiters.upload, uploadProductImageFile, uploadProductImage);
 router.get('/', authenticate, authorize('STORE', 'RESTAURANT'), getProducts);
+// Search: the marketplace grouped by store (before /:id).
+router.get('/by-store', authenticate, authorize('RESTAURANT'), getProductsByStore);
 router.get('/mine', authenticate, authorize('STORE'), getMineProducts);
 router.put('/:id', authenticate, authorize('STORE'), updateProduct);
 router.delete('/:id', authenticate, authorize('STORE'), deleteProduct);

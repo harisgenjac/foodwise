@@ -8,7 +8,7 @@ import { HttpError } from '../utils/httpError.js';
 import { cityDistance, parseCityFilter, parseRadius, userCityId } from '../utils/cities.js';
 import { chargeForProduct, chargeForProducts, refundForProduct } from '../services/creditService.js';
 import { visibleStore } from '../utils/visibility.js';
-import { companyName } from '../utils/branding.js';
+import { companyName, storeLogo } from '../utils/branding.js';
 import { availableQuantity, pendingHeld, soldInShop } from '../services/stock.js';
 import { saveImage } from '../services/storage.js';
 import { parseProductImage, productImageNamePrefix, releaseProductImage } from '../utils/productImages.js';
@@ -182,20 +182,21 @@ export const uploadProductImage = async (req: Request, res: Response) => {
   }
 };
 
-export const getProducts = async (req: Request, res: Response) => {
-  try {
-    const { category, expiryWithinDays, name, city_id, sort, store_id } = req.query;
-    const radiusFilter = parseRadius(req.query.radius);
-    if ("invalid" in radiusFilter) {
-      return res.status(400).json({ error: "Invalid filter." });
-    }
-    // Distances start at a restaurant's city; a store browsing gets none.
-    const fromCity = req.user!.role === "RESTAURANT" ? await userCityId(pool, req.user!.id) : null;
-    let values: (string | number | null)[] = [fromCity];
+// The marketplace's filters, shared by GET /products (a list of products) and GET /products/by-store
+// (Search: the matches grouped by store). Returns the FROM clause over `listed` (products on offer
+// with their remaining quantity and distance, the filters and the radius applied), its values, how
+// many offers the radius hides and the sort key; null for an invalid filter.
+const buildMarketplace = async (req: Request) => {
+  const { category, expiryWithinDays, name, city_id, sort, store_id } = req.query;
+  const radiusFilter = parseRadius(req.query.radius);
+  if ("invalid" in radiusFilter) return null;
+  // Distances start at a restaurant's city; a store browsing gets none.
+  const fromCity = req.user!.role === "RESTAURANT" ? await userCityId(pool, req.user!.id) : null;
+  const values: (string | number | null)[] = [fromCity];
 
-    // Inner query: marketplace products with their remaining quantity and distance; the outer
-    // queries drop fully ordered ones, apply the radius, count the rest and return one page.
-    let query = `
+  // Inner query: marketplace products with their remaining quantity and distance; the outer
+  // queries drop fully ordered ones, apply the radius, count the rest and return one page.
+  let query = `
       SELECT
         products.*,
         users.business_name,
@@ -212,72 +213,160 @@ export const getProducts = async (req: Request, res: Response) => {
       AND ${visibleStore("users")}
     `;
 
-    if (category) {
-      values.push(category as string);
-      query += ` AND products.category = $${values.length}`;
-    }
+  if (category) {
+    values.push(category as string);
+    query += ` AND products.category = $${values.length}`;
+  }
 
-    if (expiryWithinDays) {
-      const days = parseNonNegativeInt(expiryWithinDays);
-      if (days === null) {
-        return res.status(400).json({ error: "Invalid filter." });
-      }
-      values.push(days);
-      query += ` AND products.expiry_date <= CURRENT_DATE + ($${values.length} * INTERVAL '1 day')`;
-    }
+  if (expiryWithinDays) {
+    const days = parseNonNegativeInt(expiryWithinDays);
+    if (days === null) return null;
+    values.push(days);
+    query += ` AND products.expiry_date <= CURRENT_DATE + ($${values.length} * INTERVAL '1 day')`;
+  }
 
-    if (name) {
-      values.push(`%${name}%`);
-      query += ` AND products.name ILIKE $${values.length}`;
-    }
+  if (name) {
+    values.push(`%${name}%`);
+    query += ` AND products.name ILIKE $${values.length}`;
+  }
 
-    // The store's city, from the cities list like the store list's city filter.
-    const cityFilter = await parseCityFilter(pool, city_id);
-    if ("invalid" in cityFilter) {
-      return res.status(400).json({ error: "Invalid filter." });
-    }
-    if (cityFilter.cityId !== null) {
-      values.push(cityFilter.cityId);
-      query += ` AND users.city_id = $${values.length}`;
-    }
+  // The store's city, from the cities list like the store list's city filter.
+  const cityFilter = await parseCityFilter(pool, city_id);
+  if ("invalid" in cityFilter) return null;
+  if (cityFilter.cityId !== null) {
+    values.push(cityFilter.cityId);
+    query += ` AND users.city_id = $${values.length}`;
+  }
 
-    // A store's profile lists its offers through the marketplace, with the same rules.
-    if (store_id) {
-      const storeId = parseId(store_id);
-      if (storeId === null) {
-        return res.status(400).json({ error: "Invalid filter." });
-      }
-      values.push(storeId);
-      query += ` AND products.store_id = $${values.length}`;
-    }
+  // A store's profile lists its offers through the marketplace, with the same rules.
+  if (store_id) {
+    const storeId = parseId(store_id);
+    if (storeId === null) return null;
+    values.push(storeId);
+    query += ` AND products.store_id = $${values.length}`;
+  }
 
+  const sortKey = sort ?? "newest";
+  if (typeof sortKey !== "string" || !Object.hasOwn(SORT_ORDERS, sortKey)) return null;
+
+  // The radius limits a restaurant's search unless it chose a city or a store itself.
+  const radius = fromCity !== null && cityFilter.cityId === null && !store_id ? radiusFilter.radius : null;
+  const listed = `FROM (${query}) AS listed WHERE listed.available_quantity > 0`;
+  let from = listed;
+  let outsideRadiusCount = 0;
+  if (radius !== null) {
+    values.push(radius);
+    from += ` AND listed.distance_km <= $${values.length}`;
+    const outside = await pool.query<{ count: string }>(
+      `SELECT COUNT(*) AS count ${listed} AND listed.distance_km > $${values.length}`,
+      values,
+    );
+    outsideRadiusCount = Number(outside.rows[0]!.count);
+  }
+  return { from, values, outsideRadiusCount, sortKey };
+};
+
+// The shop's shortage is the store's own business (only its product details show it).
+const withoutShortage = (rows: Record<string, unknown>[]) =>
+  rows.map(({ shop_shortage: _shortage, ...product }) => product);
+
+export const getProducts = async (req: Request, res: Response) => {
+  try {
     const page = parsePage(req.query, CARD_PAGE_SIZE);
-    const sortKey = sort ?? "newest";
-    if (!page || typeof sortKey !== "string" || !Object.hasOwn(SORT_ORDERS, sortKey)) {
+    const marketplace = page && (await buildMarketplace(req));
+    if (!page || !marketplace) {
       return res.status(400).json({ error: "Invalid filter." });
     }
+    const { from, values, outsideRadiusCount, sortKey } = marketplace;
+    const { rows, total } = await listPage("listed.*", from, SORT_ORDERS[sortKey]!, values, page);
+    return res.status(200).json({ products: withoutShortage(rows), total, outside_radius_count: outsideRadiusCount });
+  } catch (error) {
+    console.error("Error while fetching products:", error);
+    return res
+      .status(500)
+      .json({ error: "An error occurred while fetching products." });
+  }
+};
 
-    // The radius limits a restaurant's search unless it chose a city or a store itself.
-    const radius =
-      fromCity !== null && cityFilter.cityId === null && !store_id ? radiusFilter.radius : null;
-    const listed = `FROM (${query}) AS listed WHERE listed.available_quantity > 0`;
-    let from = listed;
-    let outsideRadiusCount = 0;
-    if (radius !== null) {
-      values.push(radius);
-      from += ` AND listed.distance_km <= $${values.length}`;
-      const outside = await pool.query<{ count: string }>(
-        `SELECT COUNT(*) AS count ${listed} AND listed.distance_km > $${values.length}`,
-        values,
-      );
-      outsideRadiusCount = Number(outside.rows[0]!.count);
+// How Search orders the stores for each product sort: by the best match each store has (the
+// newest, the soonest expiry, the lowest or highest price or discount, the nearest).
+const STORE_SORT_VALUES: Record<string, string> = {
+  newest: "MAX(matched.created_at) DESC",
+  expiry: "MIN(matched.expiry_date) ASC",
+  price_asc: "MIN(matched.discounted_price) ASC",
+  price_desc: "MAX(matched.discounted_price) DESC",
+  discount_desc: `MAX(${DISCOUNT.replaceAll("listed.", "matched.")}) DESC`,
+  discount_asc: `MIN(${DISCOUNT.replaceAll("listed.", "matched.")}) ASC`,
+  distance: "MIN(matched.distance_km) ASC NULLS LAST, MAX(matched.created_at) DESC",
+};
+
+// Products shown per store on Search; the rest is behind "see all" (the store page).
+export const SEARCH_PRODUCTS_PER_STORE = 4;
+
+// Search (GET /products/by-store): the marketplace's matches grouped by store, paged by store
+// (default 12). Each row is a store (logo, name, chain, city, distance), how many of its offers
+// match and its first matches in the chosen sort. Same filters and rules as GET /products.
+export const getProductsByStore = async (req: Request, res: Response) => {
+  try {
+    const page = parsePage(req.query, CARD_PAGE_SIZE);
+    const marketplace = page && (await buildMarketplace(req));
+    if (!page || !marketplace) {
+      return res.status(400).json({ error: "Invalid filter." });
+    }
+    const { from, values, outsideRadiusCount, sortKey } = marketplace;
+    const matched = `WITH matched AS (SELECT listed.* ${from})`;
+    const n = values.length;
+    const groups = await pool.query<{ store_id: number; match_count: number; total: string }>(
+      `${matched}
+       SELECT matched.store_id, COUNT(*)::int AS match_count, COUNT(*) OVER () AS total
+       FROM matched
+       GROUP BY matched.store_id
+       ORDER BY ${STORE_SORT_VALUES[sortKey]!}, matched.store_id DESC
+       LIMIT $${n + 1} OFFSET $${n + 2}`,
+      [...values, page.limit, page.offset],
+    );
+    const total = Number(groups.rows[0]?.total ?? 0);
+    const storeIds = groups.rows.map((row) => row.store_id);
+    if (storeIds.length === 0) {
+      return res.status(200).json({ stores: [], total, outside_radius_count: outsideRadiusCount });
     }
 
-    const { rows, total } = await listPage("listed.*", from, SORT_ORDERS[sortKey]!, values, page);
+    const products = await pool.query(
+      `${matched}
+       SELECT ranked.* FROM (
+         SELECT matched.*, ROW_NUMBER() OVER (
+           PARTITION BY matched.store_id ORDER BY ${SORT_ORDERS[sortKey]!.replaceAll("listed.", "matched.")}
+         ) AS rank_in_store
+         FROM matched
+         WHERE matched.store_id = ANY($${n + 1}::int[])
+       ) AS ranked
+       WHERE ranked.rank_in_store <= $${n + 2}
+       ORDER BY ranked.rank_in_store`,
+      [...values, storeIds, SEARCH_PRODUCTS_PER_STORE],
+    );
+    const stores = await pool.query(
+      `SELECT users.id, users.business_name, ${storeLogo("users")} AS logo_url,
+              ${companyName("users")} AS company_name, cities.name AS city
+       FROM users LEFT JOIN cities ON cities.id = users.city_id
+       WHERE users.id = ANY($1::int[])`,
+      [storeIds],
+    );
+    const storeById = new Map(stores.rows.map((store) => [store.id, store]));
+    const productRows = withoutShortage(products.rows).map(({ rank_in_store: _rank, ...product }) => product);
 
-    // The shop's shortage is the store's own business (only its product details show it).
-    const products = rows.map(({ shop_shortage: _shortage, ...product }) => product);
-    return res.status(200).json({ products, total, outside_radius_count: outsideRadiusCount });
+    return res.status(200).json({
+      stores: groups.rows.map((group) => {
+        const items = productRows.filter((product) => product.store_id === group.store_id);
+        return {
+          ...storeById.get(group.store_id),
+          distance_km: items[0]?.distance_km ?? null,
+          match_count: group.match_count,
+          products: items,
+        };
+      }),
+      total,
+      outside_radius_count: outsideRadiusCount,
+    });
   } catch (error) {
     console.error("Error while fetching products:", error);
     return res
