@@ -19,8 +19,9 @@ test("the marketplace shows nearby offers first and the far ones on request", as
     await api.dispose();
   }
 
+  // Search groups the offers by store; each store's header has its city and distance.
   const cards = await searchMarketplace(page, prefix);
-  const card = (name: string) => cards.filter({ has: page.getByRole("heading", { name }) });
+  const card = (name: string) => page.getByTestId("search-store").filter({ hasText: name });
   const radius = page.getByRole("combobox", { name: "Udaljenost" });
   const hint = page.getByText("Još 1 ponuda je dalje od 10 km.");
 

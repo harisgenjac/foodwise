@@ -47,7 +47,7 @@ test("a store cancels a pickup the restaurant missed and the food is offered aga
 
   await test.step("Proizvod je opet ponuđen u cijeloj količini", async () => {
     const card = await searchMarketplace(restaurant, productName);
-    await expect(card.getByText("10 kilogram (kg)")).toBeVisible();
+    await expect(card.getByText("Dostupno: 10 kg")).toBeVisible();
   });
 
   await storeContext.close();

@@ -54,7 +54,7 @@ test("a restaurant withdraws a pending order and the store finds it by its code"
 
   await test.step("Količina je opet ponuđena", async () => {
     const card = await searchMarketplace(restaurant, productName);
-    await expect(card.getByText("10 kilogram (kg)")).toBeVisible();
+    await expect(card.getByText("Dostupno: 10 kg")).toBeVisible();
   });
 
   await storeContext.close();

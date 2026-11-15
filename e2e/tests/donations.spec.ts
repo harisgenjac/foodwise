@@ -51,7 +51,7 @@ test("a store donates a product's free quantity and returns it to the offer", as
     await expect(donationCard).toHaveCount(0);
     const offer = await searchMarketplace(restaurant, productName);
     await expect(offer).toHaveCount(1);
-    await expect(offer.getByText("5 kilogram (kg)")).toBeVisible();
+    await expect(offer.getByText("Dostupno: 5 kg")).toBeVisible();
   });
 
   await storeContext.close();

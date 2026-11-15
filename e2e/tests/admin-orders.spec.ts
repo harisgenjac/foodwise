@@ -56,7 +56,7 @@ test("the admin finds an order by code and cancels it with a reason", async ({ b
     await open(restaurant, "/notifications");
     await expect(restaurant.getByText(`Narudžbu ${code} je otkazao administrator platforme.`)).toBeVisible();
     const card = await searchMarketplace(restaurant, chicken);
-    await expect(card.getByText("4 kilogram (kg)")).toBeVisible();
+    await expect(card.getByText("Dostupno: 4 kg")).toBeVisible();
   });
 
   await adminContext.close();

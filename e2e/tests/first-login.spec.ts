@@ -74,6 +74,6 @@ test("a new restaurant changes its temporary password and fills in its profile b
   await expect(gate).toBeHidden();
   // The hero button; an empty dashboard repeats the same link further down.
   await page.getByRole("main").getByRole("link", { name: "Pretraži ponude" }).first().click();
-  await expect(page).toHaveURL(/\/browse-products$/);
-  await expect(page.getByRole("heading", { level: 1, name: "Proizvodi" })).toBeVisible();
+  await expect(page).toHaveURL(/\/search$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Pretraga" })).toBeVisible();
 });
