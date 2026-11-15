@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
@@ -28,14 +28,21 @@ interface SentView extends SentOrderResult {
 // The restaurant's cart (/cart): lines of one store with their live state, and the checkout. After
 // sending it shows the order's code, pickup, total and every change made at sending; lines that
 // were not sent stay in the cart with their flag (docs/orders-design.md, sections 4 and 5).
+// The store page's cart panel sends from there and opens this page with { sent } or { notSent }.
+interface CartPageState {
+  sent?: SentView;
+  notSent?: number[];
+}
+
 function CartPage() {
   const { t } = useTranslation();
+  const arrived = (useLocation().state ?? {}) as CartPageState;
   const { cart, status, setCart, refresh } = useCart();
   const [busy, setBusy] = useState(false);
   const [confirmEmpty, setConfirmEmpty] = useState(false);
   // Lines the last send refused (partial fulfilment off), by product.
-  const [notSent, setNotSent] = useState<Set<number>>(new Set());
-  const [sent, setSent] = useState<SentView | null>(null);
+  const [notSent, setNotSent] = useState<Set<number>>(() => new Set(arrived.notSent ?? []));
+  const [sent, setSent] = useState<SentView | null>(arrived.sent ?? null);
 
   // Every /cart call answers the whole cart.
   const change = async (request: () => Promise<AxiosResponse<{ cart: Cart }>>) => {

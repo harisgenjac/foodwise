@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
-import { AlertCircle, Building2, Clock, FileText, MapPin, Phone, Truck, UserRound } from "lucide-react";
+import { AlertCircle, Building2, FileText, MapPin, Phone, UserRound } from "lucide-react";
 import api from "../../api/axios.js";
 import Modal, { ModalBody, ModalFooter, ModalHeader, modalFormStyle } from "../product/Modal.js";
 import FormField, { inputStyle } from "../form/FormField.js";
@@ -11,6 +11,8 @@ import RequiredHint from "../form/RequiredHint.js";
 import CitySelect from "../form/CitySelect.js";
 import { useFormValidation } from "../../hooks/useFormValidation.js";
 import { isBlank, REQUIRED } from "../../utils/validation.js";
+import { isScheduleValid, type Schedule } from "../../utils/schedule.js";
+import WeeklyHoursEditor from "../profile/WeeklyHoursEditor.js";
 import type { User } from "../../types/index.js";
 
 interface EditProfileModalProps {
@@ -27,8 +29,6 @@ type ProfileField =
   | "city_id"
   | "phone"
   | "address"
-  | "opening_hours"
-  | "pickup_hours"
   | "description";
 
 // The admin corrects a user's profile; an admin account has only a name, a company headquarters
@@ -45,10 +45,11 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
     city_id: user.city_id ? String(user.city_id) : "",
     phone: user.phone ?? "",
     address: user.address ?? "",
-    opening_hours: user.opening_hours ?? "",
-    pickup_hours: user.pickup_hours ?? "",
     description: user.description ?? "",
   });
+  // Weekly hours, like on the user's own profile (sent once entered).
+  const [openingSchedule, setOpeningSchedule] = useState<Schedule | null>(user.opening_schedule ?? null);
+  const [pickupSchedule, setPickupSchedule] = useState<Schedule | null>(user.pickup_schedule ?? null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -62,8 +63,6 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
           { field: "city_id" as const, label: t("admin.userDetails.city"), icon: MapPin, required: true },
           { field: "phone" as const, label: t("admin.userDetails.phone"), icon: Phone, required: true },
           { field: "address" as const, label: t("admin.userDetails.address"), icon: MapPin, wide: true, required: true },
-          { field: "opening_hours" as const, label: t("admin.userDetails.openingHours"), icon: Clock },
-          { field: "pickup_hours" as const, label: t("admin.userDetails.pickupHours"), icon: Truck },
         ]
       : []),
     ...(isCompany
@@ -80,10 +79,18 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (saving || !validate()) return;
+    if (!isScheduleValid(openingSchedule) || !isScheduleValid(pickupSchedule)) {
+      setError(t("schedule.invalid"));
+      return;
+    }
     setSaving(true);
     setError("");
     try {
-      const response = await api.put(`/admin/users/${user.id}/profile`, values);
+      const response = await api.put(`/admin/users/${user.id}/profile`, {
+        ...values,
+        ...(openingSchedule && { opening_schedule: openingSchedule }),
+        ...(user.role === "STORE" && pickupSchedule && { pickup_schedule: pickupSchedule }),
+      });
       toast.success(response.data.message);
       onSaved();
     } catch (err) {
@@ -135,6 +142,24 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
                 </div>
               );
             })}
+            {isBusiness && (
+              <div className="space-y-5 sm:col-span-2">
+                <WeeklyHoursEditor
+                  label={t("admin.userDetails.openingHours")}
+                  value={openingSchedule}
+                  onChange={setOpeningSchedule}
+                  legacyText={user.opening_hours ?? null}
+                />
+                {user.role === "STORE" && (
+                  <WeeklyHoursEditor
+                    label={t("admin.userDetails.pickupHours")}
+                    value={pickupSchedule}
+                    onChange={setPickupSchedule}
+                    legacyText={user.pickup_hours ?? null}
+                  />
+                )}
+              </div>
+            )}
             {isBusiness && (
               <div className="sm:col-span-2">
                 <FormField label={t("admin.userDetails.description")} icon={FileText}>

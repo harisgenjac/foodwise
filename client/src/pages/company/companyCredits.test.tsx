@@ -217,6 +217,8 @@ describe("the branch page's credits card", () => {
       phone: "032 400",
       opening_hours: null,
       pickup_hours: null,
+      opening_schedule: null,
+      pickup_schedule: null,
       logo_url: null,
       description: null,
       status: "active",

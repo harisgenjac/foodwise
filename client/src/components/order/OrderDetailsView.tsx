@@ -30,6 +30,7 @@ import {
 import type { OrderDetails, OrderParty } from "../../types/index.js";
 import SendChangesList from "./SendChangesList.js";
 import OrderImage from "./OrderImage.js";
+import { hoursText } from "../../utils/schedule.js";
 
 const dateTimeFormat: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" };
 const formatDateTime = (value: string) => new Date(value).toLocaleString(undefined, dateTimeFormat);
@@ -79,6 +80,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
 
   const partyCard = (party: OrderParty, kind: "STORE" | "RESTAURANT") => {
     const isStoreParty = kind === "STORE";
+    const pickupHours = hoursText(party.pickup_schedule, party.pickup_hours, t);
     // The restaurant needs the store's pickup hours and its page; the admin opens the user page.
     const link = isAdmin
       ? { to: `/admin/users/${party.id}`, label: t("orders.viewUser") }
@@ -103,10 +105,10 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
                 {party.phone}
               </a>
             )}
-            {isStoreParty && party.pickup_hours && (
+            {isStoreParty && pickupHours && (
               <p className="flex items-center gap-2 text-sm text-gray-600">
                 <Clock className="h-4 w-4 shrink-0 text-gray-400" />
-                {t("orders.pickupHours")}: {party.pickup_hours}
+                {t("orders.pickupHours")}: {pickupHours}
               </p>
             )}
           </div>

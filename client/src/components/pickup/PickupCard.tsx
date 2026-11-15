@@ -13,6 +13,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import OrderImage from "../order/OrderImage.js";
+import { hoursText } from "../../utils/schedule.js";
 import { formatMoney, formatOrderCode, itemsSummary } from "../../utils/orders.js";
 import type { Order } from "../../types/index.js";
 
@@ -40,6 +41,7 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
   const pickedUpAt = new Date(order.picked_up_at ?? order.updated_at);
   const PartyIcon = isStore ? UtensilsCrossed : Store;
   const daysOverdue = order.days_overdue ?? 0;
+  const pickupHours = hoursText(order.party_pickup_schedule, order.party_pickup_hours, t);
 
   const tone = isCompleted
     ? "bg-green-50 text-green-700"
@@ -112,10 +114,10 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
                 {order.party_address}
               </span>
             )}
-            {!isStore && order.party_pickup_hours && (
+            {!isStore && pickupHours && (
               <span className="inline-flex items-center gap-1.5">
                 <Clock className="h-4 w-4 shrink-0 text-gray-400" />
-                {t("pickups.pickupHours")}: {order.party_pickup_hours}
+                {t("pickups.pickupHours")}: {pickupHours}
               </span>
             )}
           </div>

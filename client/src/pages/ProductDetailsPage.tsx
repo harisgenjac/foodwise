@@ -34,6 +34,7 @@ import DonateProductModal from "../components/donation/DonateProductModal.js";
 import SoldInShopModal from "../components/product/SoldInShopModal.js";
 import ShopSalesCard from "../components/product/ShopSalesCard.js";
 import ProductImage from "../components/product/ProductImage.js";
+import { hoursText } from "../utils/schedule.js";
 import { PRODUCT_STATUS_STYLES } from "../utils/productStatus.js";
 import { getDaysUntilExpiry } from "../utils/expiry.js";
 import ChainLabel from "../components/store/ChainLabel.js";
@@ -136,6 +137,7 @@ function ProductDetailsPage() {
 
   const unit = units[product.unit] || product.unit;
   const isOwner = isStore && product.store_id === user?.id;
+  const storePickupHours = hoursText(product.store_pickup_schedule, product.store_pickup_hours, t);
   const quantity = parseFloat(product.quantity);
   const available = parseFloat(product.available_quantity ?? product.quantity);
   // The owner also sees what it sold in its own shop; for restaurants that is part of "ordered".
@@ -375,10 +377,10 @@ function ProductDetailsPage() {
                   {product.store_phone}
                 </a>
               )}
-              {product.store_pickup_hours && (
+              {storePickupHours && (
                 <p className="flex items-center gap-2 text-sm text-gray-600">
                   <Clock className="h-4 w-4 shrink-0 text-gray-400" />
-                  {t("orders.pickupHours")}: {product.store_pickup_hours}
+                  {t("orders.pickupHours")}: {storePickupHours}
                 </p>
               )}
             </div>

@@ -344,14 +344,8 @@
     "noStoresTitle": "No stores registered yet",
     "noStoresSubtitle": "Once a store is registered, it will appear here.",
     "storeNotFound": "Store not found.",
-    "activeProducts": "Active Products",
-    "soldProducts": "Products Sold",
-    "successfulOrders": "Successful deliveries (picked up)",
-    "myOrders": "Your orders here (picked up)",
     "productsTab": "Products",
-    "ordersTab": "My orders",
     "storeNoProducts": "This store currently has no available products.",
-    "restaurantNoRes": "You have no orders with this store.",
     "subtitle": "Find stores near you and browse their offers.",
     "count_one": "{{count}} store",
     "count_other": "{{count}} stores",
@@ -365,15 +359,36 @@
     "inFavorites": "In favorites",
     "noFavoritesTitle": "You have no favorite stores",
     "noFavoritesSubtitle": "Add a store to your favorites by clicking the heart on its card.",
-    "contactTitle": "Contact and opening hours",
     "backToStores": "Back to stores",
     "storeNotFoundSubtitle": "The store does not exist or is no longer available.",
     "storeNoProductsSubtitle": "Check back later or browse offers from other stores.",
     "browseOtherOffers": "Browse all offers",
-    "restaurantNoResSubtitle": "When you order a product from this store, the order will appear here.",
-    "noStatusResultsSubtitle": "You have no orders with this status at this store.",
-    "allStatuses": "All",
-    "chainLabel": "part of {{company}}"
+    "chainLabel": "part of {{company}}",
+    "page": {
+      "available": "Available: {{amount}}",
+      "cartBar_one": "Cart · {{count}} product · {{total}}",
+      "cartBar_other": "Cart · {{count}} products · {{total}}",
+      "cartTitle": "Cart",
+      "cartEmpty": "The cart is empty. Add products with the + button.",
+      "cartOtherStore_one": "The cart holds {{count}} product from {{store}}. An order can only come from one store.",
+      "cartOtherStore_other": "The cart holds {{count}} products from {{store}}. An order can only come from one store.",
+      "openCart": "Open the cart",
+      "lineUnavailable": "No longer available",
+      "pickupToday": "Pickup today: {{hours}}",
+      "openNow": "Open now",
+      "closedNow": "Closed",
+      "activeOffers": "Active offers",
+      "expiringToday": "Expiring today",
+      "maxDiscount": "Biggest discount",
+      "tabsLabel": "Store page",
+      "infoTab": "Information",
+      "searchPlaceholder": "Search in this store",
+      "categoriesLabel": "Categories",
+      "allCategories": "All",
+      "noResultsSubtitle": "No product of this store matches the search.",
+      "expiringSoon": "Expiring soon",
+      "about": "About the store"
+    }
   },
   "categories": {
     "Meat": "Meat",
@@ -1987,5 +2002,49 @@
     "galleryOption": "Suggested image {{number}}",
     "select": "Select image",
     "cancel": "Cancel"
+  },
+  "schedule": {
+    "closed": "closed",
+    "copyMonday": "Copy Monday to every day",
+    "legacyHint": "Entered before: “{{text}}”. Enter your weekly hours below so restaurants can see whether you are open now.",
+    "notEntered": "Weekly hours are not entered yet. Save them so restaurants can see whether you are open now.",
+    "openOn": "Open on {{day}}",
+    "opensAt": "{{day}}: opens at",
+    "closesAt": "{{day}}: closes at",
+    "invalid": "Check the hours: every open day must close after it opens.",
+    "days": {
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday",
+      "sun": "Sunday"
+    },
+    "short": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    }
+  },
+  "cover": {
+    "alt": "Store cover image",
+    "add": "Add a cover image",
+    "change": "Change the cover image",
+    "upload": "Upload a cover image",
+    "remove": "Remove the cover image",
+    "saved": "The cover image was uploaded.",
+    "hint": "The cover image is shown at the top of your store page (JPG, PNG or WEBP, at most 5 MB)."
+  },
+  "stepper": {
+    "label": "Quantity in the cart: {{name}}",
+    "add": "Add to cart: {{name}}",
+    "increase": "Increase the quantity: {{name}}",
+    "decrease": "Decrease the quantity: {{name}}",
+    "remove": "Remove from the cart: {{name}}"
   }
 }
