@@ -21,7 +21,7 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-hot-toast": "^2.6.1",
-    "react-i18next": "^17.1.9",
+    "react-i18next": "^18.0.1",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.18.5",
     "tailwindcss": "^4.3.3"
