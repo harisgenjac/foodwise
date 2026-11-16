@@ -9,6 +9,8 @@ export interface SeedBusiness {
   // A name from the cities table.
   city: string;
   address: string;
+  // The pin on the map: [latitude, longitude]. Left out = no pin yet (the profile reminds).
+  location?: [number, number];
   phone: string;
   opening_hours: string;
   pickup_hours: string;
@@ -70,61 +72,61 @@ const ALL_CATEGORIES = ["Meat", "Fish", "Dairy", "Vegetables", "Fruits", "Bakery
 export const STORES: SeedStore[] = [
   {
     first_name: "Amir", last_name: "Hodžić", email: "market.centar@demo.com", business_name: "Market Centar",
-    city: "Sarajevo", address: "Ferhadija 5", phone: "061111111", opening_hours: "07:00–22:00", pickup_hours: "15:00–20:00",
+    city: "Sarajevo", address: "Ferhadija 5", location: [43.85905, 18.42632], phone: "061111111", opening_hours: "07:00–22:00", pickup_hours: "15:00–20:00",
     description: "Supermarket u centru grada sa svježim mesom, mliječnim proizvodima i pekarom.",
     pickup: [15, 20], activity: 0.7, currentStock: 22, categories: ALL_CATEGORIES, plans: ["Pro"], autoRenew: true,
   },
   {
     first_name: "Emir", last_name: "Kovač", email: "zeleni.market@demo.com", business_name: "Zeleni Market",
-    city: "Sarajevo", address: "Zmaja od Bosne 44", phone: "061333333", opening_hours: "07:00–21:00", pickup_hours: "14:00–19:00",
+    city: "Sarajevo", address: "Zmaja od Bosne 44", location: [43.85383, 18.39548], phone: "061333333", opening_hours: "07:00–21:00", pickup_hours: "14:00–19:00",
     description: "Voće i povrće od lokalnih proizvođača, sokovi i namirnice za kuhinju.",
     pickup: [14, 19], activity: 0.55, currentStock: 18, categories: ["Vegetables", "Fruits", "Drinks", "Other"], plans: ["Pro"], autoRenew: true,
   },
   {
     first_name: "Mirza", last_name: "Delić", email: "mesnica.bosna@demo.com", business_name: "Mesnica Bosna",
-    city: "Tuzla", address: "Turalibegova 18", phone: "061444444", opening_hours: "07:00–19:00", pickup_hours: "13:00–18:00",
+    city: "Tuzla", address: "Turalibegova 18", location: [44.53803, 18.67683], phone: "061444444", opening_hours: "07:00–19:00", pickup_hours: "13:00–18:00",
     description: "Domaće meso iz vlastitog otkupa, suhomesnato i smrznuti program.",
     pickup: [13, 18], activity: 0.4, currentStock: 14, categories: ["Meat", "Frozen Food"], plans: ["Standard"], autoRenew: true,
   },
   {
     first_name: "Selma", last_name: "Begić", email: "pekara.dobra@demo.com", business_name: "Pekara Dobra",
-    city: "Tuzla", address: "Slatina 12", phone: "061222222", opening_hours: "06:00–20:00", pickup_hours: "16:00–19:00",
+    city: "Tuzla", address: "Slatina 12", location: [44.54241, 18.68262], phone: "061222222", opening_hours: "06:00–20:00", pickup_hours: "16:00–19:00",
     description: "Pekara sa tradicijom: hljeb, peciva, kroasani i mliječni program.",
     pickup: [16, 19], activity: 0.45, currentStock: 13, categories: ["Bakery", "Dairy"], plans: ["Standard"], autoRenew: false,
   },
   {
     first_name: "Lamija", last_name: "Hadžić", email: "mljekara.vrelo@demo.com", business_name: "Mljekara Vrelo",
-    city: "Visoko", address: "Alije Izetbegovića 12", phone: "061555555", opening_hours: "07:00–18:00", pickup_hours: "12:00–17:00",
+    city: "Visoko", address: "Alije Izetbegovića 12", location: [43.98872, 18.17812], phone: "061555555", opening_hours: "07:00–18:00", pickup_hours: "12:00–17:00",
     description: "Mlijeko, jogurt, sirevi i pavlaka iz vlastite mljekare.",
     pickup: [12, 17], activity: 0.3, currentStock: 11, categories: ["Dairy", "Drinks"], plans: ["Standard"], autoRenew: true,
   },
   {
     first_name: "Dino", last_name: "Marić", email: "ribarnica.neretva@demo.com", business_name: "Ribarnica Neretva",
-    city: "Zenica", address: "Trg Alije Izetbegovića 3", phone: "061666666", opening_hours: "07:00–17:00", pickup_hours: "12:00–16:00",
+    city: "Zenica", address: "Trg Alije Izetbegovića 3", location: [44.20168, 17.90783], phone: "061666666", opening_hours: "07:00–17:00", pickup_hours: "12:00–16:00",
     description: "Svježa riječna i morska riba, isporuka svako jutro.",
     pickup: [12, 16], activity: 0.25, currentStock: 10, categories: ["Fish", "Frozen Food"], plans: ["Basic", "Standard"], autoRenew: false,
   },
   {
     first_name: "Ivana", last_name: "Bošnjak", email: "market.neretva@demo.com", business_name: "Market Neretva",
-    city: "Kakanj", address: "Branilaca 5", phone: "061777777", opening_hours: "07:00–21:00", pickup_hours: "15:00–19:00",
+    city: "Kakanj", address: "Branilaca 5", location: [44.13277, 18.11998], phone: "061777777", opening_hours: "07:00–21:00", pickup_hours: "15:00–19:00",
     description: "Kvartovski market sa širokim izborom namirnica.",
     pickup: [15, 19], activity: 0.3, currentStock: 9, categories: ALL_CATEGORIES, plans: ["Standard"], autoRenew: false,
   },
   {
     first_name: "Kenan", last_name: "Mujić", email: "vocarna.butmir@demo.com", business_name: "Voćarna Butmir",
-    city: "Sarajevo", address: "Butmirska cesta 31", phone: "061888888", opening_hours: "08:00–20:00", pickup_hours: "16:00–19:00",
+    city: "Sarajevo", address: "Butmirska cesta 31", location: [43.82676, 18.30905], phone: "061888888", opening_hours: "08:00–20:00", pickup_hours: "16:00–19:00",
     description: "Sezonsko voće i povrće sa farmi u okolini Sarajeva.",
     pickup: [16, 19], activity: 0.18, currentStock: 7, categories: ["Fruits", "Vegetables"], plans: ["Basic"], autoRenew: true,
   },
   {
     first_name: "Aida", last_name: "Salihović", email: "pekara.somun@demo.com", business_name: "Pekara Somun",
-    city: "Zenica", address: "Maršala Tita 60", phone: "061999999", opening_hours: "06:00–19:00", pickup_hours: "17:00–19:00",
+    city: "Zenica", address: "Maršala Tita 60", location: [44.20412, 17.90598], phone: "061999999", opening_hours: "06:00–19:00", pickup_hours: "17:00–19:00",
     description: "Somuni, pite i hljeb iz krušne peći.",
     pickup: [17, 19], activity: 0.15, currentStock: 6, categories: ["Bakery"], plans: ["Basic"], autoRenew: false,
   },
   {
     first_name: "Nermin", last_name: "Čaušević", email: "bio.kutak@demo.com", business_name: "Bio Kutak",
-    city: "Visoko", address: "Čaršijska 4", phone: "062000000", opening_hours: "09:00–20:00", pickup_hours: "17:00–20:00",
+    city: "Visoko", address: "Čaršijska 4", location: [43.98963, 18.17646], phone: "062000000", opening_hours: "09:00–20:00", pickup_hours: "17:00–20:00",
     description: "Organske namirnice, biljni napici i zdrava hrana.",
     pickup: [17, 20], activity: 0.12, currentStock: 5, categories: ["Other", "Drinks", "Dairy", "Vegetables"], plans: ["Basic"], autoRenew: false,
   },
@@ -132,31 +134,31 @@ export const STORES: SeedStore[] = [
   // their own, so they show the company's.
   {
     first_name: "Lejla", last_name: "Kovač", email: "bingo.sarajevo@demo.com", business_name: "Bingo Sarajevo Centar",
-    city: "Sarajevo", address: "Zmaja od Bosne 8", phone: "033400100", opening_hours: "07:00–22:00", pickup_hours: "16:00–20:00",
+    city: "Sarajevo", address: "Zmaja od Bosne 8", location: [43.85641, 18.40858], phone: "033400100", opening_hours: "07:00–22:00", pickup_hours: "16:00–20:00",
     pickup: [16, 20], activity: 0.35, currentStock: 10, categories: ALL_CATEGORIES, plans: ["Standard"], autoRenew: true,
     company: "Bingo d.o.o.",
   },
   {
     first_name: "Mirza", last_name: "Hadžić", email: "bingo.visoko@demo.com", business_name: "Bingo Visoko",
-    city: "Visoko", address: "Alije Izetbegovića 22", phone: "032400200", opening_hours: "07:00–21:00", pickup_hours: "16:00–19:00",
+    city: "Visoko", address: "Alije Izetbegovića 22", location: [43.98728, 18.18044], phone: "032400200", opening_hours: "07:00–21:00", pickup_hours: "16:00–19:00",
     pickup: [16, 19], activity: 0.25, currentStock: 8, categories: ALL_CATEGORIES, plans: ["Standard"], autoRenew: false,
     company: "Bingo d.o.o.",
   },
   {
     first_name: "Edina", last_name: "Bešić", email: "bingo.kakanj@demo.com", business_name: "Bingo Kakanj",
-    city: "Kakanj", address: "Alije Izetbegovića 5", phone: "032400300", opening_hours: "07:00–21:00", pickup_hours: "16:00–19:00",
+    city: "Kakanj", address: "Alije Izetbegovića 5", location: [44.13125, 18.11876], phone: "032400300", opening_hours: "07:00–21:00", pickup_hours: "16:00–19:00",
     pickup: [16, 19], activity: 0.2, currentStock: 7, categories: ALL_CATEGORIES, plans: ["Basic"], autoRenew: false,
     company: "Bingo d.o.o.",
   },
   {
     first_name: "Haris", last_name: "Delić", email: "bingo.zenica@demo.com", business_name: "Bingo Zenica",
-    city: "Zenica", address: "Bulevar Kralja Tvrtka I 14", phone: "032400400", opening_hours: "07:00–22:00", pickup_hours: "16:00–20:00",
+    city: "Zenica", address: "Bulevar Kralja Tvrtka I 14", location: [44.20644, 17.91104], phone: "032400400", opening_hours: "07:00–22:00", pickup_hours: "16:00–20:00",
     pickup: [16, 20], activity: 0.3, currentStock: 9, categories: ALL_CATEGORIES, plans: ["Standard"], autoRenew: true,
     company: "Bingo d.o.o.",
   },
   {
     first_name: "Amela", last_name: "Mehić", email: "bingo.tuzla@demo.com", business_name: "Bingo Tuzla",
-    city: "Tuzla", address: "Mitra Trifunovića Uče 2", phone: "035400500", opening_hours: "07:00–22:00", pickup_hours: "16:00–20:00",
+    city: "Tuzla", address: "Mitra Trifunovića Uče 2", location: [44.53646, 18.67168], phone: "035400500", opening_hours: "07:00–22:00", pickup_hours: "16:00–20:00",
     pickup: [16, 20], activity: 0.3, currentStock: 9, categories: ALL_CATEGORIES, plans: ["Standard"], autoRenew: true,
     company: "Bingo d.o.o.",
   },
@@ -165,25 +167,25 @@ export const STORES: SeedStore[] = [
 export const RESTAURANTS: SeedBusiness[] = [
   {
     first_name: "Lejla", last_name: "Softić", email: "restoran.ukus@demo.com", business_name: "Restoran Ukus",
-    city: "Sarajevo", address: "Titova 20", phone: "062111111", opening_hours: "10:00–23:00", pickup_hours: "",
+    city: "Sarajevo", address: "Titova 20", location: [43.85873, 18.41756], phone: "062111111", opening_hours: "10:00–23:00", pickup_hours: "",
     description: "Bosanska i mediteranska kuhinja, dnevni meni i catering.",
     pickup: [0, 0], activity: 0.9,
   },
   {
     first_name: "Tarik", last_name: "Hasić", email: "bistro.avlija@demo.com", business_name: "Bistro Avlija",
-    city: "Sarajevo", address: "Sime Milutinovića 4", phone: "062222223", opening_hours: "08:00–22:00", pickup_hours: "",
+    city: "Sarajevo", address: "Sime Milutinovića 4", location: [43.85962, 18.42197], phone: "062222223", opening_hours: "08:00–22:00", pickup_hours: "",
     description: "Doručci, sezonske salate i jela s roštilja u mirnoj avliji.",
     pickup: [0, 0], activity: 0.75,
   },
   {
     first_name: "Adnan", last_name: "Mešić", email: "pizzeria.roma@demo.com", business_name: "Pizzeria Roma",
-    city: "Tuzla", address: "Trg slobode 7", phone: "062222222", opening_hours: "11:00–23:00", pickup_hours: "",
+    city: "Tuzla", address: "Trg slobode 7", location: [44.53851, 18.67606], phone: "062222222", opening_hours: "11:00–23:00", pickup_hours: "",
     description: "Pizza iz krušne peći i domaća tjestenina.",
     pickup: [0, 0], activity: 0.7,
   },
   {
     first_name: "Jasmin", last_name: "Omerović", email: "restoran.starigrad@demo.com", business_name: "Restoran Stari Grad",
-    city: "Sarajevo", address: "Baščaršija 12", phone: "062333333", opening_hours: "09:00–23:00", pickup_hours: "",
+    city: "Sarajevo", address: "Baščaršija 12", location: [43.85976, 18.43105], phone: "062333333", opening_hours: "09:00–23:00", pickup_hours: "",
     description: "Tradicionalna jela, ćevapi i pite u srcu Baščaršije.",
     pickup: [0, 0], activity: 0.6,
   },
@@ -195,31 +197,31 @@ export const RESTAURANTS: SeedBusiness[] = [
   },
   {
     first_name: "Edin", last_name: "Karić", email: "restoran.panorama@demo.com", business_name: "Restoran Panorama",
-    city: "Sarajevo", address: "Vrbanja 1", phone: "062555555", opening_hours: "11:00–23:00", pickup_hours: "",
+    city: "Sarajevo", address: "Vrbanja 1", location: [43.85633, 18.40551], phone: "062555555", opening_hours: "11:00–23:00", pickup_hours: "",
     description: "Restoran za poslovne ručkove i proslave.",
     pickup: [0, 0], activity: 0.5,
   },
   {
     first_name: "Maja", last_name: "Pašić", email: "bistro.zelenikutak@demo.com", business_name: "Bistro Zeleni Kutak",
-    city: "Kakanj", address: "Rudarska 12", phone: "062666666", opening_hours: "08:00–21:00", pickup_hours: "",
+    city: "Kakanj", address: "Rudarska 12", location: [44.13402, 18.11733], phone: "062666666", opening_hours: "08:00–21:00", pickup_hours: "",
     description: "Vegetarijanska i veganska jela od lokalnih namirnica.",
     pickup: [0, 0], activity: 0.4,
   },
   {
     first_name: "Haris", last_name: "Imamović", email: "pizzeria.napoli@demo.com", business_name: "Pizzeria Napoli",
-    city: "Tuzla", address: "Stupine B4", phone: "062777777", opening_hours: "11:00–23:00", pickup_hours: "",
+    city: "Tuzla", address: "Stupine B4", location: [44.53047, 18.65182], phone: "062777777", opening_hours: "11:00–23:00", pickup_hours: "",
     description: "Napolitanska pizza i brza dostava u Tuzli.",
     pickup: [0, 0], activity: 0.35,
   },
   {
     first_name: "Goran", last_name: "Vuković", email: "restoran.tvrdjava@demo.com", business_name: "Restoran Tvrđava",
-    city: "Visoko", address: "Čaršijska 20", phone: "062888888", opening_hours: "10:00–23:00", pickup_hours: "",
+    city: "Visoko", address: "Čaršijska 20", location: [43.98931, 18.17712], phone: "062888888", opening_hours: "10:00–23:00", pickup_hours: "",
     description: "Jela s ražnja i peke, domaća vina.",
     pickup: [0, 0], activity: 0.3,
   },
   {
     first_name: "Senad", last_name: "Bajrić", email: "ascinica.sofra@demo.com", business_name: "Aščinica Sofra",
-    city: "Zenica", address: "Maršala Tita 15", phone: "062999999", opening_hours: "08:00–18:00", pickup_hours: "",
+    city: "Zenica", address: "Maršala Tita 15", location: [44.20286, 17.90671], phone: "062999999", opening_hours: "08:00–18:00", pickup_hours: "",
     description: "Kuhana jela, dolme i sogan-dolma po starim receptima.",
     pickup: [0, 0], activity: 0.2,
   },

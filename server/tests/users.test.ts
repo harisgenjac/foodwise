@@ -341,6 +341,79 @@ describe("Users routes", () => {
     });
   });
 
+  describe("location on PUT /api/users/me", () => {
+    // A point about 1 km from Olovo's centre (PROFILE's city), read from the city list.
+    let near: { latitude: number; longitude: number };
+
+    beforeAll(async () => {
+      const olovo = await pool.query(
+        "SELECT cities.latitude::float8 AS latitude, cities.longitude::float8 AS longitude FROM cities WHERE cities.name = 'Olovo'",
+      );
+      near = { latitude: olovo.rows[0].latitude + 0.009, longitude: olovo.rows[0].longitude };
+    });
+
+    it("has no location until the pin is set", async () => {
+      const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
+      const me = await restaurant.get("/api/users/me");
+      expect(me.body.user).toMatchObject({ latitude: null, longitude: null });
+    });
+
+    it("saves the pin rounded to 6 decimals, keeps it when not sent and clears it with null", async () => {
+      const store = await registerAndLogin(STORE, "STORE");
+      const precise = { latitude: near.latitude + 0.0000004, longitude: near.longitude - 0.0000004 };
+      const saved = await store.put("/api/users/me").send({ ...PROFILE, location: precise });
+      expect(saved.status).toBe(200);
+      expect(saved.body.user.latitude).toBe(Math.round(precise.latitude * 1e6) / 1e6);
+      expect(saved.body.user.longitude).toBe(Math.round(precise.longitude * 1e6) / 1e6);
+      expect(typeof saved.body.user.latitude).toBe("number");
+
+      const kept = await store.put("/api/users/me").send(PROFILE);
+      expect(kept.body.user.latitude).toBe(saved.body.user.latitude);
+      expect((await store.get("/api/users/me")).body.user.longitude).toBe(saved.body.user.longitude);
+
+      const cleared = await store.put("/api/users/me").send({ ...PROFILE, location: null });
+      expect(cleared.body.user).toMatchObject({ latitude: null, longitude: null });
+    });
+
+    it.each([
+      ["a missing longitude", { latitude: 44.1 }],
+      ["a string", { latitude: "44.1", longitude: "18.5" }],
+      ["a latitude out of range", { latitude: 91, longitude: 18.5 }],
+      ["a longitude out of range", { latitude: 44.1, longitude: -181 }],
+      ["an array", [44.1, 18.5]],
+      ["a text", "Olovo"],
+    ])("refuses %s", async (_label, location) => {
+      const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
+      const response = await restaurant.put("/api/users/me").send({ ...PROFILE, location });
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Location is not valid.");
+    });
+
+    it("refuses a pin more than 30 km from the chosen city and changes nothing", async () => {
+      const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
+      await restaurant.put("/api/users/me").send({ ...PROFILE, location: near });
+      // Zenica's centre is far more than 30 km from Olovo.
+      const zenicaCentre = await pool.query(
+        "SELECT cities.latitude::float8 AS latitude, cities.longitude::float8 AS longitude FROM cities WHERE cities.id = $1",
+        [zenica],
+      );
+      const far = await restaurant
+        .put("/api/users/me")
+        .send({ ...PROFILE, address: "Nova 1", location: zenicaCentre.rows[0] });
+      expect(far.status).toBe(400);
+      expect(far.body.error).toBe("The location on the map is too far from the chosen city.");
+      const me = (await restaurant.get("/api/users/me")).body.user;
+      expect(me.address).toBe(PROFILE.address);
+      expect(me.latitude).toBe(near.latitude);
+
+      // The same pin is accepted with the city it belongs to.
+      const moved = await restaurant
+        .put("/api/users/me")
+        .send({ ...PROFILE, city_id: zenica, location: zenicaCentre.rows[0] });
+      expect(moved.status).toBe(200);
+    });
+  });
+
   describe("cover image", () => {
     const coverPath = (url: string) => path.join(UPLOADS_DIR, "covers", path.basename(url));
     const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);

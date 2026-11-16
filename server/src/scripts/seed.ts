@@ -342,13 +342,13 @@ async function seed() {
       if (companyId === undefined) throw new Error(`Unknown seed company: ${companyName}`);
       const result = await client.query<{ id: number }>(
         `INSERT INTO users (first_name, last_name, email, password_hash, role, business_name, city_id, phone, address,
-                            opening_schedule, pickup_schedule, description, company_id, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
+                            opening_schedule, pickup_schedule, description, company_id, created_at, latitude, longitude)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id`,
         [
           data.first_name, data.last_name, data.email, passwordHash, role, data.business_name, cityId(data.city), data.phone,
           data.address, JSON.stringify(weekly(data.opening_hours)),
           role === "STORE" ? JSON.stringify(weekly(data.pickup_hours)) : null,
-          data.description ?? null, companyId, createdAt,
+          data.description ?? null, companyId, createdAt, data.location?.[0] ?? null, data.location?.[1] ?? null,
         ],
       );
       const id = result.rows[0]!.id;

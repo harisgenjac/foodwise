@@ -68,8 +68,12 @@ describe("GET /api/cities", () => {
     expect(response.status).toBe(200);
     expect(response.body.message).toBe("Cities fetched successfully.");
     expect(response.body.cities.map((city: { name: string }) => city.name)).toEqual(CITIES_IN_ORDER);
-    expect(Object.keys(response.body.cities[0]).sort()).toEqual(["id", "name"]);
+    expect(Object.keys(response.body.cities[0]).sort()).toEqual(["id", "latitude", "longitude", "name"]);
     expect(typeof response.body.cities[0].id).toBe("number");
+    // The centre's coordinates as numbers, where the location map starts.
+    const sarajevo = response.body.cities.find((city: { name: string }) => city.name === "Sarajevo");
+    expect(sarajevo.latitude).toBeCloseTo(43.86, 1);
+    expect(sarajevo.longitude).toBeCloseTo(18.41, 1);
   });
 
   // The profile can be filled in before the temporary password is replaced, so the list must load.

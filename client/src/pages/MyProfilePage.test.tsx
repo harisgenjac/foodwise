@@ -3,6 +3,21 @@ import userEvent from "@testing-library/user-event";
 import toast from "react-hot-toast";
 import MyProfilePage from "./MyProfilePage.js";
 import { apiMock, axiosError, makeUser, renderWithProviders, t } from "../test/utils.js";
+import type { LocationMapProps } from "../components/profile/LocationMap.js";
+
+// Leaflet does not run in jsdom: a stand-in map that shows the pin and the centre and places a pin
+// like a click on the real map.
+vi.mock("../components/profile/LocationMap.js", () => ({
+  default: ({ value, center, onChange }: LocationMapProps) => (
+    <div>
+      <span data-testid="map-center">{`${center.latitude},${center.longitude}`}</span>
+      <span data-testid="map-pin">{value ? `${value.latitude},${value.longitude}` : "none"}</span>
+      <button type="button" onClick={() => onChange({ latitude: 44.21, longitude: 17.91 })}>
+        map click
+      </button>
+    </div>
+  ),
+}));
 
 const restaurant = makeUser({
   role: "RESTAURANT",
@@ -245,5 +260,51 @@ describe("MyProfilePage weekly hours and cover", () => {
     await userEvent.click(screen.getByRole("button", { name: t("cover.remove") }));
     expect(apiMock.delete).toHaveBeenCalledWith("/users/me/cover");
     await waitFor(() => expect(screen.queryByAltText(t("cover.alt"))).not.toBeInTheDocument());
+  });
+});
+
+describe("MyProfilePage location", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    apiMock.put.mockResolvedValue({ data: { message: "Profile updated successfully." } });
+  });
+
+  it("shows the saved pin and sends it with the profile", async () => {
+    renderWithProviders(<MyProfilePage />, {
+      route: "/my-profile",
+      path: "/my-profile",
+      user: { ...restaurant, latitude: 44.2, longitude: 17.9 },
+    });
+    expect(await screen.findByTestId("map-pin")).toHaveTextContent("44.2,17.9");
+    expect(screen.getByText(t("location.set"))).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: t("user.saveButton") }));
+    await waitFor(() =>
+      expect(apiMock.put).toHaveBeenCalledWith(
+        "/users/me",
+        expect.objectContaining({ location: { latitude: 44.2, longitude: 17.9 } }),
+      ),
+    );
+  });
+
+  it("starts the map at the chosen city, sets the pin with a click, and sends null after removing it", async () => {
+    renderPage();
+    expect(await screen.findByText(t("location.missing"))).toBeInTheDocument();
+    // Zenica (city_id 3) from the city list.
+    await waitFor(() => expect(screen.getByTestId("map-center")).toHaveTextContent("44.2017,17.9078"));
+
+    await userEvent.click(screen.getByRole("button", { name: "map click" }));
+    await userEvent.click(screen.getByRole("button", { name: t("user.saveButton") }));
+    await waitFor(() =>
+      expect(apiMock.put).toHaveBeenLastCalledWith(
+        "/users/me",
+        expect.objectContaining({ location: { latitude: 44.21, longitude: 17.91 } }),
+      ),
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: t("location.remove") }));
+    await userEvent.click(screen.getByRole("button", { name: t("user.saveButton") }));
+    await waitFor(() =>
+      expect(apiMock.put).toHaveBeenLastCalledWith("/users/me", expect.objectContaining({ location: null })),
+    );
   });
 });

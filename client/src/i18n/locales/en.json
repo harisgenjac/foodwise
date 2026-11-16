@@ -2036,6 +2036,21 @@
     "saved": "The cover image was uploaded.",
     "hint": "The cover image is shown at the top of your store page (JPG, PNG or WEBP, at most 5 MB)."
   },
+  "location": {
+    "title": "Location on the map",
+    "description": "The exact location of your business, needed for delivery.",
+    "set": "The location is set on the map.",
+    "missing": "The location is not set yet. It will be needed for delivery.",
+    "hint": "Click the map where the entrance of your business is, or drag the pin. The location is saved with the rest of the profile.",
+    "mapLabel": "Map for setting the location",
+    "pinTitle": "Your location (drag to move)",
+    "useMine": "Use my current location",
+    "locating": "Finding the location…",
+    "geoError": "The device location is not available. Set it by clicking the map.",
+    "remove": "Remove location",
+    "reminder": "Set the location of your business on the map; delivery will need it.",
+    "reminderLink": "Set location"
+  },
   "stepper": {
     "label": "Quantity in the cart: {{name}}",
     "add": "Add to cart: {{name}}",

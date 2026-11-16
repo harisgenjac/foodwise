@@ -244,6 +244,25 @@ describe("Admin", () => {
       expect(await actions()).toEqual([expect.objectContaining({ action: "UPDATE_PROFILE", target_user_id: storeId })]);
     });
 
+    it("sets the location pin, shown on the user's details, and refuses one far from the city", async () => {
+      const storeId = await userId(STORE);
+      // Zenica (the profile's city): a pin about 1 km from its centre.
+      const centre = await pool.query(
+        "SELECT cities.latitude::float8 AS latitude, cities.longitude::float8 AS longitude FROM cities WHERE cities.name = 'Zenica'",
+      );
+      const pin = { latitude: centre.rows[0].latitude + 0.009, longitude: centre.rows[0].longitude };
+      const response = await admin.put(`/api/admin/users/${storeId}/profile`).send({ ...profile, location: pin });
+      expect(response.status).toBe(200);
+      expect(response.body.user).toMatchObject(pin);
+      expect((await admin.get(`/api/admin/users/${storeId}`)).body.user).toMatchObject(pin);
+
+      const far = await admin
+        .put(`/api/admin/users/${storeId}/profile`)
+        .send({ ...profile, location: { latitude: 44.54, longitude: 18.68 } });
+      expect(far.status).toBe(400);
+      expect(far.body.error).toBe("The location on the map is too far from the chosen city.");
+    });
+
     it("validates like the user's own profile form", async () => {
       const response = await admin
         .put(`/api/admin/users/${await userId(STORE)}/profile`)
