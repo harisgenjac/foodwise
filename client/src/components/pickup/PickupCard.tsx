@@ -82,8 +82,13 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
         />
         <div className="min-w-0 flex-1 space-y-2">
           <div>
-            <h3 className="truncate text-base font-bold text-gray-900">
-              {t("orders.title", { code: formatOrderCode(order.code) })}
+            <h3 className="flex min-w-0 items-center gap-2 text-base font-bold text-gray-900">
+              <span className="truncate">{t("orders.title", { code: formatOrderCode(order.code) })}</span>
+              {order.fulfilment_method === "DELIVERY" && (
+                <span className="shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700">
+                  {t("orders.delivery.badge")}
+                </span>
+              )}
             </h3>
             <p className="text-sm text-gray-500">
               <span className="font-medium text-gray-700">{itemsSummary(order, t)}</span>

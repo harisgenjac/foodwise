@@ -13,7 +13,9 @@ import {
   PackageCheck,
   Phone,
   Store,
+  Truck,
   UtensilsCrossed,
+  Wallet,
 } from "lucide-react";
 import DetailItem from "../product/DetailItem.js";
 import {
@@ -165,7 +167,24 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
         </div>
 
         <dl className="grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2">
-          <DetailItem icon={CalendarClock} label={t("orders.pickup")} value={formatDateTime(order.pickup_at)} />
+          {order.fulfilment_method === "DELIVERY" ? (
+            <>
+              <DetailItem
+                icon={Truck}
+                label={t("orders.delivery.estimated")}
+                value={order.delivery_estimated_at ? formatDateTime(order.delivery_estimated_at) : "–"}
+              />
+              <DetailItem icon={MapPin} label={t("orders.delivery.address")} value={order.delivery_address ?? "–"} />
+              <DetailItem
+                icon={Wallet}
+                label={t("orders.delivery.fee")}
+                value={formatMoney(order.delivery_fee_estimate ?? 0)}
+              />
+              <DetailItem icon={CalendarClock} label={t("orders.delivery.courierPickup")} value={formatDateTime(order.pickup_at)} />
+            </>
+          ) : (
+            <DetailItem icon={CalendarClock} label={t("orders.pickup")} value={formatDateTime(order.pickup_at)} />
+          )}
           <DetailItem icon={CalendarPlus} label={t("orders.sentAt")} value={formatDateTime(order.created_at)} />
           <DetailItem
             icon={ListChecks}

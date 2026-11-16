@@ -83,6 +83,13 @@ describe("ORDER_CREATED email", () => {
     expect(email.text).not.toContain("<p");
   });
 
+  it("names a delivery order's time as the courier's pickup", () => {
+    const delivery = { ...DATA, fulfilmentMethod: "DELIVERY" };
+    expect(orderCreated.render(delivery, "bs", APP_URL).text).toContain("Dostava (kurir preuzima): 06.11.2026. 14:30");
+    expect(orderCreated.render(delivery, "en", APP_URL).text).toContain("Delivery (courier pickup): 06/11/2026 14:30");
+    expect(orderCreated.render(delivery, "bs", APP_URL).text).not.toContain("Preuzimanje:");
+  });
+
   it("is in English", () => {
     const email = orderCreated.render(DATA, "en", APP_URL);
     expect(email.subject).toBe("New order #K7PM from Restoran Ćevap & Co");

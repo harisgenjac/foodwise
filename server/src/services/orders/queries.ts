@@ -41,6 +41,7 @@ const LINES = `JOIN LATERAL (
 
 const ORDER_COLUMNS = `
     orders.id, orders.code, orders.status, orders.fulfilment_method, orders.pickup_at, orders.accept_partial,
+    orders.delivery_address, orders.delivery_fee_estimate::text AS delivery_fee_estimate, orders.delivery_estimated_at,
     orders.decided_at, orders.picked_up_at, orders.created_at, orders.updated_at,
     orders.store_id, orders.restaurant_id,
     orders.status = 'Confirmed' AND orders.pickup_at::date < CURRENT_DATE AS is_overdue,

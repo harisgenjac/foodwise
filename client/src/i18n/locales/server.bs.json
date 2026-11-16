@@ -371,5 +371,9 @@
   "Preparation time is not valid.": "Vrijeme pripreme nije ispravno.",
   "The pause must be turned on or off.": "Pauza mora biti uključena ili isključena.",
   "No settings to save.": "Nema postavki za čuvanje.",
-  "The pause must end between now and {{max}} days from now.": "Pauza mora završiti između sada i {{max}} dana od sada."
+  "The pause must end between now and {{max}} days from now.": "Pauza mora završiti između sada i {{max}} dana od sada.",
+  "The cart is empty.": "Korpa je prazna.",
+  "Delivery checked.": "Dostava je provjerena.",
+  "An error occurred while checking delivery.": "Došlo je do greške pri provjeri dostave.",
+  "Delivery is not available for this order.": "Dostava nije moguća za ovu narudžbu."
 }

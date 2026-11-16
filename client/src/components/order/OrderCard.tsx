@@ -86,9 +86,15 @@ function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = fals
             <dd className="font-semibold text-green-700">{formatMoney(order.total)}</dd>
           </div>
           <div className="flex justify-between gap-2">
-            <dt className="text-gray-500">{t("dashboard.pickupDate")}</dt>
+            <dt className="text-gray-500">
+              {order.fulfilment_method === "DELIVERY" ? t("orders.delivery.cardLabel") : t("dashboard.pickupDate")}
+            </dt>
             <dd className="text-right font-medium text-gray-800">
-              {new Date(order.pickup_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" })}
+              {new Date(
+                order.fulfilment_method === "DELIVERY" && order.delivery_estimated_at
+                  ? order.delivery_estimated_at
+                  : order.pickup_at,
+              ).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" })}
             </dd>
           </div>
           {showCreatedAt && (

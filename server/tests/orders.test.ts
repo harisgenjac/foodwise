@@ -111,7 +111,7 @@ describe("POST /api/orders", () => {
     const cases: [Record<string, unknown>, number, string][] = [
       [{ items: [] }, 400, "An order must have between 1 and 30 items."],
       [{ items: Array.from({ length: 31 }, () => line(product, 1)) }, 400, "An order must have between 1 and 30 items."],
-      [{ items: [line(product, 1)], fulfilment_method: "DELIVERY" }, 400, "Fulfilment method is not valid."],
+      [{ items: [line(product, 1)], fulfilment_method: "COURIER" }, 400, "Fulfilment method is not valid."],
       [{ items: [line(product, 1)], accept_partial: "yes" }, 400, "Invalid request format."],
       [{ items: [{ product_id: "abc", quantity: 1, unit_price: 5 }] }, 404, "Product not found."],
       [{ items: [{ product_id: 999999, quantity: 1, unit_price: 5 }] }, 404, "Product not found."],

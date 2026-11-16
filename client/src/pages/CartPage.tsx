@@ -16,6 +16,7 @@ import CheckoutPanel, { type NotSentLine, type SentOrderResult } from "../compon
 import SendChangesList from "../components/order/SendChangesList.js";
 import { useCart } from "../context/CartContext.js";
 import { formatMoney, formatOrderCode } from "../utils/orders.js";
+import { formatClock } from "../utils/delivery.js";
 import type { Cart } from "../types/index.js";
 
 const dateTimeFormat: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" };
@@ -96,7 +97,12 @@ function CartPage() {
           </h1>
           <p className="text-sm text-gray-700">{t("orders.send.sentText", { total: formatMoney(total), store: sent.storeName })}</p>
           <p className="text-sm text-gray-700">
-            {t("cart.sent.pickup", { date: new Date(sent.order.pickup_at).toLocaleString(undefined, dateTimeFormat) })}
+            {sent.order.fulfilment_method === "DELIVERY"
+              ? t("cart.sent.delivery", {
+                  time: formatClock(sent.order.delivery_estimated_at ?? ""),
+                  fee: formatMoney(sent.order.delivery_fee_estimate ?? 0),
+                })
+              : t("cart.sent.pickup", { date: new Date(sent.order.pickup_at).toLocaleString(undefined, dateTimeFormat) })}
           </p>
           <SendChangesList changes={sent.changes} />
           {leftInCart && (

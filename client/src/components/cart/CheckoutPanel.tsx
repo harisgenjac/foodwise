@@ -2,7 +2,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, Clock, Send } from "lucide-react";
+import { AlertTriangle, Clock, Send, Store, Truck } from "lucide-react";
 import api from "../../api/axios.js";
 import FormField, { inputStyle } from "../form/FormField.js";
 import DateInput from "../form/DateInput.js";
@@ -12,11 +12,21 @@ import { formatDisplayDate, formatTimeTyping, parseTimeInput, toDateInput } from
 import { formatMoney } from "../../utils/orders.js";
 import { isPaused } from "../../utils/orderPause.js";
 import StorePausedNotice from "../store/StorePausedNotice.js";
-import type { Cart, SendChange, SendChangeKind } from "../../types/index.js";
+import DeliverySummary from "./DeliverySummary.js";
+import { useCartDelivery } from "../../hooks/useCartDelivery.js";
+import type { Cart, FulfilmentMethod, SendChange, SendChangeKind } from "../../types/index.js";
 
 // What POST /orders answered: the order (with its items) and what sending changed.
 export interface SentOrderResult {
-  order: { id: number; code: string; pickup_at: string; items: { quantity: string; unit_price: string }[] };
+  order: {
+    id: number;
+    code: string;
+    fulfilment_method: FulfilmentMethod;
+    pickup_at: string;
+    delivery_fee_estimate: string | null;
+    delivery_estimated_at: string | null;
+    items: { quantity: string; unit_price: string }[];
+  };
   changes: SendChange[];
 }
 
@@ -32,8 +42,9 @@ interface CheckoutPanelProps {
   onNotSent: (lines: NotSentLine[]) => void;
 }
 
-// The cart's checkout: the pickup day and time (today up to the earliest expiry among the lines
-// that can be ordered), "Accept partial fulfilment" and sending. Every available line goes with
+// The cart's checkout: pickup (the day and time, today up to the earliest expiry among the lines
+// that can be ordered) or delivery (today, as soon as possible, with the provider's estimate),
+// "Accept partial fulfilment" and sending. Every available line goes with
 // the price the restaurant saw; the server sends what it can (docs/orders-design.md, section 5).
 function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
   const { t } = useTranslation();
@@ -41,20 +52,33 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
   const [pickupDate, setPickupDate] = useState("");
   const [pickupTime, setPickupTime] = useState("");
   const [acceptPartial, setAcceptPartial] = useState(true);
+  const [method, setMethod] = useState<FulfilmentMethod>("PICKUP");
+  const isDelivery = method === "DELIVERY";
   const [submitting, setSubmitting] = useState(false);
 
   const orderable = cart.items.filter((line) => !line.flags.unavailable);
   const minPickup = toDateInput(new Date());
   const maxPickup = orderable.map((line) => line.expiry_date.slice(0, 10)).sort()[0] ?? minPickup;
   const parsedTime = parseTimeInput(pickupTime);
+  const delivery = useCartDelivery(isDelivery && orderable.length > 0, `${cart.store?.id}:${cart.totals.total}`);
+  const deliveryReady = Boolean(delivery.delivery?.available) && !delivery.loading;
   const { formRef, errorFor, blur, validate } = useFormValidation({
-    // A typed date skips the calendar's min/max, so the range is checked here too.
-    pickupDate: !pickupDate
+    // A typed date skips the calendar's min/max, so the range is checked here too. A delivery
+    // has no pickup time.
+    pickupDate: isDelivery
+      ? undefined
+      : !pickupDate
       ? REQUIRED
       : pickupDate < minPickup || pickupDate > maxPickup
         ? "orderForm.pickupDateOutOfRange"
         : undefined,
-    pickupTime: isBlank(pickupTime) ? REQUIRED : parsedTime ? undefined : "orderForm.invalidTime",
+    pickupTime: isDelivery
+      ? undefined
+      : isBlank(pickupTime)
+        ? REQUIRED
+        : parsedTime
+          ? undefined
+          : "orderForm.invalidTime",
   });
   // The limit is shown once it is close (design: from 8 of 10 on).
   const showPending = cart.pending_orders >= cart.max_pending_orders - 2;
@@ -67,12 +91,13 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (submitting || paused || orderable.length === 0 || !validate()) return;
+    if (submitting || paused || orderable.length === 0 || (isDelivery && !deliveryReady) || !validate()) return;
     setSubmitting(true);
     try {
       const response = await api.post("/orders", {
-        // Local time without a time zone, as the server expects.
-        pickup_at: `${pickupDate}T${parsedTime}`,
+        fulfilment_method: method,
+        // Local time without a time zone, as the server expects; a delivery is as soon as possible.
+        ...(!isDelivery && { pickup_at: `${pickupDate}T${parsedTime}` }),
         accept_partial: acceptPartial,
         items: orderable.map((line) => ({
           product_id: line.product_id,
@@ -86,6 +111,9 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
       const data = axios.isAxiosError(err) ? err.response?.data : null;
       if (data?.code === "ORDER_NOT_SENT") {
         onNotSent(data.lines ?? []);
+      } else if (data?.code === "DELIVERY_UNAVAILABLE") {
+        delivery.markUnavailable(data.reason);
+        toast.error(data.error || t("cart.checkout.sendError"));
       } else {
         toast.error(data?.error || t("cart.checkout.sendError"));
       }
@@ -106,6 +134,45 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
         {t("cart.checkout.title")}
       </h2>
 
+      <fieldset>
+        <legend className="mb-2 text-sm font-medium text-gray-700">{t("cart.method.label")}</legend>
+        <div className="grid grid-cols-2 gap-2">
+          {(["PICKUP", "DELIVERY"] as const).map((value) => {
+            const Icon = value === "PICKUP" ? Store : Truck;
+            return (
+              <label
+                key={value}
+                className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors ${
+                  method === value
+                    ? "border-orange-400 bg-orange-50 font-semibold text-orange-800"
+                    : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="fulfilment-method"
+                  value={value}
+                  checked={method === value}
+                  onChange={() => setMethod(value)}
+                  className="sr-only"
+                />
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                {t(value === "PICKUP" ? "cart.method.pickup" : "cart.method.delivery")}
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      {isDelivery ? (
+        <DeliverySummary
+          delivery={delivery.delivery}
+          loading={delivery.loading}
+          failed={delivery.failed}
+          goodsTotal={Number(cart.totals.total)}
+        />
+      ) : (
+      <>
       <div className="grid grid-cols-2 gap-3">
         <DateInput
           label={t("orderForm.pickupDate")}
@@ -142,6 +209,8 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
       {orderable.length > 0 && (
         <p className="text-xs text-gray-500">{t("cart.checkout.pickupUntil", { date: formatDisplayDate(maxPickup) })}</p>
       )}
+      </>
+      )}
 
       <label className="flex cursor-pointer items-start gap-2 text-sm text-gray-700">
         <input
@@ -169,7 +238,7 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
 
       <button
         type="submit"
-        disabled={submitting || paused || orderable.length === 0}
+        disabled={submitting || paused || orderable.length === 0 || (isDelivery && !deliveryReady)}
         className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-orange-500 py-3 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Send className="h-4 w-4" />
