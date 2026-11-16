@@ -2082,6 +2082,21 @@
     "saved": "Naslovna slika je postavljena.",
     "hint": "Naslovna slika se prikazuje na vrhu vaše stranice prodavnice (JPG, PNG ili WEBP, najviše 5 MB)."
   },
+  "location": {
+    "title": "Lokacija na mapi",
+    "description": "Tačna lokacija vašeg objekta, potrebna za dostavu.",
+    "set": "Lokacija je označena na mapi.",
+    "missing": "Lokacija još nije označena. Bit će potrebna za dostavu.",
+    "hint": "Kliknite na mapu na mjesto ulaza u vaš objekat ili povucite pin. Lokacija se sprema s ostatkom profila.",
+    "mapLabel": "Mapa za označavanje lokacije",
+    "pinTitle": "Vaša lokacija (povucite za pomjeranje)",
+    "useMine": "Koristi moju trenutnu lokaciju",
+    "locating": "Tražim lokaciju…",
+    "geoError": "Lokacija uređaja nije dostupna. Označite je klikom na mapu.",
+    "remove": "Ukloni lokaciju",
+    "reminder": "Označite lokaciju vašeg objekta na mapi, bit će potrebna za dostavu.",
+    "reminderLink": "Označi lokaciju"
+  },
   "stepper": {
     "label": "Količina u korpi: {{name}}",
     "add": "Dodaj u korpu: {{name}}",

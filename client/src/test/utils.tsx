@@ -100,12 +100,12 @@ export function renderWithProviders(
   );
 }
 
-// A short city list for CitySelect, in the server's (Bosnian alphabetical) order.
+// A short city list for CitySelect, in the server's (Bosnian alphabetical) order, with the centres.
 export const CITIES: City[] = [
-  { id: 1, name: "Sarajevo" },
-  { id: 2, name: "Tuzla" },
-  { id: 3, name: "Zenica" },
-  { id: 4, name: "Žepče" },
+  { id: 1, name: "Sarajevo", latitude: 43.8563, longitude: 18.4131 },
+  { id: 2, name: "Tuzla", latitude: 44.5384, longitude: 18.6671 },
+  { id: 3, name: "Zenica", latitude: 44.2017, longitude: 17.9078 },
+  { id: 4, name: "Žepče", latitude: 44.4267, longitude: 18.0378 },
 ];
 
 export const makeUser = (overrides: Partial<User> = {}): User => ({

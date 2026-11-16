@@ -13,7 +13,9 @@ import { useFormValidation } from "../../hooks/useFormValidation.js";
 import { isBlank, REQUIRED } from "../../utils/validation.js";
 import { isScheduleValid, type Schedule } from "../../utils/schedule.js";
 import WeeklyHoursEditor from "../profile/WeeklyHoursEditor.js";
-import type { User } from "../../types/index.js";
+import LocationPicker from "../profile/LocationPicker.js";
+import { useCities } from "../../hooks/useCities.js";
+import type { GeoPoint, User } from "../../types/index.js";
 
 interface EditProfileModalProps {
   user: User;
@@ -50,6 +52,12 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
   // Weekly hours, like on the user's own profile (sent once entered).
   const [openingSchedule, setOpeningSchedule] = useState<Schedule | null>(user.opening_schedule ?? null);
   const [pickupSchedule, setPickupSchedule] = useState<Schedule | null>(user.pickup_schedule ?? null);
+  // The pin on the map, like on the user's own profile (sent as shown: removing it clears it).
+  const [location, setLocation] = useState<GeoPoint | null>(
+    user.latitude != null && user.longitude != null ? { latitude: user.latitude, longitude: user.longitude } : null,
+  );
+  const { cities } = useCities();
+  const city = cities.find((entry) => String(entry.id) === values.city_id);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -88,6 +96,7 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
     try {
       const response = await api.put(`/admin/users/${user.id}/profile`, {
         ...values,
+        ...(isBusiness && { location }),
         ...(openingSchedule && { opening_schedule: openingSchedule }),
         ...(user.role === "STORE" && pickupSchedule && { pickup_schedule: pickupSchedule }),
       });
@@ -142,6 +151,16 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
                 </div>
               );
             })}
+            {isBusiness && (
+              <div className="sm:col-span-2">
+                <p className="mb-2 text-sm font-medium text-gray-700">{t("location.title")}</p>
+                <LocationPicker
+                  value={location}
+                  onChange={setLocation}
+                  cityCenter={city ? { latitude: city.latitude, longitude: city.longitude } : null}
+                />
+              </div>
+            )}
             {isBusiness && (
               <div className="space-y-5 sm:col-span-2">
                 <WeeklyHoursEditor

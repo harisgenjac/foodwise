@@ -12,6 +12,7 @@ import { onOffer } from "../services/stock.js";
 import { companyName, storeDescription, storeLogo } from "../utils/branding.js";
 import { removeStoredFile, saveImage } from "../services/storage.js";
 import { isOpenAt, parseSchedule } from "../utils/schedule.js";
+import { kmFromCity, MAX_KM_FROM_CITY, parseLocation } from "../utils/location.js";
 
 export const getUser = async (req: Request, res: Response) => {
   try {
@@ -20,6 +21,7 @@ export const getUser = async (req: Request, res: Response) => {
       `SELECT users.id, users.first_name, users.last_name, users.email, users.role, users.business_name,
          users.logo_url, users.cover_url, users.address, users.city_id, cities.name AS city, users.opening_hours,
          users.pickup_hours, users.opening_schedule, users.pickup_schedule, users.description, users.phone, users.must_change_password, users.email_notifications,
+         users.latitude, users.longitude,
          users.created_at,
          users.company_id, companies.name AS company_name, companies.logo_url AS company_logo_url,
          companies.description AS company_description
@@ -73,6 +75,8 @@ export interface UserFields {
   // Weekly hours (utils/schedule.ts); not sent keeps the stored ones, null clears them.
   opening_schedule?: unknown;
   pickup_schedule?: unknown;
+  // The pin on the map (utils/location.ts); not sent keeps it, null clears it.
+  location?: unknown;
   description?: string;
   phone: string;
 }
@@ -95,7 +99,7 @@ function validateUserFields(fields: UserFields) {
 }
 
 const PROFILE_COLUMNS = `id, first_name, last_name, email, role, business_name, logo_url, cover_url, address, city_id,
-  ${CITY_NAME}, opening_hours, pickup_hours, opening_schedule, pickup_schedule, description, phone`;
+  ${CITY_NAME}, opening_hours, pickup_hours, opening_schedule, pickup_schedule, description, phone, latitude, longitude`;
 
 type ProfileResult = { error: string; user?: never } | { user: Record<string, unknown> | undefined; error?: never };
 
@@ -164,6 +168,16 @@ export const updateProfile = async (
   if (pickupSchedule && "invalid" in pickupSchedule) {
     return { error: "Pickup hours are not valid." };
   }
+  const location = parseLocation(body.location);
+  if (location && "invalid" in location) {
+    return { error: "Location is not valid." };
+  }
+  if (location?.value) {
+    const km = await kmFromCity(db, cityId, location.value);
+    if (km === null || km > MAX_KM_FROM_CITY) {
+      return { error: "The location on the map is too far from the chosen city." };
+    }
+  }
   const {
     first_name,
     last_name,
@@ -188,7 +202,9 @@ export const updateProfile = async (
        description = COALESCE($9, description),
        phone = $10,
        opening_schedule = CASE WHEN $12::boolean THEN $13::jsonb ELSE opening_schedule END,
-       pickup_schedule = CASE WHEN $14::boolean THEN $15::jsonb ELSE pickup_schedule END
+       pickup_schedule = CASE WHEN $14::boolean THEN $15::jsonb ELSE pickup_schedule END,
+       latitude = CASE WHEN $16::boolean THEN $17::float8 ELSE latitude END,
+       longitude = CASE WHEN $16::boolean THEN $18::float8 ELSE longitude END
      WHERE id = $11
      RETURNING ${PROFILE_COLUMNS}`,
     [
@@ -207,6 +223,9 @@ export const updateProfile = async (
       openingSchedule ? JSON.stringify(openingSchedule.value) : null,
       pickupSchedule !== undefined,
       pickupSchedule ? JSON.stringify(pickupSchedule.value) : null,
+      location !== undefined,
+      location?.value?.latitude ?? null,
+      location?.value?.longitude ?? null,
     ],
   );
   return { user: result.rows[0] };

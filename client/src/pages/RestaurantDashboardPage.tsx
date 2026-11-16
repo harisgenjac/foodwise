@@ -11,6 +11,7 @@ import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import DashboardHero from "../components/dashboard/DashboardHero.js";
+import LocationReminder from "../components/profile/LocationReminder.js";
 import StatCard from "../components/dashboard/StatCard.js";
 import SectionCard from "../components/dashboard/SectionCard.js";
 import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
@@ -98,6 +99,8 @@ const RestaurantDashboardPage = () => {
         details={details || undefined}
         action={{ to: "/search", label: t("dashboard.browseOffers"), icon: ShoppingBasket }}
       />
+
+      <LocationReminder />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard icon={ShoppingBasket} label={t("dashboard.statAvailableOffers")} value={offersCount} />

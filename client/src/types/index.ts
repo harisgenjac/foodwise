@@ -196,6 +196,10 @@ export interface User {
   pickup_schedule?: Schedule | null;
   // A store's cover image on its store page.
   cover_url?: string | null;
+  // The pin on the map (My profile); null until the business sets it. On GET /users/me and the
+  // admin's user details.
+  latitude?: number | null;
+  longitude?: number | null;
   // Only on GET /users/stores/:id: open now by the weekly hours (null without them).
   open_now?: boolean | null;
   description?: string;
@@ -778,10 +782,18 @@ export interface CreditTransaction {
   created_by_email: string | null;
 }
 
-// One entry of the fixed city list (GET /cities).
+// One entry of the fixed city list (GET /cities), with its centre (where the location map starts).
 export interface City {
   id: number;
   name: string;
+  latitude: number;
+  longitude: number;
+}
+
+// A point on the map: a business's pin or a city centre.
+export interface GeoPoint {
+  latitude: number;
+  longitude: number;
 }
 
 // The restaurant's cart (GET /cart): lines of one store with the product's live state.

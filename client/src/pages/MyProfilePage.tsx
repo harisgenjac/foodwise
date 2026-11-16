@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import api, { assetUrl } from "../api/axios.js";
-import type { User } from "../types/index.js";
+import type { GeoPoint, User } from "../types/index.js";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
@@ -13,12 +13,14 @@ import {
   FileText,
   Mail,
   MapPin,
+  MapPinned,
   Phone,
   ShieldCheck,
   Store,
   UserRound,
   UtensilsCrossed,
 } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.js";
 import FormSection from "../components/form/FormSection.js";
 import FormField, { inputStyle } from "../components/form/FormField.js";
@@ -32,6 +34,7 @@ import ChangePasswordForm from "../components/profile/ChangePasswordForm.js";
 import SubscriptionSection from "../components/credits/SubscriptionSection.js";
 import EmailNotificationsSection from "../components/profile/EmailNotificationsSection.js";
 import WeeklyHoursEditor from "../components/profile/WeeklyHoursEditor.js";
+import LocationPicker, { LOCATION_SECTION } from "../components/profile/LocationPicker.js";
 import { isScheduleValid, type Schedule } from "../utils/schedule.js";
 import { MAX_PRODUCT_IMAGE_MB, PRODUCT_IMAGE_TYPES } from "../utils/productImages.js";
 
@@ -45,6 +48,8 @@ function MyProfilePage() {
   const [cityId, setCityId] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  // The pin on the map; null until set.
+  const [location, setLocation] = useState<GeoPoint | null>(null);
   // The old free-text hours: only a hint until weekly hours are entered.
   const [openingHours, setOpeningHours] = useState("");
   const [pickupHours, setPickupHours] = useState("");
@@ -78,6 +83,9 @@ function MyProfilePage() {
       setCityId(data.city_id ? String(data.city_id) : "");
       setPhone(data.phone || "");
       setAddress(data.address || "");
+      setLocation(
+        data.latitude != null && data.longitude != null ? { latitude: data.latitude, longitude: data.longitude } : null,
+      );
       setOpeningHours(data.opening_hours || "");
       setPickupHours(data.pickup_hours || "");
       setOpeningSchedule(data.opening_schedule ?? null);
@@ -202,6 +210,8 @@ function MyProfilePage() {
         ...(!isBranch && { business_name: businessName, city_id: Number(cityId) }),
         phone,
         address,
+        // The pin as shown: removing it on the map clears it.
+        location,
         // Weekly hours are sent once entered (until then the stored ones stay as they are).
         ...(openingSchedule && { opening_schedule: openingSchedule }),
         ...(isStore && pickupSchedule && { pickup_schedule: pickupSchedule }),
@@ -251,8 +261,17 @@ function MyProfilePage() {
   const avatarSrc =
     logoPreview || (logoUrl ? assetUrl(logoUrl) : usesCompanyLogo ? assetUrl(companyLogoUrl) : null);
   const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`;
-  const cityName = cities.find((city) => String(city.id) === cityId)?.name;
-  const location = [address, cityName].filter(Boolean).join(", ");
+  const city = cities.find((entry) => String(entry.id) === cityId);
+  const cityName = city?.name;
+  const addressLine = [address, cityName].filter(Boolean).join(", ");
+
+  // The dashboard reminder links to the location section (/my-profile#location).
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash === `#${LOCATION_SECTION}` && role) {
+      document.getElementById(LOCATION_SECTION)?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+    }
+  }, [hash, role]);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-16">
@@ -335,10 +354,10 @@ function MyProfilePage() {
                 <Mail className="h-4 w-4" />
                 {email}
               </span>
-              {location && (
+              {addressLine && (
                 <span className="inline-flex items-center gap-1.5">
                   <MapPin className="h-4 w-4" />
-                  {location}
+                  {addressLine}
                 </span>
               )}
             </div>
@@ -481,6 +500,16 @@ function MyProfilePage() {
               </div>
             </div>
           </FormSection>
+
+          <div id={LOCATION_SECTION} className="scroll-mt-6 lg:col-span-2">
+            <FormSection title={t("location.title")} icon={MapPinned} description={t("location.description")}>
+              <LocationPicker
+                value={location}
+                onChange={setLocation}
+                cityCenter={city ? { latitude: city.latitude, longitude: city.longitude } : null}
+              />
+            </FormSection>
+          </div>
 
           <FormSection title={t("user.hoursSection")} icon={Clock}>
             <div className="space-y-6">

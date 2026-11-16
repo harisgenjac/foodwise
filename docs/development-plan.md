@@ -94,7 +94,7 @@ Agreed Nov 15, 2026. One-store orders made the category image and the flat produ
 
 Agreed Nov 16, 2026: done as separate PRs, in this order: the provider, addresses, store settings (delivery on/off, preparation time, pause), the cart choice, accepting with a ready time, webhooks and failures, SSE, automatic rejection and the packing list, then the e2e flow.
 
-- [ ] Exact addresses with coordinates for stores and restaurants, and a delivery address. Coordinates come from a pin on a map (Leaflet with OpenStreetMap tiles) next to the typed address, not from geocoding.
+- [x] Exact addresses with coordinates for stores and restaurants, and a delivery address. Coordinates come from a pin on a map (Leaflet with OpenStreetMap tiles) next to the typed address, not from geocoding. (Nov 16, 2026: `users.latitude`/`longitude` set on My profile or by an admin, optional with a reminder on the dashboards, at most 30 km from the profile's city. Decided: a restaurant has one address, its profile pin, which is its delivery address; the cart PR copies it onto the order when it is sent.)
 - [x] `DeliveryProvider` interface and `MockProvider` following the phase 0 specification. (Nov 16, 2026: `server/src/delivery/`, with the webhook signature check and a simulated courier; not used by orders yet.)
 - [ ] Fulfilment methods per store: a store can turn delivery off.
 - [ ] Choice in the cart: pickup (day and time) or delivery with price and time from the quote; no delivery when it is not available.
