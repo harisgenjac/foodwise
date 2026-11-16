@@ -111,7 +111,10 @@ describe("SearchPage", () => {
   it("shows no results for active filters without the radius, and a load error", async () => {
     const { unmount } = renderPage(() => ({ stores: [], total: 0 }));
     await screen.findByText(t("radius.emptyOffers", { radius: "10" }));
-    await userEvent.selectOptions(screen.getByLabelText(t("cities.label")), "2");
+    // The city list loads on its own; wait for it, so the choice is there.
+    const city = screen.getByLabelText(t("cities.label"));
+    await within(city).findByRole("option", { name: "Tuzla" });
+    await userEvent.selectOptions(city, "2");
     expect(await screen.findByText(t("myProducts.noResultsTitle"))).toBeInTheDocument();
     unmount();
 
