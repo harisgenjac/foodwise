@@ -86,7 +86,7 @@ describe("server texts", () => {
     /^(Bakery Products|Dairy Products|Frozen Food|Favorites only|Pickup date)$/,
     /^(Broj|Datum|Pekarski|Smrznuta|Mliječni|Spašena) /,
     /^(GET|POST|PUT|PATCH|DELETE) \/api\//,
-    /^(SELECT|UPDATE|INSERT|DELETE|WITH|FROM|FOR|COALESCE|CASE|SAVEPOINT|RELEASE|ROLLBACK)[ (]/,
+    /^(SELECT|UPDATE|INSERT|DELETE|WITH|FROM|FOR|COALESCE|CASE|SAVEPOINT|RELEASE|ROLLBACK|MAX|MIN)[ (]/,
     // `Your account is blocked.${reason}`: the reason part has its own key (see below).
     /^Your account is blocked\.7$/,
   ];

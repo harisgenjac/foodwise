@@ -3,7 +3,6 @@
     "dashboard": "Početna",
     "myProfile": "Moj profil",
     "stores": "Prodavnice",
-    "browseProducts": "Pretraži Proizvode",
     "myProducts": "Moji Proizvodi",
     "addProduct": "Dodaj Proizvod",
     "donateFood": "Doniraj obrok",
@@ -31,7 +30,8 @@
     "menu": "Meni",
     "closeMenu": "Zatvori meni",
     "orders": "Narudžbe",
-    "myOrders": "Moje narudžbe"
+    "myOrders": "Moje narudžbe",
+    "search": "Pretraga"
   },
   "breadcrumbs": {
     "label": "Putanja",
@@ -56,10 +56,10 @@
     "label": "Glavna navigacija",
     "dashboard": "Početna",
     "myProducts": "Proizvodi",
-    "browseProducts": "Ponude",
     "pickups": "Preuzimanja",
     "more": "Više",
-    "orders": "Narudžbe"
+    "orders": "Narudžbe",
+    "search": "Pretraga"
   },
   "auth": {
     "welcomeBack": "Dobrodošli nazad",
@@ -116,11 +116,6 @@
   },
   "product": {
     "addTitle": "Dodaj proizvod",
-    "browseTitle": "Proizvodi",
-    "browseSubtitle": "Pronađite proizvode po sniženoj cijeni iz prodavnica u vašoj blizini.",
-    "offersCount_one": "{{count}} dostupna ponuda",
-    "offersCount_few": "{{count}} dostupne ponude",
-    "offersCount_other": "{{count}} dostupnih ponuda",
     "name": "Naziv proizvoda",
     "description": "Opis",
     "category": "Kategorija",
@@ -2093,5 +2088,13 @@
     "increase": "Povećaj količinu: {{name}}",
     "decrease": "Smanji količinu: {{name}}",
     "remove": "Ukloni iz korpe: {{name}}"
+  },
+  "search": {
+    "title": "Pretraga",
+    "subtitle": "Ponude prodavnica u blizini, po prodavnicama. Narudžba je uvijek iz jedne prodavnice.",
+    "storeCount_one": "{{count}} prodavnica",
+    "storeCount_few": "{{count}} prodavnice",
+    "storeCount_other": "{{count}} prodavnica",
+    "seeAll": "Sve ({{count}})"
   }
 }

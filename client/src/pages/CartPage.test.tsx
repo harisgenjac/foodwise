@@ -44,7 +44,7 @@ describe("CartPage", () => {
     cart = makeCart([]);
     renderPage();
     expect(await screen.findByText(t("cart.empty.title"))).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: t("cart.empty.action") })).toHaveAttribute("href", "/browse-products");
+    expect(screen.getByRole("link", { name: t("cart.empty.action") })).toHaveAttribute("href", "/search");
   });
 
   it("shows the store, the lines and that nothing is held", async () => {

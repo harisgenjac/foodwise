@@ -73,8 +73,8 @@ test("the store accepts part of an order with reasons, and the restaurant sees t
   });
 
   await test.step("Ponuda: piletine 4 kg (2 kg prodano u radnji), mlijeko opet cijelo", async () => {
-    await expect((await searchMarketplace(restaurant, chicken)).getByText("4 kilogram (kg)")).toBeVisible();
-    await expect((await searchMarketplace(restaurant, milk)).getByText("10 kilogram (kg)")).toBeVisible();
+    await expect((await searchMarketplace(restaurant, chicken)).getByText("Dostupno: 4 kg")).toBeVisible();
+    await expect((await searchMarketplace(restaurant, milk)).getByText("Dostupno: 10 kg")).toBeVisible();
   });
 
   await storeContext.close();

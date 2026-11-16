@@ -11,7 +11,7 @@ test.use({ viewport: { width: WIDTH, height: 812 }, hasTouch: true });
 
 // Only stores have a Credits page: restaurants pay no credits.
 const STORE_PAGES = ["/dashboard", "/my-products", "/add-product", "/import-products", "/orders", "/credits"];
-const RESTAURANT_PAGES = ["/dashboard", "/browse-products", "/stores", "/my-orders", "/cart"];
+const RESTAURANT_PAGES = ["/dashboard", "/search", "/stores", "/my-orders", "/cart"];
 const SHARED_PAGES = ["/pickups", "/reports", "/my-profile", "/donate-food", "/donate-food/new", "/sponsor", "/notifications"];
 
 const bottomBar = (page: Page) => page.getByRole("navigation", { name: "Glavna navigacija" });
@@ -469,8 +469,8 @@ test.describe("restaurant", () => {
     for (const path of [...RESTAURANT_PAGES, ...SHARED_PAGES, ...details]) await expectPhoneLayout(page, path);
   });
 
-  test("Browse products keeps the search and puts the other filters behind the Filters button", async ({ page }) => {
-    await expectFilterPanel(page, "/browse-products", "Pretraga po imenu");
+  test("Search keeps the search field and puts the other filters behind the Filters button", async ({ page }) => {
+    await expectFilterPanel(page, "/search", "Pretraga po imenu");
   });
 
   test("stat labels are not cut, and the order tabs are 44 px", async ({ page }) => {

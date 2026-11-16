@@ -156,7 +156,7 @@ function MyOrdersPage() {
           icon={ReceiptText}
           title={t("orders.historyEmptyTitle")}
           subtitle={t("orders.historyEmptySubtitle")}
-          action={{ to: "/browse-products", label: t("dashboard.browseOffers") }}
+          action={{ to: "/search", label: t("dashboard.browseOffers") }}
         />
       );
     } else {
@@ -165,7 +165,7 @@ function MyOrdersPage() {
           icon={CalendarClock}
           title={t("orders.activeEmptyTitle")}
           subtitle={t("orders.activeEmptySubtitle")}
-          action={{ to: "/browse-products", label: t("dashboard.browseOffers") }}
+          action={{ to: "/search", label: t("dashboard.browseOffers") }}
           secondaryAction={{ label: t("orders.showHistory"), onClick: () => switchTab("history") }}
         />
       );
@@ -229,7 +229,7 @@ function MyOrdersPage() {
         title={t("orders.myTitle")}
         subtitle={t("orders.mySubtitle")}
         icon={ReceiptText}
-        action={{ to: "/browse-products", label: t("dashboard.browseOffers"), icon: ShoppingBasket }}
+        action={{ to: "/search", label: t("dashboard.browseOffers"), icon: ShoppingBasket }}
       />
 
       <div role="tablist" className="inline-flex w-fit flex-wrap rounded-full border border-gray-100 bg-white p-1 shadow-sm">

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { PASSWORD, runId, storageState } from "../support/accounts.js";
-import { changeTemporaryPassword, dialogWith, fillProductForm, loginViaForm, open, toast } from "../support/ui.js";
+import { changeTemporaryPassword, dialogWith, fillProductForm, loginViaForm, open, searchMarketplace, toast } from "../support/ui.js";
 
 test("a chain's branch in Breza publishes a product that a restaurant in Visoko sees with the chain label", async ({
   browser,
@@ -106,15 +106,12 @@ test("a chain's branch in Breza publishes a product that a restaurant in Visoko 
   });
 
   await test.step("Restoran u Visokom vidi proizvod s oznakom lanca", async () => {
-    await open(restaurant, "/browse-products");
-    await restaurant.getByPlaceholder("Pretraga po imenu").fill(productName);
-    const card = restaurant
-      .getByTestId("product-card")
-      .filter({ has: restaurant.getByRole("heading", { name: productName }) });
-    await expect(card).toHaveCount(1);
-    await expect(card.getByText(branch)).toBeVisible();
-    await expect(card.getByText(`dio ${company}`)).toBeVisible();
-    await expect(card.getByText("Breza · 7 km")).toBeVisible();
+    // Search groups the offers by store: the branch's header carries the chain label.
+    await expect(await searchMarketplace(restaurant, productName)).toHaveCount(1);
+    const group = restaurant.getByTestId("search-store").filter({ hasText: productName });
+    await expect(group.getByRole("heading", { name: branch })).toBeVisible();
+    await expect(group.getByText(`dio ${company}`)).toBeVisible();
+    await expect(group.getByText("Breza · 7 km")).toBeVisible();
   });
 
   for (const context of [adminContext, hqContext, branchContext, restaurantContext]) await context.close();

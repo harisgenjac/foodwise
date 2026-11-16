@@ -16,13 +16,9 @@ test("a rejected order puts the quantity back on offer, with no credits for the 
 
   const code = await test.step("Restoran naručuje 4 od 10 kg", async () => {
     const card = await searchMarketplace(restaurant, productName);
-    await expect(card.getByText("10 kilogram (kg)")).toBeVisible();
-    await card.getByRole("button", { name: "Dodaj u korpu" }).click();
-    // Restaurants pay no credits: the dialog says nothing about them.
-    await expect(restaurant.getByRole("dialog").getByText(/kredit/i)).toHaveCount(0);
-    await restaurant.getByRole("dialog").getByRole("button", { name: "Otkaži" }).click();
-    // Closing goes back in the history; the next page load waits for it.
-    await expect(restaurant.getByRole("dialog")).toBeHidden();
+    await expect(card.getByText("Dostupno: 10 kg")).toBeVisible();
+    // Restaurants pay no credits: Search says nothing about them.
+    await expect(restaurant.getByRole("main").getByText(/kredit/i)).toHaveCount(0);
     return orderFromMarketplace(restaurant, productName, { quantity: "4" });
   });
 
@@ -54,7 +50,7 @@ test("a rejected order puts the quantity back on offer, with no credits for the 
     await open(restaurant, "/credits");
     await expect(restaurant).toHaveURL(/\/dashboard$/);
     const card = await searchMarketplace(restaurant, productName);
-    await expect(card.getByText("10 kilogram (kg)")).toBeVisible();
+    await expect(card.getByText("Dostupno: 10 kg")).toBeVisible();
   });
 
   await storeContext.close();

@@ -160,6 +160,19 @@ export type Role = "STORE" | "RESTAURANT" | "ADMIN" | "COMPANY";
 
 import type { Schedule } from "../utils/schedule.js";
 
+// One store on Search (GET /products/by-store): the store, how many of its offers match and its
+// first matches.
+export interface SearchStore {
+  id: number;
+  business_name: string;
+  logo_url: string | null;
+  company_name: string | null;
+  city: string | null;
+  distance_km: number | null;
+  match_count: number;
+  products: Product[];
+}
+
 export interface User {
   id: number;
   // Null until the user fills in the profile (an admin creates accounts with only an email).

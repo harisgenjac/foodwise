@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { ACCOUNTS, runId, storageState } from "../support/accounts.js";
 import { apiAs, cancelOrder, createProduct, recordShopSale, setProductPrice } from "../support/api.js";
-import { addToCart, checkout, emptyCart, open, sentOrderId, settleOverlays, toast } from "../support/ui.js";
+import { addToCart, checkout, emptyCart, open, searchMarketplace, sentOrderId, settleOverlays, toast } from "../support/ui.js";
 
 // The restaurant's cart (docs/orders-design.md, sections 4 and 5): one store per cart, the flags of
 // lines whose offer changed, and what sending does with them with partial fulfilment on and off.
@@ -42,20 +42,15 @@ test.describe("cart", () => {
     await addToCart(restaurant, mine, "2");
     await expect(restaurant.getByRole("link", { name: "Korpa, 1 proizvod" })).toBeVisible();
 
-    const card = restaurant.getByTestId("product-card").filter({ hasText: theirs });
-    await open(restaurant, "/browse-products");
-    await restaurant.getByPlaceholder("Pretraga po imenu").fill(theirs);
-    await card.getByRole("button", { name: "Dodaj u korpu" }).click();
-    const dialog = restaurant.getByRole("dialog", { name: "Dodaj u korpu" });
-    await dialog.getByLabel("Količina").fill("1");
-    await dialog.getByRole("button", { name: "Dodaj u korpu" }).click();
+    const card = await searchMarketplace(restaurant, theirs);
+    await card.getByRole("button", { name: `Dodaj u korpu: ${theirs}` }).click();
 
     const question = restaurant.getByRole("dialog", { name: "Isprazniti korpu?" });
     await expect(
       question.getByText(`U korpi su proizvodi iz ${ACCOUNTS.store.businessName}. Narudžba može biti samo iz jedne prodavnice.`),
     ).toBeVisible();
     await question.getByRole("button", { name: "Isprazni i dodaj" }).click();
-    await expect(toast(restaurant, `${theirs}: dodano u korpu.`)).toBeVisible();
+    await expect(card.getByRole("group", { name: `Količina u korpi: ${theirs}` })).toBeVisible();
 
     // A link clicked before the closed dialogs' Back lands would be undone by it.
     await settleOverlays(restaurant);

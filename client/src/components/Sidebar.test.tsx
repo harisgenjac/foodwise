@@ -52,7 +52,7 @@ describe("Sidebar", () => {
 
   it("gives restaurants no credits page: they pay no credits", async () => {
     renderSidebar(makeUser({ role: "RESTAURANT" }));
-    expect(await screen.findByRole("link", { name: t("sidebar.browseProducts") })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: t("sidebar.search") })).toBeInTheDocument();
     expect(links()).not.toContain("/credits");
   });
 });

@@ -84,6 +84,7 @@ export const seedE2e = async (databaseUrl: string) => {
     // An approved Standard plan for the current credit month (months change at midnight
     // Europe/London, like creditMonth), granted the way grantPlan does it. No auto-renew, so
     // the renewal job leaves it alone. The trigger fills the request's credits and price.
+    const EXTRA_CREDITS = 150;
     const grantPlan = async (userId: number) => {
       const request = await client.query<{ id: number; credits: number; period_month: string }>(
         `INSERT INTO credit_requests
@@ -107,6 +108,14 @@ export const seedE2e = async (databaseUrl: string) => {
             actor, created_by_user_id)
          VALUES ($1, $2, $3, $4, 'PLAN_GRANT', 'credit_request', $5, 'ADMIN', $6)`,
         [userId, subscription.rows[0]!.id, periodMonth, credits, requestId, adminId],
+      );
+      // The specs publish many products with the shared stores, and the chromium and iPhone
+      // projects both run some of them, so 50 credits are not enough for a full run.
+      await client.query(
+        `INSERT INTO credit_transactions
+           (user_id, subscription_id, period_month, amount, type, reason, actor, created_by_user_id)
+         VALUES ($1, $2, $3, $4, 'ADMIN_ADJUSTMENT', 'E2E: credits for a full run', 'ADMIN', $5)`,
+        [userId, subscription.rows[0]!.id, periodMonth, EXTRA_CREDITS, adminId],
       );
     };
 

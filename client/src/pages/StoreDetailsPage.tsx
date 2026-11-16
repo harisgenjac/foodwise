@@ -260,7 +260,7 @@ function StoreDetailsPage() {
                   icon={PackageOpen}
                   title={t("store.storeNoProducts")}
                   subtitle={t("store.storeNoProductsSubtitle")}
-                  action={{ to: "/browse-products", label: t("store.browseOtherOffers") }}
+                  action={{ to: "/search", label: t("store.browseOtherOffers") }}
                 />
               ) : (
                 <>

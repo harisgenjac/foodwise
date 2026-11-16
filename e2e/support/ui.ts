@@ -45,12 +45,13 @@ export const changeTemporaryPassword = async (page: Page, temporaryPassword: str
   await expect(toast(page, "Lozinka je promijenjena.")).toBeVisible();
 };
 
-// Searches the marketplace by (part of) a product name and returns the matching cards. The search
-// is debounced, so assert on the result (toHaveCount, toBeVisible), never read it right away.
+// Searches the marketplace ("Pretraga", grouped by store) by (part of) a product name and returns
+// the matching product cards. The search is debounced, so assert on the result (toHaveCount,
+// toBeVisible), never read it right away.
 export const searchMarketplace = async (page: Page, name: string) => {
-  await open(page, "/browse-products");
+  await open(page, "/search");
   await page.getByPlaceholder("Pretraga po imenu").fill(name);
-  return page.getByTestId("product-card").filter({ hasText: name });
+  return page.getByTestId("store-product-card").filter({ hasText: name });
 };
 
 // The product is not offered. The page keeps the previous list until the filtered answer arrives,
@@ -110,16 +111,20 @@ export const emptyCart = async (page: Page) => {
   expect(response.ok(), `DELETE /api/cart → ${response.status()}`).toBe(true);
 };
 
-// Puts a product from its marketplace card into the cart ("Dodaj u korpu").
+// Puts a product into the cart from Search: + on its card adds 1; any other amount (also a
+// decimal like "2,5") is then typed into its line on the cart page.
 export const addToCart = async (page: Page, productName: string, quantity: string) => {
   const card = await searchMarketplace(page, productName);
   await expect(card).toHaveCount(1);
-  await card.getByRole("button", { name: "Dodaj u korpu" }).click();
-  const dialog = page.getByRole("dialog", { name: /^(Dodaj u korpu|Izmijeni količinu u korpi)$/ });
-  await dialog.getByLabel("Količina").fill(quantity);
-  await dialog.getByRole("button", { name: /^(Dodaj u korpu|Sačuvaj)$/ }).click();
-  await expect(dialog).toBeHidden();
-  await settleOverlays(page);
+  await card.getByRole("button", { name: `Dodaj u korpu: ${productName}` }).click();
+  await expect(card.getByRole("group", { name: `Količina u korpi: ${productName}` })).toBeVisible();
+  if (quantity === "1") return;
+  await open(page, "/cart");
+  const input = page.getByLabel(`Količina: ${productName}`);
+  await input.fill(quantity);
+  await input.press("Enter");
+  await input.blur();
+  await expect(page.getByTestId("cart-line").filter({ hasText: productName }).getByLabel(`Količina: ${productName}`)).toHaveValue(quantity);
 };
 
 // Opens the cart, picks the pickup (tomorrow at `time`) and sends the order. Returns the code
