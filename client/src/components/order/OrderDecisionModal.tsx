@@ -14,6 +14,7 @@ import {
   MAX_CHANGE_NOTE,
 } from "../../utils/orders.js";
 import type { ChangeReason, Order, OrderItem } from "../../types/index.js";
+import ReadyTimePicker, { readyAtOf, type ReadyChoice } from "./ReadyTimePicker.js";
 
 type Action = "ACCEPT" | "ACCEPT_LESS" | "REJECT";
 
@@ -38,12 +39,14 @@ interface Rejection {
 type Step = "decide" | "reject" | "confirm";
 
 interface OrderDecisionModalProps {
-  order: Pick<Order, "id" | "code" | "accept_partial" | "items">;
+  order: Pick<Order, "id" | "code" | "accept_partial" | "items" | "fulfilment_method">;
   // The restaurant's name, for the title.
   restaurant: string;
   onClose: () => void;
   // Called after the decision is saved (the modal has already closed).
   onDecided: () => void;
+  // The store's default preparation time, preselected as the ready time of a delivery order.
+  preparationMinutes?: number;
 }
 
 const EMPTY_LINE: Line = { action: "ACCEPT", quantity: "", reason: "", note: "", sale: false, saleQuantity: "" };
@@ -116,7 +119,7 @@ const saleAmount = (sale: boolean, quantity: string, reason: ChangeReason | "") 
 // on, each item is accepted, accepted with less or rejected (the last two with a reason, and with
 // "not enough in stock" the difference can be recorded as sold in the shop); with it off, only the
 // whole order can be accepted or rejected. A summary step comes before the irreversible save.
-function OrderDecisionModal({ order, restaurant, onClose, onDecided }: OrderDecisionModalProps) {
+function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparationMinutes = 30 }: OrderDecisionModalProps) {
   const { t } = useTranslation();
   const titleId = useId();
   const items = order.items.filter((item) => item.status === "Pending");
@@ -129,6 +132,9 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided }: OrderDeci
   const [rejection, setRejection] = useState<Rejection>({ reason: "", note: "", sales: {} });
   const [showErrors, setShowErrors] = useState(false);
   const [busy, setBusy] = useState(false);
+  // A delivery order: when the goods will be ready (the store's preparation time by default).
+  const [ready, setReady] = useState<ReadyChoice>({ kind: "minutes", minutes: preparationMinutes });
+  const [readyError, setReadyError] = useState(false);
 
   const code = formatOrderCode(order.code);
   const lineOf = (item: OrderItem) => lines[item.id] ?? EMPTY_LINE;
@@ -233,11 +239,20 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided }: OrderDeci
     };
   };
 
+  // Accepting anything of a delivery order sends the ready time.
+  const needsReadyTime =
+    order.fulfilment_method === "DELIVERY" && confirming === "decide" && counts.accepted + counts.reduced > 0;
+
   const save = async () => {
     if (busy) return;
+    const readyAt = needsReadyTime ? readyAtOf(ready) : null;
+    if (needsReadyTime && !readyAt) {
+      setReadyError(true);
+      return;
+    }
     setBusy(true);
     try {
-      const response = await api.post(`/orders/${order.id}/decision`, body());
+      const response = await api.post(`/orders/${order.id}/decision`, { ...body(), ...(readyAt && { ready_at: readyAt }) });
       toast.success(response.data.message);
       onClose();
       onDecided();
@@ -492,6 +507,7 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided }: OrderDeci
     <div className="space-y-3">
       <p className="font-medium text-gray-900">{summary}</p>
       <p className="text-sm text-gray-600">{t("orders.decision.irreversible")}</p>
+      {needsReadyTime && <ReadyTimePicker value={ready} onChange={setReady} showError={readyError} />}
     </div>
   );
 

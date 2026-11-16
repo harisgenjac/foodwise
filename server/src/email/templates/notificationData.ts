@@ -32,6 +32,10 @@ export interface NotificationEmailData {
   pickupAt: string | null;
   // PICKUP or DELIVERY. Optional: emails queued before delivery existed do not have it.
   fulfilmentMethod?: string | null;
+  // The order's delivery once the store accepted (optional like fulfilmentMethod): its final
+  // price, or why it could not be created.
+  deliveryPrice?: string | null;
+  deliveryFailure?: string | null;
   restaurantName: string | null;
   storeName: string | null;
   // The order's code (without #) and lines (the email adds up the totals).
@@ -123,6 +127,8 @@ export const NOTIFICATION_EMAIL_DATA = `jsonb_build_object(
   'unit', COALESCE(products.unit, donation_offers.unit),
   'pickupAt', to_char(orders.pickup_at, 'YYYY-MM-DD"T"HH24:MI'),
   'fulfilmentMethod', orders.fulfilment_method::text,
+  'deliveryPrice', (SELECT deliveries.price::text FROM deliveries WHERE deliveries.order_id = orders.id),
+  'deliveryFailure', (SELECT deliveries.failure_reason FROM deliveries WHERE deliveries.order_id = orders.id),
   'restaurantName', order_restaurants.business_name,
   'storeName', COALESCE(order_stores.business_name, stores.business_name),
   'orderCode', orders.code::text,

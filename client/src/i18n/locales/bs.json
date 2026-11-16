@@ -316,7 +316,8 @@
       "BRANCH_CREDIT_REQUEST_EXPIRED": "Zahtjev za poslovnicu {{branch}} je istekao.",
       "CREDIT_TOPUP_COMPANY_APPROVED": "Centrala je proslijedila vaš zahtjev za dodatne kredite administratoru.",
       "CREDIT_TOPUP_COMPANY_REJECTED": "Centrala je odbila vaš zahtjev za dodatne kredite.",
-      "PASSWORD_CHANGED": "Lozinka je promijenjena putem linka za novu lozinku. Ako to niste bili vi, odmah zatražite novu lozinku."
+      "PASSWORD_CHANGED": "Lozinka je promijenjena putem linka za novu lozinku. Ako to niste bili vi, odmah zatražite novu lozinku.",
+      "DELIVERY_FAILED": "Dostava narudžbe {{code}} nije moguća. Narudžba ostaje prihvaćena."
     },
     "reason": "Razlog: {{reason}}",
     "credits": {
@@ -1935,7 +1936,14 @@
       "wholeOnlySold": "Restoran prihvata samo cijelu narudžbu, a dio je prodan u vašoj radnji: narudžbu morate odbiti.",
       "acceptAtMost": "{{product}}: nakon prodaje u radnji možete prihvatiti najviše {{amount}}. Prihvatite manje ili odbijte.",
       "mustRejectItem": "{{product}} je prodan u vašoj radnji: ovu stavku morate odbiti.",
-      "mustRejectOrder": "Ova narudžba se mora odbiti: {{product}} je prodan u vašoj radnji (ostalo je samo {{left}})."
+      "mustRejectOrder": "Ova narudžba se mora odbiti: {{product}} je prodan u vašoj radnji (ostalo je samo {{left}}).",
+      "ready": {
+        "title": "Kada će narudžba biti spremna za kurira?",
+        "hint": "Kurir dolazi kad je narudžba spremna. Podrazumijevano je vaše vrijeme pripreme.",
+        "exact": "Tačno vrijeme",
+        "timeLabel": "Spremno u (danas)",
+        "invalid": "Unesite vrijeme danas, kasnije od sada (npr. 14:30)."
+      }
     },
     "send": {
       "submit": "Pošalji narudžbu",
@@ -1969,7 +1977,25 @@
       "fee": "Cijena dostave (okvirno)",
       "courierPickup": "Kurir preuzima (okvirno)",
       "cardLabel": "Dostava",
-      "badge": "Dostava"
+      "badge": "Dostava",
+      "statusLabel": "Stanje dostave",
+      "status": {
+        "CREATED": "Dostava naručena, čeka kurira",
+        "COURIER_ASSIGNED": "Kurir dodijeljen",
+        "PICKED_UP": "Kurir je preuzeo narudžbu",
+        "DELIVERED": "Dostavljeno",
+        "FAILED": "Dostava nije uspjela",
+        "CANCELLED": "Dostava otkazana"
+      },
+      "failed": "Dostava nije moguća ({{reason}}). Dogovorite preuzimanje.",
+      "failure": {
+        "OUT_OF_ZONE": "adresa je izvan zone dostave",
+        "other": "dostavna služba trenutno nije dostupna"
+      },
+      "finalFee": "Cijena dostave",
+      "cash": "Kuriru se plaća (roba + dostava)",
+      "readyAt": "Spremno za kurira",
+      "courierPickupFinal": "Kurir preuzima (okvirno)"
     }
   },
   "cart": {

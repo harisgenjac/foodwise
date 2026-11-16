@@ -18,6 +18,7 @@ import { usePagedLimit } from "../hooks/usePagedLimit.js";
 import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import { usePickupActions } from "../hooks/usePickupActions.js";
 import type { Order } from "../types/index.js";
+import { useAuth } from "../context/AuthContext.js";
 
 const STATUSES: Order["status"][] = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
 
@@ -32,6 +33,8 @@ function StoreOrdersPage() {
   const [cityId, setCityId] = useState("");
   const [deciding, setDeciding] = useState<Order | null>(null);
   const { t } = useTranslation();
+  // The store's preparation time, the default ready time of a delivery order it accepts.
+  const { user } = useAuth();
   // 12 at a time; a filter change starts again from the first page, a reload keeps the limit.
   // The code is searched without its "#".
   const filters = { name, code: code.replace(/^#/, "").trim(), status, city_id: cityId };
@@ -204,6 +207,7 @@ function StoreOrdersPage() {
           restaurant={deciding.business_name ?? ""}
           onClose={() => setDeciding(null)}
           onDecided={refetch}
+          {...(user?.preparation_minutes && { preparationMinutes: user.preparation_minutes })}
         />
       )}
     </div>

@@ -306,7 +306,8 @@
       "BRANCH_CREDIT_REQUEST_EXPIRED": "The request for branch {{branch}} expired.",
       "CREDIT_TOPUP_COMPANY_APPROVED": "Your headquarters sent your extra credits request to an administrator.",
       "CREDIT_TOPUP_COMPANY_REJECTED": "Your headquarters rejected your extra credits request.",
-      "PASSWORD_CHANGED": "Your password was changed with a password reset link. If this was not you, ask for a new password right away."
+      "PASSWORD_CHANGED": "Your password was changed with a password reset link. If this was not you, ask for a new password right away.",
+      "DELIVERY_FAILED": "The delivery of order {{code}} is not possible. The order stays accepted."
     },
     "reason": "Reason: {{reason}}",
     "credits": {
@@ -1889,7 +1890,14 @@
       "wholeOnlySold": "The restaurant accepts only the whole order, and part of it was sold in your shop: you must reject the order.",
       "acceptAtMost": "{{product}}: after the sale in your shop you can accept at most {{amount}}. Accept less or reject it.",
       "mustRejectItem": "{{product}} was sold in your shop: you must reject this item.",
-      "mustRejectOrder": "This order must be rejected: {{product}} was sold in your shop (only {{left}} left)."
+      "mustRejectOrder": "This order must be rejected: {{product}} was sold in your shop (only {{left}} left).",
+      "ready": {
+        "title": "When will the order be ready for the courier?",
+        "hint": "The courier comes when the order is ready. Your preparation time is the default.",
+        "exact": "Exact time",
+        "timeLabel": "Ready at (today)",
+        "invalid": "Enter a time later today (e.g. 14:30)."
+      }
     },
     "send": {
       "submit": "Send order",
@@ -1923,7 +1931,25 @@
       "fee": "Delivery price (estimate)",
       "courierPickup": "Courier pickup (estimate)",
       "cardLabel": "Delivery",
-      "badge": "Delivery"
+      "badge": "Delivery",
+      "statusLabel": "Delivery status",
+      "status": {
+        "CREATED": "Delivery booked, waiting for a courier",
+        "COURIER_ASSIGNED": "Courier assigned",
+        "PICKED_UP": "The courier picked the order up",
+        "DELIVERED": "Delivered",
+        "FAILED": "Delivery failed",
+        "CANCELLED": "Delivery cancelled"
+      },
+      "failed": "Delivery is not possible ({{reason}}). Agree on a pickup.",
+      "failure": {
+        "OUT_OF_ZONE": "the address is outside the delivery zone",
+        "other": "the delivery service is not available"
+      },
+      "finalFee": "Delivery price",
+      "cash": "Paid to the courier (goods + delivery)",
+      "readyAt": "Ready for the courier",
+      "courierPickupFinal": "Courier pickup (estimate)"
     }
   },
   "cart": {

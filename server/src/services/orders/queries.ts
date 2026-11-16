@@ -42,6 +42,14 @@ const LINES = `JOIN LATERAL (
 const ORDER_COLUMNS = `
     orders.id, orders.code, orders.status, orders.fulfilment_method, orders.pickup_at, orders.accept_partial,
     orders.delivery_address, orders.delivery_fee_estimate::text AS delivery_fee_estimate, orders.delivery_estimated_at,
+    orders.ready_at,
+    (SELECT json_build_object(
+       'status', deliveries.status, 'price', deliveries.price::text,
+       'cash_to_collect', deliveries.cash_to_collect::text,
+       'estimated_pickup_at', deliveries.estimated_pickup_at, 'estimated_delivery_at', deliveries.estimated_delivery_at,
+       'courier_name', deliveries.courier_name, 'courier_phone', deliveries.courier_phone,
+       'tracking_url', deliveries.tracking_url, 'failure_reason', deliveries.failure_reason)
+     FROM deliveries WHERE deliveries.order_id = orders.id) AS delivery,
     orders.decided_at, orders.picked_up_at, orders.created_at, orders.updated_at,
     orders.store_id, orders.restaurant_id,
     orders.status = 'Confirmed' AND orders.pickup_at::date < CURRENT_DATE AS is_overdue,

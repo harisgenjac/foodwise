@@ -88,6 +88,22 @@ export interface SendChange {
 
 export type FulfilmentMethod = "PICKUP" | "DELIVERY";
 
+export type DeliveryStatus = "CREATED" | "COURIER_ASSIGNED" | "PICKED_UP" | "DELIVERED" | "FAILED" | "CANCELLED";
+
+// The delivery of an accepted delivery order (FAILED: it could not be arranged, failure_reason
+// is the provider's code such as OUT_OF_ZONE).
+export interface OrderDelivery {
+  status: DeliveryStatus;
+  price: string | null;
+  cash_to_collect: string | null;
+  estimated_pickup_at: string | null;
+  estimated_delivery_at: string | null;
+  courier_name: string | null;
+  courier_phone: string | null;
+  tracking_url: string | null;
+  failure_reason: string | null;
+}
+
 // Why the cart cannot be delivered now (GET /cart/delivery, 409 DELIVERY_UNAVAILABLE).
 export type DeliveryUnavailableReason =
   | "STORE_NO_DELIVERY"
@@ -121,6 +137,10 @@ export interface Order {
   delivery_address?: string | null;
   delivery_fee_estimate?: string | null;
   delivery_estimated_at?: string | null;
+  // A delivery order once accepted: when the store said it will be ready, and the delivery the
+  // acceptance created (null before, and for pickup).
+  ready_at?: string | null;
+  delivery?: OrderDelivery | null;
   accept_partial: boolean;
   decided_at: string | null;
   picked_up_at: string | null;

@@ -71,6 +71,7 @@ describe("server texts", () => {
     /^New order 7: /,
     /^(Your order|Order|Some items of your order) (7|{code}) /,
     /^Pickup of order 7 /,
+    /^The delivery of order 7 /,
     /^No free order code /,
     /^New .* request waiting for approval\.$/,
     /^Your .* request was /,

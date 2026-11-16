@@ -34,6 +34,15 @@ interface Values {
 
 type CopyFn = (v: Values, d: NotificationEmailData) => Copy;
 
+const isDelivery = (d: NotificationEmailData) => d.fulfilmentMethod === "DELIVERY";
+
+// Why a delivery could not be arranged, from the provider's code.
+const failureText = (d: NotificationEmailData, lang: EmailLanguage) => {
+  const outOfZone = d.deliveryFailure === "OUT_OF_ZONE";
+  if (lang === "en") return outOfZone ? "the address is outside the delivery zone" : "the delivery service is not available";
+  return outOfZone ? "adresa je izvan zone dostave" : "dostavna služba trenutno nije dostupna";
+};
+
 // A credit type's text depends on whether the request is a subscription or a top-up.
 const byRequest = (subscription: CopyFn, topup: CopyFn): CopyFn => (v, d) => (v.topup ? topup : subscription)(v, d);
 
@@ -65,20 +74,24 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
       heading: "Narudžba je otkazana",
       intro: [`${v.restaurant} je otkazao narudžbu ${v.code}.`],
     }),
-    ORDER_ACCEPTED: (v) => ({
+    ORDER_ACCEPTED: (v, d) => ({
       subject: `Narudžba ${v.code} je prihvaćena`,
       heading: "Narudžba je prihvaćena",
       intro: [`Prodavnica ${v.store} je prihvatila vašu narudžbu ${v.code}.`],
-      outro: ["Preuzmite je u dogovoreno vrijeme."],
+      outro: [isDelivery(d) ? "Kurir će vam je dostaviti; platite mu robu i dostavu u gotovini." : "Preuzmite je u dogovoreno vrijeme."],
     }),
-    ORDER_PARTIALLY_ACCEPTED: (v) => ({
+    ORDER_PARTIALLY_ACCEPTED: (v, d) => ({
       subject: `Narudžba ${v.code} je djelimično prihvaćena`,
       heading: "Narudžba je djelimično prihvaćena",
       intro: [
         `Prodavnica ${v.store} je prihvatila dio vaše narudžbe ${v.code}. Izmjene su navedene ispod.`,
         ...(v.newTotal ? [`Novi iznos: ${v.newTotal} umjesto ${v.orderedTotal}.`] : []),
       ],
-      outro: ["Preuzmite prihvaćene stavke u dogovoreno vrijeme."],
+      outro: [
+        isDelivery(d)
+          ? "Kurir će vam dostaviti prihvaćene stavke; platite mu robu i dostavu u gotovini."
+          : "Preuzmite prihvaćene stavke u dogovoreno vrijeme.",
+      ],
     }),
     ORDER_REJECTED: (v) => ({
       subject: `Narudžba ${v.code} je odbijena`,
@@ -123,6 +136,16 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
       subject: `Narudžba ${v.code} je otkazana`,
       heading: "Administrator je otkazao narudžbu",
       intro: [`Administrator platforme je otkazao narudžbu ${v.code}.`],
+    }),
+    DELIVERY_FAILED: (v, d) => ({
+      subject: `Dostava narudžbe ${v.code} nije moguća`,
+      heading: "Dostava nije moguća",
+      intro: [
+        `Za narudžbu ${v.code} dostavna služba nije mogla organizovati dostavu (${failureText(d, "bs")}).`,
+        d.recipientRole === "STORE"
+          ? "Narudžba ostaje prihvaćena, ali kurir neće doći. Dogovorite preuzimanje s restoranom."
+          : `Narudžba ostaje prihvaćena. Dogovorite preuzimanje s prodavnicom ${v.store}.`,
+      ],
     }),
     ORDER_CANCELLED_STORE_CLOSED: (v) => ({
       subject: `Narudžba ${v.code} je otkazana`,
@@ -306,20 +329,24 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
       heading: "Order cancelled",
       intro: [`${v.restaurant} cancelled order ${v.code}.`],
     }),
-    ORDER_ACCEPTED: (v) => ({
+    ORDER_ACCEPTED: (v, d) => ({
       subject: `Order ${v.code} was accepted`,
       heading: "Order accepted",
       intro: [`${v.store} accepted your order ${v.code}.`],
-      outro: ["Pick it up at the agreed time."],
+      outro: [isDelivery(d) ? "A courier will bring it; pay them the goods and the delivery in cash." : "Pick it up at the agreed time."],
     }),
-    ORDER_PARTIALLY_ACCEPTED: (v) => ({
+    ORDER_PARTIALLY_ACCEPTED: (v, d) => ({
       subject: `Order ${v.code} was partly accepted`,
       heading: "Order partly accepted",
       intro: [
         `${v.store} accepted part of your order ${v.code}. The changes are listed below.`,
         ...(v.newTotal ? [`New total: ${v.newTotal} instead of ${v.orderedTotal}.`] : []),
       ],
-      outro: ["Pick up the accepted items at the agreed time."],
+      outro: [
+        isDelivery(d)
+          ? "A courier will bring the accepted items; pay them the goods and the delivery in cash."
+          : "Pick up the accepted items at the agreed time.",
+      ],
     }),
     ORDER_REJECTED: (v) => ({
       subject: `Order ${v.code} was rejected`,
@@ -364,6 +391,16 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
       subject: `Order ${v.code} was cancelled`,
       heading: "An administrator cancelled an order",
       intro: [`The platform administrator cancelled order ${v.code}.`],
+    }),
+    DELIVERY_FAILED: (v, d) => ({
+      subject: `Delivery of order ${v.code} is not possible`,
+      heading: "Delivery not possible",
+      intro: [
+        `The delivery service could not arrange the delivery of order ${v.code} (${failureText(d, "en")}).`,
+        d.recipientRole === "STORE"
+          ? "The order stays accepted, but no courier is coming. Agree on a pickup with the restaurant."
+          : `The order stays accepted. Agree on a pickup with ${v.store}.`,
+      ],
     }),
     ORDER_CANCELLED_STORE_CLOSED: (v) => ({
       subject: `Order ${v.code} was cancelled`,
@@ -613,6 +650,7 @@ const LABELS: Record<EmailLanguage, Record<string, string>> = {
     store: "Prodavnica",
     pickup: "Preuzimanje",
     delivery: "Dostava (kurir preuzima)",
+    deliveryPrice: "Cijena dostave",
     branch: "Poslovnica",
     requester: "Podnosilac",
     credits: "Krediti",
@@ -628,6 +666,7 @@ const LABELS: Record<EmailLanguage, Record<string, string>> = {
     store: "Store",
     pickup: "Pickup",
     delivery: "Delivery (courier pickup)",
+    deliveryPrice: "Delivery price",
     branch: "Branch",
     requester: "Requester",
     credits: "Credits",
@@ -668,6 +707,7 @@ const detailRows = (type: NotificationType, d: NotificationEmailData, lang: Emai
       const delivery = d.fulfilmentMethod === "DELIVERY";
       rows.push({ label: delivery ? label.delivery! : label.pickup!, value: formatPickup(d.pickupAt, lang) });
     }
+    if (d.deliveryPrice) rows.push({ label: label.deliveryPrice!, value: formatMoney(d.deliveryPrice, lang) });
   }
   if (CREDIT_TYPES.has(type)) {
     if (d.recipientRole === "ADMIN" && d.creditRequester !== null) {

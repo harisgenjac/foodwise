@@ -14,6 +14,7 @@ import {
   ShieldAlert,
   ShoppingBag,
   Store,
+  Truck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Notification, NotificationType } from "../context/NotificationsContext.js";
@@ -34,6 +35,7 @@ export const NOTIFICATION_META: Record<NotificationType, { icon: LucideIcon; sty
   ORDER_ITEMS_REMOVED: { icon: ShieldAlert, style: "bg-amber-50 text-amber-600" },
   ORDER_CANCELLED_BY_ADMIN: { icon: ShieldAlert, style: "bg-gray-100 text-gray-600" },
   ORDER_CANCELLED_STORE_CLOSED: { icon: Ban, style: "bg-gray-100 text-gray-600" },
+  DELIVERY_FAILED: { icon: Truck, style: "bg-red-50 text-red-600" },
   PRODUCT_EXPIRED: { icon: CalendarX, style: "bg-red-50 text-red-600" },
   PRODUCT_SOLD_OUT: { icon: PackageCheck, style: "bg-green-50 text-green-600" },
   PRODUCT_EXPIRING_SOON: { icon: Hourglass, style: "bg-amber-50 text-amber-600" },

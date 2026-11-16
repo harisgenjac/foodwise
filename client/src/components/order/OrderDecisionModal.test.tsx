@@ -209,3 +209,56 @@ describe("OrderDecisionModal after a sale in the shop", () => {
     expect(screen.getByRole("heading", { name: t("orders.decision.rejectTitle", { code: "#J4BL" }) })).toBeInTheDocument();
   });
 });
+
+describe("OrderDecisionModal for a delivery order", () => {
+  const DELIVERY = { ...ORDER, fulfilment_method: "DELIVERY" as const };
+  const renderDelivery = (preparationMinutes?: number) =>
+    render(
+      <OrderDecisionModal
+        order={DELIVERY}
+        restaurant="Restoran Ukus"
+        onClose={vi.fn()}
+        onDecided={vi.fn()}
+        {...(preparationMinutes && { preparationMinutes })}
+      />,
+    );
+
+  it("asks when the order will be ready, starting from the store's preparation time", async () => {
+    apiMock.post.mockResolvedValue({ data: { message: "Order decision saved." } });
+    renderDelivery(45);
+    await userEvent.click(button("orders.decision.confirmDecision"));
+    const ready = screen.getByTestId("ready-time");
+    expect(within(ready).getByRole("button", { name: t("orderSettings.minutes", { count: 45 }) })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await userEvent.click(within(ready).getByRole("button", { name: t("orderSettings.minutes", { count: 15 }) }));
+    const before = Date.now();
+    await userEvent.click(button("orders.decision.save"));
+
+    const body = apiMock.post.mock.calls[0]![1] as { ready_at: string };
+    const minutes = (new Date(body.ready_at).getTime() - before) / 60000;
+    expect(minutes).toBeGreaterThan(14.9);
+    expect(minutes).toBeLessThan(15.1);
+  });
+
+  it("needs an exact time later today", async () => {
+    renderDelivery();
+    await userEvent.click(button("orders.decision.confirmDecision"));
+    await userEvent.click(within(screen.getByTestId("ready-time")).getByRole("button", { name: t("orders.decision.ready.exact") }));
+    await userEvent.click(button("orders.decision.save"));
+    expect(apiMock.post).not.toHaveBeenCalled();
+    expect(screen.getByText(t("orders.decision.ready.invalid"))).toBeInTheDocument();
+  });
+
+  it("asks nothing when the whole order is rejected", async () => {
+    apiMock.post.mockResolvedValue({ data: { message: "Order decision saved." } });
+    renderDelivery();
+    await userEvent.click(button("orders.decision.rejectOrder"));
+    await userEvent.selectOptions(screen.getByLabelText(t("orders.decision.reason")), "QUALITY");
+    await userEvent.click(screen.getAllByRole("button", { name: t("orders.decision.rejectOrder") }).at(-1)!);
+    expect(screen.queryByTestId("ready-time")).not.toBeInTheDocument();
+    await userEvent.click(button("orders.decision.saveReject"));
+    expect(apiMock.post).toHaveBeenCalledWith("/orders/8/decision", expect.not.objectContaining({ ready_at: expect.anything() }));
+  });
+});

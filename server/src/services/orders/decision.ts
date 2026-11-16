@@ -5,6 +5,9 @@ import { createNotification } from "../../utils/notifications.js";
 import { absorbShopShortage, markSoldIfFullyConfirmed } from "../stock.js";
 import { formatOrderCode } from "./codes.js";
 import { lockOrder, lockOrderItems, recordItemChanges, syncOrderStatus, type ItemRow } from "./status.js";
+import { parseReadyAt } from "../../utils/readyTime.js";
+import type { Schedule } from "../../utils/schedule.js";
+import { createOrderDelivery, notifyDeliveryFailed, type DeliveryOutcome } from "../orderDelivery.js";
 
 // The store's decision on a Pending order (docs/orders-design.md, section 6): every Pending item is
 // accepted, accepted with a smaller quantity or rejected, in one step; or the whole order is
@@ -177,6 +180,19 @@ export const decideOrder = async (
   }
   checkShopShortage(decisions, order.accept_partial);
 
+  // Accepting a delivery order needs the time the goods will be ready (body.ready_at): today,
+  // before the store closes. The delivery is created with it below.
+  let readyAt: Date | null = null;
+  if (order.fulfilment_method === "DELIVERY" && decisions.some((decision) => decision.action !== "REJECT")) {
+    const store = await client.query<{ opening_schedule: Schedule | null }>(
+      "SELECT users.opening_schedule FROM users WHERE users.id = $1",
+      [order.store_id],
+    );
+    const parsed = parseReadyAt(body.ready_at, store.rows[0]?.opening_schedule ?? null);
+    if (parsed.error !== undefined) throw new HttpError(400, parsed.error);
+    readyAt = parsed.readyAt;
+  }
+
   for (const decision of decisions) {
     await client.query(
       `UPDATE order_items
@@ -238,6 +254,11 @@ export const decideOrder = async (
   }
   await client.query("UPDATE orders SET decided_at = NOW() WHERE orders.id = $1", [order.id]);
   const updated = await syncOrderStatus(client, order.id, event);
+  let delivery: DeliveryOutcome | null = null;
+  if (readyAt && updated.status === "Confirmed") {
+    await client.query("UPDATE orders SET ready_at = $2 WHERE orders.id = $1", [order.id, readyAt.toISOString()]);
+    delivery = await createOrderDelivery(client, order, readyAt);
+  }
 
   const code = formatOrderCode(order.code);
   const changed = decisions.some((decision) => decision.action !== "ACCEPT");
@@ -248,5 +269,6 @@ export const decideOrder = async (
         ? { type: "ORDER_PARTIALLY_ACCEPTED" as const, message: `Your order ${code} was partly accepted.` }
         : { type: "ORDER_ACCEPTED" as const, message: `Your order ${code} was accepted.` };
   await createNotification(client, { userId: order.restaurant_id, orderId: order.id, ...notification });
+  if (delivery && !delivery.created) await notifyDeliveryFailed(client, order, delivery.reason);
   return updated;
 };

@@ -90,6 +90,29 @@ describe("ORDER_CREATED email", () => {
     expect(orderCreated.render(delivery, "bs", APP_URL).text).not.toContain("Preuzimanje:");
   });
 
+  it("tells a restaurant about an accepted delivery: the courier, the cash and the final price", () => {
+    const accepted = { ...DATA, recipientRole: "RESTAURANT", fulfilmentMethod: "DELIVERY", deliveryPrice: "9.10" };
+    const email = NOTIFICATION_TEMPLATES.ORDER_ACCEPTED.render(accepted, "bs", APP_URL);
+    expect(email.text).toContain("Kurir će vam je dostaviti; platite mu robu i dostavu u gotovini.");
+    expect(email.text).toContain("Cijena dostave: 9,10 KM");
+    expect(email.text).not.toContain("Preuzmite je u dogovoreno vrijeme.");
+  });
+
+  it("explains a failed delivery to each side", () => {
+    const failed = { ...DATA, fulfilmentMethod: "DELIVERY", deliveryFailure: "OUT_OF_ZONE" };
+    const toRestaurant = NOTIFICATION_TEMPLATES.DELIVERY_FAILED.render({ ...failed, recipientRole: "RESTAURANT" }, "bs", APP_URL);
+    expect(toRestaurant.subject).toBe("Dostava narudžbe #K7PM nije moguća");
+    expect(toRestaurant.text).toContain("adresa je izvan zone dostave");
+    expect(toRestaurant.text).toContain("Dogovorite preuzimanje s prodavnicom Market Centar.");
+    const toStore = NOTIFICATION_TEMPLATES.DELIVERY_FAILED.render(
+      { ...failed, recipientRole: "STORE", deliveryFailure: "UNAVAILABLE" },
+      "en",
+      APP_URL,
+    );
+    expect(toStore.text).toContain("the delivery service is not available");
+    expect(toStore.text).toContain("no courier is coming");
+  });
+
   it("is in English", () => {
     const email = orderCreated.render(DATA, "en", APP_URL);
     expect(email.subject).toBe("New order #K7PM from Restoran Ćevap & Co");
@@ -138,7 +161,7 @@ describe("ORDER_CREATED email", () => {
     expect(emailTemplate("NO_SUCH_TEMPLATE")).toBeUndefined();
     expect(emailTemplate("toString")).toBeUndefined();
     // 36 notification types and the system emails PASSWORD_RESET and INVITATION.
-    expect(Object.keys(EMAIL_TEMPLATES)).toHaveLength(38);
+    expect(Object.keys(EMAIL_TEMPLATES)).toHaveLength(39);
   });
 });
 
@@ -216,6 +239,7 @@ const FULL: Record<NotificationType, NotificationEmailData> = (() => {
     ORDER_ITEMS_REMOVED: order,
     ORDER_CANCELLED_BY_ADMIN: { ...order, details: "Spor" },
     ORDER_CANCELLED_STORE_CLOSED: order,
+    DELIVERY_FAILED: { ...order, fulfilmentMethod: "DELIVERY", deliveryFailure: "OUT_OF_ZONE" },
     PRODUCT_EXPIRED: product,
     PRODUCT_SOLD_OUT: product,
     PRODUCT_EXPIRING_SOON: product,

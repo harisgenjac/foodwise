@@ -133,3 +133,61 @@ describe("OrderDetailsPage", () => {
     expect(screen.getByRole("link", { name: t("orders.backToList") })).toHaveAttribute("href", "/my-orders");
   });
 });
+
+describe("OrderDetailsPage delivery", () => {
+  const delivered = (delivery: OrderDetails["delivery"]) =>
+    ({
+      ...PARTIAL,
+      fulfilment_method: "DELIVERY",
+      delivery_address: "Butmirska cesta 2, Sarajevo",
+      delivery_fee_estimate: "9.10",
+      delivery_estimated_at: "2026-11-16T12:36:00.000Z",
+      ready_at: "2026-11-16T12:00:00.000Z",
+      delivery,
+    }) as OrderDetails;
+
+  it("shows the booked delivery with its final price and the cash for the courier", async () => {
+    renderPage(
+      RESTAURANT,
+      delivered({
+        status: "CREATED",
+        price: "9.40",
+        cash_to_collect: "61.90",
+        estimated_pickup_at: "2026-11-16T12:05:00.000Z",
+        estimated_delivery_at: "2026-11-16T12:36:00.000Z",
+        courier_name: null,
+        courier_phone: null,
+        tracking_url: null,
+        failure_reason: null,
+      }),
+    );
+    expect(await screen.findByText(t("orders.delivery.status.CREATED"))).toBeInTheDocument();
+    expect(screen.getByText(t("orders.delivery.finalFee"))).toBeInTheDocument();
+    expect(screen.getByText("9.40 KM")).toBeInTheDocument();
+    expect(screen.getByText("61.90 KM")).toBeInTheDocument();
+    expect(screen.getByText(t("orders.delivery.readyAt"))).toBeInTheDocument();
+    expect(screen.getByText("Butmirska cesta 2, Sarajevo")).toBeInTheDocument();
+  });
+
+  it("says why the delivery failed", async () => {
+    renderPage(
+      STORE,
+      delivered({
+        status: "FAILED",
+        price: null,
+        cash_to_collect: null,
+        estimated_pickup_at: null,
+        estimated_delivery_at: null,
+        courier_name: null,
+        courier_phone: null,
+        tracking_url: null,
+        failure_reason: "OUT_OF_ZONE",
+      }),
+    );
+    expect(
+      await screen.findByText(t("orders.delivery.failed", { reason: t("orders.delivery.failure.OUT_OF_ZONE") })),
+    ).toBeInTheDocument();
+    // Without a price, the estimate from the cart.
+    expect(screen.getByText(t("orders.delivery.fee"))).toBeInTheDocument();
+  });
+});
