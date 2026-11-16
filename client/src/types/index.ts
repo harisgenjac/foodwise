@@ -170,7 +170,22 @@ export interface SearchStore {
   city: string | null;
   distance_km: number | null;
   match_count: number;
+  // The store takes no orders now (see StorePause).
+  orders_paused: boolean;
+  orders_paused_until: string | null;
   products: Product[];
+}
+
+// A store's pause on new orders: on (until a time, or until the store switches it off) or off.
+export interface StorePause {
+  orders_paused: boolean;
+  orders_paused_until: string | null;
+}
+
+// A store's order settings (PATCH /users/me/order-settings, GET /users/me, the admin's user).
+export interface OrderSettings extends StorePause {
+  delivery_enabled: boolean;
+  preparation_minutes: number;
 }
 
 export interface User {
@@ -211,6 +226,12 @@ export interface User {
   must_change_password?: boolean;
   // The "Email notifications" switch on My profile (GET /users/me).
   email_notifications?: boolean;
+  // A store's order settings: on GET /users/me and the admin's user (all four); the pause also on
+  // the store page and the store list.
+  delivery_enabled?: boolean;
+  preparation_minutes?: number;
+  orders_paused?: boolean;
+  orders_paused_until?: string | null;
   // The last successful login; null = never logged in (admin user responses).
   last_login_at?: string | null;
   // The user's company: set for a COMPANY (headquarters) user, null otherwise for now.
@@ -828,7 +849,7 @@ export interface CartLine {
 }
 
 export interface Cart {
-  store: { id: number; business_name: string | null } | null;
+  store: ({ id: number; business_name: string | null } & StorePause) | null;
   items: CartLine[];
   // What would be sent now (available lines without a higher price, at most the free quantity).
   totals: { lines: number; total: string };

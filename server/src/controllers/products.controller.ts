@@ -12,6 +12,7 @@ import { companyName, storeLogo } from '../utils/branding.js';
 import { availableQuantity, pendingHeld, soldInShop } from '../services/stock.js';
 import { saveImage } from '../services/storage.js';
 import { parseProductImage, productImageNamePrefix, releaseProductImage } from '../utils/productImages.js';
+import { pauseColumns } from '../utils/orderSettings.js';
 
 export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
 
@@ -346,7 +347,7 @@ export const getProductsByStore = async (req: Request, res: Response) => {
     );
     const stores = await pool.query(
       `SELECT users.id, users.business_name, ${storeLogo("users")} AS logo_url,
-              ${companyName("users")} AS company_name, cities.name AS city
+              ${companyName("users")} AS company_name, cities.name AS city, ${pauseColumns("users")}
        FROM users LEFT JOIN cities ON cities.id = users.city_id
        WHERE users.id = ANY($1::int[])`,
       [storeIds],

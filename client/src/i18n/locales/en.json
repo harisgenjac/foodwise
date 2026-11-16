@@ -2064,5 +2064,44 @@
     "storeCount_one": "{{count}} store",
     "storeCount_other": "{{count}} stores",
     "seeAll": "All ({{count}})"
+  },
+  "orderSettings": {
+    "title": "Orders and delivery",
+    "description": "How your store receives orders. Changes are saved at once.",
+    "delivery": "I offer delivery",
+    "deliveryOnHint": "Restaurants can choose delivery or pickup (once delivery is available).",
+    "deliveryOffHint": "Restaurants can only pick the order up at the store.",
+    "preparation": "Preparation time",
+    "preparationHint": "How long you usually need to prepare an order. Suggested when you accept an order.",
+    "minutes_one": "{{count}} minute",
+    "minutes_other": "{{count}} minutes",
+    "adminPaused": "Receiving orders paused",
+    "error": "The settings were not saved. Try again."
+  },
+  "orderPause": {
+    "receivingTitle": "You are receiving orders",
+    "receivingText": "Restaurants can send you orders.",
+    "pausedTitle": "Receiving orders is paused",
+    "pausedText": "Restaurants see your offer but cannot send orders {{until}}.",
+    "pause": "Pause orders",
+    "resume": "Resume orders",
+    "modalTitle": "Pause orders?",
+    "modalText": "Your products stay visible, but restaurants cannot send new orders while the pause lasts. Orders already waiting stay.",
+    "howLong": "For how long?",
+    "options": {
+      "30m": "30 minutes",
+      "1h": "1 hour",
+      "2h": "2 hours",
+      "4h": "4 hours",
+      "endOfDay": "Until the end of the day",
+      "untilResumed": "Until I turn it off"
+    },
+    "confirm": "Pause",
+    "untilTime": "until {{time}}",
+    "untilDate": "until {{date}} at {{time}}",
+    "untilEndOfDay": "until the end of the day",
+    "untilResumed": "until the store turns it off",
+    "badge": "Not taking orders",
+    "notice": "This store is not taking orders right now ({{until}}). The products stay in your cart, so you can send the order later."
   }
 }

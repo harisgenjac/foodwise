@@ -2111,5 +2111,45 @@
     "storeCount_few": "{{count}} prodavnice",
     "storeCount_other": "{{count}} prodavnica",
     "seeAll": "Sve ({{count}})"
+  },
+  "orderSettings": {
+    "title": "Narudžbe i dostava",
+    "description": "Kako vaša prodavnica prima narudžbe. Promjene se čuvaju odmah.",
+    "delivery": "Nudim dostavu",
+    "deliveryOnHint": "Restorani mogu birati dostavu ili preuzimanje (kad dostava bude dostupna).",
+    "deliveryOffHint": "Restorani mogu samo preuzeti narudžbu u prodavnici.",
+    "preparation": "Vrijeme pripreme",
+    "preparationHint": "Koliko vam obično treba da pripremite narudžbu. Predlaže se pri prihvatanju narudžbe.",
+    "minutes_one": "{{count}} minuta",
+    "minutes_few": "{{count}} minute",
+    "minutes_other": "{{count}} minuta",
+    "adminPaused": "Primanje narudžbi pauzirano",
+    "error": "Postavke nisu sačuvane. Pokušajte ponovo."
+  },
+  "orderPause": {
+    "receivingTitle": "Primate narudžbe",
+    "receivingText": "Restorani vam mogu slati narudžbe.",
+    "pausedTitle": "Primanje narudžbi je pauzirano",
+    "pausedText": "Restorani vide vašu ponudu, ali ne mogu slati narudžbe {{until}}.",
+    "pause": "Pauziraj narudžbe",
+    "resume": "Nastavi primati narudžbe",
+    "modalTitle": "Pauzirati narudžbe?",
+    "modalText": "Vaši proizvodi ostaju vidljivi, ali restorani ne mogu slati nove narudžbe dok traje pauza. Narudžbe koje već čekaju ostaju.",
+    "howLong": "Koliko dugo?",
+    "options": {
+      "30m": "30 minuta",
+      "1h": "1 sat",
+      "2h": "2 sata",
+      "4h": "4 sata",
+      "endOfDay": "Do kraja dana",
+      "untilResumed": "Dok je ne isključim"
+    },
+    "confirm": "Pauziraj",
+    "untilTime": "do {{time}}",
+    "untilDate": "do {{date}} u {{time}}",
+    "untilEndOfDay": "do kraja dana",
+    "untilResumed": "dok je prodavnica ne isključi",
+    "badge": "Ne prima narudžbe",
+    "notice": "Ova prodavnica trenutno ne prima narudžbe ({{until}}). Proizvodi ostaju u korpi pa narudžbu možete poslati kasnije."
   }
 }

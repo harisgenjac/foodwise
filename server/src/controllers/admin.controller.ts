@@ -19,6 +19,12 @@ import { DONATION_STATUSES, DONATION_TYPES } from "../utils/validateDonation.js"
 import { ORDER_STATUSES } from "../services/orders/status.js";
 import { cancelPendingItemsOfProducts, cancelPendingOrders, lockOrdersHoldingProducts } from "../services/orders/cascades.js";
 import { updateProfile } from "./users.controller.js";
+import {
+  orderSettingsColumns,
+  parseOrderSettings,
+  saveOrderSettings,
+  type OrderSettingsInput,
+} from "../utils/orderSettings.js";
 import { isValidDateTime } from "../utils/dates.js";
 import { CITY_NAME, parseCityFilter } from "../utils/cities.js";
 import { getPlatformUsage } from "../services/creditService.js";
@@ -71,7 +77,7 @@ const DONATION_SORTS = { expiry_date: "donation_offers.expiry_date" };
 const USER_COLUMNS = `users.id, users.email, users.role, users.first_name, users.last_name,
   users.business_name, users.city_id, ${CITY_NAME}, users.address, users.phone, users.logo_url,
   users.opening_hours, users.pickup_hours, users.opening_schedule, users.pickup_schedule, users.description,
-  users.latitude, users.longitude,
+  users.latitude, users.longitude, ${orderSettingsColumns("users")},
   users.is_blocked, users.blocked_at, users.blocked_reason, users.must_change_password, users.created_at,
   users.last_login_at,
   users.company_id, users.deactivated_at,
@@ -921,12 +927,26 @@ export const updateUserProfile = async (req: Request, res: Response) => {
       await client.query("ROLLBACK");
       return res.status(404).json({ error: "User not found." });
     }
-    const { logo_url: _logo, ...fields } = req.body;
+    const { logo_url: _logo, order_settings: orderSettings, ...fields } = req.body;
+    // A store's order settings come along as `order_settings` (other roles have none).
+    let settingsInput: OrderSettingsInput | null = null;
+    if (target.role === "STORE" && orderSettings !== undefined) {
+      const parsed =
+        orderSettings !== null && typeof orderSettings === "object" && !Array.isArray(orderSettings)
+          ? parseOrderSettings(orderSettings as Record<string, unknown>)
+          : { error: "Invalid request format." };
+      if (parsed.error !== undefined) {
+        await client.query("ROLLBACK");
+        return res.status(400).json({ error: parsed.error });
+      }
+      settingsInput = parsed.input;
+    }
     const result = await updateProfile(client, targetId, target.role, fields);
     if (result.error) {
       await client.query("ROLLBACK");
       return res.status(400).json({ error: result.error });
     }
+    if (settingsInput) await saveOrderSettings(client, targetId, settingsInput);
     await logAdminAction(client, { adminId: req.user!.id, action: "UPDATE_PROFILE", targetUserId: targetId });
     const user = await client.query(`SELECT ${USER_COLUMNS} FROM users WHERE users.id = $1`, [targetId]);
     await client.query("COMMIT");

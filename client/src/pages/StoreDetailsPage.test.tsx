@@ -158,7 +158,7 @@ describe("StoreDetailsPage", () => {
 
   it("shows the cart bar and the cart panel with this store's lines", async () => {
     cart = makeCart([makeCartLine({ product_id: 2, name: "Kefir", quantity: "2", unit: "kom" })], {
-      store: { id: 2, business_name: "Market Centar" },
+      store: { id: 2, business_name: "Market Centar", orders_paused: false, orders_paused_until: null },
       totals: { lines: 1, total: "45.00" },
     });
     renderPage();
@@ -171,7 +171,7 @@ describe("StoreDetailsPage", () => {
   });
 
   it("says when the cart holds another store's products", async () => {
-    cart = makeCart([makeCartLine({ product_id: 9, name: "Mlijeko" })], { store: { id: 7, business_name: "Druga" } });
+    cart = makeCart([makeCartLine({ product_id: 9, name: "Mlijeko" })], { store: { id: 7, business_name: "Druga", orders_paused: false, orders_paused_until: null } });
     renderPage();
     expect(
       await screen.findByText(t("store.page.cartOtherStore", { store: "Druga", count: 1 })),

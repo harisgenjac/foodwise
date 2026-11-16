@@ -18,6 +18,7 @@ import ChainLabel from "../components/store/ChainLabel.js";
 import FavoriteButton from "../components/store/FavoriteButton.js";
 import StoreProductCard from "../components/store/StoreProductCard.js";
 import { StoreCartBar, StoreCartPanel } from "../components/store/StoreCart.js";
+import StorePausedNotice from "../components/store/StorePausedNotice.js";
 import Tabs from "../components/common/Tabs.js";
 import { dayHoursText, hoursText, scheduleLines, todayWeekday, type Schedule } from "../utils/schedule.js";
 import type { Favorites, Product, User } from "../types/index.js";
@@ -230,6 +231,7 @@ function StoreDetailsPage() {
           </div>
           <FavoriteButton isFavorite={isFavorite} onToggle={toggleFavorite} variant="pill" />
         </div>
+        <StorePausedNotice pause={store} className="mx-5 mb-5 sm:mx-6" />
       </section>
 
       <div className="grid grid-cols-3 gap-3 sm:gap-4">

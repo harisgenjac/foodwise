@@ -8,6 +8,7 @@ import ChainLabel from "./ChainLabel.js";
 import { formatCityDistance } from "../../utils/radius.js";
 import type { User } from "../../types/index.js";
 import { hoursText } from "../../utils/schedule.js";
+import StorePausedNotice from "./StorePausedNotice.js";
 
 interface StoreCardProps {
   store: User;
@@ -59,6 +60,7 @@ function StoreCard({ store, isFavorite, onToggleFavorite }: StoreCardProps) {
                 ? t("store.activeOffers", { count: activeProducts })
                 : t("store.noOffers")}
             </span>
+            <StorePausedNotice pause={store} variant="badge" />
           </div>
         </div>
 

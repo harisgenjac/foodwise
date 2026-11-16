@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import api, { assetUrl } from "../api/axios.js";
-import type { GeoPoint, User } from "../types/index.js";
+import type { GeoPoint, OrderSettings, User } from "../types/index.js";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
@@ -33,6 +33,7 @@ import { isBlank, REQUIRED } from "../utils/validation.js";
 import ChangePasswordForm from "../components/profile/ChangePasswordForm.js";
 import SubscriptionSection from "../components/credits/SubscriptionSection.js";
 import EmailNotificationsSection from "../components/profile/EmailNotificationsSection.js";
+import OrderSettingsSection from "../components/profile/OrderSettingsSection.js";
 import WeeklyHoursEditor from "../components/profile/WeeklyHoursEditor.js";
 import LocationPicker, { LOCATION_SECTION } from "../components/profile/LocationPicker.js";
 import { isScheduleValid, type Schedule } from "../utils/schedule.js";
@@ -66,6 +67,8 @@ function MyProfilePage() {
   const [logoUrl, setLogoUrl] = useState("");
   // Null until the profile is loaded, so the switch starts from the saved value.
   const [emailNotifications, setEmailNotifications] = useState<boolean | null>(null);
+  // A store's order settings (delivery, preparation time, pause); null until loaded.
+  const [orderSettings, setOrderSettings] = useState<OrderSettings | null>(null);
   const { file: logoFile, preview: logoPreview, select: selectLogo, clear: clearLogo } = useLogoPreview();
   const [saving, setSaving] = useState(false);
   const { t } = useTranslation();
@@ -97,6 +100,16 @@ function MyProfilePage() {
       setCompanyDescription(data.company_description || "");
       setLogoUrl(data.logo_url || "");
       setEmailNotifications(data.email_notifications ?? true);
+      setOrderSettings(
+        data.role === "STORE"
+          ? {
+              delivery_enabled: data.delivery_enabled ?? true,
+              preparation_minutes: data.preparation_minutes ?? 30,
+              orders_paused: data.orders_paused ?? false,
+              orders_paused_until: data.orders_paused_until ?? null,
+            }
+          : null,
+      );
     } catch (err) {
       console.error("Error fetching profile:", err);
     }
@@ -558,6 +571,8 @@ function MyProfilePage() {
           </button>
         </div>
       </form>
+
+      {orderSettings && <OrderSettingsSection initial={orderSettings} />}
 
       {emailNotifications !== null && <EmailNotificationsSection initial={emailNotifications} />}
 

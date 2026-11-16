@@ -13,6 +13,7 @@ import { companyName, storeDescription, storeLogo } from "../utils/branding.js";
 import { removeStoredFile, saveImage } from "../services/storage.js";
 import { isOpenAt, parseSchedule } from "../utils/schedule.js";
 import { kmFromCity, MAX_KM_FROM_CITY, parseLocation } from "../utils/location.js";
+import { orderSettingsColumns, parseOrderSettings, pauseColumns, saveOrderSettings } from "../utils/orderSettings.js";
 
 export const getUser = async (req: Request, res: Response) => {
   try {
@@ -21,7 +22,7 @@ export const getUser = async (req: Request, res: Response) => {
       `SELECT users.id, users.first_name, users.last_name, users.email, users.role, users.business_name,
          users.logo_url, users.cover_url, users.address, users.city_id, cities.name AS city, users.opening_hours,
          users.pickup_hours, users.opening_schedule, users.pickup_schedule, users.description, users.phone, users.must_change_password, users.email_notifications,
-         users.latitude, users.longitude,
+         users.latitude, users.longitude, ${orderSettingsColumns("users")},
          users.created_at,
          users.company_id, companies.name AS company_name, companies.logo_url AS company_logo_url,
          companies.description AS company_description
@@ -59,6 +60,24 @@ export const updateEmailNotifications = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error while updating email notifications:", error);
     return res.status(500).json({ error: "An error occurred while updating email notifications." });
+  }
+};
+
+// A store's order settings on My profile (and the pause on its dashboard). They save at once,
+// each field on its own; see utils/orderSettings.ts.
+export const updateOrderSettings = async (req: Request, res: Response) => {
+  const parsed = parseOrderSettings(req.body ?? {});
+  if (parsed.error !== undefined) {
+    return res.status(400).json({ error: parsed.error });
+  }
+  try {
+    const settings = await saveOrderSettings(pool, req.user!.id, parsed.input);
+    const pause = parsed.input.pause;
+    const message = pause ? (pause.paused ? "Orders paused." : "Orders resumed.") : "Order settings saved.";
+    return res.status(200).json({ message, settings });
+  } catch (error) {
+    console.error("Error while updating order settings:", error);
+    return res.status(500).json({ error: "An error occurred while saving the order settings." });
   }
 };
 
@@ -303,7 +322,7 @@ export const getStores = async (req: Request, res: Response) => {
     const columns = `users.id, users.business_name, users.city_id, cities.name AS city, ${distance} AS distance_km,
      users.address, ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
      users.opening_hours, users.pickup_hours, users.opening_schedule, users.pickup_schedule, users.phone,
-     ${companyName("users")} AS company_name,
+     ${companyName("users")} AS company_name, ${pauseColumns("users")},
      (SELECT COUNT(*) FROM products
       WHERE products.store_id = users.id AND ${onOffer("products", "users")}) AS active_products`;
     let query = `FROM users
@@ -384,7 +403,7 @@ export const getStoreDetails = async (req: Request, res: Response) => {
       `SELECT users.id, users.business_name, users.city_id, cities.name AS city, users.address,
        ${storeLogo("users")} AS logo_url, users.cover_url, ${storeDescription("users")} AS description,
        users.opening_hours, users.pickup_hours, users.opening_schedule, users.pickup_schedule,
-       users.phone, ${companyName("users")} AS company_name
+       users.phone, ${companyName("users")} AS company_name, ${pauseColumns("users")}
        FROM users LEFT JOIN cities ON cities.id = users.city_id
        WHERE users.id = $1 AND users.role = 'STORE' AND ${visibleStore("users")}`,
       [storeId],
