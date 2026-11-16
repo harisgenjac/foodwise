@@ -1,12 +1,14 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { API_URL, storageState, uniqueName, type SeededRole } from "../support/accounts.js";
-import { apiAs, createProduct } from "../support/api.js";
+import { apiAs, cancelOrder, createProduct } from "../support/api.js";
 import { emptyCart, open } from "../support/ui.js";
 
 // A restaurant chooses delivery in the cart (delivery phase 2, the mock provider): the estimate
 // with the price and the arrival, sending without a pickup time, and the delivery on the order
 // page. Both seeded businesses are in Visoko and get a pin there for the test (removed again in
-// afterEach, also when the test fails). Runs on desktop Chrome and on the iPhone project.
+// afterEach, also when the test fails). The order is withdrawn there too: the seeded restaurant is
+// shared, and orders left Pending count towards its limit of 10. Runs on desktop Chrome and on the
+// iPhone project.
 test.use({ storageState: storageState("restaurant") });
 
 const VISOKO = { latitude: 43.9889, longitude: 18.1781 };
@@ -30,7 +32,16 @@ const setPin = async (role: SeededRole, location: { latitude: number; longitude:
   await api.dispose();
 };
 
+// The order this test sent, withdrawn in afterEach.
+let sentOrderId: number | null = null;
+
 test.afterEach(async () => {
+  if (sentOrderId !== null) {
+    const api = await apiAs("restaurant");
+    await cancelOrder(api, sentOrderId);
+    await api.dispose();
+    sentOrderId = null;
+  }
   await setPin("store", null);
   await setPin("restaurant", null);
 });
@@ -58,6 +69,8 @@ test("a restaurant orders with delivery from the cart", async ({ page }) => {
 
   await test.step("Slanje bez termina preuzimanja", async () => {
     await page.getByRole("button", { name: "Pošalji narudžbu" }).click();
+    const href = await page.getByRole("link", { name: "Pogledaj narudžbu" }).getAttribute("href");
+    sentOrderId = Number(href?.split("/").pop());
     await expect(page.getByText(/Dostava danas, okvirno oko \d{2}:\d{2}\. Okvirna cijena dostave/)).toBeVisible();
   });
 
