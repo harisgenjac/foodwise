@@ -612,6 +612,7 @@ const LABELS: Record<EmailLanguage, Record<string, string>> = {
     restaurant: "Restoran",
     store: "Prodavnica",
     pickup: "Preuzimanje",
+    delivery: "Dostava (kurir preuzima)",
     branch: "Poslovnica",
     requester: "Podnosilac",
     credits: "Krediti",
@@ -626,6 +627,7 @@ const LABELS: Record<EmailLanguage, Record<string, string>> = {
     restaurant: "Restaurant",
     store: "Store",
     pickup: "Pickup",
+    delivery: "Delivery (courier pickup)",
     branch: "Branch",
     requester: "Requester",
     credits: "Credits",
@@ -662,7 +664,10 @@ const detailRows = (type: NotificationType, d: NotificationEmailData, lang: Emai
     // The other party.
     if (d.recipientRole === "STORE" && d.restaurantName) rows.push({ label: label.restaurant!, value: d.restaurantName });
     if (d.recipientRole === "RESTAURANT" && d.storeName) rows.push({ label: label.store!, value: d.storeName });
-    if (d.pickupAt) rows.push({ label: label.pickup!, value: formatPickup(d.pickupAt, lang) });
+    if (d.pickupAt) {
+      const delivery = d.fulfilmentMethod === "DELIVERY";
+      rows.push({ label: delivery ? label.delivery! : label.pickup!, value: formatPickup(d.pickupAt, lang) });
+    }
   }
   if (CREDIT_TYPES.has(type)) {
     if (d.recipientRole === "ADMIN" && d.creditRequester !== null) {

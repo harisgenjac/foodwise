@@ -1962,7 +1962,15 @@
     },
     "sortPendingFirst": "Prvo na čekanju",
     "sortPickupSoonest": "Najskorije preuzimanje",
-    "showHistory": "Pogledaj historiju"
+    "showHistory": "Pogledaj historiju",
+    "delivery": {
+      "estimated": "Dostava (okvirno)",
+      "address": "Adresa dostave",
+      "fee": "Cijena dostave (okvirno)",
+      "courierPickup": "Kurir preuzima (okvirno)",
+      "cardLabel": "Dostava",
+      "badge": "Dostava"
+    }
   },
   "cart": {
     "title": "Korpa",
@@ -2024,7 +2032,30 @@
       "leftInCart": "Proizvodi koji nisu poslani ostali su u korpi.",
       "backToCart": "Nazad u korpu",
       "toOffers": "Nazad na ponudu",
-      "viewOrder": "Pogledaj narudžbu"
+      "viewOrder": "Pogledaj narudžbu",
+      "delivery": "Dostava danas, okvirno oko {{time}}. Okvirna cijena dostave: {{fee}}; konačna stiže kad prodavnica prihvati narudžbu."
+    },
+    "method": {
+      "label": "Način preuzimanja",
+      "pickup": "Preuzimanje u prodavnici",
+      "delivery": "Dostava"
+    },
+    "delivery": {
+      "checking": "Provjeravam dostavu…",
+      "error": "Dostavu trenutno ne možemo provjeriti. Pokušajte ponovo.",
+      "arrives": "Dostava danas, okvirno oko {{time}}",
+      "price": "Dostava (okvirno)",
+      "cash": "Kuriru plaćate u gotovini",
+      "estimateHint": "Konačnu cijenu i vrijeme dostave određuje dostavna služba kad prodavnica prihvati narudžbu.",
+      "reasons": {
+        "STORE_NO_DELIVERY": "Ova prodavnica ne nudi dostavu. Narudžbu možete preuzeti u prodavnici.",
+        "STORE_PAUSED": "Ova prodavnica trenutno ne prima narudžbe.",
+        "STORE_CLOSED": "Prodavnica je sada zatvorena, a dostava je samo za danas što prije. Izaberite preuzimanje.",
+        "STORE_NO_LOCATION": "Prodavnica još nije označila lokaciju na mapi, pa dostava nije moguća.",
+        "RESTAURANT_NO_LOCATION": "Za dostavu označite lokaciju vašeg restorana na mapi.",
+        "OUT_OF_ZONE": "Vaša adresa je izvan zone dostave za ovu prodavnicu.",
+        "UNAVAILABLE": "Dostava trenutno nije dostupna. Pokušajte kasnije ili izaberite preuzimanje."
+      }
     }
   },
   "productImage": {

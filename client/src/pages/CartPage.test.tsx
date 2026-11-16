@@ -148,6 +148,7 @@ describe("CartPage", () => {
     await userEvent.click(screen.getByRole("button", { name: t("orders.send.submit") }));
 
     expect(apiMock.post).toHaveBeenCalledWith("/orders", {
+      fulfilment_method: "PICKUP",
       pickup_at: "2030-01-05T10:00",
       accept_partial: false,
       items: [

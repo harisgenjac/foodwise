@@ -4,9 +4,10 @@ import { isValidDateTime } from "../../utils/dates.js";
 import { parseId, parseNumber } from "../../utils/params.js";
 import { createNotification } from "../../utils/notifications.js";
 import { freeQuantity, sellableProduct } from "../stock.js";
-import { formatOrderCode, insertOrder, type OrderRow } from "./codes.js";
+import { formatOrderCode, insertOrder, type NewOrderDelivery, type OrderRow } from "./codes.js";
 import { recordOrderCreated } from "./status.js";
 import { ordersPaused, STORE_PAUSED_ERROR } from "../../utils/orderSettings.js";
+import { deliveryAddressText, quoteDelivery } from "../deliveryQuote.js";
 
 // Sending an order (docs/orders-design.md, section 5): one transaction with the stock protection,
 // where accepting partial fulfilment already applies to what can be sent.
@@ -40,7 +41,9 @@ interface SendLine {
 }
 
 export interface SendOrderInput {
-  pickupAt: string;
+  method: "PICKUP" | "DELIVERY";
+  // Only for pickup; a delivery is today, as soon as possible.
+  pickupAt: string | null;
   acceptPartial: boolean;
   lines: SendLine[];
 }
@@ -50,9 +53,10 @@ export const PENDING_LIMIT_ERROR = `You have too many orders waiting for an answ
 // Validates the body of POST /orders. Throws an HttpError with the first problem.
 export const parseSendOrderBody = (body: Record<string, unknown>): SendOrderInput => {
   const { fulfilment_method, pickup_at, accept_partial, items } = body;
-  if (fulfilment_method !== undefined && fulfilment_method !== "PICKUP") {
+  if (fulfilment_method !== undefined && fulfilment_method !== "PICKUP" && fulfilment_method !== "DELIVERY") {
     throw new HttpError(400, "Fulfilment method is not valid.");
   }
+  const method = fulfilment_method === "DELIVERY" ? "DELIVERY" : "PICKUP";
   if (!Array.isArray(items) || items.length === 0 || items.length > MAX_ORDER_ITEMS) {
     throw new HttpError(400, `An order must have between 1 and ${MAX_ORDER_ITEMS} items.`);
   }
@@ -79,10 +83,15 @@ export const parseSendOrderBody = (body: Record<string, unknown>): SendOrderInpu
     }
     lines.push({ productId, quantity, unitPrice });
   }
-  if (!isValidDateTime(pickup_at)) {
+  if (method === "PICKUP" && !isValidDateTime(pickup_at)) {
     throw new HttpError(400, "Pickup date is not valid.");
   }
-  return { pickupAt: pickup_at, acceptPartial: accept_partial ?? true, lines };
+  return {
+    method,
+    pickupAt: method === "PICKUP" ? (pickup_at as string) : null,
+    acceptPartial: accept_partial ?? true,
+    lines,
+  };
 };
 
 interface LockedProduct {
@@ -197,12 +206,39 @@ export const sendOrder = async (client: PoolClient, restaurantId: number, input:
     throw new HttpError(409, "The order could not be sent.", { code: "ORDER_NOT_SENT", lines: problems });
   }
 
+  // A delivery is quoted again for what is sent (the cart's estimate may be stale): its estimated
+  // courier pickup becomes the order's pickup_at, as local time.
+  let pickupAt = input.pickupAt;
+  let delivery: NewOrderDelivery | undefined;
+  if (input.method === "DELIVERY") {
+    const goods = sendable.reduce((sum, entry) => sum + cents(entry.quantity * entry.price), 0) / 100;
+    const option = await quoteDelivery(client, storeId, restaurantId, goods);
+    if (!option.available) {
+      throw new HttpError(409, "Delivery is not available for this order.", {
+        code: "DELIVERY_UNAVAILABLE",
+        reason: option.reason,
+      });
+    }
+    const local = await client.query<{ local: string }>(
+      `SELECT to_char($1::timestamptz, 'YYYY-MM-DD"T"HH24:MI:SS') AS local`,
+      [option.estimate.estimated_pickup_at],
+    );
+    pickupAt = local.rows[0]!.local;
+    delivery = {
+      address: deliveryAddressText(option.dropoff),
+      latitude: option.dropoff.latitude,
+      longitude: option.dropoff.longitude,
+      feeEstimate: option.estimate.price,
+      estimatedAt: option.estimate.estimated_delivery_at,
+    };
+  }
+
   // The pickup day must fit every sent line: today up to the earliest expiry among them.
   const range = await client.query<{ in_range: boolean }>(
     `SELECT $1::timestamp::date >= CURRENT_DATE
             AND $1::timestamp::date <= (SELECT MIN(products.expiry_date) FROM products WHERE products.id = ANY($2::int[]))
             AS in_range`,
-    [input.pickupAt, sendable.map((entry) => entry.product.id)],
+    [pickupAt, sendable.map((entry) => entry.product.id)],
   );
   if (!range.rows[0]!.in_range) {
     throw new HttpError(400, "Pickup date must be between today and the products' expiry date.");
@@ -211,7 +247,8 @@ export const sendOrder = async (client: PoolClient, restaurantId: number, input:
   const order = await insertOrder(client, {
     storeId,
     restaurantId,
-    pickupAt: input.pickupAt,
+    pickupAt: pickupAt!,
+    delivery,
     acceptPartial: input.acceptPartial,
     sendChanges: changes,
   });

@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import pool from "../config/db.js";
 import { HttpError } from "../utils/httpError.js";
 import { inTransaction } from "../utils/transaction.js";
 import { parseId } from "../utils/params.js";
@@ -10,6 +11,7 @@ import {
   parseCartItemBody,
   putCartItem,
 } from "../services/cart.js";
+import { quoteDelivery } from "../services/deliveryQuote.js";
 
 // /api/cart (docs/orders-design.md, sections 4 and 10). RESTAURANT only (the routes check it);
 // every success answers the whole cart, so the client never has to merge a line by itself.
@@ -28,6 +30,20 @@ export const getCartRoute = async (req: Request, res: Response) => {
     return res.status(200).json({ message: "Cart fetched successfully.", cart });
   } catch (error) {
     return fail(res, error, "An error occurred while fetching the cart.");
+  }
+};
+
+// The cart's delivery choice: whether its store can deliver to the restaurant now, and the
+// provider's estimate for what would be sent (price, courier pickup and delivery time).
+export const getCartDeliveryRoute = async (req: Request, res: Response) => {
+  try {
+    const cart = await getCart(req.user!.id);
+    if (!cart.store) throw new HttpError(400, "The cart is empty.");
+    const option = await quoteDelivery(pool, cart.store.id, req.user!.id, Number(cart.totals.total));
+    const delivery = option.available ? { available: true, ...option.estimate } : option;
+    return res.status(200).json({ message: "Delivery checked.", delivery });
+  } catch (error) {
+    return fail(res, error, "An error occurred while checking delivery.");
   }
 };
 

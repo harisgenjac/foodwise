@@ -22,10 +22,21 @@ export const parseOrderCode = (value: unknown): string | null => {
   return code.length > 0 && code.length <= ORDER_CODE_LENGTH && /^[A-Z0-9]+$/.test(code) ? code : null;
 };
 
+// A delivery order's address (the restaurant's pin when it was sent) and the quote's estimate.
+export interface NewOrderDelivery {
+  address: string;
+  latitude: number;
+  longitude: number;
+  feeEstimate: string;
+  estimatedAt: string;
+}
+
 export interface NewOrder {
   storeId: number;
   restaurantId: number;
+  // Local wall-clock time; for a delivery, when the courier is expected at the store.
   pickupAt: string;
+  delivery?: NewOrderDelivery | undefined;
   acceptPartial: boolean;
   sendChanges: unknown[];
 }
@@ -38,6 +49,11 @@ export interface OrderRow {
   status: string;
   fulfilment_method: string;
   pickup_at: string;
+  delivery_address: string | null;
+  delivery_latitude: number | null;
+  delivery_longitude: number | null;
+  delivery_fee_estimate: string | null;
+  delivery_estimated_at: string | null;
   accept_partial: boolean;
   decided_at: string | null;
   send_changes: unknown[];
@@ -46,13 +62,15 @@ export interface OrderRow {
   updated_at: string;
 }
 
-// Inserts a Pending pickup order with a fresh code. A collision draws again; ten collisions in a
+// Inserts a Pending order (a delivery one with `delivery`) with a fresh code. A collision draws again; ten collisions in a
 // row are practically impossible (32^4 codes per store), so they end in an error.
 export const insertOrder = async (client: PoolClient, order: NewOrder): Promise<OrderRow> => {
   for (let attempt = 0; attempt < MAX_CODE_TRIES; attempt++) {
     const result = await client.query<OrderRow>(
-      `INSERT INTO orders (store_id, restaurant_id, code, pickup_at, accept_partial, send_changes)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO orders (store_id, restaurant_id, code, pickup_at, accept_partial, send_changes,
+         fulfilment_method, delivery_address, delivery_latitude, delivery_longitude,
+         delivery_fee_estimate, delivery_estimated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        ON CONFLICT (store_id, code) DO NOTHING
        RETURNING *`,
       [
@@ -62,6 +80,12 @@ export const insertOrder = async (client: PoolClient, order: NewOrder): Promise<
         order.pickupAt,
         order.acceptPartial,
         JSON.stringify(order.sendChanges),
+        order.delivery ? "DELIVERY" : "PICKUP",
+        order.delivery?.address ?? null,
+        order.delivery?.latitude ?? null,
+        order.delivery?.longitude ?? null,
+        order.delivery?.feeEstimate ?? null,
+        order.delivery?.estimatedAt ?? null,
       ],
     );
     if (result.rows[0]) return result.rows[0];

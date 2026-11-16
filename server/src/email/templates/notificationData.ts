@@ -28,8 +28,10 @@ export interface NotificationEmailData {
   // The product's, or the donation's for DONATION_REMOVED_BY_ADMIN.
   productName: string | null;
   unit: string | null;
-  // The order's pickup, local time, YYYY-MM-DDTHH:MI.
+  // The order's pickup, local time, YYYY-MM-DDTHH:MI (for a delivery, the courier's pickup).
   pickupAt: string | null;
+  // PICKUP or DELIVERY. Optional: emails queued before delivery existed do not have it.
+  fulfilmentMethod?: string | null;
   restaurantName: string | null;
   storeName: string | null;
   // The order's code (without #) and lines (the email adds up the totals).
@@ -120,6 +122,7 @@ export const NOTIFICATION_EMAIL_DATA = `jsonb_build_object(
   'productName', COALESCE(products.name, donation_offers.name),
   'unit', COALESCE(products.unit, donation_offers.unit),
   'pickupAt', to_char(orders.pickup_at, 'YYYY-MM-DD"T"HH24:MI'),
+  'fulfilmentMethod', orders.fulfilment_method::text,
   'restaurantName', order_restaurants.business_name,
   'storeName', COALESCE(order_stores.business_name, stores.business_name),
   'orderCode', orders.code::text,

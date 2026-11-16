@@ -1916,7 +1916,15 @@
     },
     "sortPendingFirst": "Pending first",
     "sortPickupSoonest": "Pickup soonest",
-    "showHistory": "View history"
+    "showHistory": "View history",
+    "delivery": {
+      "estimated": "Delivery (estimate)",
+      "address": "Delivery address",
+      "fee": "Delivery price (estimate)",
+      "courierPickup": "Courier pickup (estimate)",
+      "cardLabel": "Delivery",
+      "badge": "Delivery"
+    }
   },
   "cart": {
     "title": "Cart",
@@ -1978,7 +1986,30 @@
       "leftInCart": "Products that were not sent stayed in the cart.",
       "backToCart": "Back to the cart",
       "toOffers": "Back to the offers",
-      "viewOrder": "View the order"
+      "viewOrder": "View the order",
+      "delivery": "Delivery today, around {{time}}. Estimated delivery price: {{fee}}; the final one comes when the store accepts the order."
+    },
+    "method": {
+      "label": "How you get it",
+      "pickup": "Pickup at the store",
+      "delivery": "Delivery"
+    },
+    "delivery": {
+      "checking": "Checking delivery…",
+      "error": "We cannot check delivery right now. Try again.",
+      "arrives": "Delivery today, around {{time}}",
+      "price": "Delivery (estimate)",
+      "cash": "You pay the courier in cash",
+      "estimateHint": "The delivery service sets the final price and time when the store accepts the order.",
+      "reasons": {
+        "STORE_NO_DELIVERY": "This store does not offer delivery. You can pick the order up at the store.",
+        "STORE_PAUSED": "This store is not taking orders right now.",
+        "STORE_CLOSED": "The store is closed now, and delivery is only for today as soon as possible. Choose pickup.",
+        "STORE_NO_LOCATION": "The store has not set its location on the map yet, so delivery is not possible.",
+        "RESTAURANT_NO_LOCATION": "Set your restaurant's location on the map to get deliveries.",
+        "OUT_OF_ZONE": "Your address is outside this store's delivery zone.",
+        "UNAVAILABLE": "Delivery is not available right now. Try later or choose pickup."
+      }
     }
   },
   "productImage": {

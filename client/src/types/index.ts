@@ -86,14 +86,41 @@ export interface SendChange {
   new_price: number;
 }
 
+export type FulfilmentMethod = "PICKUP" | "DELIVERY";
+
+// Why the cart cannot be delivered now (GET /cart/delivery, 409 DELIVERY_UNAVAILABLE).
+export type DeliveryUnavailableReason =
+  | "STORE_NO_DELIVERY"
+  | "STORE_PAUSED"
+  | "STORE_CLOSED"
+  | "STORE_NO_LOCATION"
+  | "RESTAURANT_NO_LOCATION"
+  | "OUT_OF_ZONE"
+  | "UNAVAILABLE";
+
+// The cart's delivery option: the provider's estimate, or why there is none.
+export interface CartDelivery {
+  available: boolean;
+  reason?: DeliveryUnavailableReason;
+  price?: string;
+  estimated_pickup_at?: string;
+  estimated_delivery_at?: string;
+}
+
 // An order as the lists return it (GET /orders/mine, /orders/store, /orders/pickups).
 export interface Order {
   id: number;
   // 4 characters, shown as #K7PM (formatOrderCode); unique within its store.
   code: string;
   status: OrderStatus;
-  fulfilment_method: "PICKUP";
+  fulfilment_method: FulfilmentMethod;
+  // Local time; for a delivery, when the courier is expected at the store.
   pickup_at: string;
+  // A delivery order: the restaurant's address when it was sent, the estimated delivery price
+  // (the final one comes when the store accepts) and the estimated delivery time. Null for pickup.
+  delivery_address?: string | null;
+  delivery_fee_estimate?: string | null;
+  delivery_estimated_at?: string | null;
   accept_partial: boolean;
   decided_at: string | null;
   picked_up_at: string | null;
