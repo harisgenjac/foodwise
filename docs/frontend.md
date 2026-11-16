@@ -323,5 +323,6 @@ Every form with input follows the same rules for required fields and errors.
 ## Pending and known limitations
 
 - Translate `SponsorPage` when it gets real content, and switch server messages to translated keys once the backend returns them.
-- Pages without tests yet: EditProduct, EditDonation, ProductDetails, StoreDetails, MyProfile, and the Header/Sidebar. Notifications is covered only for its confirmation.
+- The location map loads OpenStreetMap's public tiles, which their usage policy allows for light use only; a public launch needs a tile provider (or own tiles) and its URL in `LocationMap`.
+- Pages without tests yet: EditProduct, EditDonation, ProductDetails, and the Header/Sidebar. Notifications is covered only for its confirmation.
 - ESLint covers only `.js` files (in practice just its own config), because `typescript-eslint` does not support TypeScript 7 yet (peer range `<6.1.0`). Add it, or a TS-aware linter such as oxlint, when that changes; the config can then become `eslint.config.ts`.
