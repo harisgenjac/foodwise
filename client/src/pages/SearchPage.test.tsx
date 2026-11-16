@@ -13,6 +13,8 @@ const makeStore = (overrides: Partial<SearchStore> = {}): SearchStore => ({
   city: "Breza",
   distance_km: 7,
   match_count: 1,
+  orders_paused: false,
+  orders_paused_until: null,
   products: [makeProduct({ id: 10, store_id: 2, name: "Piletina" })],
   ...overrides,
 });

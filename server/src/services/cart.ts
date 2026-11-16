@@ -5,6 +5,7 @@ import { parseNumber } from "../utils/params.js";
 import { visibleStore } from "../utils/visibility.js";
 import { availableQuantity, sellableProduct } from "./stock.js";
 import { MAX_ORDER_ITEMS, MAX_PENDING_ORDERS } from "./orders/send.js";
+import { pauseColumns } from "../utils/orderSettings.js";
 
 // The restaurant's cart (docs/orders-design.md, section 4): lines of one store, no stock held.
 // GET /cart answers every line with the product's live state and flags, so the cart never shows
@@ -30,6 +31,8 @@ interface CartRow {
   product_id: number;
   store_id: number;
   store_name: string | null;
+  orders_paused: boolean;
+  orders_paused_until: string | null;
   name: string;
   category: string;
   image_url: string | null;
@@ -65,7 +68,13 @@ export interface CartLine {
 }
 
 export interface Cart {
-  store: { id: number; business_name: string | null } | null;
+  // orders_paused: the store takes no orders now, so nothing can be sent (until the time, if set).
+  store: {
+    id: number;
+    business_name: string | null;
+    orders_paused: boolean;
+    orders_paused_until: string | null;
+  } | null;
   items: CartLine[];
   // What would be sent now: lines that are available and not more expensive, each with at most
   // the free quantity, at the current price.
@@ -113,7 +122,7 @@ const toLine = (row: CartRow): CartLine => {
 };
 
 const CART_LINES = `
-  SELECT cart_items.product_id, products.store_id, stores.business_name AS store_name,
+  SELECT cart_items.product_id, products.store_id, stores.business_name AS store_name, ${pauseColumns("stores")},
          products.name, products.category, products.image_url, products.unit, products.status, products.expiry_date,
          products.original_price, products.discounted_price,
          cart_items.quantity, cart_items.unit_price_seen, cart_items.added_at,
@@ -145,7 +154,14 @@ export const getCart = async (restaurantId: number, db: Db = pool): Promise<Cart
     total += Math.min(parseFloat(line.quantity), parseFloat(line.available_quantity)) * parseFloat(line.discounted_price);
   }
   return {
-    store: first ? { id: first.store_id, business_name: first.store_name } : null,
+    store: first
+      ? {
+          id: first.store_id,
+          business_name: first.store_name,
+          orders_paused: first.orders_paused,
+          orders_paused_until: first.orders_paused_until,
+        }
+      : null,
     items,
     totals: { lines: items.length, total: total.toFixed(2) },
     pending_orders: await countPendingOrders(db, restaurantId),

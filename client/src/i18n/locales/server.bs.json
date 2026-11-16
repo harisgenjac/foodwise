@@ -361,5 +361,15 @@
   "Cover image removed.": "Naslovna slika je uklonjena.",
   "An error occurred while removing the cover image.": "Došlo je do greške prilikom uklanjanja naslovne slike.",
   "Location is not valid.": "Lokacija nije ispravna.",
-  "The location on the map is too far from the chosen city.": "Lokacija na mapi je predaleko od odabranog grada."
+  "The location on the map is too far from the chosen city.": "Lokacija na mapi je predaleko od odabranog grada.",
+  "Order settings saved.": "Postavke narudžbi su sačuvane.",
+  "Orders paused.": "Primanje narudžbi je pauzirano.",
+  "Orders resumed.": "Primanje narudžbi je ponovo uključeno.",
+  "An error occurred while saving the order settings.": "Došlo je do greške pri čuvanju postavki narudžbi.",
+  "This store is not receiving orders right now.": "Ova prodavnica trenutno ne prima narudžbe.",
+  "Delivery must be turned on or off.": "Dostava mora biti uključena ili isključena.",
+  "Preparation time is not valid.": "Vrijeme pripreme nije ispravno.",
+  "The pause must be turned on or off.": "Pauza mora biti uključena ili isključena.",
+  "No settings to save.": "Nema postavki za čuvanje.",
+  "The pause must end between now and {{max}} days from now.": "Pauza mora završiti između sada i {{max}} dana od sada."
 }

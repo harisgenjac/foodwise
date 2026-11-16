@@ -78,7 +78,12 @@ describe("/api/cart", () => {
     expect(updated.body.cart.items).toHaveLength(2);
 
     const current = await cart();
-    expect(current.store).toEqual({ id: chicken.store_id, business_name: expect.any(String) });
+    expect(current.store).toEqual({
+      id: chicken.store_id,
+      business_name: expect.any(String),
+      orders_paused: false,
+      orders_paused_until: null,
+    });
     expect(current.items.map((line: { name: string; quantity: string }) => [line.name, Number(line.quantity)])).toEqual([
       ["Piletina", 8],
       ["Hljeb", 2],

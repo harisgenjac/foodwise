@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
-import { AlertCircle, Building2, FileText, MapPin, Phone, UserRound } from "lucide-react";
+import { AlertCircle, Building2, FileText, MapPin, Phone, Timer, UserRound } from "lucide-react";
 import api from "../../api/axios.js";
 import Modal, { ModalBody, ModalFooter, ModalHeader, modalFormStyle } from "../product/Modal.js";
 import FormField, { inputStyle } from "../form/FormField.js";
@@ -16,6 +16,7 @@ import WeeklyHoursEditor from "../profile/WeeklyHoursEditor.js";
 import LocationPicker from "../profile/LocationPicker.js";
 import { useCities } from "../../hooks/useCities.js";
 import type { GeoPoint, User } from "../../types/index.js";
+import { formatPauseEnd, isPaused, PREPARATION_MINUTES } from "../../utils/orderPause.js";
 
 interface EditProfileModalProps {
   user: User;
@@ -56,6 +57,12 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
   const [location, setLocation] = useState<GeoPoint | null>(
     user.latitude != null && user.longitude != null ? { latitude: user.latitude, longitude: user.longitude } : null,
   );
+  // A store's order settings. The pause is sent only when the admin changes it, so a timed pause
+  // keeps its end.
+  const wasPaused = isPaused(user);
+  const [deliveryEnabled, setDeliveryEnabled] = useState(user.delivery_enabled ?? true);
+  const [preparationMinutes, setPreparationMinutes] = useState(user.preparation_minutes ?? 30);
+  const [ordersPaused, setOrdersPaused] = useState(wasPaused);
   const { cities } = useCities();
   const city = cities.find((entry) => String(entry.id) === values.city_id);
   const [error, setError] = useState("");
@@ -99,6 +106,13 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
         ...(isBusiness && { location }),
         ...(openingSchedule && { opening_schedule: openingSchedule }),
         ...(user.role === "STORE" && pickupSchedule && { pickup_schedule: pickupSchedule }),
+        ...(user.role === "STORE" && {
+          order_settings: {
+            delivery_enabled: deliveryEnabled,
+            preparation_minutes: preparationMinutes,
+            ...(ordersPaused !== wasPaused && { orders_paused: ordersPaused }),
+          },
+        }),
       });
       toast.success(response.data.message);
       onSaved();
@@ -178,6 +192,49 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
                   />
                 )}
               </div>
+            )}
+            {user.role === "STORE" && (
+              <fieldset className="space-y-3 rounded-xl border border-gray-100 p-3 sm:col-span-2">
+                <legend className="px-1 text-sm font-medium text-gray-700">{t("orderSettings.title")}</legend>
+                <label className="flex cursor-pointer items-start gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={deliveryEnabled}
+                    onChange={(e) => setDeliveryEnabled(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-orange-500"
+                  />
+                  {t("orderSettings.delivery")}
+                </label>
+                <label className="flex cursor-pointer items-start gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={ordersPaused}
+                    onChange={(e) => setOrdersPaused(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-orange-500"
+                  />
+                  <span>
+                    {t("orderSettings.adminPaused")}
+                    {wasPaused && ordersPaused && (
+                      <span className="block text-xs text-gray-500">
+                        {formatPauseEnd(user.orders_paused_until ?? null, t)}
+                      </span>
+                    )}
+                  </span>
+                </label>
+                <FormField label={t("orderSettings.preparation")} icon={Timer}>
+                  <select
+                    value={preparationMinutes}
+                    onChange={(e) => setPreparationMinutes(Number(e.target.value))}
+                    className={inputStyle}
+                  >
+                    {PREPARATION_MINUTES.map((minutes) => (
+                      <option key={minutes} value={minutes}>
+                        {t("orderSettings.minutes", { count: minutes })}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </fieldset>
             )}
             {isBusiness && (
               <div className="sm:col-span-2">

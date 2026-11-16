@@ -60,6 +60,32 @@ describe("Editing a profile as admin", () => {
     await waitFor(() => expect(respond).toHaveBeenCalledTimes(2));
   });
 
+  it("sends a store's order settings, and the pause only when it changes", async () => {
+    apiMock.put.mockResolvedValue({ data: { message: "User profile updated." } });
+    renderWithProviders(<AdminUserDetailsPage />, {
+      route: "/admin/users/5",
+      path: "/admin/users/:id",
+      user: admin,
+      get: {
+        "/admin/users/5": {
+          user: { ...store, delivery_enabled: true, preparation_minutes: 30, orders_paused: false, orders_paused_until: null },
+          counts,
+          actions: [],
+        },
+      },
+    });
+
+    await userEvent.click(await screen.findByRole("button", { name: t("admin.userDetails.editProfile") }));
+    const dialog = screen.getByRole("dialog");
+    await userEvent.click(within(dialog).getByLabelText(t("orderSettings.delivery")));
+    await userEvent.selectOptions(within(dialog).getByLabelText(t("orderSettings.preparation")), "90");
+    await userEvent.click(within(dialog).getByRole("button", { name: t("admin.userDetails.saveProfile") }));
+    expect(apiMock.put).toHaveBeenLastCalledWith(
+      "/admin/users/5/profile",
+      expect.objectContaining({ order_settings: { delivery_enabled: false, preparation_minutes: 90 } }),
+    );
+  });
+
   it("does not save a business profile with an empty required field", async () => {
     renderWithProviders(<AdminUserDetailsPage />, {
       route: "/admin/users/5",

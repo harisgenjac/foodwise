@@ -22,6 +22,7 @@ import { useAddToCart } from "../hooks/useAddToCart.js";
 import { CARD_PAGE_SIZE } from "../utils/pagination.js";
 import { DEFAULT_RADIUS, formatCityDistance, nextRadius, widenLabel, type Radius } from "../utils/radius.js";
 import type { SearchStore } from "../types/index.js";
+import StorePausedNotice from "../components/store/StorePausedNotice.js";
 
 // Search ("Pretraga", restaurants): the marketplace grouped by store, since an order comes from one
 // store. Each group has the store's logo (or a generic store image), name, city and a link to its
@@ -163,6 +164,7 @@ function SearchPage() {
                   <p className="flex min-w-0 flex-wrap items-center gap-x-2 text-sm text-gray-500">
                     {store.city && <span>{formatCityDistance(t, store.city, store.distance_km)}</span>}
                     <ChainLabel company={store.company_name} className="px-1.5" />
+                    <StorePausedNotice pause={store} variant="badge" />
                   </p>
                 </div>
                 <Link

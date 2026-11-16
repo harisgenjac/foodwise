@@ -6,6 +6,7 @@ import { createNotification } from "../../utils/notifications.js";
 import { freeQuantity, sellableProduct } from "../stock.js";
 import { formatOrderCode, insertOrder, type OrderRow } from "./codes.js";
 import { recordOrderCreated } from "./status.js";
+import { ordersPaused, STORE_PAUSED_ERROR } from "../../utils/orderSettings.js";
 
 // Sending an order (docs/orders-design.md, section 5): one transaction with the stock protection,
 // where accepting partial fulfilment already applies to what can be sent.
@@ -145,6 +146,14 @@ export const sendOrder = async (client: PoolClient, restaurantId: number, input:
     throw new HttpError(400, "An order can contain products of one store only.");
   }
   const storeId = locked.rows[0]!.store_id;
+  // A paused store takes no orders; the cart keeps everything until the pause ends.
+  const store = await client.query<{ paused: boolean }>(
+    `SELECT ${ordersPaused("users")} AS paused FROM users WHERE users.id = $1`,
+    [storeId],
+  );
+  if (store.rows[0]?.paused) {
+    throw new HttpError(409, STORE_PAUSED_ERROR, { code: "STORE_PAUSED" });
+  }
   const products = new Map(locked.rows.map((product) => [product.id, product]));
 
   const changes: SendChange[] = [];

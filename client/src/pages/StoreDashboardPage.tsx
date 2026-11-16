@@ -13,6 +13,7 @@ import { useAuth } from "../context/AuthContext.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import DashboardHero from "../components/dashboard/DashboardHero.js";
 import LocationReminder from "../components/profile/LocationReminder.js";
+import OrderPauseControl from "../components/profile/OrderPauseControl.js";
 import StatCard from "../components/dashboard/StatCard.js";
 import SectionCard from "../components/dashboard/SectionCard.js";
 import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
@@ -27,7 +28,7 @@ function StoreDashboardPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [stats, setStats] = useState<StoreDashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { t } = useTranslation();
 
   // The stat cards come from the server over all data; the lists are only the newest few.
@@ -88,6 +89,15 @@ function StoreDashboardPage() {
       />
 
       <LocationReminder />
+
+      {/* Pausing new orders is urgent (a rush, no staff), so it is here as well as on My profile. */}
+      {user && (
+        <OrderPauseControl
+          variant="card"
+          pause={{ orders_paused: user.orders_paused ?? false, orders_paused_until: user.orders_paused_until ?? null }}
+          onChange={() => refreshUser().catch((err) => console.error("Error refreshing user:", err))}
+        />
+      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard icon={Package} label={t("dashboard.statActiveProducts")} value={stats?.active_products ?? 0} />

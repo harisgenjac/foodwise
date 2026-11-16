@@ -164,7 +164,7 @@ export const makeCartLine = (overrides: Partial<CartLine> = {}): CartLine => ({
 });
 
 export const makeCart = (items: CartLine[] = [makeCartLine()], overrides: Partial<Cart> = {}): Cart => ({
-  store: items.length > 0 ? { id: 2, business_name: "Prodavnica Merkator" } : null,
+  store: items.length > 0 ? { id: 2, business_name: "Prodavnica Merkator", orders_paused: false, orders_paused_until: null } : null,
   items,
   totals: { lines: items.length, total: "10.00" },
   pending_orders: 0,

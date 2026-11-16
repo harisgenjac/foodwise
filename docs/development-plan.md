@@ -96,15 +96,15 @@ Agreed Nov 16, 2026: done as separate PRs, in this order: the provider, addresse
 
 - [x] Exact addresses with coordinates for stores and restaurants, and a delivery address. Coordinates come from a pin on a map (Leaflet with OpenStreetMap tiles) next to the typed address, not from geocoding. (Nov 16, 2026: `users.latitude`/`longitude` set on My profile or by an admin, optional with a reminder on the dashboards, at most 30 km from the profile's city. Decided: a restaurant has one address, its profile pin, which is its delivery address; the cart PR copies it onto the order when it is sent.)
 - [x] `DeliveryProvider` interface and `MockProvider` following the phase 0 specification. (Nov 16, 2026: `server/src/delivery/`, with the webhook signature check and a simulated courier; not used by orders yet.)
-- [ ] Fulfilment methods per store: a store can turn delivery off.
+- [x] Fulfilment methods per store: a store can turn delivery off. (Nov 16, 2026: `users.delivery_enabled`, the "Nudim dostavu" switch on My profile and in the admin's profile dialog; the cart PR offers delivery only when it is on.)
 - [ ] Choice in the cart: pickup (day and time) or delivery with price and time from the quote; no delivery when it is not available.
-- [ ] Default preparation time in the store profile.
+- [x] Default preparation time in the store profile. (Nov 16, 2026: `users.preparation_minutes`, 15/30/45/60/90/120 with 30 by default, on My profile and in the admin's dialog; accepting with a ready time will suggest it.)
 - [ ] Accepting with a ready time (15 / 30 / 60 min or an exact time, within opening hours and before expiry), the final amount and creating the delivery.
 - [ ] Webhook and statuses: "courier picked up" means `Completed`; "delivered" and "failed" are notifications. Late logic only for pickup.
 - [ ] Failure before pickup: the restaurant chooses to switch to pickup or cancel.
 - [ ] SSE for live statuses instead of polling on order pages.
 - [ ] Automatic rejection of orders the store does not accept in time.
-- [ ] Pause receiving orders for a store.
+- [x] Pause receiving orders for a store. (Nov 16, 2026: decided as a switch with an optional end: 30 min, 1, 2 or 4 hours, to the end of the day or until switched off, from My profile and a card on the store's dashboard, also by an admin. The products stay visible and in carts with a "not taking orders" note; sending is refused. Not for a headquarters on its branches.)
 - [ ] Packing list for today's orders, by ready time.
 - [ ] E2E tests for the whole delivery flow with the mock.
 

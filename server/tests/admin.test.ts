@@ -263,6 +263,34 @@ describe("Admin", () => {
       expect(far.body.error).toBe("The location on the map is too far from the chosen city.");
     });
 
+    it("saves a store's order settings with the profile, and refuses invalid ones", async () => {
+      const storeId = await userId(STORE);
+      const response = await admin
+        .put(`/api/admin/users/${storeId}/profile`)
+        .send({ ...profile, order_settings: { delivery_enabled: false, preparation_minutes: 60, orders_paused: true } });
+      expect(response.status).toBe(200);
+      expect(response.body.user).toMatchObject({
+        delivery_enabled: false,
+        preparation_minutes: 60,
+        orders_paused: true,
+        orders_paused_until: null,
+      });
+
+      const invalid = await admin
+        .put(`/api/admin/users/${storeId}/profile`)
+        .send({ ...profile, first_name: "Promijenjeno", order_settings: { preparation_minutes: 20 } });
+      expect(invalid.status).toBe(400);
+      expect(invalid.body.error).toBe("Preparation time is not valid.");
+      // Nothing of the request was saved.
+      const user = (await admin.get(`/api/admin/users/${storeId}`)).body.user;
+      expect(user).toMatchObject({ first_name: profile.first_name, preparation_minutes: 60 });
+
+      await pool.query(
+        "UPDATE users SET delivery_enabled = true, preparation_minutes = 30, orders_paused = false WHERE id = $1",
+        [storeId],
+      );
+    });
+
     it("validates like the user's own profile form", async () => {
       const response = await admin
         .put(`/api/admin/users/${await userId(STORE)}/profile`)

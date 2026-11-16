@@ -10,6 +10,8 @@ import { useFormValidation } from "../../hooks/useFormValidation.js";
 import { isBlank, REQUIRED } from "../../utils/validation.js";
 import { formatDisplayDate, formatTimeTyping, parseTimeInput, toDateInput } from "../../utils/expiry.js";
 import { formatMoney } from "../../utils/orders.js";
+import { isPaused } from "../../utils/orderPause.js";
+import StorePausedNotice from "../store/StorePausedNotice.js";
 import type { Cart, SendChange, SendChangeKind } from "../../types/index.js";
 
 // What POST /orders answered: the order (with its items) and what sending changed.
@@ -56,6 +58,8 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
   });
   // The limit is shown once it is close (design: from 8 of 10 on).
   const showPending = cart.pending_orders >= cart.max_pending_orders - 2;
+  // A paused store takes no orders; the cart stays as it is until the pause ends.
+  const paused = isPaused(cart.store);
 
   const normalizeTime = () => {
     if (parsedTime && parsedTime !== pickupTime) setPickupTime(parsedTime);
@@ -63,7 +67,7 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (submitting || orderable.length === 0 || !validate()) return;
+    if (submitting || paused || orderable.length === 0 || !validate()) return;
     setSubmitting(true);
     try {
       const response = await api.post("/orders", {
@@ -161,10 +165,11 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
         </p>
       )}
       {orderable.length === 0 && <p className="text-sm text-gray-600">{t("cart.checkout.nothingToSend")}</p>}
+      <StorePausedNotice pause={cart.store} />
 
       <button
         type="submit"
-        disabled={submitting || orderable.length === 0}
+        disabled={submitting || paused || orderable.length === 0}
         className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-orange-500 py-3 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Send className="h-4 w-4" />
