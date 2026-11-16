@@ -6,6 +6,7 @@ import { startCreditRenewalJob } from './jobs/creditRenewals.js';
 import { startUploadCleanupJob } from './jobs/cleanupUploads.js';
 import { EmailConfigError, loadEmailConfig, type EmailConfig } from './email/config.js';
 import { startEmailWorker } from './email/queue.js';
+import { DeliveryConfigError, loadDeliveryConfig, type DeliveryConfig } from './delivery/config.js';
 
 const PORT = process.env.PORT || 3000;
 
@@ -24,6 +25,19 @@ try {
 console.log(
   `Emails: ${emailConfig.provider}${emailConfig.redirectTo ? `, every email redirected to ${emailConfig.redirectTo}` : ''}`,
 );
+
+// The same for delivery: an unknown provider or a missing webhook secret in production.
+let deliveryConfig: DeliveryConfig;
+try {
+  deliveryConfig = loadDeliveryConfig(process.env);
+} catch (error) {
+  if (error instanceof DeliveryConfigError) {
+    console.error(`Delivery configuration error: ${error.message}`);
+    process.exit(1);
+  }
+  throw error;
+}
+console.log(`Delivery: ${deliveryConfig.provider}`);
 
 startExpirationJob();
 startReminderJob();

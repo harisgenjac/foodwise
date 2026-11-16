@@ -34,7 +34,7 @@ A restaurant orders from a cart with one store and chooses delivery (Korpa) or p
 ### Phase 0: Preparation
 
 - [ ] Agreement with Korpa: commission, exclusivity, sandbox, coverage zones, how cash collected for goods is paid out to stores.
-- [ ] API specification (OpenAPI): quote (price and time), creating a delivery with the ready time and the amount to collect, cancelling, webhooks for statuses (courier assigned, picked up, delivered, failed), HMAC signature and idempotency.
+- [x] API specification (OpenAPI): quote (price and time), creating a delivery with the ready time and the amount to collect, cancelling, webhooks for statuses (courier assigned, picked up, delivered, failed), HMAC signature and idempotency. (Nov 16, 2026: we wrote it ourselves in `docs/delivery-api.yaml` so phase 2 can start, as our proposal; it still has to be agreed with Korpa in the agreement above.)
 
 ### Phase 1: Orders and cart (pickup only)
 
@@ -92,8 +92,10 @@ Agreed Nov 15, 2026. One-store orders made the category image and the flat produ
 
 ### Phase 2: Delivery with a mock provider
 
-- [ ] Exact addresses with coordinates for stores and restaurants, and a delivery address.
-- [ ] `DeliveryProvider` interface and `MockProvider` following the phase 0 specification.
+Agreed Nov 16, 2026: done as separate PRs, in this order: the provider, addresses, store settings (delivery on/off, preparation time, pause), the cart choice, accepting with a ready time, webhooks and failures, SSE, automatic rejection and the packing list, then the e2e flow.
+
+- [ ] Exact addresses with coordinates for stores and restaurants, and a delivery address. Coordinates come from a pin on a map (Leaflet with OpenStreetMap tiles) next to the typed address, not from geocoding.
+- [x] `DeliveryProvider` interface and `MockProvider` following the phase 0 specification. (Nov 16, 2026: `server/src/delivery/`, with the webhook signature check and a simulated courier; not used by orders yet.)
 - [ ] Fulfilment methods per store: a store can turn delivery off.
 - [ ] Choice in the cart: pickup (day and time) or delivery with price and time from the quote; no delivery when it is not available.
 - [ ] Default preparation time in the store profile.

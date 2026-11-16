@@ -75,8 +75,10 @@ Create `server/.env.test` with the same variables, pointing `DATABASE_URL` at `f
 | `EMAIL_REDIRECT_TO` | for `resend` outside production | Sends every email to this address instead, with `[to: real@address]` in front of the subject |
 | `RESEND_API_KEY` | for `resend` | Resend API key |
 | `SMTP_HOST` / `SMTP_PORT` | no | SMTP server for `smtp`, default `localhost` / `1025` (Mailpit) |
+| `DELIVERY_PROVIDER` | no | Delivery provider, only `mock` (the default) for now |
+| `DELIVERY_WEBHOOK_SECRET` | in production | Shared secret for the delivery webhook signatures (at least 16 characters); the mock uses a built-in development secret when it is not set |
 
-`server/.env.example` lists every variable with comments. A wrong email setting stops the server at startup with `Email configuration error: ...`.
+`server/.env.example` lists every variable with comments. A wrong email setting stops the server at startup with `Email configuration error: ...`, a wrong delivery setting with `Delivery configuration error: ...`.
 
 The client reads an optional `VITE_API_URL` (backend origin without `/api`, default `http://localhost:3000`), for example from `client/.env.local`.
 
