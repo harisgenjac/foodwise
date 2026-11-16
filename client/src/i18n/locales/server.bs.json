@@ -375,5 +375,7 @@
   "The cart is empty.": "Korpa je prazna.",
   "Delivery checked.": "Dostava je provjerena.",
   "An error occurred while checking delivery.": "Došlo je do greške pri provjeri dostave.",
-  "Delivery is not available for this order.": "Dostava nije moguća za ovu narudžbu."
+  "Delivery is not available for this order.": "Dostava nije moguća za ovu narudžbu.",
+  "Choose when the order will be ready.": "Izaberite kada će narudžba biti spremna.",
+  "The ready time must be later today, before the store closes.": "Vrijeme spremnosti mora biti danas, kasnije od sada i prije zatvaranja prodavnice."
 }

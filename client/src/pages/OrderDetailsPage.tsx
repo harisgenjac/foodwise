@@ -151,6 +151,7 @@ function OrderDetailsPage() {
           restaurant={order.restaurant.business_name ?? ""}
           onClose={() => setDeciding(false)}
           onDecided={fetchOrder}
+          {...(user?.preparation_minutes && { preparationMinutes: user.preparation_minutes })}
         />
       )}
 

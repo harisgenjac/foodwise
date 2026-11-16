@@ -24,6 +24,8 @@ export type NotificationType =
   | "ORDER_CANCELLED_BY_ADMIN"
   // To the restaurant when a branch is deactivated (by its headquarters or an admin).
   | "ORDER_CANCELLED_STORE_CLOSED"
+  // To both sides of a delivery order: the delivery could not be created (or later failed).
+  | "DELIVERY_FAILED"
   | "PRODUCT_EXPIRED"
   | "PRODUCT_SOLD_OUT"
   | "PRODUCT_EXPIRING_SOON"

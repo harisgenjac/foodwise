@@ -175,12 +175,49 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
                 value={order.delivery_estimated_at ? formatDateTime(order.delivery_estimated_at) : "–"}
               />
               <DetailItem icon={MapPin} label={t("orders.delivery.address")} value={order.delivery_address ?? "–"} />
-              <DetailItem
-                icon={Wallet}
-                label={t("orders.delivery.fee")}
-                value={formatMoney(order.delivery_fee_estimate ?? 0)}
-              />
-              <DetailItem icon={CalendarClock} label={t("orders.delivery.courierPickup")} value={formatDateTime(order.pickup_at)} />
+              {order.delivery && (
+                <DetailItem
+                  icon={Truck}
+                  label={t("orders.delivery.statusLabel")}
+                  value={
+                    order.delivery.status === "FAILED"
+                      ? t("orders.delivery.failed", {
+                          reason: t(
+                            order.delivery.failure_reason === "OUT_OF_ZONE"
+                              ? "orders.delivery.failure.OUT_OF_ZONE"
+                              : "orders.delivery.failure.other",
+                          ),
+                        })
+                      : t(`orders.delivery.status.${order.delivery.status}`)
+                  }
+                />
+              )}
+              {order.delivery?.price ? (
+                <>
+                  <DetailItem icon={Wallet} label={t("orders.delivery.finalFee")} value={formatMoney(order.delivery.price)} />
+                  <DetailItem
+                    icon={Wallet}
+                    label={t("orders.delivery.cash")}
+                    value={formatMoney(order.delivery.cash_to_collect ?? 0)}
+                  />
+                </>
+              ) : (
+                <DetailItem
+                  icon={Wallet}
+                  label={t("orders.delivery.fee")}
+                  value={formatMoney(order.delivery_fee_estimate ?? 0)}
+                />
+              )}
+              {order.ready_at && (
+                <DetailItem icon={Clock} label={t("orders.delivery.readyAt")} value={formatDateTime(order.ready_at)} />
+              )}
+              {order.delivery?.status !== "FAILED" && (
+                <DetailItem
+                  icon={CalendarClock}
+                  label={order.delivery ? t("orders.delivery.courierPickupFinal") : t("orders.delivery.courierPickup")}
+                  value={formatDateTime(order.pickup_at)}
+                />
+              )}
             </>
           ) : (
             <DetailItem icon={CalendarClock} label={t("orders.pickup")} value={formatDateTime(order.pickup_at)} />

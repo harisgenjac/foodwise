@@ -155,3 +155,96 @@ describe("sending a delivery order", () => {
     expect(response.body.error).toBe("Fulfilment method is not valid.");
   });
 });
+
+describe("accepting a delivery order", () => {
+  // A delivery order of 2 × 5 KM (10 KM of goods), and its one item.
+  const sendDelivery = async () => {
+    const product = await fillCart(2);
+    const response = await restaurant.post("/api/orders").send({
+      fulfilment_method: "DELIVERY",
+      accept_partial: true,
+      items: [{ product_id: product.id, quantity: 2, unit_price: 5 }],
+    });
+    expect(response.status).toBe(201);
+    return { orderId: response.body.order.id as number, itemId: response.body.order.items[0].id as number };
+  };
+  // A few minutes ahead, so it stays today (unless the test runs in the last minutes before midnight).
+  const soon = () => new Date(Date.now() + 5 * 60 * 1000).toISOString();
+  const notificationTypes = async (id: number) =>
+    (
+      await pool.query<{ type: string }>("SELECT type FROM notifications WHERE user_id = $1 ORDER BY id", [id])
+    ).rows.map((row) => row.type);
+
+  it("needs a ready time today", async () => {
+    const { orderId, itemId } = await sendDelivery();
+    const accept = { items: [{ item_id: itemId, action: "ACCEPT" }] };
+    const missing = await store.post(`/api/orders/${orderId}/decision`).send(accept);
+    expect(missing.status).toBe(400);
+    expect(missing.body.error).toBe("Choose when the order will be ready.");
+    const tomorrow = await store
+      .post(`/api/orders/${orderId}/decision`)
+      .send({ ...accept, ready_at: new Date(Date.now() + 26 * 60 * 60 * 1000).toISOString() });
+    expect(tomorrow.status).toBe(400);
+    expect(tomorrow.body.error).toBe("The ready time must be later today, before the store closes.");
+    expect((await store.get(`/api/orders/${orderId}`)).body.order.status).toBe("Pending");
+  });
+
+  it("creates the delivery with the final price and the cash for the accepted goods", async () => {
+    const { orderId, itemId } = await sendDelivery();
+    const readyAt = soon();
+    const response = await store
+      .post(`/api/orders/${orderId}/decision`)
+      .send({ items: [{ item_id: itemId, action: "ACCEPT_LESS", quantity: 1, reason: "QUALITY" }], ready_at: readyAt });
+    expect(response.status).toBe(200);
+
+    const order = (await restaurant.get(`/api/orders/${orderId}`)).body.order;
+    expect(order.status).toBe("Confirmed");
+    expect(new Date(order.ready_at).toISOString()).toBe(readyAt);
+    // 1 × 5 KM accepted + 9.10 KM delivery, in cash to the courier.
+    expect(order.delivery).toMatchObject({ status: "CREATED", price: "9.10", cash_to_collect: "14.10", failure_reason: null });
+    // The courier comes 5 minutes after the goods are ready.
+    expect(new Date(order.delivery.estimated_pickup_at).getTime() - new Date(readyAt).getTime()).toBe(5 * 60 * 1000);
+    expect(new Date(order.delivery_estimated_at).getTime()).toBe(new Date(order.delivery.estimated_delivery_at).getTime());
+    expect(await notificationTypes(restaurantId)).toEqual(["ORDER_PARTIALLY_ACCEPTED"]);
+  });
+
+  it("rejecting needs no ready time and creates no delivery", async () => {
+    const { orderId } = await sendDelivery();
+    const response = await store.post(`/api/orders/${orderId}/decision`).send({ reject_order: true, reason: "QUALITY" });
+    expect(response.status).toBe(200);
+    const order = (await restaurant.get(`/api/orders/${orderId}`)).body.order;
+    expect(order).toMatchObject({ status: "Rejected", ready_at: null, delivery: null });
+  });
+
+  it("keeps the acceptance when the delivery cannot be created, and tells both sides", async () => {
+    const { orderId, itemId } = await sendDelivery();
+    // The order's address moved out of the mock's zone after it was sent.
+    await pool.query("UPDATE orders SET delivery_latitude = $2, delivery_longitude = $3 WHERE id = $1", [
+      orderId,
+      ZENICA_PIN.latitude,
+      ZENICA_PIN.longitude,
+    ]);
+    const response = await store
+      .post(`/api/orders/${orderId}/decision`)
+      .send({ items: [{ item_id: itemId, action: "ACCEPT" }], ready_at: soon() });
+    expect(response.status).toBe(200);
+    const order = (await store.get(`/api/orders/${orderId}`)).body.order;
+    expect(order.status).toBe("Confirmed");
+    expect(order.delivery).toMatchObject({ status: "FAILED", price: null, failure_reason: "OUT_OF_ZONE" });
+    expect(await notificationTypes(restaurantId)).toEqual(["ORDER_ACCEPTED", "DELIVERY_FAILED"]);
+    expect(await notificationTypes(storeId)).toContain("DELIVERY_FAILED");
+  });
+
+  it("asks no ready time for a pickup order", async () => {
+    const product = await fillCart(1);
+    const sent = await restaurant.post("/api/orders").send({
+      pickup_at: futurePickup(),
+      items: [{ product_id: product.id, quantity: 1, unit_price: 5 }],
+    });
+    const response = await store
+      .post(`/api/orders/${sent.body.order.id}/decision`)
+      .send({ items: [{ item_id: sent.body.order.items[0].id, action: "ACCEPT" }] });
+    expect(response.status).toBe(200);
+    expect((await store.get(`/api/orders/${sent.body.order.id}`)).body.order).toMatchObject({ ready_at: null, delivery: null });
+  });
+});
