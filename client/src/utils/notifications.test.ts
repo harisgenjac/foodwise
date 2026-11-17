@@ -84,6 +84,15 @@ describe("getNotificationText", () => {
     expect(getNotificationText(makeOrderNotification({ order_code: null }), t)).toBe("New order #K7PM: 1 item.");
   });
 
+  it("names a delivery's order by its code, without the provider's code as a reason", () => {
+    const failed = makeOrderNotification({ type: "DELIVERY_FAILED", details: "OUT_OF_ZONE" });
+    expect(getNotificationText(failed, t)).toBe(t("notifications.types.DELIVERY_FAILED", { code: "#K7PM" }));
+    const switched = makeOrderNotification({ type: "ORDER_SWITCHED_TO_PICKUP" });
+    expect(getNotificationText(switched, t)).toBe(
+      t("notifications.types.ORDER_SWITCHED_TO_PICKUP", { code: "#K7PM", restaurant: "Restoran Ukus" }),
+    );
+  });
+
   it("adds the admin's reason after the translated text", () => {
     const removed = makeNotification({ type: "PRODUCT_REMOVED_BY_ADMIN", details: "Neispravan opis" });
     expect(getNotificationText(removed, t)).toBe(

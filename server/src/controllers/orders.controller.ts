@@ -5,7 +5,13 @@ import { inTransaction } from "../utils/transaction.js";
 import { parseId } from "../utils/params.js";
 import { parseSendOrderBody, sendOrder } from "../services/orders/send.js";
 import { decideOrder } from "../services/orders/decision.js";
-import { cancelOrder, cancelOverdueOrder, completeOrder } from "../services/orders/actions.js";
+import {
+  cancelFailedDelivery,
+  cancelOrder,
+  cancelOverdueOrder,
+  completeOrder,
+  switchToPickup,
+} from "../services/orders/actions.js";
 import {
   countPickupOrders,
   getOrderDetails,
@@ -138,5 +144,18 @@ export const completeOrderRoute = orderAction(
 export const cancelOverdueOrderRoute = orderAction(
   (client, storeId, orderId) => cancelOverdueOrder(client, storeId, orderId),
   "Overdue order cancelled.",
+  "An error occurred while cancelling the order.",
+);
+
+// After a failed delivery: the restaurant picks the order up itself, or cancels it.
+export const switchToPickupRoute = orderAction(
+  (client, restaurantId, orderId, body) => switchToPickup(client, restaurantId, orderId, body.pickup_at),
+  "Order switched to pickup.",
+  "An error occurred while switching the order to pickup.",
+);
+
+export const cancelFailedDeliveryRoute = orderAction(
+  (client, restaurantId, orderId) => cancelFailedDelivery(client, restaurantId, orderId),
+  "Order cancelled.",
   "An error occurred while cancelling the order.",
 );

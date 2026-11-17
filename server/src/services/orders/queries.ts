@@ -5,7 +5,7 @@ import { ADMIN_PAGE_SIZE, CARD_PAGE_SIZE, listPage, parsePage, parseSort } from 
 import { parseCityFilter } from "../../utils/cities.js";
 import { parseOrderCode } from "./codes.js";
 import { storeLogo } from "../../utils/branding.js";
-import { ORDER_STATUSES } from "./status.js";
+import { IS_OVERDUE, ORDER_STATUSES } from "./status.js";
 
 // The order lists and details of /api/orders: the order lists (filters, sorts, scopes,
 // paging) over orders. A list row is the order with its items and totals:
@@ -48,11 +48,12 @@ const ORDER_COLUMNS = `
        'cash_to_collect', deliveries.cash_to_collect::text,
        'estimated_pickup_at', deliveries.estimated_pickup_at, 'estimated_delivery_at', deliveries.estimated_delivery_at,
        'courier_name', deliveries.courier_name, 'courier_phone', deliveries.courier_phone,
-       'tracking_url', deliveries.tracking_url, 'failure_reason', deliveries.failure_reason)
+       'tracking_url', deliveries.tracking_url, 'failure_reason', deliveries.failure_reason,
+       'picked_up_at', deliveries.picked_up_at, 'delivered_at', deliveries.delivered_at)
      FROM deliveries WHERE deliveries.order_id = orders.id) AS delivery,
     orders.decided_at, orders.picked_up_at, orders.created_at, orders.updated_at,
     orders.store_id, orders.restaurant_id,
-    orders.status = 'Confirmed' AND orders.pickup_at::date < CURRENT_DATE AS is_overdue,
+    ${IS_OVERDUE} AS is_overdue,
     lines.item_count::int AS item_count, lines.accepted_count::int AS accepted_count,
     lines.ordered_total::text AS ordered_total, lines.current_total::text AS total,
     orders.status IN ('Confirmed', 'Completed') AND lines.has_changes AS is_partial,
@@ -286,7 +287,7 @@ export const listPickupOrders = async (userId: number, role: string, query: Requ
   if (scope === "completed" && !page) return null;
   const { owner, partyJoin } = pickupOwnership(role);
   const columns = `${ORDER_COLUMNS},
-    GREATEST(CURRENT_DATE - orders.pickup_at::date, 0) AS days_overdue,
+    CASE WHEN orders.fulfilment_method = 'PICKUP' THEN GREATEST(CURRENT_DATE - orders.pickup_at::date, 0) ELSE 0 END AS days_overdue,
     parties.business_name, cities.name AS city, parties.phone AS party_phone,
     parties.address AS party_address, parties.pickup_hours AS party_pickup_hours,
     parties.pickup_schedule AS party_pickup_schedule,
@@ -328,7 +329,7 @@ export const countPickupOrders = async (userId: number, role: string) => {
   const result = await pool.query(
     `SELECT
        COUNT(*) FILTER (WHERE orders.status = 'Confirmed' AND orders.pickup_at::date <= CURRENT_DATE) AS today,
-       COUNT(*) FILTER (WHERE orders.status = 'Confirmed' AND orders.pickup_at::date < CURRENT_DATE) AS overdue,
+       COUNT(*) FILTER (WHERE ${IS_OVERDUE}) AS overdue,
        COUNT(*) FILTER (WHERE orders.status = 'Confirmed' AND orders.pickup_at::date > CURRENT_DATE) AS upcoming,
        COUNT(*) FILTER (WHERE orders.status = 'Completed') AS completed
      FROM orders

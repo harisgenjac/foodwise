@@ -161,7 +161,7 @@ function StoreOrdersPage() {
                     </button>
                     {details(order)}
                   </>
-                ) : order.status === "Confirmed" ? (
+                ) : order.status === "Confirmed" && order.fulfilment_method === "PICKUP" ? (
                   <>
                     <button
                       type="button"

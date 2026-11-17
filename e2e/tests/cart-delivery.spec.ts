@@ -1,13 +1,13 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { API_URL, storageState, uniqueName, type SeededRole } from "../support/accounts.js";
-import { apiAs, cancelOrder, completeOrder, createProduct } from "../support/api.js";
+import { apiAs, cancelOrder, createProduct, simulateCourier } from "../support/api.js";
 import { emptyCart, open, reload, toast } from "../support/ui.js";
 
 // A restaurant chooses delivery in the cart (delivery phase 2, the mock provider): the estimate
 // with the price and the arrival, sending without a pickup time, and the delivery on the order
 // page; the store accepts it with a ready time, which books the delivery with its final price. Both seeded businesses are in Visoko and get a pin there for the test (removed again in
 // afterEach, also when the test fails). The order is closed there too (withdrawn while Pending,
-// marked picked up once accepted): the seeded restaurant is shared, and orders left Pending count
+// picked up by the mock courier once accepted): the seeded restaurant is shared, and orders left Pending count
 // towards its limit of 10. Runs on desktop Chrome and on the
 // iPhone project.
 test.use({ storageState: storageState("restaurant") });
@@ -40,7 +40,13 @@ let accepted = false;
 test.afterEach(async () => {
   if (sentOrderId !== null) {
     const api = await apiAs(accepted ? "store" : "restaurant");
-    await (accepted ? completeOrder(api, sentOrderId) : cancelOrder(api, sentOrderId));
+    if (accepted) {
+      // A delivery order is completed by the courier's pickup, never by the store.
+      await simulateCourier(api, sentOrderId, "courier_assigned");
+      await simulateCourier(api, sentOrderId, "picked_up");
+    } else {
+      await cancelOrder(api, sentOrderId);
+    }
     await api.dispose();
     sentOrderId = null;
     accepted = false;

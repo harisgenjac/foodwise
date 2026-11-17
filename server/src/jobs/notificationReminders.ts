@@ -30,14 +30,15 @@ export const sendReminders = async (): Promise<{ expiringSoon: number; pickupTod
        RETURNING notifications.id`,
     );
 
-    // Restaurants: accepted orders to pick up today, once per order.
+    // Restaurants: accepted pickup orders to pick up today, once per order (a courier collects a
+    // delivery order).
     const pickupToday = await client.query<{ id: number }>(
       `INSERT INTO notifications (user_id, type, message, order_id)
        SELECT orders.restaurant_id, 'ORDER_PICKUP_TODAY',
               'Reminder: pick up order #' || orders.code || ' today.',
               orders.id
        FROM orders
-       WHERE orders.status = 'Confirmed'
+       WHERE orders.status = 'Confirmed' AND orders.fulfilment_method = 'PICKUP'
          AND orders.pickup_at::date = CURRENT_DATE
          AND NOT EXISTS (
            SELECT 1 FROM notifications

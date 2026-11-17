@@ -10,9 +10,11 @@ import EmptyState from "../components/product/EmptyState.js";
 import PickupConfirmModal from "../components/pickup/PickupConfirmModal.js";
 import OrderDecisionModal from "../components/order/OrderDecisionModal.js";
 import OrderDetailsView from "../components/order/OrderDetailsView.js";
+import DeliveryFailedActions from "../components/order/DeliveryFailedActions.js";
+import MockCourierPanel from "../components/order/MockCourierPanel.js";
 import { usePickupActions } from "../hooks/usePickupActions.js";
 import { useCancelOrder } from "../hooks/useCancelOrder.js";
-import { formatOrderCode } from "../utils/orders.js";
+import { deliveryFailedBeforePickup, formatOrderCode } from "../utils/orders.js";
 import type { OrderDetails } from "../types/index.js";
 
 // One order for its store or its restaurant: the items with the store's changes, the totals, the
@@ -74,12 +76,19 @@ function OrderDetailsPage() {
 
   const code = formatOrderCode(order.code);
   const isPending = order.status === "Pending";
-  const canHandOver = isStore && order.status === "Confirmed";
+  // A delivery order is completed by the courier's pickup, never by the store.
+  const canHandOver = isStore && order.status === "Confirmed" && order.fulfilment_method === "PICKUP";
+  const deliveryFailed = deliveryFailedBeforePickup(order);
   const handOver = { ...order, business_name: order.restaurant.business_name ?? "" };
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-10">
       <Breadcrumbs items={[section, { label: code }]} />
+
+      {/* Development only: the mock provider's courier. */}
+      {import.meta.env.DEV && order.fulfilment_method === "DELIVERY" && order.delivery && (
+        <MockCourierPanel orderId={order.id} delivery={order.delivery} onDone={fetchOrder} />
+      )}
 
       <OrderDetailsView
         order={order}
@@ -109,6 +118,12 @@ function OrderDetailsPage() {
                   {t("orders.cancelButton")}
                 </button>
               </div>
+            )}
+            {deliveryFailed && !isStore && <DeliveryFailedActions order={order} onDone={fetchOrder} />}
+            {deliveryFailed && isStore && (
+              <p data-testid="delivery-failed" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                {t("orders.deliveryFailed.storeWaiting")}
+              </p>
             )}
             {canHandOver && (
               <div className="flex flex-col gap-2 sm:flex-row">

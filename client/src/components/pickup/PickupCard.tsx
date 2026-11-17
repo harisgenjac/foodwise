@@ -10,6 +10,7 @@ import {
   PackageCheck,
   Phone,
   Store,
+  Truck,
   UtensilsCrossed,
 } from "lucide-react";
 import OrderImage from "../order/OrderImage.js";
@@ -136,6 +137,12 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
             {t("pickups.pickedUpAt", {
               date: `${shortDate(pickedUpAt)} ${pickedUpAt.toLocaleTimeString(i18n.language, timeFormat)}`,
             })}
+          </span>
+        ) : order.fulfilment_method === "DELIVERY" ? (
+          // The courier collects a delivery order; its pickup completes it.
+          <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+            <Truck className="h-4 w-4" />
+            {t("pickups.courierCollects")}
           </span>
         ) : isStore ? (
           <>

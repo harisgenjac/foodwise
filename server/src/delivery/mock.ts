@@ -203,6 +203,16 @@ export class MockProvider implements DeliveryProvider {
     return parseDeliveryEvent(rawBody);
   }
 
+  // Whether the mock still knows a delivery (it forgets them on a restart).
+  has(deliveryId: string): boolean {
+    return this.deliveries.has(deliveryId);
+  }
+
+  // Takes back a delivery FoodWise stored before a restart, so the dev courier can go on with it.
+  remember(delivery: Delivery): void {
+    this.deliveries.set(delivery.delivery_id, { ...delivery });
+  }
+
   // Plays the courier: moves the delivery on and returns the signed webhook call for the event.
   simulate(deliveryId: string, type: DeliveryEventType, options: SimulateOptions = {}): SignedWebhook {
     const delivery = this.find(deliveryId);

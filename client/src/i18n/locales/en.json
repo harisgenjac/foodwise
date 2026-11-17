@@ -307,7 +307,11 @@
       "CREDIT_TOPUP_COMPANY_APPROVED": "Your headquarters sent your extra credits request to an administrator.",
       "CREDIT_TOPUP_COMPANY_REJECTED": "Your headquarters rejected your extra credits request.",
       "PASSWORD_CHANGED": "Your password was changed with a password reset link. If this was not you, ask for a new password right away.",
-      "DELIVERY_FAILED": "The delivery of order {{code}} is not possible. The order stays accepted."
+      "DELIVERY_FAILED": "The delivery of order {{code}} failed. Choose to pick it up at the store or cancel the order.",
+      "DELIVERY_FAILED_AFTER_PICKUP": "The courier picked up order {{code}} but could not deliver it.",
+      "DELIVERY_DELIVERED": "Order {{code}} was delivered.",
+      "ORDER_SWITCHED_TO_PICKUP": "{{restaurant}} will pick up order {{code}} itself instead of delivery.",
+      "ORDER_CANCELLED_DELIVERY_FAILED": "{{restaurant}} cancelled order {{code}} after the delivery failed."
     },
     "reason": "Reason: {{reason}}",
     "credits": {
@@ -670,7 +674,8 @@
       "completedSubtitle": "When an order is picked up, you will see the history here.",
       "noResultsTitle": "No results",
       "noResultsSubtitle": "No pickup matches your search."
-    }
+    },
+    "courierCollects": "Courier collects"
   },
   "reports": {
     "title": "Reports",
@@ -1843,7 +1848,8 @@
         "RESTAURANT": "restaurant",
         "STORE": "store",
         "ADMIN": "administrator",
-        "SYSTEM": "system"
+        "SYSTEM": "system",
+        "PROVIDER": "delivery service"
       }
     },
     "decision": {
@@ -1941,15 +1947,41 @@
         "FAILED": "Delivery failed",
         "CANCELLED": "Delivery cancelled"
       },
-      "failed": "Delivery is not possible ({{reason}}). Agree on a pickup.",
+      "failed": "Delivery failed: {{reason}}.",
       "failure": {
         "OUT_OF_ZONE": "the address is outside the delivery zone",
-        "other": "the delivery service is not available"
+        "other": "the delivery service is not available",
+        "courier": "the courier could not pick up the order",
+        "cancelled": "the delivery service cancelled the delivery",
+        "admin": "an administrator cancelled the delivery",
+        "afterPickup": "the courier picked up the order but could not deliver it"
       },
       "finalFee": "Delivery price",
       "cash": "Paid to the courier (goods + delivery)",
       "readyAt": "Ready for the courier",
-      "courierPickupFinal": "Courier pickup (estimate)"
+      "courierPickupFinal": "Courier pickup (estimate)",
+      "courier": "Courier",
+      "deliveredAt": "Delivered",
+      "switchedToPickup": "The delivery failed, the order is picked up at the store"
+    },
+    "deliveryFailed": {
+      "prompt": "The delivery failed and no courier is coming. You can pick the order up yourself at {{store}} or cancel it.",
+      "pickupButton": "I will pick it up",
+      "pickupTitle": "Pickup instead of delivery",
+      "pickupText": "Choose when you will pick up order {{code}} at {{store}}. You pay the store for the goods at pickup.",
+      "pickupConfirm": "Pick it up",
+      "cancelText": "Order {{code}} will be cancelled and the products go back on offer at {{store}}.",
+      "storeWaiting": "The delivery failed and no courier is coming. The restaurant chooses to pick the order up itself or to cancel it."
+    },
+    "mockCourier": {
+      "title": "Courier simulation (development only)",
+      "steps": {
+        "courier_assigned": "Courier assigned",
+        "picked_up": "Courier picked up",
+        "delivered": "Delivered",
+        "failed": "Delivery failed",
+        "cancelled": "Service cancelled"
+      }
     }
   },
   "cart": {

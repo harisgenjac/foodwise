@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import type { ChangeReason, Order, OrderItem, OrderStatus, SendChange } from "../types/index.js";
+import type { ChangeReason, Order, OrderDelivery, OrderItem, OrderStatus, SendChange } from "../types/index.js";
 
 // The order's short code as people see it: "#K7PM". Unique only within a store, so it is always
 // shown with the store's or the restaurant's name.
@@ -61,4 +61,22 @@ export const sendChangeText = (change: SendChange, t: TFunction) => {
     newPrice: formatMoney(change.new_price),
   };
   return t(`orders.sendChanges.${change.kind}`, values);
+};
+
+// No courier is coming and the goods are still at the store: the restaurant of an accepted
+// delivery order then picks it up itself or cancels it (POST /orders/:id/switch-to-pickup,
+// /cancel-failed-delivery).
+export const deliveryFailedBeforePickup = (order: Pick<Order, "status" | "fulfilment_method" | "delivery">) =>
+  order.status === "Confirmed" &&
+  order.fulfilment_method === "DELIVERY" &&
+  (order.delivery?.status === "FAILED" || order.delivery?.status === "CANCELLED") &&
+  !order.delivery.picked_up_at;
+
+// The orders.delivery.failure.<key> that says why a delivery failed or was cancelled.
+export const deliveryFailureKey = (delivery: OrderDelivery) => {
+  if (delivery.status === "CANCELLED") return delivery.failure_reason === "CANCELLED_BY_ADMIN" ? "admin" : "cancelled";
+  if (delivery.picked_up_at) return "afterPickup";
+  if (delivery.failure_reason === "OUT_OF_ZONE") return "OUT_OF_ZONE";
+  // Without a price it was never created; with one, the courier failed.
+  return delivery.price ? "courier" : "other";
 };

@@ -103,7 +103,7 @@ describe("ORDER_CREATED email", () => {
     const toRestaurant = NOTIFICATION_TEMPLATES.DELIVERY_FAILED.render({ ...failed, recipientRole: "RESTAURANT" }, "bs", APP_URL);
     expect(toRestaurant.subject).toBe("Dostava narudžbe #K7PM nije moguća");
     expect(toRestaurant.text).toContain("adresa je izvan zone dostave");
-    expect(toRestaurant.text).toContain("Dogovorite preuzimanje s prodavnicom Market Centar.");
+    expect(toRestaurant.text).toContain("preuzeti sami u prodavnici Market Centar ili je otkazati");
     const toStore = NOTIFICATION_TEMPLATES.DELIVERY_FAILED.render(
       { ...failed, recipientRole: "STORE", deliveryFailure: "UNAVAILABLE" },
       "en",
@@ -111,6 +111,7 @@ describe("ORDER_CREATED email", () => {
     );
     expect(toStore.text).toContain("the delivery service is not available");
     expect(toStore.text).toContain("no courier is coming");
+    expect(toStore.text).toContain("The restaurant chooses to pick it up itself or to cancel it.");
   });
 
   it("is in English", () => {
@@ -160,8 +161,8 @@ describe("ORDER_CREATED email", () => {
     expect(emailTemplate("ORDER_CREATED")).toBe(orderCreated);
     expect(emailTemplate("NO_SUCH_TEMPLATE")).toBeUndefined();
     expect(emailTemplate("toString")).toBeUndefined();
-    // 36 notification types and the system emails PASSWORD_RESET and INVITATION.
-    expect(Object.keys(EMAIL_TEMPLATES)).toHaveLength(39);
+    // 41 notification types and the system emails PASSWORD_RESET and INVITATION.
+    expect(Object.keys(EMAIL_TEMPLATES)).toHaveLength(43);
   });
 });
 
@@ -240,6 +241,10 @@ const FULL: Record<NotificationType, NotificationEmailData> = (() => {
     ORDER_CANCELLED_BY_ADMIN: { ...order, details: "Spor" },
     ORDER_CANCELLED_STORE_CLOSED: order,
     DELIVERY_FAILED: { ...order, fulfilmentMethod: "DELIVERY", deliveryFailure: "OUT_OF_ZONE" },
+    DELIVERY_FAILED_AFTER_PICKUP: { ...order, fulfilmentMethod: "DELIVERY" },
+    DELIVERY_DELIVERED: { ...order, fulfilmentMethod: "DELIVERY" },
+    ORDER_SWITCHED_TO_PICKUP: order,
+    ORDER_CANCELLED_DELIVERY_FAILED: order,
     PRODUCT_EXPIRED: product,
     PRODUCT_SOLD_OUT: product,
     PRODUCT_EXPIRING_SOON: product,

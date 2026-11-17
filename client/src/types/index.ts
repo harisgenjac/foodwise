@@ -90,8 +90,10 @@ export type FulfilmentMethod = "PICKUP" | "DELIVERY";
 
 export type DeliveryStatus = "CREATED" | "COURIER_ASSIGNED" | "PICKED_UP" | "DELIVERED" | "FAILED" | "CANCELLED";
 
-// The delivery of an accepted delivery order (FAILED: it could not be arranged, failure_reason
-// is the provider's code such as OUT_OF_ZONE).
+// The delivery of an accepted delivery order. FAILED: it could not be arranged (no price,
+// failure_reason is a code such as OUT_OF_ZONE) or the courier failed (failure_reason is the
+// provider's text); CANCELLED: the provider or an admin cancelled it. Status changes come from the
+// provider's webhooks; picked_up_at and delivered_at are the courier's times.
 export interface OrderDelivery {
   status: DeliveryStatus;
   price: string | null;
@@ -102,6 +104,8 @@ export interface OrderDelivery {
   courier_phone: string | null;
   tracking_url: string | null;
   failure_reason: string | null;
+  picked_up_at?: string | null;
+  delivered_at?: string | null;
 }
 
 // Why the cart cannot be delivered now (GET /cart/delivery, 409 DELIVERY_UNAVAILABLE).
