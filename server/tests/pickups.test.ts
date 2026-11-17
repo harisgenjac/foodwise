@@ -193,7 +193,7 @@ describe("Pickups", () => {
       expect(await availableQuantity(product.id)).toBe(4);
 
       const tooMuch = await restaurant.post("/api/orders").send({
-        pickup_at: `${futureDate(0)}T23:00`,
+        pickup_at: `${futureDate(1)}T23:00`,
         accept_partial: false,
         items: [{ product_id: product.id, quantity: 5, unit_price: 5 }],
       });

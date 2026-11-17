@@ -103,7 +103,7 @@ function BranchActivity({ branchId, tab }: { branchId: number; tab: Tab }) {
                 ))
               : (list.data as Order[]).map((order) => (
                   // No details link: the order page belongs to the branch and the restaurant.
-                  <OrderCard key={order.id} order={order} partyLabel={t("orders.buyer")} actions={<></>} />
+                  <OrderCard key={order.id} order={order} partyLabel={t("orders.buyer")} actions={<></>} viewer="STORE" />
                 ))}
           </div>
           <LoadMore shown={list.data.length} total={list.total ?? list.data.length} fetching={list.fetching} onLoadMore={loadMore} />

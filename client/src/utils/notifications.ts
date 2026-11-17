@@ -27,6 +27,7 @@ export const NOTIFICATION_META: Record<NotificationType, { icon: LucideIcon; sty
   ORDER_ACCEPTED: { icon: CircleCheck, style: "bg-green-50 text-green-600" },
   ORDER_PARTIALLY_ACCEPTED: { icon: CircleCheck, style: "bg-amber-50 text-amber-600" },
   ORDER_REJECTED: { icon: CircleX, style: "bg-red-50 text-red-600" },
+  ORDER_AUTO_REJECTED: { icon: CircleX, style: "bg-red-50 text-red-600" },
   ORDER_COMPLETED: { icon: PackageCheck, style: "bg-green-50 text-green-600" },
   ORDER_PICKUP_MISSED: { icon: CalendarX, style: "bg-red-50 text-red-600" },
   ORDER_PICKUP_TODAY: { icon: Clock, style: "bg-blue-50 text-blue-600" },

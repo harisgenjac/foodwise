@@ -161,8 +161,8 @@ describe("ORDER_CREATED email", () => {
     expect(emailTemplate("ORDER_CREATED")).toBe(orderCreated);
     expect(emailTemplate("NO_SUCH_TEMPLATE")).toBeUndefined();
     expect(emailTemplate("toString")).toBeUndefined();
-    // 41 notification types and the system emails PASSWORD_RESET and INVITATION.
-    expect(Object.keys(EMAIL_TEMPLATES)).toHaveLength(43);
+    // 42 notification types and the system emails PASSWORD_RESET and INVITATION.
+    expect(Object.keys(EMAIL_TEMPLATES)).toHaveLength(44);
   });
 });
 
@@ -232,6 +232,7 @@ const FULL: Record<NotificationType, NotificationEmailData> = (() => {
     ORDER_ACCEPTED: order,
     ORDER_PARTIALLY_ACCEPTED: order,
     ORDER_REJECTED: order,
+    ORDER_AUTO_REJECTED: order,
     ORDER_COMPLETED: order,
     ORDER_PICKUP_MISSED: order,
     ORDER_PICKUP_TODAY: order,

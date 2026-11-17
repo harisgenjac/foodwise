@@ -157,13 +157,14 @@ describe("an admin's cancel", () => {
 describe("the pickup reminder", () => {
   it("reminds once per accepted order, however many items it has", async () => {
     const { orderId } = await twoItemOrder(true);
-    await pool.query("UPDATE orders SET pickup_at = CURRENT_DATE + time '18:00' WHERE id = $1", [orderId]);
     const response = await store.post(`/api/orders/${orderId}/decision`).send({
       items: (
         await pool.query("SELECT id FROM order_items WHERE order_id = $1", [orderId])
       ).rows.map((row) => ({ item_id: row.id, action: "ACCEPT" })),
     });
     expect(response.status).toBe(200);
+    // Today after the decision: a Pending order past its pickup time can no longer be decided.
+    await pool.query("UPDATE orders SET pickup_at = CURRENT_DATE + time '18:00' WHERE id = $1", [orderId]);
 
     await sendReminders();
     await sendReminders();

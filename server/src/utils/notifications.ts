@@ -12,6 +12,8 @@ export type NotificationType =
   | "ORDER_ACCEPTED"
   | "ORDER_PARTIALLY_ACCEPTED"
   | "ORDER_REJECTED"
+  // To both sides: the store did not answer in time (jobs/autoRejectOrders.ts).
+  | "ORDER_AUTO_REJECTED"
   | "ORDER_COMPLETED"
   | "ORDER_PICKUP_MISSED"
   | "ORDER_PICKUP_TODAY"

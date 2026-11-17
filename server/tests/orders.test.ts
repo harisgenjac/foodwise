@@ -121,6 +121,7 @@ describe("POST /api/orders", () => {
       [{ items: [line(product, 1)], pickup_at: "tomorrow" }, 400, "Pickup date is not valid."],
       [{ items: [line(product, 1)], pickup_at: `${futureDate(-1)}T10:00` }, 400, "Pickup date must be between today and the products' expiry date."],
       [{ items: [line(product, 1)], pickup_at: `${futureDate(31)}T10:00` }, 400, "Pickup date must be between today and the products' expiry date."],
+      [{ items: [line(product, 1)], pickup_at: `${futureDate(0)}T00:00` }, 400, "Pickup time must be in the future."],
     ];
     for (const [body, status, error] of cases) {
       const response = await restaurant.post("/api/orders").send({ pickup_at: futurePickup(), ...body });

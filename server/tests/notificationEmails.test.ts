@@ -94,7 +94,7 @@ afterEach(async () => {
 
 it("every declared notification type has an email template", async () => {
   expect(Object.keys(NOTIFICATION_TEMPLATES).sort()).toEqual(await declaredTypes());
-  expect(Object.keys(NOTIFICATION_TEMPLATES)).toHaveLength(41);
+  expect(Object.keys(NOTIFICATION_TEMPLATES)).toHaveLength(42);
 });
 
 it("createNotification queues the email of every type, and each renders in both languages", async () => {
@@ -129,6 +129,7 @@ it("createNotification queues the email of every type, and each renders in both 
     ORDER_ACCEPTED: [RESTAURANT, "order"],
     ORDER_PARTIALLY_ACCEPTED: [RESTAURANT, "order"],
     ORDER_REJECTED: [RESTAURANT, "order"],
+    ORDER_AUTO_REJECTED: [STORE, "order"],
     ORDER_COMPLETED: [RESTAURANT, "order"],
     ORDER_PICKUP_MISSED: [RESTAURANT, "order"],
     ORDER_PICKUP_TODAY: [RESTAURANT, "order"],
@@ -185,7 +186,7 @@ it("createNotification queues the email of every type, and each renders in both 
     expect(en.html, type).toContain(`href="${APP_URL}`);
   }
   // Every type was checked, which the Record type also enforces.
-  expect(Object.keys(cases)).toHaveLength(41);
+  expect(Object.keys(cases)).toHaveLength(42);
   expect(restaurantId).toBeGreaterThan(0);
 });
 
@@ -334,7 +335,8 @@ it("the reminder and expiry jobs queue their emails", async () => {
   const tomorrow = await createProduct(store, { name: "Kajmak", expiry_date: futureDate(1) });
   await orderOne(restaurant, tomorrow.id, 1);
   const today = await createProduct(store, { name: "Burek", expiry_date: futureDate(0) });
-  const ordered = await orderOne(restaurant, today.id, 1, `${futureDate(0)}T12:00:00`);
+  // Today's product needs a pickup today, still ahead (sending refuses a passed time).
+  const ordered = await orderOne(restaurant, today.id, 1, `${futureDate(0)}T23:59:00`);
   expect((await acceptItem(store, ordered)).status).toBe(200);
   const expired = await pool.query<{ id: number }>(
     `INSERT INTO products (store_id, name, category, original_price, discounted_price, quantity, unit, expiry_date)
@@ -359,7 +361,7 @@ it("the reminder and expiry jobs queue their emails", async () => {
   const reminder = renderBoth(toRestaurant[0]!);
   expect(reminder.bs.subject).toMatch(/^Podsjetnik: danas preuzimate narudžbu #[A-Z0-9]{4}$/);
   expect(reminder.bs.text).toContain("- Burek, 1 kg: 5,00 KM");
-  expect(reminder.bs.text).toMatch(/Preuzimanje: \d{2}\.\d{2}\.\d{4}\. 12:00/);
+  expect(reminder.bs.text).toMatch(/Preuzimanje: \d{2}\.\d{2}\.\d{4}\. 23:59/);
 
   // Running the reminders again sends nothing twice.
   await pool.query("DELETE FROM email_queue");

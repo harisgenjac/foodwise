@@ -21,6 +21,7 @@ import {
 import DetailItem from "../product/DetailItem.js";
 import {
   changeReasonText,
+  autoRejected,
   deliveryFailureKey,
   formatAmount,
   formatMoney,
@@ -35,6 +36,7 @@ import type { OrderDetails, OrderParty } from "../../types/index.js";
 import SendChangesList from "./SendChangesList.js";
 import OrderImage from "./OrderImage.js";
 import { hoursText } from "../../utils/schedule.js";
+import AnswerDeadline from "./AnswerDeadline.js";
 
 const dateTimeFormat: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" };
 const formatDateTime = (value: string) => new Date(value).toLocaleString(undefined, dateTimeFormat);
@@ -162,6 +164,13 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">{t("orders.title", { code })}</h1>
             <p className="mt-1 text-gray-600">{subtitle}</p>
+            <AnswerDeadline order={order} viewer={viewer} className="mt-2" />
+            {autoRejected(order) && (
+              <p data-testid="auto-rejected" className="mt-2 flex items-center gap-1.5 text-sm font-medium text-red-700">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                {t("orders.autoReject.rejected")}
+              </p>
+            )}
             </div>
           </div>
           <div className="text-right">

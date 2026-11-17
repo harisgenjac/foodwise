@@ -98,6 +98,11 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
       heading: "Narudžba je odbijena",
       intro: [`Prodavnica ${v.store} je odbila vašu narudžbu ${v.code}.`],
     }),
+    ORDER_AUTO_REJECTED: (v) => ({
+      subject: `Narudžba ${v.code} je automatski odbijena`,
+      heading: "Narudžba je automatski odbijena",
+      intro: [`Narudžba ${v.code} restorana ${v.restaurant} je automatski odbijena jer prodavnica ${v.store} nije odgovorila na vrijeme.`],
+    }),
     ORDER_COMPLETED: (v) => ({
       subject: `Narudžba ${v.code} je preuzeta`,
       heading: "Preuzimanje je potvrđeno",
@@ -377,6 +382,11 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
       subject: `Order ${v.code} was rejected`,
       heading: "Order rejected",
       intro: [`${v.store} rejected your order ${v.code}.`],
+    }),
+    ORDER_AUTO_REJECTED: (v) => ({
+      subject: `Order ${v.code} was rejected automatically`,
+      heading: "Order rejected automatically",
+      intro: [`Order ${v.code} from ${v.restaurant} was rejected automatically because ${v.store} did not answer in time.`],
     }),
     ORDER_COMPLETED: (v) => ({
       subject: `Order ${v.code} was picked up`,

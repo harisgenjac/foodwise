@@ -172,6 +172,10 @@ export const decideOrder = async (
   if (order.status !== "Pending") {
     throw new HttpError(400, "Only pending orders can be accepted or rejected.");
   }
+  // The automatic rejection job runs every minute; past the deadline it decides, not the store.
+  if (order.is_past_answer_deadline) {
+    throw new HttpError(400, "This order was not answered in time and can no longer be decided.");
+  }
   const items = await lockOrderItems(client, orderId);
   const pendingItems = items.filter((item) => item.status === "Pending");
   const decisions = parseDecisions(body, pendingItems, order.accept_partial);

@@ -195,6 +195,7 @@
     "timePlaceholder": "HH:MM",
     "invalidTime": "Unesite vrijeme u formatu HH:MM (00:00–23:59).",
     "pickupDateOutOfRange": "Datum mora biti između danas i datuma isteka.",
+    "pickupTimePassed": "Ovo vrijeme je već prošlo. Izaberite kasnije vrijeme.",
     "cancelButton": "Otkaži"
   },
   "filters": {
@@ -286,6 +287,7 @@
       "ORDER_ACCEPTED": "Vaša narudžba {{code}} je prihvaćena.",
       "ORDER_PARTIALLY_ACCEPTED": "Vaša narudžba {{code}} je djelimično prihvaćena.",
       "ORDER_REJECTED": "Vaša narudžba {{code}} je odbijena.",
+      "ORDER_AUTO_REJECTED": "Narudžba {{code}} je automatski odbijena jer prodavnica nije odgovorila na vrijeme.",
       "ORDER_COMPLETED": "Preuzimanje narudžbe {{code}} je potvrđeno.",
       "ORDER_PICKUP_MISSED": "Narudžba {{code}} je otkazana jer nije preuzeta na vrijeme.",
       "ORDER_PICKUP_TODAY": "Podsjetnik: danas preuzimate narudžbu {{code}} ({{store}}).",
@@ -2009,6 +2011,11 @@
       "courier": "Kurir",
       "deliveredAt": "Dostavljeno",
       "switchedToPickup": "Dostava nije uspjela, narudžba se preuzima u prodavnici"
+    },
+    "autoReject": {
+      "storeDeadline": "Odbija se automatski u {{time}} ako ne odgovorite",
+      "deadline": "Prodavnica treba odgovoriti do {{time}}",
+      "rejected": "Automatski odbijeno: prodavnica nije odgovorila na vrijeme"
     },
     "deliveryFailed": {
       "prompt": "Dostava nije uspjela i kurir neće doći. Možete narudžbu preuzeti sami u prodavnici {{store}} ili je otkazati.",

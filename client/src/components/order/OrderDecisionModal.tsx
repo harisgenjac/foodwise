@@ -15,6 +15,7 @@ import {
 } from "../../utils/orders.js";
 import type { ChangeReason, Order, OrderItem } from "../../types/index.js";
 import ReadyTimePicker, { readyAtOf, type ReadyChoice } from "./ReadyTimePicker.js";
+import AnswerDeadline from "./AnswerDeadline.js";
 
 type Action = "ACCEPT" | "ACCEPT_LESS" | "REJECT";
 
@@ -39,7 +40,7 @@ interface Rejection {
 type Step = "decide" | "reject" | "confirm";
 
 interface OrderDecisionModalProps {
-  order: Pick<Order, "id" | "code" | "accept_partial" | "items" | "fulfilment_method">;
+  order: Pick<Order, "id" | "code" | "accept_partial" | "items" | "fulfilment_method" | "status" | "auto_reject_at">;
   // The restaurant's name, for the title.
   restaurant: string;
   onClose: () => void;
@@ -525,6 +526,7 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
           {step === "reject" ? t("orders.decision.rejectTitle", { code }) : t("orders.decision.title", { code })}
         </h3>
         <p className="text-sm text-gray-500">{restaurant}</p>
+        <AnswerDeadline order={order} viewer="STORE" className="mt-1" />
       </ModalHeader>
 
       <ModalBody>{step === "decide" ? decideStep : step === "reject" ? rejectStep : confirmStep}</ModalBody>

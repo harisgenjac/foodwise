@@ -126,6 +126,57 @@ describe("OrderDetailsPage", () => {
     expect(screen.queryByRole("button", { name: t("orders.decideButton") })).not.toBeInTheDocument();
   });
 
+  it("tells the store when an unanswered order is rejected, and the restaurant until when the store answers", async () => {
+    const deadline = new Date(Date.now() + 60 * 60 * 1000);
+    const time = deadline.toLocaleString(undefined, { timeStyle: "short", hourCycle: "h23" });
+    const pending = makeOrderDetails({ id: 8, auto_reject_at: deadline.toISOString() });
+    const { unmount } = renderPage(STORE, pending);
+    expect(await screen.findByTestId("answer-deadline")).toHaveTextContent(t("orders.autoReject.storeDeadline", { time }));
+    unmount();
+
+    renderPage(RESTAURANT, pending);
+    expect(await screen.findByTestId("answer-deadline")).toHaveTextContent(t("orders.autoReject.deadline", { time }));
+  });
+
+  it("shows the deadline in amber when it is close, and none for a decided order", async () => {
+    const pending = makeOrderDetails({ id: 8, auto_reject_at: new Date(Date.now() + 2 * 60 * 1000).toISOString() });
+    const { unmount } = renderPage(STORE, pending);
+    expect(await screen.findByTestId("answer-deadline")).toHaveClass("text-amber-700");
+    unmount();
+
+    renderPage(STORE, PARTIAL);
+    await screen.findByRole("heading", { level: 1 });
+    expect(screen.queryByTestId("answer-deadline")).not.toBeInTheDocument();
+  });
+
+  it("says when the order was rejected automatically", async () => {
+    const rejected = makeOrderDetails({
+      id: 8,
+      status: "Rejected",
+      items: [makeOrderItem({ status: "Rejected" })],
+      history: [
+        { id: 1, item_id: null, from_status: null, to_status: "Pending", source: "RESTAURANT", reason: null, created_at: "2030-01-01T08:00:00.000Z", product_name: null },
+        { id: 2, item_id: null, from_status: "Pending", to_status: "Rejected", source: "SYSTEM", reason: null, created_at: "2030-01-01T08:15:00.000Z", product_name: null },
+      ],
+    });
+    renderPage(RESTAURANT, rejected);
+    expect(await screen.findByTestId("auto-rejected")).toHaveTextContent(t("orders.autoReject.rejected"));
+  });
+
+  it("says nothing of an automatic rejection when the store rejected", async () => {
+    const rejected = makeOrderDetails({
+      id: 8,
+      status: "Rejected",
+      items: [makeOrderItem({ status: "Rejected" })],
+      history: [
+        { id: 2, item_id: null, from_status: "Pending", to_status: "Rejected", source: "STORE", reason: null, created_at: "2030-01-01T08:15:00.000Z", product_name: null },
+      ],
+    });
+    renderPage(RESTAURANT, rejected);
+    await screen.findByRole("heading", { level: 1 });
+    expect(screen.queryByTestId("auto-rejected")).not.toBeInTheDocument();
+  });
+
   it("says the order was not found for anyone else", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     renderPage(RESTAURANT, axiosError(404, "Order not found."));

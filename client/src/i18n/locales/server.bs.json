@@ -390,5 +390,7 @@
   "This order has no delivery to simulate.": "Ova narudžba nema dostavu za simulaciju.",
   "Courier step simulated.": "Korak kurira je simuliran.",
   "This courier step is not possible now.": "Ovaj korak kurira sada nije moguć.",
-  "An error occurred while simulating the courier.": "Došlo je do greške pri simulaciji kurira."
+  "An error occurred while simulating the courier.": "Došlo je do greške pri simulaciji kurira.",
+  "This order was not answered in time and can no longer be decided.": "Na ovu narudžbu nije odgovoreno na vrijeme i o njoj se više ne može odlučiti.",
+  "Pickup time must be in the future.": "Vrijeme preuzimanja mora biti u budućnosti."
 }

@@ -498,7 +498,7 @@ PR 3a is the largest: once items belong to orders, every place that changes an i
 | 12 | Notifications per order or per item? | **Per order**; item-level only where a single item changes (expiry, moderation). Sending notifies only the store. |
 | 13 | Maximum lines per cart and order? | **30** (`MAX_ORDER_ITEMS`). |
 | 14 | A reason when the store rejects? | **Yes** (replaces the earlier "no"): a smaller quantity, a rejected item and a rejected order need a reason: not enough in stock, quality, or other with a text. |
-| 15 | Automatic rejection when the store does not answer? | **Stays in phase 2** (plan); until then a Pending order waits until its products expire. |
+| 15 | Automatic rejection when the store does not answer? | **Yes** (delivery phase 2, Nov 17, 2026): a delivery order after 15 minutes, a pickup order at its pickup time; both sides are notified. |
 | 16 | Fulfilment method? | **On the order now** (`fulfilment_method`, only `PICKUP` in phase 1; `DELIVERY` comes with Korpa). The pickup date and time stay on the order; delivery address, ready time and provider fields are left for phase 2, not built. |
 | 17 | What does the restaurant confirm after a partial acceptance? | **Nothing**: "Accept partial fulfilment" is its consent. It gets a notification and an email listing each change with its reason and the new total; the details show "20 kg → 15 kg". |
 | 18 | Which quantity counts after a partial acceptance? | **The accepted one** for stock, pickup, reports and statistics; the ordered quantity stays on the item for history. |
