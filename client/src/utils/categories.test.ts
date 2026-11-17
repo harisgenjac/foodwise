@@ -39,7 +39,7 @@ describe("unit lookups", () => {
 describe("status styles", () => {
   it("styles every product and order status", () => {
     expect(Object.keys(PRODUCT_STATUS_STYLES).sort()).toEqual(["Available", "Expired", "Removed", "Sold"]);
-    expect(Object.keys(ORDER_STATUS_STYLES).sort()).toEqual(["Cancelled", "Completed", "Confirmed", "Pending", "Rejected"]);
+    expect(Object.keys(ORDER_STATUS_STYLES).sort()).toEqual(["Cancelled", "Completed", "Confirmed", "InDelivery", "Pending", "Rejected"]);
   });
 
   it("translates every order status", () => {

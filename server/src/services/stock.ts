@@ -17,7 +17,7 @@ type Db = Pool | PoolClient;
 export const heldByOrderItems = (alias: string) => `COALESCE(
   (SELECT SUM(order_items.quantity) FROM order_items
    WHERE order_items.product_id = ${alias}.id
-     AND order_items.status IN ('Pending', 'Confirmed', 'Completed')), 0)`;
+     AND order_items.status IN ('Pending', 'Confirmed', 'InDelivery', 'Completed')), 0)`;
 
 export const soldInShop = (alias: string) => `COALESCE(
   (SELECT SUM(product_shop_sales.quantity) FROM product_shop_sales
@@ -54,7 +54,7 @@ export const soldOutCover = async (db: Db, productId: number): Promise<number> =
   const result = await db.query<{ covered: string }>(
     `SELECT COALESCE(
        (SELECT SUM(order_items.quantity) FROM order_items
-        WHERE order_items.product_id = products.id AND order_items.status IN ('Confirmed', 'Completed')), 0)
+        WHERE order_items.product_id = products.id AND order_items.status IN ('Confirmed', 'InDelivery', 'Completed')), 0)
        + ${soldInShop("products")} AS covered
      FROM products WHERE products.id = $1`,
     [productId],

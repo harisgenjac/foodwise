@@ -21,7 +21,7 @@ import { usePickupActions } from "../hooks/usePickupActions.js";
 import type { Order } from "../types/index.js";
 import { useAuth } from "../context/AuthContext.js";
 
-const STATUSES: Order["status"][] = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
+const STATUSES: Order["status"][] = ["Pending", "Confirmed", "InDelivery", "Completed", "Rejected", "Cancelled"];
 
 const detailsLinkStyle =
   "inline-flex items-center justify-center rounded-xl bg-orange-50 px-3 text-orange-700 transition-colors hover:bg-orange-500 hover:text-white";

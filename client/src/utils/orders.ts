@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import type { ChangeReason, Order, OrderDelivery, OrderDetails, OrderItem, OrderStatus, SendChange } from "../types/index.js";
+import type { ChangeReason, FulfilmentMethod, Order, OrderDelivery, OrderDetails, OrderItem, OrderStatus, SendChange } from "../types/index.js";
 
 // The order's short code as people see it: "#K7PM". Unique only within a store, so it is always
 // shown with the store's or the restaurant's name.
@@ -9,10 +9,16 @@ export const formatOrderCode = (code: string) => `#${code}`;
 export const ORDER_STATUS_STYLES: Record<OrderStatus, string> = {
   Pending: "bg-amber-50 text-amber-700",
   Confirmed: "bg-green-50 text-green-700",
+  InDelivery: "bg-indigo-50 text-indigo-700",
   Completed: "bg-gray-100 text-gray-700",
   Rejected: "bg-red-50 text-red-600",
   Cancelled: "bg-red-50 text-red-600",
 };
+
+// An order's or item's status as people read it: a delivered delivery order is "Dostavljeno", not
+// "Preuzeto" (both are Completed).
+export const orderStatusLabel = (t: TFunction, status: OrderStatus, fulfilment?: FulfilmentMethod) =>
+  status === "Completed" && fulfilment === "DELIVERY" ? t("orders.statusDelivered") : t(`orderStatus.${status}`);
 
 export const CHANGE_REASONS: ChangeReason[] = ["NOT_ENOUGH_STOCK", "QUALITY", "OTHER"];
 

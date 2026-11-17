@@ -380,7 +380,7 @@ export const refundForProduct = async (
 
   const ordered = await client.query(
     `SELECT 1 FROM order_items
-     WHERE order_items.product_id = $1 AND order_items.status IN ('Pending', 'Confirmed', 'Completed')
+     WHERE order_items.product_id = $1 AND order_items.status IN ('Pending', 'Confirmed', 'InDelivery', 'Completed')
      LIMIT 1`,
     [productId],
   );

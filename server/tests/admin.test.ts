@@ -751,7 +751,7 @@ describe("Admin", () => {
         const before = await orderStatus(order);
         const response = await admin.post(`/api/admin/orders/${order}/cancel`).send({ reason: "Test" });
         expect(response.status).toBe(400);
-        expect(response.body.error).toBe("Only pending or accepted orders can be cancelled.");
+        expect(response.body.error).toBe("Only pending, accepted or in-delivery orders can be cancelled.");
         expect(await orderStatus(order)).toBe(before);
       }
       const missing = await admin.post("/api/admin/orders/999999/cancel").send({ reason: "Test" });
@@ -768,7 +768,7 @@ describe("Admin", () => {
       const { stats } = response.body;
       expect(stats.users.admins).toBeGreaterThanOrEqual(1);
       expect(typeof stats.products.active).toBe("number");
-      expect(Object.keys(stats.orders)).toEqual(["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"]);
+      expect(Object.keys(stats.orders)).toEqual(["Pending", "Confirmed", "InDelivery", "Completed", "Rejected", "Cancelled"]);
       expect(typeof stats.saved.kg).toBe("number");
       expect(typeof stats.donations.available).toBe("number");
     });

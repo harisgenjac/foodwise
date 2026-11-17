@@ -215,7 +215,7 @@ describe("order lists", () => {
       expect(response.body.summary).toEqual({
         total: 7,
         active: 3,
-        counts: { Pending: 2, Confirmed: 1, Completed: 0, Rejected: 1, Cancelled: 3 },
+        counts: { Pending: 2, Confirmed: 1, InDelivery: 0, Completed: 0, Rejected: 1, Cancelled: 3 },
       });
 
       for (const status of ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"]) {

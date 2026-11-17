@@ -531,6 +531,7 @@
   "orderStatus": {
     "Pending": "Pending",
     "Confirmed": "Confirmed",
+    "InDelivery": "With the courier",
     "Completed": "Picked up",
     "Rejected": "Rejected",
     "Cancelled": "Cancelled"
@@ -677,7 +678,11 @@
       "noResultsTitle": "No results",
       "noResultsSubtitle": "No pickup matches your search."
     },
-    "courierCollects": "Courier collects"
+    "courierCollects": "Courier collects",
+    "courierPickedUpAt": "Courier picked up {{date}}",
+    "deliveredAt": "Delivered {{date}}",
+    "onTheWay": "Picked up by the courier, on the way",
+    "deliveryFailedOnTheWay": "Delivery failed after the pickup"
   },
   "reports": {
     "title": "Reports",
@@ -1167,6 +1172,7 @@
       "cancel": "Cancel",
       "cancelTitle": "Cancel this order?",
       "cancelTextPending": "Order {{code}} to {{store}} is cancelled. The store and the restaurant are notified with the reason.",
+      "cancelTextInDelivery": "Order {{code}} from {{store}}, which the courier has taken, is cancelled. Its quantities do not go back on offer, because the goods have left the store. The store and the restaurant are notified with the reason.",
       "cancelTextConfirmed": "The accepted order {{code}} to {{store}} is cancelled and its quantities go back on offer. The store and the restaurant are notified with the reason.",
       "cancelled": "The order was cancelled.",
       "emptyTitle": "No orders yet",
@@ -1779,6 +1785,7 @@
   },
   "orders": {
     "title": "Order {{code}}",
+    "statusDelivered": "Delivered",
     "myTitle": "My orders",
     "mySubtitle": "Follow your orders, the stores' answers and the pickup times.",
     "storeTitle": "Orders",

@@ -306,7 +306,7 @@ describe("order lists and details", () => {
     expect(summary.body.summary).toEqual({
       total: 2,
       active: 1,
-      counts: { Pending: 1, Confirmed: 0, Completed: 0, Rejected: 0, Cancelled: 1 },
+      counts: { Pending: 1, Confirmed: 0, InDelivery: 0, Completed: 0, Rejected: 0, Cancelled: 1 },
     });
   });
 
@@ -466,6 +466,7 @@ describe("order codes and statuses", () => {
     expect(deriveOrderStatus(["Pending", "Confirmed"])).toBe("Pending");
     expect(deriveOrderStatus(["Confirmed", "Rejected"])).toBe("Confirmed");
     expect(deriveOrderStatus(["Completed", "Rejected", "Cancelled"])).toBe("Completed");
+    expect(deriveOrderStatus(["InDelivery", "Rejected"])).toBe("InDelivery");
     expect(deriveOrderStatus(["Rejected", "Cancelled"])).toBe("Rejected");
     expect(deriveOrderStatus(["Cancelled", "Cancelled"])).toBe("Cancelled");
   });

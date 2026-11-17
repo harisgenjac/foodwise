@@ -7,7 +7,7 @@ import { emptyCart, open, reload, toast } from "../support/ui.js";
 // with the price and the arrival, sending without a pickup time, and the delivery on the order
 // page; the store accepts it with a ready time, which books the delivery with its final price. Both seeded businesses are in Visoko and get a pin there for the test (removed again in
 // afterEach, also when the test fails). The order is closed there too (withdrawn while Pending,
-// picked up by the mock courier once accepted): the seeded restaurant is shared, and orders left Pending count
+// delivered by the mock courier once accepted): the seeded restaurant is shared, and orders left Pending count
 // towards its limit of 10. Runs on desktop Chrome and on the
 // iPhone project.
 test.use({ storageState: storageState("restaurant") });
@@ -41,9 +41,10 @@ test.afterEach(async () => {
   if (sentOrderId !== null) {
     const api = await apiAs(accepted ? "store" : "restaurant");
     if (accepted) {
-      // A delivery order is completed by the courier's pickup, never by the store.
+      // A delivery order is completed by the courier's delivery, never by the store.
       await simulateCourier(api, sentOrderId, "courier_assigned");
       await simulateCourier(api, sentOrderId, "picked_up");
+      await simulateCourier(api, sentOrderId, "delivered");
     } else {
       await cancelOrder(api, sentOrderId);
     }

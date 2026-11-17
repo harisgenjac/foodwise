@@ -620,7 +620,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
         .json({ error: "You are not allowed to delete this product." });
     }
     const activeOrderItems = await client.query(
-      "SELECT order_items.id FROM order_items WHERE order_items.product_id = $1 AND order_items.status IN ('Pending', 'Confirmed')",
+      "SELECT order_items.id FROM order_items WHERE order_items.product_id = $1 AND order_items.status IN ('Pending', 'Confirmed', 'InDelivery')",
       [productId],
     );
 

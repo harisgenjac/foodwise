@@ -8,7 +8,7 @@ import type { DeliveryEventType, SignedWebhook } from "../src/delivery/types.js"
 import { type Agent, cityId, cleanupUsers, createProduct, futureDate, registerAndLogin, userId } from "./helpers.js";
 
 // Delivery phase 2, webhooks and statuses: the provider's signed events move the delivery on
-// (the courier's pickup completes the order), "delivered" and "failed" notify both sides, and
+// (the courier's pickup makes the order InDelivery, the delivery completes it), "delivered" and "failed" notify both sides, and
 // after a failure before the pickup the restaurant switches to pickup or cancels.
 const STORE = "delivery-webhooks-store@test.com";
 const RESTAURANT = "delivery-webhooks-restaurant@test.com";
@@ -106,7 +106,7 @@ describe("POST /api/delivery/webhooks/:provider", () => {
     expect(other.body.error).toBe("Unknown delivery provider.");
   });
 
-  it("follows the courier: assigned, picked up (the order is completed), delivered", async () => {
+  it("follows the courier: assigned, picked up (in delivery), delivered (completed)", async () => {
     const { orderId, deliveryId } = await acceptedDelivery();
 
     const assigned = await courier(deliveryId, "delivery.courier_assigned");
@@ -118,18 +118,27 @@ describe("POST /api/delivery/webhooks/:provider", () => {
 
     await courier(deliveryId, "delivery.picked_up");
     order = await orderOf(orderId);
-    expect(order.status).toBe("Completed");
+    expect(order.status).toBe("InDelivery");
     expect(order.picked_up_at).not.toBeNull();
     expect(order.delivery.status).toBe("PICKED_UP");
     expect(order.delivery.picked_up_at).not.toBeNull();
-    expect(order.items[0].status).toBe("Completed");
-    expect(order.history.at(-1)).toMatchObject({ from_status: "Confirmed", to_status: "Completed", source: "PROVIDER" });
+    expect(order.items[0].status).toBe("InDelivery");
+    expect(order.history.at(-1)).toMatchObject({ from_status: "Confirmed", to_status: "InDelivery", source: "PROVIDER" });
+    // Still the restaurant's open order, already the store's history.
+    const restaurantToday = await restaurant.get("/api/orders/pickups?scope=today");
+    expect(restaurantToday.body.orders.map((o: { id: number }) => o.id)).toContain(orderId);
+    const storeHistory = await store.get("/api/orders/pickups?scope=completed");
+    expect(storeHistory.body.orders.map((o: { id: number }) => o.id)).toContain(orderId);
+    expect((await restaurant.get("/api/orders/mine?scope=active")).body.orders.map((o: { id: number }) => o.id)).toContain(orderId);
+    expect((await restaurant.get("/api/orders/mine/summary")).body.summary).toMatchObject({ active: 1, counts: { InDelivery: 1 } });
     // The pickup itself is not a notification.
     expect(await notificationTypes(restaurantId)).toEqual(["ORDER_ACCEPTED"]);
 
     await courier(deliveryId, "delivery.delivered");
     order = await orderOf(orderId);
     expect(order.status).toBe("Completed");
+    expect(order.items[0].status).toBe("Completed");
+    expect(order.history.at(-1)).toMatchObject({ from_status: "InDelivery", to_status: "Completed", source: "PROVIDER" });
     expect(order.delivery.status).toBe("DELIVERED");
     expect(order.delivery.delivered_at).not.toBeNull();
     expect(await notificationTypes(restaurantId)).toEqual(["ORDER_ACCEPTED", "DELIVERY_DELIVERED"]);
@@ -169,19 +178,38 @@ describe("POST /api/delivery/webhooks/:provider", () => {
     expect(response.body.outcome).toBe("UNKNOWN_DELIVERY");
   });
 
-  it("a failure after the pickup notifies both sides and keeps the order completed", async () => {
+  it("a failure after the pickup notifies both sides and keeps the order in delivery", async () => {
     const { orderId, deliveryId } = await acceptedDelivery();
     await courier(deliveryId, "delivery.courier_assigned");
     await courier(deliveryId, "delivery.picked_up");
     await courier(deliveryId, "delivery.failed");
     const order = await orderOf(orderId);
-    expect(order.status).toBe("Completed");
+    expect(order.status).toBe("InDelivery");
     expect(order.delivery).toMatchObject({ status: "FAILED", failure_reason: "Courier could not reach the store." });
     expect(await notificationTypes(restaurantId)).toEqual(["ORDER_ACCEPTED", "DELIVERY_FAILED_AFTER_PICKUP"]);
     expect(await notificationTypes(storeId)).toContain("DELIVERY_FAILED_AFTER_PICKUP");
     // The restaurant has nothing to choose any more.
     const switched = await restaurant.post(`/api/orders/${orderId}/switch-to-pickup`).send({ pickup_at: `${futureDate(1)}T10:00:00` });
     expect(switched.status).toBe(400);
+  });
+
+  it("an admin closes an order the courier took but did not deliver, without putting it back on offer", async () => {
+    const { orderId, productId, deliveryId } = await acceptedDelivery();
+    await courier(deliveryId, "delivery.courier_assigned");
+    await courier(deliveryId, "delivery.picked_up");
+    await courier(deliveryId, "delivery.failed");
+    const before = await restaurant.get(`/api/products/${productId}`);
+    expect(Number(before.body.product.available_quantity)).toBe(8);
+
+    const admin = await registerAndLogin(ADMIN, "ADMIN");
+    const response = await admin.post(`/api/admin/orders/${orderId}/cancel`).send({ reason: "Roba izgubljena" });
+    expect(response.status).toBe(200);
+
+    const order = await orderOf(orderId);
+    expect(order.status).toBe("Cancelled");
+    const after = await restaurant.get(`/api/products/${productId}`);
+    expect(Number(after.body.product.available_quantity)).toBe(8);
+    expect(Number(after.body.product.quantity)).toBe(8);
   });
 });
 
@@ -282,7 +310,7 @@ describe("delivery orders and the store's pickup actions", () => {
     const { orderId } = await acceptedDelivery();
     const response = await store.post(`/api/orders/${orderId}/complete`);
     expect(response.status).toBe(400);
-    expect(response.body.error).toBe("A delivery order is completed when the courier picks it up.");
+    expect(response.body.error).toBe("A delivery order is completed when the courier delivers it.");
 
     await pool.query("UPDATE orders SET pickup_at = pickup_at - INTERVAL '2 days' WHERE id = $1", [orderId]);
     expect((await orderOf(orderId)).is_overdue).toBe(false);
@@ -309,7 +337,7 @@ describe("POST /api/delivery/mock/orders/:id/simulate", () => {
     expect(assigned.body.order.delivery.status).toBe("COURIER_ASSIGNED");
 
     const pickedUp = await restaurant.post(`/api/delivery/mock/orders/${orderId}/simulate`).send({ event: "picked_up" });
-    expect(pickedUp.body.order.status).toBe("Completed");
+    expect(pickedUp.body.order.status).toBe("InDelivery");
 
     const again = await restaurant.post(`/api/delivery/mock/orders/${orderId}/simulate`).send({ event: "courier_assigned" });
     expect(again.status).toBe(409);

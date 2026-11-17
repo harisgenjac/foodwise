@@ -30,7 +30,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       const orders = await pool.query(
         `SELECT
            COUNT(*) FILTER (WHERE orders.status = 'Pending') AS pending_orders,
-           COUNT(*) FILTER (WHERE orders.status IN ('Confirmed', 'Completed')) AS successful_orders
+           COUNT(*) FILTER (WHERE orders.status IN ('Confirmed', 'InDelivery', 'Completed')) AS successful_orders
          FROM orders
          WHERE orders.store_id = $1`,
         [userId],
@@ -57,7 +57,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     const orders = await pool.query(
       `SELECT
          COUNT(*) FILTER (WHERE orders.status = 'Pending') AS pending_orders,
-         COUNT(*) FILTER (WHERE orders.status IN ('Confirmed', 'Completed')) AS successful_orders
+         COUNT(*) FILTER (WHERE orders.status IN ('Confirmed', 'InDelivery', 'Completed')) AS successful_orders
        FROM orders
        WHERE orders.restaurant_id = $1`,
       [userId],

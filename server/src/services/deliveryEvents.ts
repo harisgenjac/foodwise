@@ -7,12 +7,13 @@ import { lockOrder, moveItems, syncOrderStatus } from "./orders/status.js";
 
 // The provider's status webhooks (delivery phase 2, docs/delivery-api.yaml "deliveryEvent"):
 // - courier assigned: the courier's name and phone are kept;
-// - picked up: the courier has the goods, which completes the order (source PROVIDER, no
+// - picked up: the courier has the goods, the order becomes InDelivery (source PROVIDER, no
 //   notification: the order page shows it);
-// - delivered: both sides get DELIVERY_DELIVERED (a missed "picked up" is applied first);
+// - delivered: the order becomes Completed and both sides get DELIVERY_DELIVERED (a missed
+//   "picked up" is applied first);
 // - failed: before the pickup both sides get DELIVERY_FAILED and the order stays Confirmed until
 //   the restaurant switches to pickup or cancels; after the pickup DELIVERY_FAILED_AFTER_PICKUP and
-//   the order stays Completed (the goods left the store);
+//   the order stays InDelivery (the goods left the store) until an admin cancels it;
 // - cancelled by the provider (only before the pickup): like a failure before the pickup.
 // Every event is stored in delivery_events in the same transaction, so a repeated event_id is
 // ignored, and an event that would move the delivery backwards (out of order, or after it
@@ -62,9 +63,16 @@ const markPickedUp = async (client: PoolClient, order: OrderRow, delivery: Deliv
     event.occurred_at,
   ]);
   if (order.status !== "Confirmed" || order.fulfilment_method !== "DELIVERY") return;
-  await moveItems(client, order.id, ["Confirmed"], "Completed", { pickedUp: true });
+  // picked_up_at: when the goods left the store (the reports and the store's pickup history).
+  await moveItems(client, order.id, ["Confirmed"], "InDelivery", { pickedUp: true });
   await client.query("UPDATE orders SET picked_up_at = NOW() WHERE orders.id = $1", [order.id]);
   await syncOrderStatus(client, order.id, { source: "PROVIDER" });
+};
+
+// The courier delivered: the order is Completed (the statistics count it from now on).
+const markDelivered = async (client: PoolClient, orderId: number) => {
+  await moveItems(client, orderId, ["InDelivery"], "Completed");
+  await syncOrderStatus(client, orderId, { source: "PROVIDER" });
 };
 
 // Applies one event; false when it would move the delivery backwards.
@@ -96,6 +104,7 @@ const applyEvent = async (
         delivery.id,
         event.occurred_at,
       ]);
+      await markDelivered(client, order.id);
       if (notify) await notifyBoth(client, order, "DELIVERY_DELIVERED", `Order ${code} was delivered.`);
       return true;
     case "delivery.failed": {

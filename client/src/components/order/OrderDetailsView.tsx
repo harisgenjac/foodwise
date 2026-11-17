@@ -30,6 +30,7 @@ import {
   isReduced,
   lineTotal,
   ORDER_STATUS_STYLES,
+  orderStatusLabel,
   orderedLineTotal,
 } from "../../utils/orders.js";
 import type { OrderDetails, OrderParty } from "../../types/index.js";
@@ -65,7 +66,6 @@ const sectionTitle = (Icon: typeof Store, title: string) => (
 // parties and the history (the order page of both parties and the admin's order page).
 function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
   const { t } = useTranslation();
-  const statuses = t("orderStatus", { returnObjects: true }) as Record<string, string>;
   const isAdmin = viewer === "ADMIN";
   const code = formatOrderCode(order.code);
   const totalChanged = Math.round(Number(order.total) * 100) !== Math.round(Number(order.ordered_total) * 100);
@@ -79,7 +79,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
   const deliveryClosed = delivery?.status === "FAILED" || delivery?.status === "CANCELLED";
 
   const historyText = (entry: OrderDetails["history"][number]) => {
-    const status = statuses[entry.to_status] || entry.to_status;
+    const status = orderStatusLabel(t, entry.to_status, order.fulfilment_method);
     const who = t(`orders.history.sources.${entry.source}`);
     if (entry.item_id === null) {
       return entry.from_status === null ? t("orders.history.created", { who }) : t("orders.history.order", { status, who });
@@ -148,7 +148,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
             <div className="min-w-0">
             <div className="mb-2 flex flex-wrap gap-2">
               <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${ORDER_STATUS_STYLES[order.status]}`}>
-                {statuses[order.status] || order.status}
+                {orderStatusLabel(t, order.status, order.fulfilment_method)}
               </span>
               {order.is_partial && (
                 <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
@@ -263,7 +263,11 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
             value={order.accept_partial ? t("orders.partialOn") : t("orders.partialOff")}
           />
           {order.picked_up_at && (
-            <DetailItem icon={PackageCheck} label={t("pickups.tabs.completed")} value={formatDateTime(order.picked_up_at)} />
+            <DetailItem
+              icon={PackageCheck}
+              label={order.fulfilment_method === "DELIVERY" ? t("orderStatus.InDelivery") : t("pickups.tabs.completed")}
+              value={formatDateTime(order.picked_up_at)}
+            />
           )}
         </dl>
 
@@ -313,7 +317,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
                     <td className="py-3 pr-3 whitespace-nowrap text-gray-700">{formatMoney(item.unit_price)}</td>
                     <td className="py-3 pr-3">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${ORDER_STATUS_STYLES[item.status]}`}>
-                        {statuses[item.status] || item.status}
+                        {orderStatusLabel(t, item.status, order.fulfilment_method)}
                       </span>
                     </td>
                     <td className="py-3 text-right whitespace-nowrap font-semibold tabular-nums text-gray-900">
