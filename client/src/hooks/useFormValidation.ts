@@ -27,7 +27,8 @@ export function useFormValidation<F extends string>(errors: FieldErrors<F>) {
   }, [focusRequest]);
 
   const errorFor = (field: F) => {
-    const key = errors[field];
+    // A plain string: i18next 27 cannot check a key typed through the generic field map.
+    const key: string | undefined = errors[field];
     return key && (submitted || touched[field]) ? t(key) : undefined;
   };
 
