@@ -143,8 +143,33 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
       intro: [
         `Za narudžbu ${v.code} dostavna služba nije mogla organizovati dostavu (${failureText(d, "bs")}).`,
         d.recipientRole === "STORE"
-          ? "Narudžba ostaje prihvaćena, ali kurir neće doći. Dogovorite preuzimanje s restoranom."
-          : `Narudžba ostaje prihvaćena. Dogovorite preuzimanje s prodavnicom ${v.store}.`,
+          ? "Narudžba ostaje prihvaćena, ali kurir neće doći. Restoran bira da li će narudžbu preuzeti sam ili je otkazati."
+          : `Narudžba ostaje prihvaćena. U aplikaciji odaberite da li ćete je preuzeti sami u prodavnici ${v.store} ili je otkazati.`,
+      ],
+    }),
+    DELIVERY_FAILED_AFTER_PICKUP: (v) => ({
+      subject: `Dostava narudžbe ${v.code} nije uspjela`,
+      heading: "Dostava nije uspjela",
+      intro: [
+        `Kurir je preuzeo narudžbu ${v.code}, ali je nije mogao dostaviti.`,
+        "Za robu i novac se obratite dostavnoj službi ili administratoru platforme.",
+      ],
+    }),
+    DELIVERY_DELIVERED: (v) => ({
+      subject: `Narudžba ${v.code} je dostavljena`,
+      heading: "Narudžba je dostavljena",
+      intro: [`Kurir je dostavio narudžbu ${v.code}.`],
+    }),
+    ORDER_SWITCHED_TO_PICKUP: (v) => ({
+      subject: `Narudžba ${v.code} se preuzima lično`,
+      heading: "Preuzimanje umjesto dostave",
+      intro: [`Dostava narudžbe ${v.code} nije uspjela, pa će je restoran ${v.restaurant} preuzeti sam.`],
+    }),
+    ORDER_CANCELLED_DELIVERY_FAILED: (v) => ({
+      subject: `Narudžba ${v.code} je otkazana`,
+      heading: "Narudžba je otkazana",
+      intro: [
+        `Dostava narudžbe ${v.code} nije uspjela, pa ju je restoran ${v.restaurant} otkazao. Proizvodi su vraćeni u ponudu.`,
       ],
     }),
     ORDER_CANCELLED_STORE_CLOSED: (v) => ({
@@ -398,8 +423,33 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
       intro: [
         `The delivery service could not arrange the delivery of order ${v.code} (${failureText(d, "en")}).`,
         d.recipientRole === "STORE"
-          ? "The order stays accepted, but no courier is coming. Agree on a pickup with the restaurant."
-          : `The order stays accepted. Agree on a pickup with ${v.store}.`,
+          ? "The order stays accepted, but no courier is coming. The restaurant chooses to pick it up itself or to cancel it."
+          : `The order stays accepted. Choose in the app whether to pick it up yourself at ${v.store} or to cancel it.`,
+      ],
+    }),
+    DELIVERY_FAILED_AFTER_PICKUP: (v) => ({
+      subject: `Delivery of order ${v.code} failed`,
+      heading: "Delivery failed",
+      intro: [
+        `The courier picked up order ${v.code} but could not deliver it.`,
+        "Contact the delivery service or the platform administrator about the goods and the payment.",
+      ],
+    }),
+    DELIVERY_DELIVERED: (v) => ({
+      subject: `Order ${v.code} was delivered`,
+      heading: "Order delivered",
+      intro: [`The courier delivered order ${v.code}.`],
+    }),
+    ORDER_SWITCHED_TO_PICKUP: (v) => ({
+      subject: `Order ${v.code} will be picked up`,
+      heading: "Pickup instead of delivery",
+      intro: [`The delivery of order ${v.code} failed, so ${v.restaurant} will pick it up itself.`],
+    }),
+    ORDER_CANCELLED_DELIVERY_FAILED: (v) => ({
+      subject: `Order ${v.code} was cancelled`,
+      heading: "Order cancelled",
+      intro: [
+        `The delivery of order ${v.code} failed, so ${v.restaurant} cancelled it. The products are back on offer.`,
       ],
     }),
     ORDER_CANCELLED_STORE_CLOSED: (v) => ({

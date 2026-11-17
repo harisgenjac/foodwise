@@ -189,5 +189,93 @@ describe("OrderDetailsPage delivery", () => {
     ).toBeInTheDocument();
     // Without a price, the estimate from the cart.
     expect(screen.getByText(t("orders.delivery.fee"))).toBeInTheDocument();
+    // The store waits for the restaurant's choice and cannot hand the order over.
+    expect(screen.getByText(t("orders.deliveryFailed.storeWaiting"))).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t("pickups.completeButton") })).not.toBeInTheDocument();
+  });
+
+  const booked = {
+    status: "COURIER_ASSIGNED",
+    price: "9.40",
+    cash_to_collect: "61.90",
+    estimated_pickup_at: "2026-11-16T12:05:00.000Z",
+    estimated_delivery_at: "2026-11-16T12:36:00.000Z",
+    courier_name: "Mock Kurir",
+    courier_phone: "+38761000000",
+    tracking_url: null,
+    failure_reason: null,
+    picked_up_at: null,
+    delivered_at: null,
+  } as const;
+
+  it("shows the courier, and the store has no pickup button for a delivery", async () => {
+    renderPage(STORE, delivered(booked));
+    expect(await screen.findByText(t("orders.delivery.status.COURIER_ASSIGNED"))).toBeInTheDocument();
+    expect(screen.getByText("Mock Kurir")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "+38761000000" })).toHaveAttribute("href", "tel:+38761000000");
+    expect(screen.queryByRole("button", { name: t("pickups.completeButton") })).not.toBeInTheDocument();
+  });
+
+  it("plays the mock courier in development", async () => {
+    apiMock.post.mockResolvedValue({ data: { message: "Courier step simulated." } });
+    renderPage(STORE, delivered(booked));
+    const panel = await screen.findByTestId("mock-courier");
+    expect(within(panel).queryByRole("button", { name: t("orders.mockCourier.steps.courier_assigned") })).not.toBeInTheDocument();
+    await userEvent.click(within(panel).getByRole("button", { name: t("orders.mockCourier.steps.picked_up") }));
+    expect(apiMock.post).toHaveBeenCalledWith("/delivery/mock/orders/8/simulate", { event: "picked_up" });
+  });
+
+  describe("after a failed delivery", () => {
+    const failed = () =>
+      ({
+        ...delivered({ ...booked, status: "FAILED", failure_reason: "Courier could not reach the store." }),
+        items: PARTIAL.items.map((item) => ({ ...item, expiry_date: "2030-01-10" })),
+      }) as OrderDetails;
+
+    it("says the courier failed", async () => {
+      renderPage(RESTAURANT, failed());
+      expect(
+        await screen.findByText(t("orders.delivery.failed", { reason: t("orders.delivery.failure.courier") })),
+      ).toBeInTheDocument();
+      expect(screen.queryByTestId("mock-courier")).not.toBeInTheDocument();
+    });
+
+    it("lets the restaurant switch to pickup at a time it chooses", async () => {
+      apiMock.post.mockResolvedValue({ data: { message: "Order switched to pickup." } });
+      renderPage(RESTAURANT, failed());
+      const box = await screen.findByTestId("delivery-failed");
+      expect(within(box).getByText(t("orders.deliveryFailed.prompt", { store: "Market Centar" }))).toBeInTheDocument();
+      await userEvent.click(within(box).getByRole("button", { name: t("orders.deliveryFailed.pickupButton") }));
+
+      const dialog = screen.getByRole("dialog");
+      await userEvent.click(within(dialog).getByRole("button", { name: t("orders.deliveryFailed.pickupConfirm") }));
+      // Nothing is sent without a date and a time.
+      expect(apiMock.post).not.toHaveBeenCalled();
+      await userEvent.type(within(dialog).getByLabelText(t("orderForm.pickupDate")), "05/01/2030");
+      await userEvent.type(within(dialog).getByLabelText(t("orderForm.pickupTime")), "10:00");
+      await userEvent.click(within(dialog).getByRole("button", { name: t("orders.deliveryFailed.pickupConfirm") }));
+      expect(apiMock.post).toHaveBeenCalledWith("/orders/8/switch-to-pickup", { pickup_at: "2030-01-05T10:00" });
+    });
+
+    it("lets the restaurant cancel the order", async () => {
+      apiMock.post.mockResolvedValue({ data: { message: "Order cancelled." } });
+      renderPage(RESTAURANT, failed());
+      const box = await screen.findByTestId("delivery-failed");
+      await userEvent.click(within(box).getByRole("button", { name: t("orders.cancelButton") }));
+      const dialog = screen.getByRole("dialog");
+      expect(
+        within(dialog).getByText(t("orders.deliveryFailed.cancelText", { code: "#K7PM", store: "Market Centar" })),
+      ).toBeInTheDocument();
+      await userEvent.click(within(dialog).getByRole("button", { name: t("orders.cancelButton") }));
+      expect(apiMock.post).toHaveBeenCalledWith("/orders/8/cancel-failed-delivery", undefined);
+    });
+
+    it("has no choice once the courier had the goods", async () => {
+      renderPage(RESTAURANT, delivered({ ...booked, status: "FAILED", picked_up_at: "2026-11-16T12:06:00.000Z" }));
+      expect(
+        await screen.findByText(t("orders.delivery.failed", { reason: t("orders.delivery.failure.afterPickup") })),
+      ).toBeInTheDocument();
+      expect(screen.queryByTestId("delivery-failed")).not.toBeInTheDocument();
+    });
   });
 });

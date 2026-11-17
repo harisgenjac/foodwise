@@ -9,9 +9,9 @@ import { absorbShopShortage } from "../stock.js";
 export const ORDER_STATUSES = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
-// Who caused a change: the restaurant, the store, an admin, or the system (the expiry job,
-// blocking cascades, a closed branch). Phase 2 adds PROVIDER.
-export type OrderEventSource = "RESTAURANT" | "STORE" | "ADMIN" | "SYSTEM";
+// Who caused a change: the restaurant, the store, an admin, the system (the expiry job,
+// blocking cascades, a closed branch) or the delivery provider (the courier picked a delivery up).
+export type OrderEventSource = "RESTAURANT" | "STORE" | "ADMIN" | "SYSTEM" | "PROVIDER";
 
 export interface OrderEvent {
   source: OrderEventSource;
@@ -80,11 +80,16 @@ export const syncOrderStatus = async (client: PoolClient, orderId: number, event
   return updated.rows[0]!;
 };
 
+// A late pickup: a Confirmed pickup order whose whole pickup day has passed. Late logic is only for
+// pickup; a delivery order is the courier's to collect (SQL over the orders table).
+export const IS_OVERDUE =
+  "(orders.status = 'Confirmed' AND orders.fulfilment_method = 'PICKUP' AND orders.pickup_at::date < CURRENT_DATE)";
+
 // Locks one order (the first lock of every order path: orders, then products in ascending id,
-// then the store's subscription). is_overdue: Confirmed and the whole pickup day has passed.
+// then the store's subscription). is_overdue: see IS_OVERDUE.
 export const lockOrder = async (client: PoolClient, orderId: number) => {
   const result = await client.query<OrderRow & { is_overdue: boolean }>(
-    `SELECT orders.*, orders.status = 'Confirmed' AND orders.pickup_at::date < CURRENT_DATE AS is_overdue
+    `SELECT orders.*, ${IS_OVERDUE} AS is_overdue
      FROM orders WHERE orders.id = $1 FOR UPDATE`,
     [orderId],
   );

@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  cancelFailedDeliveryRoute,
   cancelOrderRoute,
   cancelOverdueOrderRoute,
   completeOrderRoute,
@@ -11,6 +12,7 @@ import {
   getOrderPickupCounts,
   getOrderPickups,
   getStoreOrders,
+  switchToPickupRoute,
 } from "../controllers/orders.controller.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
 
@@ -26,6 +28,8 @@ router.post("/:id/decision", authenticate, authorize("STORE"), decideOrderRoute)
 router.post("/:id/cancel", authenticate, authorize("RESTAURANT"), cancelOrderRoute);
 router.post("/:id/complete", authenticate, authorize("STORE"), completeOrderRoute);
 router.post("/:id/cancel-overdue", authenticate, authorize("STORE"), cancelOverdueOrderRoute);
+router.post("/:id/switch-to-pickup", authenticate, authorize("RESTAURANT"), switchToPickupRoute);
+router.post("/:id/cancel-failed-delivery", authenticate, authorize("RESTAURANT"), cancelFailedDeliveryRoute);
 router.get("/:id", authenticate, authorize("STORE", "RESTAURANT"), getOrder);
 
 export default router;

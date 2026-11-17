@@ -24,8 +24,17 @@ export type NotificationType =
   | "ORDER_CANCELLED_BY_ADMIN"
   // To the restaurant when a branch is deactivated (by its headquarters or an admin).
   | "ORDER_CANCELLED_STORE_CLOSED"
-  // To both sides of a delivery order: the delivery could not be created (or later failed).
+  // To both sides of a delivery order: the delivery could not be created, or failed (or the
+  // provider cancelled it) before the courier picked the goods up, and the restaurant then switches to
+  // pickup or cancels.
   | "DELIVERY_FAILED"
+  // To both sides: the courier picked the goods up but could not deliver them (the order stays
+  // Completed), or delivered them.
+  | "DELIVERY_FAILED_AFTER_PICKUP"
+  | "DELIVERY_DELIVERED"
+  // To the store: after a failed delivery the restaurant picks the order up itself, or cancels it.
+  | "ORDER_SWITCHED_TO_PICKUP"
+  | "ORDER_CANCELLED_DELIVERY_FAILED"
   | "PRODUCT_EXPIRED"
   | "PRODUCT_SOLD_OUT"
   | "PRODUCT_EXPIRING_SOON"

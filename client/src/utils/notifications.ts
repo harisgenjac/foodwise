@@ -36,6 +36,10 @@ export const NOTIFICATION_META: Record<NotificationType, { icon: LucideIcon; sty
   ORDER_CANCELLED_BY_ADMIN: { icon: ShieldAlert, style: "bg-gray-100 text-gray-600" },
   ORDER_CANCELLED_STORE_CLOSED: { icon: Ban, style: "bg-gray-100 text-gray-600" },
   DELIVERY_FAILED: { icon: Truck, style: "bg-red-50 text-red-600" },
+  DELIVERY_FAILED_AFTER_PICKUP: { icon: Truck, style: "bg-red-50 text-red-600" },
+  DELIVERY_DELIVERED: { icon: Truck, style: "bg-green-50 text-green-600" },
+  ORDER_SWITCHED_TO_PICKUP: { icon: Store, style: "bg-blue-50 text-blue-600" },
+  ORDER_CANCELLED_DELIVERY_FAILED: { icon: Ban, style: "bg-gray-100 text-gray-600" },
   PRODUCT_EXPIRED: { icon: CalendarX, style: "bg-red-50 text-red-600" },
   PRODUCT_SOLD_OUT: { icon: PackageCheck, style: "bg-green-50 text-green-600" },
   PRODUCT_EXPIRING_SOON: { icon: Hourglass, style: "bg-amber-50 text-amber-600" },
@@ -130,8 +134,9 @@ export const getNotificationText = (notification: Notification, t: TFunction, la
   if (notification.type === "CREDIT_RENEWAL_SKIPPED") return t("notifications.types.CREDIT_RENEWAL_SKIPPED");
   if (notification.type === "PASSWORD_CHANGED") return t("notifications.types.PASSWORD_CHANGED");
   // An order's text names it by its code and the other party; without the joined order (deleted)
-  // the English message is shown.
-  if (notification.type?.startsWith("ORDER_")) {
+  // the English message is shown. A delivery's details are the provider's code, not for people.
+  const isDelivery = notification.type?.startsWith("DELIVERY_") ?? false;
+  if (notification.type?.startsWith("ORDER_") || isDelivery) {
     const text = notification.order_code
       ? t(`notifications.types.${notification.type}`, {
           code: `#${notification.order_code}`,
@@ -140,7 +145,9 @@ export const getNotificationText = (notification: Notification, t: TFunction, la
           defaultValue: notification.message,
         })
       : notification.message;
-    return notification.details ? `${text} ${t("notifications.reason", { reason: notification.details })}` : text;
+    return notification.details && !isDelivery
+      ? `${text} ${t("notifications.reason", { reason: notification.details })}`
+      : text;
   }
   const creditKeys = notification.type ? CREDIT_TEXT_KEYS[notification.type] : undefined;
   if (creditKeys) {

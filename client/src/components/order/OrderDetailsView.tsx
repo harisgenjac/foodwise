@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
   ArrowRight,
+  Bike,
   CalendarClock,
   CalendarPlus,
   Clock,
@@ -20,6 +21,7 @@ import {
 import DetailItem from "../product/DetailItem.js";
 import {
   changeReasonText,
+  deliveryFailureKey,
   formatAmount,
   formatMoney,
   formatOrderCode,
@@ -70,6 +72,9 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
     : (viewer === "STORE" ? order.restaurant : order.store).business_name;
   // The other party's logo (the admin sees the store's).
   const partyLogo = (viewer === "STORE" ? order.restaurant : order.store).logo_url;
+  const delivery = order.delivery ?? null;
+  // No courier is coming any more (failed, or cancelled by the provider or an admin).
+  const deliveryClosed = delivery?.status === "FAILED" || delivery?.status === "CANCELLED";
 
   const historyText = (entry: OrderDetails["history"][number]) => {
     const status = statuses[entry.to_status] || entry.to_status;
@@ -175,22 +180,36 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
                 value={order.delivery_estimated_at ? formatDateTime(order.delivery_estimated_at) : "–"}
               />
               <DetailItem icon={MapPin} label={t("orders.delivery.address")} value={order.delivery_address ?? "–"} />
-              {order.delivery && (
+              {delivery && (
                 <DetailItem
                   icon={Truck}
                   label={t("orders.delivery.statusLabel")}
                   value={
-                    order.delivery.status === "FAILED"
-                      ? t("orders.delivery.failed", {
-                          reason: t(
-                            order.delivery.failure_reason === "OUT_OF_ZONE"
-                              ? "orders.delivery.failure.OUT_OF_ZONE"
-                              : "orders.delivery.failure.other",
-                          ),
-                        })
-                      : t(`orders.delivery.status.${order.delivery.status}`)
+                    deliveryClosed
+                      ? t("orders.delivery.failed", { reason: t(`orders.delivery.failure.${deliveryFailureKey(delivery)}`) })
+                      : t(`orders.delivery.status.${delivery.status}`)
+                  }
+                  valueClassName={deliveryClosed ? "text-red-700" : "text-gray-900"}
+                />
+              )}
+              {delivery?.courier_name && (
+                <DetailItem
+                  icon={Bike}
+                  label={t("orders.delivery.courier")}
+                  value={
+                    <span className="flex flex-wrap items-center gap-x-2">
+                      {delivery.courier_name}
+                      {delivery.courier_phone && (
+                        <a href={`tel:${delivery.courier_phone}`} className="font-medium text-orange-700 hover:underline">
+                          {delivery.courier_phone}
+                        </a>
+                      )}
+                    </span>
                   }
                 />
+              )}
+              {delivery?.delivered_at && (
+                <DetailItem icon={PackageCheck} label={t("orders.delivery.deliveredAt")} value={formatDateTime(delivery.delivered_at)} />
               )}
               {order.delivery?.price ? (
                 <>
@@ -211,16 +230,22 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
               {order.ready_at && (
                 <DetailItem icon={Clock} label={t("orders.delivery.readyAt")} value={formatDateTime(order.ready_at)} />
               )}
-              {order.delivery?.status !== "FAILED" && (
+              {!deliveryClosed && !delivery?.picked_up_at && (
                 <DetailItem
                   icon={CalendarClock}
-                  label={order.delivery ? t("orders.delivery.courierPickupFinal") : t("orders.delivery.courierPickup")}
+                  label={delivery ? t("orders.delivery.courierPickupFinal") : t("orders.delivery.courierPickup")}
                   value={formatDateTime(order.pickup_at)}
                 />
               )}
             </>
           ) : (
-            <DetailItem icon={CalendarClock} label={t("orders.pickup")} value={formatDateTime(order.pickup_at)} />
+            <>
+              <DetailItem icon={CalendarClock} label={t("orders.pickup")} value={formatDateTime(order.pickup_at)} />
+              {/* A delivery order the restaurant switched to pickup after the delivery failed. */}
+              {delivery && (
+                <DetailItem icon={Truck} label={t("orders.delivery.cardLabel")} value={t("orders.delivery.switchedToPickup")} />
+              )}
+            </>
           )}
           <DetailItem icon={CalendarPlus} label={t("orders.sentAt")} value={formatDateTime(order.created_at)} />
           <DetailItem

@@ -173,3 +173,41 @@ export const notifyDeliveryFailed = async (client: PoolClient, order: OrderForDe
     });
   }
 };
+
+// The delivery of an order as the order actions need it (null for a pickup order never delivered).
+export const findOrderDelivery = async (client: PoolClient, orderId: number) =>
+  (
+    await client.query<{ id: number; status: string; provider: string; provider_delivery_id: string | null; picked_up_at: string | null }>(
+      `SELECT deliveries.id, deliveries.status, deliveries.provider, deliveries.provider_delivery_id, deliveries.picked_up_at
+       FROM deliveries WHERE deliveries.order_id = $1 FOR UPDATE`,
+      [orderId],
+    )
+  ).rows[0] ?? null;
+
+// No courier is coming and the goods are still at the store: the delivery could not be created,
+// failed, or the provider cancelled it before the pickup. The restaurant then chooses to pick the
+// order up itself or to cancel it.
+export const failedBeforePickup = (delivery: Awaited<ReturnType<typeof findOrderDelivery>>) =>
+  delivery !== null && (delivery.status === "FAILED" || delivery.status === "CANCELLED") && delivery.picked_up_at === null;
+
+// An admin cancels an order whose courier may still come: the delivery is cancelled with the
+// provider first. A refusal (the courier already has the goods, or the provider is down) is logged
+// and the delivery is closed on our side all the same; the admin resolves the rest by phone.
+export const cancelOpenDelivery = async (
+  client: PoolClient,
+  orderId: number,
+  reason: string,
+  provider: DeliveryProvider = getDeliveryProvider(),
+) => {
+  const delivery = await findOrderDelivery(client, orderId);
+  if (!delivery || !["CREATED", "COURIER_ASSIGNED"].includes(delivery.status)) return;
+  try {
+    await provider.cancelDelivery(delivery.provider_delivery_id!, reason);
+  } catch (error) {
+    console.error(`Cancelling the delivery of order ${orderId} with the provider failed:`, error);
+  }
+  await client.query("UPDATE deliveries SET status = 'CANCELLED', failure_reason = $2 WHERE deliveries.id = $1", [
+    delivery.id,
+    "CANCELLED_BY_ADMIN",
+  ]);
+};

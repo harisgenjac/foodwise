@@ -317,7 +317,11 @@
       "CREDIT_TOPUP_COMPANY_APPROVED": "Centrala je proslijedila vaš zahtjev za dodatne kredite administratoru.",
       "CREDIT_TOPUP_COMPANY_REJECTED": "Centrala je odbila vaš zahtjev za dodatne kredite.",
       "PASSWORD_CHANGED": "Lozinka je promijenjena putem linka za novu lozinku. Ako to niste bili vi, odmah zatražite novu lozinku.",
-      "DELIVERY_FAILED": "Dostava narudžbe {{code}} nije moguća. Narudžba ostaje prihvaćena."
+      "DELIVERY_FAILED": "Dostava narudžbe {{code}} nije uspjela. Odaberite preuzimanje u prodavnici ili otkažite narudžbu.",
+      "DELIVERY_FAILED_AFTER_PICKUP": "Kurir je preuzeo narudžbu {{code}}, ali je nije mogao dostaviti.",
+      "DELIVERY_DELIVERED": "Narudžba {{code}} je dostavljena.",
+      "ORDER_SWITCHED_TO_PICKUP": "{{restaurant}} će narudžbu {{code}} preuzeti sam umjesto dostave.",
+      "ORDER_CANCELLED_DELIVERY_FAILED": "{{restaurant}} je otkazao narudžbu {{code}} nakon neuspjele dostave."
     },
     "reason": "Razlog: {{reason}}",
     "credits": {
@@ -691,7 +695,8 @@
       "completedSubtitle": "Kada narudžba bude preuzeta, ovdje ćete vidjeti historiju.",
       "noResultsTitle": "Nema rezultata",
       "noResultsSubtitle": "Nijedno preuzimanje ne odgovara pretrazi."
-    }
+    },
+    "courierCollects": "Preuzima kurir"
   },
   "reports": {
     "title": "Izvještaji",
@@ -1888,7 +1893,8 @@
         "RESTAURANT": "restoran",
         "STORE": "prodavnica",
         "ADMIN": "administrator",
-        "SYSTEM": "sistem"
+        "SYSTEM": "sistem",
+        "PROVIDER": "dostavna služba"
       }
     },
     "decision": {
@@ -1987,15 +1993,41 @@
         "FAILED": "Dostava nije uspjela",
         "CANCELLED": "Dostava otkazana"
       },
-      "failed": "Dostava nije moguća ({{reason}}). Dogovorite preuzimanje.",
+      "failed": "Dostava nije uspjela: {{reason}}.",
       "failure": {
         "OUT_OF_ZONE": "adresa je izvan zone dostave",
-        "other": "dostavna služba trenutno nije dostupna"
+        "other": "dostavna služba trenutno nije dostupna",
+        "courier": "kurir nije mogao preuzeti narudžbu",
+        "cancelled": "dostavna služba je otkazala dostavu",
+        "admin": "administrator je otkazao dostavu",
+        "afterPickup": "kurir je preuzeo narudžbu, ali je nije mogao dostaviti"
       },
       "finalFee": "Cijena dostave",
       "cash": "Kuriru se plaća (roba + dostava)",
       "readyAt": "Spremno za kurira",
-      "courierPickupFinal": "Kurir preuzima (okvirno)"
+      "courierPickupFinal": "Kurir preuzima (okvirno)",
+      "courier": "Kurir",
+      "deliveredAt": "Dostavljeno",
+      "switchedToPickup": "Dostava nije uspjela, narudžba se preuzima u prodavnici"
+    },
+    "deliveryFailed": {
+      "prompt": "Dostava nije uspjela i kurir neće doći. Možete narudžbu preuzeti sami u prodavnici {{store}} ili je otkazati.",
+      "pickupButton": "Preuzet ću u prodavnici",
+      "pickupTitle": "Preuzimanje umjesto dostave",
+      "pickupText": "Odaberite kada ćete preuzeti narudžbu {{code}} u prodavnici {{store}}. Robu plaćate prodavnici pri preuzimanju.",
+      "pickupConfirm": "Preuzet ću je",
+      "cancelText": "Narudžba {{code}} će biti otkazana, a proizvodi vraćeni u ponudu prodavnice {{store}}.",
+      "storeWaiting": "Dostava nije uspjela i kurir neće doći. Restoran bira da li će narudžbu preuzeti sam ili je otkazati."
+    },
+    "mockCourier": {
+      "title": "Simulacija kurira (samo za razvoj)",
+      "steps": {
+        "courier_assigned": "Kurir dodijeljen",
+        "picked_up": "Kurir preuzeo",
+        "delivered": "Dostavljeno",
+        "failed": "Dostava nije uspjela",
+        "cancelled": "Služba otkazala"
+      }
     }
   },
   "cart": {

@@ -19,6 +19,7 @@ import dashboardRoutes from './routes/dashboard.routes.js'
 import statsRoutes from './routes/stats.routes.js'
 import citiesRoutes from './routes/cities.routes.js'
 import companyRoutes from './routes/company.routes.js'
+import { deliveryDevRoutes, deliveryWebhookRoutes } from './routes/delivery.routes.js'
 import { HttpError } from "./utils/httpError.js";
 import { allowedOrigins, checkOrigin } from "./middleware/origin.middleware.js";
 import { rateLimiters } from "./middleware/rateLimit.middleware.js";
@@ -39,6 +40,8 @@ app.use(
 );
 app.use(checkOrigin);
 app.use("/api", rateLimiters.api);
+// Before express.json(): a webhook's signature covers its raw body.
+app.use("/api/delivery/webhooks", deliveryWebhookRoutes);
 app.use(express.json());
 // Express 5 leaves req.body undefined when a request has no body; controllers destructure it.
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -65,6 +68,8 @@ app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/stats', statsRoutes)
 app.use('/api/cities', citiesRoutes)
 app.use('/api/company', companyRoutes)
+// The mock courier, for development and tests; never on a deployment.
+if (process.env.NODE_ENV !== 'production') app.use('/api/delivery', deliveryDevRoutes)
 // nosniff: browsers must not treat an uploaded file as anything but its declared type.
 app.use(UPLOADS_URL_PREFIX, express.static(UPLOADS_DIR, {
   setHeaders: (res) => res.setHeader('X-Content-Type-Options', 'nosniff'),

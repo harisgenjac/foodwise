@@ -377,5 +377,18 @@
   "An error occurred while checking delivery.": "Došlo je do greške pri provjeri dostave.",
   "Delivery is not available for this order.": "Dostava nije moguća za ovu narudžbu.",
   "Choose when the order will be ready.": "Izaberite kada će narudžba biti spremna.",
-  "The ready time must be later today, before the store closes.": "Vrijeme spremnosti mora biti danas, kasnije od sada i prije zatvaranja prodavnice."
+  "The ready time must be later today, before the store closes.": "Vrijeme spremnosti mora biti danas, kasnije od sada i prije zatvaranja prodavnice.",
+  "A delivery order is completed when the courier picks it up.": "Narudžba s dostavom je završena kad je kurir preuzme.",
+  "Only an accepted order whose delivery failed can be switched to pickup.": "Na preuzimanje se može prebaciti samo prihvaćena narudžba čija dostava nije uspjela.",
+  "Only an accepted order whose delivery failed can be cancelled.": "Ovako se može otkazati samo prihvaćena narudžba čija dostava nije uspjela.",
+  "Order switched to pickup.": "Narudžba je prebačena na preuzimanje.",
+  "An error occurred while switching the order to pickup.": "Došlo je do greške pri prebacivanju narudžbe na preuzimanje.",
+  "Unknown delivery provider.": "Nepoznata dostavna služba.",
+  "Webhook received.": "Webhook je primljen.",
+  "An error occurred while processing the webhook.": "Došlo je do greške pri obradi webhooka.",
+  "This courier step is not valid.": "Ovaj korak kurira nije ispravan.",
+  "This order has no delivery to simulate.": "Ova narudžba nema dostavu za simulaciju.",
+  "Courier step simulated.": "Korak kurira je simuliran.",
+  "This courier step is not possible now.": "Ovaj korak kurira sada nije moguć.",
+  "An error occurred while simulating the courier.": "Došlo je do greške pri simulaciji kurira."
 }
