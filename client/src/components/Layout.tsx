@@ -11,6 +11,7 @@ import AccountSetupGate from './AccountSetupGate.js';
 import AnnouncementBanner from './AnnouncementBanner.js';
 import Footer from './Footer.js';
 import { NotificationsProvider } from '../context/NotificationsContext.js';
+import { LiveEventsProvider } from '../context/LiveEventsContext.js';
 import { CreditsProvider } from '../context/CreditsContext.js';
 import { CartProvider } from '../context/CartContext.js';
 import CreditBanner from './credits/CreditBanner.js';
@@ -53,7 +54,9 @@ function Layout() {
   }, [pathname]);
 
   return (
-    // A temporary password blocks every other API call, so notifications wait until it is replaced.
+    // A temporary password blocks every other API call, so live events and notifications wait until
+    // it is replaced.
+    <LiveEventsProvider enabled={!setup.needsPassword}>
     <NotificationsProvider enabled={!setup.needsPassword}>
       {/* Only stores pay credits (restaurants order for free), and only once the account is set up. */}
       <CreditsProvider enabled={user?.role === "STORE" && !setup.locked}>
@@ -93,6 +96,7 @@ function Layout() {
       </CartProvider>
       </CreditsProvider>
     </NotificationsProvider>
+    </LiveEventsProvider>
   );
 }
 

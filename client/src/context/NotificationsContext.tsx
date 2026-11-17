@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import api from "../api/axios.js";
+import { useLiveEvents } from "./LiveEventsContext.js";
 
 export type NotificationType =
   // Orders, linked by order_id (one notification per order event).
@@ -136,6 +137,12 @@ export const NotificationsProvider = ({
       window.removeEventListener("focus", fetchNotifications);
     };
   }, [fetchNotifications, enabled]);
+
+  // A new notification arrives live; the polling above stays as a fallback for a stream that
+  // cannot be kept open (a proxy that cuts it).
+  useLiveEvents((event) => {
+    if (enabled && (event.kind === "notification" || event.kind === "resync")) fetchNotifications();
+  });
 
   // The updates below are applied optimistically; on failure a toast says so and the list is reloaded from the server.
   const markAsRead = async (notification: Notification) => {

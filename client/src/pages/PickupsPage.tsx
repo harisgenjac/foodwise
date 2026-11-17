@@ -20,6 +20,7 @@ import PickupCard from "../components/pickup/PickupCard.js";
 import PickupConfirmModal from "../components/pickup/PickupConfirmModal.js";
 import { useAuth } from "../context/AuthContext.js";
 import LoadMore from "../components/LoadMore.js";
+import { useLiveOrderRefresh } from "../context/LiveEventsContext.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { usePagedLimit } from "../hooks/usePagedLimit.js";
 import { CARD_PAGE_SIZE } from "../utils/pagination.js";
@@ -81,6 +82,12 @@ function PickupsPage() {
   }, [fetchCounts]);
 
   const actions = usePickupActions(() => {
+    refetch();
+    fetchCounts();
+  });
+
+  // The other side's pickup or the courier's progress updates the list and the counts live.
+  useLiveOrderRefresh(() => {
     refetch();
     fetchCounts();
   });
