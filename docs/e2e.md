@@ -150,7 +150,7 @@ Config:
   - Use them as `getByTestId('product-card').filter({ has: getByRole('heading', { name }) })`.
 - **Waiting:**
   - Never use `waitForTimeout`. Rely on auto-waiting and web-first assertions (`toBeVisible`, `toHaveURL`, `toHaveCount`).
-  - Notifications poll every 50 s, so load the page that shows them (`goto`, `reload`) instead of waiting.
+  - Notifications and the order pages update live (`/api/events`), and notifications also poll every 50 s. A test may wait for a live change with a web-first assertion, but loading the page that shows it (`goto`, `reload`) stays the most robust.
   - The list filters (name search, radius, city) are debounced by 500 ms, and the list keeps the previous results until the new answer arrives. To check that something is absent, wait for the empty state ("Nema rezultata", see `expectNotInMarketplace`). A bare `toHaveCount(0)` can pass before the search has run.
 - **Dates:** `DateInput` fields take `dd/mm/yyyy`. Use `sarajevoDate(days)` and press Enter to commit the value. The product form's expiry has shortcut buttons ("Sutra", "Za 3 dana").
 

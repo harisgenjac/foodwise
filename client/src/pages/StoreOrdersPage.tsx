@@ -13,6 +13,7 @@ import { inputStyle } from "../components/form/FormField.js";
 import CitySelect from "../components/form/CitySelect.js";
 import PickupConfirmModal from "../components/pickup/PickupConfirmModal.js";
 import LoadMore from "../components/LoadMore.js";
+import { useLiveOrderRefresh } from "../context/LiveEventsContext.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { usePagedLimit } from "../hooks/usePagedLimit.js";
 import { CARD_PAGE_SIZE } from "../utils/pagination.js";
@@ -45,6 +46,9 @@ function StoreOrdersPage() {
   });
 
   const pickupActions = usePickupActions(refetch);
+
+  // A new order, a withdrawal or the courier's progress updates the list live.
+  useLiveOrderRefresh(refetch);
 
   const clearFilters = () => {
     setName("");

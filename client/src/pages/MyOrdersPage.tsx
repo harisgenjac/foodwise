@@ -29,6 +29,7 @@ import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
 import { inputStyle } from "../components/form/FormField.js";
 import LoadMore from "../components/LoadMore.js";
+import { useLiveOrderRefresh } from "../context/LiveEventsContext.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { usePagedLimit } from "../hooks/usePagedLimit.js";
 import { CARD_PAGE_SIZE, HISTORY_PAGE_SIZE } from "../utils/pagination.js";
@@ -121,6 +122,12 @@ function MyOrdersPage() {
   };
 
   const cancelOrder = useCancelOrder(() => {
+    refetch();
+    fetchSummary();
+  });
+
+  // A store's decision or the courier's progress updates the list and the counts live.
+  useLiveOrderRefresh(() => {
     refetch();
     fetchSummary();
   });

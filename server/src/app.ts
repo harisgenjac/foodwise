@@ -19,6 +19,7 @@ import dashboardRoutes from './routes/dashboard.routes.js'
 import statsRoutes from './routes/stats.routes.js'
 import citiesRoutes from './routes/cities.routes.js'
 import companyRoutes from './routes/company.routes.js'
+import eventsRoutes from './routes/events.routes.js'
 import { deliveryDevRoutes, deliveryWebhookRoutes } from './routes/delivery.routes.js'
 import { HttpError } from "./utils/httpError.js";
 import { allowedOrigins, checkOrigin } from "./middleware/origin.middleware.js";
@@ -68,6 +69,8 @@ app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/stats', statsRoutes)
 app.use('/api/cities', citiesRoutes)
 app.use('/api/company', companyRoutes)
+// Live updates (Server-Sent Events) for the order pages and the notification bell.
+app.use('/api/events', eventsRoutes)
 // The mock courier, for development and tests; never on a deployment.
 if (process.env.NODE_ENV !== 'production') app.use('/api/delivery', deliveryDevRoutes)
 // nosniff: browsers must not treat an uploaded file as anything but its declared type.

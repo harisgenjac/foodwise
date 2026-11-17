@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { CalendarX, Check, PackageCheck, SearchX, X } from "lucide-react";
 import api from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.js";
+import { useLiveOrderRefresh } from "../context/LiveEventsContext.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import Breadcrumbs from "../components/Breadcrumbs.js";
 import EmptyState from "../components/product/EmptyState.js";
@@ -47,6 +48,9 @@ function OrderDetailsPage() {
   const pickupActions = usePickupActions(fetchOrder);
 
   const cancelOrder = useCancelOrder(fetchOrder);
+
+  // The other side's decision, the courier's progress: the order is loaded again when it changes.
+  useLiveOrderRefresh(fetchOrder, Number(id));
 
   const listPath = isStore ? "/orders" : "/my-orders";
   const section = { label: t(isStore ? "sidebar.orders" : "sidebar.myOrders"), to: listPath };
