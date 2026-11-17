@@ -243,6 +243,11 @@ export const sendOrder = async (client: PoolClient, restaurantId: number, input:
   if (!range.rows[0]!.in_range) {
     throw new HttpError(400, "Pickup date must be between today and the products' expiry date.");
   }
+  // A pickup time that has passed would be rejected automatically at once (AUTO_REJECT_AT).
+  if (input.method === "PICKUP") {
+    const ahead = await client.query<{ ahead: boolean }>("SELECT $1::timestamp > LOCALTIMESTAMP AS ahead", [pickupAt]);
+    if (!ahead.rows[0]!.ahead) throw new HttpError(400, "Pickup time must be in the future.");
+  }
 
   const order = await insertOrder(client, {
     storeId,

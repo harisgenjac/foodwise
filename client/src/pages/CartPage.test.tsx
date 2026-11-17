@@ -125,6 +125,19 @@ describe("CartPage", () => {
     expect(apiMock.post).not.toHaveBeenCalled();
   });
 
+  it("refuses a pickup time today that has passed", async () => {
+    cart = makeCart();
+    renderPage();
+    const now = new Date();
+    const today = [now.getDate(), now.getMonth() + 1, now.getFullYear()].map((part) => String(part).padStart(2, "0")).join("/");
+    await screen.findByText(t("orderForm.pickupTime"));
+    // 00:00 today is never ahead of now.
+    await fillPickup(today, "00:00");
+    await userEvent.click(screen.getByRole("button", { name: t("orders.send.submit") }));
+    expect(await screen.findByText(t("orderForm.pickupTimePassed"))).toBeInTheDocument();
+    expect(apiMock.post).not.toHaveBeenCalled();
+  });
+
   it("sends the orderable lines with the seen prices and shows what was sent", async () => {
     cart = makeCart([
       makeCartLine({ product_id: 1, name: "Piletina", quantity: "4", unit_price_seen: "5.00" }),

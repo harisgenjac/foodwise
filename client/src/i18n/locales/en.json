@@ -192,6 +192,7 @@
     "timePlaceholder": "HH:MM",
     "invalidTime": "Enter a time as HH:MM (00:00–23:59).",
     "pickupDateOutOfRange": "The date must be between today and the expiry date.",
+    "pickupTimePassed": "This time has already passed. Choose a later time.",
     "cancelButton": "Cancel"
   },
   "filters": {
@@ -276,6 +277,7 @@
       "ORDER_ACCEPTED": "Your order {{code}} was accepted.",
       "ORDER_PARTIALLY_ACCEPTED": "Your order {{code}} was partly accepted.",
       "ORDER_REJECTED": "Your order {{code}} was rejected.",
+      "ORDER_AUTO_REJECTED": "Order {{code}} was rejected automatically because the store did not answer in time.",
       "ORDER_COMPLETED": "Pickup of order {{code}} confirmed.",
       "ORDER_PICKUP_MISSED": "Order {{code}} was cancelled because it was not picked up in time.",
       "ORDER_PICKUP_TODAY": "Reminder: pick up order {{code}} today ({{store}}).",
@@ -1963,6 +1965,11 @@
       "courier": "Courier",
       "deliveredAt": "Delivered",
       "switchedToPickup": "The delivery failed, the order is picked up at the store"
+    },
+    "autoReject": {
+      "storeDeadline": "Rejected automatically at {{time}} unless you answer",
+      "deadline": "The store has to answer by {{time}}",
+      "rejected": "Rejected automatically: the store did not answer in time"
     },
     "deliveryFailed": {
       "prompt": "The delivery failed and no courier is coming. You can pick the order up yourself at {{store}} or cancel it.",

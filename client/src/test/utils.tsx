@@ -201,6 +201,7 @@ export const makeOrder = (overrides: Partial<Order> = {}): Order => ({
   store_id: 2,
   restaurant_id: 1,
   is_overdue: false,
+  auto_reject_at: null,
   item_count: 1,
   accepted_count: 0,
   ordered_total: "10.00",

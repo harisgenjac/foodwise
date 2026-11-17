@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import type { ChangeReason, Order, OrderDelivery, OrderItem, OrderStatus, SendChange } from "../types/index.js";
+import type { ChangeReason, Order, OrderDelivery, OrderDetails, OrderItem, OrderStatus, SendChange } from "../types/index.js";
 
 // The order's short code as people see it: "#K7PM". Unique only within a store, so it is always
 // shown with the store's or the restaurant's name.
@@ -62,6 +62,12 @@ export const sendChangeText = (change: SendChange, t: TFunction) => {
   };
   return t(`orders.sendChanges.${change.kind}`, values);
 };
+
+// The job rejected the order because the store did not answer in time: the only change to
+// Rejected the system makes (expiry and cascades cancel).
+export const autoRejected = (order: Pick<OrderDetails, "status" | "history">) =>
+  order.status === "Rejected" &&
+  order.history.some((entry) => entry.item_id === null && entry.to_status === "Rejected" && entry.source === "SYSTEM");
 
 // No courier is coming and the goods are still at the store: the restaurant of an accepted
 // delivery order then picks it up itself or cancels it (POST /orders/:id/switch-to-pickup,

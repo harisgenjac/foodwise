@@ -10,7 +10,7 @@ export const ORDER_STATUSES = ["Pending", "Confirmed", "Completed", "Rejected", 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 // Who caused a change: the restaurant, the store, an admin, the system (the expiry job,
-// blocking cascades, a closed branch) or the delivery provider (the courier picked a delivery up).
+// blocking cascades, a closed branch, an automatic rejection) or the delivery provider (the courier picked a delivery up).
 export type OrderEventSource = "RESTAURANT" | "STORE" | "ADMIN" | "SYSTEM" | "PROVIDER";
 
 export interface OrderEvent {
@@ -85,11 +85,23 @@ export const syncOrderStatus = async (client: PoolClient, orderId: number, event
 export const IS_OVERDUE =
   "(orders.status = 'Confirmed' AND orders.fulfilment_method = 'PICKUP' AND orders.pickup_at::date < CURRENT_DATE)";
 
+// How long a store has to answer a delivery order (always for today, as soon as possible).
+export const DELIVERY_ANSWER_MINUTES = 15;
+
+// When a Pending order is rejected automatically if the store has not decided (local wall-clock
+// time, like created_at and pickup_at; compare with LOCALTIMESTAMP): a delivery order 15 minutes
+// after it was sent, a pickup order at the pickup time the restaurant chose (jobs/autoRejectOrders.ts).
+export const AUTO_REJECT_AT = `(CASE WHEN orders.fulfilment_method = 'DELIVERY'
+  THEN orders.created_at + INTERVAL '${DELIVERY_ANSWER_MINUTES} minutes'
+  ELSE orders.pickup_at END)`;
+
 // Locks one order (the first lock of every order path: orders, then products in ascending id,
-// then the store's subscription). is_overdue: see IS_OVERDUE.
+// then the store's subscription). is_overdue: see IS_OVERDUE; is_past_answer_deadline: a Pending
+// order's AUTO_REJECT_AT has passed.
 export const lockOrder = async (client: PoolClient, orderId: number) => {
-  const result = await client.query<OrderRow & { is_overdue: boolean }>(
-    `SELECT orders.*, ${IS_OVERDUE} AS is_overdue
+  const result = await client.query<OrderRow & { is_overdue: boolean; is_past_answer_deadline: boolean }>(
+    `SELECT orders.*, ${IS_OVERDUE} AS is_overdue,
+            (orders.status = 'Pending' AND ${AUTO_REJECT_AT} <= LOCALTIMESTAMP) AS is_past_answer_deadline
      FROM orders WHERE orders.id = $1 FOR UPDATE`,
     [orderId],
   );

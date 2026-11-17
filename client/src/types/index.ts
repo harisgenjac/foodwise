@@ -154,6 +154,9 @@ export interface Order {
   restaurant_id: number;
   // Confirmed and the pickup day is before today.
   is_overdue: boolean;
+  // While Pending: when the order is rejected automatically if the store does not answer (a delivery
+  // order 15 minutes after sending, a pickup order at its pickup time); null once decided.
+  auto_reject_at: string | null;
   item_count: number;
   accepted_count: number;
   // What the order sent, and the current amount (the accepted one after the decision).
@@ -192,7 +195,7 @@ export interface OrderHistoryEntry {
   item_id: number | null;
   from_status: OrderStatus | null;
   to_status: OrderStatus;
-  source: "RESTAURANT" | "STORE" | "ADMIN" | "SYSTEM";
+  source: "RESTAURANT" | "STORE" | "ADMIN" | "SYSTEM" | "PROVIDER";
   reason: string | null;
   created_at: string;
   product_name: string | null;

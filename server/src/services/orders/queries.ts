@@ -5,7 +5,7 @@ import { ADMIN_PAGE_SIZE, CARD_PAGE_SIZE, listPage, parsePage, parseSort } from 
 import { parseCityFilter } from "../../utils/cities.js";
 import { parseOrderCode } from "./codes.js";
 import { storeLogo } from "../../utils/branding.js";
-import { IS_OVERDUE, ORDER_STATUSES } from "./status.js";
+import { AUTO_REJECT_AT, IS_OVERDUE, ORDER_STATUSES } from "./status.js";
 
 // The order lists and details of /api/orders: the order lists (filters, sorts, scopes,
 // paging) over orders. A list row is the order with its items and totals:
@@ -54,6 +54,7 @@ const ORDER_COLUMNS = `
     orders.decided_at, orders.picked_up_at, orders.created_at, orders.updated_at,
     orders.store_id, orders.restaurant_id,
     ${IS_OVERDUE} AS is_overdue,
+    CASE WHEN orders.status = 'Pending' THEN ${AUTO_REJECT_AT} END AS auto_reject_at,
     lines.item_count::int AS item_count, lines.accepted_count::int AS accepted_count,
     lines.ordered_total::text AS ordered_total, lines.current_total::text AS total,
     orders.status IN ('Confirmed', 'Completed') AND lines.has_changes AS is_partial,

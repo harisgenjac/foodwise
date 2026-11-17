@@ -46,6 +46,13 @@ interface CheckoutPanelProps {
 // that can be ordered) or delivery (today, as soon as possible, with the provider's estimate),
 // "Accept partial fulfilment" and sending. Every available line goes with
 // the price the restaurant saw; the server sends what it can (docs/orders-design.md, section 5).
+// The local time now as HH:MM (a pickup today must be later: the store answers by then, or the
+// order is rejected automatically).
+const currentTime = () => {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+};
+
 function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
   const { t } = useTranslation();
   // YYYY-MM-DD, and the time text (masked as HH:MM while typing, completed on blur).
@@ -76,9 +83,11 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
       ? undefined
       : isBlank(pickupTime)
         ? REQUIRED
-        : parsedTime
-          ? undefined
-          : "orderForm.invalidTime",
+        : !parsedTime
+          ? "orderForm.invalidTime"
+          : pickupDate === minPickup && parsedTime <= currentTime()
+            ? "orderForm.pickupTimePassed"
+            : undefined,
   });
   // The limit is shown once it is close (design: from 8 of 10 on).
   const showPending = cart.pending_orders >= cart.max_pending_orders - 2;

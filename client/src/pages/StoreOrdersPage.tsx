@@ -152,6 +152,7 @@ function StoreOrdersPage() {
               key={order.id}
               order={order}
               partyLabel={t("orders.buyer")}
+              viewer="STORE"
               actions={
                 order.status === "Pending" ? (
                   <>

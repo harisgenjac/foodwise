@@ -7,6 +7,7 @@ import { startUploadCleanupJob } from './jobs/cleanupUploads.js';
 import { EmailConfigError, loadEmailConfig, type EmailConfig } from './email/config.js';
 import { startEmailWorker } from './email/queue.js';
 import { startLiveListener } from './live/listener.js';
+import { startAutoRejectJob } from './jobs/autoRejectOrders.js';
 import { DeliveryConfigError, loadDeliveryConfig, type DeliveryConfig } from './delivery/config.js';
 
 const PORT = process.env.PORT || 3000;
@@ -45,6 +46,7 @@ startReminderJob();
 startCreditRenewalJob();
 startUploadCleanupJob();
 startEmailWorker(emailConfig);
+startAutoRejectJob();
 startLiveListener();
 
 app.listen(PORT, () => {

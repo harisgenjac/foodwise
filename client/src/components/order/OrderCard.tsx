@@ -7,6 +7,7 @@ import OrderItemThumbnails from "./OrderItemThumbnails.js";
 import { formatRelativeTime } from "../../utils/notifications.js";
 import { formatMoney, formatOrderCode, itemsSummary, ORDER_STATUS_STYLES } from "../../utils/orders.js";
 import StoreNameLink from "../store/StoreNameLink.js";
+import AnswerDeadline from "./AnswerDeadline.js";
 import type { Order } from "../../types/index.js";
 
 interface OrderCardProps {
@@ -19,10 +20,13 @@ interface OrderCardProps {
   showCreatedAt?: boolean;
   // Links the store name to its profile; restaurant side only, and not on that store's own page.
   linkStore?: boolean;
+  // Whose list it is: a Pending order tells the store when it is rejected automatically, and the
+  // restaurant until when the store can answer.
+  viewer?: "STORE" | "RESTAURANT";
 }
 
 // One order on a list or dashboard: its code, products, the other party, total and pickup.
-function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = false }: OrderCardProps) {
+function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = false, viewer = "RESTAURANT" }: OrderCardProps) {
   const { t, i18n } = useTranslation();
   const statuses = t("orderStatus", { returnObjects: true }) as Record<string, string>;
   const code = formatOrderCode(order.code);
@@ -104,6 +108,8 @@ function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = fals
             </div>
           )}
         </dl>
+
+        <AnswerDeadline order={order} viewer={viewer} />
 
         {actions ? (
           <div className="mt-auto flex gap-2">{actions}</div>
