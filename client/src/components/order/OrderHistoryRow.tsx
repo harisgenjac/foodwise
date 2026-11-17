@@ -2,14 +2,13 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronRight } from "lucide-react";
 import OrderImage from "./OrderImage.js";
-import { formatMoney, formatOrderCode, itemsSummary, ORDER_STATUS_STYLES } from "../../utils/orders.js";
+import { formatMoney, formatOrderCode, itemsSummary, ORDER_STATUS_STYLES, orderStatusLabel } from "../../utils/orders.js";
 import type { Order } from "../../types/index.js";
 
 // One compact row of the restaurant's order history; the whole row opens the order.
 // On phones it stacks into two lines (code, products and store, then time, total and status).
 function OrderHistoryRow({ order }: { order: Order }) {
   const { t, i18n } = useTranslation();
-  const statuses = t("orderStatus", { returnObjects: true }) as Record<string, string>;
   const time = new Date(order.created_at).toLocaleTimeString(i18n.language, {
     hour: "2-digit",
     minute: "2-digit",
@@ -40,7 +39,7 @@ function OrderHistoryRow({ order }: { order: Order }) {
         </time>
         <span className="font-semibold text-gray-800 tabular-nums">{formatMoney(order.total)}</span>
         <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${ORDER_STATUS_STYLES[order.status]}`}>
-          {statuses[order.status] || order.status}
+          {orderStatusLabel(t, order.status, order.fulfilment_method)}
         </span>
         {order.is_partial && (
           <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">

@@ -154,7 +154,8 @@ export const completeOrder = async (api: APIRequestContext, orderId: number) =>
   ok(await api.post(`/api/orders/${orderId}/complete`));
 
 // Plays the mock courier for an accepted delivery order (the server's dev-only route, which the
-// e2e server has: it does not run in production). The courier's pickup completes the order.
+// e2e server has: it does not run in production). The pickup makes the order InDelivery, the
+// delivery completes it.
 export const simulateCourier = async (
   api: APIRequestContext,
   orderId: number,

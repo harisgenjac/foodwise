@@ -31,6 +31,7 @@ import type { AdminStats } from "../../types/index.js";
 const ORDER_COLORS = {
   Confirmed: "bg-green-600",
   Completed: "bg-blue-600",
+  InDelivery: "bg-indigo-400",
   Pending: "bg-amber-600",
   Cancelled: "bg-slate-500",
   Rejected: "bg-red-600",

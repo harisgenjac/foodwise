@@ -36,7 +36,12 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
-  const isCompleted = order.status === "Completed";
+  const isDelivery = order.fulfilment_method === "DELIVERY";
+  const inDelivery = order.status === "InDelivery";
+  // The goods left the store: picked up, delivered, or (for the store) taken by the courier.
+  const isCompleted = order.status === "Completed" || (isStore && inDelivery);
+  const deliveredAt = new Date(order.delivery?.delivered_at ?? order.updated_at);
+  const failedOnTheWay = inDelivery && order.delivery?.status === "FAILED";
   const isOverdue = Boolean(order.is_overdue);
   const pickup = new Date(order.pickup_at);
   const pickedUpAt = new Date(order.picked_up_at ?? order.updated_at);
@@ -134,12 +139,27 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
         {isCompleted ? (
           <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
             <PackageCheck className="h-4 w-4" />
-            {t("pickups.pickedUpAt", {
-              date: `${shortDate(pickedUpAt)} ${pickedUpAt.toLocaleTimeString(i18n.language, timeFormat)}`,
-            })}
+            {isDelivery && !isStore && order.status === "Completed"
+              ? t("pickups.deliveredAt", {
+                  date: `${shortDate(deliveredAt)} ${deliveredAt.toLocaleTimeString(i18n.language, timeFormat)}`,
+                })
+              : t(isDelivery ? "pickups.courierPickedUpAt" : "pickups.pickedUpAt", {
+                  date: `${shortDate(pickedUpAt)} ${pickedUpAt.toLocaleTimeString(i18n.language, timeFormat)}`,
+                })}
           </span>
-        ) : order.fulfilment_method === "DELIVERY" ? (
-          // The courier collects a delivery order; its pickup completes it.
+        ) : failedOnTheWay ? (
+          // The courier had the goods and could not deliver them; an admin settles it.
+          <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+            <AlertTriangle className="h-4 w-4" />
+            {t("pickups.deliveryFailedOnTheWay")}
+          </span>
+        ) : inDelivery ? (
+          <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+            <Truck className="h-4 w-4" />
+            {t("pickups.onTheWay")}
+          </span>
+        ) : isDelivery ? (
+          // The courier collects a delivery order; its delivery completes it.
           <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
             <Truck className="h-4 w-4" />
             {t("pickups.courierCollects")}

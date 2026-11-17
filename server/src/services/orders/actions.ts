@@ -5,7 +5,7 @@ import { createNotification } from "../../utils/notifications.js";
 import { cancelOpenDelivery, failedBeforePickup, findOrderDelivery } from "../orderDelivery.js";
 import { releaseSoldProduct } from "../stock.js";
 import { formatOrderCode } from "./codes.js";
-import { lockOrder, moveItems, syncOrderStatus } from "./status.js";
+import { lockOrder, lockOrderItems, moveItems, syncOrderStatus } from "./status.js";
 
 // Actions on a whole order (docs/orders-design.md, section 2): the restaurant withdraws a Pending
 // order, the store marks a Confirmed one picked up or cancels a missed pickup, an admin cancels
@@ -41,7 +41,7 @@ export const cancelOrder = async (client: PoolClient, restaurantId: number, orde
 
 // The store hands the food over. Allowed after the pickup time or the products' expiry too: the
 // food was already promised to this restaurant. A delivery order is completed by the courier's
-// pickup (the provider's webhook), never by the store.
+// delivery (the provider's webhook), never by the store.
 export const completeOrder = async (client: PoolClient, storeId: number, orderId: number) => {
   const order = await lockOrder(client, orderId);
   if (!order || order.store_id !== storeId) throw new HttpError(404, NOT_FOUND);
@@ -49,7 +49,7 @@ export const completeOrder = async (client: PoolClient, storeId: number, orderId
     throw new HttpError(400, "Only accepted orders can be marked as picked up.");
   }
   if (order.fulfilment_method === "DELIVERY") {
-    throw new HttpError(400, "A delivery order is completed when the courier picks it up.");
+    throw new HttpError(400, "A delivery order is completed when the courier delivers it.");
   }
   await moveItems(client, order.id, ["Confirmed"], "Completed", { pickedUp: true });
   await client.query("UPDATE orders SET picked_up_at = NOW() WHERE orders.id = $1", [order.id]);
@@ -83,15 +83,26 @@ export const cancelOverdueOrder = async (client: PoolClient, storeId: number, or
   return updated;
 };
 
-// Resolves a dispute: a Pending or Confirmed order is cancelled and both sides are told why.
-// The caller logs the admin action.
+// Resolves a dispute: a Pending, Confirmed or InDelivery order is cancelled and both sides are told
+// why. The caller logs the admin action. An InDelivery order (the courier has the goods, e.g. a
+// delivery that failed after the pickup) does not put its quantity back on offer: the goods left
+// the store, so the products' quantity is lowered by what the courier took.
 export const adminCancelOrder = async (client: PoolClient, adminId: number, orderId: number, reason: string) => {
   const order = await lockOrder(client, orderId);
   if (!order) throw new HttpError(404, NOT_FOUND);
-  if (order.status !== "Pending" && order.status !== "Confirmed") {
-    throw new HttpError(400, "Only pending or accepted orders can be cancelled.");
+  if (order.status !== "Pending" && order.status !== "Confirmed" && order.status !== "InDelivery") {
+    throw new HttpError(400, "Only pending, accepted or in-delivery orders can be cancelled.");
   }
-  const moved = await moveItems(client, order.id, ["Pending", "Confirmed"], "Cancelled");
+  if (order.status === "InDelivery") {
+    const items = await lockOrderItems(client, order.id);
+    for (const item of items.filter((entry) => entry.status === "InDelivery")) {
+      await client.query("UPDATE products SET quantity = GREATEST(products.quantity - $2, 0) WHERE products.id = $1", [
+        item.product_id,
+        item.quantity,
+      ]);
+    }
+  }
+  const moved = await moveItems(client, order.id, ["Pending", "Confirmed", "InDelivery"], "Cancelled");
   if (order.status === "Confirmed") await releaseProducts(client, moved.map((item) => item.product_id));
   if (order.fulfilment_method === "DELIVERY") await cancelOpenDelivery(client, order.id, reason);
   const updated = await syncOrderStatus(client, order.id, { source: "ADMIN", actorId: adminId, reason });

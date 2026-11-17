@@ -545,6 +545,7 @@
   "orderStatus": {
     "Pending": "Na čekanju",
     "Confirmed": "Potvrđeno",
+    "InDelivery": "Kurir preuzeo",
     "Completed": "Preuzeto",
     "Rejected": "Odbijeno",
     "Cancelled": "Otkazano"
@@ -698,7 +699,11 @@
       "noResultsTitle": "Nema rezultata",
       "noResultsSubtitle": "Nijedno preuzimanje ne odgovara pretrazi."
     },
-    "courierCollects": "Preuzima kurir"
+    "courierCollects": "Preuzima kurir",
+    "courierPickedUpAt": "Kurir preuzeo {{date}}",
+    "deliveredAt": "Dostavljeno {{date}}",
+    "onTheWay": "Kurir je preuzeo, na putu",
+    "deliveryFailedOnTheWay": "Dostava nije uspjela nakon preuzimanja"
   },
   "reports": {
     "title": "Izvještaji",
@@ -1196,6 +1201,7 @@
       "cancel": "Otkaži",
       "cancelTitle": "Otkazati narudžbu?",
       "cancelTextPending": "Narudžba {{code}} prodavnici {{store}} se otkazuje. Prodavnica i restoran dobijaju obavještenje s razlogom.",
+      "cancelTextInDelivery": "Narudžba {{code}} prodavnice {{store}} koju je kurir preuzeo se otkazuje. Količine se ne vraćaju u ponudu jer je roba napustila prodavnicu. Prodavnica i restoran dobijaju obavještenje s razlogom.",
       "cancelTextConfirmed": "Prihvaćena narudžba {{code}} prodavnici {{store}} se otkazuje, a količine se vraćaju u ponudu. Prodavnica i restoran dobijaju obavještenje s razlogom.",
       "cancelled": "Narudžba je otkazana.",
       "emptyTitle": "Još nema narudžbi",
@@ -1821,6 +1827,7 @@
   },
   "orders": {
     "title": "Narudžba {{code}}",
+    "statusDelivered": "Dostavljeno",
     "myTitle": "Moje narudžbe",
     "mySubtitle": "Pratite svoje narudžbe, odgovore prodavnica i termine preuzimanja.",
     "storeTitle": "Narudžbe",

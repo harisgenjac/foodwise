@@ -49,7 +49,7 @@ type Dialog = "edit" | "password" | "invitation" | "deactivate" | "reactivate" |
 type Tab = "products" | "orders";
 
 const PRODUCT_STATUSES = ["Available", "Sold", "Expired"];
-const ORDER_STATUSES = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
+const ORDER_STATUSES = ["Pending", "Confirmed", "InDelivery", "Completed", "Rejected", "Cancelled"];
 
 const errorMessage = (err: unknown) => (axios.isAxiosError(err) ? err.response?.data?.error : null);
 

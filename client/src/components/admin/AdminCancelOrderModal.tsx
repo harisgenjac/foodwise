@@ -8,7 +8,7 @@ import { formatOrderCode } from "../../utils/orders.js";
 import type { OrderStatus } from "../../types/index.js";
 
 // Only orders that are still open can be cancelled by an admin.
-export const ADMIN_CANCELLABLE: OrderStatus[] = ["Pending", "Confirmed"];
+export const ADMIN_CANCELLABLE: OrderStatus[] = ["Pending", "Confirmed", "InDelivery"];
 
 interface AdminCancelOrderModalProps {
   order: { id: number; code: string; status: OrderStatus };
@@ -42,10 +42,14 @@ function AdminCancelOrderModal({ order, storeName, onClose, onCancelled }: Admin
       variant="danger"
       reason
       title={t("admin.orders.cancelTitle")}
-      message={t(order.status === "Confirmed" ? "admin.orders.cancelTextConfirmed" : "admin.orders.cancelTextPending", {
-        code: formatOrderCode(order.code),
-        store: storeName,
-      })}
+      message={t(
+        order.status === "InDelivery"
+          ? "admin.orders.cancelTextInDelivery"
+          : order.status === "Confirmed"
+            ? "admin.orders.cancelTextConfirmed"
+            : "admin.orders.cancelTextPending",
+        { code: formatOrderCode(order.code), store: storeName },
+      )}
       confirmLabel={t("admin.orders.cancel")}
       cancelLabel={t("admin.common.cancel")}
       busy={busy}

@@ -207,7 +207,7 @@ export const deactivateBranch = async (
     throw new HttpError(400, "Branch is already deactivated.");
   }
   const confirmed = await client.query(
-    "SELECT COUNT(*) AS count FROM orders WHERE orders.store_id = $1 AND orders.status = 'Confirmed'",
+    "SELECT COUNT(*) AS count FROM orders WHERE orders.store_id = $1 AND orders.status IN ('Confirmed', 'InDelivery')",
     [branch.id],
   );
   const count = Number(confirmed.rows[0].count);

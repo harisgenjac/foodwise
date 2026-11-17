@@ -120,6 +120,26 @@ describe("PickupsPage", () => {
     expect(screen.getByText(t("pickups.readyForPickup"))).toBeInTheDocument();
   });
 
+  it("keeps a delivery the courier took on the restaurant's Today, on the way or failed", async () => {
+    const onTheWay = pickup({ id: 3, status: "InDelivery", fulfilment_method: "DELIVERY", product_name: "Sir", delivery: { status: "PICKED_UP" } as Order["delivery"] });
+    const failed = pickup({ id: 4, status: "InDelivery", fulfilment_method: "DELIVERY", product_name: "Jogurt", delivery: { status: "FAILED" } as Order["delivery"] });
+    renderPage({ today: [onTheWay, failed] }, "RESTAURANT");
+
+    expect(await screen.findByText(t("pickups.onTheWay"))).toBeInTheDocument();
+    expect(screen.getByText(t("pickups.deliveryFailedOnTheWay"))).toBeInTheDocument();
+  });
+
+  it("shows the store when the courier took a delivery", async () => {
+    const pickedUpAt = new Date();
+    renderPage({
+      completed: [pickup({ status: "InDelivery", fulfilment_method: "DELIVERY", product_name: "Sir", picked_up_at: pickedUpAt.toISOString() })],
+    });
+
+    await userEvent.click(await screen.findByRole("tab", { name: new RegExp(t("pickups.tabs.completed")) }));
+    expect(await screen.findByText(/Sir/)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(t("pickups.courierPickedUpAt", { date: "" }).trim()))).toBeInTheDocument();
+  });
+
   it("shows when a completed order was picked up", async () => {
     renderPage({
       completed: [pickup({ status: "Completed", product_name: "Sir", picked_up_at: new Date().toISOString() })],

@@ -44,7 +44,8 @@ export interface ShopSale {
   created_by_email: string | null;
 }
 
-export type OrderStatus = "Pending" | "Confirmed" | "Completed" | "Rejected" | "Cancelled";
+// InDelivery: the courier has the goods of a delivery order and has not delivered them yet.
+export type OrderStatus = "Pending" | "Confirmed" | "InDelivery" | "Completed" | "Rejected" | "Cancelled";
 export type ChangeReason = "NOT_ENOUGH_STOCK" | "QUALITY" | "OTHER";
 export type SendChangeKind = "QUANTITY_REDUCED" | "PRICE_LOWERED" | "NOT_SENT_SOLD_OUT" | "NOT_SENT_PRICE_RAISED";
 

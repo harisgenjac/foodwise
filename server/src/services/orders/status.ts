@@ -6,7 +6,9 @@ import { absorbShopShortage } from "../stock.js";
 // The order's status is never set directly: syncOrderStatus derives it from its items after every
 // item change, in the same transaction, and records the change in order_status_history.
 
-export const ORDER_STATUSES = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"] as const;
+// InDelivery: a delivery order's courier has the goods and has not delivered them yet (Completed
+// comes with the delivery).
+export const ORDER_STATUSES = ["Pending", "Confirmed", "InDelivery", "Completed", "Rejected", "Cancelled"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 // Who caused a change: the restaurant, the store, an admin, the system (the expiry job,
@@ -20,11 +22,11 @@ export interface OrderEvent {
   reason?: string | null;
 }
 
-// Pending while any item waits; then Completed, Confirmed, Rejected in that order; Cancelled
-// only when every item is. A partly accepted order has no status of its own (Confirmed or
+// Pending while any item waits; then InDelivery, Completed, Confirmed, Rejected in that order;
+// Cancelled only when every item is. A partly accepted order has no status of its own (Confirmed or
 // Completed with an item rejected or reduced).
 export const deriveOrderStatus = (itemStatuses: string[]): OrderStatus => {
-  for (const status of ["Pending", "Completed", "Confirmed", "Rejected"] as const) {
+  for (const status of ["Pending", "InDelivery", "Completed", "Confirmed", "Rejected"] as const) {
     if (itemStatuses.includes(status)) return status;
   }
   return "Cancelled";

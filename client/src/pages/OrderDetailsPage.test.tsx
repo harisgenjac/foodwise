@@ -197,6 +197,35 @@ describe("OrderDetailsPage delivery", () => {
       delivery,
     }) as OrderDetails;
 
+  const courierLeg = {
+    price: "9.40",
+    cash_to_collect: "61.90",
+    estimated_pickup_at: "2026-11-16T12:05:00.000Z",
+    estimated_delivery_at: "2026-11-16T12:36:00.000Z",
+    courier_name: "Mock Kurir",
+    courier_phone: "+38761000000",
+    tracking_url: null,
+    failure_reason: null,
+    picked_up_at: "2026-11-16T12:06:00.000Z",
+  };
+
+  it("says the courier has the goods, then that the order was delivered", async () => {
+    const { unmount } = renderPage(RESTAURANT, {
+      ...delivered({ ...courierLeg, status: "PICKED_UP", delivered_at: null }),
+      status: "InDelivery",
+    });
+    const pill = await screen.findByText(t("orderStatus.InDelivery"), { selector: "span" });
+    expect(pill).toBeInTheDocument();
+    unmount();
+
+    renderPage(RESTAURANT, {
+      ...delivered({ ...courierLeg, status: "DELIVERED", delivered_at: "2026-11-16T12:30:00.000Z" }),
+      status: "Completed",
+    });
+    expect(await screen.findAllByText(t("orders.statusDelivered"))).not.toHaveLength(0);
+    expect(screen.queryByText(t("orderStatus.Completed"), { selector: "span" })).not.toBeInTheDocument();
+  });
+
   it("shows the booked delivery with its final price and the cash for the courier", async () => {
     renderPage(
       RESTAURANT,

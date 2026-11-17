@@ -57,11 +57,11 @@ describe("MyOrdersPage", () => {
     await waitFor(() => expect(within(tab("history")).getByText("10")).toBeInTheDocument());
   });
 
-  it("filters Active by the two active statuses only", async () => {
+  it("filters Active by the active statuses only", async () => {
     renderPage([order(1)]);
     await screen.findByText(/Piletina/);
 
-    expect(statusOptions()).toEqual(["", "Pending", "Confirmed"]);
+    expect(statusOptions()).toEqual(["", "Pending", "Confirmed", "InDelivery"]);
     await userEvent.selectOptions(statusSelect(), t("orderStatus.Confirmed"));
     await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "active", status: "Confirmed" }));
   });
@@ -208,7 +208,7 @@ describe("MyOrdersPage", () => {
 
       await userEvent.click(tab("history"));
       expect(statusSelect()).toHaveValue("");
-      expect(statusOptions()).toEqual(["", "Pending", "Confirmed", "Completed", "Rejected", "Cancelled"]);
+      expect(statusOptions()).toEqual(["", "Pending", "Confirmed", "InDelivery", "Completed", "Rejected", "Cancelled"]);
       await userEvent.selectOptions(statusSelect(), t("orderStatus.Rejected"));
       await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all", status: "Rejected" }));
 

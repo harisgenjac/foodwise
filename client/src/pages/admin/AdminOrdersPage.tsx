@@ -17,7 +17,7 @@ import Pagination from "../../components/admin/Pagination.js";
 import DataTable, { type DataColumn } from "../../components/common/DataTable.js";
 import AdminCancelOrderModal, { ADMIN_CANCELLABLE } from "../../components/admin/AdminCancelOrderModal.js";
 import { ADMIN_PAGE_SIZE, formatDateTime } from "../../utils/admin.js";
-import { formatMoney, formatOrderCode, itemsSummary, ORDER_STATUS_STYLES } from "../../utils/orders.js";
+import { formatMoney, formatOrderCode, itemsSummary, ORDER_STATUS_STYLES, orderStatusLabel } from "../../utils/orders.js";
 import type { AdminOrder } from "../../types/index.js";
 
 // Sortable columns (the server whitelist of GET /admin/orders).
@@ -125,7 +125,7 @@ function AdminOrdersPage() {
       card: "status",
       cell: (order) => (
         <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${ORDER_STATUS_STYLES[order.status]}`}>
-          {statuses[order.status] || order.status}
+          {orderStatusLabel(t, order.status, order.fulfilment_method)}
         </span>
       ),
     },

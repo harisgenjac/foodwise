@@ -16,7 +16,7 @@ import { AUTO_REJECT_AT, IS_OVERDUE, ORDER_STATUSES } from "./status.js";
 
 const LINES = `JOIN LATERAL (
     SELECT COUNT(*) AS item_count,
-           COUNT(*) FILTER (WHERE order_items.status IN ('Confirmed', 'Completed')) AS accepted_count,
+           COUNT(*) FILTER (WHERE order_items.status IN ('Confirmed', 'InDelivery', 'Completed')) AS accepted_count,
            COALESCE(SUM(order_items.unit_price * order_items.ordered_quantity), 0) AS ordered_total,
            COALESCE(SUM(order_items.unit_price * order_items.quantity)
              FILTER (WHERE order_items.status <> 'Rejected'), 0) AS current_total,
@@ -57,7 +57,7 @@ const ORDER_COLUMNS = `
     CASE WHEN orders.status = 'Pending' THEN ${AUTO_REJECT_AT} END AS auto_reject_at,
     lines.item_count::int AS item_count, lines.accepted_count::int AS accepted_count,
     lines.ordered_total::text AS ordered_total, lines.current_total::text AS total,
-    orders.status IN ('Confirmed', 'Completed') AND lines.has_changes AS is_partial,
+    orders.status IN ('Confirmed', 'InDelivery', 'Completed') AND lines.has_changes AS is_partial,
     lines.items`;
 
 // An order containing a product whose name matches $n.
@@ -83,8 +83,8 @@ const MINE_PERIODS: Record<string, string> = {
 };
 
 const STATUS_ORDER = `CASE orders.status
-    WHEN 'Pending' THEN 0 WHEN 'Confirmed' THEN 1 WHEN 'Completed' THEN 2
-    WHEN 'Rejected' THEN 3 WHEN 'Cancelled' THEN 4 END`;
+    WHEN 'Pending' THEN 0 WHEN 'Confirmed' THEN 1 WHEN 'InDelivery' THEN 2 WHEN 'Completed' THEN 3
+    WHEN 'Rejected' THEN 4 WHEN 'Cancelled' THEN 5 END`;
 
 const MINE_SORTS: Record<string, string> = {
   newest: "orders.created_at DESC, orders.id DESC",
@@ -135,7 +135,7 @@ export const listMineOrders = async (restaurantId: number, query: Request["query
   if (!page || !filters || scope === null || sort === null) return null;
   let { from } = filters;
   // "active" is what still needs the restaurant's attention.
-  if (scope === "active") from += ` AND orders.status IN ('Pending', 'Confirmed')`;
+  if (scope === "active") from += ` AND orders.status IN ('Pending', 'Confirmed', 'InDelivery')`;
   const { rows, total } = await listPage(
     // party_logo_url: the other side's logo (a branch without one shows its company's).
     `${ORDER_COLUMNS}, stores.business_name, cities.name AS city, ${storeLogo("stores")} AS party_logo_url`,
@@ -156,6 +156,7 @@ export const summarizeMineOrders = async (restaurantId: number, query: Request["
        COUNT(*) AS total,
        COUNT(*) FILTER (WHERE orders.status = 'Pending') AS pending,
        COUNT(*) FILTER (WHERE orders.status = 'Confirmed') AS confirmed,
+       COUNT(*) FILTER (WHERE orders.status = 'InDelivery') AS in_delivery,
        COUNT(*) FILTER (WHERE orders.status = 'Completed') AS completed,
        COUNT(*) FILTER (WHERE orders.status = 'Rejected') AS rejected,
        COUNT(*) FILTER (WHERE orders.status = 'Cancelled') AS cancelled
@@ -166,11 +167,12 @@ export const summarizeMineOrders = async (restaurantId: number, query: Request["
   const counts = {
     Pending: parseInt(row.pending, 10),
     Confirmed: parseInt(row.confirmed, 10),
+    InDelivery: parseInt(row.in_delivery, 10),
     Completed: parseInt(row.completed, 10),
     Rejected: parseInt(row.rejected, 10),
     Cancelled: parseInt(row.cancelled, 10),
   };
-  return { total: parseInt(row.total, 10), active: counts.Pending + counts.Confirmed, counts };
+  return { total: parseInt(row.total, 10), active: counts.Pending + counts.Confirmed + counts.InDelivery, counts };
 };
 
 // The orders of a store (GET /orders/store), Pending first. Null for an invalid filter or page.
@@ -274,10 +276,24 @@ export const PICKUP_SCOPES =["today", "upcoming", "completed"];
 
 // The pickups page: the caller's orders through orders.store_id (store) or restaurant_id;
 // `parties` is the other side of the handover.
-const pickupOwnership = (role: string) =>
-  role === "STORE"
-    ? { owner: "orders.store_id = $1", partyJoin: "orders.restaurant_id = parties.id" }
-    : { owner: "orders.restaurant_id = $1", partyJoin: "orders.store_id = parties.id" };
+// An InDelivery order (the courier has the goods) is the store's history at once, and the
+// restaurant's Today until it is delivered.
+const pickupOwnership = (role: string) => {
+  const due = "(orders.status = 'Confirmed' AND orders.pickup_at::date <= CURRENT_DATE)";
+  return role === "STORE"
+    ? {
+        owner: "orders.store_id = $1",
+        partyJoin: "orders.restaurant_id = parties.id",
+        today: due,
+        completed: "orders.status IN ('InDelivery', 'Completed')",
+      }
+    : {
+        owner: "orders.restaurant_id = $1",
+        partyJoin: "orders.store_id = parties.id",
+        today: `(${due} OR orders.status = 'InDelivery')`,
+        completed: "orders.status = 'Completed'",
+      };
+};
 
 // Today (and late ones from earlier days), upcoming, or picked up (the only paged scope: an open
 // or late pickup must never hide on a later page). Null for an invalid filter.
@@ -286,7 +302,7 @@ export const listPickupOrders = async (userId: number, role: string, query: Requ
   if (typeof scope !== "string" || !PICKUP_SCOPES.includes(scope)) return null;
   const page = scope === "completed" ? parsePage(query, CARD_PAGE_SIZE) : null;
   if (scope === "completed" && !page) return null;
-  const { owner, partyJoin } = pickupOwnership(role);
+  const { owner, partyJoin, today, completed } = pickupOwnership(role);
   const columns = `${ORDER_COLUMNS},
     CASE WHEN orders.fulfilment_method = 'PICKUP' THEN GREATEST(CURRENT_DATE - orders.pickup_at::date, 0) ELSE 0 END AS days_overdue,
     parties.business_name, cities.name AS city, parties.phone AS party_phone,
@@ -300,11 +316,11 @@ export const listPickupOrders = async (userId: number, role: string, query: Requ
     WHERE ${owner}`;
   const values: (string | number)[] = [userId];
   if (scope === "today") {
-    from += ` AND orders.status = 'Confirmed' AND orders.pickup_at::date <= CURRENT_DATE`;
+    from += ` AND ${today}`;
   } else if (scope === "upcoming") {
     from += ` AND orders.status = 'Confirmed' AND orders.pickup_at::date > CURRENT_DATE`;
   } else {
-    from += ` AND orders.status = 'Completed'`;
+    from += ` AND ${completed}`;
   }
   if (name) {
     values.push(`%${name}%`);
@@ -326,13 +342,13 @@ export const listPickupOrders = async (userId: number, role: string, query: Requ
 };
 
 export const countPickupOrders = async (userId: number, role: string) => {
-  const { owner } = pickupOwnership(role);
+  const { owner, today, completed } = pickupOwnership(role);
   const result = await pool.query(
     `SELECT
-       COUNT(*) FILTER (WHERE orders.status = 'Confirmed' AND orders.pickup_at::date <= CURRENT_DATE) AS today,
+       COUNT(*) FILTER (WHERE ${today}) AS today,
        COUNT(*) FILTER (WHERE ${IS_OVERDUE}) AS overdue,
        COUNT(*) FILTER (WHERE orders.status = 'Confirmed' AND orders.pickup_at::date > CURRENT_DATE) AS upcoming,
-       COUNT(*) FILTER (WHERE orders.status = 'Completed') AS completed
+       COUNT(*) FILTER (WHERE ${completed}) AS completed
      FROM orders
      WHERE ${owner}`,
     [userId],

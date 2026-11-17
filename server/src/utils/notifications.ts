@@ -31,7 +31,7 @@ export type NotificationType =
   // pickup or cancels.
   | "DELIVERY_FAILED"
   // To both sides: the courier picked the goods up but could not deliver them (the order stays
-  // Completed), or delivered them.
+  // InDelivery until an admin cancels it), or delivered them (the order is Completed).
   | "DELIVERY_FAILED_AFTER_PICKUP"
   | "DELIVERY_DELIVERED"
   // To the store: after a failed delivery the restaurant picks the order up itself, or cancels it.

@@ -40,9 +40,9 @@ import type { Order } from "../types/index.js";
 type Tab = "active" | "history";
 type Status = Order["status"];
 
-const STATUSES: Status[] = ["Pending", "Confirmed", "Completed", "Rejected", "Cancelled"];
-// The statuses an order on the Active tab can have.
-const ACTIVE_STATUSES: Status[] = ["Pending", "Confirmed"];
+const STATUSES: Status[] = ["Pending", "Confirmed", "InDelivery", "Completed", "Rejected", "Cancelled"];
+// The statuses an order on the Active tab can have (InDelivery: the courier is on the way).
+const ACTIVE_STATUSES: Status[] = ["Pending", "Confirmed", "InDelivery"];
 const PERIODS = [
   { value: "today", label: "orders.period.today" },
   { value: "7d", label: "orders.period.last7Days" },

@@ -106,7 +106,8 @@ The migration that adds orders deletes every reservation (their notifications go
 |---|---|
 | `Pending` | waiting for the store |
 | `Confirmed` | accepted by the store, waiting for pickup |
-| `Completed` | picked up |
+| `InDelivery` | a delivery order's courier has the goods (Nov 17, 2026) |
+| `Completed` | picked up (a delivery order: delivered) |
 | `Rejected` | refused by the store (its quantity is free again) |
 | `Cancelled` | withdrawn by the restaurant, cancelled by expiry, an admin, blocking or moderation, a deactivated branch, or a missed pickup |
 
@@ -116,7 +117,8 @@ The migration that adds orders deletes every reservation (their notifications go
 |---|---|---|
 | `Pending` | Čeka odgovor / Waiting | the store has not decided yet |
 | `Confirmed` | Prihvaćena / Accepted | at least one item accepted, waiting for pickup |
-| `Completed` | Preuzeta / Picked up | handed over |
+| `InDelivery` | Kurir preuzeo / With the courier | a delivery order on its way to the restaurant |
+| `Completed` | Preuzeta / Picked up (Dostavljeno / Delivered) | handed over, or delivered |
 | `Rejected` | Odbijena / Rejected | the store accepted nothing |
 | `Cancelled` | Otkazana / Cancelled | withdrawn, expired, cancelled by an admin, closed, or a missed pickup |
 
@@ -161,6 +163,9 @@ stateDiagram-v2
     Pending --> Rejected: store rejects every item
     Pending --> Cancelled: restaurant withdraws /\nall items expired or removed /\nadmin, blocking, branch closed /\npartial off and an item dropped
     Confirmed --> Completed: store marks picked up
+    Confirmed --> InDelivery: courier picks a delivery up
+    InDelivery --> Completed: courier delivers
+    InDelivery --> Cancelled: admin (delivery failed after the pickup)
     Confirmed --> Cancelled: store cancels missed pickup\n(day after pickup) / admin
     Completed --> [*]
     Rejected --> [*]
@@ -176,6 +181,8 @@ stateDiagram-v2
     Pending --> Rejected: store rejects the item with a reason\n(quantity back on offer)
     Pending --> Cancelled: order withdrawn / product expired\nor removed / admin / blocking
     Confirmed --> Completed: order picked up
+    Confirmed --> InDelivery: courier picks the delivery up
+    InDelivery --> Completed: delivered
     Confirmed --> Cancelled: missed pickup / admin\n(quantity back, sold-out product released)
 ```
 

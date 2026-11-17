@@ -150,7 +150,7 @@ describe("an admin's cancel", () => {
     expect(history.rows).toEqual([{ source: "ADMIN", actor_id: await userId(ADMIN), reason: "Spor" }]);
 
     const again = await admin.post(`/api/admin/orders/${orderId}/cancel`).send({ reason: "Spor" });
-    expect(again.body.error).toBe("Only pending or accepted orders can be cancelled.");
+    expect(again.body.error).toBe("Only pending, accepted or in-delivery orders can be cancelled.");
   });
 });
 

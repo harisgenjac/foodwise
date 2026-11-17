@@ -5,7 +5,7 @@ import { AlertTriangle, ArrowRight } from "lucide-react";
 import OrderImage from "./OrderImage.js";
 import OrderItemThumbnails from "./OrderItemThumbnails.js";
 import { formatRelativeTime } from "../../utils/notifications.js";
-import { formatMoney, formatOrderCode, itemsSummary, ORDER_STATUS_STYLES } from "../../utils/orders.js";
+import { formatMoney, formatOrderCode, itemsSummary, ORDER_STATUS_STYLES, orderStatusLabel } from "../../utils/orders.js";
 import StoreNameLink from "../store/StoreNameLink.js";
 import AnswerDeadline from "./AnswerDeadline.js";
 import type { Order } from "../../types/index.js";
@@ -28,7 +28,6 @@ interface OrderCardProps {
 // One order on a list or dashboard: its code, products, the other party, total and pickup.
 function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = false, viewer = "RESTAURANT" }: OrderCardProps) {
   const { t, i18n } = useTranslation();
-  const statuses = t("orderStatus", { returnObjects: true }) as Record<string, string>;
   const code = formatOrderCode(order.code);
 
   return (
@@ -44,7 +43,7 @@ function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = fals
         />
         <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
           <span className={`rounded-full px-2 py-1 text-xs font-semibold ${ORDER_STATUS_STYLES[order.status]}`}>
-            {statuses[order.status] || order.status}
+            {orderStatusLabel(t, order.status, order.fulfilment_method)}
           </span>
           {order.is_partial && (
             <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
