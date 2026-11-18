@@ -42,17 +42,12 @@ describe("GET /api/dashboard/stats", () => {
     await cleanupUsers([STORE_A, STORE_B, RESTAURANT_A, RESTAURANT_B, ADMIN]);
   });
 
-  it("returns zeros for a store and a restaurant without data", async () => {
+  it("returns zeros for a store without data", async () => {
     expect(await stats(storeA)).toEqual({
       active_products: 0,
       pending_orders: 0,
       successful_orders: 0,
       saved: { kg: 0, l: 0, pieces: 0 },
-    });
-    expect(await stats(restaurantA)).toEqual({
-      pending_orders: 0,
-      successful_orders: 0,
-      savings: 0,
     });
   });
 
@@ -97,38 +92,13 @@ describe("GET /api/dashboard/stats", () => {
     });
   });
 
-  it("sums the restaurant's own order items and picked-up savings at the agreed price", async () => {
-    const product = await createProduct(storeA, { original_price: 10, discounted_price: 6, quantity: 100 });
-    await insertItem(product.id, RESTAURANT_A, "Confirmed", 2, 6);
-    await insertItem(product.id, RESTAURANT_A, "Completed", 1.5, 4);
-    await insertItem(product.id, RESTAURANT_A, "Pending", 3, 6);
-    await insertItem(product.id, RESTAURANT_A, "Rejected", 5, 6);
-    await insertItem(product.id, RESTAURANT_A, "Cancelled", 5, 6);
-    // Another restaurant's order items are never counted.
-    await insertItem(product.id, RESTAURANT_B, "Completed", 10, 6);
-    await insertItem(product.id, RESTAURANT_B, "Pending", 1, 6);
-
-    // Only the Completed one saves: (10 − 4) × 1.5 = 9; the Confirmed one is not picked up yet.
-    expect(await stats(restaurantA)).toEqual({
-      pending_orders: 1,
-      successful_orders: 2,
-      savings: 9,
-    });
-  });
-
-  it("uses the product's current full price for the savings", async () => {
-    const product = await createProduct(storeA, { original_price: 10, discounted_price: 6, quantity: 100 });
-    await insertItem(product.id, RESTAURANT_A, "Completed", 2, 6);
-    await pool.query("UPDATE products SET original_price = 12 WHERE id = $1", [product.id]);
-
-    expect((await stats(restaurantA)).savings).toBe(12);
-  });
-
-  it("returns 403 for an admin and 401 without a session", async () => {
+  it("returns 403 for a restaurant and an admin and 401 without a session", async () => {
     const admin = await registerAndLogin(ADMIN, "ADMIN");
-    const forbidden = await admin.get("/api/dashboard/stats");
-    expect(forbidden.status).toBe(403);
-    expect(forbidden.body.error).toBe("You do not have the required role for this action.");
+    for (const agent of [restaurantA, admin]) {
+      const forbidden = await agent.get("/api/dashboard/stats");
+      expect(forbidden.status).toBe(403);
+      expect(forbidden.body.error).toBe("You do not have the required role for this action.");
+    }
 
     const anonymous = await request(app).get("/api/dashboard/stats");
     expect(anonymous.status).toBe(401);

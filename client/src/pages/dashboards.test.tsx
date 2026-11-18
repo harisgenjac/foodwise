@@ -2,7 +2,7 @@ import { screen, within } from "@testing-library/react";
 import StoreDashboardPage from "./StoreDashboardPage.js";
 import RestaurantDashboardPage from "./RestaurantDashboardPage.js";
 import { apiMock, makeOrder, makeOrderItem, makeProduct, makeUser, renderWithProviders, t } from "../test/utils.js";
-import type { RestaurantDashboardStats, StoreDashboardStats } from "../types/index.js";
+import type { StoreDashboardStats } from "../types/index.js";
 
 // The value printed under a stat card's label (the label is the card's first, truncated line).
 const statValue = (label: string) =>
@@ -100,42 +100,27 @@ describe("StoreDashboardPage", () => {
 });
 
 describe("RestaurantDashboardPage", () => {
-  const renderRestaurant = (stats: RestaurantDashboardStats) =>
+  const renderRestaurant = (orders: ReturnType<typeof makeOrder>[]) =>
     renderWithProviders(<RestaurantDashboardPage />, {
       route: "/dashboard",
       path: "/dashboard",
-      user: makeUser({ role: "RESTAURANT" }),
-      get: {
-        "/dashboard/stats": { stats },
-        "/products": { products: [makeProduct({ id: 1, name: "Hljeb" })], total: 58 },
-        "/orders/mine": {
-          orders: [makeOrder({ id: 9, status: "Confirmed", items: [makeOrderItem({ product_name: "Jogurt" })] })],
-          total: 12,
-        },
-      },
+      user: makeUser({ role: "RESTAURANT", latitude: 43.98, longitude: 18.17 }),
+      get: { "/orders/mine": { orders, total: orders.length } },
     });
 
-  it("shows the server's numbers and the marketplace total on the stat cards", async () => {
-    renderRestaurant({ pending_orders: 3, successful_orders: 21, savings: 146.5 });
+  it("shows the hero and the first 3 orders, and asks for nothing else", async () => {
+    renderRestaurant([makeOrder({ id: 9, status: "Confirmed", items: [makeOrderItem({ product_name: "Jogurt" })] })]);
 
     expect(await screen.findByText(/Jogurt/)).toBeInTheDocument();
-    expect(statValue(t("dashboard.statAvailableOffers"))).toBe("58");
-    expect(statValue(t("dashboard.statPending"))).toBe("3");
-    expect(statValue(t("dashboard.statConfirmed"))).toBe("21");
-    expect(statValue(t("dashboard.statSavings"))).toBe("146.50 KM");
-  });
-
-  it("asks for the 3 offers closest to expiry and the first 3 orders", async () => {
-    renderRestaurant({ pending_orders: 0, successful_orders: 0, savings: 0 });
-
-    expect(await screen.findByText("Hljeb")).toBeInTheDocument();
-    expect(paramsOf("/products")).toEqual({ sort: "expiry", radius: "10", limit: 3 });
+    expect(screen.getAllByRole("img", { name: t("restaurantHero.title") })).toHaveLength(2);
     expect(paramsOf("/orders/mine")).toEqual({ limit: 3 });
-    expect(statValue(t("dashboard.statSavings"))).toBe("0.00 KM");
+    // The page itself asks only for the orders (the auth context loads /users/me).
+    expect(apiMock.get.mock.calls.map(([url]) => url).filter((url) => url !== "/users/me")).toEqual(["/orders/mine"]);
+    expect(screen.queryByTestId("stat-label")).not.toBeInTheDocument();
   });
 
   it("titles the orders section My orders, like the page its link opens", async () => {
-    renderRestaurant({ pending_orders: 0, successful_orders: 0, savings: 0 });
+    renderRestaurant([]);
 
     expect(await screen.findByRole("heading", { name: t("dashboard.myOrdersTitle") })).toHaveTextContent(
       "Moje narudžbe",
@@ -144,77 +129,10 @@ describe("RestaurantDashboardPage", () => {
     expect(screen.getByRole("link", { name: t("dashboard.viewAllOrders") })).toHaveAttribute("href", "/my-orders");
   });
 
-  describe("offers closest to expiry, nearby first", () => {
-    const VISOKO = makeProduct({ id: 1, name: "Hljeb", city: "Visoko", distance_km: 0 });
-    const KAKANJ = makeProduct({ id: 2, name: "Mlijeko", city: "Kakanj", distance_km: 16 });
-    const ZENICA = makeProduct({ id: 3, name: "Sir", city: "Zenica", distance_km: 32 });
-    const TUZLA = makeProduct({ id: 4, name: "Jaja", city: "Tuzla", distance_km: 73 });
-    // The server's answer per radius, sorted by expiry (the far ones expire sooner here, so a
-    // wider result lists them before the near one).
-    const BY_RADIUS: Record<string, { products: typeof VISOKO[]; outside: number }> = {
-      "10": { products: [VISOKO], outside: 3 },
-      "20": { products: [KAKANJ, VISOKO], outside: 2 },
-      "50": { products: [ZENICA, KAKANJ, VISOKO], outside: 1 },
-      all: { products: [TUZLA, ZENICA, KAKANJ, VISOKO], outside: 0 },
-    };
-    const renderOffers = (byRadius: Record<string, { products: typeof VISOKO[]; outside: number }>) =>
-      renderWithProviders(<RestaurantDashboardPage />, {
-        route: "/dashboard",
-        path: "/dashboard",
-        user: makeUser({ role: "RESTAURANT" }),
-        get: {
-          "/dashboard/stats": { stats: { pending_orders: 0, successful_orders: 0, savings: 0 } },
-          "/products": ({ radius, limit }: { radius: string; limit: number }) => ({
-            products: byRadius[radius]!.products.slice(0, limit),
-            total: byRadius[radius]!.products.length,
-            outside_radius_count: byRadius[radius]!.outside,
-          }),
-          "/orders/mine": { orders: [], total: 0 },
-        },
-      });
-    const productRadii = () =>
-      apiMock.get.mock.calls
-        .filter(([url]) => url === "/products")
-        .map(([, config]) => config?.params as { radius: string; limit: number; sort: string });
+  it("sends a restaurant without orders to the offers", async () => {
+    renderRestaurant([]);
 
-    it("asks once when 10 km has three offers", async () => {
-      renderOffers({ "10": { products: [VISOKO, KAKANJ, ZENICA, TUZLA], outside: 5 } });
-      expect(await screen.findByText("Sir")).toBeInTheDocument();
-      expect(productRadii()).toEqual([{ sort: "expiry", radius: "10", limit: 3 }]);
-      expect(statValue(t("dashboard.statAvailableOffers"))).toBe("4");
-    });
-
-    it("keeps the nearby offer first and fills the rest from the next radii", async () => {
-      renderOffers(BY_RADIUS);
-      expect(await screen.findByText("Sir")).toBeInTheDocument();
-      expect(productRadii()).toEqual([
-        { sort: "expiry", radius: "10", limit: 3 },
-        { sort: "expiry", radius: "20", limit: 4 },
-        { sort: "expiry", radius: "50", limit: 5 },
-      ]);
-      expect(screen.getAllByText(/·/).map((line) => line.textContent)).toEqual([
-        "· Visoko · u vašem gradu",
-        "· Kakanj · 16 km",
-        "· Zenica · 32 km",
-      ]);
-      expect(screen.queryByText("Jaja")).not.toBeInTheDocument();
-      // The count covers the widest radius asked for.
-      expect(statValue(t("dashboard.statAvailableOffers"))).toBe("3");
-    });
-
-    it("goes on to all cities when nothing is nearer", async () => {
-      const empty = { products: [], outside: 1 };
-      renderOffers({ "10": empty, "20": empty, "50": empty, all: { products: [TUZLA], outside: 0 } });
-      expect(await screen.findByText("Jaja")).toBeInTheDocument();
-      expect(productRadii().map((params) => params.radius)).toEqual(["10", "20", "50", "all"]);
-      expect(statValue(t("dashboard.statAvailableOffers"))).toBe("1");
-    });
-
-    it("stops when nothing lies further away and shows the empty message", async () => {
-      renderOffers({ "10": { products: [], outside: 0 } });
-      expect(await screen.findByText(t("dashboard.noProducts"))).toBeInTheDocument();
-      expect(productRadii()).toEqual([{ sort: "expiry", radius: "10", limit: 3 }]);
-      expect(statValue(t("dashboard.statAvailableOffers"))).toBe("0");
-    });
+    expect(await screen.findByText(t("dashboard.noOrders"))).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: t("dashboard.browseOffers") })).toHaveAttribute("href", "/search");
   });
 });
