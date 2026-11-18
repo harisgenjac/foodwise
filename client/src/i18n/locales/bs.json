@@ -9,6 +9,7 @@
     "sponsor": "Budi sponzor",
     "humanitarian": "Humanitarno",
     "pickups": "Preuzimanja",
+    "packing": "Pakovanje",
     "reports": "Izvještaji",
     "adminDashboard": "Pregled platforme",
     "adminUsers": "Korisnici",
@@ -533,6 +534,8 @@
     "dateFormat": "{{weekday}}, {{day}}. {{month}}",
     "myOrdersTitle": "Moje narudžbe",
     "recentOrdersTitle": "Nove narudžbe",
+    "packingTitle": "Spisak za pakovanje",
+    "packingText": "Šta spremiti danas i do kada, po vremenu spremnosti.",
     "viewAllOrders": "Vidi sve narudžbe",
     "noOrders": "Još nema narudžbi."
   },
@@ -703,7 +706,30 @@
     "courierPickedUpAt": "Kurir preuzeo {{date}}",
     "deliveredAt": "Dostavljeno {{date}}",
     "onTheWay": "Kurir je preuzeo, na putu",
-    "deliveryFailedOnTheWay": "Dostava nije uspjela nakon preuzimanja"
+    "deliveryFailedOnTheWay": "Dostava nije uspjela nakon preuzimanja",
+    "packingLink": "Spisak za pakovanje"
+  },
+  "packing": {
+    "title": "Spisak za pakovanje",
+    "subtitle": "Šta spremiti danas i do kada · {{date}}",
+    "orderCount_one": "{{count}} narudžba danas",
+    "orderCount_few": "{{count}} narudžbe danas",
+    "orderCount_other": "{{count}} narudžbi danas",
+    "print": "Štampaj",
+    "pendingNote_one": "{{count}} narudžba čeka vašu odluku i još nije na spisku.",
+    "pendingNote_few": "{{count}} narudžbe čekaju vašu odluku i još nisu na spisku.",
+    "pendingNote_other": "{{count}} narudžbi čeka vašu odluku i još nije na spisku.",
+    "productsTitle": "Ukupno za spremiti",
+    "inOrders_one": "u {{count}} narudžbi",
+    "inOrders_few": "u {{count}} narudžbe",
+    "inOrders_other": "u {{count}} narudžbi",
+    "ordersTitle": "Narudžbe po vremenu spremnosti",
+    "readyForCourier": "za kurira",
+    "readyForPickup": "preuzimanje",
+    "pickupBadge": "Preuzimanje",
+    "deliveryFailed": "Dostava nije uspjela, čeka odluku restorana",
+    "emptyTitle": "Danas nema ništa za pakovanje",
+    "emptySubtitle": "Prihvaćene narudžbe koje trebaju biti spremne danas pojavit će se ovdje, po vremenu spremnosti."
   },
   "reports": {
     "title": "Izvještaji",

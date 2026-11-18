@@ -11,6 +11,7 @@ import {
   getOrder,
   getOrderPickupCounts,
   getOrderPickups,
+  getPackingList,
   getStoreOrders,
   switchToPickupRoute,
 } from "../controllers/orders.controller.js";
@@ -22,6 +23,7 @@ router.get("/mine", authenticate, authorize("RESTAURANT"), getMineOrders);
 router.get("/mine/summary", authenticate, authorize("RESTAURANT"), getMineOrdersSummary);
 router.get("/store", authenticate, authorize("STORE"), getStoreOrders);
 router.get("/pickups", authenticate, authorize("STORE", "RESTAURANT"), getOrderPickups);
+router.get("/packing", authenticate, authorize("STORE"), getPackingList);
 router.get("/pickups/counts", authenticate, authorize("STORE", "RESTAURANT"), getOrderPickupCounts);
 // Actions are POST /orders/:id/<action>: an action with a body, not a field update.
 router.post("/:id/decision", authenticate, authorize("STORE"), decideOrderRoute);

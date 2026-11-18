@@ -63,15 +63,20 @@ function Layout() {
       {/* Only restaurants order, from one cart. */}
       <CartProvider enabled={user?.role === "RESTAURANT" && !setup.locked}>
         <div className="flex min-h-dvh flex-col bg-gray-50">
-          <Header
-            isSidebarOpen={isSidebarOpen}
-            onToggleSidebar={onToggleSidebar}
-            isMenuOpen={isMenuOpen}
-            onOpenMenu={openMenu}
-            locked={setup.locked}
-          />
+          {/* Printing a page (the packing list) prints only its content: the app's frame stays on screen. */}
+          <div className="contents print:hidden">
+            <Header
+              isSidebarOpen={isSidebarOpen}
+              onToggleSidebar={onToggleSidebar}
+              isMenuOpen={isMenuOpen}
+              onOpenMenu={openMenu}
+              locked={setup.locked}
+            />
+          </div>
           <div className="flex flex-1">
-            <Sidebar isSidebarOpen={isSidebarOpen} locked={setup.locked} />
+            <div className="contents print:hidden">
+              <Sidebar isSidebarOpen={isSidebarOpen} locked={setup.locked} />
+            </div>
             {/* A flex column, so the footer sits at the bottom of short pages and after the content of long
                 ones. With the bottom bar, the bottom padding keeps the footer and last buttons above it. */}
             <main
@@ -79,19 +84,25 @@ function Layout() {
                 bottomNavRole ? 'pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6' : 'pb-6'
               }`}
             >
-              <div className="flex-1 pb-6">
-                {!setup.locked && <AnnouncementBanner />}
-                {!setup.locked && <CreditBanner />}
-                <AccountSetupGate />
+              <div className="flex-1 pb-6 print:pb-0">
+                <div className="contents print:hidden">
+                  {!setup.locked && <AnnouncementBanner />}
+                  {!setup.locked && <CreditBanner />}
+                  <AccountSetupGate />
+                </div>
                 <Outlet />
               </div>
-              <Footer showImpact={!setup.needsPassword} />
+              <div className="contents print:hidden">
+                <Footer showImpact={!setup.needsPassword} />
+              </div>
             </main>
           </div>
-          {isMenuOpen && !setup.locked && <MobileDrawer onClose={closeMenu} />}
-          {bottomNavRole && (
-            <BottomNav role={bottomNavRole} onOpenMore={openMenu} isMoreOpen={isMenuOpen} locked={setup.locked} />
-          )}
+          <div className="contents print:hidden">
+            {isMenuOpen && !setup.locked && <MobileDrawer onClose={closeMenu} />}
+            {bottomNavRole && (
+              <BottomNav role={bottomNavRole} onOpenMore={openMenu} isMoreOpen={isMenuOpen} locked={setup.locked} />
+            )}
+          </div>
         </div>
       </CartProvider>
       </CreditsProvider>

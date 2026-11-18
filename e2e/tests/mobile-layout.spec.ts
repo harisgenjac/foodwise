@@ -10,7 +10,7 @@ const WIDTH = Number(process.env.MOBILE_WIDTH ?? 375);
 test.use({ viewport: { width: WIDTH, height: 812 }, hasTouch: true });
 
 // Only stores have a Credits page: restaurants pay no credits.
-const STORE_PAGES = ["/dashboard", "/my-products", "/add-product", "/import-products", "/orders", "/credits"];
+const STORE_PAGES = ["/dashboard", "/my-products", "/add-product", "/import-products", "/orders", "/packing", "/credits"];
 const RESTAURANT_PAGES = ["/dashboard", "/search", "/stores", "/my-orders", "/cart"];
 const SHARED_PAGES = ["/pickups", "/reports", "/my-profile", "/donate-food", "/donate-food/new", "/sponsor", "/notifications"];
 

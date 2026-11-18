@@ -9,6 +9,7 @@
     "sponsor": "Become a Sponsor",
     "humanitarian": "Humanitarian",
     "pickups": "Pickups",
+    "packing": "Packing",
     "reports": "Reports",
     "adminDashboard": "Platform overview",
     "adminUsers": "Users",
@@ -519,6 +520,8 @@
     "dateFormat": "{{weekday}}, {{day}} {{month}}",
     "myOrdersTitle": "My orders",
     "recentOrdersTitle": "New orders",
+    "packingTitle": "Packing list",
+    "packingText": "What to prepare today and by when, by ready time.",
     "viewAllOrders": "View all orders",
     "noOrders": "No orders yet."
   },
@@ -682,7 +685,27 @@
     "courierPickedUpAt": "Courier picked up {{date}}",
     "deliveredAt": "Delivered {{date}}",
     "onTheWay": "Picked up by the courier, on the way",
-    "deliveryFailedOnTheWay": "Delivery failed after the pickup"
+    "deliveryFailedOnTheWay": "Delivery failed after the pickup",
+    "packingLink": "Packing list"
+  },
+  "packing": {
+    "title": "Packing list",
+    "subtitle": "What to prepare today and by when · {{date}}",
+    "orderCount_one": "{{count}} order today",
+    "orderCount_other": "{{count}} orders today",
+    "print": "Print",
+    "pendingNote_one": "{{count}} order is waiting for your decision and is not on the list yet.",
+    "pendingNote_other": "{{count}} orders are waiting for your decision and are not on the list yet.",
+    "productsTitle": "Total to prepare",
+    "inOrders_one": "in {{count}} order",
+    "inOrders_other": "in {{count}} orders",
+    "ordersTitle": "Orders by ready time",
+    "readyForCourier": "for the courier",
+    "readyForPickup": "pickup",
+    "pickupBadge": "Pickup",
+    "deliveryFailed": "Delivery failed, waiting for the restaurant",
+    "emptyTitle": "Nothing to pack today",
+    "emptySubtitle": "Accepted orders that must be ready today will appear here, by ready time."
   },
   "reports": {
     "title": "Reports",

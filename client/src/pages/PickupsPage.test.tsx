@@ -55,6 +55,20 @@ describe("PickupsPage", () => {
     expect(screen.getByText(/Mlijeko/)).toBeInTheDocument();
   });
 
+  it("links a store, not a restaurant, to the packing list", async () => {
+    renderPage({ today: [onTime] });
+    expect(await screen.findByRole("link", { name: new RegExp(t("pickups.packingLink")) })).toHaveAttribute(
+      "href",
+      "/packing",
+    );
+  });
+
+  it("has no packing list link for a restaurant", async () => {
+    renderPage({ today: [onTime] }, "RESTAURANT");
+    expect(await screen.findByText(/Mlijeko/)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: new RegExp(t("pickups.packingLink")) })).not.toBeInTheDocument();
+  });
+
   it("loads another scope when a tab is chosen", async () => {
     const scopes = renderPage({ upcoming: [pickup({ status: "Confirmed", product_name: "Hljeb" })] });
 

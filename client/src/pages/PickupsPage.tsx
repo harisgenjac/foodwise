@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   CalendarClock,
   CalendarDays,
+  ClipboardList,
   PackageCheck,
   PackageOpen,
   Search,
@@ -129,6 +130,7 @@ function PickupsPage() {
         subtitle={isStore ? t("pickups.storeSubtitle") : t("pickups.restaurantSubtitle")}
         icon={PackageCheck}
         {...(counts && { count: t("pickups.todayCount", { count: counts.today }) })}
+        {...(isStore && { action: { to: "/packing", label: t("pickups.packingLink"), icon: ClipboardList } })}
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
