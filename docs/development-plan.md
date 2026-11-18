@@ -105,7 +105,7 @@ Agreed Nov 16, 2026: done as separate PRs, in this order: the provider, addresse
 - [x] SSE for live statuses instead of polling on order pages. (Nov 17, 2026: `GET /api/events`, fed by database triggers through Postgres `LISTEN/NOTIFY`, so an event goes out only after its transaction commits and works with several server instances. Decided: an event only says which order changed (or that a notification arrived), and the page loads it through the API; the order page, My orders, the store's Orders and Pickups update live, and so does the notification bell, whose 50 s polling stays as a fallback.)
 - [x] Automatic rejection of orders the store does not accept in time. (Nov 17, 2026: decided: a delivery order 15 minutes after it was sent, a pickup order at the pickup time the restaurant chose; a job checks every minute, rejects the whole order (the quantity goes back on offer) and notifies both sides (`ORDER_AUTO_REJECTED`); the store's decision is refused past the deadline; the store sees when an order will be rejected and the restaurant until when the store can answer. Because of this, sending refuses a pickup time that has already passed.)
 - [x] Pause receiving orders for a store. (Nov 16, 2026: decided as a switch with an optional end: 30 min, 1, 2 or 4 hours, to the end of the day or until switched off, from My profile and a card on the store's dashboard, also by an admin. The products stay visible and in carts with a "not taking orders" note; sending is refused. Not for a headquarters on its branches.)
-- [ ] Packing list for today's orders, by ready time.
+- [x] Packing list for today's orders, by ready time. (Nov 18, 2026: decided as its own store page `/packing` ("Pakovanje" in the menu, linked from Pickups and the dashboard), not a Pickups tab. It sums every accepted product at the top, then lists today's `Confirmed` orders by ready time: a delivery's ready time, a pickup's pickup time. Orders with the courier, missed pickups from earlier days and Pending orders (a note links to them) are left out. View and print only: no "packed" mark, see the ideas backlog.)
 - [ ] E2E tests for the whole delivery flow with the mock.
 
 ### Phase 3: Korpa live
@@ -312,6 +312,7 @@ Older ideas moved here from `product.md`. Agreed as possible directions, not pla
 - [ ] A reminder an hour before the pickup.
 - [ ] Pickup time slots set by the store.
 - [ ] A rating after pickup.
+- [ ] Marking an order "Spakovano" on the packing list (stored, shared by the store's devices and live), if stores ask for more than printing.
 
 ### Store chains
 
