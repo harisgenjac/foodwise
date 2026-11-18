@@ -174,6 +174,27 @@ describe("useLiveOrderRefresh", () => {
     expect(refresh).toHaveBeenCalledTimes(1);
   });
 
+  it("calls the page's latest refresh when the delay ends, not the one from when the event came", () => {
+    vi.useFakeTimers();
+    const before = vi.fn();
+    const after = vi.fn();
+    const { rerender } = render(
+      <LiveEventsProvider>
+        <OrderPage refresh={before} />
+      </LiveEventsProvider>,
+    );
+    act(() => latest().send("order", { kind: "order", order_id: 8 }));
+    // The user switches the tab before the delay ends: the page now loads another list.
+    rerender(
+      <LiveEventsProvider>
+        <OrderPage refresh={after} />
+      </LiveEventsProvider>,
+    );
+    act(() => vi.advanceTimersByTime(LIVE_REFRESH_DELAY_MS));
+    expect(before).not.toHaveBeenCalled();
+    expect(after).toHaveBeenCalledTimes(1);
+  });
+
   it("loads a list for any order", () => {
     vi.useFakeTimers();
     const refresh = vi.fn();

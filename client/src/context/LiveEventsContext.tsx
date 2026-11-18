@@ -103,12 +103,18 @@ export const LIVE_REFRESH_DELAY_MS = 300;
 // after a reconnect.
 export const useLiveOrderRefresh = (refresh: () => void, orderId?: number) => {
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // The page's latest `refresh`, called when the delay ends: one taken when the event arrived would
+  // load what the page showed then (e.g. the tab before the user switched), over the newer list.
+  const refreshRef = useRef(refresh);
+  useEffect(() => {
+    refreshRef.current = refresh;
+  });
   useEffect(() => () => clearTimeout(timerRef.current), []);
   useLiveEvents((event) => {
     const relevant =
       event.kind === "resync" || (event.kind === "order" && (orderId === undefined || event.order_id === orderId));
     if (!relevant) return;
     clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(refresh, LIVE_REFRESH_DELAY_MS);
+    timerRef.current = setTimeout(() => refreshRef.current(), LIVE_REFRESH_DELAY_MS);
   });
 };
