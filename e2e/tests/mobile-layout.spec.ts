@@ -486,6 +486,18 @@ test.describe("restaurant", () => {
     });
     expect(bubblePx).toBeGreaterThanOrEqual(12);
     await expect(page.getByRole("heading", { name: "Moje narudžbe" })).toBeVisible();
+
+    // The impact strip: three numbers stacked, and a tapped tooltip stays inside the screen.
+    const strip = page.getByRole("region", { name: "Vaš uticaj" });
+    await expect(strip.getByTestId("impact-value")).toHaveCount(3);
+    await expect(strip.getByTestId("impact-value").last()).toHaveText(/KM$/);
+    await strip.getByRole("button", { name: "Kako se računa ušteda" }).click();
+    const tooltip = page.getByRole("tooltip").filter({ hasText: "Razlika između pune cijene" });
+    await expect(tooltip).toBeVisible();
+    const box = (await tooltip.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(WIDTH);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(WIDTH);
   });
 
   test("the order tabs are 44 px", async ({ page }) => {

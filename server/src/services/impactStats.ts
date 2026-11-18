@@ -9,10 +9,19 @@ interface SavedTotals {
   savings: number;
 }
 
-// Platform-wide food saved, shared by the admin statistics and the footer's impact counter.
-// It follows the store dashboard's rules: picked-up (Completed) order items only, g/kg as kg,
-// ml/l as l, kom and pak as pieces. Value and savings follow the impact report.
-export const getSavedTotals = async (db: Pool | PoolClient = pool): Promise<SavedTotals> => {
+// Kilograms of CO₂ avoided per kilogram of food saved (producing it and throwing it away).
+// An estimate taken from general food-waste figures, not a measured value for our products:
+// verify the source and the number before launch.
+export const CO2_KG_PER_FOOD_KG = 2.5;
+
+// Food saved, platform-wide or (with `restaurantId`) one restaurant's, shared by the admin
+// statistics, the footer's impact counter and the restaurant dashboard's impact strip. It follows
+// the store dashboard's rules: picked-up (Completed) order items only, g/kg as kg, ml/l as l, kom
+// and pak as pieces. Value and savings follow the impact report.
+export const getSavedTotals = async (
+  db: Pool | PoolClient = pool,
+  { restaurantId }: { restaurantId?: number } = {},
+): Promise<SavedTotals> => {
   const result = await db.query<Record<keyof SavedTotals, string>>(
     `SELECT
        COALESCE(SUM(CASE products.unit
@@ -26,7 +35,9 @@ export const getSavedTotals = async (db: Pool | PoolClient = pool): Promise<Save
        COALESCE(ROUND(SUM(GREATEST(products.original_price - order_items.unit_price, 0) * order_items.quantity), 2), 0) AS savings
      FROM order_items
      JOIN products ON order_items.product_id = products.id
-     WHERE order_items.status = 'Completed'`,
+     WHERE order_items.status = 'Completed'
+       AND ($1::integer IS NULL OR order_items.restaurant_id = $1)`,
+    [restaurantId ?? null],
   );
   const row = result.rows[0]!;
   return {
@@ -35,5 +46,29 @@ export const getSavedTotals = async (db: Pool | PoolClient = pool): Promise<Save
     pieces: Number(row.pieces),
     value: Number(row.value),
     savings: Number(row.savings),
+  };
+};
+
+export interface RestaurantImpact {
+  // "own" = the restaurant's totals; "platform" = everyone's, while it has picked up nothing yet.
+  scope: "own" | "platform";
+  food_kg: number;
+  co2_kg: number;
+  savings: number;
+}
+
+// The restaurant dashboard's impact strip: food saved (kg + l, a litre counted as a kilogram;
+// pieces left out), the CO₂ estimate and the savings, since the restaurant joined. A restaurant
+// without any picked-up item gets the platform's totals instead.
+export const getRestaurantImpact = async (restaurantId: number): Promise<RestaurantImpact> => {
+  const own = await getSavedTotals(pool, { restaurantId });
+  const pickedUpAnything = own.kg + own.l + own.pieces > 0;
+  const totals = pickedUpAnything ? own : await getSavedTotals();
+  const food = totals.kg + totals.l;
+  return {
+    scope: pickedUpAnything ? "own" : "platform",
+    food_kg: food,
+    co2_kg: food * CO2_KG_PER_FOOD_KG,
+    savings: totals.savings,
   };
 };

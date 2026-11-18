@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import StoreDashboardPage from "./StoreDashboardPage.js";
 import RestaurantDashboardPage from "./RestaurantDashboardPage.js";
 import { apiMock, makeOrder, makeOrderItem, makeProduct, makeUser, renderWithProviders, t } from "../test/utils.js";
@@ -100,23 +100,48 @@ describe("StoreDashboardPage", () => {
 });
 
 describe("RestaurantDashboardPage", () => {
-  const renderRestaurant = (orders: ReturnType<typeof makeOrder>[]) =>
+  const IMPACT = { impact: { scope: "own", food_kg: 873.94, co2_kg: 2184.85, savings: 1246.5 } };
+  const renderRestaurant = (orders: ReturnType<typeof makeOrder>[], impact: object | Error = IMPACT) =>
     renderWithProviders(<RestaurantDashboardPage />, {
       route: "/dashboard",
       path: "/dashboard",
       user: makeUser({ role: "RESTAURANT", latitude: 43.98, longitude: 18.17 }),
-      get: { "/orders/mine": { orders, total: orders.length } },
+      get: { "/orders/mine": { orders, total: orders.length }, "/stats/my-impact": impact },
     });
+  const heroBox = () => screen.getByTestId("restaurant-hero-wide").parentElement!;
 
-  it("shows the hero and the first 3 orders, and asks for nothing else", async () => {
+  it("shows the hero with the impact strip and the first 3 orders, and asks for nothing else", async () => {
     renderRestaurant([makeOrder({ id: 9, status: "Confirmed", items: [makeOrderItem({ product_name: "Jogurt" })] })]);
 
     expect(await screen.findByText(/Jogurt/)).toBeInTheDocument();
     expect(screen.getAllByRole("img", { name: t("restaurantHero.title") })).toHaveLength(2);
+    expect(await screen.findByText("873,9 kg")).toBeInTheDocument();
+    expect(screen.getByText("1.246,50 KM")).toBeInTheDocument();
+    // The strip is attached under the hero: only the hero's top corners are rounded.
+    expect(heroBox()).toHaveClass("rounded-t-2xl");
     expect(paramsOf("/orders/mine")).toEqual({ limit: 3 });
-    // The page itself asks only for the orders (the auth context loads /users/me).
-    expect(apiMock.get.mock.calls.map(([url]) => url).filter((url) => url !== "/users/me")).toEqual(["/orders/mine"]);
+    // The page itself asks only for the orders and the impact (the auth context loads /users/me).
+    expect(apiMock.get.mock.calls.map(([url]) => url).filter((url) => url !== "/users/me").sort()).toEqual([
+      "/orders/mine",
+      "/stats/my-impact",
+    ]);
     expect(screen.queryByTestId("stat-label")).not.toBeInTheDocument();
+  });
+
+  it("hides the strip when the impact fails to load and keeps the rest of the page", async () => {
+    renderRestaurant([makeOrder({ id: 9, items: [makeOrderItem({ product_name: "Jogurt" })] })], new Error("Network Error"));
+
+    expect(await screen.findByText(/Jogurt/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId("impact-strip")).not.toBeInTheDocument());
+    expect(heroBox()).toHaveClass("rounded-2xl");
+    expect(screen.getAllByRole("img", { name: t("restaurantHero.title") })).toHaveLength(2);
+  });
+
+  it("shows the platform's totals with Together we have saved for a restaurant without pickups", async () => {
+    renderRestaurant([], { impact: { scope: "platform", food_kg: 5000, co2_kg: 12500, savings: 9000 } });
+
+    expect(await screen.findByText(t("impactStrip.together"))).toBeInTheDocument();
+    expect(screen.getByText("5.000,0 kg")).toBeInTheDocument();
   });
 
   it("titles the orders section My orders, like the page its link opens", async () => {

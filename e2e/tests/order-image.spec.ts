@@ -47,6 +47,8 @@ test("an order shows the other party's logo, or the generic image, and its first
       await expect(card.getByText("+1", { exact: true })).toBeVisible();
 
       await card.getByRole("link", { name: "Detalji" }).click();
+      // My orders has an h1 too: wait for the order page itself before looking for its one logo.
+      await expect(page).toHaveURL(/\/orders\/\d+$/);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       await expect(page.getByTestId("order-logo")).toHaveAttribute("src", /\/uploads\/logos\//);
     });

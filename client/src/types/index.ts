@@ -498,6 +498,16 @@ export interface DonationFormValues {
   serving_temperature: string;
 }
 
+// The restaurant dashboard's impact strip (GET /stats/my-impact), all numbers: food saved in kg (litres
+// counted as kilograms, pieces left out), the CO₂ estimate in kg and the savings in KM, over the
+// restaurant's picked-up items, or the platform's while it has picked up nothing (`scope`).
+export interface RestaurantImpact {
+  scope: "own" | "platform";
+  food_kg: number;
+  co2_kg: number;
+  savings: number;
+}
+
 // The store dashboard's stat cards (GET /dashboard/stats), all numbers. The counts are orders:
 // `successful_orders` = accepted (Confirmed + Completed); `saved` = the picked-up (Completed)
 // items only.
