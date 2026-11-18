@@ -5,7 +5,8 @@ import { API_ORIGIN } from "../api/axios.js";
 // changed; a page that shows it loads it again through the API.
 // - order: an order of the user (its items or its delivery) changed
 // - notification: the user got a new notification
-// - resync: events may have been missed (the stream reconnected), so reload what is shown
+// - resync: events may have been missed (the stream just opened or reconnected), so reload what
+//   is shown
 export type LiveEvent = { kind: "order"; order_id: number } | { kind: "notification" } | { kind: "resync" };
 
 type Listener = (event: LiveEvent) => void;
@@ -34,16 +35,13 @@ export const LiveEventsProvider = ({ children, enabled = true }: { children: Rea
     };
     let source: EventSource | null = null;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
-    let openedBefore = false;
 
     const open = () => {
       const current = new EventSource(`${API_ORIGIN}/api/events`, { withCredentials: true });
       source = current;
-      current.addEventListener("open", () => {
-        // A reconnect: whatever changed while the stream was down was not sent.
-        if (openedBefore) emit({ kind: "resync" });
-        openedBefore = true;
-      });
+      // Events flow only from here on: whatever changed while the stream was down, or (the first
+      // time) after the page loaded its data and before the stream connected, was not sent.
+      current.addEventListener("open", () => emit({ kind: "resync" }));
       for (const kind of KINDS) {
         current.addEventListener(kind, (message) => {
           try {
