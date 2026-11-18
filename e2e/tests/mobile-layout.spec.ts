@@ -60,7 +60,7 @@ const expectTapTargets = async (scope: Locator, label: string) => {
   expect(small, `${label}: tap targets under 44 px`).toEqual([]);
 };
 
-// The dashboard's stat cards sit two to a row on a phone; every label is shown whole (it wraps
+// The store dashboard's stat cards sit two to a row on a phone; every label is shown whole (it wraps
 // instead of ending in "…").
 const expectStatLabelsWhole = async (page: Page) => {
   await open(page, "/dashboard");
@@ -473,8 +473,22 @@ test.describe("restaurant", () => {
     await expectFilterPanel(page, "/search", "Pretraga po imenu");
   });
 
-  test("stat labels are not cut, and the order tabs are 44 px", async ({ page }) => {
-    await expectStatLabelsWhole(page);
+  test("the dashboard shows the phone hero with readable bubbles and My orders", async ({ page }) => {
+    await expectPhoneLayout(page, "/dashboard");
+    const hero = page.getByRole("img", { name: "Animacija Još vrijedi" });
+    await expect(hero).toHaveCount(1);
+    await expect(hero).toHaveAttribute("data-testid", "restaurant-hero-phone");
+    expect((await hero.boundingBox())!.width).toBeLessThanOrEqual(WIDTH);
+    // The bubble text renders at about 12 px or more on the phone (its font size × the SVG's scale).
+    const bubblePx = await hero.evaluate((svg) => {
+      const text = [...svg.querySelectorAll("text")].find((node) => node.textContent === "Bolje popust")!;
+      return parseFloat(text.getAttribute("font-size")!) * (svg as SVGSVGElement).getScreenCTM()!.a;
+    });
+    expect(bubblePx).toBeGreaterThanOrEqual(12);
+    await expect(page.getByRole("heading", { name: "Moje narudžbe" })).toBeVisible();
+  });
+
+  test("the order tabs are 44 px", async ({ page }) => {
     await open(page, "/my-orders");
     await expectTapTargets(page.getByRole("tablist"), "/my-orders tabs");
   });

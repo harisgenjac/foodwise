@@ -70,10 +70,11 @@ test("a new restaurant changes its temporary password and fills in its profile b
 
   // The dashboard is usable.
   await page.locator("aside").getByRole("link", { name: "Početna" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: `Dobro došli, ${firstName}` })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Animacija Još vrijedi" })).toBeVisible();
   await expect(gate).toBeHidden();
-  // The hero button; an empty dashboard repeats the same link further down.
-  await page.getByRole("main").getByRole("link", { name: "Pretraži ponude" }).first().click();
+  // A restaurant without orders is sent to the offers from My orders.
+  await expect(page.getByRole("heading", { name: "Moje narudžbe" })).toBeVisible();
+  await page.getByRole("main").getByRole("link", { name: "Pretraži ponude" }).click();
   await expect(page).toHaveURL(/\/search$/);
   await expect(page.getByRole("heading", { level: 1, name: "Pretraga" })).toBeVisible();
 });
