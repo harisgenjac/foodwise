@@ -21,7 +21,7 @@ import {
   Store,
   Trash2,
 } from "lucide-react";
-import api from "../api/axios.js";
+import api, { apiErrorMessage } from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import Breadcrumbs, { BreadcrumbPlaceholder } from "../components/Breadcrumbs.js";
@@ -86,9 +86,7 @@ function ProductDetailsPage() {
       navigate("/my-products");
     } catch (err) {
       console.error(err);
-      const message = axios.isAxiosError(err)
-        ? err.response?.data?.error
-        : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("myProducts.deleteError"));
     } finally {
       setDeleting(false);

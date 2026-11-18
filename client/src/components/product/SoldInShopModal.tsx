@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { Scale, Store, TriangleAlert } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import Modal, { ModalBody, ModalFooter, ModalHeader, modalFormStyle } from "./Modal.js";
 import FormField, { inputStyle } from "../form/FormField.js";
 import RequiredHint from "../form/RequiredHint.js";
@@ -83,7 +83,7 @@ function SoldInShopModal({ product, onClose, onRecorded }: SoldInShopModalProps)
       onClose();
       onRecorded();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("soldInShop.error"));
       setConfirming(false);
     } finally {

@@ -4,7 +4,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { ListFilter, Package, Search, Trash2, X } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import { useFetch } from "../../hooks/useFetch.js";
 import { useAdminPage, useAdminSort, useKeepPageInRange } from "../../hooks/useAdminPage.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
@@ -60,7 +60,7 @@ function AdminProductsPage() {
       setSelected(null);
       refetch();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("admin.common.actionError"));
     } finally {
       setBusy(false);

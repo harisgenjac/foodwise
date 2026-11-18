@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { ImageIcon, Images, Loader2, Trash2, Upload } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import FormSection from "../form/FormSection.js";
 import ProductImage from "./ProductImage.js";
 import SuggestedImagesModal from "./SuggestedImagesModal.js";
@@ -42,7 +42,7 @@ function ProductImagePicker({ value, onChange }: ProductImagePickerProps) {
       const response = await api.post("/products/images", data);
       onChange(response.data.image_url);
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("productImage.uploadError"));
     } finally {
       setUploading(false);

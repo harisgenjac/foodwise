@@ -17,7 +17,7 @@ import {
   Tag,
   Trash2,
 } from "lucide-react";
-import api from "../api/axios.js";
+import api, { apiErrorMessage } from "../api/axios.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
 import ProductPageHeader from "../components/product/ProductPageHeader.js";
@@ -87,9 +87,7 @@ function MyProductsPage() {
       toast.success(t("myProducts.deleteSuccess"));
     } catch (err) {
       console.error(err);
-      const message = axios.isAxiosError(err)
-        ? err.response?.data?.error
-        : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("myProducts.deleteError"));
     } finally {
       setDeleting(false);

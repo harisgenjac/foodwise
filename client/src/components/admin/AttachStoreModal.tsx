@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { AlertCircle, Search, Store } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import Modal, { ModalBody, ModalFooter, ModalHeader } from "../product/Modal.js";
 import { inputStyle } from "../form/FormField.js";
 import { FilterField } from "../product/FilterBar.js";
@@ -37,7 +37,7 @@ function AttachStoreModal({ companyId, companyName, onClose, onAttached }: Attac
       toast.success(response.data.message);
       onAttached();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       setError(message || t("admin.common.actionError"));
       setBusyId(null);
     }

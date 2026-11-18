@@ -4,7 +4,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { Building2, Info, KeyRound, Lock, Mail } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import FormSection from "../../components/form/FormSection.js";
 import FormField, { inputStyle } from "../../components/form/FormField.js";
 import RequiredHint from "../../components/form/RequiredHint.js";
@@ -41,7 +41,7 @@ function AdminCreateCompanyPage() {
       toast.success(t(method === "INVITE" ? "admin.createCompany.successInvite" : "admin.createCompany.success"));
       navigate(`/admin/companies/${response.data.company.id}`);
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("admin.createCompany.error"));
       setSaving(false);
     }

@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Check, TriangleAlert, X } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import Modal, { ModalBody, ModalFooter, ModalHeader } from "../product/Modal.js";
 import { inputStyle } from "../form/FormField.js";
 import {
@@ -259,7 +259,7 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
       onDecided();
     } catch (err) {
       console.error(err);
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("orders.actionError"));
     } finally {
       setBusy(false);

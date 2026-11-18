@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { Gift, HandCoins, Scale } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import Modal, { ModalBody, ModalFooter, ModalHeader, modalFormStyle } from "../product/Modal.js";
 import LoadingSpinner from "../LoadingSpinner.js";
 import FormField, { inputStyle } from "../form/FormField.js";
@@ -74,7 +74,7 @@ function DonateProductModal({ product, onClose, onDonated }: DonateProductModalP
       onClose();
       onDonated();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("donations.fromProduct.error"));
     } finally {
       setSubmitting(false);

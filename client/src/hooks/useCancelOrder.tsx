@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { XCircle } from "lucide-react";
-import api from "../api/axios.js";
+import api, { apiErrorMessage } from "../api/axios.js";
 import ConfirmModal from "../components/common/ConfirmModal.js";
 import { formatOrderCode } from "../utils/orders.js";
 
@@ -31,7 +31,7 @@ export function useCancelOrder(onDone: () => void) {
       onDone();
     } catch (err) {
       console.error(err);
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("orders.actionError"));
     } finally {
       setBusy(false);

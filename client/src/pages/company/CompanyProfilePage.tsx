@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { Building2, Camera, FileText, Info } from "lucide-react";
-import api, { assetUrl } from "../../api/axios.js";
+import api, { apiErrorMessage, assetUrl } from "../../api/axios.js";
 import { useAuth } from "../../context/AuthContext.js";
 import { LOGO_ACCEPT, useLogoPreview } from "../../hooks/useLogoPreview.js";
 import FormSection from "../../components/form/FormSection.js";
@@ -11,8 +11,6 @@ import FormField, { inputStyle } from "../../components/form/FormField.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
 import type { Company } from "../../types/index.js";
-
-const errorText = (err: unknown) => (axios.isAxiosError(err) ? err.response?.data?.error : null);
 
 // The headquarters edits its company's description and logo. The name is read-only: only an
 // admin changes it.
@@ -59,7 +57,7 @@ function CompanyProfilePage() {
       toast.success(t("user.addedLogoSuccess"));
     } catch (err) {
       console.error(err);
-      toast.error(errorText(err) || t("user.uploadError"));
+      toast.error(apiErrorMessage(err) || t("user.uploadError"));
     }
   };
 
@@ -73,7 +71,7 @@ function CompanyProfilePage() {
       toast.success(response.data.message);
     } catch (err) {
       console.error("Error updating company:", err);
-      toast.error(errorText(err) || t("company.profile.saveError"));
+      toast.error(apiErrorMessage(err) || t("company.profile.saveError"));
     } finally {
       setSaving(false);
     }

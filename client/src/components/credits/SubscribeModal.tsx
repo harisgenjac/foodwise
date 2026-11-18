@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import Modal, { ModalBody, ModalFooter, ModalHeader } from "../product/Modal.js";
 import AutoRenewTooltip from "./AutoRenewTooltip.js";
 import { formatCreditMonth } from "../../utils/credits.js";
@@ -53,7 +53,7 @@ function SubscribeModal({
       toast.success(t("credits.modal.sent"));
       onSent();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("credits.profile.requestError"));
     } finally {
       setSending(false);

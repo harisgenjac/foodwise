@@ -4,7 +4,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { Building2, Eye, Info, KeyRound, Lock, Mail, MapPin, Phone, Store } from "lucide-react";
-import api, { assetUrl } from "../../api/axios.js";
+import api, { apiErrorMessage, assetUrl } from "../../api/axios.js";
 import FormSection from "../../components/form/FormSection.js";
 import FormField, { inputStyle } from "../../components/form/FormField.js";
 import RequiredHint from "../../components/form/RequiredHint.js";
@@ -62,7 +62,7 @@ function CompanyCreateBranchPage() {
       toast.success(response.data.message);
       navigate(`/company/branches/${response.data.branch.id}`);
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("company.createBranch.error"));
       setSaving(false);
     }

@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import ConfirmModal from "../common/ConfirmModal.js";
 import { formatOrderCode } from "../../utils/orders.js";
 import type { OrderStatus } from "../../types/index.js";
@@ -30,7 +30,7 @@ function AdminCancelOrderModal({ order, storeName, onClose, onCancelled }: Admin
       toast.success(t("admin.orders.cancelled"));
       onCancelled();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("admin.common.actionError"));
     } finally {
       setBusy(false);

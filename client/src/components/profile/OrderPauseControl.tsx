@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { PauseCircle, PlayCircle } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import type { OrderSettings, StorePause } from "../../types/index.js";
 import { formatPauseEnd, isPaused, pauseUntil, type PauseOption } from "../../utils/orderPause.js";
 import PauseOrdersModal from "./PauseOrdersModal.js";
@@ -32,7 +32,7 @@ function OrderPauseControl({ pause, onChange, variant = "row" }: OrderPauseContr
       toast.success(response.data.message);
       setAsking(false);
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("orderSettings.error"));
     } finally {
       setSaving(false);

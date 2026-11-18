@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { Timer, Truck } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import FormSection from "../form/FormSection.js";
 import { inputStyle } from "../form/FormField.js";
 import OrderPauseControl from "./OrderPauseControl.js";
@@ -31,7 +31,7 @@ function OrderSettingsSection({ initial }: { initial: OrderSettings }) {
       toast.success(response.data.message);
     } catch (err) {
       setSettings(previous);
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("orderSettings.error"));
     } finally {
       setSaving(false);

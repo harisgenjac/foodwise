@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { HandHeart, Pencil } from "lucide-react";
-import api from "../api/axios.js";
+import api, { apiErrorMessage } from "../api/axios.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import Breadcrumbs, { BreadcrumbPlaceholder } from "../components/Breadcrumbs.js";
 import EmptyState from "../components/product/EmptyState.js";
@@ -40,7 +40,7 @@ function EditDonationPage() {
       toast.success(response.data.message || t("donations.form.updatedSuccess"));
       navigate("/donate-food");
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("donations.form.saveError"));
     }
   };

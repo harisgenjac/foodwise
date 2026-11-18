@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import Modal, { ModalBody, ModalFooter, ModalHeader } from "../product/Modal.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
 import type { TopupPackage } from "../../types/index.js";
@@ -43,7 +43,7 @@ function TopupModal({
       toast.success(t(toCompany ? "credits.profile.topupSentToCompany" : "credits.profile.topupSent"));
       onSent();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("credits.profile.requestError"));
     } finally {
       setSending(false);

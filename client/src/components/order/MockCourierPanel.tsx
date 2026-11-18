@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { FlaskConical } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import type { DeliveryStatus, OrderDelivery } from "../../types/index.js";
 
 type CourierStep = "courier_assigned" | "picked_up" | "delivered" | "failed" | "cancelled";
@@ -38,7 +38,7 @@ function MockCourierPanel({ orderId, delivery, onDone }: MockCourierPanelProps) 
       onDone();
     } catch (err) {
       console.error(err);
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("orders.actionError"));
     } finally {
       setBusy(false);
