@@ -4,7 +4,7 @@ import { formatOrderCode, type OrderRow } from "./codes.js";
 import { moveItems, recordItemChanges, syncOrderStatus, type OrderEvent } from "./status.js";
 import { absorbShopShortage } from "../stock.js";
 
-// What happens to orders when something outside them changes (docs/orders-design.md, section 8):
+// What happens to orders when something outside them changes (docs/product.md):
 // a blocked user or company, a deactivated branch, an expired or removed product. Only Pending
 // orders and items are touched; Confirmed ones stay, because the store already agreed to hand
 // that food over.

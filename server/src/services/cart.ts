@@ -7,7 +7,7 @@ import { availableQuantity, sellableProduct } from "./stock.js";
 import { MAX_ORDER_ITEMS, MAX_PENDING_ORDERS } from "./orders/send.js";
 import { pauseColumns } from "../utils/orderSettings.js";
 
-// The restaurant's cart (docs/orders-design.md, section 4): lines of one store, no stock held.
+// The restaurant's cart (docs/product.md): lines of one store, no stock held.
 // GET /cart answers every line with the product's live state and flags, so the cart never shows
 // stale stock; sending the order (services/orders/send.ts) removes the sent lines.
 

@@ -9,7 +9,7 @@ import { parseReadyAt } from "../../utils/readyTime.js";
 import type { Schedule } from "../../utils/schedule.js";
 import { createOrderDelivery, notifyDeliveryFailed, type DeliveryOutcome } from "../orderDelivery.js";
 
-// The store's decision on a Pending order (docs/orders-design.md, section 6): every Pending item is
+// The store's decision on a Pending order (docs/product.md): every Pending item is
 // accepted, accepted with a smaller quantity or rejected, in one step; or the whole order is
 // rejected. A smaller quantity or a rejection needs a reason, and with "not enough in stock" the
 // freed amount can be recorded as sold in the shop.

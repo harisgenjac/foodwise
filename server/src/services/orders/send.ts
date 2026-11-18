@@ -9,7 +9,7 @@ import { recordOrderCreated } from "./status.js";
 import { ordersPaused, STORE_PAUSED_ERROR } from "../../utils/orderSettings.js";
 import { deliveryAddressText, quoteDelivery } from "../deliveryQuote.js";
 
-// Sending an order (docs/orders-design.md, section 5): one transaction with the stock protection,
+// Sending an order (docs/product.md): one transaction with the stock protection,
 // where accepting partial fulfilment already applies to what can be sent.
 
 // At most this many Pending orders per restaurant across all stores (without credits nothing

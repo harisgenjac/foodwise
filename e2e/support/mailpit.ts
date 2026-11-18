@@ -1,4 +1,4 @@
-// Mailpit catches every email the e2e server sends (EMAIL_PROVIDER=smtp, see docs/e2e.md); the
+// Mailpit catches every email the e2e server sends (EMAIL_PROVIDER=smtp, see the E2E tests section of docs/frontend.md); the
 // tests read them through its REST API. MAILPIT_URL is its web/API address, e.g. http://localhost:8025.
 import { expect } from "@playwright/test";
 
@@ -19,7 +19,7 @@ interface MailpitMessage {
 }
 
 const mailpit = async <T>(path: string): Promise<T> => {
-  if (!MAILPIT_URL) throw new Error("MAILPIT_URL is not set (see docs/e2e.md).");
+  if (!MAILPIT_URL) throw new Error("MAILPIT_URL is not set (see the E2E tests section of docs/frontend.md).");
   const response = await fetch(`${MAILPIT_URL}${path}`);
   expect(response.ok, `Mailpit ${path} → ${response.status}`).toBe(true);
   return (await response.json()) as T;

@@ -13,7 +13,7 @@ import {
 } from "../services/cart.js";
 import { quoteDelivery } from "../services/deliveryQuote.js";
 
-// /api/cart (docs/orders-design.md, sections 4 and 10). RESTAURANT only (the routes check it);
+// /api/cart (docs/product.md). RESTAURANT only (the routes check it);
 // every success answers the whole cart, so the client never has to merge a line by itself.
 
 const UPDATE_ERROR = "An error occurred while updating the cart.";

@@ -116,7 +116,7 @@ const lineError = (item: OrderItem, line: Line) => {
 const saleAmount = (sale: boolean, quantity: string, reason: ChangeReason | "") =>
   sale && reason === "NOT_ENOUGH_STOCK" && Number(quantity) > 0 ? Number(quantity) : null;
 
-// The store decides a Pending order (docs/orders-design.md, section 6). With partial fulfilment
+// The store decides a Pending order (docs/product.md). With partial fulfilment
 // on, each item is accepted, accepted with less or rejected (the last two with a reason, and with
 // "not enough in stock" the difference can be recorded as sold in the shop); with it off, only the
 // whole order can be accepted or rejected. A summary step comes before the irreversible save.

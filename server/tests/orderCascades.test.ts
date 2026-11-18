@@ -4,7 +4,7 @@ import { sendReminders } from "../src/jobs/notificationReminders.js";
 import { type Agent, cleanupUsers, createProduct, futurePickup, orderOf, registerAndLogin, orderOne, userId, acceptItem } from "./helpers.js";
 
 // What happens to orders when something outside them changes: an expired or removed product, a
-// blocked user, an admin's cancel, the pickup reminder (docs/orders-design.md, section 8).
+// blocked user, an admin's cancel, the pickup reminder (docs/product.md).
 const STORE = "order-cascades-store@test.com";
 const RESTAURANT = "order-cascades-restaurant@test.com";
 const ADMIN = "order-cascades-admin@test.com";

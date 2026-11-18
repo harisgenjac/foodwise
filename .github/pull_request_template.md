@@ -10,6 +10,6 @@
 
 - [ ] Tests added or updated for changed behaviour
 - [ ] i18n keys added in both `bs.json` and `en.json` (and `server.bs.json` for new server messages)
-- [ ] Docs updated (`docs/backend.md` / `docs/frontend.md` / `docs/product.md`) when behaviour changed
+- [ ] Docs updated (`docs/backend.md` / `docs/frontend.md` / `docs/product.md` / `docs/development-plan.md`) when behaviour or plans changed
 - [ ] A new TypeScript migration, safe for existing data, if the schema changed
 - [ ] Screenshots for UI changes

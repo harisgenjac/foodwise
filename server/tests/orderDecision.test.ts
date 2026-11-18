@@ -1,7 +1,7 @@
 import pool from "../src/config/db.js";
 import { type Agent, cleanupUsers, createProduct, futurePickup, registerAndLogin, userId } from "./helpers.js";
 
-// The store's decision on a Pending order (docs/orders-design.md, section 6): accept, accept less
+// The store's decision on a Pending order (docs/product.md): accept, accept less
 // or reject each item with a reason, or reject the whole order; shop sales from the freed amount.
 const STORE = "order-decision-store@test.com";
 const OTHER_STORE = "order-decision-other-store@test.com";

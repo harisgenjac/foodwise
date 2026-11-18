@@ -27,7 +27,7 @@ interface SentView extends SentOrderResult {
 
 // The restaurant's cart (/cart): lines of one store with their live state, and the checkout. After
 // sending it shows the order's code, pickup, total and every change made at sending; lines that
-// were not sent stay in the cart with their flag (docs/orders-design.md, sections 4 and 5).
+// were not sent stay in the cart with their flag (docs/product.md).
 // The store page's cart panel sends from there and opens this page with { sent } or { notSent }.
 interface CartPageState {
   sent?: SentView;

@@ -25,7 +25,7 @@ import {
 } from "./types.js";
 
 // A delivery provider without a network, for development, tests and e2e: it follows the contract
-// (docs/delivery-api.yaml) with fixed, predictable rules. State lives in memory, so a server
+// (openapi.yaml) with fixed, predictable rules. State lives in memory, so a server
 // restart forgets its deliveries. `simulate` plays the courier: it moves a delivery to the next
 // status and returns the signed webhook the real provider would send.
 

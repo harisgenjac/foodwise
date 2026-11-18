@@ -13,7 +13,7 @@ import {
   userId,
 } from "./helpers.js";
 
-// Sending orders (docs/orders-design.md, section 5), the order lists and details, and the actions
+// Sending orders (docs/product.md), the order lists and details, and the actions
 // on a whole order. The store's decision is in orderDecision.test.ts.
 const STORE = "orders-store@test.com";
 const OTHER_STORE = "orders-other-store@test.com";

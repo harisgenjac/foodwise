@@ -22,7 +22,7 @@ import {
   summarizeMineOrders,
 } from "../services/orders/queries.js";
 
-// /api/orders (docs/orders-design.md, section 10). The order service throws an HttpError for
+// /api/orders (docs/product.md). The order service throws an HttpError for
 // every refusal; anything else is logged and answered with 500.
 
 // A refusal of the order service answers with its status; anything else is logged with the

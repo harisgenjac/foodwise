@@ -10,7 +10,7 @@ import {
   userId,
 } from "./helpers.js";
 
-// The restaurant's cart (docs/orders-design.md, section 4): one store, no stock held, live flags,
+// The restaurant's cart (docs/product.md): one store, no stock held, live flags,
 // and what sending an order and the expiry job do with its lines.
 const STORE = "cart-store@test.com";
 const OTHER_STORE = "cart-other-store@test.com";

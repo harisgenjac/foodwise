@@ -5,7 +5,7 @@ import { sarajevoDate } from "../support/dates.js";
 import { MAILPIT_URL, waitForEmail } from "../support/mailpit.js";
 import { open, orderFromMarketplace } from "../support/ui.js";
 
-// Locally the test needs Mailpit (docs/e2e.md); CI always runs it.
+// Locally the test needs Mailpit (docs/frontend.md, E2E tests); CI always runs it.
 test.skip(
   !MAILPIT_URL && !process.env.CI,
   "Set MAILPIT_URL and EMAIL_PROVIDER=smtp in e2e/.env.e2e and start Mailpit to run this test.",

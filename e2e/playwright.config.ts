@@ -7,13 +7,13 @@ import { assertE2eDatabase } from "./support/seed.js";
 // .env.e2e: DATABASE_URL (a *_e2e_db database), JWT_SECRET, PORT=3100,
 // CLIENT_ORIGIN=http://localhost:4173, TRUST_PROXY=0, DISABLE_RATE_LIMITS=true, and for the email
 // test EMAIL_PROVIDER=smtp, SMTP_HOST=localhost, SMTP_PORT=1025, MAILPIT_URL=http://localhost:8025
-// (Mailpit running). See docs/e2e.md.
+// (Mailpit running). See the E2E tests section of docs/frontend.md.
 // Resolved next to this file, not from the working directory: the VS Code extension loads the
 // config from the workspace root.
 const envFile = fileURLToPath(new URL(".env.e2e", import.meta.url));
 loadEnv({ path: envFile, quiet: true });
 if (!process.env.DATABASE_URL) {
-  throw new Error(`${envFile} with DATABASE_URL is missing (see docs/e2e.md).`);
+  throw new Error(`${envFile} with DATABASE_URL is missing (see the E2E tests section of docs/frontend.md).`);
 }
 // Before the web servers start: the backend command runs the migrations on this database.
 assertE2eDatabase(process.env.DATABASE_URL);

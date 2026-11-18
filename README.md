@@ -216,11 +216,11 @@ foodwise/
 - [`docs/development-plan.md`](docs/development-plan.md): roadmap, ideas backlog, open questions
 - [`docs/backend.md`](docs/backend.md): API endpoints, database schema, auth, tests
 - [`docs/frontend.md`](docs/frontend.md): routes, components, hooks, i18n, UI conventions
-- [`docs/e2e.md`](docs/e2e.md): end-to-end tests (Playwright), their database and seed, CI traces
+- [`docs/frontend.md`](docs/frontend.md), section E2E tests: end-to-end tests (Playwright), their database and seed, CI traces
 
 ## E2E tests
 
-Playwright tests in `e2e/` run the built frontend in Chromium (and the phone layout spec also in WebKit with iPhone emulation) against the real API, on a separate database `food_saver_e2e_db` that is emptied and seeded on every run. One-time setup: create that database and `e2e/.env.e2e` (contents in [`docs/e2e.md`](docs/e2e.md)), start Mailpit for the email test (it is skipped locally without `MAILPIT_URL`), then `cd e2e && npx playwright install chromium webkit`. Run one file with `npm run e2e -- tests/<file>.spec.ts` or open the UI mode with `npm run e2e:ui`. The full suite runs in CI.
+Playwright tests in `e2e/` run the built frontend in Chromium (and the phone layout spec also in WebKit with iPhone emulation) against the real API, on a separate database `food_saver_e2e_db` that is emptied and seeded on every run. One-time setup: create that database and `e2e/.env.e2e` (contents in the E2E tests section of [`docs/frontend.md`](docs/frontend.md)), start Mailpit for the email test (it is skipped locally without `MAILPIT_URL`), then `cd e2e && npx playwright install chromium webkit`. Run one file with `npm run e2e -- tests/<file>.spec.ts` or open the UI mode with `npm run e2e:ui`. The full suite runs in CI.
 
 ## CI
 

@@ -7,7 +7,7 @@ import { releaseSoldProduct } from "../stock.js";
 import { formatOrderCode } from "./codes.js";
 import { lockOrder, lockOrderItems, moveItems, syncOrderStatus } from "./status.js";
 
-// Actions on a whole order (docs/orders-design.md, section 2): the restaurant withdraws a Pending
+// Actions on a whole order (docs/product.md): the restaurant withdraws a Pending
 // order, the store marks a Confirmed one picked up or cancels a missed pickup, an admin cancels
 // either. There are no single-item cancels and no partial pickups. Each runs inside the caller's
 // transaction and locks the order first.
