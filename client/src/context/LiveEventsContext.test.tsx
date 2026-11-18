@@ -87,7 +87,11 @@ describe("LiveEventsProvider", () => {
       latest().send("order", "not json");
     });
 
-    expect(onEvent.mock.calls).toEqual([[{ kind: "order", order_id: 7 }], [{ kind: "notification" }]]);
+    expect(onEvent.mock.calls).toEqual([
+      [{ kind: "resync" }],
+      [{ kind: "order", order_id: 7 }],
+      [{ kind: "notification" }],
+    ]);
   });
 
   it("opens nothing when disabled", () => {
@@ -95,7 +99,7 @@ describe("LiveEventsProvider", () => {
     expect(FakeEventSource.instances).toHaveLength(0);
   });
 
-  it("sends resync after the browser reconnected, and opens a refused stream again later", () => {
+  it("sends resync each time the stream opens, and opens a refused stream again later", () => {
     vi.useFakeTimers();
     const onEvent = vi.fn();
     render(
@@ -109,7 +113,7 @@ describe("LiveEventsProvider", () => {
       first.fail(false);
       first.open();
     });
-    expect(onEvent.mock.calls).toEqual([[{ kind: "resync" }]]);
+    expect(onEvent.mock.calls).toEqual([[{ kind: "resync" }], [{ kind: "resync" }]]);
 
     act(() => first.fail(true));
     expect(first.closed).toBe(true);
@@ -152,6 +156,22 @@ describe("useLiveOrderRefresh", () => {
       vi.advanceTimersByTime(LIVE_REFRESH_DELAY_MS);
     });
     expect(refresh).toHaveBeenCalledTimes(2);
+  });
+
+  it("loads a page again once the stream opens, for what changed while it was connecting", () => {
+    vi.useFakeTimers();
+    const refresh = vi.fn();
+    render(
+      <LiveEventsProvider>
+        <OrderPage refresh={refresh} orderId={7} />
+      </LiveEventsProvider>,
+    );
+    expect(refresh).not.toHaveBeenCalled();
+    act(() => {
+      latest().open();
+      vi.advanceTimersByTime(LIVE_REFRESH_DELAY_MS);
+    });
+    expect(refresh).toHaveBeenCalledTimes(1);
   });
 
   it("loads a list for any order", () => {

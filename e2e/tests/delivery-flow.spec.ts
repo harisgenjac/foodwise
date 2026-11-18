@@ -9,14 +9,15 @@ import {
   simulateCourier,
 } from "../support/api.js";
 import { sarajevoDate } from "../support/dates.js";
-import { open, openLive, searchMarketplace, toast } from "../support/ui.js";
+import { open, searchMarketplace, toast } from "../support/ui.js";
 
 // The whole delivery flow with the mock provider (delivery phase 2), after the store accepted the
 // order with a ready time: the courier's steps, a failure before the courier picked the goods up
 // (the restaurant picks the order up itself, or cancels it) and a failure after it (an admin
 // cancels). The e2e client is a production build without the order page's mock courier panel, so
 // the courier is played through the server's dev-only route (simulateCourier). The screens are
-// not reloaded between the courier's steps: they follow the order live (SSE).
+// not reloaded between the courier's steps: they follow the order live (SSE), also right after a
+// page load (the happy path's last step sends the event as soon as the store's page opened).
 //
 // The order is sent and accepted through the API (cart-delivery.spec.ts clicks those). A fresh
 // restaurant sends it: the seeded one is shared and may be at its limit of pending orders. The
@@ -114,7 +115,7 @@ const acceptedDelivery = async (browser: Browser, productPrefix: string): Promis
 
   const restaurant = await (await browser.newContext({ storageState: fresh.storageState })).newPage();
   const store = await (await browser.newContext({ storageState: storageState("store") })).newPage();
-  await openLive(restaurant, `/orders/${order.id}`);
+  await open(restaurant, `/orders/${order.id}`);
   await expect(restaurant.getByText("Dostava naručena, čeka kurira")).toBeVisible();
   return { productName, productId, orderId: order.id, code: `#${order.code}`, restaurant, store };
 };
@@ -128,7 +129,7 @@ test("the courier is assigned, picks the order up and delivers it, live on both 
   const packingCard = store.getByTestId("packing-order").filter({ hasText: productName });
 
   await test.step("Spisak za pakovanje: narudžba čeka kurira", async () => {
-    await openLive(store, "/packing");
+    await open(store, "/packing");
     await expect(packingCard.getByText("za kurira")).toBeVisible();
   });
 
@@ -148,7 +149,7 @@ test("the courier is assigned, picks the order up and delivers it, live on both 
   });
 
   await test.step("Dostavljeno: narudžba je završena za obje strane", async () => {
-    await openLive(store, `/orders/${id}`);
+    await open(store, `/orders/${id}`);
     await withSeeded("store", (api) => simulateCourier(api, id, "delivered").then(() => undefined));
     await expect(restaurant.getByText("Kurir je preuzeo narudžbu")).toHaveCount(0);
     await expect(restaurant.getByText("Dostavljeno", { exact: true }).first()).toBeVisible();
@@ -161,7 +162,7 @@ test("the courier is assigned, picks the order up and delivers it, live on both 
 
 test("after a failure before the pickup the restaurant picks the order up at the store itself", async ({ browser }) => {
   const { orderId: id, code, restaurant, store } = await acceptedDelivery(browser, "E2E Dostava Kifle");
-  await openLive(store, `/orders/${id}`);
+  await open(store, `/orders/${id}`);
 
   await test.step("Dostava ne uspijeva: restoran bira, prodavnica čeka", async () => {
     await withSeeded("store", (api) => simulateCourier(api, id, "failed").then(() => undefined));
@@ -221,7 +222,7 @@ test("after a failure before the pickup the restaurant cancels and the goods go 
 
 test("a failure after the pickup keeps the order with the courier until the admin cancels it", async ({ browser }) => {
   const { orderId: id, code, restaurant, store } = await acceptedDelivery(browser, "E2E Dostava Pita");
-  await openLive(store, `/orders/${id}`);
+  await open(store, `/orders/${id}`);
 
   await test.step("Kurir preuzme pa dostava ne uspije: narudžba ostaje kod kurira", async () => {
     await withSeeded("store", async (api) => {

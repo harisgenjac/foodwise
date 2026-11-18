@@ -23,16 +23,6 @@ export const reload = async (page: Page) => {
   await page.reload();
 };
 
-// `open` for a page that should then follow changes live: also waits until the page's live stream
-// (GET /api/events) is connected. The server registers the stream before it answers, so a change
-// made after this reaches the page; one made while the stream is still connecting after a page
-// load would be missed.
-export const openLive = async (page: Page, url: string) => {
-  const connected = page.waitForResponse((response) => response.url() === `${API_URL}/api/events`);
-  await open(page, url);
-  await connected;
-};
-
 // Toasts are role="status", and so is the credit banner, so they are told apart by text.
 export const toast = (page: Page, text: string | RegExp) => page.getByRole("status").filter({ hasText: text });
 
