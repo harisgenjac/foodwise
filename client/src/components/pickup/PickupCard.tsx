@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import OrderImage from "../order/OrderImage.js";
 import { hoursText } from "../../utils/schedule.js";
-import { formatMoney, formatOrderCode, itemsSummary } from "../../utils/orders.js";
+import { formatMoney, formatOrderCode, itemsSummary, TIME_OF_DAY } from "../../utils/orders.js";
 import type { Order } from "../../types/index.js";
 
 interface PickupCardProps {
@@ -25,7 +25,6 @@ interface PickupCardProps {
   onCancelOverdue?: (order: Order) => void;
 }
 
-const timeFormat: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit", hourCycle: "h23" };
 // "18.09." in both languages (browsers format Bosnian short dates inconsistently).
 const shortDate = (date: Date) =>
   `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.`;
@@ -68,7 +67,7 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
       >
         <div className="flex items-center gap-2 sm:flex-col sm:gap-1">
           <Clock className="h-4 w-4 opacity-70" strokeWidth={2} />
-          <span className="text-2xl font-bold tracking-tight">{pickup.toLocaleTimeString(i18n.language, timeFormat)}</span>
+          <span className="text-2xl font-bold tracking-tight">{pickup.toLocaleTimeString(i18n.language, TIME_OF_DAY)}</span>
           <span className="text-xs font-medium opacity-80">{shortDate(pickup)}</span>
         </div>
         {isOverdue && (
@@ -141,10 +140,10 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
             <PackageCheck className="h-4 w-4" />
             {isDelivery && !isStore && order.status === "Completed"
               ? t("pickups.deliveredAt", {
-                  date: `${shortDate(deliveredAt)} ${deliveredAt.toLocaleTimeString(i18n.language, timeFormat)}`,
+                  date: `${shortDate(deliveredAt)} ${deliveredAt.toLocaleTimeString(i18n.language, TIME_OF_DAY)}`,
                 })
               : t(isDelivery ? "pickups.courierPickedUpAt" : "pickups.pickedUpAt", {
-                  date: `${shortDate(pickedUpAt)} ${pickedUpAt.toLocaleTimeString(i18n.language, timeFormat)}`,
+                  date: `${shortDate(pickedUpAt)} ${pickedUpAt.toLocaleTimeString(i18n.language, TIME_OF_DAY)}`,
                 })}
           </span>
         ) : failedOnTheWay ? (

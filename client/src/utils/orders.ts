@@ -27,6 +27,11 @@ export const MAX_CHANGE_NOTE = 300;
 
 export const formatMoney = (amount: number | string) => `${Number(amount).toFixed(2)} KM`;
 
+// An order's date and time ("18. nov 2026. 14:30") and a time of day ("14:30"), always 24-hour.
+export const ORDER_DATE_TIME: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" };
+export const TIME_OF_DAY: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit", hourCycle: "h23" };
+export const formatOrderDateTime = (value: string | Date) => new Date(value).toLocaleString(undefined, ORDER_DATE_TIME);
+
 // "15 kg", "2.5 l": the amount without trailing zeros and the unit's short code.
 export const formatAmount = (quantity: number | string, unit: string) => `${parseFloat(String(quantity))} ${unit}`;
 

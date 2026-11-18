@@ -2,18 +2,14 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronRight } from "lucide-react";
 import OrderImage from "./OrderImage.js";
-import { formatMoney, formatOrderCode, itemsSummary, ORDER_STATUS_STYLES, orderStatusLabel } from "../../utils/orders.js";
+import { formatMoney, formatOrderCode, itemsSummary, ORDER_STATUS_STYLES, orderStatusLabel, TIME_OF_DAY } from "../../utils/orders.js";
 import type { Order } from "../../types/index.js";
 
 // One compact row of the restaurant's order history; the whole row opens the order.
 // On phones it stacks into two lines (code, products and store, then time, total and status).
 function OrderHistoryRow({ order }: { order: Order }) {
   const { t, i18n } = useTranslation();
-  const time = new Date(order.created_at).toLocaleTimeString(i18n.language, {
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  });
+  const time = new Date(order.created_at).toLocaleTimeString(i18n.language, TIME_OF_DAY);
 
   return (
     <Link

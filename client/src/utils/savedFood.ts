@@ -6,14 +6,14 @@ interface SavedFoodTotals {
   pieces: number;
 }
 
-const formatAmount = (value: number) =>
+const formatTotal = (value: number) =>
   Number.isInteger(value) ? String(value) : value.toFixed(1);
 
 // Returns the non-zero totals as display strings, e.g. ["42.5 kg", "12 l", "30 kom"].
 export function formatSavedFood(totals: SavedFoodTotals, piecesLabel: string): string[] {
   const parts: string[] = [];
-  if (totals.kg > 0) parts.push(`${formatAmount(totals.kg)} kg`);
-  if (totals.l > 0) parts.push(`${formatAmount(totals.l)} l`);
-  if (totals.pieces > 0) parts.push(`${formatAmount(totals.pieces)} ${piecesLabel}`);
+  if (totals.kg > 0) parts.push(`${formatTotal(totals.kg)} kg`);
+  if (totals.l > 0) parts.push(`${formatTotal(totals.l)} l`);
+  if (totals.pieces > 0) parts.push(`${formatTotal(totals.pieces)} ${piecesLabel}`);
   return parts;
 }

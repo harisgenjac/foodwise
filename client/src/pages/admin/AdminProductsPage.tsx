@@ -19,6 +19,7 @@ import ConfirmModal from "../../components/common/ConfirmModal.js";
 import { PRODUCT_STATUS_STYLES } from "../../utils/productStatus.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
 import { ADMIN_PAGE_SIZE } from "../../utils/admin.js";
+import { formatMoney } from "../../utils/orders.js";
 import type { AdminProduct } from "../../types/index.js";
 
 // Sortable columns (the server whitelist of GET /admin/products).
@@ -121,7 +122,7 @@ function AdminProductsPage() {
       className: "hidden md:table-cell",
       cell: (product) => (
         <>
-          <span className="font-semibold text-green-700">{parseFloat(product.discounted_price).toFixed(2)} KM</span>
+          <span className="font-semibold text-green-700">{formatMoney(product.discounted_price)}</span>
           <span className="ml-1 text-xs text-gray-400 line-through">{parseFloat(product.original_price).toFixed(2)}</span>
         </>
       ),

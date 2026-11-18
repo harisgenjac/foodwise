@@ -20,10 +20,9 @@ import EmptyState from "../components/product/EmptyState.js";
 import LoadErrorState from "../components/product/LoadErrorState.js";
 import { useLiveOrderRefresh } from "../context/LiveEventsContext.js";
 import { useFetch } from "../hooks/useFetch.js";
-import { deliveryFailedBeforePickup, formatAmount, formatOrderCode, isDropped } from "../utils/orders.js";
+import { deliveryFailedBeforePickup, formatAmount, formatOrderCode, isDropped, TIME_OF_DAY } from "../utils/orders.js";
 import type { PackingOrder, PackingProduct } from "../types/index.js";
 
-const timeFormat: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit", hourCycle: "h23" };
 
 // The store's packing list: what to prepare today and by when. The products summed for gathering
 // from the shelf, then each order by its ready time (a delivery's ready time, a pickup's pickup
@@ -146,7 +145,7 @@ function PackingListPage() {
                     <div className="flex shrink-0 items-center gap-2 bg-orange-50 px-4 py-3 text-orange-700 sm:w-32 sm:flex-col sm:justify-center sm:gap-1 sm:py-4">
                       <Clock className="h-4 w-4 opacity-70" strokeWidth={2} />
                       <span className="text-2xl font-bold tracking-tight">
-                        {readyAt.toLocaleTimeString(i18n.language, timeFormat)}
+                        {readyAt.toLocaleTimeString(i18n.language, TIME_OF_DAY)}
                       </span>
                       <span className="text-xs font-medium opacity-80">
                         {t(isDelivery ? "packing.readyForCourier" : "packing.readyForPickup")}

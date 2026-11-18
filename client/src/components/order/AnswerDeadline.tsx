@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Timer } from "lucide-react";
 import type { Order } from "../../types/index.js";
+import { ORDER_DATE_TIME } from "../../utils/orders.js";
 
 // Under this the deadline is shown in amber.
 const DEADLINE_SOON_MS = 5 * 60 * 1000;
@@ -30,7 +31,7 @@ function AnswerDeadline({ order, viewer, className = "" }: AnswerDeadlineProps) 
   const today = new Date(now).toDateString() === deadline.toDateString();
   const time = deadline.toLocaleString(
     undefined,
-    today ? { timeStyle: "short", hourCycle: "h23" } : { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" },
+    today ? { timeStyle: "short", hourCycle: "h23" } : ORDER_DATE_TIME,
   );
   const soon = deadline.getTime() - now < DEADLINE_SOON_MS;
   return (
