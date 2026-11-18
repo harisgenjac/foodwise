@@ -4,11 +4,13 @@
   "description": "",
   "scripts": {
     "migrate": "dotenv run -q -f .env -- node-pg-migrate",
+    "migrate:create": "node-pg-migrate create --migration-file-language ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "concurrently \"tsc --watch\" \"node --watch dist/server.js\"",
     "test": "dotenv run -q -f .env.test -- vitest run",
     "seed": "npm run build && node dist/scripts/seed.js",
+    "db:reset": "npm run build && node dist/scripts/dbReset.js",
     "create-admin": "npm run build && node dist/scripts/createAdmin.js",
     "test:watch": "dotenv run -q -f .env.test -- vitest",
     "typecheck": "tsc --noEmit -p tsconfig.test.json"

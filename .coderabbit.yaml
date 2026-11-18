@@ -43,8 +43,10 @@ reviews:
         Error messages are English.
     - path: "server/**/migrations/**"
       instructions: |
-        Migrations must be safe for existing data, have a working down step, and
-        add indexes for new foreign keys. Flag anything destructive.
+        Migrations are TypeScript (node-pg-migrate). The baseline creates the schema as
+        of the cleanup and is never edited; a change is a new migration that must be
+        safe for existing data, have a working down step and add indexes for new
+        foreign keys. Flag anything destructive.
     - path: "client/src/**"
       instructions: |
         Every UI text goes through i18n with keys in BOTH bs and en; flag

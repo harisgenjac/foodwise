@@ -1,9 +1,10 @@
 import type { Pool, PoolClient } from "pg";
 import { isValidDateTime } from "./dates.js";
 
-// A store's order settings (migration 1793000000039): delivery on or off, the default preparation
-// time and the pause on new orders. Saved by the store on My profile (and the pause also from its
-// dashboard), or by an admin in the profile dialog.
+// A store's order settings (users.delivery_enabled, preparation_minutes, orders_paused):
+// delivery on or off, the default preparation time and the pause on new orders. Saved by the
+// store on My profile (and the pause also from its dashboard), or by an admin in the profile
+// dialog.
 
 // The preparation times a store can choose, in minutes; 30 is the default.
 const PREPARATION_MINUTES = [15, 30, 45, 60, 90, 120] as const;

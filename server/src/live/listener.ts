@@ -3,7 +3,7 @@ import { sendToAll, sendToUsers, type LiveEvent } from "./hub.js";
 
 const { Client } = pkg;
 
-// The channel the triggers of migration 044 notify on.
+// The channel the live event triggers (notify_order_change, notify_new_notification) notify on.
 const LIVE_CHANNEL = "live_events";
 
 // The listener's connection shows under this name in pg_stat_activity.

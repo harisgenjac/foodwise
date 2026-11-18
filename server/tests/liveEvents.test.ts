@@ -8,7 +8,7 @@ import { LIVE_APPLICATION_NAME, parseLiveEvent, startLiveListener, type LiveList
 import { type Agent, cleanupUsers, createProduct, orderOne, PASSWORD, registerAndLogin, userId } from "./helpers.js";
 
 // SSE (delivery phase 2): GET /api/events streams "something changed" events, sent by the
-// database triggers of migration 044 once a transaction commits, to the order's two parties and
+// database triggers notify_order_change and notify_new_notification once a transaction commits, to the order's two parties and
 // to a notification's user.
 const STORE = "live-events-store@test.com";
 const RESTAURANT = "live-events-restaurant@test.com";

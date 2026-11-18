@@ -61,7 +61,7 @@ More commands (tests, seed, lint, type-check) are in the two technical docs.
 - **Server messages are in English** (errors, success messages, log lines) and the tests assert on them. Keep new ones in English and consistent with existing wording (e.g. `"Product not found."`, `"An error occurred while fetching products."`). UI translation stays on the client: `error`/`message` texts are translated by their exact English text from `client/src/i18n/locales/server.bs.json` (an axios interceptor applies it; a client test fails when a server text has no entry, so a new or reworded message needs one), notification text is translated from the notification `type` (the stored `message` is an English fallback), and CSV reports follow the `lang` query param.
 - **Authorization checks ownership, not only role.**
 - **SQL:** parameterized queries only. With a JOIN, always use explicit `table.column` prefixes and never a bare `*`.
-- **Migrations:** never edit one that has already been run. Every schema change is a new migration.
+- **Migrations:** TypeScript (`npm run migrate:create -- <name>`). Never edit one that has already been run, the baseline included. Every schema change is a new migration.
 - **UI strings:** every user-visible string goes through `t()` with keys in both `client/src/i18n/locales/bs.json` and `en.json`.
 - **Imports:** local imports end in `.js` (server and client), even when the source file is `.ts`/`.tsx`.
 - **Postgres types:** `DECIMAL`/`NUMERIC` and `COUNT(*)` arrive as `string`; `INTEGER`/`SERIAL` ids arrive as `number`.
