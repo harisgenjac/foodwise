@@ -16,6 +16,7 @@ import {
   countPickupOrders,
   getOrderDetails,
   listMineOrders,
+  listPackingList,
   listPickupOrders,
   listStoreOrders,
   summarizeMineOrders,
@@ -90,6 +91,15 @@ export const getOrderPickupCounts = async (req: Request, res: Response) => {
     return res.status(200).json({ message: "Pickups fetched successfully.", counts });
   } catch (error) {
     return fail(res, error, "An error occurred while fetching pickups.");
+  }
+};
+
+export const getPackingList = async (req: Request, res: Response) => {
+  try {
+    const list = await listPackingList(req.user!.id);
+    return res.status(200).json({ message: "Packing list fetched successfully.", ...list });
+  } catch (error) {
+    return fail(res, error, "An error occurred while fetching the packing list.");
   }
 };
 

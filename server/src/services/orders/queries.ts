@@ -362,6 +362,45 @@ export const countPickupOrders = async (userId: number, role: string) => {
   };
 };
 
+// When the goods must be ready, as local wall-clock time like pickup_at: the ready time the store
+// chose for a delivery (a timestamptz), the pickup time for a pickup.
+const READY_TIME = `(CASE WHEN orders.fulfilment_method = 'DELIVERY' AND orders.ready_at IS NOT NULL
+    THEN orders.ready_at AT TIME ZONE current_setting('TimeZone') ELSE orders.pickup_at END)`;
+
+// The orders a store packs today: accepted, ready today, not yet with the courier or picked up.
+// Missed pickups from earlier days stay on the pickups page.
+const PACKING_ORDERS = `orders.store_id = $1 AND orders.status = 'Confirmed' AND ${READY_TIME}::date = CURRENT_DATE`;
+
+// The store's packing list: today's orders by ready time with their items, and every accepted
+// product summed over those orders.
+export const listPackingList = async (storeId: number) => {
+  const orders = await pool.query(
+    `SELECT ${ORDER_COLUMNS},
+       ${READY_TIME} AS ready_time,
+       restaurants.business_name, cities.name AS city, restaurants.phone AS party_phone,
+       ${storeLogo("restaurants")} AS party_logo_url
+     FROM orders
+     JOIN users AS restaurants ON restaurants.id = orders.restaurant_id
+     LEFT JOIN cities ON cities.id = restaurants.city_id
+     ${LINES}
+     WHERE ${PACKING_ORDERS}
+     ORDER BY ready_time ASC, orders.id ASC`,
+    [storeId],
+  );
+  const products = await pool.query(
+    `SELECT products.id AS product_id, products.name AS product_name, products.unit, products.image_url,
+       SUM(order_items.quantity)::text AS quantity, COUNT(DISTINCT orders.id)::int AS order_count
+     FROM order_items
+     JOIN orders ON orders.id = order_items.order_id
+     JOIN products ON products.id = order_items.product_id
+     WHERE ${PACKING_ORDERS} AND order_items.status = 'Confirmed'
+     GROUP BY products.id, products.name, products.unit, products.image_url
+     ORDER BY products.name ASC, products.id ASC`,
+    [storeId],
+  );
+  return { orders: orders.rows, products: products.rows };
+};
+
 const PARTY_COLUMNS = (alias: string, cityAlias: string) => `json_build_object(
     'id', ${alias}.id,
     'business_name', ${alias}.business_name,
