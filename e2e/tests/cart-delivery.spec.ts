@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { API_URL, storageState, uniqueName } from "../support/accounts.js";
 import { apiAs, cancelOrder, createProduct, setPinAs, simulateCourier } from "../support/api.js";
+import { sarajevoMinutesNow } from "../support/dates.js";
 import { emptyCart, open, reload, toast } from "../support/ui.js";
 
 // A restaurant chooses delivery in the cart (delivery phase 2, the mock provider): the estimate
@@ -38,6 +39,9 @@ test.afterEach(async () => {
 });
 
 test("a restaurant orders with delivery from the cart, and the store accepts it with a ready time", async ({ page, browser }) => {
+  // Delivery is for today and accepting needs a ready time today (30 minutes ahead here); near
+  // midnight there is none left, as in delivery-flow.spec.ts.
+  test.skip(24 * 60 - sarajevoMinutesNow() < 45, "no ready time left today");
   // The store at the town centre, the restaurant about 2 km north-east: a short mock delivery.
   await setPinAs("store", VISOKO);
   await setPinAs("restaurant", { latitude: VISOKO.latitude + 0.015, longitude: VISOKO.longitude + 0.015 });
@@ -83,8 +87,10 @@ test("a restaurant orders with delivery from the cart, and the store accepts it 
     await expect(ready.getByText("Kada će narudžba biti spremna za kurira?")).toBeVisible();
     await ready.getByRole("button", { name: "30 minuta" }).click();
     await dialog.getByRole("button", { name: "Sačuvaj odluku" }).click();
-    accepted = true;
     await expect(toast(store, "Odluka o narudžbi je sačuvana.")).toBeVisible();
+    // Only once the server took the decision: afterEach then lets the courier deliver it,
+    // otherwise it withdraws the order (a Pending one has no delivery to simulate).
+    accepted = true;
     await expect(store.getByText("Dostava naručena, čeka kurira")).toBeVisible();
     await expect(store.getByText("Spremno za kurira")).toBeVisible();
     await storeContext.close();
