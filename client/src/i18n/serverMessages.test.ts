@@ -90,6 +90,8 @@ describe("server texts", () => {
     /^(SELECT|UPDATE|INSERT|DELETE|WITH|FROM|FOR|COALESCE|CASE|SAVEPOINT|RELEASE|ROLLBACK|MAX|MIN)[ (]/,
     // `Your account is blocked.${reason}`: the reason part has its own key (see below).
     /^Your account is blocked\.7$/,
+    // Log labels passed to sendError (its `log` argument): written to the log, never sent.
+    /^Error while .*:$/,
   ];
 
   // A template literal stands for any value: `${...}` becomes a sample value.
