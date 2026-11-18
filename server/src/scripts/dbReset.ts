@@ -1,6 +1,6 @@
 // npm run db:reset: a fresh local database. Drops and recreates the public schema, runs the
-// migrations, empties the local uploads (logos, covers, product images) and runs the seed.
-// Refuses to run in production or on a database whose name looks like a production one. Uses
+// migrations, empties the local uploads (logos, covers, product images) and runs the seed
+// (`npm run db:reset -- --demo` runs the demo seed instead). Refuses to run in production or on a database whose name looks like a production one. Uses
 // DATABASE_URL and UPLOADS_DIR from .env.
 import "dotenv/config";
 import fs from "fs";
@@ -65,7 +65,8 @@ const main = async () => {
     }
   }
 
-  run("Seed", path.join(SERVER_DIR, "dist/scripts/seed.js"));
+  const demo = process.argv.includes("--demo");
+  run(demo ? "Demo seed" : "Seed", path.join(SERVER_DIR, "dist/scripts", demo ? "seedDemo.js" : "seed.js"));
 };
 
 main().catch((error) => {
