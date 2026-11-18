@@ -129,12 +129,32 @@ export const sendOrderOf = async (
   return order;
 };
 
-// The store's side of an order: accept every item, or mark it picked up.
-export const acceptOrder = async (api: APIRequestContext, orderId: number) => {
+// Sends a one-item delivery order as a restaurant (today, as soon as possible, to its pin) at the
+// product's current price, with partial fulfilment off. Both parties need a pin.
+export const sendDeliveryOrder = async (api: APIRequestContext, productId: number, quantity: number) => {
+  const { product } = await ok<{ product: { discounted_price: string } }>(await api.get(`/api/products/${productId}`));
+  const { order } = await ok<{ order: { id: number; code: string } }>(
+    await api.post("/api/orders", {
+      data: {
+        fulfilment_method: "DELIVERY",
+        accept_partial: false,
+        items: [{ product_id: productId, quantity, unit_price: product.discounted_price }],
+      },
+    }),
+  );
+  return order;
+};
+
+// The store's side of an order: accept every item, or mark it picked up. A delivery order also
+// needs the time the goods will be ready (today), which books the delivery.
+export const acceptOrder = async (api: APIRequestContext, orderId: number, readyAt?: Date) => {
   const { order } = await ok<{ order: { items: { id: number }[] } }>(await api.get(`/api/orders/${orderId}`));
   return ok(
     await api.post(`/api/orders/${orderId}/decision`, {
-      data: { items: order.items.map((item) => ({ item_id: item.id, action: "ACCEPT" })) },
+      data: {
+        items: order.items.map((item) => ({ item_id: item.id, action: "ACCEPT" })),
+        ...(readyAt ? { ready_at: readyAt.toISOString() } : {}),
+      },
     }),
   );
 };
