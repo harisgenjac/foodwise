@@ -169,7 +169,8 @@ The Resend transport is built and tested but not configured. Going live is a cha
 | `npm test` | Runs the tests against the test database (apply its schema first with `npx dotenv run -q -f .env.test -- node-pg-migrate up`) |
 | `npm run test:watch` | Runs the tests in watch mode |
 | `npm run typecheck` | Type-checks the source and the tests |
-| `npm run seed` | Builds, then replaces all data with demo data that simulates two months of use |
+| `npm run seed` | Builds, then replaces all data with the demo accounts only (fast) |
+| `npm run seed:demo` | Builds, then replaces all data with the demo accounts plus two months of activity |
 | `npm run create-admin -- <email> <password> [first] [last]` | Builds, then creates an admin account |
 
 ### Client (`cd client`)
@@ -185,7 +186,7 @@ The Resend transport is built and tested but not configured. Going live is a cha
 
 ## Demo accounts
 
-After `npm run seed`, every demo account uses the password `To12345678`:
+After `npm run seed` or `npm run seed:demo`, every demo account uses the password `To12345678` (`SEED_PASSWORD` in `server/.env` changes it):
 
 | Role | Email |
 |---|---|
@@ -195,7 +196,7 @@ After `npm run seed`, every demo account uses the password `To12345678`:
 | Company HQ (Bingo d.o.o.) | `bingo@demo.com` |
 | Bingo branches (5) | `bingo.sarajevo@demo.com`, `bingo.visoko@demo.com`, `bingo.kakanj@demo.com`, `bingo.zenica@demo.com`, `bingo.tuzla@demo.com` |
 
-The seed deletes all existing data and rebuilds the last two months of activity: products, orders in every status, donations, subscriptions and credits, notifications and announcements.
+Both seeds delete all existing data. `npm run seed` creates the accounts above with complete profiles and this month's plan for every store; `npm run seed:demo` adds the last two months of activity: products, orders in every status (pickup and delivery), donations, subscriptions and credits, notifications and announcements.
 
 ## Project structure
 

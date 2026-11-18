@@ -1,5 +1,5 @@
-// Static data for `npm run seed`: the demo businesses, the products they sell and the meals
-// restaurants donate. The simulation that uses it lives in seed.ts.
+// Static data for the seeds: the accounts (`npm run seed`, seedBase.ts) and, for the demo activity
+// (`npm run seed:demo`, seedDemo.ts), the products stores sell and the meals restaurants donate.
 
 export interface SeedBusiness {
   first_name: string;
@@ -9,8 +9,8 @@ export interface SeedBusiness {
   // A name from the cities table.
   city: string;
   address: string;
-  // The pin on the map: [latitude, longitude]. Left out = no pin yet (the profile reminds).
-  location?: [number, number];
+  // The pin on the map: [latitude, longitude], within 30 km of the city.
+  location: [number, number];
   phone: string;
   openingTimes: string;
   pickupTimes: string;
@@ -32,6 +32,8 @@ export interface SeedStore extends SeedBusiness {
   currentStock: number;
   // A branch: the name of its company in COMPANIES (created by its headquarters).
   company?: string;
+  // Order settings: delivery is on unless set to false here.
+  deliveryEnabled?: boolean;
 }
 
 export interface ProductTemplate {
@@ -51,7 +53,8 @@ export interface MealTemplate {
   temperature: "HOT" | "COLD";
 }
 
-export const SEED_PASSWORD = "To12345678";
+// One password for every seeded account; SEED_PASSWORD in .env changes it.
+export const SEED_PASSWORD = process.env.SEED_PASSWORD || "To12345678";
 
 export const ADMINS = [
   { first_name: "Haris", last_name: "Admin", email: "admin@demo.com" },
@@ -104,7 +107,7 @@ export const STORES: SeedStore[] = [
     first_name: "Dino", last_name: "Marić", email: "ribarnica.neretva@demo.com", business_name: "Ribarnica Neretva",
     city: "Zenica", address: "Trg Alije Izetbegovića 3", location: [44.20168, 17.90783], phone: "061666666", openingTimes: "07:00–17:00", pickupTimes: "12:00–16:00",
     description: "Svježa riječna i morska riba, isporuka svako jutro.",
-    pickup: [12, 16], activity: 0.25, currentStock: 10, categories: ["Fish", "Frozen Food"], plans: ["Basic", "Standard"], autoRenew: false,
+    pickup: [12, 16], activity: 0.25, currentStock: 10, categories: ["Fish", "Frozen Food"], plans: ["Basic", "Standard"], autoRenew: false, deliveryEnabled: false,
   },
   {
     first_name: "Ivana", last_name: "Bošnjak", email: "market.neretva@demo.com", business_name: "Market Neretva",
@@ -122,13 +125,13 @@ export const STORES: SeedStore[] = [
     first_name: "Aida", last_name: "Salihović", email: "pekara.somun@demo.com", business_name: "Pekara Somun",
     city: "Zenica", address: "Maršala Tita 60", location: [44.20412, 17.90598], phone: "061999999", openingTimes: "06:00–19:00", pickupTimes: "17:00–19:00",
     description: "Somuni, pite i hljeb iz krušne peći.",
-    pickup: [17, 19], activity: 0.15, currentStock: 6, categories: ["Bakery"], plans: ["Basic"], autoRenew: false,
+    pickup: [17, 19], activity: 0.15, currentStock: 6, categories: ["Bakery"], plans: ["Basic"], autoRenew: false, deliveryEnabled: false,
   },
   {
     first_name: "Nermin", last_name: "Čaušević", email: "bio.kutak@demo.com", business_name: "Bio Kutak",
     city: "Visoko", address: "Čaršijska 4", location: [43.98963, 18.17646], phone: "062000000", openingTimes: "09:00–20:00", pickupTimes: "17:00–20:00",
     description: "Organske namirnice, biljni napici i zdrava hrana.",
-    pickup: [17, 20], activity: 0.12, currentStock: 5, categories: ["Other", "Drinks", "Dairy", "Vegetables"], plans: ["Basic"], autoRenew: false,
+    pickup: [17, 20], activity: 0.12, currentStock: 5, categories: ["Other", "Drinks", "Dairy", "Vegetables"], plans: ["Basic"], autoRenew: false, deliveryEnabled: false,
   },
   // Branches of Bingo d.o.o. (after the stores with product templates). No description or logo of
   // their own, so they show the company's.
@@ -191,7 +194,7 @@ export const RESTAURANTS: SeedBusiness[] = [
   },
   {
     first_name: "Ana", last_name: "Jurić", email: "kafana.most@demo.com", business_name: "Kafana Most",
-    city: "Zenica", address: "Kamberovića čikma 2", phone: "062444444", openingTimes: "09:00–24:00", pickupTimes: "",
+    city: "Zenica", address: "Kamberovića čikma 2", location: [44.20311, 17.90842], phone: "062444444", openingTimes: "09:00–24:00", pickupTimes: "",
     description: "Domaća kuhinja i riblji specijaliteti s pogledom na rijeku Bosnu.",
     pickup: [0, 0], activity: 0.55,
   },

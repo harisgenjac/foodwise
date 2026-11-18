@@ -1,11 +1,20 @@
 // The e2e seed: empties every data table and creates a small, fixed set of accounts (see
-// accounts.ts). Not the demo seed (server/src/scripts/seed.ts): only what the tests need.
+// accounts.ts). Not the local seeds (server/src/scripts/seed.ts, seedDemo.ts): only what the tests
+// need. The accounts are written with the same helpers the local seeds use
+// (server/src/scripts/seedAccounts.ts), so the two cannot drift apart.
 import bcrypt from "bcryptjs";
 import pg from "pg";
+import {
+  addCredits,
+  cityLookup,
+  everyDay,
+  grantMonthlyPlan,
+  insertAdmin,
+  insertBusiness,
+  insertCompany,
+  wipeData,
+} from "../../server/src/scripts/seedAccounts.js";
 import { ACCOUNTS, PASSWORD } from "./accounts.js";
-
-// Reference data filled by the migrations; everything else is emptied.
-const KEPT_TABLES = ["pgmigrations", "cities", "plans", "topup_packages"];
 
 // Migrations and TRUNCATE on the wrong database would change or wipe it, so only a database named
 // *_e2e_db is accepted: checked by the config before the web servers start, and again here.
@@ -18,117 +27,35 @@ export const assertE2eDatabase = (databaseUrl: string) => {
 
 type Business = { email: string; firstName: string; lastName: string; businessName: string };
 
+// Open all day every day, so the store page says "open now" whenever a test runs; pickup
+// 10:00–18:00 every day.
+const OPEN_ALL_DAY = everyDay("00:00", "24:00");
+const PICKUP_HOURS = everyDay("10:00", "18:00");
+// The specs publish many products with the shared stores, and the chromium and iPhone projects
+// both run some of them, so a Standard plan's 50 credits are not enough for a full run.
+const EXTRA_CREDITS = 150;
+
 export const seedE2e = async (databaseUrl: string) => {
   assertE2eDatabase(databaseUrl);
   const client = new pg.Client({ connectionString: databaseUrl });
   await client.connect();
   try {
     await client.query("BEGIN");
+    await wipeData(client);
 
-    // TRUNCATE fires no row triggers, so the append-only credit ledger empties too.
-    const tables = await client.query<{ tablename: string }>(
-      "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> ALL($1)",
-      [KEPT_TABLES],
-    );
-    const list = tables.rows.map((row) => `"${row.tablename}"`).join(", ");
-    await client.query(`TRUNCATE ${list} RESTART IDENTITY CASCADE`);
-
-    const hash = await bcrypt.hash(PASSWORD, 10);
-    const cities = await client.query<{ id: number; name: string }>(
-      "SELECT id, name FROM cities WHERE name = ANY($1)",
-      [["Visoko", "Breza", "Tuzla"]],
-    );
-    const cityId = (name: string) => {
-      const city = cities.rows.find((row) => row.name === name);
-      if (!city) throw new Error(`City ${name} is missing; run the migrations first.`);
-      return city.id;
-    };
-
+    const passwordHash = await bcrypt.hash(PASSWORD, 10);
+    const cityId = await cityLookup(client);
     const { admin, store, restaurant, brezaStore, tuzlaStore, blockStore, hq, branch } = ACCOUNTS;
-    const adminRow = await client.query<{ id: number }>(
-      `INSERT INTO users (first_name, last_name, email, password_hash, role)
-       VALUES ($1, $2, $3, $4, 'ADMIN') RETURNING id`,
-      [admin.firstName, admin.lastName, admin.email, hash],
-    );
-    const adminId = adminRow.rows[0]!.id;
-
-    // Weekly hours (server/src/utils/schedule.ts). Open all day every day, so the store page says
-    // "open now" whenever a test runs; pickup 10:00–18:00 every day.
-    const everyDay = (open: string, close: string) =>
-      JSON.stringify(Object.fromEntries(["mon", "tue", "wed", "thu", "fri", "sat", "sun"].map((day) => [day, { open, close }])));
-    const OPEN_ALL_DAY = everyDay("00:00", "24:00");
-    const PICKUP_HOURS = everyDay("10:00", "18:00");
-
-    // A store or restaurant with a complete profile (a branch when companyId is set).
-    const insertBusiness = async (
-      account: Business,
-      role: "STORE" | "RESTAURANT",
-      city: string,
-      address: string,
-      companyId: number | null = null,
-    ) => {
-      const user = await client.query<{ id: number }>(
-        `INSERT INTO users
-           (first_name, last_name, email, password_hash, role, business_name, city_id, address, phone,
-            opening_schedule, pickup_schedule, company_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, '061 000 000', $9, $10, $11)
-         RETURNING id`,
-        [
-          account.firstName, account.lastName, account.email, hash, role, account.businessName, cityId(city), address,
-          OPEN_ALL_DAY, role === "STORE" ? PICKUP_HOURS : null, companyId,
-        ],
-      );
-      return user.rows[0]!.id;
-    };
-
-    // An approved Standard plan for the current credit month (months change at midnight
-    // Europe/London, like creditMonth), granted the way grantPlan does it. No auto-renew, so
-    // the renewal job leaves it alone. The trigger fills the request's credits and price.
-    const EXTRA_CREDITS = 150;
-    const grantPlan = async (userId: number) => {
-      const request = await client.query<{ id: number; credits: number; period_month: string }>(
-        `INSERT INTO credit_requests
-           (user_id, request_type, plan_id, period_month, auto_renew, status, source, requested_by,
-            reviewed_by, reviewed_at)
-         VALUES ($1, 'SUBSCRIPTION', (SELECT id FROM plans WHERE name = 'Standard'),
-                 date_trunc('month', now() AT TIME ZONE 'Europe/London')::date, false, 'APPROVED', 'USER', $1,
-                 $2, now())
-         RETURNING id, credits, period_month::text`,
-        [userId, adminId],
-      );
-      const { id: requestId, credits, period_month: periodMonth } = request.rows[0]!;
-      const subscription = await client.query<{ id: number }>(
-        `INSERT INTO subscriptions (user_id, plan_id, credit_request_id, period_month, auto_renew)
-         VALUES ($1, (SELECT id FROM plans WHERE name = 'Standard'), $2, $3, false) RETURNING id`,
-        [userId, requestId, periodMonth],
-      );
-      await client.query(
-        `INSERT INTO credit_transactions
-           (user_id, subscription_id, period_month, amount, type, related_entity_type, related_entity_id,
-            actor, created_by_user_id)
-         VALUES ($1, $2, $3, $4, 'PLAN_GRANT', 'credit_request', $5, 'ADMIN', $6)`,
-        [userId, subscription.rows[0]!.id, periodMonth, credits, requestId, adminId],
-      );
-      // The specs publish many products with the shared stores, and the chromium and iPhone
-      // projects both run some of them, so 50 credits are not enough for a full run.
-      await client.query(
-        `INSERT INTO credit_transactions
-           (user_id, subscription_id, period_month, amount, type, reason, actor, created_by_user_id)
-         VALUES ($1, $2, $3, $4, 'ADMIN_ADJUSTMENT', 'E2E: credits for a full run', 'ADMIN', $5)`,
-        [userId, subscription.rows[0]!.id, periodMonth, EXTRA_CREDITS, adminId],
-      );
-    };
+    const adminId = await insertAdmin(client, {
+      firstName: admin.firstName, lastName: admin.lastName, email: admin.email, passwordHash,
+    });
 
     // The company: its headquarters login (no credits of its own) and one branch in Visoko.
-    const company = await client.query<{ id: number }>("INSERT INTO companies (name) VALUES ($1) RETURNING id", [
-      hq.company,
-    ]);
-    const companyId = company.rows[0]!.id;
-    await client.query(
-      `INSERT INTO users (first_name, last_name, email, password_hash, role, phone, company_id)
-       VALUES ($1, $2, $3, $4, 'COMPANY', '061 000 001', $5)`,
-      [hq.firstName, hq.lastName, hq.email, hash, companyId],
-    );
+    const { companyId } = await insertCompany(client, {
+      name: hq.company,
+      hq: { firstName: hq.firstName, lastName: hq.lastName, email: hq.email, phone: "061 000 001" },
+      passwordHash,
+    });
 
     const businesses: [Business, "STORE" | "RESTAURANT", string, string, number | null][] = [
       [store, "STORE", "Visoko", "Alije Izetbegovića 1", null],
@@ -138,10 +65,19 @@ export const seedE2e = async (databaseUrl: string) => {
       [blockStore, "STORE", "Visoko", "Musala 9", null],
       [branch, "STORE", "Visoko", "Kakanjska 4", companyId],
     ];
-    // Only stores pay credits: restaurants get no plan.
     for (const [account, role, city, address, branchOf] of businesses) {
-      const id = await insertBusiness(account, role, city, address, branchOf);
-      if (role === "STORE") await grantPlan(id);
+      // No pin: the specs that need one set it themselves (delivery, the location on the map).
+      const id = await insertBusiness(client, {
+        role, email: account.email, firstName: account.firstName, lastName: account.lastName,
+        businessName: account.businessName, cityId: cityId(city), address, phone: "061 000 000", passwordHash,
+        openingSchedule: OPEN_ALL_DAY, pickupSchedule: PICKUP_HOURS, companyId: branchOf,
+      });
+      // Only stores pay credits: an approved Standard plan for this month (no auto-renew, so the
+      // renewal job leaves it alone) and the extra credits.
+      if (role === "STORE") {
+        await grantMonthlyPlan(client, { userId: id, planName: "Standard", autoRenew: false, adminId });
+        await addCredits(client, { userId: id, amount: EXTRA_CREDITS, reason: "E2E: credits for a full run", adminId });
+      }
     }
 
     await client.query("COMMIT");
