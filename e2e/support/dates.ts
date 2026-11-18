@@ -23,3 +23,17 @@ export const sarajevoDate = (days = 0): string => {
 
 // Today plus `days` in Sarajevo, as yyyy-mm-dd (the format the API takes).
 export const isoDate = (days = 0): string => sarajevoDay(days).join("-");
+
+// Minutes since midnight in Sarajevo now, for tests that need time left today.
+export const sarajevoMinutesNow = (): number => {
+  const [hours, minutes] = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  })
+    .format(new Date())
+    .split(":")
+    .map(Number);
+  return hours! * 60 + minutes!;
+};
