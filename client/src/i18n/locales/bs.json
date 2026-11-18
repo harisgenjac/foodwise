@@ -487,6 +487,19 @@
     "backpack1": "Još",
     "backpack2": "vrijedi"
   },
+  "impactStrip": {
+    "label": "Vaš uticaj",
+    "together": "Zajedno smo spasili",
+    "foodSaved": "Spašeno hrane",
+    "foodSavedInfo": "Kako se računa spašena hrana",
+    "foodSavedTip": "Sva hrana koju ste preuzeli preko aplikacije. Litre računamo kao kilograme, a proizvodi u komadima nisu uračunati.",
+    "co2": "Manje CO₂",
+    "co2Info": "Kako se računa CO₂",
+    "co2Tip": "Procjena: svaki spašeni kilogram hrane sprečava oko 2,5 kg CO₂ koji bi nastao njenom proizvodnjom i bacanjem.",
+    "saved": "Ušteđeno",
+    "savedInfo": "Kako se računa ušteda",
+    "savedTip": "Razlika između pune cijene i cijene koju ste platili za svu preuzetu hranu."
+  },
   "dashboard": {
     "appTitle": "Dobrodošli na FoodWise",
     "appSubtitle": "Ne bacaj hranu. Uživaj u ukusu.",

@@ -384,7 +384,27 @@ function PhoneScene({ text }: { text: SceneText }) {
   );
 }
 
-function RestaurantHero() {
+// The view boxes and their ratios (literal classes, so Tailwind finds them). With `attached`, the
+// light kerb under the road (16 units) is cut off, so the road runs straight into the impact strip
+// under the hero (design/restaurant-home/impact-strip.html).
+const LAYOUTS = {
+  wide: {
+    full: { viewBox: "0 0 680 310", className: "hidden aspect-[680/310] max-h-80 w-full md:block" },
+    attached: { viewBox: "0 0 680 294", className: "hidden aspect-[680/294] max-h-80 w-full md:block" },
+  },
+  phone: {
+    full: { viewBox: "0 20 360 290", className: "block aspect-[360/290] w-full md:hidden" },
+    attached: { viewBox: "0 20 360 274", className: "block aspect-[360/274] w-full md:hidden" },
+  },
+};
+
+interface RestaurantHeroProps {
+  // Something is attached below (the impact strip): only the top corners are rounded and the kerb
+  // under the road is cut off.
+  attached?: boolean;
+}
+
+function RestaurantHero({ attached = false }: RestaurantHeroProps) {
   const { t } = useTranslation();
   const id = useId();
   const text: SceneText = {
@@ -401,17 +421,18 @@ function RestaurantHero() {
     const titleId = `${id}-${layout}-title`;
     const descId = `${id}-${layout}-desc`;
     const wide = layout === "wide";
+    const { viewBox, className } = LAYOUTS[layout][attached ? "attached" : "full"];
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        viewBox={wide ? "0 0 680 310" : "0 20 360 290"}
+        viewBox={viewBox}
         role="img"
         aria-labelledby={titleId}
         aria-describedby={descId}
         focusable="false"
         fontFamily={FONT}
         data-testid={`restaurant-hero-${layout}`}
-        className={wide ? "hidden aspect-[680/310] max-h-80 w-full md:block" : "block aspect-[360/290] w-full md:hidden"}
+        className={className}
       >
         <title id={titleId}>{t("restaurantHero.title")}</title>
         <desc id={descId}>{t("restaurantHero.desc")}</desc>
@@ -421,7 +442,7 @@ function RestaurantHero() {
   };
 
   return (
-    <div className="overflow-hidden rounded-2xl bg-[#FFF7ED]">
+    <div className={`overflow-hidden bg-[#FFF7ED] ${attached ? "rounded-t-2xl" : "rounded-2xl"}`}>
       {scene("wide")}
       {scene("phone")}
     </div>

@@ -473,6 +473,19 @@
     "backpack1": "Još",
     "backpack2": "vrijedi"
   },
+  "impactStrip": {
+    "label": "Your impact",
+    "together": "Together we have saved",
+    "foodSaved": "Food saved",
+    "foodSavedInfo": "How food saved is counted",
+    "foodSavedTip": "All food you picked up through the app. Litres are counted as kilograms; items sold by the piece are not included.",
+    "co2": "Less CO₂",
+    "co2Info": "How the CO₂ is estimated",
+    "co2Tip": "An estimate: each kilogram of food saved avoids about 2.5 kg of CO₂ from producing and throwing it away.",
+    "saved": "Saved",
+    "savedInfo": "How the savings are counted",
+    "savedTip": "The difference between the full price and the price you paid for all the food you picked up."
+  },
   "dashboard": {
     "appTitle": "Welcome to FoodWise",
     "appSubtitle": "Less waste. More taste.",

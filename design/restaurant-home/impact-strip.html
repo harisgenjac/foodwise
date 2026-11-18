@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="bs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Još vrijedi – traka uticaja (predložak)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+body{margin:0;padding:24px;font-family:system-ui,sans-serif;background:#FFFFFF}
+.wrap{max-width:1024px}
+.hero{height:260px;background:#FFF7ED;border-radius:16px 16px 0 0;position:relative;overflow:hidden}
+.road{position:absolute;left:0;right:0;bottom:0;height:40px;background:#57534E}
+.strip{background:#0F766E;border-radius:0 0 16px 16px;padding:22px 24px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.stat{display:flex;align-items:center;gap:14px;justify-content:center;position:relative}
+.stat>i{font-size:40px;color:#99F6E4}
+.lbl{display:flex;align-items:center;gap:6px;font-size:15px;color:#F0FDFA}
+.val{font-size:30px;font-weight:600;color:#FFFFFF;line-height:1.2}
+.info{background:none;border:none;padding:0;cursor:help;color:#D9F99D;font-size:19px;display:inline-flex}
+.tip{position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);width:240px;background:#064E46;border-radius:12px;padding:18px 20px 20px;text-align:center;opacity:0;pointer-events:none;transition:opacity .15s;z-index:3}
+.tip i{font-size:40px;color:#5EEAD4}
+.tip .tt{color:#D9F99D;font-size:17px;font-weight:600;margin:6px 0 10px}
+.tip .tb{color:#FFFFFF;font-size:14px;line-height:1.55;text-align:left}
+.stat.open .tip{opacity:1}
+@media (max-width:639px){.strip{grid-template-columns:1fr;gap:14px;padding:16px}.stat{justify-content:flex-start}.stat>i{font-size:32px}.val{font-size:24px}.tip{left:0;transform:none;width:min(260px,calc(100vw - 64px))}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="hero"><div class="road"></div></div>
+<div class="strip">
+<div class="stat"><i class="ti ti-salad" aria-hidden="true"></i><div><div class="lbl">Spašeno hrane<button class="info" aria-label="Kako se računa spašena hrana"><i class="ti ti-info-circle" aria-hidden="true"></i></button></div><div class="val">873,9 kg</div></div><div class="tip" role="tooltip"><i class="ti ti-salad" aria-hidden="true"></i><div class="tt">Spašeno hrane</div><div class="tb">Sva hrana koju ste preuzeli preko aplikacije. Litre računamo kao kilograme, a proizvodi u komadima nisu uračunati.</div></div></div>
+<div class="stat open"><i class="ti ti-cloud" aria-hidden="true"></i><div><div class="lbl">Manje CO₂<button class="info" aria-label="Kako se računa CO2"><i class="ti ti-info-circle" aria-hidden="true"></i></button></div><div class="val">2.184,8 kg</div></div><div class="tip" role="tooltip"><i class="ti ti-cloud" aria-hidden="true"></i><div class="tt">Manje CO₂</div><div class="tb">Procjena: svaki spašeni kilogram hrane sprečava oko 2,5 kg CO₂ koji bi nastao njenom proizvodnjom i bacanjem.</div></div></div>
+<div class="stat"><i class="ti ti-coins" aria-hidden="true"></i><div><div class="lbl">Ušteđeno<button class="info" aria-label="Kako se računa ušteda"><i class="ti ti-info-circle" aria-hidden="true"></i></button></div><div class="val">1.246,50 KM</div></div><div class="tip" role="tooltip"><i class="ti ti-coins" aria-hidden="true"></i><div class="tt">Ušteđeno</div><div class="tb">Razlika između pune cijene i cijene koju ste platili za svu preuzetu hranu.</div></div></div>
+</div>
+</div>
+<script>
+document.querySelectorAll('.stat').forEach(s=>{const b=s.querySelector('.info');const on=()=>{document.querySelectorAll('.stat').forEach(x=>x.classList.remove('open'));s.classList.add('open')};b.addEventListener('mouseenter',on);b.addEventListener('focus',on);b.addEventListener('click',on);b.addEventListener('mouseleave',()=>s.classList.remove('open'))});
+</script>
+</body>
+</html>
