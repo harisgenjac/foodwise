@@ -1,13 +1,14 @@
-import { expect, test, type APIRequestContext } from "@playwright/test";
-import { storageState, uniqueName } from "../support/accounts.js";
-import { acceptOrder, apiAs, cancelOrder, completeOrder, createProduct } from "../support/api.js";
+import { expect, request, test, type APIRequestContext } from "@playwright/test";
+import { API_URL, storageState, uniqueName } from "../support/accounts.js";
+import { acceptOrder, apiAs, cancelOrder, completeOrder, createProduct, createStoreWithoutPlan } from "../support/api.js";
 import { isoDate } from "../support/dates.js";
 import { open } from "../support/ui.js";
 
 // The store's packing list: today's accepted orders by ready time and every product summed. Two
 // pickup orders for later today are sent and accepted through the API, then the list is read on
-// the screen. The orders are closed in afterEach (picked up once accepted, withdrawn otherwise):
-// the seeded businesses are shared with other specs. Runs on desktop Chrome and on the iPhone project.
+// the screen. A fresh restaurant sends them: the seeded one keeps pending orders from other specs and
+// may already be at its limit of 10. The orders are closed in afterEach (picked up once accepted,
+// withdrawn otherwise), as the seeded store is shared. Runs on desktop Chrome and on the iPhone project.
 test.use({ storageState: storageState("store") });
 
 // A pickup time must still be ahead; near midnight there is no "later today" left.
@@ -38,23 +39,25 @@ const sendPickupToday = async (api: APIRequestContext, productId: number, quanti
 };
 
 const sent: { id: number; accepted: boolean }[] = [];
+let restaurant: APIRequestContext | null = null;
 
 test.afterEach(async () => {
   const store = await apiAs("store");
-  const restaurant = await apiAs("restaurant");
   for (const order of sent.splice(0)) {
     if (order.accepted) await completeOrder(store, order.id);
-    else await cancelOrder(restaurant, order.id);
+    else if (restaurant) await cancelOrder(restaurant, order.id);
   }
   await store.dispose();
-  await restaurant.dispose();
+  await restaurant?.dispose();
+  restaurant = null;
 });
 
 test("the store's packing list shows today's orders by ready time with the products summed", async ({ page }) => {
   test.skip(sarajevoMinutes() > 23 * 60 + 40, "no pickup time left today");
   const productName = uniqueName("E2E Pakovanje Sir");
   const store = await apiAs("store");
-  const restaurant = await apiAs("restaurant");
+  const fresh = await createStoreWithoutPlan("RESTAURANT");
+  restaurant = await request.newContext({ baseURL: API_URL, storageState: fresh.storageState });
   const product = await createProduct(store, { name: productName, unit: "kg", quantity: 10 });
   // Sent in the opposite order of their pickup times: the list follows the time, not the sending.
   const later = await sendPickupToday(restaurant, product.id, 3, "23:55");
@@ -66,7 +69,6 @@ test("the store's packing list shows today's orders by ready time with the produ
     order.accepted = true;
   }
   await store.dispose();
-  await restaurant.dispose();
 
   await open(page, "/packing");
   await expect(page.getByRole("heading", { level: 1, name: "Spisak za pakovanje" })).toBeVisible();
