@@ -9,7 +9,7 @@ import { formatCreditMonth, nextCreditMonth } from "../../utils/credits.js";
 import type { CreditRequest, Plan, TopupPackage } from "../../types/index.js";
 
 // What the actions need to know about a branch's credits this month.
-export interface BranchCreditState {
+interface BranchCreditState {
   id: number;
   name: string;
   deactivated: boolean;

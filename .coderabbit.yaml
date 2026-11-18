@@ -26,7 +26,7 @@ reviews:
     - path: "server/src/**"
       instructions: |
         Check against the business rules in docs/product.md and credits-spec.md:
-        reservation statuses, credit charges and refunds (each charge refunded at
+        order statuses, credit charges and refunds (each charge refunded at
         most once), visibility of blocked and deactivated stores (use the shared
         visibility condition), company/branch rules.
         Every authenticated route must check role AND ownership (store,

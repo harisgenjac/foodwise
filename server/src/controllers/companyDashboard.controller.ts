@@ -13,7 +13,7 @@ import { callerCompanyId, fail } from "./companyBranches.controller.js";
 // rows and totals with their status, but only active branches need a plan or credits.
 
 // From this share of the month's credits used, a branch is listed as running out.
-export const LOW_CREDITS_SHARE = 0.9;
+const LOW_CREDITS_SHARE = 0.9;
 
 interface OpenRequest {
   request_type: string;

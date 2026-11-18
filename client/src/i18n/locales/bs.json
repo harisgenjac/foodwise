@@ -68,14 +68,11 @@
     "email": "Email",
     "password": "Lozinka",
     "loginButton": "Prijavi se",
-    "noAccount": "Nemate nalog?",
-    "registerLink": "Registrujte se",
     "loginError": "Pogrešan email ili lozinka. Molimo pokušajte ponovo.",
     "createAccount": "Napravite nalog",
     "registrationSubtitle": "Pridružite se FoodWise platformi",
     "firstName": "Ime",
     "lastName": "Prezime",
-    "selectRole": "-- Odaberite ulogu --",
     "roleLabel": "Vrsta naloga",
     "storeRole": "Prodavnica",
     "restaurantRole": "Restoran",
@@ -120,7 +117,6 @@
     "name": "Naziv proizvoda",
     "description": "Opis",
     "category": "Kategorija",
-    "selectCategory": "-- Odaberite kategoriju --",
     "originalPrice": "Originalna cijena",
     "discountedPrice": "Snižena cijena",
     "available": "Dostupno",
@@ -132,7 +128,6 @@
     "addError": "Greška prilikom dodavanja proizvoda. Molimo pokušajte ponovo.",
     "addedSuccess": "Proizvod uspješno kreiran.",
     "editTitle": "Uredi proizvod",
-    "editButton": "Uredi proizvod",
     "editError": "Greška prilikom uređivanja proizvoda. Molimo pokušajte ponovo.",
     "noAvailableProductsTitle": "Trenutno nema dostupnih proizvoda",
     "noAvailableProductsSubtitle": "Vratite se kasnije, prodavnice redovno dodaju nove proizvode.",
@@ -186,8 +181,7 @@
     "notAvailable": "Ovaj proizvod trenutno nije dostupan za narudžbu.",
     "store": "Prodavnica",
     "availableQuantity": "Dostupna količina",
-    "totalQuantity": "Ukupna količina",
-    "daysUntilExpiry": "Dana do isteka"
+    "totalQuantity": "Ukupna količina"
   },
   "orderForm": {
     "placeholderMax": "Maksimalno",
@@ -488,7 +482,6 @@
     "quantity": "Količina",
     "expiryDate": "Datum isteka",
     "viewAllProducts": "Vidi sve proizvode",
-    "city": "Grad",
     "pickupDate": "Preuzimanje",
     "greeting": "Dobro došli, {{name}}",
     "storeSubtitle": "Evo pregleda vaše prodavnice za danas.",
@@ -678,8 +671,6 @@
     "readyForPickup": "Spremno za preuzimanje",
     "pickedUpAt": "Preuzeto {{date}}",
     "total": "Ukupno",
-    "buyer": "Kupac",
-    "seller": "Prodavač",
     "pickupHours": "Preuzimanje",
     "completeButton": "Označi kao preuzeto",
     "cancelOverdueButton": "Otkaži",
@@ -1243,7 +1234,6 @@
     "announcements": {
       "title": "Obavještenja",
       "subtitle": "Pošaljite poruku prodavnicama, restoranima ili svima. Primaoci je dobijaju kao notifikaciju i kao baner dok obavještenje traje.",
-      "formSection": "Novo obavještenje",
       "audienceSection": "Kome se šalje",
       "audiences": {
         "ALL": "Svima",
@@ -2177,7 +2167,6 @@
   "schedule": {
     "closed": "zatvoreno",
     "copyMonday": "Kopiraj ponedjeljak na sve dane",
-    "legacyHint": "Ranije uneseno: „{{text}}”. Unesite sedmično vrijeme ispod, kako bi restorani vidjeli da li ste trenutno otvoreni.",
     "notEntered": "Sedmično vrijeme još nije uneseno. Sačuvajte ga, kako bi restorani vidjeli da li ste trenutno otvoreni.",
     "openOn": "Otvoreno: {{day}}",
     "opensAt": "{{day}}: otvara u",

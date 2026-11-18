@@ -5,7 +5,7 @@ import { InvalidEmailDataError, type EmailTemplate } from "./types.js";
 // without the footer link to it. Their data holds the raw one-time token, which the queue removes
 // from the row once the email is finished (sent, failed or skipped).
 
-export interface TokenEmailData {
+interface TokenEmailData {
   token: string;
 }
 
@@ -93,8 +93,8 @@ const INVITATION_COPY: Record<
 const invitationSender = (data: unknown): InvitationSender =>
   (data as { sender?: unknown } | null)?.sender === "COMPANY" ? "COMPANY" : "ADMIN";
 
-export const PASSWORD_RESET_PAGE = "/reset-password";
-export const INVITATION_PAGE = "/set-password";
+const PASSWORD_RESET_PAGE = "/reset-password";
+const INVITATION_PAGE = "/set-password";
 
 export const SYSTEM_TEMPLATES: Record<string, EmailTemplate> = {
   PASSWORD_RESET: {

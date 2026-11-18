@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import { randomBytes } from "node:crypto";
 
 export const MAX_EMAIL_LENGTH = 254;
-export const MIN_PASSWORD_LENGTH = 8;
+const MIN_PASSWORD_LENGTH = 8;
 const SALT_ROUNDS = 10;
 
 // Emails are compared case-insensitively, so they are stored and looked up in lowercase.
@@ -36,7 +36,7 @@ export const isUniqueViolation = (error: unknown) =>
 // How a new account gets in, when an admin or a headquarters creates it: an invitation email with
 // a link to set the first password (the default), or a temporary password the creator passes on
 // (for users without email access), which must be replaced at the first login.
-export type CreateMethod = "INVITE" | "PASSWORD";
+type CreateMethod = "INVITE" | "PASSWORD";
 const CREATE_METHODS: readonly string[] = ["INVITE", "PASSWORD"];
 export const INVALID_CREATE_METHOD = "Choose an invitation or a temporary password.";
 

@@ -3,7 +3,7 @@ import { Download } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import DataTable, { type DataColumn } from "../common/DataTable.js";
 
-export interface ReportItem {
+interface ReportItem {
   id: string;
   icon: LucideIcon;
   title: string;

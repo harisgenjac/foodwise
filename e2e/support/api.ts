@@ -1,4 +1,4 @@
-// Arranging data through the API: whatever a test needs but does not test (a product to reserve,
+// Arranging data through the API: whatever a test needs but does not test (a product to order,
 // a fresh account) is created here, and the behaviour under test is clicked through the UI.
 // An APIRequestContext sends no Origin or Referer, so the server's origin check lets it through.
 import { expect, request, type APIRequestContext, type APIResponse } from "@playwright/test";
@@ -15,13 +15,13 @@ const ok = async <T>(response: APIResponse): Promise<T> => {
 export const apiAs = (role: SeededRole) => request.newContext({ baseURL: API_URL, storageState: storageState(role) });
 
 // An API client logged in as any account.
-export const apiLogin = async (email: string, password: string) => {
+const apiLogin = async (email: string, password: string) => {
   const api = await request.newContext({ baseURL: API_URL });
   await ok(await api.post("/api/auth/login", { data: { email, password } }));
   return api;
 };
 
-export const cityId = async (api: APIRequestContext, name: string) => {
+const cityId = async (api: APIRequestContext, name: string) => {
   const { cities } = await ok<{ cities: { id: number; name: string }[] }>(await api.get("/api/cities"));
   const city = cities.find((row) => row.name === name);
   if (!city) throw new Error(`City ${name} is missing.`);

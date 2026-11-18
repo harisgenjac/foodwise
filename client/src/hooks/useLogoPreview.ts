@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 // The image types the server accepts for a logo (server/src/middleware/upload.middleware.ts).
-export const LOGO_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const LOGO_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export const LOGO_ACCEPT = LOGO_MIME_TYPES.join(",");
 
 // A chosen logo file and its preview. The preview is only ever an object URL of the file itself

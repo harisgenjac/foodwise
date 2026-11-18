@@ -11,15 +11,15 @@ import { createEmailTransport, type EmailTransport } from "./transports.js";
 
 // The users' language is not stored yet (the switcher only changes the open page), so every
 // email goes out in Bosnian for now. The queue keeps a language per email for when it is.
-export const DEFAULT_EMAIL_LANGUAGE: EmailLanguage = "bs";
+const DEFAULT_EMAIL_LANGUAGE: EmailLanguage = "bs";
 
 export const MAX_EMAIL_ATTEMPTS = 5;
 // Wait after a failed attempt 1, 2, 3, 4 before the next one (1 min, 5 min, 30 min, 2 h).
 export const RETRY_DELAYS_SECONDS = [60, 300, 1800, 7200] as const;
 // A row still SENDING after this long belongs to a worker that stopped mid-send.
-export const STALE_SENDING_MINUTES = 10;
-export const EMAIL_BATCH_SIZE = 50;
-export const EMAIL_POLL_INTERVAL_MS = 5_000;
+const STALE_SENDING_MINUTES = 10;
+const EMAIL_BATCH_SIZE = 50;
+const EMAIL_POLL_INTERVAL_MS = 5_000;
 const MAX_ERROR_LENGTH = 1000;
 // A finished email (sent, failed or skipped) keeps no one-time token: system emails carry the raw
 // token of their link in `data` only until then.
@@ -89,7 +89,7 @@ interface ClaimedEmail {
   recipient_active: boolean | null;
 }
 
-export interface ProcessOptions {
+interface ProcessOptions {
   transport: EmailTransport;
   config: Pick<EmailConfig, "from" | "redirectTo" | "appUrl">;
   now?: Date;
@@ -97,7 +97,7 @@ export interface ProcessOptions {
   db?: Queryable;
 }
 
-export interface ProcessResult {
+interface ProcessResult {
   sent: number;
   retrying: number;
   failed: number;

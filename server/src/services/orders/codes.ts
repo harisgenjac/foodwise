@@ -31,7 +31,7 @@ export interface NewOrderDelivery {
   estimatedAt: string;
 }
 
-export interface NewOrder {
+interface NewOrder {
   storeId: number;
   restaurantId: number;
   // Local wall-clock time; for a delivery, when the courier is expected at the store.

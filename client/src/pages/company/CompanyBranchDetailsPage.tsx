@@ -264,7 +264,7 @@ function CompanyBranchDetailsPage() {
           />
           <DetailItem icon={Phone} label={t("user.phone")} value={branch.phone || "—"} />
           <DetailItem icon={Mail} label={t("company.branchDetails.login")} value={branch.email} />
-          <DetailItem icon={Clock} label={t("user.workingHours")} value={hoursText(branch.opening_schedule, branch.opening_hours, t) || "—"} />
+          <DetailItem icon={Clock} label={t("user.workingHours")} value={hoursText(branch.opening_schedule, t) || "—"} />
           <DetailItem
             icon={CircleCheck}
             label={t("company.branchDetails.staff")}

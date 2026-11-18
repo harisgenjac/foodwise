@@ -55,7 +55,7 @@ Design, decisions and PR split: `docs/orders-design.md` (agreed Nov 6, 2026). De
 
 ### Before Phase 2: order and store UI
 
-**Done** (Nov 16, 2026, PRs #101–#104), except dropping the old free-text hour columns, which waits until the businesses have entered weekly hours.
+**Done** (Nov 16, 2026, PRs #101–#104). The old free-text hour columns were dropped on Nov 18, 2026.
 
 Agreed Nov 15, 2026. One-store orders made the category image and the flat product list stale, and the store page becomes the main place to order. These changes keep the existing look and components; layouts are designed for phones first and also work on desktop. Split into four PRs (product image, order image, store page, Search).
 
@@ -80,7 +80,7 @@ Agreed Nov 15, 2026. One-store orders made the category image and the flat produ
 - [x] Products: search within the store, category chips, an "Expiring soon" section first, then products grouped by category. Each card has the image, discount, expiry, available quantity, price and a + button that turns into a quantity stepper. (Nov 16, 2026: `StoreProductCard`, `QuantityStepper`, `useAddToCart`.)
 - [x] Cart: on phones a cart bar at the bottom ("Korpa · 3 proizvoda · 45,00 KM") that opens `/cart`; on desktop the cart as a panel on the right with checkout and "Accept partial fulfilment". Favorites stay on the store page. (Nov 16, 2026: `StoreCartBar`, `StoreCartPanel`.)
 
-- [ ] Drop the free-text `opening_hours` and `pickup_hours` columns once the businesses have entered weekly hours (a migration; My profile and the admin's dialog then lose the hint).
+- [x] Drop the free-text `opening_hours` and `pickup_hours` columns once the businesses have entered weekly hours (a migration; My profile and the admin's dialog then lose the hint). (Nov 18, 2026: migration 046, in the cleanup before the next phase; the data was test data only.)
 
 **Search ("Pretraga")** (replaces "Browse products" for restaurants)
 - [x] Results grouped by store: a header with the store's logo (or a generic store image), name, city and a link to the store page, and below it the matching products. (Nov 16, 2026: `GET /api/products/by-store`, `SearchPage`.)

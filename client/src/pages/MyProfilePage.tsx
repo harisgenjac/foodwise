@@ -51,9 +51,6 @@ function MyProfilePage() {
   const [address, setAddress] = useState("");
   // The pin on the map; null until set.
   const [location, setLocation] = useState<GeoPoint | null>(null);
-  // The old free-text hours: only a hint until weekly hours are entered.
-  const [openingHours, setOpeningHours] = useState("");
-  const [pickupHours, setPickupHours] = useState("");
   const [openingSchedule, setOpeningSchedule] = useState<Schedule | null>(null);
   const [pickupSchedule, setPickupSchedule] = useState<Schedule | null>(null);
   // A store's cover image on its store page.
@@ -89,8 +86,6 @@ function MyProfilePage() {
       setLocation(
         data.latitude != null && data.longitude != null ? { latitude: data.latitude, longitude: data.longitude } : null,
       );
-      setOpeningHours(data.opening_hours || "");
-      setPickupHours(data.pickup_hours || "");
       setOpeningSchedule(data.opening_schedule ?? null);
       setPickupSchedule(data.pickup_schedule ?? null);
       setCoverUrl(data.cover_url || "");
@@ -530,7 +525,6 @@ function MyProfilePage() {
                 label={t("user.workingHours")}
                 value={openingSchedule}
                 onChange={setOpeningSchedule}
-                legacyText={openingHours}
               />
               {/* Only a store hands food over, so only a store has pickup hours. */}
               {isStore && (
@@ -538,7 +532,6 @@ function MyProfilePage() {
                   label={t("user.pickupHours")}
                   value={pickupSchedule}
                   onChange={setPickupSchedule}
-                  legacyText={pickupHours}
                 />
               )}
             </div>

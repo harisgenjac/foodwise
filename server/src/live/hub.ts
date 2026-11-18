@@ -50,5 +50,3 @@ export const sendToAll = (event: LiveEvent) => {
     for (const res of userStreams) res.write(message);
   }
 };
-
-export const openStreamCount = (userId: number) => streams.get(userId)?.size ?? 0;

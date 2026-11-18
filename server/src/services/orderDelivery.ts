@@ -13,7 +13,7 @@ import { formatOrderCode } from "./orders/codes.js";
 // Known limit: a real provider call inside the transaction holds the order's locks while it runs;
 // before Korpa goes live this should move to an outbox (see docs/development-plan.md).
 
-export interface OrderForDelivery {
+interface OrderForDelivery {
   id: number;
   code: string;
   store_id: number;

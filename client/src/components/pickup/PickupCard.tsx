@@ -47,7 +47,7 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
   const pickedUpAt = new Date(order.picked_up_at ?? order.updated_at);
   const PartyIcon = isStore ? UtensilsCrossed : Store;
   const daysOverdue = order.days_overdue ?? 0;
-  const pickupHours = hoursText(order.party_pickup_schedule, order.party_pickup_hours, t);
+  const pickupHours = hoursText(order.party_pickup_schedule, t);
 
   const tone = isCompleted
     ? "bg-green-50 text-green-700"

@@ -17,9 +17,9 @@ type Db = Pool | PoolClient;
 // so two parallel adds of one restaurant cannot both pass the one-store and line-count rules.
 const CART_LOCK_NAMESPACE = 42;
 
-export type UnavailableReason = "SOLD_OUT" | "EXPIRED" | "REMOVED" | "STORE_UNAVAILABLE";
+type UnavailableReason = "SOLD_OUT" | "EXPIRED" | "REMOVED" | "STORE_UNAVAILABLE";
 
-export interface CartFlags {
+interface CartFlags {
   unavailable: boolean;
   unavailable_reason: UnavailableReason | null;
   quantity_exceeds: boolean;
@@ -50,7 +50,7 @@ interface CartRow {
   available_quantity: string;
 }
 
-export interface CartLine {
+interface CartLine {
   product_id: number;
   name: string;
   category: string;
@@ -67,7 +67,7 @@ export interface CartLine {
   flags: CartFlags;
 }
 
-export interface Cart {
+interface Cart {
   // orders_paused: the store takes no orders now, so nothing can be sent (until the time, if set).
   store: {
     id: number;
@@ -169,7 +169,7 @@ export const getCart = async (restaurantId: number, db: Db = pool): Promise<Cart
   };
 };
 
-export interface PutCartItemInput {
+interface PutCartItemInput {
   quantity: number;
   replace: boolean;
   acceptPrice: boolean;

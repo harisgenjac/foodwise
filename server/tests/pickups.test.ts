@@ -107,7 +107,7 @@ describe("Pickups", () => {
 
     it("returns the other party: the restaurant to the store and the store to the restaurant", async () => {
       await pool.query("UPDATE users SET business_name = 'Bistro A', phone = '061111111' WHERE email = $1", [RESTAURANT_A]);
-      await pool.query("UPDATE users SET business_name = 'Market A', pickup_hours = '8-16' WHERE email = $1", [STORE_A]);
+      await pool.query("UPDATE users SET business_name = 'Market A' WHERE email = $1", [STORE_A]);
       const product = await createProduct(store);
       await insertItem(product.id, RESTAURANT_A);
 
@@ -117,7 +117,6 @@ describe("Pickups", () => {
       const restaurantView = await restaurant.get("/api/orders/pickups?scope=today");
       expect(restaurantView.body.orders[0]).toMatchObject({
         business_name: "Market A",
-        party_pickup_hours: "8-16",
       });
     });
 

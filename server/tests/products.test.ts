@@ -395,7 +395,6 @@ describe("Products routes", () => {
         city_id: await cityId("Sarajevo"),
         phone: "033123456",
         address: "Titova 1",
-        pickup_hours: "08-16",
       });
       expect(profile.status).toBe(200);
 
@@ -406,7 +405,6 @@ describe("Products routes", () => {
         business_name: "Prodavnica Test",
         store_phone: "033123456",
         store_address: "Titova 1",
-        store_pickup_hours: "08-16",
       });
     });
   });

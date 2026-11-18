@@ -26,8 +26,8 @@ export interface ActorRef {
 }
 
 // Client paths the 402 points to (My profile sections).
-export const SUBSCRIPTION_ACTION_URL = "/my-profile#subscription";
-export const TOPUP_ACTION_URL = "/my-profile#topup";
+const SUBSCRIPTION_ACTION_URL = "/my-profile#subscription";
+const TOPUP_ACTION_URL = "/my-profile#topup";
 
 // HTTP 402 with { error, code, hasActiveSubscription, actionUrl }. `error` instead of the spec's
 // `message`, so it follows the API rule and the client's existing error handling shows it.
@@ -50,7 +50,7 @@ export interface ActiveSubscription {
   auto_renew: boolean;
 }
 
-export interface CreditBalance {
+interface CreditBalance {
   periodStart: string;
   periodEnd: string;
   subscription: ActiveSubscription | null;
@@ -60,7 +60,7 @@ export interface CreditBalance {
   available: number;
 }
 
-export interface CreditTransaction {
+interface CreditTransaction {
   id: number;
   user_id: number;
   subscription_id: number | null;
@@ -186,7 +186,7 @@ export const getPlatformUsage = async (db: Db, now = new Date()): Promise<number
   return result.rows[0]?.used ?? 0;
 };
 
-export interface MonthUsage {
+interface MonthUsage {
   month: string;
   hasSubscription: boolean;
   total: number;
@@ -314,7 +314,7 @@ export const chargeForProduct = async (
 export const chargeForProducts = (client: PoolClient, storeId: number, products: ChargeItem[], now = new Date()) =>
   charge(client, storeId, products, now);
 
-export type RefundResult =
+type RefundResult =
   | { refunded: true; transaction: CreditTransaction }
   | { refunded: false; reason: "NO_CHARGE" | "DAY_PASSED" | "HAS_ORDERS" | "ALREADY_REFUNDED" };
 

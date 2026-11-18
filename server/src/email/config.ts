@@ -19,7 +19,7 @@ export interface EmailConfig {
 export class EmailConfigError extends Error {}
 
 export const DEFAULT_EMAIL_FROM = "FoodWise <no-reply@foodwise.local>";
-export const DEFAULT_SMTP_HOST = "localhost";
+const DEFAULT_SMTP_HOST = "localhost";
 // Mailpit's SMTP port.
 export const DEFAULT_SMTP_PORT = 1025;
 const DEFAULT_APP_URL = "http://localhost:5173";

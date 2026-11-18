@@ -2,7 +2,7 @@ import { rateLimit, ipKeyGenerator, MemoryStore, MINUTE, HOUR } from "express-ra
 import type { Request, Response } from "express";
 import { normalizeEmail } from "../utils/accounts.js";
 
-export type RateLimits = {
+type RateLimits = {
   api: number; // per IP, every 15 minutes
   login: number; // failed logins per IP and email, every 15 minutes
   password: number; // password changes and resets per user, every 15 minutes
@@ -12,7 +12,7 @@ export type RateLimits = {
 
 // The app polls notifications every 50 s and a page loads several endpoints at once, so the
 // general limit stays far above normal use.
-export const DEFAULT_RATE_LIMITS: RateLimits = { api: 1000, login: 10, password: 10, upload: 30, forgotPassword: 10 };
+const DEFAULT_RATE_LIMITS: RateLimits = { api: 1000, login: 10, password: 10, upload: 30, forgotPassword: 10 };
 
 const ip = (req: Request) => ipKeyGenerator(req.ip ?? "");
 // Behind authenticate, so the user is known; the IP is only a fallback.

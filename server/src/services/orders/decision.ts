@@ -14,9 +14,9 @@ import { createOrderDelivery, notifyDeliveryFailed, type DeliveryOutcome } from 
 // rejected. A smaller quantity or a rejection needs a reason, and with "not enough in stock" the
 // freed amount can be recorded as sold in the shop.
 
-export const CHANGE_REASONS = ["NOT_ENOUGH_STOCK", "QUALITY", "OTHER"] as const;
-export type ChangeReason = (typeof CHANGE_REASONS)[number];
-export const MAX_NOTE_LENGTH = 300;
+const CHANGE_REASONS = ["NOT_ENOUGH_STOCK", "QUALITY", "OTHER"] as const;
+type ChangeReason = (typeof CHANGE_REASONS)[number];
+const MAX_NOTE_LENGTH = 300;
 
 const REASON_ERROR = "Choose a reason.";
 const NOTE_ERROR = `Describe the reason (at most ${MAX_NOTE_LENGTH} characters).`;

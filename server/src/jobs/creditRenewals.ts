@@ -7,7 +7,7 @@ import { notBlocked } from "../utils/visibility.js";
 
 // Renewal requests are created this many days before the new month starts, so an admin has
 // time to approve them before the user's credits run out with the month.
-export const RENEWAL_DAYS_BEFORE = 2;
+const RENEWAL_DAYS_BEFORE = 2;
 const DAY_MS = 24 * 60 * 60 * 1000;
 // A user whose plan is no longer offered is told once per renewal window, not on every run.
 const SKIPPED_NOTICE_DAYS = 7;

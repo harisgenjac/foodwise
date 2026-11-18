@@ -27,7 +27,7 @@ export const formatMoney = (cents: number): string => {
   return `${whole}.${String(cents % 100).padStart(2, "0")}`;
 };
 
-export const parseDateTime = (value: unknown): Date | null => {
+const parseDateTime = (value: unknown): Date | null => {
   if (typeof value !== "string" || !ISO_DATE_TIME.test(value)) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;

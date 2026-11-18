@@ -219,7 +219,6 @@ describe("Admin", () => {
       city_id: 0, // Zenica, set in beforeAll
       phone: "061999999",
       address: "Glavna 1",
-      opening_hours: "08-20",
     };
 
     beforeAll(async () => {

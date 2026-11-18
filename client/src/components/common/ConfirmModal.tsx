@@ -9,7 +9,7 @@ import RequiredHint from "../form/RequiredHint.js";
 import { useFormValidation } from "../../hooks/useFormValidation.js";
 import { isBlank, REQUIRED } from "../../utils/validation.js";
 
-export type ConfirmVariant = "success" | "danger";
+type ConfirmVariant = "success" | "danger";
 
 interface ConfirmModalProps {
   title: string;

@@ -4,7 +4,7 @@ import { Timer } from "lucide-react";
 import type { Order } from "../../types/index.js";
 
 // Under this the deadline is shown in amber.
-export const DEADLINE_SOON_MS = 5 * 60 * 1000;
+const DEADLINE_SOON_MS = 5 * 60 * 1000;
 
 interface AnswerDeadlineProps {
   order: Pick<Order, "status" | "auto_reject_at">;

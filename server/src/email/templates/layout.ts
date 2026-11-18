@@ -18,7 +18,7 @@ export interface EmailLine {
   struck?: boolean;
 }
 
-export interface EmailContent {
+interface EmailContent {
   lang: EmailLanguage;
   subject: string;
   heading: string;

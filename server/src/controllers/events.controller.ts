@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { addStream, removeStream } from "../live/hub.js";
 
 // A comment line keeps proxies and the browser from closing an idle stream.
-export const HEARTBEAT_MS = 25_000;
+const HEARTBEAT_MS = 25_000;
 // How long the browser waits before reconnecting a dropped stream.
 const RETRY_MS = 10_000;
 // setTimeout's limit (about 24.8 days).

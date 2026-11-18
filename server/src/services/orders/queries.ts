@@ -272,7 +272,7 @@ export const listAdminOrders = async (query: Request["query"]) => {
   return { orders: rows, total };
 };
 
-export const PICKUP_SCOPES =["today", "upcoming", "completed"];
+const PICKUP_SCOPES =["today", "upcoming", "completed"];
 
 // The pickups page: the caller's orders through orders.store_id (store) or restaurant_id;
 // `parties` is the other side of the handover.
@@ -306,7 +306,7 @@ export const listPickupOrders = async (userId: number, role: string, query: Requ
   const columns = `${ORDER_COLUMNS},
     CASE WHEN orders.fulfilment_method = 'PICKUP' THEN GREATEST(CURRENT_DATE - orders.pickup_at::date, 0) ELSE 0 END AS days_overdue,
     parties.business_name, cities.name AS city, parties.phone AS party_phone,
-    parties.address AS party_address, parties.pickup_hours AS party_pickup_hours,
+    parties.address AS party_address,
     parties.pickup_schedule AS party_pickup_schedule,
     ${storeLogo("parties")} AS party_logo_url`;
   let from = `FROM orders
@@ -407,7 +407,6 @@ const PARTY_COLUMNS = (alias: string, cityAlias: string) => `json_build_object(
     'city', ${cityAlias}.name,
     'address', ${alias}.address,
     'phone', ${alias}.phone,
-    'pickup_hours', ${alias}.pickup_hours,
     'pickup_schedule', ${alias}.pickup_schedule,
     'logo_url', ${storeLogo(alias)}
   )`;

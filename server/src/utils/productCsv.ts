@@ -1,7 +1,7 @@
 import { parse } from "csv-parse/sync";
 import { validateProductFields, type ProductFields } from "./validateProduct.js";
 
-export const CSV_COLUMNS = [
+const CSV_COLUMNS = [
   "name",
   "description",
   "category",
@@ -14,12 +14,12 @@ export const CSV_COLUMNS = [
 const REQUIRED_COLUMNS = CSV_COLUMNS.filter((column) => column !== "description");
 export const MAX_CSV_ROWS = 500;
 
-export interface CsvRowError {
+interface CsvRowError {
   row: number;
   error: string;
 }
 
-export type CsvParseResult =
+type CsvParseResult =
   | { error: string; rowErrors?: CsvRowError[] }
   | { error?: undefined; products: ProductFields[] };
 

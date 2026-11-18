@@ -5,7 +5,7 @@ import FormSection from "../form/FormSection.js";
 import DateInput from "../form/DateInput.js";
 import { PRESETS, presetPeriod, type Preset } from "../../utils/reportPeriods.js";
 
-export interface ReportPeriod {
+interface ReportPeriod {
   from: string;
   to: string;
 }

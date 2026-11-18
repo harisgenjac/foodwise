@@ -62,7 +62,7 @@ export const lockOrdersHoldingProducts = async (client: PoolClient, productIds: 
   return result.rows;
 };
 
-export type DroppedCause = "EXPIRED" | "REMOVED";
+type DroppedCause = "EXPIRED" | "REMOVED";
 
 const DROPPED_TEXT: Record<DroppedCause, { some: string; all: string }> = {
   EXPIRED: {
