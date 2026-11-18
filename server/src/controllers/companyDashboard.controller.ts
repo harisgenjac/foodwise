@@ -4,7 +4,8 @@ import { nextMonth } from "../utils/creditTime.js";
 import { isRenewalWindow } from "../jobs/creditRenewals.js";
 import { getBranchesStats } from "../services/branches.js";
 import { listBranchTopupRequests, listCompanyBranchCredits } from "../services/companyCredits.js";
-import { callerCompanyId, fail } from "./companyBranches.controller.js";
+import { callerCompanyId } from "./companyBranches.controller.js";
+import { sendError } from "../utils/httpError.js";
 
 // The headquarters' overview: what waits for its decision, the company's totals and one row per
 // branch. It only reads what the credits page and the branch pages already show: credit figures
@@ -124,6 +125,6 @@ export const getCompanyDashboard = async (req: Request, res: Response) => {
       branches,
     });
   } catch (error) {
-    return fail(res, error, "An error occurred while fetching the dashboard.");
+    return sendError(res, error, "An error occurred while fetching the dashboard.");
   }
 };

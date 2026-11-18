@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api from "../api/axios.js";
+import api, { apiErrorMessage } from "../api/axios.js";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -78,7 +78,7 @@ function AddProductPage() {
       if (appliedTemplateId === template.id) setAppliedTemplateId(null);
       toast.success(t("templates.deleted"));
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("templates.deleteError"));
     }
   };
@@ -124,9 +124,7 @@ function AddProductPage() {
         setCreditError(credits);
         return;
       }
-      const message = axios.isAxiosError(err)
-        ? err.response?.data?.error
-        : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("product.addError"));
     } finally {
       setSaving(false);

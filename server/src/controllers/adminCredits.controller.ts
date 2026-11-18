@@ -1,7 +1,7 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import { parseId, parseNumber } from "../utils/params.js";
-import { HttpError } from "../utils/httpError.js";
+import { HttpError, sendError } from "../utils/httpError.js";
 import { createNotification, notifyCompanyHqOfCredit } from "../utils/notifications.js";
 import { creditMonth, monthEnd } from "../utils/creditTime.js";
 import {
@@ -271,11 +271,7 @@ const decideRequest = (decision: "APPROVED" | "REJECTED") => async (req: Request
     });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    if (error instanceof HttpError) {
-      return res.status(error.status).json(error.body());
-    }
-    console.error("Error while deciding a credit request:", error);
-    return res.status(500).json({ error: "An error occurred while processing the request." });
+    return sendError(res, error, "An error occurred while processing the request.", "Error while deciding a credit request:");
   } finally {
     if (client) client.release();
   }
@@ -338,11 +334,7 @@ export const adjustUserCredits = async (req: Request, res: Response) => {
     });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    if (error instanceof HttpError) {
-      return res.status(error.status).json(error.body());
-    }
-    console.error("Error while adjusting credits:", error);
-    return res.status(500).json({ error: "An error occurred while adjusting credits." });
+    return sendError(res, error, "An error occurred while adjusting credits.", "Error while adjusting credits:");
   } finally {
     if (client) client.release();
   }

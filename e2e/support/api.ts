@@ -6,7 +6,7 @@ import { API_URL, PASSWORD, runId, storageState, type SeededRole } from "./accou
 import { isoDate } from "./dates.js";
 
 // The JSON body of a successful response; fails the test with the server's answer otherwise.
-const ok = async <T>(response: APIResponse): Promise<T> => {
+export const ok = async <T>(response: APIResponse): Promise<T> => {
   expect(response.ok(), `${response.url()} → ${response.status()} ${await response.text()}`).toBe(true);
   return (await response.json()) as T;
 };
@@ -78,6 +78,21 @@ export const createDonation = async (api: APIRequestContext, name: string) => {
   return donation;
 };
 
+// Sets or clears an account's pin on the map through its own profile, keeping the rest of it.
+export const setPin = async (api: APIRequestContext, location: { latitude: number; longitude: number } | null) => {
+  const { user } = await ok<{ user: Record<string, unknown> }>(await api.get("/api/users/me"));
+  const fields = ["first_name", "last_name", "business_name", "city_id", "phone", "address"] as const;
+  const data = Object.fromEntries(fields.map((field) => [field, user[field]]));
+  await ok(await api.put("/api/users/me", { data: { ...data, location } }));
+};
+
+// setPin for a seeded account.
+export const setPinAs = async (role: SeededRole, location: { latitude: number; longitude: number } | null) => {
+  const api = await apiAs(role);
+  await setPin(api, location);
+  await api.dispose();
+};
+
 // The logged-in account's own id.
 export const myId = async (api: APIRequestContext) => {
   const { user } = await ok<{ user: { id: number } }>(await api.get("/api/users/me"));
@@ -85,13 +100,19 @@ export const myId = async (api: APIRequestContext) => {
 };
 
 // Sends a one-item order as a restaurant (restaurants pay no credits) at the product's current
-// price, with partial fulfilment off; pickup tomorrow at 12:00 unless a date is given.
-export const sendOrder = async (api: APIRequestContext, productId: number, quantity: number, pickupDate = isoDate(1)) => {
+// price, with partial fulfilment off; pickup tomorrow at 12:00 unless a date and time are given.
+export const sendOrder = async (
+  api: APIRequestContext,
+  productId: number,
+  quantity: number,
+  pickupDate = isoDate(1),
+  pickupTime = "12:00",
+) => {
   const { product } = await ok<{ product: { discounted_price: string } }>(await api.get(`/api/products/${productId}`));
   const { order } = await ok<{ order: { id: number; code: string } }>(
     await api.post("/api/orders", {
       data: {
-        pickup_at: `${pickupDate}T12:00`,
+        pickup_at: `${pickupDate}T${pickupTime}`,
         accept_partial: false,
         items: [{ product_id: productId, quantity, unit_price: product.discounted_price }],
       },

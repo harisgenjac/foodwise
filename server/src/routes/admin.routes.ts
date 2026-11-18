@@ -3,9 +3,6 @@ import {
   blockUser,
   resendInvitation,
   sendResetLink,
-  createAnnouncement,
-  endAnnouncement,
-  getAnnouncements,
   createUser,
   getAdminActions,
   getAdminDonations,
@@ -19,6 +16,7 @@ import {
   unblockUser,
   updateUserProfile,
 } from "../controllers/admin.controller.js";
+import { createAnnouncement, endAnnouncement, getAnnouncements } from "../controllers/adminAnnouncements.controller.js";
 import {
   adjustUserCredits,
   approveCreditRequest,

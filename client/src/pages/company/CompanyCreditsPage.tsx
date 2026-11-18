@@ -4,7 +4,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { Check, CreditCard, History, Inbox, X } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import LoadErrorState from "../../components/product/LoadErrorState.js";
@@ -27,8 +27,6 @@ import {
 import type { CompanyBranchCredits, CompanyCredits, CreditRequest } from "../../types/index.js";
 
 const cardStyle = "rounded-2xl border border-gray-100 bg-white p-6 shadow-sm";
-const errorMessage = (err: unknown) => (axios.isAxiosError(err) ? err.response?.data?.error : null);
-
 // "Krediti i pretplate": the headquarters asks and pays for its branches' credits. This month's
 // totals, one row per branch (plan, usage, next month's plan, auto-renew and the two actions),
 // the top-ups the branches asked for and the request history across branches.
@@ -99,7 +97,7 @@ function CompanyCreditsPage() {
       toast.success(response.data.message);
       await reload();
     } catch (err) {
-      toast.error(errorMessage(err) || t("company.credits.actionError"));
+      toast.error(apiErrorMessage(err) || t("company.credits.actionError"));
     } finally {
       setBusy(false);
     }

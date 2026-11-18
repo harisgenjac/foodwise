@@ -17,7 +17,7 @@ import {
   Trash2,
   Undo2,
 } from "lucide-react";
-import api from "../api/axios.js";
+import api, { apiErrorMessage } from "../api/axios.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import ProductPageHeader from "../components/product/ProductPageHeader.js";
 import FilterBar, { FilterField } from "../components/product/FilterBar.js";
@@ -62,7 +62,7 @@ function DonateFoodPage() {
       refetch();
       toast.success(t("donations.delete.success"));
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("donations.delete.error"));
     } finally {
       setDeleting(false);
@@ -87,7 +87,7 @@ function DonateFoodPage() {
         setCreditError(credits);
         return;
       }
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("donations.delete.returnError"));
     } finally {
       setDeleting(false);

@@ -6,9 +6,10 @@ import {
   createProduct,
   createStoreWithoutPlan,
   sendDeliveryOrder,
+  setPin,
   simulateCourier,
 } from "../support/api.js";
-import { sarajevoDate } from "../support/dates.js";
+import { sarajevoDate, sarajevoMinutesNow } from "../support/dates.js";
 import { open, searchMarketplace, toast } from "../support/ui.js";
 
 // The whole delivery flow with the mock provider (delivery phase 2), after the store accepted the
@@ -26,37 +27,6 @@ import { open, searchMarketplace, toast } from "../support/ui.js";
 // Chrome and on the iPhone project.
 
 const VISOKO = { latitude: 43.9889, longitude: 18.1781 };
-
-// Accepting needs a ready time today, a little ahead; near midnight there is none left.
-const minutesLeftToday = () => {
-  const [hours, minutes] = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Europe/Sarajevo",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  })
-    .format(new Date())
-    .split(":")
-    .map(Number);
-  return 24 * 60 - (hours! * 60 + minutes!);
-};
-
-// Sets or clears an account's pin through its own profile, keeping the rest of the profile.
-const setPin = async (api: APIRequestContext, location: { latitude: number; longitude: number } | null) => {
-  const me = (await (await api.get("/api/users/me")).json()).user;
-  const response = await api.put("/api/users/me", {
-    data: {
-      first_name: me.first_name,
-      last_name: me.last_name,
-      business_name: me.business_name,
-      city_id: me.city_id,
-      phone: me.phone,
-      address: me.address,
-      location,
-    },
-  });
-  expect(response.ok(), `PUT /api/users/me → ${response.status()} ${await response.text()}`).toBe(true);
-};
 
 const withSeeded = async (role: SeededRole, run: (api: APIRequestContext) => Promise<void>) => {
   const api = await apiAs(role);
@@ -96,7 +66,8 @@ test.afterEach(async () => {
 // the store accepts with the goods ready in 20 minutes. Both parties' screens are opened: the
 // restaurant's order page and the store's order page.
 const acceptedDelivery = async (browser: Browser, productPrefix: string): Promise<Setup> => {
-  test.skip(minutesLeftToday() < 45, "no ready time left today");
+  // Accepting needs a ready time today, a little ahead; near midnight there is none left.
+  test.skip(24 * 60 - sarajevoMinutesNow() < 45, "no ready time left today");
   await withSeeded("store", (api) => setPin(api, VISOKO));
   const fresh = await createStoreWithoutPlan("RESTAURANT");
   restaurantApi = await request.newContext({ baseURL: API_URL, storageState: fresh.storageState });

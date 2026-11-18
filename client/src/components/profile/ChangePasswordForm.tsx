@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { KeyRound, Lock } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import { useAuth } from "../../context/AuthContext.js";
 import FormSection from "../form/FormSection.js";
 import FormField, { inputStyle } from "../form/FormField.js";
@@ -41,7 +41,7 @@ function ChangePasswordForm({ required = false }: { required?: boolean }) {
       reset();
       refreshUser().catch((err) => console.error("Error refreshing user:", err));
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("user.passwordError"));
     } finally {
       setSaving(false);

@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { HandHeart } from "lucide-react";
-import api from "../api/axios.js";
+import api, { apiErrorMessage } from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import DonationForm from "../components/donation/DonationForm.js";
@@ -36,7 +36,7 @@ function AddDonationPage() {
       toast.success(t("donations.form.addedSuccess"));
       navigate("/donate-food");
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("donations.form.saveError"));
     }
   };

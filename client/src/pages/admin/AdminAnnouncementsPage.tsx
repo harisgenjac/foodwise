@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
 import { Languages, Megaphone, Store, Users, UtensilsCrossed } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import { useFetch } from "../../hooks/useFetch.js";
 import { useAdminPage, useKeepPageInRange } from "../../hooks/useAdminPage.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
@@ -93,7 +93,7 @@ function AdminAnnouncementsPage() {
       setPage(1);
       refetch();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("admin.announcements.sendError"));
     } finally {
       setBusy(false);
@@ -110,7 +110,7 @@ function AdminAnnouncementsPage() {
       setEnding(null);
       refetch();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("admin.common.actionError"));
     } finally {
       setBusy(false);

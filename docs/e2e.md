@@ -11,7 +11,7 @@ e2e/
 ├── global-setup.ts       empties the database and seeds it (support/seed.ts)
 ├── support/
 │   ├── accounts.ts       seeded accounts, password, URLs, storageState paths, runId(), uniqueName(prefix)
-│   ├── api.ts            API clients and arrange helpers (apiAs, apiLogin, myId, createProduct, createDonation, cityId, sendOrder,
+│   ├── api.ts            API clients and arrange helpers (ok (the body of a successful response, else the test fails with the answer), apiAs, apiLogin, myId, setPin/setPinAs (a pin on the map, or none), createProduct, createDonation, cityId, sendOrder (pickup date and time optional),
 │   │                     sendOrderOf (several products), sendDeliveryOrder, acceptOrder (with a ready time for delivery), completeOrder, simulateCourier (the dev-only mock courier route), cancelOrder, orderCode,
 │   │                     recordShopSale, setProductPrice, createStoreWithoutPlan)
 │   ├── ui.ts             UI helpers (open and reload (page.goto/page.reload after settleOverlays), toast, dialogWith, loginViaForm, submitLoginForm, changeTemporaryPassword,
@@ -21,7 +21,7 @@ e2e/
 │   ├── seed.ts           the e2e seed
 │   ├── db.ts             direct database changes, only for a state the API cannot make: makePickupOverdue(orderId)
 │   │                     (the API takes pickups from today on); guarded like the seed (a *_e2e_db database)
-│   ├── dates.ts          sarajevoDate(days) → dd/mm/yyyy (UI), isoDate(days) → yyyy-mm-dd (API), both in Europe/Sarajevo
+│   ├── dates.ts          sarajevoDate(days) → dd/mm/yyyy (UI), isoDate(days) → yyyy-mm-dd (API), sarajevoMinutesNow() (minutes since midnight), all in Europe/Sarajevo
 │   └── mailpit.ts        MAILPIT_URL, waitForEmail(query): polls Mailpit's search API until exactly one email matches, returns it in full; countEmails(query)
 └── tests/
     ├── auth.setup.ts                  logs the seeded roles in through the API once, saves .auth/<role>.json

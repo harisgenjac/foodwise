@@ -17,6 +17,7 @@ import SectionCard from "../components/dashboard/SectionCard.js";
 import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
 import OrderCard from "../components/order/OrderCard.js";
 import { DEFAULT_RADIUS, nextRadius, type Radius } from "../utils/radius.js";
+import { formatMoney } from "../utils/orders.js";
 import type { Order, Product, RestaurantDashboardStats } from "../types/index.js";
 
 const SECTION_SIZE = 3;
@@ -106,7 +107,7 @@ const RestaurantDashboardPage = () => {
         <StatCard icon={ShoppingBasket} label={t("dashboard.statAvailableOffers")} value={offersCount} />
         <StatCard icon={Hourglass} label={t("dashboard.statPending")} value={stats?.pending_orders ?? 0} tone="amber" />
         <StatCard icon={CheckCircle2} label={t("dashboard.statConfirmed")} value={stats?.successful_orders ?? 0} tone="green" />
-        <StatCard icon={BadgePercent} label={t("dashboard.statSavings")} value={`${(stats?.savings ?? 0).toFixed(2)} KM`} tone="green" />
+        <StatCard icon={BadgePercent} label={t("dashboard.statSavings")} value={formatMoney(stats?.savings ?? 0)} tone="green" />
       </div>
 
       <div className="space-y-10">

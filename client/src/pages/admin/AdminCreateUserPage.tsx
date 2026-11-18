@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
 import { Building2, Info, KeyRound, Lock, Mail, ShieldCheck, Store, UserPlus, UtensilsCrossed } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import FormSection from "../../components/form/FormSection.js";
 import SignInMethodPicker, { type SignInMethod } from "../../components/form/SignInMethodPicker.js";
 import FormField, { inputStyle } from "../../components/form/FormField.js";
@@ -52,7 +52,7 @@ function AdminCreateUserPage() {
       toast.success(t(method === "INVITE" ? "admin.createUser.successInvite" : "admin.createUser.success"));
       navigate(`/admin/users/${response.data.user.id}`);
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("admin.createUser.error"));
       setSaving(false);
     }

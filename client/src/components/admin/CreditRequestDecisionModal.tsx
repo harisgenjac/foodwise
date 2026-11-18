@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { Check, X } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import Modal, { ModalBody, ModalFooter, ModalHeader } from "../product/Modal.js";
 import { inputStyle } from "../form/FormField.js";
 import { creditRequestSender, creditRequestUser, describeCreditRequest, formatCreditMonth } from "../../utils/credits.js";
@@ -75,7 +75,7 @@ function CreditRequestDecisionModal({ request, action, onClose, onDone }: Credit
       onClose();
       onDone();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("admin.common.actionError"));
     } finally {
       setBusy(false);

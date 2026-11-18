@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import type { PoolClient } from "pg";
 import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import { parseCityFilter } from "../utils/cities.js";
-import { HttpError } from "../utils/httpError.js";
+import { HttpError, sendError } from "../utils/httpError.js";
 import {
   ACTIVE_PRODUCTS,
   BRANCH_NOT_FOUND,
@@ -37,14 +37,6 @@ export const callerCompanyId = async (req: Request): Promise<number> => {
 };
 
 // Answers the HttpError a branch function threw, otherwise logs and answers 500.
-export const fail = (res: Response, error: unknown, message: string) => {
-  if (error instanceof HttpError) {
-    return res.status(error.status).json(error.body());
-  }
-  console.error(message, error);
-  return res.status(500).json({ error: message });
-};
-
 // Runs `work` in a transaction on the caller's branch (locked), or answers 404. The answer is sent
 // after the commit, so a following request already sees the change.
 export const withBranch = async (
@@ -69,7 +61,7 @@ export const withBranch = async (
     return res.status(status).json(body);
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    return fail(res, error, message);
+    return sendError(res, error, message);
   } finally {
     if (client) client.release();
   }
@@ -117,7 +109,7 @@ export const getBranches = async (req: Request, res: Response) => {
     }));
     return res.status(200).json({ message: "Branches fetched successfully.", branches, total });
   } catch (error) {
-    return fail(res, error, "An error occurred while fetching branches.");
+    return sendError(res, error, "An error occurred while fetching branches.");
   }
 };
 
@@ -135,7 +127,7 @@ export const createCompanyBranch = async (req: Request, res: Response) => {
       .json({ message: invited ? "Branch created and invitation sent." : "Branch created successfully.", branch });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    return fail(res, error, "An error occurred while creating the branch.");
+    return sendError(res, error, "An error occurred while creating the branch.");
   } finally {
     if (client) client.release();
   }
@@ -153,7 +145,7 @@ export const getBranchDetails = async (req: Request, res: Response) => {
       stats: await getBranchStats(pool, branch.id),
     });
   } catch (error) {
-    return fail(res, error, "An error occurred while fetching the branch.");
+    return sendError(res, error, "An error occurred while fetching the branch.");
   }
 };
 
@@ -169,7 +161,7 @@ export const getBranchProducts = async (req: Request, res: Response) => {
     }
     return res.status(200).json(result);
   } catch (error) {
-    return fail(res, error, "An error occurred while fetching products.");
+    return sendError(res, error, "An error occurred while fetching products.");
   }
 };
 
@@ -186,7 +178,7 @@ export const getBranchOrders = async (req: Request, res: Response) => {
     }
     return res.status(200).json({ message: "Orders fetched successfully.", ...result });
   } catch (error) {
-    return fail(res, error, "An error occurred while fetching orders.");
+    return sendError(res, error, "An error occurred while fetching orders.");
   }
 };
 

@@ -25,7 +25,7 @@ import {
   UserRound,
   UserRoundX,
 } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import { useAuth } from "../../context/AuthContext.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Breadcrumbs, { BreadcrumbPlaceholder } from "../../components/Breadcrumbs.js";
@@ -41,8 +41,6 @@ import { getAccountSetup } from "../../utils/accountSetup.js";
 import type { AccountEvent, AdminAction, AdminUserCounts, User } from "../../types/index.js";
 
 type Dialog = "block" | "unblock" | "password" | "profile" | "invitation" | "resetLink" | null;
-
-const errorMessage = (err: unknown) => (axios.isAxiosError(err) ? err.response?.data?.error : null);
 
 function AdminUserDetailsPage() {
   const { id } = useParams();
@@ -89,7 +87,7 @@ function AdminUserDetailsPage() {
       closeDialog();
       await load();
     } catch (err) {
-      toast.error(errorMessage(err) || t("admin.common.actionError"));
+      toast.error(apiErrorMessage(err) || t("admin.common.actionError"));
     } finally {
       setBusy(false);
     }

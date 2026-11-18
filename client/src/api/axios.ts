@@ -23,6 +23,11 @@ api.interceptors.response.use(
   },
 );
 
+// The server's `error` text of a failed request (already translated by the interceptor), or null
+// for any other failure (no answer, a network error).
+export const apiErrorMessage = (err: unknown): string | null =>
+  axios.isAxiosError(err) ? (err.response?.data?.error ?? null) : null;
+
 // Server-relative paths such as /uploads/logos/... become absolute URLs on the backend.
 export const assetUrl = (path: string) => `${API_ORIGIN}${path}`;
 

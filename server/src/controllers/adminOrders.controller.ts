@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { HttpError } from "../utils/httpError.js";
+import { sendError } from "../utils/httpError.js";
 import { inTransaction } from "../utils/transaction.js";
 import { parseId } from "../utils/params.js";
 import { adminCancelOrder } from "../services/orders/actions.js";
@@ -58,8 +58,6 @@ export const cancelAdminOrder = async (req: Request, res: Response) => {
     });
     return res.status(200).json({ message: "Order cancelled.", order });
   } catch (error) {
-    if (error instanceof HttpError) return res.status(error.status).json(error.body());
-    console.error("Error while cancelling the order:", error);
-    return res.status(500).json({ error: "An error occurred while cancelling the order." });
+    return sendError(res, error, "An error occurred while cancelling the order.", "Error while cancelling the order:");
   }
 };

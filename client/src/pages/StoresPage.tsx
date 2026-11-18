@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { Heart, HeartOff, MapPin, Search, SearchX, Store } from "lucide-react";
-import api from "../api/axios.js";
+import api, { apiErrorMessage } from "../api/axios.js";
 import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { usePagedLimit } from "../hooks/usePagedLimit.js";
@@ -69,7 +69,7 @@ function StoresPage() {
       if (showFavoritesOnly) refetch();
     } catch (err) {
       console.error(err);
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(
         message || (isFavorite ? t("store.deleteFavoriteError") : t("store.addFavoriteError")),
       );

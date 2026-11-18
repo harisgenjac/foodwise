@@ -2,7 +2,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
-import api from "../api/axios.js";
+import api, { apiErrorMessage } from "../api/axios.js";
 import type { Order } from "../types/index.js";
 
 // "complete": the store hands the food over; "cancel-overdue": the restaurant missed its pickup day.
@@ -37,7 +37,7 @@ export function usePickupActions(onDone: () => void) {
       onDone();
     } catch (err) {
       console.error(err);
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("orders.actionError"));
     } finally {
       setBusy(false);

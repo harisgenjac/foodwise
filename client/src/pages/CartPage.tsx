@@ -15,11 +15,10 @@ import CartLineRow from "../components/cart/CartLineRow.js";
 import CheckoutPanel, { type NotSentLine, type SentOrderResult } from "../components/cart/CheckoutPanel.js";
 import SendChangesList from "../components/order/SendChangesList.js";
 import { useCart } from "../context/CartContext.js";
-import { formatMoney, formatOrderCode } from "../utils/orders.js";
+import { formatMoney, formatOrderCode, formatOrderDateTime } from "../utils/orders.js";
 import { formatClock } from "../utils/delivery.js";
 import type { Cart } from "../types/index.js";
 
-const dateTimeFormat: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" };
 
 // What was sent, shown in place of the cart until the restaurant goes back to it.
 interface SentView extends SentOrderResult {
@@ -102,7 +101,7 @@ function CartPage() {
                   time: formatClock(sent.order.delivery_estimated_at ?? ""),
                   fee: formatMoney(sent.order.delivery_fee_estimate ?? 0),
                 })
-              : t("cart.sent.pickup", { date: new Date(sent.order.pickup_at).toLocaleString(undefined, dateTimeFormat) })}
+              : t("cart.sent.pickup", { date: formatOrderDateTime(sent.order.pickup_at) })}
           </p>
           <SendChangesList changes={sent.changes} />
           {leftInCart && (

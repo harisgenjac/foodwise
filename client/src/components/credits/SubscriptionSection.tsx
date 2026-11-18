@@ -4,7 +4,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, CalendarRange, ChevronDown, Coins, PlusCircle, Wallet } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import { useCredits } from "../../context/CreditsContext.js";
 import SubscribeModal from "./SubscribeModal.js";
 import TopupModal from "./TopupModal.js";
@@ -162,7 +162,7 @@ function SubscriptionSection() {
       setWithdrawingRenewal(null);
       await reload();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("credits.profile.requestError"));
     } finally {
       setBusy(false);
@@ -195,7 +195,7 @@ function SubscriptionSection() {
       );
       await reload();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("credits.profile.requestError"));
     } finally {
       setBusy(false);

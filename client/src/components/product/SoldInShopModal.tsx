@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { Scale, Store, TriangleAlert } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import Modal, { ModalBody, ModalFooter, ModalHeader, modalFormStyle } from "./Modal.js";
 import FormField, { inputStyle } from "../form/FormField.js";
 import RequiredHint from "../form/RequiredHint.js";
@@ -31,7 +31,7 @@ interface PendingOrder {
 }
 
 // Rounds away float noise (10 − 2.3) and drops trailing zeros: 7.7, 50, 0.25.
-const formatAmount = (value: number) => String(Math.round(value * 1000) / 1000);
+const roundQuantity = (value: number) => String(Math.round(value * 1000) / 1000);
 
 // "Prodano u radnji": the store records an amount it sold at its own till, which lowers the
 // product's free quantity. It cannot be undone, so the second step repeats the amount and the free
@@ -83,7 +83,7 @@ function SoldInShopModal({ product, onClose, onRecorded }: SoldInShopModalProps)
       onClose();
       onRecorded();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("soldInShop.error"));
       setConfirming(false);
     } finally {
@@ -119,7 +119,7 @@ function SoldInShopModal({ product, onClose, onRecorded }: SoldInShopModalProps)
           <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
             <p className="flex items-start gap-2 font-semibold">
               <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-              {t("soldInShop.shortageText", { amount: formatAmount(shortage.amount), unit, product: product.name })}
+              {t("soldInShop.shortageText", { amount: roundQuantity(shortage.amount), unit, product: product.name })}
             </p>
             <ul className="space-y-1.5">
               {shortage.orders.map((order) => (
@@ -128,7 +128,7 @@ function SoldInShopModal({ product, onClose, onRecorded }: SoldInShopModalProps)
                     {t("soldInShop.shortageOrder", {
                       code: formatOrderCode(order.code),
                       restaurant: order.restaurant_name ?? "",
-                      amount: formatAmount(parseFloat(order.quantity)),
+                      amount: roundQuantity(parseFloat(order.quantity)),
                       unit,
                     })}
                   </Link>
@@ -165,19 +165,19 @@ function SoldInShopModal({ product, onClose, onRecorded }: SoldInShopModalProps)
           <ModalBody>
             <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
               <p className="font-semibold">{product.name}</p>
-              <p>{t("soldInShop.confirmAmount", { amount: formatAmount(amount), unit })}</p>
+              <p>{t("soldInShop.confirmAmount", { amount: roundQuantity(amount), unit })}</p>
               <p>
                 {t("soldInShop.confirmAfter", {
-                  after: formatAmount(Math.max(available - amount, 0)),
-                  before: formatAmount(available),
+                  after: roundQuantity(Math.max(available - amount, 0)),
+                  before: roundQuantity(available),
                   unit,
                 })}
               </p>
               {amount > available && (
                 <p>
                   {t("soldInShop.confirmShortage", {
-                    free: formatAmount(available),
-                    rest: formatAmount(amount - available),
+                    free: roundQuantity(available),
+                    rest: roundQuantity(amount - available),
                     unit,
                   })}
                 </p>
@@ -206,7 +206,7 @@ function SoldInShopModal({ product, onClose, onRecorded }: SoldInShopModalProps)
             <p className="mb-4 rounded-xl bg-gray-50 p-3 text-sm text-gray-700">
               <span className="font-semibold text-gray-900">{product.name}</span>
               <span className="text-gray-400"> · </span>
-              {t("soldInShop.free", { amount: formatAmount(available), unit })}
+              {t("soldInShop.free", { amount: roundQuantity(available), unit })}
             </p>
             {max <= 0 ? (
               <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">{t("soldInShop.nothingFree")}</p>

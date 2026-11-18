@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api, { assetUrl } from "../api/axios.js";
+import api, { apiErrorMessage, assetUrl } from "../api/axios.js";
 import type { GeoPoint, OrderSettings, User } from "../types/index.js";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -137,7 +137,7 @@ function MyProfilePage() {
       toast.success(t("user.addedLogoSuccess"));
     } catch (err) {
       console.error(err);
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("user.uploadError"));
     }
   };
@@ -151,7 +151,7 @@ function MyProfilePage() {
       toast.success(response.data.message);
     } catch (err) {
       console.error(err);
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("user.uploadError"));
     }
   };
@@ -177,7 +177,7 @@ function MyProfilePage() {
       setCoverUrl(response.data.cover_url);
       toast.success(t("cover.saved"));
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("user.uploadError"));
     } finally {
       setCoverBusy(false);
@@ -191,7 +191,7 @@ function MyProfilePage() {
       setCoverUrl("");
       toast.success(response.data.message);
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("user.uploadError"));
     } finally {
       setCoverBusy(false);
@@ -229,7 +229,7 @@ function MyProfilePage() {
       toast.success(t("user.editedSuccess"));
     } catch (err) {
       console.error("Error updating user:", err);
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("user.editError"));
     } finally {
       setSaving(false);

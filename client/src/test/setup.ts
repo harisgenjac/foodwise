@@ -5,7 +5,9 @@ import { resetCitiesCache } from "../hooks/useCities.js";
 
 // No test talks to the server: every file gets this mocked axios instance,
 // and tests set responses through the helpers in ./utils.tsx.
-vi.mock("../api/axios.js", () => ({
+vi.mock("../api/axios.js", async () => {
+  const { default: axios } = await import("axios");
+  return {
   default: {
     get: vi.fn(),
     post: vi.fn(),
@@ -17,7 +19,10 @@ vi.mock("../api/axios.js", () => ({
   },
   API_ORIGIN: "http://localhost:3000",
   assetUrl: (path: string) => `http://localhost:3000${path}`,
-}));
+  // The real helper: tests reject with axios-shaped errors (axiosError in ./utils.tsx).
+  apiErrorMessage: (err: unknown) => (axios.isAxiosError(err) ? (err.response?.data?.error ?? null) : null),
+  };
+});
 
 // Pages debounce their requests by 500ms (useFetch), so allow more than the 1s default.
 configure({ asyncUtilTimeout: 3000 });

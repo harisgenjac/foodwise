@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import api from "../api/axios.js";
+import api, { apiErrorMessage } from "../api/axios.js";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../components/LanguageSwitcher.js";
 import { Lock, Mail, Store, UserRound, UtensilsCrossed } from "lucide-react";
@@ -31,7 +31,7 @@ function RegisterPage() {
       navigate("/login");
     } catch (err) {
       // Validation messages from the server (taken email, short password) are more useful than a generic one.
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       setError(message || t("auth.registrationError"));
     }
   };

@@ -1,6 +1,6 @@
-import { expect, test, type APIRequestContext } from "@playwright/test";
-import { API_URL, storageState, uniqueName, type SeededRole } from "../support/accounts.js";
-import { apiAs, cancelOrder, createProduct, simulateCourier } from "../support/api.js";
+import { expect, test } from "@playwright/test";
+import { API_URL, storageState, uniqueName } from "../support/accounts.js";
+import { apiAs, cancelOrder, createProduct, setPinAs, simulateCourier } from "../support/api.js";
 import { emptyCart, open, reload, toast } from "../support/ui.js";
 
 // A restaurant chooses delivery in the cart (delivery phase 2, the mock provider): the estimate
@@ -13,25 +13,6 @@ import { emptyCart, open, reload, toast } from "../support/ui.js";
 test.use({ storageState: storageState("restaurant") });
 
 const VISOKO = { latitude: 43.9889, longitude: 18.1781 };
-
-// Sets or clears a business's pin through its own profile, keeping the rest of the profile.
-const setPin = async (role: SeededRole, location: { latitude: number; longitude: number } | null) => {
-  const api: APIRequestContext = await apiAs(role);
-  const me = (await (await api.get("/api/users/me")).json()).user;
-  const response = await api.put("/api/users/me", {
-    data: {
-      first_name: me.first_name,
-      last_name: me.last_name,
-      business_name: me.business_name,
-      city_id: me.city_id,
-      phone: me.phone,
-      address: me.address,
-      location,
-    },
-  });
-  expect(response.ok(), `PUT /api/users/me as ${role} → ${response.status()}`).toBe(true);
-  await api.dispose();
-};
 
 // The order this test sent and whether the store accepted it, closed in afterEach.
 let sentOrderId: number | null = null;
@@ -52,14 +33,14 @@ test.afterEach(async () => {
     sentOrderId = null;
     accepted = false;
   }
-  await setPin("store", null);
-  await setPin("restaurant", null);
+  await setPinAs("store", null);
+  await setPinAs("restaurant", null);
 });
 
 test("a restaurant orders with delivery from the cart, and the store accepts it with a ready time", async ({ page, browser }) => {
   // The store at the town centre, the restaurant about 2 km north-east: a short mock delivery.
-  await setPin("store", VISOKO);
-  await setPin("restaurant", { latitude: VISOKO.latitude + 0.015, longitude: VISOKO.longitude + 0.015 });
+  await setPinAs("store", VISOKO);
+  await setPinAs("restaurant", { latitude: VISOKO.latitude + 0.015, longitude: VISOKO.longitude + 0.015 });
   const productName = uniqueName("E2E Dostava Mlijeko");
   const storeApi = await apiAs("store");
   const product = await createProduct(storeApi, { name: productName, unit: "kom", quantity: 5 });

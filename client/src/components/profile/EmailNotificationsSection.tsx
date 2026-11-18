@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { Mail } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import FormSection from "../form/FormSection.js";
 
 // The id the emails' footer link points to (/my-profile#email-notifications).
@@ -37,7 +37,7 @@ function EmailNotificationsSection({ initial }: { initial: boolean }) {
       toast.success(t(next ? "user.emailNotifications.turnedOn" : "user.emailNotifications.turnedOff"));
     } catch (err) {
       setEnabled(!next);
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("user.emailNotifications.error"));
     } finally {
       setSaving(false);

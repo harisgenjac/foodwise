@@ -20,7 +20,7 @@ import {
   ReceiptText,
   Store,
 } from "lucide-react";
-import api, { assetUrl } from "../../api/axios.js";
+import api, { apiErrorMessage, assetUrl } from "../../api/axios.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Breadcrumbs, { BreadcrumbPlaceholder } from "../../components/Breadcrumbs.js";
 import EmptyState from "../../components/product/EmptyState.js";
@@ -50,8 +50,6 @@ type Tab = "products" | "orders";
 
 const PRODUCT_STATUSES = ["Available", "Sold", "Expired"];
 const ORDER_STATUSES = ["Pending", "Confirmed", "InDelivery", "Completed", "Rejected", "Cancelled"];
-
-const errorMessage = (err: unknown) => (axios.isAxiosError(err) ? err.response?.data?.error : null);
 
 // The branch's products or orders, read-only: the branch itself handles them.
 function BranchActivity({ branchId, tab }: { branchId: number; tab: Tab }) {
@@ -153,7 +151,7 @@ function CompanyBranchDetailsPage() {
       closeDialog();
       await load();
     } catch (err) {
-      toast.error(errorMessage(err) || t("admin.common.actionError"));
+      toast.error(apiErrorMessage(err) || t("admin.common.actionError"));
     } finally {
       setBusy(false);
     }

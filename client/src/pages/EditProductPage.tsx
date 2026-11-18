@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import api from "../api/axios.js";
+import api, { apiErrorMessage } from "../api/axios.js";
 import axios from "axios";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -75,9 +75,7 @@ function EditProductPage() {
       navigate("/my-products");
     } catch (err) {
       // The server explains why (sold product, invalid field).
-      const message = axios.isAxiosError(err)
-        ? err.response?.data?.error
-        : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("product.editError"));
     } finally {
       setSaving(false);

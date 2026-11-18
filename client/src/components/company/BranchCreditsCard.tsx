@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { Coins } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import UsageBar from "../credits/UsageBar.js";
 import AutoRenewSwitch from "../credits/AutoRenewSwitch.js";
 import BranchCreditActions from "./BranchCreditActions.js";
@@ -50,7 +50,7 @@ function BranchCreditsCard({ branchId, branchName, deactivated }: BranchCreditsC
       toast.success(response.data.message);
       await load();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("company.credits.actionError"));
     } finally {
       setBusy(false);

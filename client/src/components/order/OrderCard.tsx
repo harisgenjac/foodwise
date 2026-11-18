@@ -5,7 +5,7 @@ import { AlertTriangle, ArrowRight } from "lucide-react";
 import OrderImage from "./OrderImage.js";
 import OrderItemThumbnails from "./OrderItemThumbnails.js";
 import { formatRelativeTime } from "../../utils/notifications.js";
-import { formatMoney, formatOrderCode, itemsSummary, ORDER_STATUS_STYLES, orderStatusLabel } from "../../utils/orders.js";
+import { formatMoney, formatOrderCode, formatOrderDateTime, itemsSummary, ORDER_STATUS_STYLES, orderStatusLabel } from "../../utils/orders.js";
 import StoreNameLink from "../store/StoreNameLink.js";
 import AnswerDeadline from "./AnswerDeadline.js";
 import type { Order } from "../../types/index.js";
@@ -93,11 +93,11 @@ function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = fals
               {order.fulfilment_method === "DELIVERY" ? t("orders.delivery.cardLabel") : t("dashboard.pickupDate")}
             </dt>
             <dd className="text-right font-medium text-gray-800">
-              {new Date(
+              {formatOrderDateTime(
                 order.fulfilment_method === "DELIVERY" && order.delivery_estimated_at
                   ? order.delivery_estimated_at
                   : order.pickup_at,
-              ).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" })}
+              )}
             </dd>
           </div>
           {showCreatedAt && (

@@ -4,7 +4,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { ListFilter, Package, Search, Trash2, X } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import { useFetch } from "../../hooks/useFetch.js";
 import { useAdminPage, useAdminSort, useKeepPageInRange } from "../../hooks/useAdminPage.js";
 import ProductPageHeader from "../../components/product/ProductPageHeader.js";
@@ -19,6 +19,7 @@ import ConfirmModal from "../../components/common/ConfirmModal.js";
 import { PRODUCT_STATUS_STYLES } from "../../utils/productStatus.js";
 import { formatDisplayDate } from "../../utils/expiry.js";
 import { ADMIN_PAGE_SIZE } from "../../utils/admin.js";
+import { formatMoney } from "../../utils/orders.js";
 import type { AdminProduct } from "../../types/index.js";
 
 // Sortable columns (the server whitelist of GET /admin/products).
@@ -60,7 +61,7 @@ function AdminProductsPage() {
       setSelected(null);
       refetch();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("admin.common.actionError"));
     } finally {
       setBusy(false);
@@ -121,7 +122,7 @@ function AdminProductsPage() {
       className: "hidden md:table-cell",
       cell: (product) => (
         <>
-          <span className="font-semibold text-green-700">{parseFloat(product.discounted_price).toFixed(2)} KM</span>
+          <span className="font-semibold text-green-700">{formatMoney(product.discounted_price)}</span>
           <span className="ml-1 text-xs text-gray-400 line-through">{parseFloat(product.original_price).toFixed(2)}</span>
         </>
       ),

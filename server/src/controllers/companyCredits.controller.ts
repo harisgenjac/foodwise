@@ -2,7 +2,7 @@ import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import { parseId, parseNonNegativeInt } from "../utils/params.js";
 import { TABLE_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
-import { HttpError } from "../utils/httpError.js";
+import { HttpError, sendError } from "../utils/httpError.js";
 import { creditMonth } from "../utils/creditTime.js";
 import { createNotification, notifyAdminsOfCreditRequest } from "../utils/notifications.js";
 import { getUsageHistory } from "../services/creditService.js";
@@ -23,7 +23,7 @@ import {
 } from "../services/creditRequests.js";
 import { BRANCH_NOT_FOUND, findCompanyBranch } from "../services/branches.js";
 import { MAX_NOTE_LENGTH, parseNote } from "./adminCredits.controller.js";
-import { callerCompanyId, fail, withBranch } from "./companyBranches.controller.js";
+import { callerCompanyId, withBranch } from "./companyBranches.controller.js";
 
 // The headquarters (COMPANY) asks and pays for its branches' credits. Credits stay per branch
 // (balance, charges and refunds work as for any store); only who asks changes: the headquarters
@@ -39,7 +39,7 @@ export const getCompanyCredits = async (req: Request, res: Response) => {
   try {
     return res.status(200).json(await listCompanyBranchCredits(pool, await callerCompanyId(req)));
   } catch (error) {
-    return fail(res, error, "An error occurred while fetching credits.");
+    return sendError(res, error, "An error occurred while fetching credits.");
   }
 };
 
@@ -70,7 +70,7 @@ export const getBranchCredits = async (req: Request, res: Response) => {
       total,
     });
   } catch (error) {
-    return fail(res, error, "An error occurred while fetching credits.");
+    return sendError(res, error, "An error occurred while fetching credits.");
   }
 };
 
@@ -154,7 +154,7 @@ export const getBranchTopupRequests = async (req: Request, res: Response) => {
   try {
     return res.status(200).json({ requests: await listBranchTopupRequests(pool, await callerCompanyId(req)) });
   } catch (error) {
-    return fail(res, error, "An error occurred while fetching credit requests.");
+    return sendError(res, error, "An error occurred while fetching credit requests.");
   }
 };
 
@@ -167,7 +167,7 @@ export const getBranchTopupRequestCount = async (req: Request, res: Response) =>
     );
     return res.status(200).json({ count: result.rows[0].count });
   } catch (error) {
-    return fail(res, error, "An error occurred while counting credit requests.");
+    return sendError(res, error, "An error occurred while counting credit requests.");
   }
 };
 
@@ -239,7 +239,7 @@ const decideBranchRequest = (decision: "APPROVED" | "REJECTED") => async (req: R
     });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    return fail(res, error, "An error occurred while processing the request.");
+    return sendError(res, error, "An error occurred while processing the request.");
   } finally {
     if (client) client.release();
   }
@@ -285,6 +285,6 @@ export const getCompanyCreditRequests = async (req: Request, res: Response) => {
     );
     return res.status(200).json({ requests: rows, total });
   } catch (error) {
-    return fail(res, error, "An error occurred while fetching credit requests.");
+    return sendError(res, error, "An error occurred while fetching credit requests.");
   }
 };

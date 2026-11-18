@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
 import { AlertCircle, Building2, FileText, MapPin, Phone, Timer, UserRound } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import Modal, { ModalBody, ModalFooter, ModalHeader, modalFormStyle } from "../product/Modal.js";
 import FormField, { inputStyle } from "../form/FormField.js";
 import RequiredHint from "../form/RequiredHint.js";
@@ -117,7 +117,7 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
       toast.success(response.data.message);
       onSaved();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       setError(message || t("admin.common.actionError"));
       setSaving(false);
     }

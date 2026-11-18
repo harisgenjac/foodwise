@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { AlertCircle, Building2, FileText } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import Modal, { ModalBody, ModalFooter, ModalHeader, modalFormStyle } from "../product/Modal.js";
 import FormField, { inputStyle } from "../form/FormField.js";
 import RequiredHint from "../form/RequiredHint.js";
@@ -39,7 +39,7 @@ function EditCompanyModal({ company, onClose, onSaved }: EditCompanyModalProps) 
       toast.success(response.data.message);
       onSaved();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       setError(message || t("admin.common.actionError"));
       setSaving(false);
     }

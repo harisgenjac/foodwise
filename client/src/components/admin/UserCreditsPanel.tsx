@@ -3,7 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
 import { Coins, Inbox, SlidersHorizontal } from "lucide-react";
-import api from "../../api/axios.js";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import Pagination from "./Pagination.js";
 import CreditRequestDecisionModal, { CreditRequestDecisionButtons, type CreditRequestAction } from "./CreditRequestDecisionModal.js";
 import AdjustCreditsModal from "./AdjustCreditsModal.js";
@@ -87,7 +87,7 @@ function UserCreditsPanel({ userId }: { userId: number }) {
       setOffset(0);
       await load();
     } catch (err) {
-      const message = axios.isAxiosError(err) ? err.response?.data?.error : null;
+      const message = apiErrorMessage(err);
       toast.error(message || t("admin.common.actionError"));
     } finally {
       setBusy(false);

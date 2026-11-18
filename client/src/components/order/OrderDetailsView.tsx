@@ -26,6 +26,7 @@ import {
   formatAmount,
   formatMoney,
   formatOrderCode,
+  formatOrderDateTime,
   isDropped,
   isReduced,
   lineTotal,
@@ -39,8 +40,6 @@ import OrderImage from "./OrderImage.js";
 import { hoursText } from "../../utils/schedule.js";
 import AnswerDeadline from "./AnswerDeadline.js";
 
-const dateTimeFormat: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" };
-const formatDateTime = (value: string) => new Date(value).toLocaleString(undefined, dateTimeFormat);
 
 type OrderViewer = "STORE" | "RESTAURANT" | "ADMIN";
 
@@ -186,7 +185,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
               <DetailItem
                 icon={Truck}
                 label={t("orders.delivery.estimated")}
-                value={order.delivery_estimated_at ? formatDateTime(order.delivery_estimated_at) : "–"}
+                value={order.delivery_estimated_at ? formatOrderDateTime(order.delivery_estimated_at) : "–"}
               />
               <DetailItem icon={MapPin} label={t("orders.delivery.address")} value={order.delivery_address ?? "–"} />
               {delivery && (
@@ -218,7 +217,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
                 />
               )}
               {delivery?.delivered_at && (
-                <DetailItem icon={PackageCheck} label={t("orders.delivery.deliveredAt")} value={formatDateTime(delivery.delivered_at)} />
+                <DetailItem icon={PackageCheck} label={t("orders.delivery.deliveredAt")} value={formatOrderDateTime(delivery.delivered_at)} />
               )}
               {order.delivery?.price ? (
                 <>
@@ -237,26 +236,26 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
                 />
               )}
               {order.ready_at && (
-                <DetailItem icon={Clock} label={t("orders.delivery.readyAt")} value={formatDateTime(order.ready_at)} />
+                <DetailItem icon={Clock} label={t("orders.delivery.readyAt")} value={formatOrderDateTime(order.ready_at)} />
               )}
               {!deliveryClosed && !delivery?.picked_up_at && (
                 <DetailItem
                   icon={CalendarClock}
                   label={delivery ? t("orders.delivery.courierPickupFinal") : t("orders.delivery.courierPickup")}
-                  value={formatDateTime(order.pickup_at)}
+                  value={formatOrderDateTime(order.pickup_at)}
                 />
               )}
             </>
           ) : (
             <>
-              <DetailItem icon={CalendarClock} label={t("orders.pickup")} value={formatDateTime(order.pickup_at)} />
+              <DetailItem icon={CalendarClock} label={t("orders.pickup")} value={formatOrderDateTime(order.pickup_at)} />
               {/* A delivery order the restaurant switched to pickup after the delivery failed. */}
               {delivery && (
                 <DetailItem icon={Truck} label={t("orders.delivery.cardLabel")} value={t("orders.delivery.switchedToPickup")} />
               )}
             </>
           )}
-          <DetailItem icon={CalendarPlus} label={t("orders.sentAt")} value={formatDateTime(order.created_at)} />
+          <DetailItem icon={CalendarPlus} label={t("orders.sentAt")} value={formatOrderDateTime(order.created_at)} />
           <DetailItem
             icon={ListChecks}
             label={t("orders.partialSetting")}
@@ -266,7 +265,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
             <DetailItem
               icon={PackageCheck}
               label={order.fulfilment_method === "DELIVERY" ? t("orderStatus.InDelivery") : t("pickups.tabs.completed")}
-              value={formatDateTime(order.picked_up_at)}
+              value={formatOrderDateTime(order.picked_up_at)}
             />
           )}
         </dl>
@@ -348,7 +347,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
                 <p className="text-gray-800">{historyText(entry)}</p>
                 {entry.reason && <p className="text-gray-500">{entry.reason}</p>}
                 <time dateTime={entry.created_at} className="text-xs text-gray-400">
-                  {formatDateTime(entry.created_at)}
+                  {formatOrderDateTime(entry.created_at)}
                 </time>
               </li>
             ))}

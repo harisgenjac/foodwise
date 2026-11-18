@@ -17,7 +17,7 @@ import {
   ShieldCheck,
   Store,
 } from "lucide-react";
-import api, { assetUrl } from "../../api/axios.js";
+import api, { apiErrorMessage, assetUrl } from "../../api/axios.js";
 import LoadingSpinner from "../../components/LoadingSpinner.js";
 import Breadcrumbs, { BreadcrumbPlaceholder } from "../../components/Breadcrumbs.js";
 import EmptyState from "../../components/product/EmptyState.js";
@@ -36,8 +36,6 @@ type Dialog =
   | "attach"
   | { kind: "deactivate" | "reactivate"; branch: AdminCompanyDetails["branches"][number] }
   | null;
-
-const errorMessage = (err: unknown) => (axios.isAxiosError(err) ? err.response?.data?.error : null);
 
 function AdminCompanyDetailsPage() {
   const { id } = useParams();
@@ -75,7 +73,7 @@ function AdminCompanyDetailsPage() {
       closeDialog();
       await load();
     } catch (err) {
-      toast.error(errorMessage(err) || t("admin.common.actionError"));
+      toast.error(apiErrorMessage(err) || t("admin.common.actionError"));
     } finally {
       setBusy(false);
     }

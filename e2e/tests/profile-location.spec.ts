@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { storageState, type SeededRole } from "../support/accounts.js";
-import { apiAs } from "../support/api.js";
+import { setPinAs } from "../support/api.js";
 import { open, reload, toast } from "../support/ui.js";
 
 // A store sets its location with a pin on the map on My profile: the dashboard reminds it while
@@ -27,20 +27,7 @@ test.beforeEach(async ({ page }) => {
 
 // Clears the pin again after the test, also when it fails.
 test.afterEach(async ({}, testInfo) => {
-  const api = await apiAs(accountFor(testInfo.project.name));
-  const me = (await (await api.get("/api/users/me")).json()).user;
-  await api.put("/api/users/me", {
-    data: {
-      first_name: me.first_name,
-      last_name: me.last_name,
-      business_name: me.business_name,
-      city_id: me.city_id,
-      phone: me.phone,
-      address: me.address,
-      location: null,
-    },
-  });
-  await api.dispose();
+  await setPinAs(accountFor(testInfo.project.name), null);
 });
 
 const map = (page: Page) => page.getByRole("application", { name: "Mapa za označavanje lokacije" });
