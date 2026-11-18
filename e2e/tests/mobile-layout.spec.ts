@@ -473,7 +473,7 @@ test.describe("restaurant", () => {
     await expectFilterPanel(page, "/search", "Pretraga po imenu");
   });
 
-  test("the dashboard shows the phone hero with readable bubbles and My orders", async ({ page }) => {
+  test("the dashboard shows the phone hero, the stacked links and a store carousel that scrolls inside itself", async ({ page }) => {
     await expectPhoneLayout(page, "/dashboard");
     const hero = page.getByRole("img", { name: "Animacija Još vrijedi" });
     await expect(hero).toHaveCount(1);
@@ -485,7 +485,29 @@ test.describe("restaurant", () => {
       return parseFloat(text.getAttribute("font-size")!) * (svg as SVGSVGElement).getScreenCTM()!.a;
     });
     expect(bubblePx).toBeGreaterThanOrEqual(12);
-    await expect(page.getByRole("heading", { name: "Moje narudžbe" })).toBeVisible();
+
+    // The two links stacked, full width, 56 px high.
+    const main = page.getByRole("main");
+    const search = (await main.getByRole("link", { name: "Pretraži proizvode" }).boundingBox())!;
+    const orders = (await main.getByRole("link", { name: /^Moje narudžbe/ }).boundingBox())!;
+    expect(orders.y).toBeGreaterThan(search.y + search.height - 1);
+    expect(Math.round(search.width)).toBe(Math.round(orders.width));
+    expect(Math.round(search.height)).toBe(56);
+
+    // The carousel is wider than the screen and scrolls inside itself; the page does not, and the
+    // arrows are hidden on a phone (swipe).
+    const carousel = page.getByRole("region", { name: "Prodavnice u blizini" });
+    const track = carousel.getByTestId("store-carousel-track");
+    await expect(carousel.getByTestId("store-card").first()).toBeVisible();
+    const { scrollWidth, clientWidth } = await track.evaluate((el) => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
+    expect(scrollWidth).toBeGreaterThan(clientWidth);
+    await expect(carousel.getByRole("button", { name: "Sljedeće prodavnice" })).toBeHidden();
+    // Swiping to the end brings the All stores card fully onto the screen.
+    await track.scrollIntoViewIfNeeded();
+    await track.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
+    await expect(carousel.getByTestId("store-card-all")).toBeInViewport({ ratio: 1 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(WIDTH);
+    expect(await page.evaluate(() => window.scrollX)).toBe(0);
 
     // The impact strip: three numbers stacked, and a tapped tooltip stays inside the screen.
     const strip = page.getByRole("region", { name: "Vaš uticaj" });

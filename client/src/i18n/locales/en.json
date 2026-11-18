@@ -486,6 +486,20 @@
     "savedInfo": "How the savings are counted",
     "savedTip": "The difference between the full price and the price you paid for all the food you picked up."
   },
+  "restaurantActions": {
+    "label": "Quick actions",
+    "search": "Search products",
+    "myOrders": "My orders",
+    "activeOrders_one": "{{count}} active order",
+    "activeOrders_other": "{{count}} active orders"
+  },
+  "storeCarousel": {
+    "title": "Stores near you",
+    "previous": "Previous stores",
+    "next": "Next stores",
+    "distance": "{{km}} km",
+    "allStores": "All stores"
+  },
   "dashboard": {
     "appTitle": "Welcome to FoodWise",
     "appSubtitle": "Less waste. More taste.",
@@ -531,7 +545,6 @@
       "December"
     ],
     "dateFormat": "{{weekday}}, {{day}} {{month}}",
-    "myOrdersTitle": "My orders",
     "recentOrdersTitle": "New orders",
     "packingTitle": "Packing list",
     "packingText": "What to prepare today and by when, by ready time.",
