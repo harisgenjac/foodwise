@@ -4,7 +4,7 @@ export const LIST_PAGE_SIZE = 10;
 // Compact history rows (the restaurant's order history) take less room, so 20 at a time.
 export const HISTORY_PAGE_SIZE = 20;
 
-export type PageItem = number | "ellipsis";
+type PageItem = number | "ellipsis";
 
 // Page numbers to show around the current page: always the first and last, the current one with
 // its neighbours, and an ellipsis for every gap. E.g. 1 … 4 5 6 … 20 (at most 7 items).

@@ -5,7 +5,7 @@ import { FilterField } from "./FilterBar.js";
 import { CountPill } from "./ProductPageHeader.js";
 import { inputStyle } from "../form/FormField.js";
 
-export interface SortOption<T extends string = string> {
+interface SortOption<T extends string = string> {
   value: T;
   // i18n key of the label.
   label: string;
@@ -13,7 +13,7 @@ export interface SortOption<T extends string = string> {
 
 // The `GET /products` sorts on a store's profile (one store, so no distance). Prices are per
 // unit, as the cards show.
-export const STORE_PROFILE_SORT_OPTIONS = [
+const STORE_PROFILE_SORT_OPTIONS = [
   { value: "newest", label: "filters.sortNewest" },
   { value: "expiry", label: "filters.sortExpiry" },
   { value: "price_asc", label: "filters.sortPriceAsc" },
@@ -21,8 +21,6 @@ export const STORE_PROFILE_SORT_OPTIONS = [
   { value: "discount_desc", label: "filters.sortDiscountDesc" },
   { value: "discount_asc", label: "filters.sortDiscountAsc" },
 ] as const satisfies readonly SortOption[];
-
-export type StoreProfileSort = (typeof STORE_PROFILE_SORT_OPTIONS)[number]["value"];
 
 // The marketplace: the store profile's sorts (Newest, the default, first) plus nearest store first.
 export const MARKETPLACE_SORT_OPTIONS = [

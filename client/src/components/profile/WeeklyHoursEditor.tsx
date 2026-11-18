@@ -8,8 +8,6 @@ interface WeeklyHoursEditorProps {
   // null: not entered yet (nothing is saved until the business changes something).
   value: Schedule | null;
   onChange: (value: Schedule) => void;
-  // The old free-text hours, shown read-only until weekly hours are entered.
-  legacyText?: string | null;
 }
 
 // Two time inputs share a phone's width, so they shrink (no icon padding as in inputStyle).
@@ -18,7 +16,7 @@ const timeInput =
 
 // One row per weekday: an "open" switch and the opening and closing time (one interval a day, no
 // overnight hours). "Copy Monday to every day" fills the week from the first row.
-function WeeklyHoursEditor({ label, value, onChange, legacyText }: WeeklyHoursEditorProps) {
+function WeeklyHoursEditor({ label, value, onChange }: WeeklyHoursEditorProps) {
   const { t } = useTranslation();
   const labelId = useId();
   const schedule = value ?? newSchedule();
@@ -45,7 +43,7 @@ function WeeklyHoursEditor({ label, value, onChange, legacyText }: WeeklyHoursEd
       </div>
       {notEntered && (
         <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          {legacyText ? t("schedule.legacyHint", { text: legacyText }) : t("schedule.notEntered")}
+          {t("schedule.notEntered")}
         </p>
       )}
       <ul className="space-y-2">

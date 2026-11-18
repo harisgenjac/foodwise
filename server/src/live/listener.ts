@@ -4,7 +4,7 @@ import { sendToAll, sendToUsers, type LiveEvent } from "./hub.js";
 const { Client } = pkg;
 
 // The channel the triggers of migration 044 notify on.
-export const LIVE_CHANNEL = "live_events";
+const LIVE_CHANNEL = "live_events";
 
 // The listener's connection shows under this name in pg_stat_activity.
 export const LIVE_APPLICATION_NAME = "foodwise-live-events";

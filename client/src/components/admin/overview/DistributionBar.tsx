@@ -1,4 +1,4 @@
-export interface DistributionItem {
+interface DistributionItem {
   label: string;
   value: number;
   // Full Tailwind background class of the segment and its legend dot.

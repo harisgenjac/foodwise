@@ -22,8 +22,8 @@ export const parseCityFilter = async (
 };
 
 // The marketplace radius (`radius` query param): km from the restaurant's city, or "all".
-export const RADIUS_OPTIONS = [5, 10, 20, 50];
-export const DEFAULT_RADIUS = 10;
+const RADIUS_OPTIONS = [5, 10, 20, 50];
+const DEFAULT_RADIUS = 10;
 
 // Missing or empty = the default 10 km, "all" = no limit (null), anything else invalid.
 export const parseRadius = (value: unknown): { radius: number | null } | { invalid: true } => {

@@ -9,7 +9,7 @@ import { absorbShopShortage } from "../stock.js";
 // InDelivery: a delivery order's courier has the goods and has not delivered them yet (Completed
 // comes with the delivery).
 export const ORDER_STATUSES = ["Pending", "Confirmed", "InDelivery", "Completed", "Rejected", "Cancelled"] as const;
-export type OrderStatus = (typeof ORDER_STATUSES)[number];
+type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 // Who caused a change: the restaurant, the store, an admin, the system (the expiry job,
 // blocking cascades, a closed branch, an automatic rejection) or the delivery provider (the courier picked a delivery up).
@@ -88,7 +88,7 @@ export const IS_OVERDUE =
   "(orders.status = 'Confirmed' AND orders.fulfilment_method = 'PICKUP' AND orders.pickup_at::date < CURRENT_DATE)";
 
 // How long a store has to answer a delivery order (always for today, as soon as possible).
-export const DELIVERY_ANSWER_MINUTES = 15;
+const DELIVERY_ANSWER_MINUTES = 15;
 
 // When a Pending order is rejected automatically if the store has not decided (local wall-clock
 // time, like created_at and pickup_at; compare with LOCALTIMESTAMP): a delivery order 15 minutes

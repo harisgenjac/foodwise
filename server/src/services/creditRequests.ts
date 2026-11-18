@@ -94,7 +94,7 @@ export const creditSummary = async (db: Db, userId: number, now = new Date()) =>
   };
 };
 
-export interface RequestBody {
+interface RequestBody {
   request_type?: unknown;
   plan_id?: unknown;
   topup_package_id?: unknown;

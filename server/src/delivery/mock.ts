@@ -29,7 +29,7 @@ import {
 // restart forgets its deliveries. `simulate` plays the courier: it moves a delivery to the next
 // status and returns the signed webhook the real provider would send.
 
-export const MOCK_RULES = {
+const MOCK_RULES = {
   baseCents: 300,
   centsPerKm: 70,
   // Prices are rounded to 10 fening.
@@ -60,12 +60,12 @@ interface StoredQuote {
   priceCents: number;
 }
 
-export interface MockProviderOptions {
+interface MockProviderOptions {
   webhookSecret: string;
   now?: () => Date;
 }
 
-export interface SimulateOptions {
+interface SimulateOptions {
   courier?: Courier;
   failureReason?: string;
 }

@@ -13,13 +13,12 @@ describe("weekly hours", () => {
       { days: "Sub", hours: "09:00–14:00" },
       { days: "Ned", hours: "zatvoreno" },
     ]);
-    expect(hoursText(week(HOURS), null, t)).toBe("Pon–Ned 08:00–20:00");
+    expect(hoursText(week(HOURS), t)).toBe("Pon–Ned 08:00–20:00");
   });
 
-  it("falls back to the old text, then to nothing", () => {
-    expect(hoursText(null, "07-22", t)).toBe("07-22");
-    expect(hoursText(null, "  ", t)).toBeNull();
-    expect(hoursText(undefined, undefined, t)).toBeNull();
+  it("has no text without weekly hours", () => {
+    expect(hoursText(null, t)).toBeNull();
+    expect(hoursText(undefined, t)).toBeNull();
   });
 
   it("checks that every open day closes after it opens", () => {

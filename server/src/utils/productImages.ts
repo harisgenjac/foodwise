@@ -6,7 +6,7 @@ import { removeStoredFile, storedFileExists, storedFileName } from "../services/
 // - "suggested:<key>": one of the suggested images (the client holds the pictures)
 // - "/uploads/products/<storeId>-<...>": a file the store uploaded (POST /api/products/images)
 // Keep the keys in sync with client/src/utils/productImages.ts.
-export const SUGGESTED_IMAGE_KEYS = [
+const SUGGESTED_IMAGE_KEYS = [
   "meat",
   "fish",
   "dairy",
@@ -36,7 +36,7 @@ const CATEGORY_IMAGE_KEYS: Record<string, string> = {
 export const suggestedImageFor = (category: string) =>
   `${SUGGESTED_PREFIX}${CATEGORY_IMAGE_KEYS[category] ?? "other"}`;
 
-export const isSuggestedImage = (value: string) =>
+const isSuggestedImage = (value: string) =>
   value.startsWith(SUGGESTED_PREFIX) && SUGGESTED_IMAGE_KEYS.includes(value.slice(SUGGESTED_PREFIX.length));
 
 // Uploaded product images are named after the store that uploaded them.
@@ -45,7 +45,7 @@ export const productImageNamePrefix = (storeId: number) => `${storeId}-`;
 const isOwnUpload = (value: string, storeId: number) =>
   storedFileName("products", value)?.startsWith(productImageNamePrefix(storeId)) ?? false;
 
-export type ParsedImage = { value: string | null } | { error: string };
+type ParsedImage = { value: string | null } | { error: string };
 
 // Checks an image value a store sends with a product or template. `undefined` means the field
 // was not sent; the caller decides what that means (keep the old image, or none).

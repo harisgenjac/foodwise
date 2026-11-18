@@ -10,7 +10,7 @@ import { ordersPaused } from "../utils/orderSettings.js";
 // ready time when it accepts. The quote's price is an estimate; the final one comes when the
 // delivery is created.
 
-export type DeliveryUnavailableReason =
+type DeliveryUnavailableReason =
   | "STORE_NO_DELIVERY" // the store turned delivery off
   | "STORE_PAUSED" // the store paused new orders
   | "STORE_CLOSED" // closed now by its weekly hours
@@ -19,13 +19,13 @@ export type DeliveryUnavailableReason =
   | "OUT_OF_ZONE" // the provider does not deliver between the two pins
   | "UNAVAILABLE"; // the provider cannot deliver now
 
-export interface DeliveryEstimate {
+interface DeliveryEstimate {
   price: string;
   estimated_pickup_at: string;
   estimated_delivery_at: string;
 }
 
-export type DeliveryOption =
+type DeliveryOption =
   | { available: true; estimate: DeliveryEstimate; dropoff: DeliveryLocation }
   | { available: false; reason: DeliveryUnavailableReason };
 

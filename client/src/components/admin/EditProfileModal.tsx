@@ -181,14 +181,12 @@ function EditProfileModal({ user, name, onClose, onSaved }: EditProfileModalProp
                   label={t("admin.userDetails.openingHours")}
                   value={openingSchedule}
                   onChange={setOpeningSchedule}
-                  legacyText={user.opening_hours ?? null}
                 />
                 {user.role === "STORE" && (
                   <WeeklyHoursEditor
                     label={t("admin.userDetails.pickupHours")}
                     value={pickupSchedule}
                     onChange={setPickupSchedule}
-                    legacyText={user.pickup_hours ?? null}
                   />
                 )}
               </div>

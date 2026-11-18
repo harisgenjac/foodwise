@@ -4,8 +4,8 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { HttpError } from '../utils/httpError.js';
 import { IMAGE_EXTENSIONS } from '../services/storage.js';
 
-export const MAX_IMAGE_SIZE_MB = 5;
-export const MAX_CSV_SIZE_MB = 1;
+const MAX_IMAGE_SIZE_MB = 5;
+const MAX_CSV_SIZE_MB = 1;
 
 // Browsers and operating systems disagree on the type of a .csv file (Excel on Windows sends vnd.ms-excel).
 const CSV_MIME_TYPES = [

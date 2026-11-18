@@ -67,14 +67,11 @@
     "email": "Email",
     "password": "Password",
     "loginButton": "Log in",
-    "noAccount": "Don't have an account?",
-    "registerLink": "Sign up",
     "loginError": "Incorrect email or password. Please try again.",
     "createAccount": "Create an account",
     "registrationSubtitle": "Join the FoodWise platform",
     "firstName": "First name",
     "lastName": "Last name",
-    "selectRole": "-- Select a role --",
     "roleLabel": "Account type",
     "storeRole": "Store",
     "restaurantRole": "Restaurant",
@@ -119,7 +116,6 @@
     "name": "Product Name",
     "description": "Description",
     "category": "Category",
-    "selectCategory": "-- Select a category --",
     "originalPrice": "Original Price",
     "discountedPrice": "Discounted Price",
     "available": "Available",
@@ -133,7 +129,6 @@
     "noAvailableProductsTitle": "No products available right now",
     "noAvailableProductsSubtitle": "Check back later, stores add new products regularly.",
     "editTitle": "Edit Product",
-    "editButton": "Edit Product",
     "editError": "Error editing product. Please try again.",
     "editSubtitle": "Update the product details. Restaurants see the changes right away.",
     "saveChanges": "Save changes",
@@ -183,8 +178,7 @@
     "productNotFoundTitle": "Product not found.",
     "store": "Store",
     "availableQuantity": "Available Quantity",
-    "totalQuantity": "Total Quantity",
-    "daysUntilExpiry": "Days Until Expiry"
+    "totalQuantity": "Total Quantity"
   },
   "orderForm": {
     "placeholderMax": "Maximum",
@@ -474,7 +468,6 @@
     "quantity": "Quantity",
     "expiryDate": "Expiry Date",
     "viewAllProducts": "View all products",
-    "city": "City",
     "pickupDate": "Pickup",
     "greeting": "Welcome, {{name}}",
     "storeSubtitle": "Here is an overview of your store today.",
@@ -657,8 +650,6 @@
     "readyForPickup": "Ready for pickup",
     "pickedUpAt": "Picked up {{date}}",
     "total": "Total",
-    "buyer": "Buyer",
-    "seller": "Seller",
     "pickupHours": "Pickup",
     "completeButton": "Mark as picked up",
     "cancelOverdueButton": "Cancel",
@@ -1210,7 +1201,6 @@
     "announcements": {
       "title": "Announcements",
       "subtitle": "Send a message to stores, restaurants or everyone. Recipients get it as a notification and as a banner while it lasts.",
-      "formSection": "New announcement",
       "audienceSection": "Send to",
       "audiences": {
         "ALL": "Everyone",
@@ -2128,7 +2118,6 @@
   "schedule": {
     "closed": "closed",
     "copyMonday": "Copy Monday to every day",
-    "legacyHint": "Entered before: “{{text}}”. Enter your weekly hours below so restaurants can see whether you are open now.",
     "notEntered": "Weekly hours are not entered yet. Save them so restaurants can see whether you are open now.",
     "openOn": "Open on {{day}}",
     "opensAt": "{{day}}: opens at",

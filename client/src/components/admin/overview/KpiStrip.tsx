@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import UnitChips from "../../dashboard/UnitChips.js";
 
-export interface Kpi {
+interface Kpi {
   icon: LucideIcon;
   label: string;
   value: string;

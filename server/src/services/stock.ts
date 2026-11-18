@@ -50,7 +50,7 @@ export const freeQuantity = async (db: Db, productId: number): Promise<number> =
 };
 
 // What keeps a product sold out: Confirmed and Completed order items plus shop sales.
-export const soldOutCover = async (db: Db, productId: number): Promise<number> => {
+const soldOutCover = async (db: Db, productId: number): Promise<number> => {
   const result = await db.query<{ covered: string }>(
     `SELECT COALESCE(
        (SELECT SUM(order_items.quantity) FROM order_items

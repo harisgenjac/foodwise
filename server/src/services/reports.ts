@@ -10,7 +10,7 @@ import { formatOrderCode } from "./orders/codes.js";
 // picked-up (Completed) order items, by the day they were picked up; pickups count orders.
 
 // Longest period a report may cover: one (leap) year, both days included.
-export const MAX_PERIOD_DAYS = 366;
+const MAX_PERIOD_DAYS = 366;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export interface Period {
@@ -33,11 +33,11 @@ export const sendCsv = (res: Response, name: string, period: Period, csv: string
   return res.status(200).send(csv);
 };
 
-export const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
+const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
 
 // Whose pickups a report covers. `owner` is a condition on $1 (the periods are $2 and $3);
 // `partyJoin` joins the other side of the pickup as `parties`.
-export interface PickupScope {
+interface PickupScope {
   owner: string;
   partyJoin: string;
 }

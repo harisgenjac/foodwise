@@ -1,7 +1,7 @@
 import type { Pool, PoolClient } from "pg";
 
 // A business's exact location: the pin on the map on My profile (users.latitude/longitude).
-export interface Location {
+interface Location {
   latitude: number;
   longitude: number;
 }

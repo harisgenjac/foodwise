@@ -86,7 +86,7 @@ export const getFavorites = async (req: Request, res: Response) => {
     const result = await pool.query(
       `SELECT users.id, users.business_name, users.city_id, cities.name AS city, users.address,
         ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
-        users.opening_hours, users.pickup_hours, users.opening_schedule, users.pickup_schedule, users.phone,
+        users.opening_schedule, users.pickup_schedule, users.phone,
         ${companyName("users")} AS company_name
         FROM favorites 
         JOIN users ON favorites.store_id = users.id

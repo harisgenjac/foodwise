@@ -32,7 +32,6 @@ export interface Product {
   // Only on GET /products/:id.
   store_address?: string | null;
   store_phone?: string | null;
-  store_pickup_hours?: string | null;
   store_pickup_schedule?: Schedule | null;
 }
 
@@ -175,7 +174,6 @@ export interface Order {
   days_overdue?: number;
   party_phone?: string | null;
   party_address?: string | null;
-  party_pickup_hours?: string | null;
   party_pickup_schedule?: Schedule | null;
 }
 
@@ -202,7 +200,6 @@ export interface OrderParty {
   city: string | null;
   address: string | null;
   phone: string | null;
-  pickup_hours: string | null;
   pickup_schedule: Schedule | null;
   logo_url: string | null;
 }
@@ -275,9 +272,6 @@ export interface User {
   city_id?: number | null;
   // On GET /users/stores: km from the restaurant's city.
   distance_km?: number | null;
-  // Old free-text hours, kept as a hint until the business enters weekly hours.
-  opening_hours?: string;
-  pickup_hours?: string;
   // Weekly hours (utils/schedule.ts); null until entered. Pickup hours are a store's only.
   opening_schedule?: Schedule | null;
   pickup_schedule?: Schedule | null;
@@ -366,8 +360,6 @@ export interface BranchDetails {
     city: string | null;
     address: string | null;
     phone: string | null;
-    opening_hours: string | null;
-    pickup_hours: string | null;
     opening_schedule: Schedule | null;
     pickup_schedule: Schedule | null;
     logo_url: string | null;
@@ -890,7 +882,7 @@ export interface GeoPoint {
 }
 
 // The restaurant's cart (GET /cart): lines of one store with the product's live state.
-export type UnavailableReason = "SOLD_OUT" | "EXPIRED" | "REMOVED" | "STORE_UNAVAILABLE";
+type UnavailableReason = "SOLD_OUT" | "EXPIRED" | "REMOVED" | "STORE_UNAVAILABLE";
 
 export interface CartFlags {
   unavailable: boolean;

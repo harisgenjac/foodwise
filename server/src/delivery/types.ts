@@ -29,7 +29,7 @@ export interface Quote {
   expires_at: string;
 }
 
-export const QUOTE_UNAVAILABLE_CODES = ["OUT_OF_ZONE", "UNAVAILABLE"] as const;
+const QUOTE_UNAVAILABLE_CODES = ["OUT_OF_ZONE", "UNAVAILABLE"] as const;
 export type QuoteUnavailableCode = (typeof QUOTE_UNAVAILABLE_CODES)[number];
 
 export type QuoteResult =

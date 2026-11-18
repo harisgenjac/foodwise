@@ -76,7 +76,7 @@ describe("LoginPage", () => {
 
   it("does not offer registration, since an admin creates business accounts", () => {
     renderLogin();
-    expect(screen.queryByRole("link", { name: t("auth.registerLink") })).not.toBeInTheDocument();
+    expect(document.querySelector('a[href="/register"]')).toBeNull();
     expect(screen.getByText(t("auth.accountByAdmin"))).toBeInTheDocument();
     expect(screen.queryByText(t("auth.registrationClosed"))).not.toBeInTheDocument();
   });

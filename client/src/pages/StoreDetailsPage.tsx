@@ -20,7 +20,7 @@ import StoreProductCard from "../components/store/StoreProductCard.js";
 import { StoreCartBar, StoreCartPanel } from "../components/store/StoreCart.js";
 import StorePausedNotice from "../components/store/StorePausedNotice.js";
 import Tabs from "../components/common/Tabs.js";
-import { dayHoursText, hoursText, scheduleLines, todayWeekday, type Schedule } from "../utils/schedule.js";
+import { dayHoursText, scheduleLines, todayWeekday, type Schedule } from "../utils/schedule.js";
 import type { Favorites, Product, User } from "../types/index.js";
 
 interface StoreStats {
@@ -147,9 +147,7 @@ function StoreDetailsPage() {
   const pickupSchedule = store.pickup_schedule ?? null;
   const todayPickup = pickupSchedule
     ? t("store.page.pickupToday", { hours: dayHoursText(pickupSchedule[todayWeekday()], t) })
-    : store.pickup_hours
-      ? `${t("user.pickupHours")}: ${store.pickup_hours}`
-      : null;
+    : null;
 
   const renderCard = (product: Product) => (
     <StoreProductCard
@@ -161,7 +159,7 @@ function StoreDetailsPage() {
     />
   );
 
-  const hoursBlock = (label: string, schedule: Schedule | null | undefined, legacy: string | undefined, Icon: typeof Clock) => (
+  const hoursBlock = (label: string, schedule: Schedule | null | undefined, Icon: typeof Clock) => (
     <div className="flex items-start gap-3">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-orange-600 shadow-sm">
         <Icon className="h-4 w-4" strokeWidth={2} />
@@ -178,7 +176,7 @@ function StoreDetailsPage() {
             ))}
           </dl>
         ) : (
-          <p className="font-semibold text-gray-900">{hoursText(null, legacy, t) ?? "—"}</p>
+          <p className="font-semibold text-gray-900">—</p>
         )}
       </div>
     </div>
@@ -360,8 +358,8 @@ function StoreDetailsPage() {
                     </p>
                   </div>
                 </div>
-                {hoursBlock(t("user.workingHours"), store.opening_schedule, store.opening_hours, Clock)}
-                {hoursBlock(t("user.pickupHours"), store.pickup_schedule, store.pickup_hours, Hourglass)}
+                {hoursBlock(t("user.workingHours"), store.opening_schedule, Clock)}
+                {hoursBlock(t("user.pickupHours"), store.pickup_schedule, Hourglass)}
               </div>
               <div>
                 <h2 className="mb-1 text-sm font-semibold text-gray-900">{t("store.page.about")}</h2>

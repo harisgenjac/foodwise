@@ -7,9 +7,9 @@ import { notBlocked } from "../utils/visibility.js";
 // until it expires, can be used once, and a new token for the same user revokes every older open
 // one.
 
-export type TokenPurpose = "PASSWORD_RESET" | "INVITATION";
+type TokenPurpose = "PASSWORD_RESET" | "INVITATION";
 
-export const TOKEN_LIFETIME_MINUTES: Record<TokenPurpose, number> = {
+const TOKEN_LIFETIME_MINUTES: Record<TokenPurpose, number> = {
   PASSWORD_RESET: 60,
   INVITATION: 72 * 60,
 };
@@ -43,7 +43,7 @@ export const createAuthToken = async (
   return token;
 };
 
-export interface ValidToken {
+interface ValidToken {
   id: number;
   user_id: number;
   purpose: TokenPurpose;

@@ -33,12 +33,12 @@ import {
 // Companies are store chains. An admin creates a company together with its headquarters login
 // (a COMPANY user); branches are STORE users with the company's company_id (step 2.2).
 
-export const MAX_COMPANY_NAME_LENGTH = 120;
-export const MAX_COMPANY_DESCRIPTION_LENGTH = 1000;
+const MAX_COMPANY_NAME_LENGTH = 120;
+const MAX_COMPANY_DESCRIPTION_LENGTH = 1000;
 const COMPANY_NAME_INDEX = "companies_name_lower_unique";
 const DUPLICATE_NAME_ERROR = "A company with this name already exists.";
 
-export const COMPANY_COLUMNS = `companies.id, companies.name, companies.description, companies.logo_url,
+const COMPANY_COLUMNS = `companies.id, companies.name, companies.description, companies.logo_url,
   companies.is_blocked, companies.blocked_at, companies.blocked_reason, companies.created_at,
   companies.updated_at`;
 

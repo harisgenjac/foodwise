@@ -42,7 +42,7 @@ import AnswerDeadline from "./AnswerDeadline.js";
 const dateTimeFormat: Intl.DateTimeFormatOptions = { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" };
 const formatDateTime = (value: string) => new Date(value).toLocaleString(undefined, dateTimeFormat);
 
-export type OrderViewer = "STORE" | "RESTAURANT" | "ADMIN";
+type OrderViewer = "STORE" | "RESTAURANT" | "ADMIN";
 
 interface OrderDetailsViewProps {
   order: OrderDetails;
@@ -89,7 +89,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
 
   const partyCard = (party: OrderParty, kind: "STORE" | "RESTAURANT") => {
     const isStoreParty = kind === "STORE";
-    const pickupHours = hoursText(party.pickup_schedule, party.pickup_hours, t);
+    const pickupHours = hoursText(party.pickup_schedule, t);
     // The restaurant needs the store's pickup hours and its page; the admin opens the user page.
     const link = isAdmin
       ? { to: `/admin/users/${party.id}`, label: t("orders.viewUser") }

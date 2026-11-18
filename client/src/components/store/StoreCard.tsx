@@ -22,7 +22,7 @@ function StoreCard({ store, isFavorite, onToggleFavorite }: StoreCardProps) {
   const activeProducts = parseInt(store.active_products ?? "0", 10);
   const contacts: { icon: LucideIcon; value: string | undefined }[] = [
     { icon: MapPin, value: store.address },
-    { icon: Clock, value: hoursText(store.opening_schedule, store.opening_hours, t) ?? undefined },
+    { icon: Clock, value: hoursText(store.opening_schedule, t) ?? undefined },
     { icon: Phone, value: store.phone },
   ];
 

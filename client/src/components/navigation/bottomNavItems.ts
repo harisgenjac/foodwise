@@ -1,7 +1,7 @@
 import { LayoutDashboard, Package, PackageCheck, ReceiptText, Search } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-export interface BottomNavItem {
+interface BottomNavItem {
   to: string;
   // An i18n key (short labels: a bar item is about 75 px wide on a phone).
   labelKey: string;

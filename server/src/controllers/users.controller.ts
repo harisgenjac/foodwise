@@ -20,8 +20,8 @@ export const getUser = async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const result = await pool.query(
       `SELECT users.id, users.first_name, users.last_name, users.email, users.role, users.business_name,
-         users.logo_url, users.cover_url, users.address, users.city_id, cities.name AS city, users.opening_hours,
-         users.pickup_hours, users.opening_schedule, users.pickup_schedule, users.description, users.phone, users.must_change_password, users.email_notifications,
+         users.logo_url, users.cover_url, users.address, users.city_id, cities.name AS city,
+         users.opening_schedule, users.pickup_schedule, users.description, users.phone, users.must_change_password, users.email_notifications,
          users.latitude, users.longitude, ${orderSettingsColumns("users")},
          users.created_at,
          users.company_id, companies.name AS company_name, companies.logo_url AS company_logo_url,
@@ -81,7 +81,7 @@ export const updateOrderSettings = async (req: Request, res: Response) => {
   }
 };
 
-export interface UserFields {
+interface UserFields {
   first_name: string;
   last_name: string;
   business_name: string;
@@ -89,8 +89,6 @@ export interface UserFields {
   address?: string;
   // An id from the cities list (a number, or a numeric string).
   city_id: unknown;
-  opening_hours?: string;
-  pickup_hours?: string;
   // Weekly hours (utils/schedule.ts); not sent keeps the stored ones, null clears them.
   opening_schedule?: unknown;
   pickup_schedule?: unknown;
@@ -100,25 +98,14 @@ export interface UserFields {
   phone: string;
 }
 function validateUserFields(fields: UserFields) {
-  const {
-    first_name,
-    last_name,
-    business_name,
-    logo_url,
-    address,
-    city_id,
-    opening_hours,
-    pickup_hours,
-    description,
-    phone,
-  } = fields;
+  const { first_name, last_name, business_name, address, city_id, phone } = fields;
   if (!first_name || !last_name || !business_name || city_id == null || city_id === "" || !address || !phone) {
     return "First name, last name, business name, city, address and phone are required.";
   }
 }
 
 const PROFILE_COLUMNS = `id, first_name, last_name, email, role, business_name, logo_url, cover_url, address, city_id,
-  ${CITY_NAME}, opening_hours, pickup_hours, opening_schedule, pickup_schedule, description, phone, latitude, longitude`;
+  ${CITY_NAME}, opening_schedule, pickup_schedule, description, phone, latitude, longitude`;
 
 type ProfileResult = { error: string; user?: never } | { user: Record<string, unknown> | undefined; error?: never };
 
@@ -203,8 +190,6 @@ export const updateProfile = async (
     business_name,
     logo_url,
     address,
-    opening_hours,
-    pickup_hours,
     description,
     phone,
   } = body;
@@ -216,15 +201,13 @@ export const updateProfile = async (
        logo_url = COALESCE($4, logo_url),
        address = $5,
        city_id = $6,
-       opening_hours = COALESCE($7, opening_hours),
-       pickup_hours = COALESCE($8, pickup_hours),
-       description = COALESCE($9, description),
-       phone = $10,
-       opening_schedule = CASE WHEN $12::boolean THEN $13::jsonb ELSE opening_schedule END,
-       pickup_schedule = CASE WHEN $14::boolean THEN $15::jsonb ELSE pickup_schedule END,
-       latitude = CASE WHEN $16::boolean THEN $17::float8 ELSE latitude END,
-       longitude = CASE WHEN $16::boolean THEN $18::float8 ELSE longitude END
-     WHERE id = $11
+       description = COALESCE($7, description),
+       phone = $8,
+       opening_schedule = CASE WHEN $10::boolean THEN $11::jsonb ELSE opening_schedule END,
+       pickup_schedule = CASE WHEN $12::boolean THEN $13::jsonb ELSE pickup_schedule END,
+       latitude = CASE WHEN $14::boolean THEN $15::float8 ELSE latitude END,
+       longitude = CASE WHEN $14::boolean THEN $16::float8 ELSE longitude END
+     WHERE id = $9
      RETURNING ${PROFILE_COLUMNS}`,
     [
       first_name,
@@ -233,8 +216,6 @@ export const updateProfile = async (
       logo_url,
       address,
       cityId,
-      opening_hours,
-      pickup_hours,
       description,
       phone,
       userId,
@@ -321,7 +302,7 @@ export const getStores = async (req: Request, res: Response) => {
     const distance = cityDistance("from_city.id", "users.city_id");
     const columns = `users.id, users.business_name, users.city_id, cities.name AS city, ${distance} AS distance_km,
      users.address, ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
-     users.opening_hours, users.pickup_hours, users.opening_schedule, users.pickup_schedule, users.phone,
+     users.opening_schedule, users.pickup_schedule, users.phone,
      ${companyName("users")} AS company_name, ${pauseColumns("users")},
      (SELECT COUNT(*) FROM products
       WHERE products.store_id = users.id AND ${onOffer("products", "users")}) AS active_products`;
@@ -402,7 +383,7 @@ export const getStoreDetails = async (req: Request, res: Response) => {
     const result = await pool.query(
       `SELECT users.id, users.business_name, users.city_id, cities.name AS city, users.address,
        ${storeLogo("users")} AS logo_url, users.cover_url, ${storeDescription("users")} AS description,
-       users.opening_hours, users.pickup_hours, users.opening_schedule, users.pickup_schedule,
+       users.opening_schedule, users.pickup_schedule,
        users.phone, ${companyName("users")} AS company_name, ${pauseColumns("users")}
        FROM users LEFT JOIN cities ON cities.id = users.city_id
        WHERE users.id = $1 AND users.role = 'STORE' AND ${visibleStore("users")}`,

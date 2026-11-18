@@ -1,7 +1,7 @@
 import pool from "../config/db.js";
 import type { Pool, PoolClient } from "pg";
 
-export interface SavedTotals {
+interface SavedTotals {
   kg: number;
   l: number;
   pieces: number;

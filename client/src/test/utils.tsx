@@ -219,8 +219,8 @@ export const makeOrderDetails = (overrides: Partial<OrderDetails> = {}): OrderDe
   return {
     ...order,
     send_changes: [],
-    store: { id: 2, business_name: "Market Centar", city: "Sarajevo", address: "Titova 1", phone: "033 111 222", pickup_hours: "8-16", pickup_schedule: null, logo_url: null },
-    restaurant: { id: 1, business_name: "Restoran Ukus", city: "Sarajevo", address: "Ferhadija 2", phone: "061 222 333", pickup_hours: null, pickup_schedule: null, logo_url: null },
+    store: { id: 2, business_name: "Market Centar", city: "Sarajevo", address: "Titova 1", phone: "033 111 222", pickup_schedule: null, logo_url: null },
+    restaurant: { id: 1, business_name: "Restoran Ukus", city: "Sarajevo", address: "Ferhadija 2", phone: "061 222 333", pickup_schedule: null, logo_url: null },
     history: [],
     ...overrides,
   };

@@ -6,8 +6,7 @@ import { isValidDateTime } from "./dates.js";
 // dashboard), or by an admin in the profile dialog.
 
 // The preparation times a store can choose, in minutes; 30 is the default.
-export const PREPARATION_MINUTES = [15, 30, 45, 60, 90, 120] as const;
-export const DEFAULT_PREPARATION_MINUTES = 30;
+const PREPARATION_MINUTES = [15, 30, 45, 60, 90, 120] as const;
 // A timed pause ends at most this many days ahead; longer means "until I switch it back on".
 export const MAX_PAUSE_DAYS = 30;
 
@@ -29,7 +28,7 @@ export const pauseColumns = (alias = "users") =>
 export const orderSettingsColumns = (alias = "users") =>
   `${alias}.delivery_enabled, ${alias}.preparation_minutes, ${pauseColumns(alias)}`;
 
-export interface OrderSettings {
+interface OrderSettings {
   delivery_enabled: boolean;
   preparation_minutes: number;
   orders_paused: boolean;

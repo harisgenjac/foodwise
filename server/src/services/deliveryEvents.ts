@@ -19,7 +19,7 @@ import { lockOrder, moveItems, syncOrderStatus } from "./orders/status.js";
 // ignored, and an event that would move the delivery backwards (out of order, or after it
 // closed) is stored but changes nothing.
 
-export type WebhookOutcome = "APPLIED" | "IGNORED" | "DUPLICATE" | "UNKNOWN_DELIVERY";
+type WebhookOutcome = "APPLIED" | "IGNORED" | "DUPLICATE" | "UNKNOWN_DELIVERY";
 
 interface DeliveryRow {
   id: number;
@@ -137,7 +137,7 @@ const applyEvent = async (
   }
 };
 
-export const applyDeliveryEvent = async (
+const applyDeliveryEvent = async (
   client: PoolClient,
   providerName: string,
   event: DeliveryEvent,

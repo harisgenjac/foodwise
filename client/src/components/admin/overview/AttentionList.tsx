@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-export interface AttentionItem {
+interface AttentionItem {
   icon: LucideIcon;
   text: string;
   to: string;

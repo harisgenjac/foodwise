@@ -23,7 +23,7 @@ export const EMPTY_PRODUCT_FORM: ProductFormValues = {
   image_url: "",
 };
 
-export type ProductField = keyof ProductFormValues;
+type ProductField = keyof ProductFormValues;
 
 // Every field but the description and the image is required (the server checks the values too).
 export const validateProductForm = (form: ProductFormValues): FieldErrors<ProductField> => {

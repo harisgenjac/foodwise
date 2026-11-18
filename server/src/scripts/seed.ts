@@ -327,8 +327,7 @@ async function seed() {
     };
 
     // seedData.ts writes hours as "07:00–22:00"; a business gets them as weekly hours, every day
-    // the same (none for an empty value). The free-text hour columns stay empty, as for a business
-    // that already entered its weekly hours.
+    // the same (none for an empty value).
     const weekly = (hours: string): Schedule | null => {
       const [open, close] = hours.split("–");
       if (!open || !close) return null;
@@ -346,8 +345,8 @@ async function seed() {
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id`,
         [
           data.first_name, data.last_name, data.email, passwordHash, role, data.business_name, cityId(data.city), data.phone,
-          data.address, JSON.stringify(weekly(data.opening_hours)),
-          role === "STORE" ? JSON.stringify(weekly(data.pickup_hours)) : null,
+          data.address, JSON.stringify(weekly(data.openingTimes)),
+          role === "STORE" ? JSON.stringify(weekly(data.pickupTimes)) : null,
           data.description ?? null, companyId, createdAt, data.location?.[0] ?? null, data.location?.[1] ?? null,
         ],
       );

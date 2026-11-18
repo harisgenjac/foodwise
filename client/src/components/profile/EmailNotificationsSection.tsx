@@ -8,7 +8,7 @@ import api from "../../api/axios.js";
 import FormSection from "../form/FormSection.js";
 
 // The id the emails' footer link points to (/my-profile#email-notifications).
-export const EMAIL_NOTIFICATIONS_SECTION = "email-notifications";
+const EMAIL_NOTIFICATIONS_SECTION = "email-notifications";
 
 // One switch for every role: notification emails on or off. It saves at once, like the auto-renew
 // switch. System emails (password reset, login details) are sent either way.

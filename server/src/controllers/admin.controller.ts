@@ -37,9 +37,9 @@ import { sendInvitation, sendPasswordResetLink } from "../services/accountEmails
 
 // Every role an admin can filter by. COMPANY accounts are created with their company
 // (POST /companies), never through POST /users.
-export const ROLES = ["STORE", "RESTAURANT", "ADMIN", "COMPANY"];
+const ROLES = ["STORE", "RESTAURANT", "ADMIN", "COMPANY"];
 const USER_CREATED_ROLES = ["STORE", "RESTAURANT", "ADMIN"];
-export const ADMIN_ACTIONS = [
+const ADMIN_ACTIONS = [
   "CREATE_USER",
   "SEND_INVITATION",
   "RESEND_INVITATION",
@@ -64,7 +64,7 @@ export const ADMIN_ACTIONS = [
   "REACTIVATE_BRANCH",
   "ATTACH_BRANCH",
 ];
-export const ANNOUNCEMENT_AUDIENCES = ["ALL", "STORE", "RESTAURANT"];
+const ANNOUNCEMENT_AUDIENCES = ["ALL", "STORE", "RESTAURANT"];
 
 const MAX_REASON_LENGTH = 500;
 export const RECENT_ACTIONS_LIMIT = 20;
@@ -76,7 +76,7 @@ const DONATION_SORTS = { expiry_date: "donation_offers.expiry_date" };
 
 const USER_COLUMNS = `users.id, users.email, users.role, users.first_name, users.last_name,
   users.business_name, users.city_id, ${CITY_NAME}, users.address, users.phone, users.logo_url,
-  users.opening_hours, users.pickup_hours, users.opening_schedule, users.pickup_schedule, users.description,
+  users.opening_schedule, users.pickup_schedule, users.description,
   users.latitude, users.longitude, ${orderSettingsColumns("users")},
   users.is_blocked, users.blocked_at, users.blocked_reason, users.must_change_password, users.created_at,
   users.last_login_at,

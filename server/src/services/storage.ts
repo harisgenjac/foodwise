@@ -11,7 +11,7 @@ import { HttpError } from "../utils/httpError.js";
 // - products: product and template images
 // - covers: the store page's cover image
 
-export type UploadKind = "logos" | "products" | "covers";
+type UploadKind = "logos" | "products" | "covers";
 
 export const UPLOADS_DIR = process.env.UPLOADS_DIR || "uploads";
 export const UPLOADS_URL_PREFIX = "/uploads";

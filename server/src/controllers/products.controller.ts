@@ -302,7 +302,7 @@ const STORE_SORT_VALUES: Record<string, string> = {
 };
 
 // Products shown per store on Search; the rest is behind "see all" (the store page).
-export const SEARCH_PRODUCTS_PER_STORE = 4;
+const SEARCH_PRODUCTS_PER_STORE = 4;
 
 // Search (GET /products/by-store): the marketplace's matches grouped by store, paged by store
 // (default 12). Each row is a store (logo, name, chain, city, distance), how many of its offers
@@ -391,7 +391,6 @@ export const getProductById = async (req: Request, res: Response) => {
     cities.name AS city,
     users.address AS store_address,
     users.phone AS store_phone,
-    users.pickup_hours AS store_pickup_hours,
     users.pickup_schedule AS store_pickup_schedule,
     ${availableQuantity("products")} AS available_quantity,
     ${soldInShop("products")} AS sold_in_shop,

@@ -4,7 +4,7 @@ const EARTH_RADIUS_KM = 6371;
 
 const radians = (degrees: number) => (degrees * Math.PI) / 180;
 
-export interface Point {
+interface Point {
   latitude: number;
   longitude: number;
 }

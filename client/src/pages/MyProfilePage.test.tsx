@@ -208,7 +208,6 @@ describe("MyProfilePage weekly hours and cover", () => {
     city_id: 1,
     phone: "033 111",
     address: "Titova 1",
-    opening_hours: "07-22 svaki dan",
   });
   const renderStore = (user = store) =>
     renderWithProviders(<MyProfilePage />, { route: "/my-profile", path: "/my-profile", user });
@@ -217,15 +216,14 @@ describe("MyProfilePage weekly hours and cover", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
-  it("shows the old text as a hint and sends no weekly hours until they are entered", async () => {
+  it("says the weekly hours are not entered and sends none until they are", async () => {
     apiMock.put.mockResolvedValue({ data: { message: "Profile updated successfully." } });
     renderStore();
-    expect(await screen.findByText(t("schedule.legacyHint", { text: "07-22 svaki dan" }))).toBeInTheDocument();
+    expect((await screen.findAllByText(t("schedule.notEntered"))).length).toBeGreaterThan(0);
     await userEvent.click(screen.getByRole("button", { name: t("user.saveButton") }));
     const body = apiMock.put.mock.calls[0]![1] as Record<string, unknown>;
     expect(body).not.toHaveProperty("opening_schedule");
     expect(body).not.toHaveProperty("pickup_schedule");
-    expect(body).not.toHaveProperty("opening_hours");
   });
 
   it("sends the weekly hours once entered (a closed Sunday)", async () => {

@@ -41,12 +41,10 @@ export const scheduleLines = (schedule: Schedule, t: TFunction) => {
   }));
 };
 
-// The hours as one line ("Pon–Pet 08:00–20:00 · Sub 09:00–14:00 · Ned zatvoreno"); a business
-// that has not entered weekly hours yet shows its old free-text hours, if any; else null.
-export const hoursText = (schedule: Schedule | null | undefined, legacy: string | null | undefined, t: TFunction) => {
-  if (schedule) return scheduleLines(schedule, t).map((line) => `${line.days} ${line.hours}`).join(" · ");
-  return legacy?.trim() ? legacy : null;
-};
+// The hours as one line ("Pon–Pet 08:00–20:00 · Sub 09:00–14:00 · Ned zatvoreno"); null when the
+// business has not entered weekly hours yet.
+export const hoursText = (schedule: Schedule | null | undefined, t: TFunction) =>
+  schedule ? scheduleLines(schedule, t).map((line) => `${line.days} ${line.hours}`).join(" · ") : null;
 
 // Weekly hours a form can send: every open day must close after it opens.
 export const isScheduleValid = (schedule: Schedule | null) =>

@@ -6,11 +6,11 @@ import { CATEGORIES, UNITS } from "./validateProduct.js";
 export const DONATION_TYPES = ["FREE", "SPONSORED"];
 export const DONATION_STATUSES = ["Available", "Expired", "Removed"];
 // Donations add ready meals and portions to the product categories and units.
-export const MEAL_CATEGORY = "Meals";
-export const DONATION_CATEGORIES = [...CATEGORIES, MEAL_CATEGORY];
-export const DONATION_UNITS = [...UNITS, "portion"];
+const MEAL_CATEGORY = "Meals";
+const DONATION_CATEGORIES = [...CATEGORIES, MEAL_CATEGORY];
+const DONATION_UNITS = [...UNITS, "portion"];
 // The 14 allergens food businesses must declare under EU rules.
-export const ALLERGENS = [
+const ALLERGENS = [
   "gluten",
   "crustaceans",
   "eggs",
@@ -26,7 +26,7 @@ export const ALLERGENS = [
   "lupin",
   "molluscs",
 ];
-export const SERVING_TEMPERATURES = ["HOT", "COLD", "FROZEN"];
+const SERVING_TEMPERATURES = ["HOT", "COLD", "FROZEN"];
 
 export interface DonationFields {
   donation_type: string;
@@ -46,7 +46,7 @@ export interface DonationFields {
 
 // The values written to the database: FREE offers carry no price, and meal details are kept
 // only for meals. Call it only after validateDonationFields returned null.
-export interface NormalizedDonation {
+interface NormalizedDonation {
   donation_type: string;
   name: string;
   description: string | null;

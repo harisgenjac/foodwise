@@ -9,7 +9,7 @@ interface Address {
   Address: string;
 }
 
-export interface MailpitMessage {
+interface MailpitMessage {
   ID: string;
   Subject: string;
   From: Address;
@@ -31,7 +31,7 @@ export const countEmails = async (query: string): Promise<number> => {
   return messages.length;
 };
 
-// Waits for exactly one email matching a Mailpit search (e.g. `to:x@y subject:"Nova rezervacija"`)
+// Waits for exactly one email matching a Mailpit search (e.g. `to:x@y subject:"Nova narudžba"`)
 // and returns it in full. The server's email worker sends every 5 seconds.
 export const waitForEmail = async (query: string): Promise<MailpitMessage> => {
   let id: string | undefined;

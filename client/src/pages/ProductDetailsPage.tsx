@@ -137,7 +137,7 @@ function ProductDetailsPage() {
 
   const unit = units[product.unit] || product.unit;
   const isOwner = isStore && product.store_id === user?.id;
-  const storePickupHours = hoursText(product.store_pickup_schedule, product.store_pickup_hours, t);
+  const storePickupHours = hoursText(product.store_pickup_schedule, t);
   const quantity = parseFloat(product.quantity);
   const available = parseFloat(product.available_quantity ?? product.quantity);
   // The owner also sees what it sold in its own shop; for restaurants that is part of "ordered".

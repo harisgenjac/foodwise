@@ -20,10 +20,10 @@ export const MAX_ORDER_ITEMS = 30;
 // The first key of the restaurant's transaction-scoped advisory lock (the second is its id).
 const PENDING_LOCK_NAMESPACE = 41;
 
-export type SendChangeKind = "QUANTITY_REDUCED" | "PRICE_LOWERED" | "NOT_SENT_SOLD_OUT" | "NOT_SENT_PRICE_RAISED";
+type SendChangeKind = "QUANTITY_REDUCED" | "PRICE_LOWERED" | "NOT_SENT_SOLD_OUT" | "NOT_SENT_PRICE_RAISED";
 
 // One entry of orders.send_changes: what sending changed on a line, for the confirmation screen.
-export interface SendChange {
+interface SendChange {
   product_id: number;
   name: string;
   unit: string;
@@ -40,7 +40,7 @@ interface SendLine {
   unitPrice: number;
 }
 
-export interface SendOrderInput {
+interface SendOrderInput {
   method: "PICKUP" | "DELIVERY";
   // Only for pickup; a delivery is today, as soon as possible.
   pickupAt: string | null;
@@ -115,7 +115,7 @@ interface ProblemLine {
   unit_price: number;
 }
 
-export interface SentOrder {
+interface SentOrder {
   order: OrderRow;
   items: { id: number; product_id: number; quantity: string; unit_price: string }[];
   changes: SendChange[];

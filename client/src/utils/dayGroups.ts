@@ -8,7 +8,7 @@ export interface DayGroup<T> {
 }
 
 // "Today", "Tomorrow", "Yesterday" or "Wednesday, 22 October" (names from i18n, browsers lack Bosnian ones).
-export const dayTitle = (dateInput: string, t: TFunction) => {
+const dayTitle = (dateInput: string, t: TFunction) => {
   const offset = daysFromToday(dateInput);
   if (offset === 0) return t("notifications.groups.today");
   if (offset === 1) return t("pickups.sections.tomorrow");
