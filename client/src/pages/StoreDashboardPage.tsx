@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import {
+  ArrowRight,
   CheckCircle2,
+  ClipboardList,
   Hourglass,
   Leaf,
   Package,
@@ -98,6 +101,20 @@ function StoreDashboardPage() {
           onChange={() => refreshUser().catch((err) => console.error("Error refreshing user:", err))}
         />
       )}
+
+      <Link
+        to="/packing"
+        className="group flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+          <ClipboardList className="h-5 w-5" strokeWidth={2} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold text-gray-900">{t("dashboard.packingTitle")}</span>
+          <span className="block text-sm text-gray-500">{t("dashboard.packingText")}</span>
+        </span>
+        <ArrowRight className="h-5 w-5 shrink-0 text-orange-600 transition-transform group-hover:translate-x-0.5" />
+      </Link>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard icon={Package} label={t("dashboard.statActiveProducts")} value={stats?.active_products ?? 0} />

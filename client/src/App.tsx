@@ -25,6 +25,7 @@ import NotificationsPage from './pages/NotificationsPage.js'
 import ProductDetailsPage from "./pages/ProductDetailsPage.js"
 import OrderDetailsPage from "./pages/OrderDetailsPage.js";
 import PickupsPage from './pages/PickupsPage.js';
+import PackingListPage from './pages/PackingListPage.js';
 import ReportsPage from './pages/ReportsPage.js';
 import CreditsPage from './pages/CreditsPage.js';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.js';
@@ -80,6 +81,7 @@ function App() {
         <Route path="/my-orders" element={<ProtectedRoute role="RESTAURANT"><MyOrdersPage /></ProtectedRoute>} />
         <Route path="/cart" element={<ProtectedRoute role="RESTAURANT"><CartPage /></ProtectedRoute>} />
         <Route path="/pickups" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><PickupsPage /></ProtectedRoute>} />
+        <Route path="/packing" element={<ProtectedRoute role="STORE"><PackingListPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><ReportsPage /></ProtectedRoute>} />
         <Route path="/credits" element={<ProtectedRoute role="STORE"><CreditsPage /></ProtectedRoute>} />
         <Route path="/my-profile" element={<MyProfilePage />} />

@@ -179,6 +179,23 @@ export interface Order {
   party_pickup_schedule?: Schedule | null;
 }
 
+// An order on the store's packing list (GET /orders/packing): ready_time is local time, the ready
+// time the store chose for a delivery or the pickup time for a pickup.
+export interface PackingOrder extends Order {
+  ready_time: string;
+}
+
+// One accepted product summed over the packing list's orders.
+export interface PackingProduct {
+  product_id: number;
+  product_name: string;
+  unit: string;
+  image_url: string | null;
+  // DECIMAL as text.
+  quantity: string;
+  order_count: number;
+}
+
 export interface OrderParty {
   id: number;
   business_name: string | null;

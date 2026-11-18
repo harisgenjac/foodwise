@@ -82,6 +82,7 @@ function SidebarNav({ expanded, locked = false, onNavigate, replace = false }: S
     { to: "/my-products", label: t("sidebar.myProducts"), icon: Package },
     { to: "/orders", label: t("sidebar.orders"), icon: ReceiptText },
     { to: "/pickups", label: t("sidebar.pickups"), icon: PackageCheck },
+    { to: "/packing", label: t("sidebar.packing"), icon: ClipboardList },
     { to: "/reports", label: t("sidebar.reports"), icon: FileChartColumn },
     { to: "/credits", label: t("sidebar.credits"), icon: Coins },
   ];
