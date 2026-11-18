@@ -1,5 +1,5 @@
 // Straight-line distance in km between two points (haversine), the same formula as the SQL
-// function city_distance_km (migration 1793000000018).
+// function city_distance_km (baseline migration).
 const EARTH_RADIUS_KM = 6371;
 
 const radians = (degrees: number) => (degrees * Math.PI) / 180;

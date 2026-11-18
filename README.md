@@ -164,7 +164,8 @@ The Resend transport is built and tested but not configured. Going live is a cha
 | `npm run build` | Compiles TypeScript to `dist/` |
 | `npm start` | Runs the compiled server |
 | `npm run migrate up` / `down` | Applies or rolls back migrations |
-| `npm run migrate create <name>` | Creates a new migration |
+| `npm run migrate:create -- <name>` | Creates a new TypeScript migration |
+| `npm run db:reset` | Builds, then drops and recreates the local schema, runs the migrations, empties the local uploads and runs the seed (refused in production) |
 | `npm test` | Runs the tests against the test database (apply its schema first with `npx dotenv run -q -f .env.test -- node-pg-migrate up`) |
 | `npm run test:watch` | Runs the tests in watch mode |
 | `npm run typecheck` | Type-checks the source and the tests |

@@ -20,8 +20,8 @@ const SUGGESTED_IMAGE_KEYS = [
 
 const SUGGESTED_PREFIX = "suggested:";
 
-// The suggested image that shows the category best. Only the seed uses it (and migration
-// 1793000000036 once for existing rows): the category never sets a product's image.
+// The suggested image that shows the category best. Only the seed uses it: the category never
+// sets a product's image.
 const CATEGORY_IMAGE_KEYS: Record<string, string> = {
   Meat: "meat",
   Fish: "fish",
