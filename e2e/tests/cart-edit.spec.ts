@@ -4,7 +4,7 @@ import { apiAs, createProduct } from "../support/api.js";
 import { isoDate, sarajevoDate } from "../support/dates.js";
 import { addToCart, emptyCart, open, reload } from "../support/ui.js";
 
-// Editing the cart before sending (docs/orders-design.md, section 4): a line's quantity, removing a
+// Editing the cart before sending (docs/product.md): a line's quantity, removing a
 // line, emptying the cart, and a pickup date after the earliest expiry date. The seeded restaurant
 // is shared by the specs, so the test starts and ends with an empty cart; it sends nothing.
 

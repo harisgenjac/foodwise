@@ -10,7 +10,7 @@ FoodWise ("Još vrijedi") is a B2B marketplace where stores sell near-expiry foo
 | Client code: pages, components, hooks, routing, i18n, styling, types | `docs/frontend.md` |
 | The app as it is today: users and roles, how it behaves, business rules, the humanitarian purpose, naming and tone | `docs/product.md` |
 | The future: planned features, phases, ideas backlog, decided-against items, open questions | `docs/development-plan.md` |
-| E2E tests: Playwright, the e2e database and seed, locators, the CI job and traces | `docs/e2e.md` |
+| E2E tests: Playwright, the e2e database and seed, locators, the CI job and traces | `docs/frontend.md` (section E2E tests) |
 
 Do not load them all by default. A feature that spans both sides (for example a new endpoint plus a page) needs `backend.md` and `frontend.md`. Open `product.md` when a business rule is unclear, and `development-plan.md` for priorities and planned work. These docs were written from the code: if the code and a doc disagree, trust the code and fix the doc in the same change.
 
@@ -22,7 +22,7 @@ Everything in the future: the agreed rules and tasks (as checkboxes) for orders 
 - Before designing or building a task, read the plan sections that touch it and follow the agreed rules there (e.g. one store per order, stores pay only credits, restaurants pay no credits, cash to the courier, accepting per item, `DeliveryProvider` interface).
 - If the task depends on something in the plan that is not built yet, or conflicts with the plan, say so before starting and ask how to proceed.
 - If we decide something different from the plan, say so and update the plan so it stays true.
-- When a plan task is done, in the same change describe the new behaviour in `docs/product.md` and tick the task's checkbox in the plan. Do not rewrite or reorder the rest of the plan.
+- When a plan task is done, in the same change describe the new behaviour in `docs/product.md` and tick the task's checkbox in the plan; once a whole section is done, collapse it into the plan's dated "Done" summary. Do not rewrite or reorder the rest of the plan.
 
 ## Repo layout
 
@@ -32,7 +32,7 @@ food-saver-app/
 ├── README.md        setup and run instructions for humans (keep in sync with scripts and env vars)
 ├── package.json     root scripts only (dev/build/install:all for both sides)
 ├── docker-compose.yml  Mailpit (catches local and e2e emails)
-├── docs/            backend.md, frontend.md, product.md, e2e.md, development-plan.md
+├── docs/            backend.md, frontend.md, product.md, development-plan.md (only these four; each fact lives in one)
 ├── server/          Express 5 + TypeScript + PostgreSQL (src/, migrations/, tests/, uploads/)
 ├── client/          React 19 + Vite + TypeScript + Tailwind + react-i18next (src/)
 └── e2e/             Playwright end-to-end tests (own package, own database)

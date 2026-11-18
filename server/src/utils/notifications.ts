@@ -4,7 +4,7 @@ import { notBlocked } from "./visibility.js";
 
 // The client translates notifications by `type`; `message` is the English fallback.
 export type NotificationType =
-  // Orders, linked by order_id: one notification per order event (docs/orders-design.md, section 8).
+  // Orders, linked by order_id: one notification per order event (docs/product.md).
   // To the store: a restaurant sent an order, or withdrew it.
   | "ORDER_CREATED"
   | "ORDER_CANCELLED"

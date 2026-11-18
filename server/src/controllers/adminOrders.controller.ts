@@ -6,7 +6,7 @@ import { adminCancelOrder } from "../services/orders/actions.js";
 import { getOrderDetails, listAdminOrders } from "../services/orders/queries.js";
 import { REASON_ERROR, logAdminAction, parseReason } from "./admin.controller.js";
 
-// The admin's orders (docs/orders-design.md, section 8): every order on the platform, one order's
+// The admin's orders (docs/product.md): every order on the platform, one order's
 // details, and cancelling an order to resolve a dispute.
 
 const FETCH_ERROR = "An error occurred while fetching orders.";

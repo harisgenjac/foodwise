@@ -1,7 +1,7 @@
 import { randomInt } from "node:crypto";
 import type { PoolClient } from "pg";
 
-// The short order code (docs/orders-design.md, section 9): 4 random characters without the easily
+// The short order code (docs/product.md): 4 random characters without the easily
 // confused 0, O, 1 and I, shown as #K7PM. Random, so it does not reveal how many orders a store
 // gets; unique within a store (UNIQUE (store_id, code)), so it is always shown with the store or
 // restaurant name and URLs use the order id.

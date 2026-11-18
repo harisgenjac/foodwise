@@ -3,7 +3,7 @@ import { ACCOUNTS, runId, storageState } from "../support/accounts.js";
 import { apiAs, cancelOrder, createProduct, recordShopSale, setProductPrice } from "../support/api.js";
 import { addToCart, checkout, emptyCart, open, searchMarketplace, sentOrderId, settleOverlays, toast } from "../support/ui.js";
 
-// The restaurant's cart (docs/orders-design.md, sections 4 and 5): one store per cart, the flags of
+// The restaurant's cart (docs/product.md): one store per cart, the flags of
 // lines whose offer changed, and what sending does with them with partial fulfilment on and off.
 // The seeded restaurant is shared by the specs, so each test starts and ends with an empty cart
 // and cancels the orders it sent (they would count towards the pending-order limit).

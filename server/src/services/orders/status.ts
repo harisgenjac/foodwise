@@ -2,7 +2,7 @@ import type { PoolClient } from "pg";
 import type { OrderRow } from "./codes.js";
 import { absorbShopShortage } from "../stock.js";
 
-// Order and item statuses (docs/orders-design.md, section 2). An item is an order_items row.
+// Order and item statuses (docs/product.md). An item is an order_items row.
 // The order's status is never set directly: syncOrderStatus derives it from its items after every
 // item change, in the same transaction, and records the change in order_status_history.
 

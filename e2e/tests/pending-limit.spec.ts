@@ -3,7 +3,7 @@ import { API_URL, uniqueName } from "../support/accounts.js";
 import { apiAs, cancelOrder, createProduct, createStoreWithoutPlan, sendOrder } from "../support/api.js";
 import { addToCart, checkout, open, reload, toast } from "../support/ui.js";
 
-// At most 10 Pending orders per restaurant (docs/orders-design.md, section 6): the cart warns from
+// At most 10 Pending orders per restaurant (docs/product.md): the cart warns from
 // 8 on and the 11th is refused. A fresh restaurant, so the count starts at zero (the seeded one
 // keeps pending orders from other specs).
 test("the cart warns near the pending-order limit and refuses the order past it", async ({ browser }) => {

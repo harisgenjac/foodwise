@@ -5,7 +5,7 @@ import { inTransaction } from "../utils/transaction.js";
 import { formatOrderCode, type OrderRow } from "./orders/codes.js";
 import { lockOrder, moveItems, syncOrderStatus } from "./orders/status.js";
 
-// The provider's status webhooks (delivery phase 2, docs/delivery-api.yaml "deliveryEvent"):
+// The provider's status webhooks (delivery phase 2, src/delivery/openapi.yaml "deliveryEvent"):
 // - courier assigned: the courier's name and phone are kept;
 // - picked up: the courier has the goods, the order becomes InDelivery (source PROVIDER, no
 //   notification: the order page shows it);

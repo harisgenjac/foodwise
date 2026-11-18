@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { DeliveryError, type WebhookHeaders } from "./types.js";
 
-// Webhook signatures (docs/delivery-api.yaml, "Webhook signature"): the provider sends
+// Webhook signatures (openapi.yaml, "Webhook signature"): the provider sends
 //   X-FoodWise-Timestamp: <unix seconds>
 //   X-FoodWise-Signature: sha256=<hex HMAC-SHA256(secret, "<timestamp>.<raw body>")>
 // The timestamp is signed too, so an old call cannot be replayed with a fresh timestamp.

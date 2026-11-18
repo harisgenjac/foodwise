@@ -25,7 +25,7 @@ reviews:
   path_instructions:
     - path: "server/src/**"
       instructions: |
-        Check against the business rules in docs/product.md and credits-spec.md:
+        Check against the business rules in docs/product.md (Credits) and docs/backend.md:
         order statuses, credit charges and refunds (each charge refunded at
         most once), visibility of blocked and deactivated stores (use the shared
         visibility condition), company/branch rules.
@@ -38,7 +38,7 @@ reviews:
         transaction.
         Time zones: business dates (expiry, "today", the midnight expiry job, the
         07:00 reminders) use APP_TIMEZONE. Credit days and months intentionally
-        change at 00:00 Europe/London (see credits-spec.md); do not suggest
+        change at 00:00 Europe/London (see Credits in docs/backend.md); do not suggest
         APP_TIMEZONE for credit periods, refunds or subscriptions.
         Error messages are English.
     - path: "server/**/migrations/**"

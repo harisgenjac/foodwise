@@ -4,8 +4,8 @@ import { apiAs, createDonation, createProduct, createStoreWithoutPlan, myId, req
 import { open } from "../support/ui.js";
 
 // Phone width: every store and restaurant page fits the screen, with the bottom bar instead of the
-// sidebar (docs/mobile-review.md, the navigation shell).
-// 375 px by default; MOBILE_WIDTH=390 runs the same checks on a wider phone (docs/e2e.md).
+// sidebar (docs/frontend.md, Routing and layout).
+// 375 px by default; MOBILE_WIDTH=390 runs the same checks on a wider phone (docs/frontend.md, E2E tests).
 const WIDTH = Number(process.env.MOBILE_WIDTH ?? 375);
 test.use({ viewport: { width: WIDTH, height: 812 }, hasTouch: true });
 

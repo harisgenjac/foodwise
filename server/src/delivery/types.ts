@@ -1,4 +1,4 @@
-// The delivery contract (docs/delivery-api.yaml) as TypeScript types, and the interface every
+// The delivery contract (openapi.yaml) as TypeScript types, and the interface every
 // delivery provider implements: the mock now, Korpa later, our own delivery app after that.
 // Money is a string with two decimals in KM ("12.50"); times are ISO 8601 strings with an offset.
 

@@ -45,7 +45,7 @@ export const expireProducts = async (): Promise<number> => {
     }
 
     // Cart lines of an expired or removed product stay one day, so the restaurant still sees why
-    // a line became unavailable, then go (docs/orders-design.md, section 4). Lines of a blocked
+    // a line became unavailable, then go (docs/product.md). Lines of a blocked
     // store stay: unblocking brings them back.
     await client.query(
       `DELETE FROM cart_items

@@ -45,7 +45,7 @@ interface CheckoutPanelProps {
 // The cart's checkout: pickup (the day and time, today up to the earliest expiry among the lines
 // that can be ordered) or delivery (today, as soon as possible, with the provider's estimate),
 // "Accept partial fulfilment" and sending. Every available line goes with
-// the price the restaurant saw; the server sends what it can (docs/orders-design.md, section 5).
+// the price the restaurant saw; the server sends what it can (docs/product.md).
 // The local time now as HH:MM (a pickup today must be later: the store answers by then, or the
 // order is rejected automatically).
 const currentTime = () => {
