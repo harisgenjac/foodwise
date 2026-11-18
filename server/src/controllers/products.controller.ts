@@ -4,7 +4,7 @@ import { validateProductFields, type ProductFields } from '../utils/validateProd
 import { parseId, parseNonNegativeInt } from '../utils/params.js';
 import { parseProductCsv } from '../utils/productCsv.js';
 import { CARD_PAGE_SIZE, listPage, parsePage } from '../utils/pagination.js';
-import { HttpError } from '../utils/httpError.js';
+import { sendError } from '../utils/httpError.js';
 import { cityDistance, parseCityFilter, parseRadius, userCityId } from '../utils/cities.js';
 import { chargeForProduct, chargeForProducts, refundForProduct } from '../services/creditService.js';
 import { visibleStore } from '../utils/visibility.js';
@@ -93,13 +93,7 @@ export const createProduct = async (req: Request, res: Response) => {
       .json({ message: "Product created successfully.", product: result.rows[0] });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    if (error instanceof HttpError) {
-      return res.status(error.status).json(error.body());
-    }
-    console.error("Error while creating product:", error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while creating the product." });
+    return sendError(res, error, "An error occurred while creating the product.", "Error while creating product:");
   } finally {
     if (client) client.release();
   }
@@ -156,13 +150,7 @@ export const importProducts = async (req: Request, res: Response) => {
     });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    if (error instanceof HttpError) {
-      return res.status(error.status).json(error.body());
-    }
-    console.error("Error while importing products:", error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while importing products." });
+    return sendError(res, error, "An error occurred while importing products.", "Error while importing products:");
   } finally {
     if (client) client.release();
   }

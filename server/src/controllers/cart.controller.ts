@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import pool from "../config/db.js";
-import { HttpError } from "../utils/httpError.js";
+import { HttpError, sendError } from "../utils/httpError.js";
 import { inTransaction } from "../utils/transaction.js";
 import { parseId } from "../utils/params.js";
 import {
@@ -16,12 +16,6 @@ import { quoteDelivery } from "../services/deliveryQuote.js";
 // /api/cart (docs/orders-design.md, sections 4 and 10). RESTAURANT only (the routes check it);
 // every success answers the whole cart, so the client never has to merge a line by itself.
 
-const fail = (res: Response, error: unknown, message: string) => {
-  if (error instanceof HttpError) return res.status(error.status).json(error.body());
-  console.error(message, error);
-  return res.status(500).json({ error: message });
-};
-
 const UPDATE_ERROR = "An error occurred while updating the cart.";
 
 export const getCartRoute = async (req: Request, res: Response) => {
@@ -29,7 +23,7 @@ export const getCartRoute = async (req: Request, res: Response) => {
     const cart = await getCart(req.user!.id);
     return res.status(200).json({ message: "Cart fetched successfully.", cart });
   } catch (error) {
-    return fail(res, error, "An error occurred while fetching the cart.");
+    return sendError(res, error, "An error occurred while fetching the cart.");
   }
 };
 
@@ -43,7 +37,7 @@ export const getCartDeliveryRoute = async (req: Request, res: Response) => {
     const delivery = option.available ? { available: true, ...option.estimate } : option;
     return res.status(200).json({ message: "Delivery checked.", delivery });
   } catch (error) {
-    return fail(res, error, "An error occurred while checking delivery.");
+    return sendError(res, error, "An error occurred while checking delivery.");
   }
 };
 
@@ -55,7 +49,7 @@ export const putCartItemRoute = async (req: Request, res: Response) => {
     const cart = await inTransaction((client) => putCartItem(client, req.user!.id, productId, input));
     return res.status(200).json({ message: "Cart updated.", cart });
   } catch (error) {
-    return fail(res, error, UPDATE_ERROR);
+    return sendError(res, error, UPDATE_ERROR);
   }
 };
 
@@ -66,7 +60,7 @@ export const deleteCartItemRoute = async (req: Request, res: Response) => {
     const cart = await deleteCartItem(req.user!.id, productId);
     return res.status(200).json({ message: "Cart updated.", cart });
   } catch (error) {
-    return fail(res, error, UPDATE_ERROR);
+    return sendError(res, error, UPDATE_ERROR);
   }
 };
 
@@ -75,7 +69,7 @@ export const clearCartRoute = async (req: Request, res: Response) => {
     const cart = await clearCart(req.user!.id);
     return res.status(200).json({ message: "Cart emptied.", cart });
   } catch (error) {
-    return fail(res, error, UPDATE_ERROR);
+    return sendError(res, error, UPDATE_ERROR);
   }
 };
 
@@ -84,6 +78,6 @@ export const clearUnavailableRoute = async (req: Request, res: Response) => {
     const cart = await clearUnavailableLines(req.user!.id);
     return res.status(200).json({ message: "Cart updated.", cart });
   } catch (error) {
-    return fail(res, error, UPDATE_ERROR);
+    return sendError(res, error, UPDATE_ERROR);
   }
 };

@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import type { PoolClient } from "pg";
-import { HttpError } from "../utils/httpError.js";
+import { HttpError, sendError } from "../utils/httpError.js";
 import { inTransaction } from "../utils/transaction.js";
 import { parseId } from "../utils/params.js";
 import { parseSendOrderBody, sendOrder } from "../services/orders/send.js";
@@ -27,12 +27,6 @@ import {
 
 // A refusal of the order service answers with its status; anything else is logged with the
 // answer's text and is a 500.
-const fail = (res: Response, error: unknown, message: string) => {
-  if (error instanceof HttpError) return res.status(error.status).json(error.body());
-  console.error(message, error);
-  return res.status(500).json({ error: message });
-};
-
 const FETCH_ERROR = "An error occurred while fetching orders.";
 
 export const createOrder = async (req: Request, res: Response) => {
@@ -41,7 +35,7 @@ export const createOrder = async (req: Request, res: Response) => {
     const sent = await inTransaction((client) => sendOrder(client, req.user!.id, input));
     return res.status(201).json({ message: "Order sent.", order: { ...sent.order, items: sent.items }, changes: sent.changes });
   } catch (error) {
-    return fail(res, error, "An error occurred while sending the order.");
+    return sendError(res, error, "An error occurred while sending the order.");
   }
 };
 
@@ -51,7 +45,7 @@ export const getMineOrders = async (req: Request, res: Response) => {
     if (!result) return res.status(400).json({ error: "Invalid filter." });
     return res.status(200).json({ message: "Orders fetched successfully.", ...result });
   } catch (error) {
-    return fail(res, error, FETCH_ERROR);
+    return sendError(res, error, FETCH_ERROR);
   }
 };
 
@@ -61,7 +55,7 @@ export const getMineOrdersSummary = async (req: Request, res: Response) => {
     if (!summary) return res.status(400).json({ error: "Invalid filter." });
     return res.status(200).json({ message: "Orders fetched successfully.", summary });
   } catch (error) {
-    return fail(res, error, FETCH_ERROR);
+    return sendError(res, error, FETCH_ERROR);
   }
 };
 
@@ -71,7 +65,7 @@ export const getStoreOrders = async (req: Request, res: Response) => {
     if (!result) return res.status(400).json({ error: "Invalid filter." });
     return res.status(200).json({ message: "Orders fetched successfully.", ...result });
   } catch (error) {
-    return fail(res, error, FETCH_ERROR);
+    return sendError(res, error, FETCH_ERROR);
   }
 };
 
@@ -81,7 +75,7 @@ export const getOrderPickups = async (req: Request, res: Response) => {
     if (!result) return res.status(400).json({ error: "Invalid filter." });
     return res.status(200).json({ message: "Pickups fetched successfully.", ...result });
   } catch (error) {
-    return fail(res, error, "An error occurred while fetching pickups.");
+    return sendError(res, error, "An error occurred while fetching pickups.");
   }
 };
 
@@ -90,7 +84,7 @@ export const getOrderPickupCounts = async (req: Request, res: Response) => {
     const counts = await countPickupOrders(req.user!.id, req.user!.role);
     return res.status(200).json({ message: "Pickups fetched successfully.", counts });
   } catch (error) {
-    return fail(res, error, "An error occurred while fetching pickups.");
+    return sendError(res, error, "An error occurred while fetching pickups.");
   }
 };
 
@@ -99,7 +93,7 @@ export const getPackingList = async (req: Request, res: Response) => {
     const list = await listPackingList(req.user!.id);
     return res.status(200).json({ message: "Packing list fetched successfully.", ...list });
   } catch (error) {
-    return fail(res, error, "An error occurred while fetching the packing list.");
+    return sendError(res, error, "An error occurred while fetching the packing list.");
   }
 };
 
@@ -111,7 +105,7 @@ export const getOrder = async (req: Request, res: Response) => {
     if (!order) return res.status(404).json({ error: "Order not found." });
     return res.status(200).json({ message: "Order fetched successfully.", order });
   } catch (error) {
-    return fail(res, error, FETCH_ERROR);
+    return sendError(res, error, FETCH_ERROR);
   }
 };
 
@@ -129,7 +123,7 @@ const orderAction =
       const order = await inTransaction((client) => run(client, req.user!.id, orderId, req.body));
       return res.status(200).json({ message, order });
     } catch (error) {
-      return fail(res, error, errorMessage);
+      return sendError(res, error, errorMessage);
     }
   };
 

@@ -17,7 +17,7 @@ import { notBlocked } from "../utils/visibility.js";
 
 const BRANCH_REQUIRED = "Business name, city, address, phone and email are required.";
 import { storeDescription, storeLogo } from "../utils/branding.js";
-import { savedUnits } from "../controllers/dashboard.controller.js";
+import { savedUnits } from "../utils/savedFood.js";
 import { cancelPendingOrders } from "./orders/cascades.js";
 import { closeBranchCredits } from "./creditRequests.js";
 

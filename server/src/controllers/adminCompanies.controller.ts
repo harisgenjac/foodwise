@@ -18,7 +18,7 @@ import {
   logAdminAction,
   parseReason,
 } from "./admin.controller.js";
-import { HttpError } from "../utils/httpError.js";
+import { sendError } from "../utils/httpError.js";
 import { notifyCompanyHq } from "../utils/notifications.js";
 import { cancelPendingOrders } from "../services/orders/cascades.js";
 import {
@@ -471,11 +471,7 @@ const changeBranchActivation = async (req: Request, res: Response, deactivate: b
       .json(deactivate ? { message: "Branch deactivated.", ...closed } : { message: "Branch reactivated." });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    if (error instanceof HttpError) {
-      return res.status(error.status).json(error.body());
-    }
-    console.error("Error while changing branch:", error);
-    return res.status(500).json({ error: "An error occurred while changing the branch." });
+    return sendError(res, error, "An error occurred while changing the branch.", "Error while changing branch:");
   } finally {
     if (client) client.release();
   }

@@ -2,7 +2,7 @@ import pool from "../config/db.js";
 import type { Request, Response } from "express";
 import { parseId, parseNonNegativeInt } from "../utils/params.js";
 import { TABLE_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
-import { HttpError } from "../utils/httpError.js";
+import { HttpError, sendError } from "../utils/httpError.js";
 import { creditMonth } from "../utils/creditTime.js";
 import { notifyAdminsOfCreditRequest, notifyCompanyHqOfCredit } from "../utils/notifications.js";
 import { getUsageHistory } from "../services/creditService.js";
@@ -131,11 +131,7 @@ export const createRequest = async (req: Request, res: Response) => {
     return res.status(201).json({ message, request: await findRequest(pool, requestId) });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    if (error instanceof HttpError) {
-      return res.status(error.status).json(error.body());
-    }
-    console.error("Error while creating credit request:", error);
-    return res.status(500).json({ error: "An error occurred while sending the request." });
+    return sendError(res, error, "An error occurred while sending the request.", "Error while creating credit request:");
   } finally {
     if (client) client.release();
   }

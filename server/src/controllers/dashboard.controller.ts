@@ -1,16 +1,6 @@
 import pool from "../config/db.js";
 import type { Request, Response } from "express";
-
-// Food saved as three columns (kg, l, pieces) over the order items matching `filter` (an SQL
-// condition on order items joined with products): g and ml are converted to kg and l, kom and pak
-// are counted together as pieces. Also used for a branch's monthly stats (services/branches.ts).
-export const savedUnits = (filter: string) => `
-  COALESCE(SUM(CASE products.unit WHEN 'kg' THEN order_items.quantity WHEN 'g' THEN order_items.quantity / 1000 END)
-    FILTER (WHERE ${filter}), 0) AS kg,
-  COALESCE(SUM(CASE products.unit WHEN 'l' THEN order_items.quantity WHEN 'ml' THEN order_items.quantity / 1000 END)
-    FILTER (WHERE ${filter}), 0) AS l,
-  COALESCE(SUM(CASE WHEN products.unit IN ('kom', 'pak') THEN order_items.quantity END)
-    FILTER (WHERE ${filter}), 0) AS pieces`;
+import { savedUnits } from "../utils/savedFood.js";
 
 // The dashboard stat cards, computed over all of the caller's data (the lists on the dashboard
 // are only the 3 newest). The counts are orders: `pending_orders` waiting for the store's decision,

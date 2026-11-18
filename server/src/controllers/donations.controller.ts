@@ -11,7 +11,7 @@ import {
 import { parseId, parseNumber } from "../utils/params.js";
 import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import { freeQuantity, heldByOrderItems, markSoldIfFullyConfirmed, heldQuantity, soldInShop } from "../services/stock.js";
-import { HttpError } from "../utils/httpError.js";
+import { sendError } from "../utils/httpError.js";
 import { chargeForProduct, hasOpenProductCharge, refundForProduct } from "../services/creditService.js";
 
 const DONATION_COLUMNS = `
@@ -456,13 +456,7 @@ export const returnDonationToProduct = async (req: Request, res: Response) => {
       .json({ message: "Donation returned to the offer.", product: updated.rows[0] });
   } catch (error) {
     if (client) await client.query("ROLLBACK");
-    if (error instanceof HttpError) {
-      return res.status(error.status).json(error.body());
-    }
-    console.error("Error while returning donation to the offer:", error);
-    return res
-      .status(500)
-      .json({ error: "An error occurred while returning the donation to the offer." });
+    return sendError(res, error, "An error occurred while returning the donation to the offer.", "Error while returning donation to the offer:");
   } finally {
     if (client) client.release();
   }
