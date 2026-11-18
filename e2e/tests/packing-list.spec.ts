@@ -1,0 +1,100 @@
+import { expect, test, type APIRequestContext } from "@playwright/test";
+import { storageState, uniqueName } from "../support/accounts.js";
+import { acceptOrder, apiAs, cancelOrder, completeOrder, createProduct } from "../support/api.js";
+import { isoDate } from "../support/dates.js";
+import { open } from "../support/ui.js";
+
+// The store's packing list: today's accepted orders by ready time and every product summed. Two
+// pickup orders for later today are sent and accepted through the API, then the list is read on
+// the screen. The orders are closed in afterEach (picked up once accepted, withdrawn otherwise):
+// the seeded businesses are shared with other specs. Runs on desktop Chrome and on the iPhone project.
+test.use({ storageState: storageState("store") });
+
+// A pickup time must still be ahead; near midnight there is no "later today" left.
+const sarajevoMinutes = () => {
+  const [hours, minutes] = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Sarajevo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  })
+    .format(new Date())
+    .split(":")
+    .map(Number);
+  return hours! * 60 + minutes!;
+};
+
+const sendPickupToday = async (api: APIRequestContext, productId: number, quantity: number, time: string) => {
+  const { product } = await (await api.get(`/api/products/${productId}`)).json();
+  const response = await api.post("/api/orders", {
+    data: {
+      pickup_at: `${isoDate(0)}T${time}`,
+      accept_partial: false,
+      items: [{ product_id: productId, quantity, unit_price: product.discounted_price }],
+    },
+  });
+  expect(response.ok(), `POST /api/orders → ${response.status()} ${await response.text()}`).toBe(true);
+  return (await response.json()).order as { id: number; code: string };
+};
+
+const sent: { id: number; accepted: boolean }[] = [];
+
+test.afterEach(async () => {
+  const store = await apiAs("store");
+  const restaurant = await apiAs("restaurant");
+  for (const order of sent.splice(0)) {
+    if (order.accepted) await completeOrder(store, order.id);
+    else await cancelOrder(restaurant, order.id);
+  }
+  await store.dispose();
+  await restaurant.dispose();
+});
+
+test("the store's packing list shows today's orders by ready time with the products summed", async ({ page }) => {
+  test.skip(sarajevoMinutes() > 23 * 60 + 40, "no pickup time left today");
+  const productName = uniqueName("E2E Pakovanje Sir");
+  const store = await apiAs("store");
+  const restaurant = await apiAs("restaurant");
+  const product = await createProduct(store, { name: productName, unit: "kg", quantity: 10 });
+  // Sent in the opposite order of their pickup times: the list follows the time, not the sending.
+  const later = await sendPickupToday(restaurant, product.id, 3, "23:55");
+  sent.push({ id: later.id, accepted: false });
+  const earlier = await sendPickupToday(restaurant, product.id, 2, "23:50");
+  sent.push({ id: earlier.id, accepted: false });
+  for (const order of sent) {
+    await acceptOrder(store, order.id);
+    order.accepted = true;
+  }
+  await store.dispose();
+  await restaurant.dispose();
+
+  await open(page, "/packing");
+  await expect(page.getByRole("heading", { level: 1, name: "Spisak za pakovanje" })).toBeVisible();
+
+  await test.step("Zbir po proizvodu", async () => {
+    const total = page.getByTestId("packing-product").filter({ hasText: productName });
+    await expect(total).toContainText("5 kg");
+    await expect(total).toContainText("u 2 narudžbe");
+  });
+
+  await test.step("Narudžbe po vremenu spremnosti", async () => {
+    const orders = page.getByTestId("packing-order");
+    const codes = await orders.allTextContents();
+    const earlierIndex = codes.findIndex((text) => text.includes(`#${earlier.code}`));
+    const laterIndex = codes.findIndex((text) => text.includes(`#${later.code}`));
+    expect(earlierIndex).toBeGreaterThanOrEqual(0);
+    expect(laterIndex).toBeGreaterThan(earlierIndex);
+    const first = orders.filter({ hasText: `#${earlier.code}` });
+    await expect(first).toContainText("23:50");
+    await expect(first).toContainText("2 kg");
+    await expect(first.getByText("Preuzimanje", { exact: true })).toBeVisible();
+  });
+
+  await test.step("Štampa bez navigacije aplikacije", async () => {
+    await page.emulateMedia({ media: "print" });
+    await expect(page.getByRole("button", { name: "Štampaj" })).toBeHidden();
+    await expect(page.getByRole("banner")).toBeHidden();
+    await expect(page.getByTestId("packing-order").filter({ hasText: `#${earlier.code}` })).toBeVisible();
+    await page.emulateMedia({ media: "screen" });
+  });
+});
