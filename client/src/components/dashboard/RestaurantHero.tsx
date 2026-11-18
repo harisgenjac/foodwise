@@ -131,13 +131,14 @@ function Cloud({ cx, cy, big }: { cx: number; cy: number; big: boolean }) {
   );
 }
 
+// The dashed centre line of the two-lane road (asphalt y 240–326), centred at y 283.
 function RoadMarkings({ from, to, step, width }: { from: number; to: number; step: number; width: number }) {
   const xs: number[] = [];
   for (let x = from; x <= to; x += step) xs.push(x);
   return (
     <g fill="#F5F5F4">
       {xs.map((x) => (
-        <rect key={x} x={x} y="291" width={width} height="3" rx="1.5" />
+        <rect key={x} x={x} y="281.5" width={width} height="3" rx="1.5" />
       ))}
     </g>
   );
@@ -158,7 +159,7 @@ interface SceneText {
 function WideScene({ text }: { text: SceneText }) {
   return (
     <>
-      <rect x="-1000" y="0" width="2680" height="310" fill="#FFF7ED" />
+      <rect x="-1000" y="0" width="2680" height="342" fill="#FFF7ED" />
       <circle cx="340" cy="62" r="24" fill="#FED7AA" />
       <circle cx="340" cy="62" r="16" fill="#FDBA74" />
       <g className={styles.clouds} fill="#FFFFFF">
@@ -188,9 +189,9 @@ function WideScene({ text }: { text: SceneText }) {
         <circle cx="438" cy="192" r="10" fill="#22C55E" />
       </g>
       <rect x="-1000" y="226" width="2680" height="14" fill="#E7E5E4" />
-      <rect x="-1000" y="240" width="2680" height="54" fill="#57534E" />
+      <rect x="-1000" y="240" width="2680" height="86" fill="#57534E" />
       <RoadMarkings from={-970} to={1640} step={90} width={36} />
-      <rect x="-1000" y="294" width="2680" height="16" fill="#E7E5E4" />
+      <rect x="-1000" y="326" width="2680" height="16" fill="#E7E5E4" />
 
       {/* The restaurant. */}
       <g>
@@ -267,8 +268,11 @@ function WideScene({ text }: { text: SceneText }) {
         <BubbleText x={258} y={135} gap={16} size={12} fill="#166534" lines={text.chefBubble} />
       </g>
 
-      <g className={styles.rider}>
-        <Rider backpack={text.backpack} />
+      {/* In the near lane: the wheels (y 287–321) stay below the centre line. */}
+      <g transform="translate(0 32)">
+        <g className={styles.rider}>
+          <Rider backpack={text.backpack} />
+        </g>
       </g>
     </>
   );
@@ -280,7 +284,7 @@ function WideScene({ text }: { text: SceneText }) {
 function PhoneScene({ text }: { text: SceneText }) {
   return (
     <>
-      <rect x="0" y="20" width="360" height="290" fill="#FFF7ED" />
+      <rect x="0" y="20" width="360" height="322" fill="#FFF7ED" />
       <circle cx="180" cy="58" r="22" fill="#FED7AA" />
       <circle cx="180" cy="58" r="15" fill="#FDBA74" />
       <g className={styles.cloudsMobile} fill="#FFFFFF">
@@ -290,9 +294,9 @@ function PhoneScene({ text }: { text: SceneText }) {
       <path d="M0 176 Q60 122 130 160 Q200 112 270 156 Q320 126 360 140 L360 226 L0 226 Z" fill="#DCFCE7" />
       <path d="M0 205 Q90 166 180 196 Q270 170 360 190 L360 226 L0 226 Z" fill="#BBF7D0" />
       <rect x="0" y="226" width="360" height="14" fill="#E7E5E4" />
-      <rect x="0" y="240" width="360" height="54" fill="#57534E" />
+      <rect x="0" y="240" width="360" height="86" fill="#57534E" />
       <RoadMarkings from={14} to={344} step={90} width={36} />
-      <rect x="0" y="294" width="360" height="16" fill="#E7E5E4" />
+      <rect x="0" y="326" width="360" height="16" fill="#E7E5E4" />
 
       {/* The restaurant. */}
       <g>
@@ -375,7 +379,7 @@ function PhoneScene({ text }: { text: SceneText }) {
         <BubbleText x={286} y={122} gap={18} size={13.5} fill="#9A3412" lines={text.storeBubble} />
       </g>
 
-      <g transform="translate(-200 0)">
+      <g transform="translate(-200 32)">
         <g className={styles.riderMobile}>
           <Rider backpack={text.backpack} />
         </g>
@@ -389,12 +393,12 @@ function PhoneScene({ text }: { text: SceneText }) {
 // under the hero (design/restaurant-home/impact-strip.html).
 const LAYOUTS = {
   wide: {
-    full: { viewBox: "0 0 680 310", className: "hidden aspect-[680/310] max-h-80 w-full md:block" },
-    attached: { viewBox: "0 0 680 294", className: "hidden aspect-[680/294] max-h-80 w-full md:block" },
+    full: { viewBox: "0 0 680 342", className: "hidden aspect-[680/342] max-h-80 w-full md:block" },
+    attached: { viewBox: "0 0 680 326", className: "hidden aspect-[680/326] max-h-80 w-full md:block" },
   },
   phone: {
-    full: { viewBox: "0 20 360 290", className: "block aspect-[360/290] w-full md:hidden" },
-    attached: { viewBox: "0 20 360 274", className: "block aspect-[360/274] w-full md:hidden" },
+    full: { viewBox: "0 20 360 322", className: "block aspect-[360/322] w-full md:hidden" },
+    attached: { viewBox: "0 20 360 306", className: "block aspect-[360/306] w-full md:hidden" },
   },
 };
 

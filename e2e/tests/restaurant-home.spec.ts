@@ -28,9 +28,11 @@ test("the impact strip under the hero shows three numbers and explains them on f
   await open(page, "/dashboard");
   const strip = page.getByRole("region", { name: "Vaš uticaj" });
   await expect(strip.getByTestId("impact-value")).toHaveText([/^\d{1,3}(\.\d{3})*,\d kg$/, /^\d{1,3}(\.\d{3})*,\d kg$/, /^\d{1,3}(\.\d{3})*,\d{2} KM$/]);
-  // Attached to the hero: the strip starts where the hero ends.
+  // Attached to the hero with no gap: the strip starts where the hero ends (overlapping it by 1 px).
   const hero = (await page.getByRole("img", { name: "Animacija Još vrijedi" }).boundingBox())!;
-  expect(Math.round((await strip.boundingBox())!.y)).toBe(Math.round(hero.y + hero.height));
+  const gap = (await strip.boundingBox())!.y - (hero.y + hero.height);
+  expect(gap).toBeLessThanOrEqual(0);
+  expect(gap).toBeGreaterThanOrEqual(-1.5);
 
   const tooltip = page.getByRole("tooltip").filter({ hasText: "Procjena: svaki spašeni kilogram" });
   await expect(tooltip).toBeHidden();

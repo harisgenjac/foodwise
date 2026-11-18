@@ -43,7 +43,9 @@ function ImpactStrip({ impact }: ImpactStripProps) {
       aria-label={t("impactStrip.label")}
       aria-busy={!impact}
       data-testid="impact-strip"
-      className="rounded-b-2xl bg-[#0F766E] p-4 sm:px-6 sm:py-[22px]"
+      // -mt-px and relative: the strip overlaps the hero by 1 px and paints above it, so no light
+      // seam shows where the hero ends on a fraction of a pixel.
+      className="relative -mt-px rounded-b-2xl bg-[#0F766E] p-4 sm:px-6 sm:py-[22px]"
     >
       {together && (
         <p className="mb-3 text-sm font-medium text-[#D9F99D] sm:text-center">{t("impactStrip.together")}</p>
