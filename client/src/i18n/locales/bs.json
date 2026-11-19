@@ -520,6 +520,21 @@
     "offers_few": "{{count}} ponude",
     "offers_other": "{{count}} ponuda"
   },
+  "howItWorks": {
+    "title": "Kako funkcioniše",
+    "find": {
+      "title": "Pronađite ponudu",
+      "text": "Pretražite hranu kojoj uskoro ističe rok i u korpu dodajte ono što vam treba iz jedne prodavnice, <hl>po nižoj cijeni</hl>."
+    },
+    "choose": {
+      "title": "Izaberite preuzimanje",
+      "text": "Pokupite narudžbu <hl>lično u prodavnici ili je primite dostavom</hl> na adresu vašeg restorana."
+    },
+    "cook": {
+      "title": "Kuhajte već danas",
+      "text": "Prodavnica potvrdi narudžbu, a hrana stiže <hl>spremna za vašu kuhinju</hl>, umjesto da završi u smeću."
+    }
+  },
   "dashboard": {
     "appTitle": "Dobrodošli na FoodWise",
     "appSubtitle": "Ne bacaj hranu. Uživaj u ukusu.",

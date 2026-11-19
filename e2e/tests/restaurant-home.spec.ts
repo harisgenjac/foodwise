@@ -113,6 +113,27 @@ test("dragging the store carousel with the mouse scrolls it without opening a st
   await expect(track).not.toHaveAttribute("data-dragging");
 });
 
+test("How it works comes after the store carousel, with three steps side by side", async ({ page }) => {
+  await open(page, "/dashboard");
+  const section = page.getByRole("region", { name: "Kako funkcioniše" });
+  await section.scrollIntoViewIfNeeded();
+  await expect(section).toBeVisible();
+  const steps = section.getByRole("listitem");
+  await expect(steps).toHaveCount(3);
+  await expect(steps.getByRole("heading", { level: 3 })).toHaveText(["Pronađite ponudu", "Izaberite preuzimanje", "Kuhajte već danas"]);
+  await expect(section.getByTestId("how-it-works-highlight")).toHaveText([
+    "po nižoj cijeni",
+    "lično u prodavnici ili je primite dostavom",
+    "spremna za vašu kuhinju",
+  ]);
+  // Below the carousel, and the three steps on one row.
+  const carousel = (await page.getByTestId("store-carousel").boundingBox())!;
+  const boxes = await Promise.all([0, 1, 2].map(async (index) => (await steps.nth(index).boundingBox())!));
+  expect(boxes[0]!.y).toBeGreaterThan(carousel.y + carousel.height);
+  expect(new Set(boxes.map((box) => Math.round(box.y))).size).toBe(1);
+  expect(boxes[1]!.x).toBeGreaterThan(boxes[0]!.x + boxes[0]!.width - 1);
+});
+
 test("the impact strip under the hero shows three numbers and explains them on focus", async ({ page }) => {
   await open(page, "/dashboard");
   const strip = page.getByRole("region", { name: "Vaš uticaj" });

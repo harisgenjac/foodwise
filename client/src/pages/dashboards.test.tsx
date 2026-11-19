@@ -143,6 +143,9 @@ describe("RestaurantDashboardPage", () => {
     // The carousel: the stores' visibility rules, nearest first, from all cities, at most 20.
     expect(paramsOf("/users/stores")).toEqual({ radius: "all", limit: 20 });
     expect(pageUrls()).toEqual(["/orders/mine/summary", "/stats/my-impact", "/users/stores"]);
+    // "How it works" comes last, after the carousel.
+    const howItWorks = screen.getByRole("region", { name: t("howItWorks.title") });
+    expect(screen.getByTestId("store-carousel").compareDocumentPosition(howItWorks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // The orders section is gone, and so are the old stat cards.
     expect(screen.queryByRole("heading", { name: "Moje narudžbe" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("order-card")).not.toBeInTheDocument();

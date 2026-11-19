@@ -473,7 +473,7 @@ test.describe("restaurant", () => {
     await expectFilterPanel(page, "/search", "Pretraga po imenu");
   });
 
-  test("the dashboard shows the phone hero, the intro with stacked links and a store carousel that scrolls inside itself", async ({ page }) => {
+  test("the dashboard shows the phone hero, the intro with stacked links and a store carousel that scrolls inside itself, then How it works stacked", async ({ page }) => {
     await expectPhoneLayout(page, "/dashboard");
     const hero = page.getByRole("img", { name: "Animacija Još vrijedi" });
     await expect(hero).toHaveCount(1);
@@ -513,6 +513,18 @@ test.describe("restaurant", () => {
     await expect(carousel.getByTestId("store-card").last()).toBeInViewport({ ratio: 1 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(WIDTH);
     expect(await page.evaluate(() => window.scrollX)).toBe(0);
+
+    // How it works: the three steps stacked inside the screen, and still no sideways page scroll.
+    const howItWorks = page.getByRole("region", { name: "Kako funkcioniše" });
+    await howItWorks.scrollIntoViewIfNeeded();
+    const steps = howItWorks.getByRole("listitem");
+    await expect(steps).toHaveCount(3);
+    const first = (await steps.nth(0).boundingBox())!;
+    const second = (await steps.nth(1).boundingBox())!;
+    expect(second.y).toBeGreaterThan(first.y + first.height - 1);
+    expect(first.x).toBeGreaterThanOrEqual(0);
+    expect(first.x + first.width).toBeLessThanOrEqual(WIDTH);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(WIDTH);
 
     // The impact strip: three numbers stacked, and a tapped tooltip stays inside the screen.
     const strip = page.getByRole("region", { name: "Vaš uticaj" });
