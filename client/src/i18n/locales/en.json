@@ -504,6 +504,21 @@
     "offers_one": "{{count}} offer",
     "offers_other": "{{count}} offers"
   },
+  "howItWorks": {
+    "title": "How it works",
+    "find": {
+      "title": "Find an offer",
+      "text": "Search for food close to its expiry date and add what you need from one store to your cart, <hl>at a lower price</hl>."
+    },
+    "choose": {
+      "title": "Choose how you get it",
+      "text": "Pick up your order <hl>in person at the store or get it delivered</hl> to your restaurant's address."
+    },
+    "cook": {
+      "title": "Cook it today",
+      "text": "The store confirms your order, and the food arrives <hl>ready for your kitchen</hl> instead of ending up in the bin."
+    }
+  },
   "dashboard": {
     "appTitle": "Welcome to FoodWise",
     "appSubtitle": "Less waste. More taste.",

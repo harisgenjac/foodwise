@@ -4,6 +4,7 @@ import RestaurantHero from "../components/dashboard/RestaurantHero.js";
 import ImpactStrip from "../components/dashboard/ImpactStrip.js";
 import RestaurantIntro from "../components/dashboard/RestaurantIntro.js";
 import StoreCarousel from "../components/dashboard/StoreCarousel.js";
+import HowItWorks from "../components/dashboard/HowItWorks.js";
 import LocationReminder from "../components/profile/LocationReminder.js";
 import type { RestaurantImpact, User } from "../types/index.js";
 
@@ -12,8 +13,9 @@ const CAROUSEL_STORES = { radius: "all", limit: 20 };
 
 // The restaurant's home page, top to bottom: the map pin reminder (only without a pin), the hero
 // animation with the impact strip under it, the intro (the brand as the page's h1, a short text and
-// the two main links: search, My orders with the active-order count) and the nearest stores. The three requests are independent: a failed one
-// only hides its own part (the strip, the badge, the carousel).
+// the two main links: search, My orders with the active-order count), the nearest stores and "How it
+// works" (three steps, no data). The three requests are independent: a failed one only hides its
+// own part (the strip, the badge, the carousel).
 const RestaurantDashboardPage = () => {
   // null while loading; the strip is hidden when it fails.
   const [impact, setImpact] = useState<RestaurantImpact | null>(null);
@@ -70,6 +72,8 @@ const RestaurantDashboardPage = () => {
       <RestaurantIntro activeOrders={activeOrders} />
 
       {(stores === null || stores.length > 0) && <StoreCarousel stores={stores} />}
+
+      <HowItWorks />
     </div>
   );
 };
