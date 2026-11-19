@@ -1,18 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { Cloud, Coins, Salad, type LucideIcon } from "lucide-react";
 import InfoTooltip from "../common/InfoTooltip.js";
+import { formatNumber } from "../../utils/numbers.js";
 import type { RestaurantImpact } from "../../types/index.js";
-
-// A number in the interface language: bs "1.246,50", en "1,246.50". Bosnian swaps the English
-// separators instead of asking Intl for "bs-BA": browsers built with a reduced ICU (Playwright's
-// Chromium, some WebViews) know the locale but format it like English.
-export const formatImpactNumber = (value: number, digits: number, language: string) => {
-  const english = new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  }).format(value);
-  return language === "en" ? english : english.replace(/[.,]/g, (separator) => (separator === "." ? "," : "."));
-};
 
 interface Stat {
   key: "foodSaved" | "co2" | "saved";
@@ -21,9 +11,9 @@ interface Stat {
 }
 
 const STATS: Stat[] = [
-  { key: "foodSaved", icon: Salad, value: (impact, lang) => `${formatImpactNumber(impact.food_kg, 1, lang)} kg` },
-  { key: "co2", icon: Cloud, value: (impact, lang) => `${formatImpactNumber(impact.co2_kg, 1, lang)} kg` },
-  { key: "saved", icon: Coins, value: (impact, lang) => `${formatImpactNumber(impact.savings, 2, lang)} KM` },
+  { key: "foodSaved", icon: Salad, value: (impact, lang) => `${formatNumber(impact.food_kg, lang, 1)} kg` },
+  { key: "co2", icon: Cloud, value: (impact, lang) => `${formatNumber(impact.co2_kg, lang, 1)} kg` },
+  { key: "saved", icon: Coins, value: (impact, lang) => `${formatNumber(impact.savings, lang, 2)} KM` },
 ];
 
 interface ImpactStripProps {

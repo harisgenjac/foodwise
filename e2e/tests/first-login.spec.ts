@@ -72,9 +72,8 @@ test("a new restaurant changes its temporary password and fills in its profile b
   await page.locator("aside").getByRole("link", { name: "Početna" }).click();
   await expect(page.getByRole("img", { name: "Animacija Još vrijedi" })).toBeVisible();
   await expect(gate).toBeHidden();
-  // A restaurant without orders is sent to the offers from My orders.
-  await expect(page.getByRole("heading", { name: "Moje narudžbe" })).toBeVisible();
-  await page.getByRole("main").getByRole("link", { name: "Pretraži ponude" }).click();
+  // The main link to the offers.
+  await page.getByRole("main").getByRole("link", { name: "Pretraži proizvode" }).click();
   await expect(page).toHaveURL(/\/search$/);
   await expect(page.getByRole("heading", { level: 1, name: "Pretraga" })).toBeVisible();
 });

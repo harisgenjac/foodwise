@@ -500,6 +500,26 @@
     "savedInfo": "Kako se računa ušteda",
     "savedTip": "Razlika između pune cijene i cijene koju ste platili za svu preuzetu hranu."
   },
+  "restaurantIntro": {
+    "label": "Brze akcije",
+    "text": "Hrana kojoj uskoro ističe rok još uvijek vrijedi. Kupite je jeftinije, direktno od prodavnica u blizini, i pretvorite je u današnji meni.",
+    "search": "Pretraži proizvode",
+    "myOrders": "Moje narudžbe",
+    "activeOrders_one": "{{count}} aktivna narudžba",
+    "activeOrders_few": "{{count}} aktivne narudžbe",
+    "activeOrders_other": "{{count}} aktivnih narudžbi"
+  },
+  "storeCarousel": {
+    "title": "Prodavnice u blizini",
+    "subtitle": "Najbliže prve",
+    "previous": "Prethodne prodavnice",
+    "next": "Sljedeće prodavnice",
+    "distance": "{{km}} km",
+    "allStores": "Sve prodavnice",
+    "offers_one": "{{count}} ponuda",
+    "offers_few": "{{count}} ponude",
+    "offers_other": "{{count}} ponuda"
+  },
   "dashboard": {
     "appTitle": "Dobrodošli na FoodWise",
     "appSubtitle": "Ne bacaj hranu. Uživaj u ukusu.",
@@ -545,7 +565,6 @@
       "decembar"
     ],
     "dateFormat": "{{weekday}}, {{day}}. {{month}}",
-    "myOrdersTitle": "Moje narudžbe",
     "recentOrdersTitle": "Nove narudžbe",
     "packingTitle": "Spisak za pakovanje",
     "packingText": "Šta spremiti danas i do kada, po vremenu spremnosti.",

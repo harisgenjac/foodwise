@@ -1,40 +1,29 @@
 import { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { ReceiptText } from "lucide-react";
 import api from "../api/axios.js";
-import LoadingSpinner from "../components/LoadingSpinner.js";
 import RestaurantHero from "../components/dashboard/RestaurantHero.js";
 import ImpactStrip from "../components/dashboard/ImpactStrip.js";
+import RestaurantIntro from "../components/dashboard/RestaurantIntro.js";
+import StoreCarousel from "../components/dashboard/StoreCarousel.js";
 import LocationReminder from "../components/profile/LocationReminder.js";
-import SectionCard from "../components/dashboard/SectionCard.js";
-import OrderCard from "../components/order/OrderCard.js";
-import type { Order, RestaurantImpact } from "../types/index.js";
+import type { RestaurantImpact, User } from "../types/index.js";
 
-const SECTION_SIZE = 3;
+// The carousel's stores: the store list's visibility rules, nearest first, from all cities.
+const CAROUSEL_STORES = { radius: "all", limit: 20 };
 
-// The restaurant's home page: the hero animation with the impact strip under it, the map pin
-// reminder and its first orders. The two requests are independent: a failed impact load only hides
-// the strip.
+// The restaurant's home page, top to bottom: the map pin reminder (only without a pin), the hero
+// animation with the impact strip under it, the intro (the brand as the page's h1, a short text and
+// the two main links: search, My orders with the active-order count) and the nearest stores. The three requests are independent: a failed one
+// only hides its own part (the strip, the badge, the carousel).
 const RestaurantDashboardPage = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
   // null while loading; the strip is hidden when it fails.
   const [impact, setImpact] = useState<RestaurantImpact | null>(null);
   const [impactFailed, setImpactFailed] = useState(false);
-  const { t } = useTranslation();
+  // Pending + Confirmed + InDelivery, from the My orders summary; null = no badge.
+  const [activeOrders, setActiveOrders] = useState<number | null>(null);
+  // null while loading; [] (none, or a failed load) hides the carousel.
+  const [stores, setStores] = useState<User[] | null>(null);
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await api.get("/orders/mine", { params: { limit: SECTION_SIZE } });
-        setOrders(response.data.orders);
-      } catch (err) {
-        console.error("Error fetching orders:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     const fetchImpact = async () => {
       try {
         const response = await api.get("/stats/my-impact");
@@ -45,41 +34,42 @@ const RestaurantDashboardPage = () => {
       }
     };
 
-    fetchOrders();
+    const fetchActiveOrders = async () => {
+      try {
+        const response = await api.get("/orders/mine/summary");
+        setActiveOrders(response.data.summary.active);
+      } catch (err) {
+        console.error("Error fetching the order summary:", err);
+      }
+    };
+
+    const fetchStores = async () => {
+      try {
+        const response = await api.get("/users/stores", { params: CAROUSEL_STORES });
+        setStores(response.data.stores);
+      } catch (err) {
+        console.error("Error fetching stores:", err);
+        setStores([]);
+      }
+    };
+
     fetchImpact();
+    fetchActiveOrders();
+    fetchStores();
   }, []);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-10">
-      <h1 className="sr-only">{t("sidebar.dashboard")}</h1>
+      <LocationReminder />
+
       <div>
         <RestaurantHero attached={!impactFailed} />
         {!impactFailed && <ImpactStrip impact={impact} />}
       </div>
 
-      <LocationReminder />
+      <RestaurantIntro activeOrders={activeOrders} />
 
-      {loading ? (
-        <LoadingSpinner />
-      ) : (
-        <SectionCard
-          title={t("dashboard.myOrdersTitle")}
-          icon={ReceiptText}
-          viewAll={{ to: "/my-orders", label: t("dashboard.viewAllOrders") }}
-          isEmpty={orders.length === 0}
-          empty={{
-            icon: ReceiptText,
-            text: t("dashboard.noOrders"),
-            action: { to: "/search", label: t("dashboard.browseOffers") },
-          }}
-        >
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {orders.map((order) => (
-              <OrderCard key={order.id} order={order} partyLabel={t("myProducts.store")} linkStore />
-            ))}
-          </div>
-        </SectionCard>
-      )}
+      {(stores === null || stores.length > 0) && <StoreCarousel stores={stores} />}
     </div>
   );
 };

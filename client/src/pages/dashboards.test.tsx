@@ -101,63 +101,103 @@ describe("StoreDashboardPage", () => {
 
 describe("RestaurantDashboardPage", () => {
   const IMPACT = { impact: { scope: "own", food_kg: 873.94, co2_kg: 2184.85, savings: 1246.5 } };
-  const renderRestaurant = (orders: ReturnType<typeof makeOrder>[], impact: object | Error = IMPACT) =>
+  const STORES = {
+    stores: [
+      makeUser({ id: 21, role: "STORE", business_name: "Zeleni Market", distance_km: 0 }),
+      makeUser({ id: 22, role: "STORE", business_name: "Pekara Kod Mirze", distance_km: 16 }),
+    ],
+    total: 2,
+  };
+  const renderRestaurant = ({
+    impact = IMPACT as object | Error,
+    active = 2,
+    stores = STORES as object | Error,
+  } = {}) =>
     renderWithProviders(<RestaurantDashboardPage />, {
       route: "/dashboard",
       path: "/dashboard",
       user: makeUser({ role: "RESTAURANT", latitude: 43.98, longitude: 18.17 }),
-      get: { "/orders/mine": { orders, total: orders.length }, "/stats/my-impact": impact },
+      get: {
+        "/stats/my-impact": impact,
+        "/orders/mine/summary": { summary: { total: 9, active, counts: {} } },
+        "/users/stores": stores,
+      },
     });
   const heroBox = () => screen.getByTestId("restaurant-hero-wide").parentElement!;
+  const pageUrls = () => apiMock.get.mock.calls.map(([url]) => url).filter((url) => url !== "/users/me").sort();
 
-  it("shows the hero with the impact strip and the first 3 orders, and asks for nothing else", async () => {
-    renderRestaurant([makeOrder({ id: 9, status: "Confirmed", items: [makeOrderItem({ product_name: "Jogurt" })] })]);
+  it("shows the hero with the impact strip, the intro with its two links and the nearest stores, without the orders section", async () => {
+    renderRestaurant();
 
-    expect(await screen.findByText(/Jogurt/)).toBeInTheDocument();
     expect(screen.getAllByRole("img", { name: t("restaurantHero.title") })).toHaveLength(2);
     expect(await screen.findByText("873,9 kg")).toBeInTheDocument();
-    expect(screen.getByText("1.246,50 KM")).toBeInTheDocument();
     // The strip is attached under the hero: only the hero's top corners are rounded.
     expect(heroBox()).toHaveClass("rounded-t-2xl");
-    expect(paramsOf("/orders/mine")).toEqual({ limit: 3 });
-    // The page itself asks only for the orders and the impact (the auth context loads /users/me).
-    expect(apiMock.get.mock.calls.map(([url]) => url).filter((url) => url !== "/users/me").sort()).toEqual([
-      "/orders/mine",
-      "/stats/my-impact",
-    ]);
+    // The intro: the brand is the page's only h1, then the short text and the two links.
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.getByRole("heading", { level: 1, name: "Još vrijedi" })).toBeInTheDocument();
+    expect(screen.getByText(t("restaurantIntro.text"))).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: t("restaurantIntro.search") })).toHaveAttribute("href", "/search");
+    expect(await screen.findByRole("link", { name: /Moje narudžbe/ })).toHaveAttribute("href", "/my-orders");
+    expect(await screen.findByRole("link", { name: /Zeleni Market/ })).toHaveAttribute("href", "/stores/21");
+    // The carousel: the stores' visibility rules, nearest first, from all cities, at most 20.
+    expect(paramsOf("/users/stores")).toEqual({ radius: "all", limit: 20 });
+    expect(pageUrls()).toEqual(["/orders/mine/summary", "/stats/my-impact", "/users/stores"]);
+    // The orders section is gone, and so are the old stat cards.
+    expect(screen.queryByRole("heading", { name: "Moje narudžbe" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("order-card")).not.toBeInTheDocument();
     expect(screen.queryByTestId("stat-label")).not.toBeInTheDocument();
   });
 
-  it("hides the strip when the impact fails to load and keeps the rest of the page", async () => {
-    renderRestaurant([makeOrder({ id: 9, items: [makeOrderItem({ product_name: "Jogurt" })] })], new Error("Network Error"));
+  it("puts the map pin reminder first", async () => {
+    renderWithProviders(<RestaurantDashboardPage />, {
+      route: "/dashboard",
+      path: "/dashboard",
+      user: makeUser({ role: "RESTAURANT", latitude: null, longitude: null }),
+      get: { "/stats/my-impact": IMPACT, "/orders/mine/summary": { summary: { active: 0 } }, "/users/stores": STORES },
+    });
 
-    expect(await screen.findByText(/Jogurt/)).toBeInTheDocument();
+    const reminder = await screen.findByRole("link", { name: t("location.reminderLink") });
+    const hero = screen.getByTestId("restaurant-hero-wide");
+    expect(reminder.compareDocumentPosition(hero) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("shows the active-order count on My orders, and no badge without active orders", async () => {
+    const { unmount } = renderRestaurant({ active: 2 });
+    expect(await screen.findByTestId("active-orders-badge")).toHaveTextContent("2");
+    expect(screen.getByRole("link", { name: /^Moje narudžbe\s*, 2 aktivne narudžbe$/ })).toBeInTheDocument();
+    unmount();
+
+    renderRestaurant({ active: 0 });
+    expect(await screen.findByRole("link", { name: /^Zeleni Market/ })).toBeInTheDocument();
+    expect(screen.queryByTestId("active-orders-badge")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Moje narudžbe" })).toBeInTheDocument();
+  });
+
+  it("hides the carousel without stores, and when the stores fail to load", async () => {
+    const { unmount } = renderRestaurant({ stores: { stores: [], total: 0 } });
+    expect(await screen.findByText("873,9 kg")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId("store-carousel")).not.toBeInTheDocument());
+    expect(screen.getByRole("link", { name: t("restaurantIntro.search") })).toBeInTheDocument();
+    unmount();
+
+    renderRestaurant({ stores: new Error("Network Error") });
+    expect(await screen.findByText("873,9 kg")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId("store-carousel")).not.toBeInTheDocument());
+  });
+
+  it("hides the strip when the impact fails to load and keeps the rest of the page", async () => {
+    renderRestaurant({ impact: new Error("Network Error") });
+
+    expect(await screen.findByRole("link", { name: /Zeleni Market/ })).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByTestId("impact-strip")).not.toBeInTheDocument());
     expect(heroBox()).toHaveClass("rounded-2xl");
-    expect(screen.getAllByRole("img", { name: t("restaurantHero.title") })).toHaveLength(2);
   });
 
   it("shows the platform's totals with Together we have saved for a restaurant without pickups", async () => {
-    renderRestaurant([], { impact: { scope: "platform", food_kg: 5000, co2_kg: 12500, savings: 9000 } });
+    renderRestaurant({ impact: { impact: { scope: "platform", food_kg: 5000, co2_kg: 12500, savings: 9000 } } });
 
     expect(await screen.findByText(t("impactStrip.together"))).toBeInTheDocument();
     expect(screen.getByText("5.000,0 kg")).toBeInTheDocument();
-  });
-
-  it("titles the orders section My orders, like the page its link opens", async () => {
-    renderRestaurant([]);
-
-    expect(await screen.findByRole("heading", { name: t("dashboard.myOrdersTitle") })).toHaveTextContent(
-      "Moje narudžbe",
-    );
-    expect(screen.queryByRole("heading", { name: t("dashboard.recentOrdersTitle") })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: t("dashboard.viewAllOrders") })).toHaveAttribute("href", "/my-orders");
-  });
-
-  it("sends a restaurant without orders to the offers", async () => {
-    renderRestaurant([]);
-
-    expect(await screen.findByText(t("dashboard.noOrders"))).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: t("dashboard.browseOffers") })).toHaveAttribute("href", "/search");
   });
 });

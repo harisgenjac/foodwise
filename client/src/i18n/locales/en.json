@@ -486,6 +486,24 @@
     "savedInfo": "How the savings are counted",
     "savedTip": "The difference between the full price and the price you paid for all the food you picked up."
   },
+  "restaurantIntro": {
+    "label": "Quick actions",
+    "text": "Food close to its expiry date is still worth it. Buy it for less, straight from stores near you, and turn it into today's menu.",
+    "search": "Search products",
+    "myOrders": "My orders",
+    "activeOrders_one": "{{count}} active order",
+    "activeOrders_other": "{{count}} active orders"
+  },
+  "storeCarousel": {
+    "title": "Stores near you",
+    "subtitle": "Nearest first",
+    "previous": "Previous stores",
+    "next": "Next stores",
+    "distance": "{{km}} km",
+    "allStores": "All stores",
+    "offers_one": "{{count}} offer",
+    "offers_other": "{{count}} offers"
+  },
   "dashboard": {
     "appTitle": "Welcome to FoodWise",
     "appSubtitle": "Less waste. More taste.",
@@ -531,7 +549,6 @@
       "December"
     ],
     "dateFormat": "{{weekday}}, {{day}} {{month}}",
-    "myOrdersTitle": "My orders",
     "recentOrdersTitle": "New orders",
     "packingTitle": "Packing list",
     "packingText": "What to prepare today and by when, by ready time.",
