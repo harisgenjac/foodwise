@@ -19,7 +19,7 @@ function StorePausedNotice({ pause, variant = "notice", className = "" }: StoreP
   if (variant === "badge") {
     return (
       <span
-        className={`inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800 ${className}`}
+        className={`inline-flex items-center gap-1 rounded-full bg-warning-50 px-2 py-0.5 text-xs font-semibold text-warning-800 ${className}`}
       >
         <PauseCircle className="h-3.5 w-3.5" aria-hidden="true" />
         {t("orderPause.badge")}
@@ -29,7 +29,7 @@ function StorePausedNotice({ pause, variant = "notice", className = "" }: StoreP
   return (
     <p
       role="status"
-      className={`flex gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-800 ${className}`}
+      className={`flex gap-2 rounded-xl bg-warning-50 p-3 text-sm text-warning-800 ${className}`}
     >
       <PauseCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
       <span>

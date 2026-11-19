@@ -40,7 +40,7 @@ function OrderSettingsSection({ initial }: { initial: OrderSettings }) {
 
   return (
     <FormSection title={t("orderSettings.title")} icon={Truck} description={t("orderSettings.description")}>
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-neutral-100">
         <div className="pb-4">
           <OrderPauseControl pause={settings} onChange={setSettings} />
         </div>
@@ -58,17 +58,17 @@ function OrderSettingsSection({ initial }: { initial: OrderSettings }) {
             className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-4 rounded-xl text-left disabled:cursor-wait"
           >
             <span className="min-w-0">
-              <span id={deliveryLabelId} className="block font-medium text-gray-900">
+              <span id={deliveryLabelId} className="block font-medium text-neutral-900">
                 {t("orderSettings.delivery")}
               </span>
-              <span id={deliveryHintId} className="mt-0.5 block text-sm text-gray-500">
+              <span id={deliveryHintId} className="mt-0.5 block text-sm text-neutral-500">
                 {t(settings.delivery_enabled ? "orderSettings.deliveryOnHint" : "orderSettings.deliveryOffHint")}
               </span>
             </span>
             <span
               aria-hidden="true"
               className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
-                settings.delivery_enabled ? "bg-orange-500" : "bg-gray-300"
+                settings.delivery_enabled ? "bg-brand-800" : "bg-neutral-300"
               }`}
             >
               <span
@@ -82,11 +82,11 @@ function OrderSettingsSection({ initial }: { initial: OrderSettings }) {
 
         <div className="flex flex-col gap-2 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <label htmlFor={preparationId} className="min-w-0">
-            <span className="flex items-center gap-1.5 font-medium text-gray-900">
-              <Timer className="h-4 w-4 text-gray-400" aria-hidden="true" />
+            <span className="flex items-center gap-1.5 font-medium text-neutral-900">
+              <Timer className="h-4 w-4 text-neutral-500" aria-hidden="true" />
               {t("orderSettings.preparation")}
             </span>
-            <span className="mt-0.5 block text-sm text-gray-500">{t("orderSettings.preparationHint")}</span>
+            <span className="mt-0.5 block text-sm text-neutral-500">{t("orderSettings.preparationHint")}</span>
           </label>
           <select
             id={preparationId}

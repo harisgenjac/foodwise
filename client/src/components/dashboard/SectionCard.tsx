@@ -18,15 +18,15 @@ function SectionCard({ title, icon: TitleIcon, viewAll, isEmpty, empty, children
   return (
     <section>
       <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-neutral-900">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-800">
             <TitleIcon className="h-4 w-4" strokeWidth={2} />
           </span>
           {title}
         </h2>
         <Link
           to={viewAll.to}
-          className="group inline-flex min-h-11 sm:min-h-0 shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-orange-600 transition-colors hover:bg-orange-50"
+          className="group inline-flex min-h-11 sm:min-h-0 shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-brand-800 transition-colors hover:bg-brand-50"
         >
           {viewAll.label}
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -34,15 +34,15 @@ function SectionCard({ title, icon: TitleIcon, viewAll, isEmpty, empty, children
       </div>
 
       {isEmpty ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-200 bg-white/60 py-12 text-center">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-neutral-200 bg-white/60 py-12 text-center">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-neutral-500">
             <EmptyIcon className="h-6 w-6" strokeWidth={1.8} />
           </span>
-          <p className="text-sm text-gray-500">{empty.text}</p>
+          <p className="text-sm text-neutral-500">{empty.text}</p>
           {empty.action && (
             <Link
               to={empty.action.to}
-              className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600"
+              className="rounded-lg bg-brand-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-900"
             >
               {empty.action.label}
             </Link>

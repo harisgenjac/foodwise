@@ -97,7 +97,7 @@ describe("POST /api/delivery/webhooks/:provider", () => {
     const tampered = await postWebhook({ ...webhook, rawBody: webhook.rawBody.replace("Mock Kurir", "Drugi Kurir") });
     expect(tampered.status).toBe(401);
 
-    const broken = await postWebhook({ rawBody: "{}", headers: signWebhook("foodwise-mock-webhook-secret", "{}") });
+    const broken = await postWebhook({ rawBody: "{}", headers: signWebhook("josvrijedi-mock-webhook-secret", "{}") });
     expect(broken.status).toBe(400);
     expect(broken.body.code).toBe("INVALID_EVENT");
 
@@ -173,7 +173,7 @@ describe("POST /api/delivery/webhooks/:provider", () => {
     const webhook = mock().simulate(deliveryId, "delivery.courier_assigned");
     const event = JSON.parse(webhook.rawBody);
     const rawBody = JSON.stringify({ ...event, delivery_id: "mock_dlv_unknown" });
-    const response = await postWebhook({ rawBody, headers: signWebhook("foodwise-mock-webhook-secret", rawBody) });
+    const response = await postWebhook({ rawBody, headers: signWebhook("josvrijedi-mock-webhook-secret", rawBody) });
     expect(response.status).toBe(200);
     expect(response.body.outcome).toBe("UNKNOWN_DELIVERY");
   });

@@ -134,11 +134,11 @@ function ImportProductsPage() {
       id: "row",
       header: t("importProducts.row"),
       headerClassName: "w-24 font-semibold",
-      cellClassName: "font-medium text-gray-900",
+      cellClassName: "font-medium text-neutral-900",
       card: "title",
       cell: (rowError) => rowError.row,
       cardCell: (rowError) => (
-        <p className="font-semibold text-red-700">
+        <p className="font-semibold text-danger-700">
           {t("importProducts.row")} {rowError.row}
         </p>
       ),
@@ -147,7 +147,7 @@ function ImportProductsPage() {
       id: "problem",
       header: t("importProducts.problem"),
       headerClassName: "font-semibold",
-      cellClassName: "text-gray-700",
+      cellClassName: "text-neutral-700",
       cardStacked: true,
       cell: (rowError) => rowError.error,
     },
@@ -157,18 +157,18 @@ function ImportProductsPage() {
     <div className="max-w-6xl mx-auto pb-16">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-gray-900">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+          <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-neutral-900">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-800">
               <FileUp className="h-5 w-5" strokeWidth={1.8} />
             </span>
             {t("importProducts.title")}
           </h1>
-          <p className="mt-2 text-sm text-gray-500">{t("importProducts.subtitle")}</p>
+          <p className="mt-2 text-sm text-neutral-500">{t("importProducts.subtitle")}</p>
         </div>
         <button
           type="button"
           onClick={downloadTemplate}
-          className="inline-flex w-fit items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 cursor-pointer"
+          className="inline-flex w-fit items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 cursor-pointer"
         >
           <Download className="h-4 w-4" />
           {t("importProducts.downloadTemplate")}
@@ -184,12 +184,12 @@ function ImportProductsPage() {
           >
             <form ref={formRef} noValidate onSubmit={handleSubmit} className="space-y-4">
               <PickerField label={t("importProducts.fileLabel")} required error={errorFor("file")}>
-                <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 px-6 py-10 text-center transition-colors hover:border-orange-300 hover:bg-orange-50/40 focus-within:border-orange-400 focus-within:ring-4 focus-within:ring-orange-100">
-                  <FileUp className="h-8 w-8 text-orange-500" strokeWidth={1.6} />
-                  <span className="text-sm font-medium text-gray-900">
+                <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-neutral-200 px-6 py-10 text-center transition-colors hover:border-brand-300 hover:bg-brand-50/40 focus-within:border-brand-800 focus-within:ring-4 focus-within:ring-brand-100">
+                  <FileUp className="h-8 w-8 text-brand-800" strokeWidth={1.6} />
+                  <span className="text-sm font-medium text-neutral-900">
                     {file ? file.name : t("importProducts.chooseFile")}
                   </span>
-                  <span className="text-xs text-gray-500">{t("importProducts.fileHint")}</span>
+                  <span className="text-xs text-neutral-500">{t("importProducts.fileHint")}</span>
                   <input
                     type="file"
                     accept=".csv,text/csv"
@@ -209,9 +209,9 @@ function ImportProductsPage() {
                   label={t("importProducts.problem")}
                   rows={rowErrors}
                   rowKey={(rowError) => rowError.row}
-                  tableWrapperClassName="overflow-hidden rounded-xl border border-red-100"
-                  theadClassName="bg-red-50 text-xs uppercase tracking-wide text-red-700"
-                  tbodyClassName="divide-y divide-red-50"
+                  tableWrapperClassName="overflow-hidden rounded-xl border border-danger-100"
+                  theadClassName="bg-danger-50 text-xs uppercase tracking-wide text-danger-700"
+                  tbodyClassName="divide-y divide-danger-50"
                   headCellClassName="px-4 py-2"
                   bodyCellClassName="px-4 py-2"
                   columns={errorColumns}
@@ -222,14 +222,14 @@ function ImportProductsPage() {
                 <button
                   type="submit"
                   disabled={uploading}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500 py-3 font-semibold text-white shadow-sm shadow-orange-500/20 transition-all hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-md disabled:translate-y-0 disabled:opacity-60 cursor-pointer"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-800 py-3 font-semibold text-white shadow-sm shadow-brand-800/20 transition-all hover:-translate-y-0.5 hover:bg-brand-900 hover:shadow-md disabled:translate-y-0 disabled:opacity-60 cursor-pointer"
                 >
                   <FileUp className="h-5 w-5" strokeWidth={1.8} />
                   {uploading ? t("importProducts.importing") : t("importProducts.importButton")}
                 </button>
                 <Link
                   to="/my-products"
-                  className="rounded-xl border border-gray-200 bg-white px-6 py-3 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                  className="rounded-xl border border-neutral-200 bg-white px-6 py-3 text-center text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
                 >
                   {t("product.cancel")}
                 </Link>
@@ -242,36 +242,36 @@ function ImportProductsPage() {
 
         <aside className="lg:sticky lg:top-22 lg:self-start">
           <FormSection title={t("importProducts.formatTitle")} icon={ListChecks}>
-            <ul className="list-disc space-y-1.5 pl-4 text-sm text-gray-600">
+            <ul className="list-disc space-y-1.5 pl-4 text-sm text-neutral-600">
               <li>{t("importProducts.formatColumns")}</li>
               <li>{t("importProducts.formatSeparator")}</li>
               <li>{t("importProducts.formatDate")}</li>
               <li>{t("importProducts.formatAllOrNothing")}</li>
             </ul>
-            <code className="mt-4 block break-all rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-700">
+            <code className="mt-4 block break-all rounded-lg bg-neutral-50 px-3 py-2 text-xs text-neutral-700">
               {CSV_COLUMNS.join(",")}
             </code>
 
-            <h3 className="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <h3 className="mt-5 text-xs font-semibold uppercase tracking-wide text-neutral-500">
               {t("importProducts.categoryCodes")}
             </h3>
             <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
               {Object.keys(CATEGORY_LABELS).map((code) => (
                 <div key={code} className="contents">
-                  <dt className="font-mono text-gray-900">{code}</dt>
-                  <dd className="text-gray-500">{t(`categories.${code}`)}</dd>
+                  <dt className="font-mono text-neutral-900">{code}</dt>
+                  <dd className="text-neutral-500">{t(`categories.${code}`)}</dd>
                 </div>
               ))}
             </dl>
 
-            <h3 className="mt-5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <h3 className="mt-5 text-xs font-semibold uppercase tracking-wide text-neutral-500">
               {t("importProducts.unitCodes")}
             </h3>
             <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
               {Object.keys(UNIT_LABELS).map((code) => (
                 <div key={code} className="contents">
-                  <dt className="font-mono text-gray-900">{code}</dt>
-                  <dd className="text-gray-500">{t(`units.${code}`)}</dd>
+                  <dt className="font-mono text-neutral-900">{code}</dt>
+                  <dd className="text-neutral-500">{t(`units.${code}`)}</dd>
                 </div>
               ))}
             </dl>

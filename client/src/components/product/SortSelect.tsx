@@ -51,7 +51,7 @@ function SortSelect<T extends string>({ value, onChange, options }: SortSelectPr
   const { t } = useTranslation();
 
   return (
-    <label className="flex items-center gap-2 text-sm text-gray-500">
+    <label className="flex items-center gap-2 text-sm text-neutral-500">
       <span className="shrink-0">{t("filters.sortBy")}</span>
       <FilterField icon={ArrowUpDown}>
         <select

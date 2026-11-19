@@ -1,7 +1,11 @@
-// The one layout every email uses: FoodWise header, content, a button to the page, footer.
+// The one layout every email uses: the "Još vrijedi" header (the name as text in the brand colour;
+// no images), content, a button to the page, footer.
 // HTML for email clients (tables and inline styles, no external CSS or images) plus a plain text
 // version with the same content. Every value is escaped, since product and business names are
 // user input.
+
+// The app's name, the same in both languages (it is the brand, not translated).
+export const BRAND_NAME = "Još vrijedi";
 
 export type EmailLanguage = "bs" | "en";
 
@@ -39,13 +43,13 @@ interface EmailContent {
 
 const FOOTER: Record<EmailLanguage, { reason: string; tagline: string; turnOff: string }> = {
   bs: {
-    reason: "Ovu poruku ste dobili jer imate račun na platformi FoodWise.",
-    tagline: "FoodWise – Još vrijedi",
+    reason: `Ovu poruku ste dobili jer imate račun na platformi ${BRAND_NAME}.`,
+    tagline: BRAND_NAME,
     turnOff: "Isključite email obavijesti",
   },
   en: {
-    reason: "You received this email because you have a FoodWise account.",
-    tagline: "FoodWise – Još vrijedi",
+    reason: `You received this email because you have a ${BRAND_NAME} account.`,
+    tagline: BRAND_NAME,
     turnOff: "Turn off email notifications",
   },
 };
@@ -53,7 +57,8 @@ const FOOTER: Record<EmailLanguage, { reason: string; tagline: string; turnOff: 
 // Where the footer's link points: the switch on My profile.
 export const EMAIL_SETTINGS_PATH = "/my-profile#email-notifications";
 
-const ORANGE = "#ea580c";
+// The brand colour (brand-800), like the app's primary buttons.
+const BRAND = "#166534";
 
 export const escapeHtml = (value: string) =>
   value
@@ -64,30 +69,30 @@ export const escapeHtml = (value: string) =>
     .replace(/'/g, "&#39;");
 
 const paragraph = (text: string) =>
-  `<p style="margin:0 0 16px;font-size:16px;line-height:24px;color:#1f2937;">${escapeHtml(text)}</p>`;
+  `<p style="margin:0 0 16px;font-size:16px;line-height:24px;color:#292524;">${escapeHtml(text)}</p>`;
 
 const detailsTable = (details: { label: string; value: string }[]) =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;border-collapse:collapse;">${details
     .map(
       ({ label, value }) =>
-        `<tr><td style="padding:8px 12px 8px 0;font-size:14px;color:#6b7280;border-bottom:1px solid #f3f4f6;white-space:nowrap;vertical-align:top;">${escapeHtml(label)}</td>` +
-        `<td style="padding:8px 0;font-size:14px;color:#111827;font-weight:600;border-bottom:1px solid #f3f4f6;">${escapeHtml(value)}</td></tr>`,
+        `<tr><td style="padding:8px 12px 8px 0;font-size:14px;color:#78716c;border-bottom:1px solid #f5f5f4;white-space:nowrap;vertical-align:top;">${escapeHtml(label)}</td>` +
+        `<td style="padding:8px 0;font-size:14px;color:#1c1917;font-weight:600;border-bottom:1px solid #f5f5f4;">${escapeHtml(value)}</td></tr>`,
     )
     .join("")}</table>`;
 
 const linesTable = (lines: EmailLine[], total: EmailContent["total"]) => {
   const rows = lines.map(({ label, value, note, struck }) => {
-    const decoration = struck ? "text-decoration:line-through;color:#9ca3af;" : "color:#111827;";
+    const decoration = struck ? "text-decoration:line-through;color:#a8a29e;" : "color:#1c1917;";
     return (
-      `<tr><td style="padding:8px 12px 8px 0;font-size:14px;border-bottom:1px solid #f3f4f6;vertical-align:top;">` +
+      `<tr><td style="padding:8px 12px 8px 0;font-size:14px;border-bottom:1px solid #f5f5f4;vertical-align:top;">` +
       `<span style="${decoration}">${escapeHtml(label)}</span>` +
-      (note ? `<br><span style="font-size:13px;color:#6b7280;">${escapeHtml(note)}</span>` : "") +
-      `</td><td align="right" style="padding:8px 0;font-size:14px;border-bottom:1px solid #f3f4f6;white-space:nowrap;vertical-align:top;${decoration}">${escapeHtml(value)}</td></tr>`
+      (note ? `<br><span style="font-size:13px;color:#78716c;">${escapeHtml(note)}</span>` : "") +
+      `</td><td align="right" style="padding:8px 0;font-size:14px;border-bottom:1px solid #f5f5f4;white-space:nowrap;vertical-align:top;${decoration}">${escapeHtml(value)}</td></tr>`
     );
   });
   const totalRow = total
-    ? `<tr><td style="padding:10px 12px 0 0;font-size:14px;font-weight:700;color:#111827;">${escapeHtml(total.label)}</td>` +
-      `<td align="right" style="padding:10px 0 0;font-size:14px;font-weight:700;color:#111827;white-space:nowrap;">${escapeHtml(total.value)}</td></tr>`
+    ? `<tr><td style="padding:10px 12px 0 0;font-size:14px;font-weight:700;color:#1c1917;">${escapeHtml(total.label)}</td>` +
+      `<td align="right" style="padding:10px 0 0;font-size:14px;font-weight:700;color:#1c1917;white-space:nowrap;">${escapeHtml(total.value)}</td></tr>`
     : "";
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;border-collapse:collapse;">${rows.join("")}${totalRow}</table>`;
 };
@@ -105,25 +110,25 @@ export const renderLayout = (content: EmailContent): RenderedEmail => {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(content.subject)}</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f9fafb;font-family:Arial,Helvetica,sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;">
+<body style="margin:0;padding:0;background-color:#fafaf7;font-family:Arial,Helvetica,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#fafaf7;">
 <tr><td align="center" style="padding:24px 12px;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
-<tr><td style="background-color:${ORANGE};padding:20px 24px;font-size:22px;font-weight:700;color:#ffffff;">FoodWise</td></tr>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e7e5e4;">
+<tr><td style="padding:20px 24px;border-bottom:1px solid #e7e5e4;font-size:22px;font-weight:700;color:${BRAND};">${escapeHtml(BRAND_NAME)}</td></tr>
 <tr><td style="padding:28px 24px 8px;">
-<h1 style="margin:0 0 16px;font-size:20px;line-height:28px;color:#111827;">${escapeHtml(content.heading)}</h1>
+<h1 style="margin:0 0 16px;font-size:20px;line-height:28px;color:#1c1917;">${escapeHtml(content.heading)}</h1>
 ${content.intro.map(paragraph).join("\n")}
 ${details.length > 0 ? detailsTable(details) : ""}
 ${lines.length > 0 ? linesTable(lines, content.total) : ""}
 ${outro.map(paragraph).join("\n")}
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 24px;"><tr><td style="border-radius:8px;background-color:${ORANGE};">
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 24px;"><tr><td style="border-radius:8px;background-color:${BRAND};">
 <a href="${escapeHtml(content.button.url)}" style="display:inline-block;padding:12px 24px;font-size:16px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">${escapeHtml(content.button.label)}</a>
 </td></tr></table>
 </td></tr>
-<tr><td style="padding:16px 24px 24px;border-top:1px solid #f3f4f6;font-size:12px;line-height:18px;color:#6b7280;">
+<tr><td style="padding:16px 24px 24px;border-top:1px solid #f5f5f4;font-size:12px;line-height:18px;color:#78716c;">
 ${escapeHtml(footer.reason)}<br>${escapeHtml(footer.tagline)}${
     content.settingsUrl
-      ? `<br><a href="${escapeHtml(content.settingsUrl)}" style="color:#6b7280;text-decoration:underline;">${escapeHtml(footer.turnOff)}</a>`
+      ? `<br><a href="${escapeHtml(content.settingsUrl)}" style="color:#78716c;text-decoration:underline;">${escapeHtml(footer.turnOff)}</a>`
       : ""
   }
 </td></tr>
@@ -135,7 +140,7 @@ ${escapeHtml(footer.reason)}<br>${escapeHtml(footer.tagline)}${
 `;
 
   const text = [
-    "FoodWise",
+    BRAND_NAME,
     "",
     content.heading,
     "",

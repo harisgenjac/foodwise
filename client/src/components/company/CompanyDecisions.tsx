@@ -45,7 +45,7 @@ function CompanyDecisions({ dashboard, onChanged }: CompanyDecisionsProps) {
           <button
             type="button"
             onClick={() => setDecision({ request: item.request, action: "approve" })}
-            className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-green-700 transition-colors hover:bg-green-50"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-brand-800 transition-colors hover:bg-brand-50"
           >
             <Check className="h-4 w-4" />
             {t("company.credits.approve")}
@@ -53,7 +53,7 @@ function CompanyDecisions({ dashboard, onChanged }: CompanyDecisionsProps) {
           <button
             type="button"
             onClick={() => setDecision({ request: item.request, action: "reject" })}
-            className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-danger-700 transition-colors hover:bg-danger-50"
           >
             <X className="h-4 w-4" />
             {t("company.credits.reject")}
@@ -84,15 +84,15 @@ function CompanyDecisions({ dashboard, onChanged }: CompanyDecisionsProps) {
 
   return (
     <section
-      className="rounded-2xl border border-amber-200 bg-amber-50/40 p-6 shadow-sm"
+      className="rounded-2xl border border-warning-200 bg-warning-50/40 p-6 shadow-sm"
       aria-labelledby="company-decisions"
     >
-      <h2 id="company-decisions" className="flex items-center gap-2 text-lg font-bold text-gray-900">
-        <Inbox className="h-5 w-5 text-amber-600" />
+      <h2 id="company-decisions" className="flex items-center gap-2 text-lg font-bold text-neutral-900">
+        <Inbox className="h-5 w-5 text-warning-700" />
         {t("company.overview.decisionsTitle")}
       </h2>
-      <p className="mt-1 text-sm text-gray-600">{t("company.overview.decisionsSubtitle")}</p>
-      <ul className="mt-4 divide-y divide-amber-100">
+      <p className="mt-1 text-sm text-neutral-600">{t("company.overview.decisionsSubtitle")}</p>
+      <ul className="mt-4 divide-y divide-warning-100">
         {dashboard.decisions.map((item) => (
           <li
             key={item.type === "TOPUP_REVIEW" ? `topup-${item.request.id}` : `${item.type}-${item.branch_id}`}
@@ -102,11 +102,11 @@ function CompanyDecisions({ dashboard, onChanged }: CompanyDecisionsProps) {
             <div className="text-sm">
               <Link
                 to={`/company/branches/${item.branch_id}`}
-                className="font-medium text-gray-900 hover:text-orange-600"
+                className="font-medium text-neutral-900 hover:text-brand-900"
               >
                 {item.branch_name}
               </Link>
-              <p className="text-gray-600">{need(item)}</p>
+              <p className="text-neutral-600">{need(item)}</p>
             </div>
             {actions(item)}
           </li>

@@ -53,7 +53,7 @@ function TopupModal({
   return (
     <Modal onClose={onClose} labelledBy={titleId}>
       <ModalHeader>
-        <h3 id={titleId} className="text-lg font-bold text-gray-900">
+        <h3 id={titleId} className="text-lg font-bold text-neutral-900">
           {branchName
             ? t("credits.topupModal.titleForBranch", {
                 credits: t("credits.profile.creditsCount", { count: topup.credits }),
@@ -63,20 +63,20 @@ function TopupModal({
                 credits: t("credits.profile.creditsCount", { count: topup.credits }),
               })}
         </h3>
-        <p className="mt-1 text-sm text-gray-500">{t("credits.profile.price", { price: topup.price })}</p>
+        <p className="mt-1 text-sm text-neutral-500">{t("credits.profile.price", { price: topup.price })}</p>
       </ModalHeader>
 
       <ModalBody>
-        <div className="space-y-3 rounded-xl bg-gray-50 p-4 text-sm text-gray-700">
+        <div className="space-y-3 rounded-xl bg-neutral-50 p-4 text-sm text-neutral-700">
           <div>
-            <p className="font-semibold text-gray-900">{t("credits.topupModal.whatTitle")}</p>
+            <p className="font-semibold text-neutral-900">{t("credits.topupModal.whatTitle")}</p>
             <p>{t("credits.topupModal.what")}</p>
           </div>
           <p>{t("credits.modal.chargeStore")}</p>
           <p>{t("credits.topupModal.expiry", { date: formatDisplayDate(periodEnd) })}</p>
         </div>
 
-        <p className="mt-4 text-xs text-gray-500">
+        <p className="mt-4 text-xs text-neutral-500">
           {toCompany ? t("credits.topupModal.paymentByCompany", { company: toCompany }) : t("credits.modal.payment")}
         </p>
       </ModalBody>
@@ -85,7 +85,7 @@ function TopupModal({
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+          className="flex-1 cursor-pointer rounded-xl bg-neutral-100 py-2.5 font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
         >
           {t("credits.modal.cancel")}
         </button>
@@ -93,7 +93,7 @@ function TopupModal({
           type="button"
           onClick={send}
           disabled={sending}
-          className="flex-1 cursor-pointer rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-wait disabled:opacity-60"
+          className="flex-1 cursor-pointer rounded-xl bg-brand-800 py-2.5 font-semibold text-white transition-colors hover:bg-brand-900 disabled:cursor-wait disabled:opacity-60"
         >
           {t("credits.modal.submit")}
         </button>

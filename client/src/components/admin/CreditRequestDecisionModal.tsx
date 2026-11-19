@@ -31,7 +31,7 @@ export function CreditRequestDecisionButtons({
       <button
         type="button"
         onClick={() => onDecide("approve")}
-        className={`${base} text-green-700 hover:bg-green-50 ${card ? "border-green-200" : ""}`}
+        className={`${base} text-brand-800 hover:bg-brand-50 ${card ? "border-brand-200" : ""}`}
       >
         <Check className="h-4 w-4" />
         {t("admin.creditRequests.approve")}
@@ -39,7 +39,7 @@ export function CreditRequestDecisionButtons({
       <button
         type="button"
         onClick={() => onDecide("reject")}
-        className={`${base} text-red-600 hover:bg-red-50 ${card ? "border-red-200" : ""}`}
+        className={`${base} text-danger-700 hover:bg-danger-50 ${card ? "border-danger-200" : ""}`}
       >
         <X className="h-4 w-4" />
         {t("admin.creditRequests.reject")}
@@ -85,12 +85,12 @@ function CreditRequestDecisionModal({ request, action, onClose, onDone }: Credit
   return (
     <Modal onClose={onClose} labelledBy={titleId}>
       <ModalHeader>
-        <h3 id={titleId} className="text-lg font-bold text-gray-900">
+        <h3 id={titleId} className="text-lg font-bold text-neutral-900">
           {t(approve ? "admin.creditRequests.approveTitle" : "admin.creditRequests.rejectTitle")}
         </h3>
       </ModalHeader>
       <ModalBody className="pt-2">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-neutral-600">
           {t(approve ? "admin.creditRequests.approveText" : "admin.creditRequests.rejectText", {
             user: creditRequestUser(request),
             what: `${requestTypes[request.request_type]} (${describeCreditRequest(request, t)})`,
@@ -98,9 +98,9 @@ function CreditRequestDecisionModal({ request, action, onClose, onDone }: Credit
           })}
         </p>
         {creditRequestSender(request, t) && (
-          <p className="mt-1 text-xs font-medium text-teal-700">{creditRequestSender(request, t)}</p>
+          <p className="mt-1 text-xs font-medium text-brand-800">{creditRequestSender(request, t)}</p>
         )}
-        <label className="mt-4 block text-sm font-medium text-gray-700">
+        <label className="mt-4 block text-sm font-medium text-neutral-700">
           {t("admin.creditRequests.note")}
           <textarea
             rows={3}
@@ -110,13 +110,13 @@ function CreditRequestDecisionModal({ request, action, onClose, onDone }: Credit
             className={`${inputStyle} mt-1.5 resize-none`}
           />
         </label>
-        <p className="mt-1 text-xs text-gray-500">{t("admin.creditRequests.noteHint")}</p>
+        <p className="mt-1 text-xs text-neutral-500">{t("admin.creditRequests.noteHint")}</p>
       </ModalBody>
       <ModalFooter>
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+          className="flex-1 cursor-pointer rounded-xl bg-neutral-100 py-2.5 font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
         >
           {t("admin.common.cancel")}
         </button>
@@ -125,7 +125,7 @@ function CreditRequestDecisionModal({ request, action, onClose, onDone }: Credit
           onClick={decide}
           disabled={busy}
           className={`flex-1 cursor-pointer rounded-xl py-2.5 font-semibold text-white transition-colors disabled:cursor-wait disabled:opacity-60 ${
-            approve ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"
+            approve ? "bg-brand-800 hover:bg-brand-900" : "bg-danger-600 hover:bg-danger-700"
           }`}
         >
           {t(approve ? "admin.creditRequests.approve" : "admin.creditRequests.reject")}

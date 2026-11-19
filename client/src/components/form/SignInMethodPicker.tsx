@@ -29,13 +29,13 @@ function SignInMethodPicker({ value, onChange }: SignInMethodPickerProps) {
             aria-checked={selected}
             onClick={() => onChange(code)}
             className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border-2 p-4 text-left transition-colors ${
-              selected ? "border-orange-500 bg-orange-50" : "border-gray-200 bg-white hover:border-orange-200"
+              selected ? "border-brand-800 bg-brand-50" : "border-neutral-200 bg-white hover:border-brand-200"
             }`}
           >
-            <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${selected ? "text-orange-600" : "text-gray-400"}`} strokeWidth={1.8} />
+            <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${selected ? "text-brand-800" : "text-neutral-500"}`} strokeWidth={1.8} />
             <span>
-              <span className="block font-semibold text-gray-900">{t(`admin.createUser.methods.${code}.title`)}</span>
-              <span className="mt-0.5 block text-xs text-gray-500">{t(`admin.createUser.methods.${code}.description`)}</span>
+              <span className="block font-semibold text-neutral-900">{t(`admin.createUser.methods.${code}.title`)}</span>
+              <span className="mt-0.5 block text-xs text-neutral-500">{t(`admin.createUser.methods.${code}.description`)}</span>
             </span>
           </button>
         );

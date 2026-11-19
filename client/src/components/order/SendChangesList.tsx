@@ -9,7 +9,7 @@ function SendChangesList({ changes }: { changes: SendChange[] }) {
   const { t } = useTranslation();
   if (changes.length === 0) return null;
   return (
-    <div className="rounded-xl bg-blue-50 p-4 text-sm text-blue-900">
+    <div className="rounded-xl bg-info-50 p-4 text-sm text-info-900">
       <p className="mb-1 flex items-center gap-2 font-semibold">
         <Info className="h-4 w-4" />
         {t("orders.sendChangesTitle")}

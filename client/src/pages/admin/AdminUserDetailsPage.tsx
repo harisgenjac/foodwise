@@ -133,44 +133,44 @@ function AdminUserDetailsPage() {
   const neverLoggedIn = !user.last_login_at;
 
   const secondaryButton =
-    "inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50";
+    "inline-flex cursor-pointer items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50";
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
       <Breadcrumbs items={[section, { label: name }]} />
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h1 className="truncate text-2xl font-bold tracking-tight text-gray-900">{name}</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+            <h1 className="truncate text-2xl font-bold tracking-tight text-neutral-900">{name}</h1>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-neutral-500">
               <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${ROLE_STYLES[user.role]}`}>
                 {roles[user.role]}
               </span>
               {user.is_blocked ? (
-                <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                <span className="rounded-full bg-danger-50 px-2.5 py-1 text-xs font-semibold text-danger-700">
                   {t("admin.common.blocked")}
                 </span>
               ) : user.deactivated_at ? (
-                <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
+                <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-600">
                   {t("company.branchStatus.deactivated")}
                 </span>
               ) : user.company_is_blocked ? (
-                <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                <span className="rounded-full bg-danger-50 px-2.5 py-1 text-xs font-semibold text-danger-700">
                   {t("admin.common.companyBlocked")}
                 </span>
               ) : getAccountSetup(user).missingFields.length > 0 ? (
-                <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                <span className="rounded-full bg-warning-50 px-2.5 py-1 text-xs font-semibold text-warning-700">
                   {t("admin.common.incompleteProfile")}
                 </span>
               ) : null}
               {neverLoggedIn && (
-                <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-700">
                   {t("admin.userDetails.neverLoggedIn")}
                 </span>
               )}
               {user.must_change_password && (
-                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                <span className="rounded-full bg-info-50 px-2.5 py-1 text-xs font-semibold text-info-700">
                   {t("admin.common.pendingPassword")}
                 </span>
               )}
@@ -206,7 +206,7 @@ function AdminUserDetailsPage() {
               <button
                 type="button"
                 onClick={() => setDialog("unblock")}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-brand-800 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-900"
               >
                 <CircleCheck className="h-4 w-4" />
                 {t("admin.userDetails.unblock")}
@@ -216,7 +216,7 @@ function AdminUserDetailsPage() {
                 <button
                   type="button"
                   onClick={() => setDialog("block")}
-                  className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-danger-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-danger-700"
                 >
                   <Ban className="h-4 w-4" />
                   {t("admin.userDetails.block")}
@@ -226,23 +226,23 @@ function AdminUserDetailsPage() {
           </div>
         </div>
 
-        {isOwnAccount && <p className="mt-4 text-sm text-gray-500">{t("admin.userDetails.ownAccount")}</p>}
+        {isOwnAccount && <p className="mt-4 text-sm text-neutral-500">{t("admin.userDetails.ownAccount")}</p>}
 
         {user.is_blocked && (
-          <div className="mt-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mt-5 rounded-xl border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700">
             <p className="font-semibold">{t("admin.userDetails.blockedSection")}</p>
             <p className="mt-1">
               {t("admin.common.reasonLabel")}: {user.blocked_reason}
             </p>
             {user.blocked_at && (
-              <p className="mt-1 text-xs text-red-600">
+              <p className="mt-1 text-xs text-danger-700">
                 {t("admin.userDetails.blockedAt")}: {formatDateTime(user.blocked_at)}
               </p>
             )}
           </div>
         )}
 
-        <dl className="mt-6 grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2 lg:grid-cols-3">
+        <dl className="mt-6 grid grid-cols-1 gap-4 rounded-xl bg-neutral-50 p-4 sm:grid-cols-2 lg:grid-cols-3">
           <DetailItem icon={UserRound} label={t("admin.userDetails.name")} value={fullName || "—"} />
           {/* A company headquarters login or a branch: its company, linked to the company page. */}
           {user.company_id && (
@@ -252,7 +252,7 @@ function AdminUserDetailsPage() {
               value={
                 <Link
                   to={`/admin/companies/${user.company_id}`}
-                  className="text-orange-600 hover:text-orange-700 hover:underline"
+                  className="text-brand-800 hover:text-brand-900 hover:underline"
                 >
                   {user.company_name}
                 </Link>
@@ -279,7 +279,7 @@ function AdminUserDetailsPage() {
       {isBusiness && (
         <section>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
               {t("admin.userDetails.statsSection")}
             </h2>
             <div className="flex flex-wrap gap-2">
@@ -303,12 +303,12 @@ function AdminUserDetailsPage() {
             {user.role === "STORE" && (
               <>
                 <StatCard icon={Package} label={t("admin.userDetails.products")} value={counts.products} />
-                <StatCard icon={PackageCheck} label={t("admin.userDetails.activeProducts")} value={counts.active_products} tone="green" />
+                <StatCard icon={PackageCheck} label={t("admin.userDetails.activeProducts")} value={counts.active_products} tone="success" />
               </>
             )}
             <StatCard icon={ReceiptText} label={t("admin.userDetails.orders")} value={counts.orders} />
-            <StatCard icon={Clock} label={t("admin.userDetails.pendingOrders")} value={counts.pending_orders} tone="amber" />
-            <StatCard icon={CircleCheck} label={t("admin.userDetails.completedOrders")} value={counts.completed_orders} tone="green" />
+            <StatCard icon={Clock} label={t("admin.userDetails.pendingOrders")} value={counts.pending_orders} tone="warning" />
+            <StatCard icon={CircleCheck} label={t("admin.userDetails.completedOrders")} value={counts.completed_orders} tone="success" />
             <StatCard icon={HeartHandshake} label={t("admin.userDetails.donations")} value={counts.donations} />
           </div>
         </section>
@@ -317,27 +317,27 @@ function AdminUserDetailsPage() {
       {/* Only stores pay credits. */}
       {user.role === "STORE" && <UserCreditsPanel userId={user.id} />}
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
-          <History className="h-4 w-4 text-orange-600" />
+      <section className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-neutral-900">
+          <History className="h-4 w-4 text-brand-800" />
           {t("admin.userDetails.historySection")}
         </h2>
         {actions.length === 0 ? (
-          <p className="text-sm text-gray-500">{t("admin.userDetails.noHistory")}</p>
+          <p className="text-sm text-neutral-500">{t("admin.userDetails.noHistory")}</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-neutral-100">
             {actions.map((action) => (
               <li key={action.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-neutral-900">
                     {actionTypes[action.action] ?? action.action}
                     {(action.product_name || action.donation_name) && (
-                      <span className="font-normal text-gray-600">: {action.product_name || action.donation_name}</span>
+                      <span className="font-normal text-neutral-600">: {action.product_name || action.donation_name}</span>
                     )}
                   </p>
-                  {action.reason && <p className="mt-0.5 text-sm text-gray-600">{action.reason}</p>}
+                  {action.reason && <p className="mt-0.5 text-sm text-neutral-600">{action.reason}</p>}
                 </div>
-                <p className="shrink-0 text-xs text-gray-500 sm:text-right">
+                <p className="shrink-0 text-xs text-neutral-500 sm:text-right">
                   {formatDateTime(action.created_at)}
                   <br />
                   <span className="inline-flex items-center gap-1">
@@ -352,19 +352,19 @@ function AdminUserDetailsPage() {
       </section>
 
       {/* What the user did to their own account (e.g. a password reset by email), apart from the admin log. */}
-      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
-          <UserRound className="h-4 w-4 text-orange-600" />
+      <section className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-neutral-900">
+          <UserRound className="h-4 w-4 text-brand-800" />
           {t("admin.userDetails.activitySection")}
         </h2>
         {events.length === 0 ? (
-          <p className="text-sm text-gray-500">{t("admin.userDetails.noActivity")}</p>
+          <p className="text-sm text-neutral-500">{t("admin.userDetails.noActivity")}</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-neutral-100">
             {events.map((event) => (
               <li key={event.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-start sm:justify-between">
-                <p className="text-sm font-medium text-gray-900">{eventTypes[event.event] ?? event.event}</p>
-                <p className="shrink-0 text-xs text-gray-500 sm:text-right">
+                <p className="text-sm font-medium text-neutral-900">{eventTypes[event.event] ?? event.event}</p>
+                <p className="shrink-0 text-xs text-neutral-500 sm:text-right">
                   {formatDateTime(event.created_at)}
                   {event.ip && (
                     <>

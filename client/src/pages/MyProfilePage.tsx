@@ -283,18 +283,18 @@ function MyProfilePage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-16">
-      <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="relative h-28 bg-linear-to-br from-orange-50 via-amber-50/60 to-white sm:h-36">
+      <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+        <div className="relative h-28 bg-linear-to-br from-brand-50 via-warning-50/60 to-white sm:h-36">
           {isStore && coverUrl ? (
             <img src={assetUrl(coverUrl)} alt={t("cover.alt")} className="h-full w-full object-cover" />
           ) : (
-            <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-orange-200/30 blur-3xl" />
+            <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-brand-200/30 blur-3xl" />
           )}
           {isStore && (
             // The store page's cover: uploaded at once, removable.
             <div className="absolute top-3 right-3 flex gap-2">
               <label
-                className={`inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl bg-white/90 px-3 text-sm font-medium text-gray-700 shadow-sm hover:bg-white sm:min-h-0 sm:py-1.5 ${coverBusy ? "pointer-events-none opacity-60" : ""}`}
+                className={`inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl bg-white/90 px-3 text-sm font-medium text-neutral-700 shadow-sm hover:bg-white sm:min-h-0 sm:py-1.5 ${coverBusy ? "pointer-events-none opacity-60" : ""}`}
               >
                 <ImageIcon className="h-4 w-4" />
                 {coverUrl ? t("cover.change") : t("cover.add")}
@@ -314,7 +314,7 @@ function MyProfilePage() {
                   disabled={coverBusy}
                   aria-label={t("cover.remove")}
                   title={t("cover.remove")}
-                  className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-xl bg-white/90 text-red-600 shadow-sm hover:bg-white disabled:opacity-60 sm:min-h-0 sm:min-w-0 sm:p-1.5"
+                  className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-xl bg-white/90 text-danger-700 shadow-sm hover:bg-white disabled:opacity-60 sm:min-h-0 sm:min-w-0 sm:p-1.5"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -325,11 +325,11 @@ function MyProfilePage() {
 
         <div className="flex flex-col gap-5 px-6 pb-6 sm:flex-row sm:items-end">
           <div className="-mt-14 shrink-0">
-            <label className="group relative block h-28 w-28 cursor-pointer overflow-hidden rounded-2xl border-4 border-white bg-orange-100 shadow-md">
+            <label className="group relative block h-28 w-28 cursor-pointer overflow-hidden rounded-2xl border-4 border-white bg-brand-100 shadow-md">
               {avatarSrc ? (
                 <img src={avatarSrc} alt={businessName || initials} className="h-full w-full object-cover" />
               ) : (
-                <span className="flex h-full w-full items-center justify-center text-3xl font-bold text-orange-700">
+                <span className="flex h-full w-full items-center justify-center text-3xl font-bold text-brand-800">
                   {initials}
                 </span>
               )}
@@ -342,12 +342,12 @@ function MyProfilePage() {
           </div>
 
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-2xl font-bold tracking-tight text-gray-900">
+            <h1 className="truncate text-2xl font-bold tracking-tight text-neutral-900">
               {businessName || `${firstName} ${lastName}`.trim() || email}
             </h1>
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500">
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-neutral-500">
               {role && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-800">
                   <RoleIcon className="h-3.5 w-3.5" />
                   {roleLabel}
                 </span>
@@ -375,7 +375,7 @@ function MyProfilePage() {
             <button
               type="button"
               onClick={handleLogoRemove}
-              className="shrink-0 cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              className="shrink-0 cursor-pointer rounded-xl border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
             >
               {t("user.removeLogo")}
             </button>
@@ -385,14 +385,14 @@ function MyProfilePage() {
               <button
                 type="button"
                 onClick={handleLogoCancel}
-                className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 cursor-pointer"
+                className="rounded-xl border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 cursor-pointer"
               >
                 {t("user.cancel")}
               </button>
               <button
                 type="button"
                 onClick={handleLogoUpload}
-                className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-600 cursor-pointer"
+                className="rounded-xl bg-brand-800 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-900 cursor-pointer"
               >
                 {t("user.saveImage")}
               </button>
@@ -400,7 +400,7 @@ function MyProfilePage() {
           )}
         </div>
         {hasBusinessProfile && (
-          <p className="border-t border-gray-100 px-6 py-3 text-xs text-gray-400">
+          <p className="border-t border-neutral-100 px-6 py-3 text-xs text-neutral-500">
             {usesCompanyLogo ? `${t("user.usesCompanyLogo")} ` : ""}
             {t("user.tooltipLogoText")}
             {isStore && ` ${t("cover.hint")}`}
@@ -471,7 +471,7 @@ function MyProfilePage() {
                     className={inputStyle}
                   />
                 </FormField>
-                {isBranch && <p className="mt-1.5 text-xs text-gray-500">{t("user.managedByCompany")}</p>}
+                {isBranch && <p className="mt-1.5 text-xs text-neutral-500">{t("user.managedByCompany")}</p>}
               </div>
               <div>
                 <FormField label={t("cities.label")} icon={MapPin} required={!isBranch} error={errorFor("city")}>
@@ -484,7 +484,7 @@ function MyProfilePage() {
                     className={inputStyle}
                   />
                 </FormField>
-                {isBranch && <p className="mt-1.5 text-xs text-gray-500">{t("user.managedByCompany")}</p>}
+                {isBranch && <p className="mt-1.5 text-xs text-neutral-500">{t("user.managedByCompany")}</p>}
               </div>
               <FormField label={t("user.phone")} icon={Phone} required error={errorFor("phone")}>
                 <input
@@ -547,7 +547,7 @@ function MyProfilePage() {
                 className={`${inputStyle} resize-none`}
               />
             </FormField>
-            {isBranch && <p className="mt-1.5 text-xs text-gray-500">{t("user.companyDescriptionHint")}</p>}
+            {isBranch && <p className="mt-1.5 text-xs text-neutral-500">{t("user.companyDescriptionHint")}</p>}
           </FormSection>
           </>
           )}
@@ -558,7 +558,7 @@ function MyProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full rounded-xl bg-orange-500 px-8 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-all hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-md disabled:translate-y-0 disabled:opacity-60 sm:w-auto cursor-pointer"
+            className="w-full rounded-xl bg-brand-800 px-8 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-all hover:-translate-y-0.5 hover:bg-brand-900 hover:shadow-md disabled:translate-y-0 disabled:opacity-60 sm:w-auto cursor-pointer"
           >
             {t("user.saveButton")}
           </button>

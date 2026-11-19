@@ -41,7 +41,7 @@ describe("HowItWorks", () => {
       expect(within(item).getByText((_, element) => element?.tagName === "P" && element.textContent === text)).toBeInTheDocument();
       const pill = within(item).getByTestId("how-it-works-highlight");
       expect(pill.textContent).toBe(highlight);
-      expect(pill).toHaveClass("rounded-full", "bg-[#FED7AA]");
+      expect(pill).toHaveClass("rounded-full", "bg-accent-200");
       // The illustration and the number are decorative.
       expect(item.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
       expect(within(item).getByText(String(index + 1))).toHaveAttribute("aria-hidden", "true");

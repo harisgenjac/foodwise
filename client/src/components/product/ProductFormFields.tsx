@@ -103,11 +103,11 @@ function ProductFormFields({
                     aria-pressed={selected}
                     className={`flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-colors cursor-pointer ${
                       selected
-                        ? "border-orange-400 bg-orange-50 text-orange-700 ring-4 ring-orange-100"
-                        : "border-gray-200 bg-white text-gray-700 hover:border-orange-200 hover:bg-orange-50/50"
+                        ? "border-brand-800 bg-brand-50 text-brand-800 ring-4 ring-brand-100"
+                        : "border-neutral-200 bg-white text-neutral-700 hover:border-brand-200 hover:bg-brand-50/50"
                     }`}
                   >
-                    <Icon className={`h-4 w-4 shrink-0 ${selected ? "text-orange-600" : "text-gray-400"}`} strokeWidth={1.8} />
+                    <Icon className={`h-4 w-4 shrink-0 ${selected ? "text-brand-800" : "text-neutral-500"}`} strokeWidth={1.8} />
                     <span className="min-w-0 break-words leading-tight">{label}</span>
                   </button>
                 );
@@ -150,11 +150,11 @@ function ProductFormFields({
         </div>
         {hasPrices && (
           discountPercent !== null ? (
-            <p className="mt-4 inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-sm font-semibold text-green-700">
+            <p className="mt-4 inline-flex items-center rounded-full bg-accent-100 px-3 py-1 text-sm font-semibold text-accent-700">
               {t("product.discountBadge", { percent: discountPercent })}
             </p>
           ) : (
-            <p className="mt-4 flex items-center gap-2 text-sm text-amber-700">
+            <p className="mt-4 flex items-center gap-2 text-sm text-warning-700">
               <AlertCircle className="h-4 w-4 shrink-0" />
               {t("product.discountInvalid")}
             </p>
@@ -175,7 +175,7 @@ function ProductFormFields({
               onChange={(e) => onChange("quantity", e.target.value)}
               onBlur={onBlur("quantity")}
               disabled={stockLocked}
-              className={`${inputStyle} disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500`}
+              className={`${inputStyle} disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-500`}
             />
           </FormField>
           <FormField label={t("product.unit")} icon={Scale} required error={errorFor("unit")}>
@@ -202,11 +202,11 @@ function ProductFormFields({
                 onChange={(e) => onChange("expiry_date", e.target.value)}
                 onBlur={onBlur("expiry_date")}
                 disabled={stockLocked}
-                className={`${inputStyle} disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500`}
+                className={`${inputStyle} disabled:cursor-not-allowed disabled:bg-neutral-100 disabled:text-neutral-500`}
               />
             </FormField>
             {stockLocked ? (
-              <p className="mt-2 flex items-start gap-2 text-sm text-gray-500">
+              <p className="mt-2 flex items-start gap-2 text-sm text-neutral-500">
                 <Lock className="mt-0.5 h-4 w-4 shrink-0" />
                 {t("product.stockLocked")}
               </p>
@@ -222,8 +222,8 @@ function ProductFormFields({
                       onClick={() => onChange("expiry_date", value)}
                       className={`min-h-11 sm:min-h-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
                         selected
-                          ? "border-orange-400 bg-orange-50 text-orange-700"
-                          : "border-gray-200 text-gray-600 hover:border-orange-200 hover:bg-orange-50/50"
+                          ? "border-brand-800 bg-brand-50 text-brand-800"
+                          : "border-neutral-200 text-neutral-600 hover:border-brand-200 hover:bg-brand-50/50"
                       }`}
                     >
                       {days === 0

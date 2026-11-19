@@ -18,7 +18,7 @@ interface TabsProps<K extends string> {
 // role="tabpanel", id `${idPrefix}-panel-${key}` and aria-labelledby `${idPrefix}-tab-${key}`.
 function Tabs<K extends string>({ tabs, active, onChange, label, idPrefix }: TabsProps<K>) {
   return (
-    <div role="tablist" aria-label={label} className="inline-flex w-fit rounded-full border border-gray-100 bg-white p-1 shadow-sm">
+    <div role="tablist" aria-label={label} className="inline-flex w-fit rounded-full border border-neutral-100 bg-white p-1 shadow-sm">
       {tabs.map((tab) => {
         const selected = tab.key === active;
         return (
@@ -31,14 +31,14 @@ function Tabs<K extends string>({ tabs, active, onChange, label, idPrefix }: Tab
             aria-controls={`${idPrefix}-panel-${tab.key}`}
             onClick={() => onChange(tab.key)}
             className={`inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors sm:min-h-0 ${
-              selected ? "bg-orange-500 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"
+              selected ? "bg-brand-800 text-white shadow-sm" : "text-neutral-600 hover:bg-neutral-50"
             }`}
           >
             {tab.label}
             {tab.count !== undefined && (
               <span
                 className={`rounded-full px-1.5 text-xs font-semibold ${
-                  selected ? "bg-white/25 text-white" : "bg-orange-100 text-orange-700"
+                  selected ? "bg-white/25 text-white" : "bg-brand-100 text-brand-800"
                 }`}
               >
                 {tab.count}

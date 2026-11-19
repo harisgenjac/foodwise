@@ -15,7 +15,7 @@ function LocationReminder() {
   return (
     <div
       role="status"
-      className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 sm:justify-between sm:px-4 sm:py-3"
+      className="flex items-center gap-3 rounded-2xl border border-warning-200 bg-warning-50 px-3 py-2 text-sm text-warning-900 sm:justify-between sm:px-4 sm:py-3"
     >
       <p className="flex min-w-0 flex-1 items-center gap-2 font-medium sm:flex-none">
         <MapPin className="h-4 w-4 shrink-0" />
@@ -23,7 +23,7 @@ function LocationReminder() {
       </p>
       <Link
         to={`/my-profile#${LOCATION_SECTION}`}
-        className="inline-flex min-h-11 max-w-[45%] shrink-0 items-center justify-center gap-1 rounded-xl border border-orange-200 bg-white px-3 text-center font-semibold leading-tight text-orange-600 hover:text-orange-700 sm:min-h-0 sm:max-w-none sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0"
+        className="inline-flex min-h-11 max-w-[45%] shrink-0 items-center justify-center gap-1 rounded-xl border border-brand-200 bg-white px-3 text-center font-semibold leading-tight text-brand-800 hover:text-brand-900 sm:min-h-0 sm:max-w-none sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0"
       >
         {t("location.reminderLink")}
         <ArrowRight className="hidden h-4 w-4 shrink-0 sm:block" />

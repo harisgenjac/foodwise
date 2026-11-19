@@ -62,14 +62,14 @@ function BranchCreditsCard({ branchId, branchName, deactivated }: BranchCreditsC
     run(() => api.delete(`/company/branches/${branchId}/credits/requests/${request.id}`));
 
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm" aria-labelledby="branch-credits">
+    <section className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm" aria-labelledby="branch-credits">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 id="branch-credits" className="flex items-center gap-2 text-base font-semibold text-gray-900">
-            <Coins className="h-4 w-4 text-orange-600" />
+          <h2 id="branch-credits" className="flex items-center gap-2 text-base font-semibold text-neutral-900">
+            <Coins className="h-4 w-4 text-brand-800" />
             {t("company.credits.cardTitle")}
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-neutral-500">
             {t("company.credits.period", {
               from: formatDisplayDate(credits.periodStart),
               to: formatDisplayDate(credits.periodEnd),
@@ -92,19 +92,19 @@ function BranchCreditsCard({ branchId, branchName, deactivated }: BranchCreditsC
       </div>
 
       <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl bg-gray-50 p-4">
-          <dt className="text-xs font-medium text-gray-500">{t("credits.profile.currentPlan")}</dt>
-          <dd className="mt-1 font-semibold text-gray-900">{subscription?.plan_name ?? t("company.credits.noPlan")}</dd>
+        <div className="rounded-xl bg-neutral-50 p-4">
+          <dt className="text-xs font-medium text-neutral-500">{t("credits.profile.currentPlan")}</dt>
+          <dd className="mt-1 font-semibold text-neutral-900">{subscription?.plan_name ?? t("company.credits.noPlan")}</dd>
         </div>
-        <div className="rounded-xl bg-gray-50 p-4">
-          <dt className="text-xs font-medium text-gray-500">{t("credits.profile.balance")}</dt>
-          <dd className="mt-1 font-semibold text-gray-900">
+        <div className="rounded-xl bg-neutral-50 p-4">
+          <dt className="text-xs font-medium text-neutral-500">{t("credits.profile.balance")}</dt>
+          <dd className="mt-1 font-semibold text-neutral-900">
             {t("credits.profile.balanceValue", { available: credits.available, total: credits.total })}
           </dd>
         </div>
-        <div className="rounded-xl bg-gray-50 p-4">
-          <dt className="text-xs font-medium text-gray-500">{t("company.credits.columnNextMonth")}</dt>
-          <dd className="mt-1 font-semibold text-gray-900">
+        <div className="rounded-xl bg-neutral-50 p-4">
+          <dt className="text-xs font-medium text-neutral-500">{t("company.credits.columnNextMonth")}</dt>
+          <dd className="mt-1 font-semibold text-neutral-900">
             {credits.nextSubscription?.plan_name ?? t("company.credits.noPlan")}
           </dd>
         </div>
@@ -131,7 +131,7 @@ function BranchCreditsCard({ branchId, branchName, deactivated }: BranchCreditsC
       {credits.pendingRequests.length > 0 && (
         <ul className="mt-4 space-y-2 text-sm">
           {credits.pendingRequests.map((request) => (
-            <li key={request.id} className="flex flex-wrap items-center gap-2 text-gray-700">
+            <li key={request.id} className="flex flex-wrap items-center gap-2 text-neutral-700">
               <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${CREDIT_REQUEST_STATUS_STYLES[request.status]}`}>
                 {requestStatuses[request.status] || request.status}
               </span>
@@ -142,7 +142,7 @@ function BranchCreditsCard({ branchId, branchName, deactivated }: BranchCreditsC
                   type="button"
                   onClick={() => withdraw(request)}
                   disabled={busy}
-                  className="cursor-pointer text-xs font-medium text-amber-800 hover:underline disabled:opacity-60"
+                  className="cursor-pointer text-xs font-medium text-warning-800 hover:underline disabled:opacity-60"
                 >
                   {t("credits.profile.withdraw")}
                 </button>

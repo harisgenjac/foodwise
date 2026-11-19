@@ -49,7 +49,7 @@ function ChangePasswordForm({ required = false }: { required?: boolean }) {
   };
 
   return (
-    <div className={required ? "rounded-2xl ring-2 ring-amber-300" : undefined}>
+    <div className={required ? "rounded-2xl ring-2 ring-warning-300" : undefined}>
       <FormSection
         title={t("user.passwordSection")}
         icon={KeyRound}
@@ -93,7 +93,7 @@ function ChangePasswordForm({ required = false }: { required?: boolean }) {
             <button
               type="submit"
               disabled={saving}
-              className="w-full cursor-pointer rounded-xl bg-orange-500 px-6 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 disabled:opacity-60 sm:w-auto"
+              className="w-full cursor-pointer rounded-xl bg-brand-800 px-6 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900 disabled:opacity-60 sm:w-auto"
             >
               {t("user.changePassword")}
             </button>

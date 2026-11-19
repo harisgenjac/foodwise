@@ -55,13 +55,13 @@ function EditBranchModal({ branch, onClose, onSaved }: EditBranchModalProps) {
   return (
     <Modal onClose={onClose} labelledBy={titleId}>
       <ModalHeader>
-        <h2 id={titleId} className="text-lg font-semibold text-gray-900">{t("company.branchDetails.editTitle")}</h2>
-        <p className="mt-1 text-sm text-gray-600">{t("company.branchDetails.editText")}</p>
+        <h2 id={titleId} className="text-lg font-semibold text-neutral-900">{t("company.branchDetails.editTitle")}</h2>
+        <p className="mt-1 text-sm text-neutral-600">{t("company.branchDetails.editText")}</p>
       </ModalHeader>
       <form ref={formRef} noValidate onSubmit={handleSubmit} className={modalFormStyle}>
         <ModalBody className="space-y-4">
           {error && (
-            <p className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="flex items-center gap-2 rounded-xl border border-danger-100 bg-danger-50 px-3 py-2 text-sm text-danger-700">
               <AlertCircle className="h-4 w-4 shrink-0" />
               {error}
             </p>
@@ -110,14 +110,14 @@ function EditBranchModal({ branch, onClose, onSaved }: EditBranchModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="cursor-pointer rounded-xl border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
           >
             {t("admin.common.cancel")}
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="cursor-pointer rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-60"
+            className="cursor-pointer rounded-xl bg-brand-800 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-900 disabled:opacity-60"
           >
             {t("company.branchDetails.save")}
           </button>

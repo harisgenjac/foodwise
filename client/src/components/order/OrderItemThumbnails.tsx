@@ -24,7 +24,7 @@ function OrderItemThumbnails({ order }: { order: Pick<Order, "items" | "item_cou
         ))}
       </div>
       {more > 0 && (
-        <span className="ml-1 rounded-full bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-600">
+        <span className="ml-1 rounded-full bg-neutral-100 px-1.5 py-0.5 text-xs font-semibold text-neutral-600">
           +{more}
         </span>
       )}

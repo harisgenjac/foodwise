@@ -50,20 +50,20 @@ function FilterBar({
       aria-controls={panelId}
       className={`inline-flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 text-sm font-medium transition-colors sm:hidden ${search ? "" : "w-full "}${
         open || activeCount > 0
-          ? "border-orange-300 bg-orange-50 text-orange-700"
-          : "border-gray-200 bg-white text-gray-700"
+          ? "border-brand-300 bg-brand-50 text-brand-800"
+          : "border-neutral-200 bg-white text-neutral-700"
       }`}
     >
       <SlidersHorizontal className="h-4 w-4" />
       {t("filters.button")}
       {activeCount > 0 && (
-        <span className="rounded-full bg-orange-500 px-1.5 text-xs font-semibold text-white">{activeCount}</span>
+        <span className="rounded-full bg-brand-800 px-1.5 text-xs font-semibold text-white">{activeCount}</span>
       )}
     </button>
   );
 
   return (
-    <div data-testid="filter-bar" className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+    <div data-testid="filter-bar" className="rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm">
       <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${columnsStyle}`}>
         {search ? (
           <div className="flex gap-2 sm:contents">
@@ -87,7 +87,7 @@ function FilterBar({
             <button
               type="button"
               onClick={onClear}
-              className="inline-flex min-h-11 cursor-pointer items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-orange-600 transition-colors hover:bg-orange-50 sm:min-h-0"
+              className="inline-flex min-h-11 cursor-pointer items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-brand-800 transition-colors hover:bg-brand-50 sm:min-h-0"
             >
               <X className="h-4 w-4" />
               {t("filters.clear")}
@@ -99,7 +99,7 @@ function FilterBar({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="inline-flex h-11 cursor-pointer items-center rounded-xl bg-orange-500 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600 sm:hidden"
+              className="inline-flex h-11 cursor-pointer items-center rounded-xl bg-brand-800 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-900 sm:hidden"
             >
               {resultCount === undefined ? t("filters.done") : t("filters.showResults", { count: resultCount })}
             </button>
@@ -119,7 +119,7 @@ interface FilterFieldProps {
 export function FilterField({ icon: Icon, children }: FilterFieldProps) {
   return (
     <span className="relative block">
-      <Icon className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-gray-400 sm:top-3" strokeWidth={1.8} />
+      <Icon className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-neutral-500 sm:top-3" strokeWidth={1.8} />
       {children}
     </span>
   );

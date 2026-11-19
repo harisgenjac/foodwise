@@ -28,7 +28,7 @@ function ReportsTable({ items, downloading, onDownload }: ReportsTableProps) {
       type="button"
       onClick={() => onDownload(id)}
       disabled={downloading !== null}
-      className={`inline-flex cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl border border-orange-200 bg-white px-3.5 text-sm font-semibold text-orange-600 transition-colors hover:border-orange-500 hover:bg-orange-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 ${
+      className={`inline-flex cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl border border-brand-200 bg-white px-3.5 text-sm font-semibold text-brand-800 transition-colors hover:border-brand-800 hover:bg-brand-900 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 ${
         card ? "min-h-11 justify-center" : "py-2"
       }`}
     >
@@ -45,12 +45,12 @@ function ReportsTable({ items, downloading, onDownload }: ReportsTableProps) {
       card: "title",
       cell: ({ icon: Icon, title, description }) => (
         <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-800">
             <Icon className="h-4 w-4" strokeWidth={1.8} />
           </span>
           <div className="min-w-0">
-            <p className="font-semibold text-gray-900">{title}</p>
-            <p className="mt-0.5 text-sm text-gray-500">{description}</p>
+            <p className="font-semibold text-neutral-900">{title}</p>
+            <p className="mt-0.5 text-sm text-neutral-500">{description}</p>
           </div>
         </div>
       ),
@@ -60,7 +60,7 @@ function ReportsTable({ items, downloading, onDownload }: ReportsTableProps) {
       header: t("reports.table.columns"),
       className: "hidden md:table-cell",
       headerClassName: "font-semibold",
-      cellClassName: "max-w-xs text-xs leading-relaxed text-gray-500",
+      cellClassName: "max-w-xs text-xs leading-relaxed text-neutral-500",
       card: "none",
       cell: (item) => item.columns,
     },
@@ -70,7 +70,7 @@ function ReportsTable({ items, downloading, onDownload }: ReportsTableProps) {
       headerClassName: "font-semibold",
       card: "status",
       cell: () => (
-        <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-600">CSV</span>
+        <span className="inline-flex rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-semibold text-neutral-600">CSV</span>
       ),
     },
     {
@@ -89,8 +89,8 @@ function ReportsTable({ items, downloading, onDownload }: ReportsTableProps) {
       label={t("reports.table.report")}
       rows={items}
       rowKey={(item) => item.id}
-      rowClassName="align-top transition-colors hover:bg-orange-50/30"
-      theadClassName="bg-gray-50 text-xs uppercase tracking-wide text-gray-500"
+      rowClassName="align-top transition-colors hover:bg-brand-50/30"
+      theadClassName="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-500"
       headCellClassName="px-5 py-3"
       bodyCellClassName="px-5 py-4"
       columns={columns}

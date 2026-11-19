@@ -34,8 +34,8 @@ function SetPasswordModal({ name, busy, onConfirm, onClose }: SetPasswordModalPr
   return (
     <Modal onClose={onClose} labelledBy={titleId}>
       <ModalHeader>
-        <h2 id={titleId} className="text-lg font-semibold text-gray-900">{t("admin.userDetails.passwordTitle")}</h2>
-        <p className="mt-1 text-sm text-gray-600">{t("admin.userDetails.passwordText", { name })}</p>
+        <h2 id={titleId} className="text-lg font-semibold text-neutral-900">{t("admin.userDetails.passwordTitle")}</h2>
+        <p className="mt-1 text-sm text-neutral-600">{t("admin.userDetails.passwordText", { name })}</p>
       </ModalHeader>
       <form ref={formRef} noValidate onSubmit={handleSubmit} className={modalFormStyle}>
         <ModalBody className="space-y-4">
@@ -60,7 +60,7 @@ function SetPasswordModal({ name, busy, onConfirm, onClose }: SetPasswordModalPr
             />
           </FormField>
           <div className="space-y-1">
-            <p className="text-xs text-gray-500">{t("auth.passwordHint")}</p>
+            <p className="text-xs text-neutral-500">{t("auth.passwordHint")}</p>
             <RequiredHint />
           </div>
         </ModalBody>
@@ -68,14 +68,14 @@ function SetPasswordModal({ name, busy, onConfirm, onClose }: SetPasswordModalPr
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
           >
             {t("admin.common.cancel")}
           </button>
           <button
             type="submit"
             disabled={busy}
-            className="cursor-pointer rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-60"
+            className="cursor-pointer rounded-xl bg-brand-800 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-900 disabled:opacity-60"
           >
             {t("admin.userDetails.savePassword")}
           </button>

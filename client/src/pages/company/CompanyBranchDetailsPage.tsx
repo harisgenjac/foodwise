@@ -191,7 +191,7 @@ function CompanyBranchDetailsPage() {
   const savedFood = formatSavedFood(stats.saved_this_month, t("dashboard.piecesShort"));
   const staffName = `${branch.first_name ?? ""} ${branch.last_name ?? ""}`.trim();
   const secondaryButton =
-    "inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50";
+    "inline-flex cursor-pointer items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50";
   const tabs: { key: Tab; label: string; icon: typeof Package }[] = [
     { key: "products", label: t("company.branchDetails.productsTab"), icon: Package },
     { key: "orders", label: t("company.branchDetails.ordersTab"), icon: ReceiptText },
@@ -201,10 +201,10 @@ function CompanyBranchDetailsPage() {
     <div className="mx-auto max-w-6xl space-y-6 pb-16">
       <Breadcrumbs items={[section, { label: branch.business_name }]} />
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-start gap-4">
-            <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-orange-100 text-orange-700">
+            <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-100 text-brand-800">
               {branch.logo_url ? (
                 <img src={assetUrl(branch.logo_url)} alt={branch.business_name} className="h-full w-full object-cover" />
               ) : (
@@ -212,13 +212,13 @@ function CompanyBranchDetailsPage() {
               )}
             </span>
             <div className="min-w-0">
-              <h1 className="truncate text-2xl font-bold tracking-tight text-gray-900">{branch.business_name}</h1>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+              <h1 className="truncate text-2xl font-bold tracking-tight text-neutral-900">{branch.business_name}</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-neutral-500">
                 <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${BRANCH_STATUS_STYLES[branch.status]}`}>
                   {t(`company.branchStatus.${branch.status}`)}
                 </span>
                 {neverLoggedIn && (
-                  <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                  <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-700">
                     {t("company.branchDetails.neverLoggedIn")}
                   </span>
                 )}
@@ -249,12 +249,12 @@ function CompanyBranchDetailsPage() {
           </div>
         </div>
 
-        <p className="mt-5 flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+        <p className="mt-5 flex items-start gap-2 rounded-xl border border-info-100 bg-info-50 px-4 py-3 text-sm text-info-800">
           <Eye className="mt-0.5 h-4 w-4 shrink-0" />
           {t("company.branchDetails.readOnly")}
         </p>
 
-        <dl className="mt-5 grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2 lg:grid-cols-3">
+        <dl className="mt-5 grid grid-cols-1 gap-4 rounded-xl bg-neutral-50 p-4 sm:grid-cols-2 lg:grid-cols-3">
           <DetailItem
             icon={MapPin}
             label={t("user.address")}
@@ -273,7 +273,7 @@ function CompanyBranchDetailsPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-neutral-500">
           {t("company.branchDetails.statsSection")}
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -282,20 +282,20 @@ function CompanyBranchDetailsPage() {
             icon={Hourglass}
             label={t("company.branchDetails.pendingOrders")}
             value={stats.pending_orders}
-            tone="amber"
+            tone="warning"
           />
           <StatCard
             icon={CircleCheck}
             label={t("company.branchDetails.completedThisMonth")}
             value={stats.completed_this_month}
-            tone="green"
+            tone="success"
           />
           <StatCard
             icon={Leaf}
             label={t("company.branchDetails.savedThisMonth")}
             value={savedFood[0] ?? "0 kg"}
             units={savedFood.slice(1)}
-            tone="green"
+            tone="success"
           />
         </div>
       </section>
@@ -303,7 +303,7 @@ function CompanyBranchDetailsPage() {
       <BranchCreditsCard key={branch.status} branchId={branch.id} branchName={branch.business_name} deactivated={isDeactivated} />
 
       <section className="space-y-4">
-        <div role="tablist" className="inline-flex w-fit flex-wrap rounded-full border border-gray-100 bg-white p-1 shadow-sm">
+        <div role="tablist" className="inline-flex w-fit flex-wrap rounded-full border border-neutral-100 bg-white p-1 shadow-sm">
           {tabs.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -312,7 +312,7 @@ function CompanyBranchDetailsPage() {
               aria-selected={tab === key}
               onClick={() => setTab(key)}
               className={`inline-flex min-h-11 sm:min-h-0 cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                tab === key ? "bg-orange-500 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"
+                tab === key ? "bg-brand-800 text-white shadow-sm" : "text-neutral-600 hover:bg-neutral-50"
               }`}
             >
               <Icon className="h-4 w-4" strokeWidth={1.8} />
@@ -324,24 +324,24 @@ function CompanyBranchDetailsPage() {
         <BranchActivity key={tab} branchId={branch.id} tab={tab} />
       </section>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
-          <Power className="h-4 w-4 text-orange-600" />
+      <section className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-neutral-900">
+          <Power className="h-4 w-4 text-brand-800" />
           {isDeactivated ? t("company.branchDetails.reactivateTitle") : t("company.branchDetails.deactivateTitle")}
         </h2>
         {isDeactivated ? (
           <>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-neutral-600">
               {t("company.branchDetails.deactivatedSince", {
                 date: branch.deactivated_at ? formatDateTime(branch.deactivated_at) : "",
                 by: branch.deactivated_by_email ?? "—",
               })}
             </p>
-            <p className="mt-1 text-sm text-gray-600">{t("company.branchDetails.reactivateText")}</p>
+            <p className="mt-1 text-sm text-neutral-600">{t("company.branchDetails.reactivateText")}</p>
             <button
               type="button"
               onClick={() => setDialog("reactivate")}
-              className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700"
+              className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-brand-800 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-900"
             >
               <CircleCheck className="h-4 w-4" />
               {t("company.branchDetails.reactivate")}
@@ -349,7 +349,7 @@ function CompanyBranchDetailsPage() {
           </>
         ) : (
           <>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-600">
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-600">
               <li>{t("company.branchDetails.deactivateHidden")}</li>
               <li>{t("company.branchDetails.deactivatePending")}</li>
               <li>{t("company.branchDetails.deactivateConfirmed")}</li>
@@ -359,7 +359,7 @@ function CompanyBranchDetailsPage() {
             <button
               type="button"
               onClick={() => setDialog("deactivate")}
-              className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+              className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-xl bg-danger-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-danger-700"
             >
               <Power className="h-4 w-4" />
               {t("company.branchDetails.deactivate")}

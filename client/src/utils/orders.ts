@@ -7,12 +7,12 @@ export const formatOrderCode = (code: string) => `#${code}`;
 
 // Order and item statuses share these pills.
 export const ORDER_STATUS_STYLES: Record<OrderStatus, string> = {
-  Pending: "bg-amber-50 text-amber-700",
-  Confirmed: "bg-green-50 text-green-700",
-  InDelivery: "bg-indigo-50 text-indigo-700",
-  Completed: "bg-gray-100 text-gray-700",
-  Rejected: "bg-red-50 text-red-600",
-  Cancelled: "bg-red-50 text-red-600",
+  Pending: "bg-warning-50 text-warning-700",
+  Confirmed: "bg-success-100 text-success-800",
+  InDelivery: "bg-info-50 text-info-700",
+  Completed: "bg-neutral-100 text-neutral-700",
+  Rejected: "bg-danger-50 text-danger-700",
+  Cancelled: "bg-danger-50 text-danger-700",
 };
 
 // An order's or item's status as people read it: a delivered delivery order is "Dostavljeno", not

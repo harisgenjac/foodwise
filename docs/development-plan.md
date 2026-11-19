@@ -1,4 +1,4 @@
-# FoodWise – development plan
+# Još vrijedi – development plan
 
 Future work only: what is planned, ideas, open questions and what was decided against. The app as it is today is in [`product.md`](product.md); how it is built is in [`backend.md`](backend.md) and [`frontend.md`](frontend.md).
 
@@ -15,7 +15,7 @@ Finished work, described in `product.md`:
 
 ## Orders and delivery
 
-A restaurant orders from a cart with one store and chooses delivery or pickup; FoodWise only shows the price, time and statuses the delivery service returns. Pickup and the mock delivery work today; Korpa is next.
+A restaurant orders from a cart with one store and chooses delivery or pickup; Još vrijedi only shows the price, time and statuses the delivery service returns. Pickup and the mock delivery work today; Korpa is next.
 
 ### Agreed rules
 

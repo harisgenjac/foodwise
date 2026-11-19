@@ -56,8 +56,8 @@ function AdminOrdersPage() {
         onClick={() => setSelected(order)}
         className={
           card
-            ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
-            : "inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+            ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-danger-200 text-sm font-semibold text-danger-700 transition-colors hover:bg-danger-50"
+            : "inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-danger-700 transition-colors hover:bg-danger-50"
         }
       >
         <Ban className="h-4 w-4" />
@@ -74,11 +74,11 @@ function AdminOrdersPage() {
       card: "title",
       cell: (order) => (
         <>
-          <Link to={`/admin/orders/${order.id}`} className="font-semibold text-gray-900 hover:text-orange-600">
+          <Link to={`/admin/orders/${order.id}`} className="font-semibold text-neutral-900 hover:text-brand-900">
             {formatOrderCode(order.code)}
           </Link>
-          <p className="max-w-xs truncate text-xs text-gray-500">{itemsSummary(order, t)}</p>
-          <p className="text-xs font-medium text-gray-700">{formatMoney(order.total)}</p>
+          <p className="max-w-xs truncate text-xs text-neutral-500">{itemsSummary(order, t)}</p>
+          <p className="text-xs font-medium text-neutral-700">{formatMoney(order.total)}</p>
         </>
       ),
     },
@@ -87,7 +87,7 @@ function AdminOrdersPage() {
       header: t("admin.orders.columnStore"),
       className: "hidden md:table-cell",
       cell: (order) => (
-        <Link to={`/admin/users/${order.store_id}`} className="text-gray-700 hover:text-orange-600">
+        <Link to={`/admin/users/${order.store_id}`} className="text-neutral-700 hover:text-brand-900">
           {order.store_name || order.store_email}
         </Link>
       ),
@@ -97,7 +97,7 @@ function AdminOrdersPage() {
       header: t("admin.orders.columnRestaurant"),
       className: "hidden md:table-cell",
       cell: (order) => (
-        <Link to={`/admin/users/${order.restaurant_id}`} className="text-gray-700 hover:text-orange-600">
+        <Link to={`/admin/users/${order.restaurant_id}`} className="text-neutral-700 hover:text-brand-900">
           {order.restaurant_name || order.restaurant_email}
         </Link>
       ),
@@ -107,12 +107,12 @@ function AdminOrdersPage() {
       header: t("admin.orders.columnPickup"),
       sortKey: "pickup_at",
       className: "hidden lg:table-cell",
-      cellClassName: "whitespace-nowrap text-gray-600",
+      cellClassName: "whitespace-nowrap text-neutral-600",
       cell: (order) => (
         <>
           {formatDateTime(order.pickup_at)}
           {order.is_overdue && (
-            <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600">
+            <span className="ml-2 rounded-full bg-danger-50 px-2 py-0.5 text-xs font-semibold text-danger-700">
               {t("admin.orders.late")}
             </span>
           )}
@@ -149,7 +149,7 @@ function AdminOrdersPage() {
       />
 
       {userId && (
-        <p className="flex items-center justify-between gap-3 rounded-xl border border-orange-100 bg-orange-50/60 px-4 py-2 text-sm text-orange-800">
+        <p className="flex items-center justify-between gap-3 rounded-xl border border-brand-100 bg-brand-50/60 px-4 py-2 text-sm text-brand-800">
           {t("admin.orders.filteredByUser")}
           <button
             type="button"

@@ -173,8 +173,8 @@ function StoresPage() {
           aria-pressed={showFavoritesOnly}
           className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${
             showFavoritesOnly
-              ? "border-orange-500 bg-orange-500 text-white shadow-sm shadow-orange-500/20"
-              : "border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:text-orange-600"
+              ? "border-brand-800 bg-brand-800 text-white shadow-sm shadow-brand-800/20"
+              : "border-neutral-200 bg-white text-neutral-700 hover:border-brand-300 hover:text-brand-900"
           }`}
         >
           <Heart className={`h-4 w-4 ${showFavoritesOnly ? "fill-current" : ""}`} />
@@ -182,7 +182,7 @@ function StoresPage() {
           {favoriteIds.length > 0 && (
             <span
               className={`rounded-full px-1.5 text-xs font-semibold ${
-                showFavoritesOnly ? "bg-white/25 text-white" : "bg-orange-100 text-orange-700"
+                showFavoritesOnly ? "bg-white/25 text-white" : "bg-brand-100 text-brand-800"
               }`}
             >
               {favoriteIds.length}

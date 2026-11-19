@@ -107,16 +107,16 @@ function AdminCompanyDetailsPage() {
   const { company, hqUsers, branches, actions } = details;
   const actionTypes = t("admin.actionTypes", { returnObjects: true }) as Record<string, string>;
   const secondaryButton =
-    "inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50";
+    "inline-flex cursor-pointer items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50";
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
       <Breadcrumbs items={[section, { label: company.name }]} />
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-start gap-4">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-orange-50 text-orange-600">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-brand-50 text-brand-800">
               {company.logo_url ? (
                 <img src={assetUrl(company.logo_url)} alt={company.name} className="h-full w-full object-cover" />
               ) : (
@@ -124,14 +124,14 @@ function AdminCompanyDetailsPage() {
               )}
             </span>
             <div className="min-w-0">
-              <h1 className="truncate text-2xl font-bold tracking-tight text-gray-900">{company.name}</h1>
+              <h1 className="truncate text-2xl font-bold tracking-tight text-neutral-900">{company.name}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 {company.is_blocked ? (
-                  <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                  <span className="rounded-full bg-danger-50 px-2.5 py-1 text-xs font-semibold text-danger-700">
                     {t("admin.common.blocked")}
                   </span>
                 ) : (
-                  <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
+                  <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-800">
                     {t("admin.common.active")}
                   </span>
                 )}
@@ -148,7 +148,7 @@ function AdminCompanyDetailsPage() {
               <button
                 type="button"
                 onClick={() => setDialog("unblock")}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-brand-800 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-900"
               >
                 <CircleCheck className="h-4 w-4" />
                 {t("admin.companyDetails.unblock")}
@@ -157,7 +157,7 @@ function AdminCompanyDetailsPage() {
               <button
                 type="button"
                 onClick={() => setDialog("block")}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-danger-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-danger-700"
               >
                 <Ban className="h-4 w-4" />
                 {t("admin.companyDetails.block")}
@@ -167,20 +167,20 @@ function AdminCompanyDetailsPage() {
         </div>
 
         {company.is_blocked && (
-          <div className="mt-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mt-5 rounded-xl border border-danger-100 bg-danger-50 px-4 py-3 text-sm text-danger-700">
             <p className="font-semibold">{t("admin.companyDetails.blockedSection")}</p>
             <p className="mt-1">
               {t("admin.common.reasonLabel")}: {company.blocked_reason}
             </p>
             {company.blocked_at && (
-              <p className="mt-1 text-xs text-red-600">
+              <p className="mt-1 text-xs text-danger-700">
                 {t("admin.userDetails.blockedAt")}: {formatDateTime(company.blocked_at)}
               </p>
             )}
           </div>
         )}
 
-        <dl className="mt-6 grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2">
+        <dl className="mt-6 grid grid-cols-1 gap-4 rounded-xl bg-neutral-50 p-4 sm:grid-cols-2">
           <DetailItem icon={Building2} label={t("admin.companyDetails.name")} value={company.name} />
           <DetailItem
             icon={Clock}
@@ -192,46 +192,46 @@ function AdminCompanyDetailsPage() {
               icon={FileText}
               label={t("admin.companyDetails.description")}
               value={company.description || "—"}
-              valueClassName="whitespace-pre-line font-normal text-gray-900"
+              valueClassName="whitespace-pre-line font-normal text-neutral-900"
             />
           </div>
         </dl>
       </section>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
-          <KeyRound className="h-4 w-4 text-orange-600" />
+      <section className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-neutral-900">
+          <KeyRound className="h-4 w-4 text-brand-800" />
           {t("admin.companyDetails.hqSection")}
         </h2>
         {hqUsers.length === 0 ? (
-          <p className="text-sm text-gray-500">—</p>
+          <p className="text-sm text-neutral-500">—</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-neutral-100">
             {hqUsers.map((hq) => {
               const fullName = `${hq.first_name ?? ""} ${hq.last_name ?? ""}`.trim();
               return (
                 <li key={hq.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
-                    <Link to={`/admin/users/${hq.id}`} className="font-medium text-gray-900 hover:text-orange-600">
+                    <Link to={`/admin/users/${hq.id}`} className="font-medium text-neutral-900 hover:text-brand-900">
                       {hq.email}
                     </Link>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-neutral-500">
                       {[fullName, hq.phone].filter(Boolean).join(" · ") || t("admin.companyDetails.profileNotFilled")}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {hq.is_blocked && (
-                      <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                      <span className="rounded-full bg-danger-50 px-2.5 py-1 text-xs font-semibold text-danger-700">
                         {t("admin.common.blocked")}
                       </span>
                     )}
                     {!hq.last_login_at && (
-                      <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                      <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-700">
                         {t("admin.userDetails.neverLoggedIn")}
                       </span>
                     )}
                     {hq.must_change_password && (
-                      <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                      <span className="rounded-full bg-info-50 px-2.5 py-1 text-xs font-semibold text-info-700">
                         {t("admin.common.pendingPassword")}
                       </span>
                     )}
@@ -243,23 +243,23 @@ function AdminCompanyDetailsPage() {
         )}
       </section>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
-          <Store className="h-4 w-4 text-orange-600" />
+      <section className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-neutral-900">
+          <Store className="h-4 w-4 text-brand-800" />
           {t("admin.companyDetails.branchesSection")}
         </h2>
         {branches.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-200 px-4 py-8 text-center">
-            <p className="font-medium text-gray-700">{t("admin.companyDetails.noBranchesTitle")}</p>
-            <p className="mt-1 text-sm text-gray-500">{t("admin.companyDetails.noBranchesSubtitle")}</p>
+          <div className="rounded-xl border border-dashed border-neutral-200 px-4 py-8 text-center">
+            <p className="font-medium text-neutral-700">{t("admin.companyDetails.noBranchesTitle")}</p>
+            <p className="mt-1 text-sm text-neutral-500">{t("admin.companyDetails.noBranchesSubtitle")}</p>
           </div>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-neutral-100">
             {branches.map((branch) => (
               <li key={branch.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <Link to={`/admin/users/${branch.id}`} className="min-w-0 hover:text-orange-600">
-                  <p className="truncate font-medium text-gray-900">{branch.business_name || branch.email}</p>
-                  <p className="text-sm text-gray-500">
+                <Link to={`/admin/users/${branch.id}`} className="min-w-0 hover:text-brand-900">
+                  <p className="truncate font-medium text-neutral-900">{branch.business_name || branch.email}</p>
+                  <p className="text-sm text-neutral-500">
                     {[branch.city, t("company.branches.activeProducts", { count: branch.active_products })]
                       .filter(Boolean)
                       .join(" · ")}
@@ -297,27 +297,27 @@ function AdminCompanyDetailsPage() {
         </button>
       </section>
 
-      <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
-          <History className="h-4 w-4 text-orange-600" />
+      <section className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-neutral-900">
+          <History className="h-4 w-4 text-brand-800" />
           {t("admin.companyDetails.historySection")}
         </h2>
         {actions.length === 0 ? (
-          <p className="text-sm text-gray-500">{t("admin.userDetails.noHistory")}</p>
+          <p className="text-sm text-neutral-500">{t("admin.userDetails.noHistory")}</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-neutral-100">
             {actions.map((action) => (
               <li key={action.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-neutral-900">
                     {actionTypes[action.action] ?? action.action}
                     {action.target_business_name && (
-                      <span className="font-normal text-gray-600">: {action.target_business_name}</span>
+                      <span className="font-normal text-neutral-600">: {action.target_business_name}</span>
                     )}
                   </p>
-                  {action.reason && <p className="mt-0.5 text-sm text-gray-600">{action.reason}</p>}
+                  {action.reason && <p className="mt-0.5 text-sm text-neutral-600">{action.reason}</p>}
                 </div>
-                <p className="shrink-0 text-xs text-gray-500 sm:text-right">
+                <p className="shrink-0 text-xs text-neutral-500 sm:text-right">
                   {formatDateTime(action.created_at)}
                   <br />
                   <span className="inline-flex items-center gap-1">

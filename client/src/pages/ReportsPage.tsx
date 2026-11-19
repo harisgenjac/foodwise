@@ -58,7 +58,7 @@ function ReportsPage() {
         downloading={downloading}
         onDownload={download}
       />
-      <p className="text-center text-xs text-gray-400">{t("reports.note")}</p>
+      <p className="text-center text-xs text-neutral-500">{t("reports.note")}</p>
     </div>
   );
 }

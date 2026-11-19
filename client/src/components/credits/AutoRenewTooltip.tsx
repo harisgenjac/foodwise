@@ -12,13 +12,13 @@ function AutoRenewTooltip({ endOnPhones = false }: { endOnPhones?: boolean }) {
       <button
         type="button"
         aria-label={text}
-        className="cursor-help rounded-full p-0.5 text-gray-400 transition-colors hover:text-gray-600 focus:text-gray-600 focus:outline-none"
+        className="cursor-help rounded-full p-0.5 text-neutral-500 transition-colors hover:text-neutral-600 focus:text-neutral-600 focus:outline-none"
       >
         <Info className="h-4 w-4" />
       </button>
       <span
         role="tooltip"
-        className={`pointer-events-none absolute bottom-full z-10 mb-2 hidden w-64 max-w-[calc(100vw-2rem)] rounded-lg bg-gray-900 px-3 py-2 text-xs leading-snug text-white shadow-lg group-hover:block group-focus-within:block ${
+        className={`pointer-events-none absolute bottom-full z-10 mb-2 hidden w-64 max-w-[calc(100vw-2rem)] rounded-lg bg-neutral-900 px-3 py-2 text-xs leading-snug text-white shadow-lg group-hover:block group-focus-within:block ${
           endOnPhones ? "right-0 md:right-auto md:left-1/2 md:-translate-x-1/2" : "left-1/2 -translate-x-1/2"
         }`}
       >

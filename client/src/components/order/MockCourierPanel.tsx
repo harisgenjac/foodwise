@@ -46,8 +46,8 @@ function MockCourierPanel({ orderId, delivery, onDone }: MockCourierPanelProps) 
   };
 
   return (
-    <section data-testid="mock-courier" className="rounded-2xl border border-dashed border-violet-300 bg-violet-50 p-4">
-      <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-violet-800">
+    <section data-testid="mock-courier" className="rounded-2xl border border-dashed border-info-300 bg-info-50 p-4">
+      <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-info-800">
         <FlaskConical className="h-4 w-4" />
         {t("orders.mockCourier.title")}
       </p>
@@ -58,7 +58,7 @@ function MockCourierPanel({ orderId, delivery, onDone }: MockCourierPanelProps) 
             type="button"
             disabled={busy}
             onClick={() => simulate(step)}
-            className="cursor-pointer rounded-lg border border-violet-200 bg-white px-3 py-1.5 text-sm font-medium text-violet-800 transition-colors hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cursor-pointer rounded-lg border border-info-200 bg-white px-3 py-1.5 text-sm font-medium text-info-800 transition-colors hover:bg-info-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {t(`orders.mockCourier.steps.${step}`)}
           </button>

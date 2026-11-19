@@ -39,7 +39,7 @@ function ForgotPasswordPage() {
   const backToLogin = (
     <Link
       to="/login"
-      className="mt-6 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-orange-600 hover:text-orange-700 hover:underline"
+      className="mt-6 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-brand-800 hover:text-brand-900 hover:underline"
     >
       <ArrowLeft className="h-4 w-4" />
       {t("auth.forgot.backToLogin")}
@@ -49,11 +49,11 @@ function ForgotPasswordPage() {
   if (sentMessage) {
     return (
       <AuthLayout title={t("auth.forgot.title")}>
-        <p role="status" className="mt-4 flex items-start gap-2 rounded-xl border border-green-200 bg-green-50 px-3 py-3 text-sm text-green-800">
+        <p role="status" className="mt-4 flex items-start gap-2 rounded-xl border border-success-200 bg-success-100 px-3 py-3 text-sm text-success-800">
           <CircleCheck className="mt-0.5 h-4 w-4 shrink-0" />
           {sentMessage}
         </p>
-        <p className="mt-4 text-sm text-gray-500">{t("auth.forgot.checkInbox")}</p>
+        <p className="mt-4 text-sm text-neutral-500">{t("auth.forgot.checkInbox")}</p>
         {backToLogin}
       </AuthLayout>
     );
@@ -62,7 +62,7 @@ function ForgotPasswordPage() {
   return (
     <AuthLayout title={t("auth.forgot.title")} subtitle={t("auth.forgot.subtitle")}>
       {error && (
-        <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+        <p className="mb-4 rounded-xl border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700">{error}</p>
       )}
       <form ref={formRef} noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
         <FormField label={t("auth.email")} icon={Mail} required error={errorFor("email")}>
@@ -80,7 +80,7 @@ function ForgotPasswordPage() {
         <button
           type="submit"
           disabled={sending}
-          className="mt-2 inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 disabled:opacity-60"
+          className="mt-2 inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-brand-800 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900 disabled:opacity-60"
         >
           {t("auth.forgot.submit")}
         </button>

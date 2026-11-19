@@ -21,7 +21,7 @@ function PickerField({ label, required = false, error, onBlur, children }: Picke
   const errorId = useId();
   return (
     <div>
-      <span id={labelId} className={`mb-1.5 block text-sm font-medium text-gray-700 ${required ? requiredMark : ""}`}>
+      <span id={labelId} className={`mb-1.5 block text-sm font-medium text-neutral-700 ${required ? requiredMark : ""}`}>
         {label}
       </span>
       <div
@@ -32,7 +32,7 @@ function PickerField({ label, required = false, error, onBlur, children }: Picke
         onBlur={(e) => {
           if (onBlur && !e.currentTarget.contains(e.relatedTarget)) onBlur();
         }}
-        className={error ? "-m-1 rounded-2xl p-1 ring-2 ring-red-300" : undefined}
+        className={error ? "-m-1 rounded-2xl p-1 ring-2 ring-danger-300" : undefined}
       >
         {children}
       </div>

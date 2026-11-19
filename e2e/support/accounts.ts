@@ -8,17 +8,17 @@ export const API_URL = "http://localhost:3100";
 export const APP_URL = "http://localhost:4173";
 
 export const ACCOUNTS = {
-  admin: { email: "e2e-admin@foodwise.test", firstName: "Ena", lastName: "Admin" },
-  store: { email: "e2e-store@foodwise.test", firstName: "Sara", lastName: "Prodavac", businessName: "E2E Prodavnica" },
-  restaurant: { email: "e2e-restaurant@foodwise.test", firstName: "Rijad", lastName: "Kuhar", businessName: "E2E Restoran" },
+  admin: { email: "e2e-admin@josvrijedi.test", firstName: "Ena", lastName: "Admin" },
+  store: { email: "e2e-store@josvrijedi.test", firstName: "Sara", lastName: "Prodavac", businessName: "E2E Prodavnica" },
+  restaurant: { email: "e2e-restaurant@josvrijedi.test", firstName: "Rijad", lastName: "Kuhar", businessName: "E2E Restoran" },
   // Nearby offers (nearby-offers.spec.ts): 7 km and 73 km from the restaurant in Visoko.
-  brezaStore: { email: "e2e-breza@foodwise.test", firstName: "Belma", lastName: "Breza", businessName: "E2E Breza Market" },
-  tuzlaStore: { email: "e2e-tuzla@foodwise.test", firstName: "Tarik", lastName: "Tuzla", businessName: "E2E Tuzla Market" },
+  brezaStore: { email: "e2e-breza@josvrijedi.test", firstName: "Belma", lastName: "Breza", businessName: "E2E Breza Market" },
+  tuzlaStore: { email: "e2e-tuzla@josvrijedi.test", firstName: "Tarik", lastName: "Tuzla", businessName: "E2E Tuzla Market" },
   // Only block-store.spec.ts uses it: it is blocked and unblocked there.
-  blockStore: { email: "e2e-block@foodwise.test", firstName: "Bakir", lastName: "Blokada", businessName: "E2E Blokada" },
+  blockStore: { email: "e2e-block@josvrijedi.test", firstName: "Bakir", lastName: "Blokada", businessName: "E2E Blokada" },
   // Company "E2E Lanac": its headquarters login and its one branch in Visoko (branch-deactivation.spec.ts).
-  hq: { email: "e2e-hq@foodwise.test", firstName: "Hana", lastName: "Centrala", company: "E2E Lanac" },
-  branch: { email: "e2e-branch@foodwise.test", firstName: "Benjamin", lastName: "Poslovnica", businessName: "E2E Lanac Visoko" },
+  hq: { email: "e2e-hq@josvrijedi.test", firstName: "Hana", lastName: "Centrala", company: "E2E Lanac" },
+  branch: { email: "e2e-branch@josvrijedi.test", firstName: "Benjamin", lastName: "Poslovnica", businessName: "E2E Lanac Visoko" },
 } as const;
 
 export type SeededRole = keyof typeof ACCOUNTS;

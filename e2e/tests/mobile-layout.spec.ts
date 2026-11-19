@@ -368,7 +368,7 @@ test.describe("admin", () => {
     const admin = await apiAs("admin");
     for (let i = 0; i < 21; i++) {
       const created = await admin.post("/api/admin/users", {
-        data: { role: "RESTAURANT", email: `e2e-page-${runId()}-${i}@foodwise.test`, password: "Privremena-123" },
+        data: { role: "RESTAURANT", email: `e2e-page-${runId()}-${i}@josvrijedi.test`, password: "Privremena-123" },
       });
       expect(created.ok()).toBe(true);
     }

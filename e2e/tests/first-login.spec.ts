@@ -6,7 +6,7 @@ test.use({ storageState: storageState("admin") });
 
 test("a new restaurant changes its temporary password and fills in its profile before using the app", async ({ page }) => {
   const id = runId();
-  const email = `e2e-rest-${id}@foodwise.test`;
+  const email = `e2e-rest-${id}@josvrijedi.test`;
   const temporaryPassword = `Privremena-${id}`;
   const newPassword = `Nova-lozinka-${id}`;
   const firstName = `Amra${id}`;

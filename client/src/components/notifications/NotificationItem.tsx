@@ -35,8 +35,8 @@ function NotificationItem({ notification, compact = false, onNavigate }: Notific
 
   return (
     <div
-      className={`group relative flex items-start transition-colors hover:bg-gray-50 ${
-        unread ? "bg-orange-50/50" : ""
+      className={`group relative flex items-start transition-colors hover:bg-neutral-50 ${
+        unread ? "bg-brand-50/50" : ""
       }`}
     >
       <button
@@ -56,24 +56,24 @@ function NotificationItem({ notification, compact = false, onNavigate }: Notific
         <span className={`min-w-0 flex-1 ${compact ? "" : "pr-10"}`}>
           <span
             className={`block line-clamp-2 ${compact ? "text-sm" : "text-[15px]"} ${
-              unread ? "font-semibold text-gray-900" : "text-gray-600"
+              unread ? "font-semibold text-neutral-900" : "text-neutral-600"
             }`}
           >
             {getNotificationText(notification, t, i18n.language)}
           </span>
-          <span className={`mt-1 block text-xs ${unread ? "text-orange-600" : "text-gray-400"}`}>
+          <span className={`mt-1 block text-xs ${unread ? "text-brand-800" : "text-neutral-500"}`}>
             {formatRelativeTime(notification.created_at, t, i18n.language)}
           </span>
         </span>
         {!compact && (
-          <ChevronRight className="mt-3 h-4 w-4 shrink-0 text-gray-300 transition-transform group-hover:translate-x-0.5 group-hover:text-orange-500" />
+          <ChevronRight className="mt-3 h-4 w-4 shrink-0 text-neutral-300 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-900" />
         )}
       </button>
 
       {unread && (
         <span
           aria-hidden
-          className={`absolute h-2 w-2 rounded-full bg-orange-500 transition-opacity group-hover:opacity-0 ${
+          className={`absolute h-2 w-2 rounded-full bg-brand-800 transition-opacity group-hover:opacity-0 ${
             compact ? "right-4 top-4" : "right-[3.25rem] top-5"
           }`}
         />
@@ -84,7 +84,7 @@ function NotificationItem({ notification, compact = false, onNavigate }: Notific
         onClick={() => deleteNotification(notification)}
         aria-label={t("notifications.delete")}
         title={t("notifications.delete")}
-        className={`absolute cursor-pointer rounded-full p-1.5 text-gray-400 opacity-0 transition-all hover:bg-red-50 hover:text-red-600 focus:opacity-100 group-hover:opacity-100 ${
+        className={`absolute cursor-pointer rounded-full p-1.5 text-neutral-500 opacity-0 transition-all hover:bg-danger-50 hover:text-danger-700 focus:opacity-100 group-hover:opacity-100 ${
           compact ? "right-2 top-2.5" : "right-10 top-3.5"
         }`}
       >

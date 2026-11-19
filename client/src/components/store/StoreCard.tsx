@@ -29,10 +29,10 @@ function StoreCard({ store, isFavorite, onToggleFavorite }: StoreCardProps) {
   return (
     <div
       onClick={() => navigate(`/stores/${store.id}`)}
-      className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+      className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
     >
-      <div className="relative h-20 bg-linear-to-br from-orange-50 via-amber-50/60 to-white">
-        <div className="pointer-events-none absolute -right-8 -top-12 h-32 w-32 rounded-full bg-orange-200/30 blur-2xl" />
+      <div className="relative h-20 bg-linear-to-br from-brand-50 via-warning-50/60 to-white">
+        <div className="pointer-events-none absolute -right-8 -top-12 h-32 w-32 rounded-full bg-brand-200/30 blur-2xl" />
         <div className="absolute top-3 right-3">
           <FavoriteButton isFavorite={isFavorite} onToggle={onToggleFavorite} />
         </div>
@@ -42,18 +42,18 @@ function StoreCard({ store, isFavorite, onToggleFavorite }: StoreCardProps) {
         <StoreAvatar store={store} className="relative z-10 -mt-9 h-16 w-16 rounded-2xl text-xl" />
 
         <div>
-          <h3 className="line-clamp-1 text-lg font-bold text-gray-800">{store.business_name}</h3>
+          <h3 className="line-clamp-1 text-lg font-bold text-neutral-800">{store.business_name}</h3>
           <ChainLabel company={store.company_name} className="mt-1 max-w-full" />
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
             {store.city && (
-              <span className="inline-flex items-center gap-1 text-gray-500">
+              <span className="inline-flex items-center gap-1 text-neutral-500">
                 <MapPin className="h-3.5 w-3.5" />
                 {formatCityDistance(t, store.city, store.distance_km)}
               </span>
             )}
             <span
               className={`rounded-full px-2 py-0.5 font-semibold ${
-                activeProducts > 0 ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"
+                activeProducts > 0 ? "bg-brand-50 text-brand-800" : "bg-neutral-100 text-neutral-500"
               }`}
             >
               {activeProducts > 0
@@ -64,14 +64,14 @@ function StoreCard({ store, isFavorite, onToggleFavorite }: StoreCardProps) {
           </div>
         </div>
 
-        <p className="line-clamp-2 text-sm text-gray-500">
+        <p className="line-clamp-2 text-sm text-neutral-500">
           {store.description || t("store.noDescription")}
         </p>
 
-        <ul className="flex flex-col gap-2 rounded-xl bg-gray-50 p-3 text-sm">
+        <ul className="flex flex-col gap-2 rounded-xl bg-neutral-50 p-3 text-sm">
           {contacts.map(({ icon: Icon, value }, index) => (
-            <li key={index} className="flex items-center gap-2 text-gray-700">
-              <Icon className="h-4 w-4 shrink-0 text-orange-500" strokeWidth={1.8} />
+            <li key={index} className="flex items-center gap-2 text-neutral-700">
+              <Icon className="h-4 w-4 shrink-0 text-brand-800" strokeWidth={1.8} />
               <span className="truncate">{value || "—"}</span>
             </li>
           ))}
@@ -80,7 +80,7 @@ function StoreCard({ store, isFavorite, onToggleFavorite }: StoreCardProps) {
         <Link
           to={`/stores/${store.id}`}
           onClick={(e) => e.stopPropagation()}
-          className="mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-orange-50 py-2.5 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
+          className="mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand-50 py-2.5 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-900 hover:text-white"
         >
           {t("store.viewOffer")}
           <ArrowRight className="h-4 w-4" />

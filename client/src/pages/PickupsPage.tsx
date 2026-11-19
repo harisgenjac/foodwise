@@ -134,7 +134,7 @@ function PickupsPage() {
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div role="tablist" className="flex w-full rounded-full border border-gray-100 bg-white p-1 shadow-sm sm:inline-flex sm:w-fit">
+        <div role="tablist" className="flex w-full rounded-full border border-neutral-100 bg-white p-1 shadow-sm sm:inline-flex sm:w-fit">
           {tabs.map(({ key, label, icon: Icon, count }) => (
             <button
               key={key}
@@ -143,7 +143,7 @@ function PickupsPage() {
               aria-selected={scope === key}
               onClick={() => setScope(key)}
               className={`relative inline-flex min-h-11 flex-1 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-2 py-1.5 text-sm sm:min-h-0 sm:flex-none sm:px-4 font-medium transition-colors ${
-                scope === key ? "bg-orange-500 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"
+                scope === key ? "bg-brand-800 text-white shadow-sm" : "text-neutral-600 hover:bg-neutral-50"
               }`}
             >
               <Icon className="hidden h-4 w-4 sm:block" strokeWidth={1.8} />
@@ -151,14 +151,14 @@ function PickupsPage() {
               {!!count && (
                 <span
                   className={`rounded-full px-1.5 text-xs font-semibold ${
-                    scope === key ? "bg-white/25 text-white" : "bg-orange-100 text-orange-700"
+                    scope === key ? "bg-white/25 text-white" : "bg-brand-100 text-brand-800"
                   }`}
                 >
                   {count}
                 </span>
               )}
               {key === "today" && !!counts?.overdue && (
-                <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500" />
+                <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-danger-500" />
               )}
             </button>
           ))}
@@ -193,7 +193,7 @@ function PickupsPage() {
           <section key={group.key}>
             <h2
               className={`mb-3 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wide ${
-                group.overdue ? "text-red-600" : "text-gray-400"
+                group.overdue ? "text-danger-700" : "text-neutral-500"
               }`}
             >
               {group.overdue && <AlertTriangle className="h-4 w-4" />}
@@ -202,7 +202,7 @@ function PickupsPage() {
               {!isHistory && (
                 <span
                   className={`rounded-full px-1.5 py-0.5 text-[11px] ${
-                    group.overdue ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-500"
+                    group.overdue ? "bg-danger-100 text-danger-700" : "bg-neutral-100 text-neutral-500"
                   }`}
                 >
                   {group.items.length}

@@ -95,7 +95,7 @@ function SoldInShopModal({ product, onClose, onRecorded }: SoldInShopModalProps)
     <button
       type="button"
       onClick={onClose}
-      className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+      className="flex-1 cursor-pointer rounded-xl bg-neutral-100 py-2.5 font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
     >
       {t("soldInShop.cancel")}
     </button>
@@ -110,13 +110,13 @@ function SoldInShopModal({ product, onClose, onRecorded }: SoldInShopModalProps)
     return (
       <Modal onClose={closeAfterShortage} labelledBy={titleId}>
         <ModalHeader>
-          <h3 id={titleId} className="flex items-center gap-2 text-lg font-bold text-gray-900">
-            <Store className="h-5 w-5 text-orange-600" />
+          <h3 id={titleId} className="flex items-center gap-2 text-lg font-bold text-neutral-900">
+            <Store className="h-5 w-5 text-brand-800" />
             {t("soldInShop.shortageTitle")}
           </h3>
         </ModalHeader>
         <ModalBody>
-          <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <div className="space-y-3 rounded-xl border border-warning-200 bg-warning-50 p-4 text-sm text-warning-900">
             <p className="flex items-start gap-2 font-semibold">
               <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
               {t("soldInShop.shortageText", { amount: roundQuantity(shortage.amount), unit, product: product.name })}
@@ -124,7 +124,7 @@ function SoldInShopModal({ product, onClose, onRecorded }: SoldInShopModalProps)
             <ul className="space-y-1.5">
               {shortage.orders.map((order) => (
                 <li key={order.id}>
-                  <Link to={`/orders/${order.id}`} onClick={closeAfterShortage} className="font-semibold text-orange-700 underline underline-offset-2 hover:text-orange-800">
+                  <Link to={`/orders/${order.id}`} onClick={closeAfterShortage} className="font-semibold text-brand-800 underline underline-offset-2 hover:text-brand-900">
                     {t("soldInShop.shortageOrder", {
                       code: formatOrderCode(order.code),
                       restaurant: order.restaurant_name ?? "",
@@ -141,7 +141,7 @@ function SoldInShopModal({ product, onClose, onRecorded }: SoldInShopModalProps)
           <button
             type="button"
             onClick={closeAfterShortage}
-            className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+            className="flex-1 cursor-pointer rounded-xl bg-neutral-100 py-2.5 font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
           >
             {t("soldInShop.close")}
           </button>
@@ -153,17 +153,17 @@ function SoldInShopModal({ product, onClose, onRecorded }: SoldInShopModalProps)
   return (
     <Modal onClose={onClose} labelledBy={titleId}>
       <ModalHeader>
-        <h3 id={titleId} className="flex items-center gap-2 text-lg font-bold text-gray-900">
-          <Store className="h-5 w-5 text-orange-600" />
+        <h3 id={titleId} className="flex items-center gap-2 text-lg font-bold text-neutral-900">
+          <Store className="h-5 w-5 text-brand-800" />
           {t("soldInShop.title")}
         </h3>
-        <p className="mt-1 text-sm text-gray-500">{t("soldInShop.text")}</p>
+        <p className="mt-1 text-sm text-neutral-500">{t("soldInShop.text")}</p>
       </ModalHeader>
 
       {confirming ? (
         <>
           <ModalBody>
-            <div className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <div className="space-y-3 rounded-xl border border-warning-200 bg-warning-50 p-4 text-sm text-warning-900">
               <p className="font-semibold">{product.name}</p>
               <p>{t("soldInShop.confirmAmount", { amount: roundQuantity(amount), unit })}</p>
               <p>
@@ -194,7 +194,7 @@ function SoldInShopModal({ product, onClose, onRecorded }: SoldInShopModalProps)
               type="button"
               onClick={record}
               disabled={submitting}
-              className="flex-1 cursor-pointer rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-60"
+              className="flex-1 cursor-pointer rounded-xl bg-brand-800 py-2.5 font-semibold text-white transition-colors hover:bg-brand-900 disabled:opacity-60"
             >
               {t("soldInShop.confirmButton")}
             </button>
@@ -203,13 +203,13 @@ function SoldInShopModal({ product, onClose, onRecorded }: SoldInShopModalProps)
       ) : (
         <form ref={formRef} noValidate onSubmit={goToConfirm} className={modalFormStyle}>
           <ModalBody>
-            <p className="mb-4 rounded-xl bg-gray-50 p-3 text-sm text-gray-700">
-              <span className="font-semibold text-gray-900">{product.name}</span>
-              <span className="text-gray-400"> · </span>
+            <p className="mb-4 rounded-xl bg-neutral-50 p-3 text-sm text-neutral-700">
+              <span className="font-semibold text-neutral-900">{product.name}</span>
+              <span className="text-neutral-500"> · </span>
               {t("soldInShop.free", { amount: roundQuantity(available), unit })}
             </p>
             {max <= 0 ? (
-              <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">{t("soldInShop.nothingFree")}</p>
+              <p className="rounded-xl bg-warning-50 px-4 py-3 text-sm text-warning-800">{t("soldInShop.nothingFree")}</p>
             ) : (
               <div className="space-y-4">
                 <FormField label={t("soldInShop.quantity")} icon={Scale} suffix={unit} required error={errorFor("quantity")}>
@@ -225,7 +225,7 @@ function SoldInShopModal({ product, onClose, onRecorded }: SoldInShopModalProps)
                     className={`${inputStyle} pr-14`}
                   />
                 </FormField>
-                <p className="text-xs text-gray-500">{t("soldInShop.hint")}</p>
+                <p className="text-xs text-neutral-500">{t("soldInShop.hint")}</p>
                 <RequiredHint />
               </div>
             )}
@@ -235,7 +235,7 @@ function SoldInShopModal({ product, onClose, onRecorded }: SoldInShopModalProps)
             {max > 0 && (
               <button
                 type="submit"
-                className="flex-1 cursor-pointer rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600"
+                className="flex-1 cursor-pointer rounded-xl bg-brand-800 py-2.5 font-semibold text-white transition-colors hover:bg-brand-900"
               >
                 {t("soldInShop.next")}
               </button>

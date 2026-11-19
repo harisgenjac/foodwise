@@ -47,11 +47,11 @@ describe("ConfirmModal", () => {
     const { unmount } = render(
       <ConfirmModal title="A" message="m" confirmLabel="Prihvati" variant="success" busy={false} onConfirm={vi.fn()} onClose={vi.fn()} />,
     );
-    expect(screen.getByRole("button", { name: "Prihvati" })).toHaveClass("bg-green-600");
+    expect(screen.getByRole("button", { name: "Prihvati" })).toHaveClass("bg-brand-800");
     unmount();
 
     renderModal();
-    expect(confirmButton()).toHaveClass("bg-red-600");
+    expect(confirmButton()).toHaveClass("bg-danger-600");
   });
 
   it("starts on Cancel for danger and on the action for success", () => {

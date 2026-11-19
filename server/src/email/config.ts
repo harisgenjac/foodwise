@@ -18,7 +18,7 @@ export interface EmailConfig {
 
 export class EmailConfigError extends Error {}
 
-export const DEFAULT_EMAIL_FROM = "FoodWise <no-reply@foodwise.local>";
+export const DEFAULT_EMAIL_FROM = "Još vrijedi <no-reply@josvrijedi.local>";
 const DEFAULT_SMTP_HOST = "localhost";
 // Mailpit's SMTP port.
 export const DEFAULT_SMTP_PORT = 1025;
@@ -30,7 +30,7 @@ const read = (env: NodeJS.ProcessEnv, name: string): string | null => {
   return value ? value : null;
 };
 
-// "FoodWise <no-reply@example.com>" or a bare address.
+// "Još vrijedi <no-reply@example.com>" or a bare address.
 const isValidSender = (from: string) => {
   const match = /^[^<>]*<([^<>]+)>$/.exec(from);
   return isValidEmail(match ? match[1]!.trim() : from);

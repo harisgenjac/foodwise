@@ -67,12 +67,12 @@ describe("ORDER_CREATED email", () => {
     expect(email.subject).toBe("Nova narudžba #K7PM od Restoran Ćevap & Co");
 
     expect(email.html).toContain('<html lang="bs">');
-    expect(email.html).toContain(">FoodWise<");
+    expect(email.html).toContain(">Još vrijedi<");
     expect(email.html).toContain("Nova narudžba #K7PM</h1>");
     expect(email.html).toContain("Restoran Ćevap &amp; Co je poslao narudžbu #K7PM.");
     expect(email.html).toContain("06.11.2026. 14:30");
     expect(email.html).toContain(`href="${APP_URL}/orders/42"`);
-    expect(email.html).toContain("Ovu poruku ste dobili jer imate račun na platformi FoodWise.");
+    expect(email.html).toContain("Ovu poruku ste dobili jer imate račun na platformi Još vrijedi.");
 
     expect(email.text).toContain("Narudžba: #K7PM");
     expect(email.text).toContain("Restoran: Restoran Ćevap & Co");
@@ -368,7 +368,7 @@ describe("layout", () => {
     expect(email.html).not.toContain("white-space:nowrap");
     expect(email.text).toBe(
       [
-        "FoodWise",
+        "Još vrijedi",
         "",
         "Heading",
         "",
@@ -379,8 +379,8 @@ describe("layout", () => {
         "Open: https://app.example.com/x?a=1&b=2",
         "",
         "--",
-        "You received this email because you have a FoodWise account.",
-        "FoodWise – Još vrijedi",
+        "You received this email because you have a Još vrijedi account.",
+        "Još vrijedi",
         "",
       ].join("\n"),
     );

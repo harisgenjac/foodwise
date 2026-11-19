@@ -60,11 +60,11 @@ function AdminCreditRequestsPage() {
     (request.reviewed_at || request.admin_note) && (
       <>
         {request.reviewed_at && (
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-neutral-500">
             {request.reviewed_by_email} · {formatDateTime(request.reviewed_at)}
           </p>
         )}
-        {request.admin_note && <p className="mt-1 text-xs italic text-gray-500">{request.admin_note}</p>}
+        {request.admin_note && <p className="mt-1 text-xs italic text-neutral-500">{request.admin_note}</p>}
       </>
     );
   const columns: DataColumn<AdminCreditRequest>[] = [
@@ -74,13 +74,13 @@ function AdminCreditRequestsPage() {
       card: "title",
       cell: (request) => (
         <>
-          <Link to={`/admin/users/${request.user_id}`} className="font-medium text-gray-900 hover:text-orange-600">
+          <Link to={`/admin/users/${request.user_id}`} className="font-medium text-neutral-900 hover:text-brand-900">
             {creditRequestUser(request)}
           </Link>
           {creditRequestSender(request, t) && (
-            <p className="text-xs font-medium text-teal-700">{creditRequestSender(request, t)}</p>
+            <p className="text-xs font-medium text-brand-800">{creditRequestSender(request, t)}</p>
           )}
-          <p className="text-xs text-gray-500">{formatDateTime(request.created_at)}</p>
+          <p className="text-xs text-neutral-500">{formatDateTime(request.created_at)}</p>
         </>
       ),
     },
@@ -89,12 +89,12 @@ function AdminCreditRequestsPage() {
       header: t("admin.creditRequests.columnRequest"),
       cell: (request) => (
         <>
-          <p className="font-medium text-gray-800">{requestTypes[request.request_type]}</p>
-          <p className="text-xs text-gray-500">
+          <p className="font-medium text-neutral-800">{requestTypes[request.request_type]}</p>
+          <p className="text-xs text-neutral-500">
             {describeCreditRequest(request, t)} · {request.price} KM
           </p>
           {(request.auto_renew || request.source === "AUTO_RENEW") && (
-            <span className="mt-1 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+            <span className="mt-1 inline-flex rounded-full bg-info-50 px-2 py-0.5 text-xs font-semibold text-info-700">
               {t(request.source === "AUTO_RENEW" ? "admin.creditRequests.renewal" : "admin.creditRequests.autoRenew")}
             </span>
           )}
@@ -105,7 +105,7 @@ function AdminCreditRequestsPage() {
       id: "month",
       header: t("admin.creditRequests.columnMonth"),
       className: "hidden md:table-cell",
-      cellClassName: "whitespace-nowrap text-gray-600",
+      cellClassName: "whitespace-nowrap text-neutral-600",
       cell: (request) => formatCreditMonth(request.period_month, monthNames),
     },
     {
@@ -152,7 +152,7 @@ function AdminCreditRequestsPage() {
       />
 
       {userId && (
-        <p className="flex items-center justify-between gap-3 rounded-xl border border-orange-100 bg-orange-50/60 px-4 py-2 text-sm text-orange-800">
+        <p className="flex items-center justify-between gap-3 rounded-xl border border-brand-100 bg-brand-50/60 px-4 py-2 text-sm text-brand-800">
           {t("admin.creditRequests.filteredByUser")}
           <button
             type="button"

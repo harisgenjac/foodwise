@@ -22,7 +22,7 @@ interface InfoTooltipProps {
   label: string;
 }
 
-// An "i" button that explains a number: a dark teal card (role="tooltip", linked with
+// An "i" button that explains a number: a dark green card (role="tooltip", linked with
 // aria-describedby) with the icon, a lime title and the text. It opens on hover and keyboard focus,
 // and on tap on touch screens; a tap outside, Escape, leaving or blurring the button closes it.
 // The card sits above its positioned (`relative`) ancestor, e.g. the stat it explains: centred
@@ -71,7 +71,7 @@ function InfoTooltip({ icon: Icon, title, text, label }: InfoTooltipProps) {
         onFocus={show}
         onBlur={hide}
         onClick={show}
-        className="inline-flex cursor-help items-center justify-center rounded-full text-[#D9F99D] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D9F99D]"
+        className="inline-flex cursor-help items-center justify-center rounded-full text-brand-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-200"
       >
         <Info className="h-[19px] w-[19px]" aria-hidden="true" />
       </button>
@@ -79,12 +79,12 @@ function InfoTooltip({ icon: Icon, title, text, label }: InfoTooltipProps) {
         id={cardId}
         role="tooltip"
         data-open={open}
-        className={`pointer-events-none absolute bottom-[calc(100%+12px)] left-0 z-20 w-[min(260px,calc(100vw-64px))] rounded-xl bg-[#064E46] px-5 pt-[18px] pb-5 text-center shadow-lg transition-opacity duration-150 sm:left-1/2 sm:w-60 sm:-translate-x-1/2 ${
+        className={`pointer-events-none absolute bottom-[calc(100%+12px)] left-0 z-20 w-[min(260px,calc(100vw-64px))] rounded-xl bg-brand-950 px-5 pt-[18px] pb-5 text-center shadow-lg transition-opacity duration-150 sm:left-1/2 sm:w-60 sm:-translate-x-1/2 ${
           open ? "visible opacity-100" : "invisible opacity-0"
         }`}
       >
-        <Icon className="mx-auto h-10 w-10 text-[#5EEAD4]" strokeWidth={1.5} aria-hidden="true" />
-        <p className="mt-1.5 mb-2.5 text-[17px] font-semibold text-[#D9F99D]">{title}</p>
+        <Icon className="mx-auto h-10 w-10 text-brand-300" strokeWidth={1.5} aria-hidden="true" />
+        <p className="mt-1.5 mb-2.5 text-[17px] font-semibold text-brand-200">{title}</p>
         <p className="text-left text-sm leading-[1.55] text-white">{text}</p>
       </div>
     </>

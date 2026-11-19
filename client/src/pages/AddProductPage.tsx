@@ -139,17 +139,17 @@ function AddProductPage() {
     <div className="max-w-6xl mx-auto pb-16">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-gray-900">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+          <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-neutral-900">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-800">
               <PackagePlus className="h-5 w-5" strokeWidth={1.8} />
             </span>
             {t("product.addTitle")}
           </h1>
-          <p className="mt-2 text-sm text-gray-500">{t("product.addSubtitle")}</p>
+          <p className="mt-2 text-sm text-neutral-500">{t("product.addSubtitle")}</p>
         </div>
         <Link
           to="/import-products"
-          className="inline-flex w-fit items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          className="inline-flex w-fit items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
         >
           <FileUp className="h-4 w-4" />
           {t("importProducts.link")}
@@ -179,7 +179,7 @@ function AddProductPage() {
         <aside className="lg:sticky lg:top-22 lg:self-start space-y-4">
           <ProductPreview values={form} />
 
-          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-colors hover:border-orange-200">
+          <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm transition-colors hover:border-brand-200">
             <input
               type="checkbox"
               checked={saveAsTemplate}
@@ -188,8 +188,8 @@ function AddProductPage() {
             />
             <span
               aria-hidden="true"
-              className={`relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors peer-focus-visible:ring-4 peer-focus-visible:ring-orange-100 ${
-                saveAsTemplate ? "bg-orange-500" : "bg-gray-200"
+              className={`relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors peer-focus-visible:ring-4 peer-focus-visible:ring-brand-100 ${
+                saveAsTemplate ? "bg-brand-800" : "bg-neutral-200"
               }`}
             >
               <span
@@ -199,18 +199,18 @@ function AddProductPage() {
               />
             </span>
             <span>
-              <span className="flex items-center gap-1.5 text-sm font-medium text-gray-900">
-                <Bookmark className="h-4 w-4 text-orange-600" />
+              <span className="flex items-center gap-1.5 text-sm font-medium text-neutral-900">
+                <Bookmark className="h-4 w-4 text-brand-800" />
                 {templateExists ? t("templates.updateToggle") : t("templates.saveToggle")}
               </span>
-              <span className="mt-0.5 block text-xs text-gray-500">{t("templates.saveHint")}</span>
+              <span className="mt-0.5 block text-xs text-neutral-500">{t("templates.saveHint")}</span>
             </span>
           </label>
 
           <button
             type="submit"
             disabled={saving}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-3 font-semibold text-white shadow-sm shadow-orange-500/20 transition-all hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-md disabled:translate-y-0 disabled:opacity-60 cursor-pointer"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-800 py-3 font-semibold text-white shadow-sm shadow-brand-800/20 transition-all hover:-translate-y-0.5 hover:bg-brand-900 hover:shadow-md disabled:translate-y-0 disabled:opacity-60 cursor-pointer"
           >
             <PackagePlus className="h-5 w-5" strokeWidth={1.8} />
             {t("product.addButton")}
@@ -219,7 +219,7 @@ function AddProductPage() {
           <RequiredHint className="text-center" />
           <Link
             to="/my-products"
-            className="block w-full rounded-xl border border-gray-200 bg-white py-2.5 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="block w-full rounded-xl border border-neutral-200 bg-white py-2.5 text-center text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
           >
             {t("product.cancel")}
           </Link>

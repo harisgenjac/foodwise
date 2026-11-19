@@ -76,13 +76,13 @@ function DonationForm({
   return (
     <div className="max-w-6xl mx-auto pb-16">
       <div className="mb-6">
-        <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-gray-900">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+        <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-neutral-900">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-800">
             <Icon className="h-5 w-5" strokeWidth={1.8} />
           </span>
           {title}
         </h1>
-        <p className="mt-2 text-sm text-gray-500">{subtitle}</p>
+        <p className="mt-2 text-sm text-neutral-500">{subtitle}</p>
       </div>
 
       <form ref={formRef} noValidate onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -97,18 +97,18 @@ function DonationForm({
         </div>
 
         <aside className="lg:sticky lg:top-22 lg:self-start space-y-4">
-          <p className="text-sm font-semibold text-gray-700">{t("donations.form.preview")}</p>
+          <p className="text-sm font-semibold text-neutral-700">{t("donations.form.preview")}</p>
           <DonationCard donation={preview} />
 
-          <p className="flex gap-2 rounded-2xl border border-gray-100 bg-white p-4 text-xs text-gray-500 shadow-sm">
-            <Info className="h-4 w-4 shrink-0 text-orange-500" />
+          <p className="flex gap-2 rounded-2xl border border-neutral-100 bg-white p-4 text-xs text-neutral-500 shadow-sm">
+            <Info className="h-4 w-4 shrink-0 text-brand-800" />
             {t("donations.info.text")}
           </p>
 
           <button
             type="submit"
             disabled={saving}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-3 font-semibold text-white shadow-sm shadow-orange-500/20 transition-all hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-md disabled:translate-y-0 disabled:opacity-60 cursor-pointer"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-800 py-3 font-semibold text-white shadow-sm shadow-brand-800/20 transition-all hover:-translate-y-0.5 hover:bg-brand-900 hover:shadow-md disabled:translate-y-0 disabled:opacity-60 cursor-pointer"
           >
             <Icon className="h-5 w-5" strokeWidth={1.8} />
             {submitLabel}
@@ -116,7 +116,7 @@ function DonationForm({
           <RequiredHint className="text-center" />
           <Link
             to="/donate-food"
-            className="block w-full rounded-xl border border-gray-200 bg-white py-2.5 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="block w-full rounded-xl border border-neutral-200 bg-white py-2.5 text-center text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
           >
             {t("donations.form.cancel")}
           </Link>

@@ -90,13 +90,13 @@ function DataTable<T>({
   className = "",
   embedded = false,
   theadClassName = embedded
-    ? "border-b border-gray-100 text-xs font-semibold uppercase tracking-wider text-gray-500"
-    : "border-b border-gray-100 bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500",
+    ? "border-b border-neutral-100 text-xs font-semibold uppercase tracking-wider text-neutral-500"
+    : "border-b border-neutral-100 bg-neutral-50 text-xs font-semibold uppercase tracking-wider text-neutral-500",
   headCellClassName = embedded ? "px-3 py-2" : "px-4 py-3",
   bodyCellClassName = embedded ? "px-3 py-3" : "px-4 py-3",
   rowTestId,
-  tableWrapperClassName = embedded ? "" : "rounded-2xl border border-gray-100 bg-white shadow-sm",
-  tbodyClassName = "divide-y divide-gray-100",
+  tableWrapperClassName = embedded ? "" : "rounded-2xl border border-neutral-100 bg-white shadow-sm",
+  tbodyClassName = "divide-y divide-neutral-100",
 }: DataTableProps<T>) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -155,7 +155,7 @@ function DataTable<T>({
       {/* Below md: a "Sort by" select and one card per row. */}
       <div className="space-y-3 md:hidden">
         {sort && sortable.length > 0 && (
-          <label className="flex items-center gap-2 text-sm text-gray-500">
+          <label className="flex items-center gap-2 text-sm text-neutral-500">
             <span className="shrink-0">{t("filters.sortBy")}</span>
             <FilterField icon={ArrowUpDown}>
               <select
@@ -198,7 +198,7 @@ function DataTable<T>({
               <li
                 key={rowKey(row)}
                 data-testid="data-card"
-                className={`relative rounded-2xl border border-gray-100 bg-white p-4 ${embedded ? "" : "shadow-sm"} ${href ? "transition-colors hover:bg-gray-50" : ""}`}
+                className={`relative rounded-2xl border border-neutral-100 bg-white p-4 ${embedded ? "" : "shadow-sm"} ${href ? "transition-colors hover:bg-neutral-50" : ""}`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1 text-sm">
@@ -215,17 +215,17 @@ function DataTable<T>({
                   {!isEmpty(statusContent) && <div className="relative shrink-0">{statusContent}</div>}
                 </div>
                 {fields.length > 0 && (
-                  <dl className="mt-3 space-y-1.5 border-t border-gray-100 pt-3 text-sm">
+                  <dl className="mt-3 space-y-1.5 border-t border-neutral-100 pt-3 text-sm">
                     {fields.map(({ column, content }) =>
                       column.cardStacked ? (
                         <div key={column.id}>
-                          <dt className="text-gray-500">{column.header}</dt>
-                          <dd className="relative mt-1 text-gray-800">{content}</dd>
+                          <dt className="text-neutral-500">{column.header}</dt>
+                          <dd className="relative mt-1 text-neutral-800">{content}</dd>
                         </div>
                       ) : (
                         <div key={column.id} className="flex items-baseline justify-between gap-3">
-                          <dt className="shrink-0 text-gray-500">{column.header}</dt>
-                          <dd className="relative min-w-0 text-right text-gray-800">{content}</dd>
+                          <dt className="shrink-0 text-neutral-500">{column.header}</dt>
+                          <dd className="relative min-w-0 text-right text-neutral-800">{content}</dd>
                         </div>
                       ),
                     )}

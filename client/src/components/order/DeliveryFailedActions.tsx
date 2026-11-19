@@ -78,8 +78,8 @@ function DeliveryFailedActions({ order, onDone }: DeliveryFailedActionsProps) {
   const store = order.store.business_name ?? "";
 
   return (
-    <div data-testid="delivery-failed" className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-      <p className="flex items-start gap-2 text-sm text-amber-800">
+    <div data-testid="delivery-failed" className="space-y-3 rounded-xl border border-warning-200 bg-warning-50 p-4">
+      <p className="flex items-start gap-2 text-sm text-warning-800">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
         {t("orders.deliveryFailed.prompt", { store })}
       </p>
@@ -87,7 +87,7 @@ function DeliveryFailedActions({ order, onDone }: DeliveryFailedActionsProps) {
         <button
           type="button"
           onClick={() => setPending("pickup")}
-          className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
+          className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-brand-800 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900"
         >
           <Store className="h-4 w-4" />
           {t("orders.deliveryFailed.pickupButton")}
@@ -95,7 +95,7 @@ function DeliveryFailedActions({ order, onDone }: DeliveryFailedActionsProps) {
         <button
           type="button"
           onClick={() => setPending("cancel")}
-          className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white py-2.5 font-semibold text-gray-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+          className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-neutral-200 bg-white py-2.5 font-semibold text-neutral-700 transition-colors hover:border-danger-200 hover:bg-danger-50 hover:text-danger-700"
         >
           <XCircle className="h-4 w-4" />
           {t("orders.cancelButton")}
@@ -141,7 +141,7 @@ function DeliveryFailedActions({ order, onDone }: DeliveryFailedActionsProps) {
               />
             </FormField>
           </div>
-          <p className="mt-2 text-xs text-gray-500">{t("cart.checkout.pickupUntil", { date: formatDisplayDate(maxPickup) })}</p>
+          <p className="mt-2 text-xs text-neutral-500">{t("cart.checkout.pickupUntil", { date: formatDisplayDate(maxPickup) })}</p>
         </ConfirmModal>
       )}
 

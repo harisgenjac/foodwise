@@ -289,9 +289,9 @@ export const MEAL_TEMPLATES: MealTemplate[] = [
 export const ANNOUNCEMENTS = [
   {
     audience: "ALL" as const,
-    title_bs: "Dobrodošli na Još vrijedi",
+    title_bs: "Dobrodošli na platformu Još vrijedi",
     body_bs: "Hvala što ste s nama od prvog dana. Objavite višak hrane, a restorani će ga naručiti u nekoliko klikova.",
-    title_en: "Welcome to FoodWise",
+    title_en: "Welcome to Još vrijedi",
     body_en: "Thank you for joining from day one. Publish your surplus food and restaurants will order it in a few clicks.",
   },
   {

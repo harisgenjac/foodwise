@@ -24,7 +24,7 @@ import { useAuth } from "../context/AuthContext.js";
 const STATUSES: Order["status"][] = ["Pending", "Confirmed", "InDelivery", "Completed", "Rejected", "Cancelled"];
 
 const detailsLinkStyle =
-  "inline-flex items-center justify-center rounded-xl bg-orange-50 px-3 text-orange-700 transition-colors hover:bg-orange-500 hover:text-white";
+  "inline-flex items-center justify-center rounded-xl bg-brand-50 px-3 text-brand-800 transition-colors hover:bg-brand-900 hover:text-white";
 
 // The store's orders, Pending first: decide a new one, hand over or cancel a missed pickup.
 function StoreOrdersPage() {
@@ -159,7 +159,7 @@ function StoreOrdersPage() {
                     <button
                       type="button"
                       onClick={() => setDeciding(order)}
-                      className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-green-600/20 transition-colors hover:bg-green-700"
+                      className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-brand-800 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900"
                     >
                       <Scale className="h-4 w-4" />
                       {t("orders.decideButton")}
@@ -171,7 +171,7 @@ function StoreOrdersPage() {
                     <button
                       type="button"
                       onClick={() => pickupActions.request("complete", order)}
-                      className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2.5 text-sm font-semibold text-white shadow-sm shadow-green-600/20 transition-colors hover:bg-green-700"
+                      className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-brand-800 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900"
                     >
                       <PackageCheck className="h-4 w-4" />
                       {t("pickups.completeButton")}
@@ -180,7 +180,7 @@ function StoreOrdersPage() {
                       <button
                         type="button"
                         onClick={() => pickupActions.request("cancel-overdue", order)}
-                        className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 px-3 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+                        className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-danger-200 px-3 py-2.5 text-sm font-semibold text-danger-700 transition-colors hover:bg-danger-50"
                       >
                         <CalendarX className="h-4 w-4" />
                         {t("pickups.cancelOverdueButton")}

@@ -60,8 +60,8 @@ function AdminCreditsPage() {
       card: "title",
       cell: (row) => (
         <>
-          <p className="font-medium text-gray-900">{row.business_name || row.email}</p>
-          {row.business_name && <p className="mt-0.5 text-xs text-gray-500">{row.email}</p>}
+          <p className="font-medium text-neutral-900">{row.business_name || row.email}</p>
+          {row.business_name && <p className="mt-0.5 text-xs text-neutral-500">{row.email}</p>}
         </>
       ),
     },
@@ -69,7 +69,7 @@ function AdminCreditsPage() {
       id: "company",
       header: t("admin.credits.columnCompany"),
       className: "hidden lg:table-cell",
-      cellClassName: "text-teal-700",
+      cellClassName: "text-brand-800",
       cell: (row) => row.company_name ?? "",
     },
     {
@@ -78,14 +78,14 @@ function AdminCreditsPage() {
       card: "status",
       cell: (row) =>
         row.has_subscription ? (
-          <span className="font-medium text-gray-800">{row.plan_name}</span>
+          <span className="font-medium text-neutral-800">{row.plan_name}</span>
         ) : (
-          <span className="text-gray-400">{t("admin.credits.noPlan")}</span>
+          <span className="text-neutral-500">{t("admin.credits.noPlan")}</span>
         ),
       cardCell: (row) => (
         <span
           className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${
-            row.has_subscription ? "bg-orange-50 text-orange-700" : "bg-gray-100 text-gray-500"
+            row.has_subscription ? "bg-brand-50 text-brand-800" : "bg-neutral-100 text-neutral-500"
           }`}
         >
           {row.has_subscription ? row.plan_name : t("admin.credits.noPlan")}
@@ -126,7 +126,7 @@ function AdminCreditsPage() {
       cell: (row) => {
         const percent = usagePercent(row.used, row.total);
         return (
-          <div className="h-2 w-28 overflow-hidden rounded-full bg-gray-100">
+          <div className="h-2 w-28 overflow-hidden rounded-full bg-neutral-100">
             <div className={`h-full ${usageBarColor(percent)}`} style={{ width: `${percent}%` }} />
           </div>
         );
@@ -141,7 +141,7 @@ function AdminCreditsPage() {
           <Link
             to={`/admin/credit-requests?user_id=${row.id}`}
             onClick={(e) => e.stopPropagation()}
-            className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 hover:bg-amber-100"
+            className="rounded-full bg-warning-50 px-2.5 py-1 text-xs font-semibold text-warning-700 hover:bg-warning-100"
           >
             {t("admin.credits.pendingCount", { count: row.pending_requests })}
           </Link>
@@ -150,7 +150,7 @@ function AdminCreditsPage() {
         row.pending_requests > 0 && (
           <Link
             to={`/admin/credit-requests?user_id=${row.id}`}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-sm font-semibold text-amber-700 hover:bg-amber-100"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-warning-200 bg-warning-50 text-sm font-semibold text-warning-700 hover:bg-warning-100"
           >
             {t("admin.credits.pendingCount", { count: row.pending_requests })}
           </Link>
@@ -226,7 +226,7 @@ function AdminCreditsPage() {
             rows={users}
             rowKey={(row) => row.id}
             rowHref={(row) => `/admin/users/${row.id}`}
-            rowClassName="hover:bg-gray-50"
+            rowClassName="hover:bg-neutral-50"
             sort={{ sort, dir, onSort: toggleSort, setSort }}
             columns={columns}
           />

@@ -63,13 +63,13 @@
   },
   "auth": {
     "welcomeBack": "Welcome back",
-    "loginSubtitle": "Log in to your FoodWise account",
+    "loginSubtitle": "Log in to your Još vrijedi account",
     "email": "Email",
     "password": "Password",
     "loginButton": "Log in",
     "loginError": "Incorrect email or password. Please try again.",
     "createAccount": "Create an account",
-    "registrationSubtitle": "Join the FoodWise platform",
+    "registrationSubtitle": "Join the Još vrijedi platform",
     "firstName": "First name",
     "lastName": "Last name",
     "roleLabel": "Account type",
@@ -106,7 +106,7 @@
     },
     "invite": {
       "title": "Set your password",
-      "subtitle": "Welcome to FoodWise! Enter your password twice, then fill in your profile.",
+      "subtitle": "Welcome to Još vrijedi! Enter your password twice, then fill in your profile.",
       "submit": "Set password",
       "invalidText": "This invitation has expired, was already used, or a newer one was sent. Ask for a new link or contact the administrator."
     }
@@ -520,7 +520,7 @@
     }
   },
   "dashboard": {
-    "appTitle": "Welcome to FoodWise",
+    "appTitle": "Welcome to Još vrijedi",
     "appSubtitle": "Less waste. More taste.",
     "price": "Price",
     "quantity": "Quantity",

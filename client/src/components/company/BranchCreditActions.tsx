@@ -32,7 +32,7 @@ interface BranchCreditActionsProps {
 }
 
 const optionButton =
-  "flex cursor-pointer flex-col items-start rounded-xl border border-gray-200 p-4 text-left transition-colors hover:border-orange-300 hover:bg-orange-50/50";
+  "flex cursor-pointer flex-col items-start rounded-xl border border-neutral-200 p-4 text-left transition-colors hover:border-brand-300 hover:bg-brand-50/50";
 
 // The headquarters' two actions for a branch, with the same dialogs and explanation a store gets
 // for itself (the branch named in the title): "Choose plan" (this month while there is none,
@@ -93,7 +93,7 @@ function BranchCreditActions({
             onClick={() => setPicker("plan")}
             disabled={!canChoosePlan}
             title={planWaiting ? t("company.credits.planWaiting") : undefined}
-            className={`${button} bg-orange-500 text-white hover:bg-orange-600`}
+            className={`${button} bg-brand-800 text-white hover:bg-brand-900`}
           >
             <Wallet className="h-4 w-4" />
             {t("company.credits.choosePlan")}
@@ -105,7 +105,7 @@ function BranchCreditActions({
             onClick={() => setPicker("topup")}
             disabled={!canTopup}
             title={topupWaiting ? t("company.credits.topupWaiting") : undefined}
-            className={`${button} border border-gray-200 bg-white text-gray-700 hover:bg-gray-50`}
+            className={`${button} border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50`}
           >
             <PlusCircle className="h-4 w-4" />
             {t("company.credits.addCredits")}
@@ -116,7 +116,7 @@ function BranchCreditActions({
       {picker === "plan" && (
         <Modal onClose={() => setPicker(null)} labelledBy={`branch-plan-${branch.id}`}>
           <ModalHeader>
-            <h3 id={`branch-plan-${branch.id}`} className="text-lg font-bold text-gray-900">
+            <h3 id={`branch-plan-${branch.id}`} className="text-lg font-bold text-neutral-900">
               {t("company.credits.pickPlanTitle", { branch: branch.name, month: formatCreditMonth(month, monthNames) })}
             </h3>
           </ModalHeader>
@@ -131,8 +131,8 @@ function BranchCreditActions({
                 }}
                 className={optionButton}
               >
-                <span className="font-semibold text-gray-900">{plan.name}</span>
-                <span className="text-sm text-gray-600">
+                <span className="font-semibold text-neutral-900">{plan.name}</span>
+                <span className="text-sm text-neutral-600">
                   {t("credits.profile.planCredits", { count: plan.credits_per_period })} ·{" "}
                   {t("credits.profile.price", { price: plan.price })}
                 </span>
@@ -144,7 +144,7 @@ function BranchCreditActions({
       {picker === "topup" && (
         <Modal onClose={() => setPicker(null)} labelledBy={`branch-topup-${branch.id}`}>
           <ModalHeader>
-            <h3 id={`branch-topup-${branch.id}`} className="text-lg font-bold text-gray-900">
+            <h3 id={`branch-topup-${branch.id}`} className="text-lg font-bold text-neutral-900">
               {t("company.credits.pickTopupTitle", { branch: branch.name })}
             </h3>
           </ModalHeader>
@@ -159,10 +159,10 @@ function BranchCreditActions({
                 }}
                 className={optionButton}
               >
-                <span className="font-semibold text-gray-900">
+                <span className="font-semibold text-neutral-900">
                   +{t("credits.profile.creditsCount", { count: topup.credits })}
                 </span>
-                <span className="text-sm text-green-600">{t("credits.profile.price", { price: topup.price })}</span>
+                <span className="text-sm text-accent-700">{t("credits.profile.price", { price: topup.price })}</span>
               </button>
             ))}
           </ModalBody>

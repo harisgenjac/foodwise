@@ -16,8 +16,8 @@ function CreditHint({ perProduct = false, className = "" }: { perProduct?: boole
     : t(perProduct ? "credits.hint.perProduct" : "credits.hint.one", { left: credits.available });
 
   return (
-    <p className={`flex items-center gap-1.5 text-xs text-gray-500 ${className}`}>
-      <Coins className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+    <p className={`flex items-center gap-1.5 text-xs text-neutral-500 ${className}`}>
+      <Coins className="h-3.5 w-3.5 shrink-0 text-warning-700" />
       {text}
     </p>
   );

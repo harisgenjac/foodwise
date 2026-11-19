@@ -51,21 +51,21 @@ function LoginPage() {
   return (
     <AuthLayout title={t("auth.welcomeBack")} subtitle={t("auth.loginSubtitle")}>
       {state.registrationClosed && (
-        <p className="mb-4 flex items-start gap-2 rounded-xl border border-orange-100 bg-orange-50 px-3 py-2 text-sm text-orange-800">
+        <p className="mb-4 flex items-start gap-2 rounded-xl border border-brand-100 bg-brand-50 px-3 py-2 text-sm text-brand-800">
           <Info className="mt-0.5 h-4 w-4 shrink-0" />
           {t("auth.registrationClosed")}
         </p>
       )}
 
       {state.passwordReset && !error && (
-        <p role="status" className="mb-4 flex items-start gap-2 rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+        <p role="status" className="mb-4 flex items-start gap-2 rounded-xl border border-success-200 bg-success-100 px-3 py-2 text-sm text-success-800">
           <CircleCheck className="mt-0.5 h-4 w-4 shrink-0" />
           {t("auth.reset.done")}
         </p>
       )}
 
       {error && (
-        <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+        <p className="mb-4 rounded-xl border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700">
           {error}
         </p>
       )}
@@ -101,7 +101,7 @@ function LoginPage() {
             {/* 44 px high on phones, so it is easy to tap. */}
             <Link
               to="/forgot-password"
-              className="inline-flex min-h-11 items-center text-sm font-medium text-orange-600 hover:text-orange-700 hover:underline md:min-h-0"
+              className="inline-flex min-h-11 items-center text-sm font-medium text-brand-800 hover:text-brand-900 hover:underline md:min-h-0"
             >
               {t("auth.forgot.link")}
             </Link>
@@ -109,14 +109,14 @@ function LoginPage() {
         </div>
         <button
           type="submit"
-          className="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
+          className="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-800 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900"
         >
           {t("auth.loginButton")}
         </button>
         <RequiredHint className="text-center" />
       </form>
 
-      <p className="text-sm text-gray-500 text-center mt-6">{t("auth.accountByAdmin")}</p>
+      <p className="text-sm text-neutral-500 text-center mt-6">{t("auth.accountByAdmin")}</p>
     </AuthLayout>
   );
 }

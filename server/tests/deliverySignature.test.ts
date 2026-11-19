@@ -35,8 +35,8 @@ describe("webhook signature", () => {
     const headers = signWebhook(SECRET, BODY, NOW);
     expect(() => verifyWebhook(SECRET, BODY, headers, NOW)).not.toThrow();
     const upper = {
-      "X-FoodWise-Timestamp": headers[TIMESTAMP_HEADER],
-      "X-FoodWise-Signature": headers[SIGNATURE_HEADER]!.replace(/[0-9a-f]{64}/, (hex) => hex.toUpperCase()),
+      "X-JosVrijedi-Timestamp": headers[TIMESTAMP_HEADER],
+      "X-JosVrijedi-Signature": headers[SIGNATURE_HEADER]!.replace(/[0-9a-f]{64}/, (hex) => hex.toUpperCase()),
     };
     expect(() => verifyWebhook(SECRET, BODY, upper, NOW)).not.toThrow();
   });

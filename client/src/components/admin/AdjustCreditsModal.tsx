@@ -35,8 +35,8 @@ function AdjustCreditsModal({ busy, onConfirm, onClose }: AdjustCreditsModalProp
   return (
     <Modal onClose={onClose} labelledBy={titleId}>
       <ModalHeader>
-        <h3 id={titleId} className="text-lg font-bold text-gray-900">{t("admin.userCredits.adjustTitle")}</h3>
-        <p className="mt-2 text-sm text-gray-600">{t("admin.userCredits.adjustText")}</p>
+        <h3 id={titleId} className="text-lg font-bold text-neutral-900">{t("admin.userCredits.adjustTitle")}</h3>
+        <p className="mt-2 text-sm text-neutral-600">{t("admin.userCredits.adjustText")}</p>
       </ModalHeader>
       <form ref={formRef} noValidate onSubmit={handleSubmit} className={modalFormStyle}>
         <ModalBody className="space-y-3">
@@ -67,14 +67,14 @@ function AdjustCreditsModal({ busy, onConfirm, onClose }: AdjustCreditsModalProp
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+            className="flex-1 cursor-pointer rounded-xl bg-neutral-100 py-2.5 font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
           >
             {t("admin.common.cancel")}
           </button>
           <button
             type="submit"
             disabled={busy}
-            className="flex-1 cursor-pointer rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-wait disabled:opacity-60"
+            className="flex-1 cursor-pointer rounded-xl bg-brand-800 py-2.5 font-semibold text-white transition-colors hover:bg-brand-900 disabled:cursor-wait disabled:opacity-60"
           >
             {t("admin.userCredits.save")}
           </button>

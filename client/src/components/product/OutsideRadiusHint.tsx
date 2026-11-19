@@ -16,15 +16,15 @@ function OutsideRadiusHint({ count, radius, kind, onWiden }: OutsideRadiusHintPr
   if (count <= 0 || radius === "all") return null;
 
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-orange-100 bg-orange-50/60 px-4 py-4 text-center sm:flex-row sm:text-left">
-      <p className="flex items-center gap-2 text-sm text-gray-700">
-        <Navigation className="h-4 w-4 shrink-0 text-orange-500" aria-hidden="true" />
+    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-brand-100 bg-brand-50/60 px-4 py-4 text-center sm:flex-row sm:text-left">
+      <p className="flex items-center gap-2 text-sm text-neutral-700">
+        <Navigation className="h-4 w-4 shrink-0 text-brand-800" aria-hidden="true" />
         {t(kind === "offers" ? "radius.moreOffers" : "radius.moreStores", { count, radius })}
       </p>
       <button
         type="button"
         onClick={() => onWiden(nextRadius(radius))}
-        className="cursor-pointer rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600"
+        className="cursor-pointer rounded-lg bg-brand-800 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-900"
       >
         {widenLabel(t, radius)}
       </button>

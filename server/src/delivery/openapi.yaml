@@ -1,21 +1,21 @@
 openapi: 3.1.0
 info:
-  title: FoodWise delivery provider API
+  title: Još vrijedi delivery provider API
   version: 0.1.0
-  summary: The contract a delivery provider (Korpa, later our own delivery app) implements for FoodWise.
+  summary: The contract a delivery provider (Korpa, later our own delivery app) implements for Još vrijedi.
   description: |
-    Written by FoodWise (Nov 16, 2026) as the proposal for the agreement with Korpa; not agreed yet.
-    FoodWise is the client of these endpoints, and the provider calls FoodWise back with webhooks.
+    Written by Još vrijedi (Nov 16, 2026) as the proposal for the agreement with Korpa; not agreed yet.
+    Još vrijedi is the client of these endpoints, and the provider calls Još vrijedi back with webhooks.
     The server's `MockProvider` (`server/src/delivery/mock.ts`) follows this contract.
 
     How an order uses it:
-    1. Cart: FoodWise asks for a **quote** (price and times) for the store → restaurant route.
-    2. The store accepts the order with a ready time: FoodWise **creates the delivery** with the
+    1. Cart: Još vrijedi asks for a **quote** (price and times) for the store → restaurant route.
+    2. The store accepts the order with a ready time: Još vrijedi **creates the delivery** with the
        ready time and the cash the courier collects (goods + delivery), using the order as the
        idempotency key.
     3. The provider sends **webhooks** as the courier is assigned, picks the goods up, delivers or
-       fails. "Picked up" completes the order on FoodWise.
-    4. Before the pickup FoodWise may **cancel** the delivery.
+       fails. "Picked up" completes the order on Još vrijedi.
+    4. Before the pickup Još vrijedi may **cancel** the delivery.
 
     Conventions:
     - Money is a string with exactly two decimals in convertible marks (`"12.50"`, currency `BAM`).
@@ -23,7 +23,7 @@ info:
     - Errors are `{ code, message }`; `code` is machine-readable and stable, `message` is English
       for logs and is never shown to users.
 servers:
-  - url: https://api.provider.example/foodwise/v1
+  - url: https://api.provider.example/josvrijedi/v1
     description: Placeholder; the provider gives the sandbox and production URLs.
 security:
   - apiKey: []
@@ -35,7 +35,7 @@ paths:
       summary: Price and times for a delivery, without booking it.
       description: |
         Valid until `expires_at`. Answers 422 when the provider cannot deliver this route
-        (outside its zones, or no couriers at that time); FoodWise then offers only pickup.
+        (outside its zones, or no couriers at that time); Još vrijedi then offers only pickup.
       requestBody:
         required: true
         content:
@@ -67,7 +67,7 @@ paths:
         With `quote_id` the quoted price is kept while the quote is valid; without it the provider
         prices the route now. `cash_to_collect` must equal `goods_amount` + the delivery price.
         The same `Idempotency-Key` always answers with the delivery it created first (201 again),
-        so FoodWise can retry safely after a timeout.
+        so Još vrijedi can retry safely after a timeout.
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -118,7 +118,7 @@ paths:
     post:
       operationId: cancelDelivery
       summary: Cancel a delivery before the courier picked the goods up.
-      description: No webhook is sent for a cancel FoodWise asked for.
+      description: No webhook is sent for a cancel Još vrijedi asked for.
       parameters:
         - $ref: "#/components/parameters/DeliveryId"
       requestBody:
@@ -149,28 +149,28 @@ webhooks:
   deliveryEvent:
     post:
       operationId: deliveryEvent
-      summary: A delivery changed status (sent by the provider to FoodWise).
+      summary: A delivery changed status (sent by the provider to Još vrijedi).
       description: |
-        Sent to `POST {FoodWise}/api/delivery/webhooks/{provider}` for every status change made on
-        the provider's side. Signed (see the `X-FoodWise-Signature` header). The provider retries
-        until FoodWise answers 2xx (suggested: 1 min, 5 min, 30 min, then hourly for 24 hours).
-        Events may arrive more than once and out of order: FoodWise ignores an `event_id` it has
+        Sent to `POST {Još vrijedi API URL}/api/delivery/webhooks/{provider}` for every status change made on
+        the provider's side. Signed (see the `X-JosVrijedi-Signature` header). The provider retries
+        until Još vrijedi answers 2xx (suggested: 1 min, 5 min, 30 min, then hourly for 24 hours).
+        Events may arrive more than once and out of order: Još vrijedi ignores an `event_id` it has
         already processed and a status change that would move a delivery backwards.
 
         Statuses: `CREATED → COURIER_ASSIGNED → PICKED_UP → DELIVERED`; `FAILED` from any open
         status; `CANCELLED` (by the provider) before `PICKED_UP`.
       parameters:
-        - name: X-FoodWise-Timestamp
+        - name: X-JosVrijedi-Timestamp
           in: header
           required: true
-          description: Unix time in seconds when the call was signed; refused when more than 5 minutes from FoodWise's clock.
+          description: Unix time in seconds when the call was signed; refused when more than 5 minutes from Još vrijedi's clock.
           schema: { type: string, pattern: "^[0-9]+$" }
-        - name: X-FoodWise-Signature
+        - name: X-JosVrijedi-Signature
           in: header
           required: true
           description: |
             `sha256=` + the hex HMAC-SHA256 of `"<timestamp>.<raw request body>"` with the shared
-            webhook secret. FoodWise compares it in constant time over the raw bytes it received.
+            webhook secret. Još vrijedi compares it in constant time over the raw bytes it received.
           schema: { type: string, pattern: "^sha256=[0-9a-fA-F]{64}$" }
       requestBody:
         required: true
@@ -187,14 +187,14 @@ components:
     apiKey:
       type: http
       scheme: bearer
-      description: An API key the provider issues to FoodWise, one per environment.
+      description: An API key the provider issues to Još vrijedi, one per environment.
 
   parameters:
     IdempotencyKey:
       name: Idempotency-Key
       in: header
       required: true
-      description: FoodWise sends one key per order (e.g. `order-1234`).
+      description: Još vrijedi sends one key per order (e.g. `order-1234`).
       schema: { type: string, minLength: 1, maxLength: 100 }
     DeliveryId:
       name: deliveryId
@@ -269,7 +269,7 @@ components:
       required: [external_order_id, external_order_code, pickup, dropoff, ready_at, goods_amount, cash_to_collect]
       properties:
         quote_id: { type: string }
-        external_order_id: { type: integer, description: FoodWise's order id. }
+        external_order_id: { type: integer, description: Još vrijedi's order id. }
         external_order_code: { type: string, description: "The short code the store and courier see, e.g. `K7PM`." }
         pickup: { $ref: "#/components/schemas/Location" }
         dropoff: { $ref: "#/components/schemas/Location" }

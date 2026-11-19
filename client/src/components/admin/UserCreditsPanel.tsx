@@ -111,17 +111,17 @@ function UserCreditsPanel({ userId }: { userId: number }) {
       id: "date",
       header: t("admin.userCredits.columnDate"),
       className: "pr-3",
-      cellClassName: "whitespace-nowrap text-gray-600",
+      cellClassName: "whitespace-nowrap text-neutral-600",
       cell: (transaction) => formatDateTime(transaction.created_at),
     },
     {
       id: "type",
       header: t("admin.userCredits.columnType"),
       className: "pr-3",
-      cellClassName: "text-gray-800",
+      cellClassName: "text-neutral-800",
       card: "title",
       cell: (transaction) => types[transaction.type] || transaction.type,
-      cardCell: (transaction) => <p className="font-medium text-gray-900">{types[transaction.type] || transaction.type}</p>,
+      cardCell: (transaction) => <p className="font-medium text-neutral-900">{types[transaction.type] || transaction.type}</p>,
     },
     {
       id: "amount",
@@ -129,7 +129,7 @@ function UserCreditsPanel({ userId }: { userId: number }) {
       className: "pr-3 text-right",
       card: "status",
       cell: (transaction) => (
-        <span className={`font-semibold tabular-nums ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}>
+        <span className={`font-semibold tabular-nums ${transaction.amount > 0 ? "text-brand-800" : "text-danger-700"}`}>
           {transaction.amount > 0 ? `+${transaction.amount}` : transaction.amount}
         </span>
       ),
@@ -138,30 +138,30 @@ function UserCreditsPanel({ userId }: { userId: number }) {
       id: "month",
       header: t("admin.userCredits.columnMonth"),
       className: "hidden pr-3 md:table-cell",
-      cellClassName: "whitespace-nowrap text-gray-600",
+      cellClassName: "whitespace-nowrap text-neutral-600",
       cell: (transaction) => formatCreditMonth(transaction.period_month, monthNames),
     },
     {
       id: "details",
       header: t("admin.userCredits.columnDetails"),
       className: "hidden md:table-cell",
-      cellClassName: "text-gray-500",
+      cellClassName: "text-neutral-500",
       cardStacked: true,
       cell: details,
     },
   ];
 
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
-          <Coins className="h-4 w-4 text-orange-600" />
+        <h2 className="flex items-center gap-2 text-base font-semibold text-neutral-900">
+          <Coins className="h-4 w-4 text-brand-800" />
           {t("admin.userCredits.title")}
         </h2>
         <button
           type="button"
           onClick={() => setAdjusting(true)}
-          className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
         >
           <SlidersHorizontal className="h-4 w-4" />
           {t("admin.userCredits.adjust")}
@@ -175,31 +175,31 @@ function UserCreditsPanel({ userId }: { userId: number }) {
           [t("credits.page.used"), `${balance.used} / ${balance.total}`],
           [t("credits.page.available"), String(balance.available)],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-xl bg-gray-50 p-3">
-            <dt className="text-xs font-medium text-gray-500">{label}</dt>
-            <dd className="mt-0.5 font-semibold text-gray-900">{value}</dd>
+          <div key={label} className="rounded-xl bg-neutral-50 p-3">
+            <dt className="text-xs font-medium text-neutral-500">{label}</dt>
+            <dd className="mt-0.5 font-semibold text-neutral-900">{value}</dd>
           </div>
         ))}
       </dl>
 
       {pending.length > 0 && (
-        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-          <h3 className="flex items-center gap-2 text-sm font-semibold text-amber-800">
+        <div className="mt-6 rounded-xl border border-warning-200 bg-warning-50/60 p-4">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-warning-800">
             <Inbox className="h-4 w-4" />
             {t("admin.userCredits.pendingTitle")}
           </h3>
-          <ul className="mt-2 divide-y divide-amber-100">
+          <ul className="mt-2 divide-y divide-warning-100">
             {pending.map((request) => (
               <li key={request.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <div>
-                  <p className="text-sm font-medium text-gray-800">
+                  <p className="text-sm font-medium text-neutral-800">
                     {requestTypes[request.request_type]} · {describeCreditRequest(request, t)} · {request.price} KM
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-neutral-500">
                     {formatCreditMonth(request.period_month, monthNames)} · {formatDateTime(request.created_at)}
                   </p>
                   {(request.auto_renew || request.source === "AUTO_RENEW") && (
-                    <span className="mt-1 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                    <span className="mt-1 inline-flex rounded-full bg-info-50 px-2 py-0.5 text-xs font-semibold text-info-700">
                       {t(request.source === "AUTO_RENEW" ? "admin.creditRequests.renewal" : "admin.creditRequests.autoRenew")}
                     </span>
                   )}
@@ -211,9 +211,9 @@ function UserCreditsPanel({ userId }: { userId: number }) {
         </div>
       )}
 
-      <h3 className="mb-2 mt-6 text-sm font-semibold text-gray-900">{t("admin.userCredits.ledgerTitle")}</h3>
+      <h3 className="mb-2 mt-6 text-sm font-semibold text-neutral-900">{t("admin.userCredits.ledgerTitle")}</h3>
       {transactions.length === 0 ? (
-        <p className="text-sm text-gray-500">{t("admin.userCredits.empty")}</p>
+        <p className="text-sm text-neutral-500">{t("admin.userCredits.empty")}</p>
       ) : (
         <>
           <DataTable
@@ -221,7 +221,7 @@ function UserCreditsPanel({ userId }: { userId: number }) {
             label={t("admin.userCredits.ledgerTitle")}
             rows={transactions}
             rowKey={(transaction) => transaction.id}
-            theadClassName="text-xs font-semibold uppercase tracking-wider text-gray-500"
+            theadClassName="text-xs font-semibold uppercase tracking-wider text-neutral-500"
             headCellClassName="py-2"
             bodyCellClassName="py-2"
             columns={ledgerColumns}

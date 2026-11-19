@@ -14,6 +14,5 @@ describe("StoreCard", () => {
     const store = makeUser({ id: 2, role: "STORE", business_name: "Market Centar", company_name: null });
     renderWithProviders(<StoreCard store={store} isFavorite={false} onToggleFavorite={() => {}} />);
     expect(screen.queryByTitle(/Bingo/)).not.toBeInTheDocument();
-    expect(document.querySelector(".bg-teal-50")).toBeNull();
   });
 });

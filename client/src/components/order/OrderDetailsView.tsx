@@ -53,8 +53,8 @@ interface OrderDetailsViewProps {
 }
 
 const sectionTitle = (Icon: typeof Store, title: string) => (
-  <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
-    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+  <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-neutral-900">
+    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-800">
       <Icon className="h-4 w-4" strokeWidth={2} />
     </span>
     {title}
@@ -96,26 +96,26 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
         ? { to: `/stores/${order.store_id}`, label: t("orders.viewStore") }
         : null;
     return (
-      <section key={kind} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      <section key={kind} className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
         {sectionTitle(isStoreParty ? Store : UtensilsCrossed, isStoreParty ? t("orders.seller") : t("orders.buyer"))}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">
-            <p className="text-lg font-bold text-gray-900">{party.business_name || "-"}</p>
+            <p className="text-lg font-bold text-neutral-900">{party.business_name || "-"}</p>
             {(party.address || party.city) && (
-              <p className="flex items-center gap-2 text-sm text-gray-600">
-                <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
+              <p className="flex items-center gap-2 text-sm text-neutral-600">
+                <MapPin className="h-4 w-4 shrink-0 text-neutral-500" />
                 {[party.address, party.city].filter(Boolean).join(", ")}
               </p>
             )}
             {party.phone && (
-              <a href={`tel:${party.phone}`} className="flex w-fit items-center gap-2 text-sm font-medium text-orange-700 hover:underline">
-                <Phone className="h-4 w-4 shrink-0 text-gray-400" />
+              <a href={`tel:${party.phone}`} className="flex w-fit items-center gap-2 text-sm font-medium text-brand-800 hover:underline">
+                <Phone className="h-4 w-4 shrink-0 text-neutral-500" />
                 {party.phone}
               </a>
             )}
             {isStoreParty && pickupHours && (
-              <p className="flex items-center gap-2 text-sm text-gray-600">
-                <Clock className="h-4 w-4 shrink-0 text-gray-400" />
+              <p className="flex items-center gap-2 text-sm text-neutral-600">
+                <Clock className="h-4 w-4 shrink-0 text-neutral-500" />
                 {t("orders.pickupHours")}: {pickupHours}
               </p>
             )}
@@ -123,7 +123,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
           {link && (
             <Link
               to={link.to}
-              className="group inline-flex w-fit shrink-0 items-center gap-1.5 rounded-xl bg-orange-50 px-4 py-2.5 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
+              className="group inline-flex w-fit shrink-0 items-center gap-1.5 rounded-xl bg-brand-50 px-4 py-2.5 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-900 hover:text-white"
             >
               {link.label}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -140,32 +140,32 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
 
   return (
     <>
-      <section className="space-y-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm md:p-8">
+      <section className="space-y-5 rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm md:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 items-start gap-4">
-            <OrderImage logoUrl={partyLogo} className="h-16 w-16 shrink-0 rounded-xl border border-gray-100 sm:h-20 sm:w-20" />
+            <OrderImage logoUrl={partyLogo} className="h-16 w-16 shrink-0 rounded-xl border border-neutral-100 sm:h-20 sm:w-20" />
             <div className="min-w-0">
             <div className="mb-2 flex flex-wrap gap-2">
               <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${ORDER_STATUS_STYLES[order.status]}`}>
                 {orderStatusLabel(t, order.status, order.fulfilment_method)}
               </span>
               {order.is_partial && (
-                <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                <span className="inline-flex rounded-full bg-warning-50 px-2.5 py-1 text-xs font-semibold text-warning-700">
                   {t("orders.partiallyAccepted")}
                 </span>
               )}
               {order.is_overdue && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
+                <span className="inline-flex items-center gap-1 rounded-full bg-danger-50 px-2.5 py-1 text-xs font-semibold text-danger-700">
                   <AlertTriangle className="h-3 w-3" />
                   {t("pickups.overdueToday")}
                 </span>
               )}
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">{t("orders.title", { code })}</h1>
-            <p className="mt-1 text-gray-600">{subtitle}</p>
+            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 md:text-3xl">{t("orders.title", { code })}</h1>
+            <p className="mt-1 text-neutral-600">{subtitle}</p>
             <AnswerDeadline order={order} viewer={viewer} className="mt-2" />
             {autoRejected(order) && (
-              <p data-testid="auto-rejected" className="mt-2 flex items-center gap-1.5 text-sm font-medium text-red-700">
+              <p data-testid="auto-rejected" className="mt-2 flex items-center gap-1.5 text-sm font-medium text-danger-700">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 {t("orders.autoReject.rejected")}
               </p>
@@ -173,13 +173,13 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-xs text-gray-500">{t("orders.total")}</p>
-            <p className="text-2xl font-bold text-gray-900">{formatMoney(order.total)}</p>
-            {totalChanged && <p className="text-sm text-gray-400 line-through">{formatMoney(order.ordered_total)}</p>}
+            <p className="text-xs text-neutral-500">{t("orders.total")}</p>
+            <p className="text-2xl font-bold text-neutral-900">{formatMoney(order.total)}</p>
+            {totalChanged && <p className="text-sm text-neutral-500 line-through">{formatMoney(order.ordered_total)}</p>}
           </div>
         </div>
 
-        <dl className="grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2">
+        <dl className="grid grid-cols-1 gap-4 rounded-xl bg-neutral-50 p-4 sm:grid-cols-2">
           {order.fulfilment_method === "DELIVERY" ? (
             <>
               <DetailItem
@@ -197,7 +197,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
                       ? t("orders.delivery.failed", { reason: t(`orders.delivery.failure.${deliveryFailureKey(delivery)}`) })
                       : t(`orders.delivery.status.${delivery.status}`)
                   }
-                  valueClassName={deliveryClosed ? "text-red-700" : "text-gray-900"}
+                  valueClassName={deliveryClosed ? "text-danger-700" : "text-neutral-900"}
                 />
               )}
               {delivery?.courier_name && (
@@ -208,7 +208,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
                     <span className="flex flex-wrap items-center gap-x-2">
                       {delivery.courier_name}
                       {delivery.courier_phone && (
-                        <a href={`tel:${delivery.courier_phone}`} className="font-medium text-orange-700 hover:underline">
+                        <a href={`tel:${delivery.courier_phone}`} className="font-medium text-brand-800 hover:underline">
                           {delivery.courier_phone}
                         </a>
                       )}
@@ -275,7 +275,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-400">
+              <tr className="border-b border-neutral-100 text-left text-xs uppercase tracking-wide text-neutral-500">
                 <th className="py-2 pr-3 font-semibold">{t("orders.table.product")}</th>
                 <th className="py-2 pr-3 font-semibold">{t("orders.table.quantity")}</th>
                 <th className="py-2 pr-3 font-semibold">{t("orders.table.price")}</th>
@@ -287,9 +287,9 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
               {order.items.map((item) => {
                 const dropped = isDropped(item);
                 const reason = changeReasonText(item, t);
-                const nameStyle = `font-medium ${dropped ? "text-gray-400 line-through" : "text-gray-900"}`;
+                const nameStyle = `font-medium ${dropped ? "text-neutral-500 line-through" : "text-neutral-900"}`;
                 return (
-                  <tr key={item.id} data-testid="order-item" className="border-b border-gray-50 align-top">
+                  <tr key={item.id} data-testid="order-item" className="border-b border-neutral-50 align-top">
                     <td className="py-3 pr-3">
                       {isAdmin ? (
                         <span className={nameStyle}>{item.product_name}</span>
@@ -298,30 +298,30 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
                           {item.product_name}
                         </Link>
                       )}
-                      {reason && <p className="mt-0.5 text-xs text-amber-700">{reason}</p>}
+                      {reason && <p className="mt-0.5 text-xs text-warning-700">{reason}</p>}
                     </td>
                     <td className="py-3 pr-3 whitespace-nowrap">
                       {isReduced(item) ? (
                         <span>
-                          <span className="text-gray-400 line-through">{formatAmount(item.ordered_quantity, item.unit)}</span>
+                          <span className="text-neutral-500 line-through">{formatAmount(item.ordered_quantity, item.unit)}</span>
                           {" → "}
-                          <span className="font-semibold text-gray-900">{formatAmount(item.quantity, item.unit)}</span>
+                          <span className="font-semibold text-neutral-900">{formatAmount(item.quantity, item.unit)}</span>
                         </span>
                       ) : (
-                        <span className={dropped ? "text-gray-400 line-through" : "text-gray-900"}>
+                        <span className={dropped ? "text-neutral-500 line-through" : "text-neutral-900"}>
                           {formatAmount(item.ordered_quantity, item.unit)}
                         </span>
                       )}
                     </td>
-                    <td className="py-3 pr-3 whitespace-nowrap text-gray-700">{formatMoney(item.unit_price)}</td>
+                    <td className="py-3 pr-3 whitespace-nowrap text-neutral-700">{formatMoney(item.unit_price)}</td>
                     <td className="py-3 pr-3">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${ORDER_STATUS_STYLES[item.status]}`}>
                         {orderStatusLabel(t, item.status, order.fulfilment_method)}
                       </span>
                     </td>
-                    <td className="py-3 text-right whitespace-nowrap font-semibold tabular-nums text-gray-900">
+                    <td className="py-3 text-right whitespace-nowrap font-semibold tabular-nums text-neutral-900">
                       {dropped ? (
-                        <span className="text-gray-400 line-through">{formatMoney(orderedLineTotal(item))}</span>
+                        <span className="text-neutral-500 line-through">{formatMoney(orderedLineTotal(item))}</span>
                       ) : (
                         formatMoney(lineTotal(item))
                       )}
@@ -339,14 +339,14 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
       {parties}
 
       {order.history.length > 0 && (
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
           {sectionTitle(History, t("orders.history.title"))}
-          <ol className="space-y-3 border-l border-gray-100 pl-4">
+          <ol className="space-y-3 border-l border-neutral-100 pl-4">
             {order.history.map((entry) => (
               <li key={entry.id} data-testid="order-history" className="text-sm">
-                <p className="text-gray-800">{historyText(entry)}</p>
-                {entry.reason && <p className="text-gray-500">{entry.reason}</p>}
-                <time dateTime={entry.created_at} className="text-xs text-gray-400">
+                <p className="text-neutral-800">{historyText(entry)}</p>
+                {entry.reason && <p className="text-neutral-500">{entry.reason}</p>}
+                <time dateTime={entry.created_at} className="text-xs text-neutral-500">
                   {formatOrderDateTime(entry.created_at)}
                 </time>
               </li>

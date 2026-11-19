@@ -84,23 +84,23 @@ function DonateProductModal({ product, onClose, onDonated }: DonateProductModalP
   return (
     <Modal onClose={onClose} labelledBy={titleId}>
       <ModalHeader>
-        <h3 id={titleId} className="text-lg font-bold text-gray-900">{t("donations.fromProduct.title")}</h3>
-        <p className="mt-1 text-sm text-gray-500">{t("donations.fromProduct.text")}</p>
+        <h3 id={titleId} className="text-lg font-bold text-neutral-900">{t("donations.fromProduct.title")}</h3>
+        <p className="mt-1 text-sm text-neutral-500">{t("donations.fromProduct.text")}</p>
       </ModalHeader>
 
       <form ref={formRef} noValidate onSubmit={handleDonate} className={modalFormStyle}>
         <ModalBody>
-          <div className="mb-5 flex items-center gap-3 rounded-xl bg-gray-50 p-3">
+          <div className="mb-5 flex items-center gap-3 rounded-xl bg-neutral-50 p-3">
             <ProductImage
               imageUrl={product.image_url}
               alt={product.name}
               className="h-14 w-14 shrink-0 rounded-lg object-cover"
             />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold text-gray-900">{product.name}</p>
-              <p className="mt-0.5 text-sm text-gray-600">
+              <p className="truncate font-semibold text-neutral-900">{product.name}</p>
+              <p className="mt-0.5 text-sm text-neutral-600">
                 {t("product.available")}: {available ?? "–"} {unit}
-                <span className="text-gray-400"> · </span>
+                <span className="text-neutral-500"> · </span>
                 {t("donations.fromProduct.value", { price: product.original_price })}
               </p>
             </div>
@@ -109,7 +109,7 @@ function DonateProductModal({ product, onClose, onDonated }: DonateProductModalP
             {available === null ? (
               <LoadingSpinner />
             ) : available <= 0 ? (
-              <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <p className="rounded-xl bg-warning-50 px-4 py-3 text-sm text-warning-800">
                 {t("donations.fromProduct.nothingAvailable")}
               </p>
             ) : (
@@ -127,8 +127,8 @@ function DonateProductModal({ product, onClose, onDonated }: DonateProductModalP
                         onClick={() => setDonationType(type)}
                         className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-colors cursor-pointer ${
                           selected
-                            ? "border-orange-400 bg-orange-50 text-orange-700 ring-4 ring-orange-100"
-                            : "border-gray-200 bg-white text-gray-700 hover:border-orange-200"
+                            ? "border-brand-800 bg-brand-50 text-brand-800 ring-4 ring-brand-100"
+                            : "border-neutral-200 bg-white text-neutral-700 hover:border-brand-200"
                         }`}
                       >
                         <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} />
@@ -178,7 +178,7 @@ function DonateProductModal({ product, onClose, onDonated }: DonateProductModalP
                       />
                     </FormField>
                     {donationPrice && (
-                      <p className="text-sm font-medium text-violet-700">
+                      <p className="text-sm font-medium text-info-700">
                         {discountPercent !== null
                           ? t("donations.form.donorPays", { price: donationPrice, percent: discountPercent })
                           : t("donations.form.priceInvalid")}
@@ -195,14 +195,14 @@ function DonateProductModal({ product, onClose, onDonated }: DonateProductModalP
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+            className="flex-1 cursor-pointer rounded-xl bg-neutral-100 py-2.5 font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
           >
             {t("donations.form.cancel")}
           </button>
           <button
             type="submit"
             disabled={submitting || available === null || available <= 0}
-            className="flex-1 cursor-pointer rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex-1 cursor-pointer rounded-xl bg-brand-800 py-2.5 font-semibold text-white transition-colors hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {t("donations.fromProduct.confirm")}
           </button>

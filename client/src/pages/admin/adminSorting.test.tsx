@@ -117,19 +117,19 @@ describe("sortable admin tables", () => {
     const price = t("admin.products.columnPrice");
 
     expect(header(price)).toHaveAttribute("aria-sort", "none");
-    expect(icon(header(price))).toHaveClass("lucide-arrow-up-down", "text-gray-400");
+    expect(icon(header(price))).toHaveClass("lucide-arrow-up-down", "text-neutral-500");
     expect(lastParams("/admin/products")).toMatchObject({ sort: "", dir: "" });
 
     await userEvent.click(sortButton(price));
     expect(screen.getByTestId("search")).toHaveTextContent("?sort=discounted_price&dir=asc");
     expect(header(price)).toHaveAttribute("aria-sort", "ascending");
-    expect(icon(header(price))).toHaveClass("lucide-arrow-up", "text-orange-500");
+    expect(icon(header(price))).toHaveClass("lucide-arrow-up", "text-brand-800");
     await waitFor(() => expect(lastParams("/admin/products")).toMatchObject({ sort: "discounted_price", dir: "asc" }));
 
     await userEvent.click(sortButton(price));
     expect(screen.getByTestId("search")).toHaveTextContent("?sort=discounted_price&dir=desc");
     expect(header(price)).toHaveAttribute("aria-sort", "descending");
-    expect(icon(header(price))).toHaveClass("lucide-arrow-down", "text-orange-500");
+    expect(icon(header(price))).toHaveClass("lucide-arrow-down", "text-brand-800");
     await waitFor(() => expect(lastParams("/admin/products")).toMatchObject({ sort: "discounted_price", dir: "desc" }));
 
     await userEvent.click(sortButton(price));

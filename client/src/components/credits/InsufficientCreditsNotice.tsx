@@ -14,11 +14,11 @@ function InsufficientCreditsNotice({ error, className = "" }: { error: CreditErr
   const company = credits?.managedByCompany ? (credits.companyName ?? "") : null;
   if (company !== null) {
     return (
-      <div role="alert" className={`flex gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm ${className}`}>
-        <Coins className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+      <div role="alert" className={`flex gap-3 rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm ${className}`}>
+        <Coins className="mt-0.5 h-4 w-4 shrink-0 text-warning-700" />
         <div>
-          <p className="font-semibold text-amber-900">{t("credits.insufficient.title")}</p>
-          <p className="mt-0.5 text-amber-800">
+          <p className="font-semibold text-warning-900">{t("credits.insufficient.title")}</p>
+          <p className="mt-0.5 text-warning-800">
             {error.hasActiveSubscription
               ? t("credits.insufficient.noCredits")
               : t("credits.insufficient.noCompanyPlan", { company })}
@@ -26,7 +26,7 @@ function InsufficientCreditsNotice({ error, className = "" }: { error: CreditErr
           {error.hasActiveSubscription && (
             <Link
               to={error.actionUrl}
-              className="mt-2 inline-flex items-center gap-1 font-semibold text-orange-600 hover:text-orange-700"
+              className="mt-2 inline-flex items-center gap-1 font-semibold text-brand-800 hover:text-brand-900"
             >
               {t("credits.insufficient.companyTopupLink")}
               <ArrowRight className="h-4 w-4" />
@@ -37,16 +37,16 @@ function InsufficientCreditsNotice({ error, className = "" }: { error: CreditErr
     );
   }
   return (
-    <div role="alert" className={`flex gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm ${className}`}>
-      <Coins className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+    <div role="alert" className={`flex gap-3 rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm ${className}`}>
+      <Coins className="mt-0.5 h-4 w-4 shrink-0 text-warning-700" />
       <div>
-        <p className="font-semibold text-amber-900">{t("credits.insufficient.title")}</p>
-        <p className="mt-0.5 text-amber-800">
+        <p className="font-semibold text-warning-900">{t("credits.insufficient.title")}</p>
+        <p className="mt-0.5 text-warning-800">
           {error.hasActiveSubscription ? t("credits.insufficient.noCredits") : t("credits.insufficient.noSubscription")}
         </p>
         <Link
           to={error.actionUrl}
-          className="mt-2 inline-flex items-center gap-1 font-semibold text-orange-600 hover:text-orange-700"
+          className="mt-2 inline-flex items-center gap-1 font-semibold text-brand-800 hover:text-brand-900"
         >
           {error.hasActiveSubscription ? t("credits.insufficient.topUpLink") : t("credits.insufficient.subscribeLink")}
           <ArrowRight className="h-4 w-4" />

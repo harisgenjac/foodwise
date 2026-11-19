@@ -39,10 +39,10 @@ function AccountSetupGate() {
 
   if (pathname === "/my-profile") {
     return (
-      <div className="mx-auto mb-6 max-w-5xl rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+      <div className="mx-auto mb-6 max-w-5xl rounded-2xl border border-warning-200 bg-warning-50 p-4 text-warning-900">
         <p className="font-semibold">{t("accountSetup.title")}</p>
         <div className="mt-2">{stepList}</div>
-        <p className="mt-3 flex items-center gap-1.5 text-xs text-amber-800">
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-warning-800">
           <Check className="h-3.5 w-3.5" />
           {t("accountSetup.profileHint")}
         </p>
@@ -57,19 +57,19 @@ function AccountSetupGate() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="account-setup-title"
-        className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-6 shadow-xl"
+        className="w-full max-w-md rounded-2xl border border-neutral-100 bg-white p-6 shadow-xl"
       >
-        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-warning-50 text-warning-700">
           <UserRoundPen className="h-6 w-6" strokeWidth={1.8} />
         </span>
-        <h2 id="account-setup-title" className="mt-4 text-xl font-bold text-gray-900">
+        <h2 id="account-setup-title" className="mt-4 text-xl font-bold text-neutral-900">
           {t("accountSetup.title")}
         </h2>
-        <p className="mt-1 text-sm text-gray-600">{t("accountSetup.text")}</p>
-        <div className="mt-4 rounded-xl bg-gray-50 p-4 text-gray-800">{stepList}</div>
+        <p className="mt-1 text-sm text-neutral-600">{t("accountSetup.text")}</p>
+        <div className="mt-4 rounded-xl bg-neutral-50 p-4 text-neutral-800">{stepList}</div>
         <Link
           to="/my-profile"
-          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
+          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-800 px-4 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900"
         >
           {t("accountSetup.goToProfile")}
           <ArrowRight className="h-4 w-4" />

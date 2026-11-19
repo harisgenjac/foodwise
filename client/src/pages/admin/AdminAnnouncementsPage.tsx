@@ -36,7 +36,7 @@ const MAX_BODY = 1000;
 const EMPTY_FORM = { title_bs: "", body_bs: "", title_en: "", body_en: "", expires: "" };
 
 const fieldStyle =
-  "w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100";
+  "w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-brand-800 focus:outline-none focus:ring-4 focus:ring-brand-100";
 
 function AdminAnnouncementsPage() {
   const { t } = useTranslation();
@@ -149,8 +149,8 @@ function AdminAnnouncementsPage() {
         onClick={() => setEnding(announcement)}
         className={
           card
-            ? "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-red-200 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
-            : "cursor-pointer rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+            ? "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-danger-200 text-sm font-semibold text-danger-700 transition-colors hover:bg-danger-50"
+            : "cursor-pointer rounded-lg px-2.5 py-1.5 text-sm font-medium text-danger-700 transition-colors hover:bg-danger-50"
         }
       >
         {t("admin.announcements.end")}
@@ -166,22 +166,22 @@ function AdminAnnouncementsPage() {
       cellClassName: "max-w-xs",
       cell: (announcement) => (
         <>
-          <p className="font-medium text-gray-900">{announcement.title_bs}</p>
-          <p className="line-clamp-2 text-xs text-gray-500">{announcement.body_bs}</p>
+          <p className="font-medium text-neutral-900">{announcement.title_bs}</p>
+          <p className="line-clamp-2 text-xs text-neutral-500">{announcement.body_bs}</p>
         </>
       ),
     },
     {
       id: "audience",
       header: t("admin.announcements.columnAudience"),
-      cellClassName: "whitespace-nowrap text-gray-700",
+      cellClassName: "whitespace-nowrap text-neutral-700",
       cell: (announcement) => audiences[announcement.audience],
     },
     {
       id: "sent",
       header: t("admin.announcements.columnSent"),
       className: "hidden md:table-cell",
-      cellClassName: "whitespace-nowrap text-gray-500",
+      cellClassName: "whitespace-nowrap text-neutral-500",
       cell: (announcement) => (
         <>
           {formatDateTime(announcement.created_at)}
@@ -194,7 +194,7 @@ function AdminAnnouncementsPage() {
       id: "reach",
       header: t("admin.announcements.columnReach"),
       className: "hidden md:table-cell",
-      cellClassName: "text-gray-600",
+      cellClassName: "text-neutral-600",
       cell: (announcement) => `${announcement.recipients} / ${announcement.dismissed}`,
     },
     {
@@ -204,16 +204,16 @@ function AdminAnnouncementsPage() {
       cell: (announcement) => (
         <>
           {announcement.is_active ? (
-            <span className="whitespace-nowrap rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
+            <span className="whitespace-nowrap rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-800">
               {t("admin.announcements.statusActive")}
             </span>
           ) : (
-            <span className="whitespace-nowrap rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
+            <span className="whitespace-nowrap rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-600">
               {t("admin.announcements.statusEnded")}
             </span>
           )}
           {announcement.is_active && announcement.expires_at && (
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-neutral-500">
               {t("admin.announcements.until", { date: formatDateTime(announcement.expires_at) })}
             </p>
           )}
@@ -248,12 +248,12 @@ function AdminAnnouncementsPage() {
                     aria-checked={selected}
                     onClick={() => setAudience(code)}
                     className={`flex cursor-pointer flex-col items-start gap-2 rounded-xl border-2 p-4 text-left transition-colors ${
-                      selected ? "border-orange-500 bg-orange-50" : "border-gray-200 bg-white hover:border-orange-200"
+                      selected ? "border-brand-800 bg-brand-50" : "border-neutral-200 bg-white hover:border-brand-200"
                     }`}
                   >
-                    <Icon className={`h-6 w-6 ${selected ? "text-orange-600" : "text-gray-400"}`} strokeWidth={1.8} />
-                    <span className="font-semibold text-gray-900">{audiences[code]}</span>
-                    <span className="text-xs text-gray-500">{descriptions[code]}</span>
+                    <Icon className={`h-6 w-6 ${selected ? "text-brand-800" : "text-neutral-500"}`} strokeWidth={1.8} />
+                    <span className="font-semibold text-neutral-900">{audiences[code]}</span>
+                    <span className="text-xs text-neutral-500">{descriptions[code]}</span>
                   </button>
                 );
               })}
@@ -280,31 +280,31 @@ function AdminAnnouncementsPage() {
         </div>
 
         <div className="space-y-4 lg:sticky lg:top-22 lg:self-start">
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-neutral-100 bg-white p-5 shadow-sm">
             <DateInput
               label={t("admin.announcements.expiresLabel")}
               value={form.expires}
               onChange={setField("expires")}
               min={toDateInput(new Date())}
             />
-            <p className="mt-2 text-xs text-gray-500">{t("admin.announcements.expiresHint")}</p>
+            <p className="mt-2 text-xs text-neutral-500">{t("admin.announcements.expiresHint")}</p>
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium text-gray-700">{t("admin.announcements.preview")}</p>
-            <div className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm">
+            <p className="mb-2 text-sm font-medium text-neutral-700">{t("admin.announcements.preview")}</p>
+            <div className="flex items-start gap-3 rounded-2xl border border-info-100 bg-info-50 p-4">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-info-700 shadow-sm">
                 <Megaphone className="h-5 w-5" strokeWidth={1.8} />
               </span>
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">{t("announcements.label")}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-info-700">{t("announcements.label")}</p>
                 {form.title_bs || form.body_bs ? (
                   <>
-                    <p className="mt-0.5 break-words font-semibold text-blue-950">{form.title_bs}</p>
-                    <p className="mt-0.5 whitespace-pre-line break-words text-sm text-blue-900">{form.body_bs}</p>
+                    <p className="mt-0.5 break-words font-semibold text-info-950">{form.title_bs}</p>
+                    <p className="mt-0.5 whitespace-pre-line break-words text-sm text-info-900">{form.body_bs}</p>
                   </>
                 ) : (
-                  <p className="mt-0.5 text-sm text-blue-800">{t("admin.announcements.previewEmpty")}</p>
+                  <p className="mt-0.5 text-sm text-info-800">{t("admin.announcements.previewEmpty")}</p>
                 )}
               </div>
             </div>
@@ -313,7 +313,7 @@ function AdminAnnouncementsPage() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full cursor-pointer rounded-xl bg-orange-500 px-8 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 disabled:opacity-60"
+            className="w-full cursor-pointer rounded-xl bg-brand-800 px-8 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900 disabled:opacity-60"
           >
             {t("admin.announcements.send")}
           </button>
@@ -322,7 +322,7 @@ function AdminAnnouncementsPage() {
       </form>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">{t("admin.announcements.listSection")}</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-500">{t("admin.announcements.listSection")}</h2>
         {loading ? (
           <LoadingSpinner />
         ) : loadError ? (

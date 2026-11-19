@@ -43,7 +43,7 @@ function OrderPauseControl({ pause, onChange, variant = "row" }: OrderPauseContr
 
   const box =
     variant === "card"
-      ? `rounded-2xl border p-4 shadow-sm ${paused ? "border-amber-200 bg-amber-50" : "border-gray-100 bg-white"}`
+      ? `rounded-2xl border p-4 shadow-sm ${paused ? "border-warning-200 bg-warning-50" : "border-neutral-100 bg-white"}`
       : "";
 
   return (
@@ -54,17 +54,17 @@ function OrderPauseControl({ pause, onChange, variant = "row" }: OrderPauseContr
       <div className="flex min-w-0 gap-3">
         <span
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-            paused ? "bg-amber-100 text-amber-700" : "bg-green-50 text-green-600"
+            paused ? "bg-warning-100 text-warning-700" : "bg-success-100 text-success-800"
           }`}
           aria-hidden="true"
         >
           {paused ? <PauseCircle className="h-5 w-5" /> : <PlayCircle className="h-5 w-5" />}
         </span>
         <div className="min-w-0">
-          <p className="font-medium text-gray-900">
+          <p className="font-medium text-neutral-900">
             {paused ? t("orderPause.pausedTitle") : t("orderPause.receivingTitle")}
           </p>
-          <p className="mt-0.5 text-sm text-gray-500">
+          <p className="mt-0.5 text-sm text-neutral-500">
             {paused
               ? t("orderPause.pausedText", { until: formatPauseEnd(pause.orders_paused_until, t) })
               : t("orderPause.receivingText")}
@@ -76,7 +76,7 @@ function OrderPauseControl({ pause, onChange, variant = "row" }: OrderPauseContr
           type="button"
           onClick={() => save({ orders_paused: false })}
           disabled={saving}
-          className="min-h-11 shrink-0 cursor-pointer rounded-xl bg-orange-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-wait disabled:opacity-60"
+          className="min-h-11 shrink-0 cursor-pointer rounded-xl bg-brand-800 px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-900 disabled:cursor-wait disabled:opacity-60"
         >
           {t("orderPause.resume")}
         </button>
@@ -84,7 +84,7 @@ function OrderPauseControl({ pause, onChange, variant = "row" }: OrderPauseContr
         <button
           type="button"
           onClick={() => setAsking(true)}
-          className="min-h-11 shrink-0 cursor-pointer rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          className="min-h-11 shrink-0 cursor-pointer rounded-xl border border-neutral-200 bg-white px-4 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
         >
           {t("orderPause.pause")}
         </button>

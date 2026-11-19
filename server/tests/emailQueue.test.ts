@@ -28,7 +28,7 @@ const RESTAURANT = "email-queue-restaurant@test.com";
 const BLOCKED_STORE = "email-queue-blocked@test.com";
 const EMAILS = [STORE, RESTAURANT, BLOCKED_STORE];
 
-const CONFIG = { from: "FoodWise <no-reply@example.com>", redirectTo: null, appUrl: "https://app.example.com" };
+const CONFIG = { from: "Još vrijedi <no-reply@example.com>", redirectTo: null, appUrl: "https://app.example.com" };
 
 interface QueueRow {
   id: number;
@@ -197,7 +197,7 @@ describe("sending", () => {
     expect(sent[0]!.html).toContain(`https://app.example.com/orders/${orderId}`);
     expect(sent[0]!.text).toContain("Piletina, 4 kg: 20,00 KM");
     const [row] = await queueRows();
-    expect(send).toHaveBeenCalledWith(expect.anything(), { idempotencyKey: `foodwise-email-${row!.id}` });
+    expect(send).toHaveBeenCalledWith(expect.anything(), { idempotencyKey: `josvrijedi-email-${row!.id}` });
     expect(row).toMatchObject({ status: "SENT", attempts: 1, last_error: null, locked_at: null });
     expect(row!.sent_at?.getTime()).toBe(now.getTime());
 

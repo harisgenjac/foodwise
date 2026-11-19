@@ -74,7 +74,7 @@ function AdminOrderDetailsPage() {
               <button
                 type="button"
                 onClick={() => setCancelling(true)}
-                className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 py-2.5 font-semibold text-red-600 transition-colors hover:bg-red-50"
+                className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-danger-200 py-2.5 font-semibold text-danger-700 transition-colors hover:bg-danger-50"
               >
                 <Ban className="h-4 w-4" />
                 {t("admin.orders.cancel")}

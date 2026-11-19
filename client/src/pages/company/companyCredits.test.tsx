@@ -100,10 +100,10 @@ describe("CompanyCreditsPage", () => {
 
     const visoko = within(row(21)).getByRole("progressbar");
     expect(visoko).toHaveAttribute("aria-valuenow", "20");
-    expect(visoko.firstElementChild).toHaveClass("bg-green-500");
+    expect(visoko.firstElementChild).toHaveClass("bg-success-600");
     const tuzla = within(row(22)).getByRole("progressbar");
     expect(tuzla).toHaveAttribute("aria-valuenow", "95");
-    expect(tuzla.firstElementChild).toHaveClass("bg-red-500");
+    expect(tuzla.firstElementChild).toHaveClass("bg-danger-500");
     expect(within(row(23)).getAllByText(t("company.credits.noPlan")).length).toBeGreaterThan(0);
     expect(within(row(21)).getByRole("link", { name: "Bingo Visoko" })).toHaveAttribute("href", "/company/branches/21");
   });
@@ -254,7 +254,7 @@ describe("the branch page's credits card", () => {
     });
     const card = (await screen.findByRole("heading", { name: t("company.credits.cardTitle") })).closest("section")!;
     expect(within(card).getByText("Standard")).toBeInTheDocument();
-    expect(within(card).getByRole("progressbar").firstElementChild).toHaveClass("bg-red-500");
+    expect(within(card).getByRole("progressbar").firstElementChild).toHaveClass("bg-danger-500");
     expect(within(card).getByRole("button", { name: t("company.credits.choosePlan") })).toBeEnabled();
     expect(within(card).getByRole("button", { name: t("company.credits.addCredits") })).toBeEnabled();
     await userEvent.click(within(card).getByRole("switch", { name: t("credits.profile.autoRenew") }));

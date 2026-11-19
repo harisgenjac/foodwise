@@ -16,7 +16,7 @@ function ChainLabel({ company, className = "" }: ChainLabelProps) {
   return (
     <span
       title={label}
-      className={`inline-flex min-w-0 shrink items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-700 ${className}`}
+      className={`inline-flex min-w-0 shrink items-center gap-1 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-800 ${className}`}
     >
       <Building2 className="h-3 w-3 shrink-0" aria-hidden="true" />
       <span className="truncate">{label}</span>

@@ -15,7 +15,7 @@ function StoreLogo({ logoUrl, className = "" }: StoreLogoProps) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const showLogo = src !== null && failedSrc !== src;
   return (
-    <span className={`flex shrink-0 overflow-hidden border border-gray-100 bg-gray-50 ${className}`}>
+    <span className={`flex shrink-0 overflow-hidden border border-neutral-100 bg-neutral-50 ${className}`}>
       {showLogo ? (
         <img src={src} alt="" data-testid="store-logo" onError={() => setFailedSrc(src)} className="h-full w-full object-contain p-1" />
       ) : (

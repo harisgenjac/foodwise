@@ -446,7 +446,7 @@ function RestaurantHero({ attached = false }: RestaurantHeroProps) {
   };
 
   return (
-    <div className={`overflow-hidden bg-[#FFF7ED] ${attached ? "rounded-t-2xl" : "rounded-2xl"}`}>
+    <div className={`overflow-hidden bg-accent-50 ${attached ? "rounded-t-2xl" : "rounded-2xl"}`}>
       {scene("wide")}
       {scene("phone")}
     </div>

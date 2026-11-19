@@ -11,7 +11,7 @@ import {
 } from "../src/email/transports.js";
 
 const MESSAGE: EmailMessage = {
-  from: "FoodWise <no-reply@example.com>",
+  from: "Još vrijedi <no-reply@example.com>",
   to: "store@example.com",
   subject: "Nova rezervacija: 4 kg Piletina",
   html: "<p>Hello</p>",
@@ -85,7 +85,7 @@ describe("resend transport", () => {
     const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(200, { id: "abc" }));
     const transport = createResendTransport({ apiKey: "re_test_key" }, fetchFn);
     expect(transport.name).toBe("resend");
-    await transport.send(MESSAGE, { idempotencyKey: "foodwise-email-7" });
+    await transport.send(MESSAGE, { idempotencyKey: "josvrijedi-email-7" });
 
     expect(fetchFn).toHaveBeenCalledTimes(1);
     const [url, init] = fetchFn.mock.calls[0]!;
@@ -94,7 +94,7 @@ describe("resend transport", () => {
     expect(init?.headers).toEqual({
       Authorization: "Bearer re_test_key",
       "Content-Type": "application/json",
-      "Idempotency-Key": "foodwise-email-7",
+      "Idempotency-Key": "josvrijedi-email-7",
     });
     expect(JSON.parse(init?.body as string)).toEqual({
       from: MESSAGE.from,

@@ -22,7 +22,7 @@ const link = (appUrl: string, page: string, token: string) => `${appUrl}${page}?
 const RESET_COPY: Record<EmailLanguage, { subject: string; intro: string; outro: string[]; button: string }> = {
   bs: {
     subject: "Postavite novu lozinku",
-    intro: "Neko je zatražio novu lozinku za vaš FoodWise račun. Kliknite dugme da postavite novu lozinku.",
+    intro: "Neko je zatražio novu lozinku za vaš račun na platformi Još vrijedi. Kliknite dugme da postavite novu lozinku.",
     outro: [
       "Link vrijedi 1 sat i može se iskoristiti jednom.",
       "Ako niste vi zatražili novu lozinku, zanemarite ovaj email; vaša lozinka ostaje ista.",
@@ -31,7 +31,7 @@ const RESET_COPY: Record<EmailLanguage, { subject: string; intro: string; outro:
   },
   en: {
     subject: "Set a new password",
-    intro: "Someone asked for a new password for your FoodWise account. Click the button to set a new password.",
+    intro: "Someone asked for a new password for your Još vrijedi account. Click the button to set a new password.",
     outro: [
       "The link is valid for 1 hour and can be used once.",
       "If you did not ask for a new password, ignore this email; your password stays the same.",
@@ -48,12 +48,12 @@ const INVITATION_COPY: Record<
   { subject: string; intro: Record<InvitationSender, string>; outro: Record<InvitationSender, string[]>; button: string }
 > = {
   bs: {
-    subject: "Pozivnica za FoodWise",
+    subject: "Pozivnica za Još vrijedi",
     intro: {
       ADMIN:
-        "Administrator platforme FoodWise vam je otvorio račun. Kliknite dugme da postavite svoju lozinku, a zatim popunite profil.",
+        "Administrator platforme Još vrijedi vam je otvorio račun. Kliknite dugme da postavite svoju lozinku, a zatim popunite profil.",
       COMPANY:
-        "Centrala vaše kompanije vam je otvorila račun poslovnice na platformi FoodWise. Kliknite dugme da postavite svoju lozinku, a zatim popunite profil.",
+        "Centrala vaše kompanije vam je otvorila račun poslovnice na platformi Još vrijedi. Kliknite dugme da postavite svoju lozinku, a zatim popunite profil.",
     },
     outro: {
       ADMIN: [
@@ -68,12 +68,12 @@ const INVITATION_COPY: Record<
     button: "Postavi lozinku",
   },
   en: {
-    subject: "Your FoodWise invitation",
+    subject: "Your Još vrijedi invitation",
     intro: {
       ADMIN:
-        "The FoodWise platform administrator opened an account for you. Click the button to set your password, then fill in your profile.",
+        "The Još vrijedi platform administrator opened an account for you. Click the button to set your password, then fill in your profile.",
       COMPANY:
-        "Your company's headquarters opened a branch account for you on FoodWise. Click the button to set your password, then fill in your profile.",
+        "Your company's headquarters opened a branch account for you on Još vrijedi. Click the button to set your password, then fill in your profile.",
     },
     outro: {
       ADMIN: [

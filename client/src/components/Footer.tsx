@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Leaf } from "lucide-react";
 import api from "../api/axios.js";
+import { BRAND_NAME } from "../utils/brand.js";
 
 interface FooterLink {
   key: string;
@@ -20,7 +21,7 @@ const FOOTER_LINKS: FooterLink[] = [
 
 // Below sm each item is a 44 px tap target with some room on both sides.
 const itemStyle = "inline-flex min-h-11 items-center px-2 sm:min-h-0 sm:px-0";
-const linkStyle = `${itemStyle} text-gray-700 transition-colors hover:text-orange-600`;
+const linkStyle = `${itemStyle} text-neutral-700 transition-colors hover:text-brand-900`;
 
 interface FooterProps {
   // The impact counter needs a login, so the login page leaves it out.
@@ -51,11 +52,11 @@ function Footer({ showImpact = true }: FooterProps) {
   const formattedKg = roundedKg.toLocaleString(i18n.language === "en" ? "en-US" : "bs-BA");
 
   return (
-    <footer className="mx-auto mt-auto w-full max-w-6xl border-t border-gray-200 pt-4 text-sm text-gray-500">
+    <footer className="mx-auto mt-auto w-full max-w-6xl border-t border-neutral-200 pt-4 text-sm text-neutral-500">
       <div className="flex flex-col items-center gap-2 text-center sm:flex-row sm:justify-between sm:text-left">
         {showImpact && roundedKg > 0 ? (
           <p className="flex items-center gap-1.5">
-            <Leaf className="h-4 w-4 shrink-0 text-green-600" strokeWidth={1.8} aria-hidden="true" />
+            <Leaf className="h-4 w-4 shrink-0 text-brand-800" strokeWidth={1.8} aria-hidden="true" />
             {t("footer.impact", { kg: formattedKg })}
           </p>
         ) : (
@@ -84,8 +85,8 @@ function Footer({ showImpact = true }: FooterProps) {
           ))}
         </nav>
       </div>
-      <div className="mt-2 flex flex-col items-center gap-1 text-xs text-gray-400 sm:flex-row sm:justify-between">
-        <span>© {new Date().getFullYear()} FoodWise · Još vrijedi</span>
+      <div className="mt-2 flex flex-col items-center gap-1 text-xs text-neutral-500 sm:flex-row sm:justify-between">
+        <span>© {new Date().getFullYear()} {BRAND_NAME}</span>
         <span>v{__APP_VERSION__}</span>
       </div>
     </footer>

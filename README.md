@@ -1,4 +1,4 @@
-# FoodWise (Još vrijedi)
+# Još vrijedi
 
 [![CI](https://github.com/harisgenjac/foodwise/actions/workflows/ci.yml/badge.svg)](https://github.com/harisgenjac/foodwise/actions/workflows/ci.yml)
 
@@ -71,7 +71,7 @@ Create `server/.env.test` with the same variables, pointing `DATABASE_URL` at `f
 | `APP_TIMEZONE` | no | Business time zone for expiry dates and the scheduled jobs, default `Europe/Sarajevo` |
 | `UPLOADS_DIR` | no | Folder for uploaded logos and product images, default `uploads` (the tests and the e2e server set their own) |
 | `EMAIL_PROVIDER` | no | `log` (default: emails are only written to the console), `smtp` (Mailpit locally) or `resend` |
-| `EMAIL_FROM` | for `resend` | Sender, e.g. `FoodWise <no-reply@example.com>`; default `FoodWise <no-reply@foodwise.local>` |
+| `EMAIL_FROM` | for `resend` | Sender, e.g. `Još vrijedi <no-reply@example.com>`; default `Još vrijedi <no-reply@josvrijedi.local>` |
 | `EMAIL_REDIRECT_TO` | for `resend` outside production | Sends every email to this address instead, with `[to: real@address]` in front of the subject |
 | `RESEND_API_KEY` | for `resend` | Resend API key |
 | `SMTP_HOST` / `SMTP_PORT` | no | SMTP server for `smtp`, default `localhost` / `1025` (Mailpit) |
@@ -139,7 +139,7 @@ The Resend transport is built and tested but not configured. Going live is a cha
 4. **Try it first with the safety redirect** (locally or on a staging server):
    ```env
    EMAIL_PROVIDER=resend
-   EMAIL_FROM=FoodWise <no-reply@mail.example.com>
+   EMAIL_FROM=Još vrijedi <no-reply@mail.example.com>
    RESEND_API_KEY=re_...
    EMAIL_REDIRECT_TO=you@example.com
    ```

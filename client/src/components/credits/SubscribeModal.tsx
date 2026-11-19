@@ -63,47 +63,47 @@ function SubscribeModal({
   return (
     <Modal onClose={onClose} labelledBy={titleId}>
       <ModalHeader>
-        <h3 id={titleId} className="text-lg font-bold text-gray-900">
+        <h3 id={titleId} className="text-lg font-bold text-neutral-900">
           {branchName
             ? t("credits.modal.titleForBranch", { plan: plan.name, branch: branchName })
             : t("credits.modal.title", { plan: plan.name })}
         </h3>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-neutral-500">
           {t("credits.profile.planCredits", { count: plan.credits_per_period })} · {plan.price} KM
         </p>
       </ModalHeader>
 
       <ModalBody>
-        <div className="space-y-3 rounded-xl bg-gray-50 p-4 text-sm text-gray-700">
+        <div className="space-y-3 rounded-xl bg-neutral-50 p-4 text-sm text-neutral-700">
           <div>
-            <p className="font-semibold text-gray-900">{t("credits.modal.whatTitle")}</p>
+            <p className="font-semibold text-neutral-900">{t("credits.modal.whatTitle")}</p>
             <p>{t("credits.modal.chargeStore")}</p>
           </div>
           <div>
-            <p className="font-semibold text-gray-900">{t("credits.modal.refundTitle")}</p>
+            <p className="font-semibold text-neutral-900">{t("credits.modal.refundTitle")}</p>
             <p>{t("credits.modal.refundStore")}</p>
           </div>
           <p>{t("credits.modal.expiry")}</p>
           <p>{t("credits.modal.balance")}</p>
         </div>
 
-        <p className="mt-4 text-sm text-gray-700">
+        <p className="mt-4 text-sm text-neutral-700">
           {t(period === "current" ? "credits.modal.forCurrent" : "credits.modal.forNext", {
             month: formatCreditMonth(month, monthNames),
           })}
         </p>
         {period === "current" && monthStarted && (
-          <p className="mt-1 text-xs text-amber-700">{t("credits.modal.smallerPlanHint")}</p>
+          <p className="mt-1 text-xs text-warning-700">{t("credits.modal.smallerPlanHint")}</p>
         )}
 
         <fieldset className="mt-3 space-y-2">
           <legend className="sr-only">{t("credits.profile.autoRenew")}</legend>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-800">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-neutral-800">
             <input type="radio" name="renewal" checked={!autoRenew} onChange={() => setAutoRenew(false)} />
             {t("credits.modal.thisMonthOnly")}
           </label>
           <div className="flex items-center gap-2">
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-800">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-neutral-800">
               <input type="radio" name="renewal" checked={autoRenew} onChange={() => setAutoRenew(true)} />
               {t("credits.modal.autoRenew")}
             </label>
@@ -111,14 +111,14 @@ function SubscribeModal({
           </div>
         </fieldset>
 
-        <p className="mt-4 text-xs text-gray-500">{t("credits.modal.payment")}</p>
+        <p className="mt-4 text-xs text-neutral-500">{t("credits.modal.payment")}</p>
       </ModalBody>
 
       <ModalFooter>
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+          className="flex-1 cursor-pointer rounded-xl bg-neutral-100 py-2.5 font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
         >
           {t("credits.modal.cancel")}
         </button>
@@ -126,7 +126,7 @@ function SubscribeModal({
           type="button"
           onClick={send}
           disabled={sending}
-          className="flex-1 cursor-pointer rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-wait disabled:opacity-60"
+          className="flex-1 cursor-pointer rounded-xl bg-brand-800 py-2.5 font-semibold text-white transition-colors hover:bg-brand-900 disabled:cursor-wait disabled:opacity-60"
         >
           {t("credits.modal.submit")}
         </button>

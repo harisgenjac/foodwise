@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-FoodWise ("Još vrijedi") is a B2B marketplace where stores sell near-expiry food at a discount to restaurants, with a humanitarian donation module planned. It is developed as a production product: write production-quality code, keep tests passing, and keep the docs current.
+Još vrijedi is a B2B marketplace where stores sell near-expiry food at a discount to restaurants, with a humanitarian donation module planned. It is developed as a production product: write production-quality code, keep tests passing, and keep the docs current.
 
 ## Where to look (read only what the task needs)
 

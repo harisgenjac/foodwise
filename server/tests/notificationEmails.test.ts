@@ -275,7 +275,7 @@ it("an announcement emails every recipient in their language, with its own title
   expect(bs.text).toContain("Od ponedjeljka se preuzima do 20h.\n\nHvala!");
   expect(en.subject).toBe("Platform announcement: New deadline");
   expect(en.text).toContain("From Monday pickups close at 8pm.");
-  expect(bs.text).toContain(`Otvori FoodWise: ${APP_URL}/dashboard`);
+  expect(bs.text).toContain(`Otvori Još vrijedi: ${APP_URL}/dashboard`);
 });
 
 it("credit requests email the admins, and the decision emails the requester", async () => {

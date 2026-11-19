@@ -128,9 +128,9 @@ describe("DistributionBar", () => {
         label="Status"
         totalLabel="4 total"
         items={[
-          { label: "A", value: 1, color: "bg-green-600" },
-          { label: "B", value: 3, color: "bg-blue-600" },
-          { label: "C", value: 0, color: "bg-slate-500" },
+          { label: "A", value: 1, color: "bg-brand-800" },
+          { label: "B", value: 3, color: "bg-info-600" },
+          { label: "C", value: 0, color: "bg-neutral-500" },
         ]}
       />,
     );

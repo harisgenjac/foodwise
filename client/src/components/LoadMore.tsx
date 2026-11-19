@@ -14,12 +14,12 @@ function LoadMore({ shown, total, fetching, onLoadMore }: LoadMoreProps) {
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <p className="text-sm text-gray-500">{t("common.showingOf", { shown, total })}</p>
+      <p className="text-sm text-neutral-500">{t("common.showingOf", { shown, total })}</p>
       <button
         type="button"
         onClick={onLoadMore}
         disabled={fetching}
-        className="cursor-pointer rounded-xl border border-orange-200 bg-white px-6 py-2.5 text-sm font-semibold text-orange-600 transition-colors hover:bg-orange-50 disabled:cursor-wait disabled:opacity-60"
+        className="cursor-pointer rounded-xl border border-brand-200 bg-white px-6 py-2.5 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-50 disabled:cursor-wait disabled:opacity-60"
       >
         {fetching ? t("common.loading") : t("common.loadMore")}
       </button>

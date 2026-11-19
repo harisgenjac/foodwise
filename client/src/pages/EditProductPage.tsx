@@ -116,13 +116,13 @@ function EditProductPage() {
         items={[section, { label: productName, to: `/products/${id}` }, { label: t("breadcrumbs.edit") }]}
       />
       <div className="mb-6">
-        <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-gray-900">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+        <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-neutral-900">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-800">
             <Pencil className="h-5 w-5" strokeWidth={1.8} />
           </span>
           {t("product.editTitle")}
         </h1>
-        <p className="mt-2 text-sm text-gray-500">{t("product.editSubtitle")}</p>
+        <p className="mt-2 text-sm text-neutral-500">{t("product.editSubtitle")}</p>
       </div>
 
       <form ref={formRef} noValidate onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -137,7 +137,7 @@ function EditProductPage() {
           <button
             type="submit"
             disabled={saving}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-3 font-semibold text-white shadow-sm shadow-orange-500/20 transition-all hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-md disabled:translate-y-0 disabled:opacity-60 cursor-pointer"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-800 py-3 font-semibold text-white shadow-sm shadow-brand-800/20 transition-all hover:-translate-y-0.5 hover:bg-brand-900 hover:shadow-md disabled:translate-y-0 disabled:opacity-60 cursor-pointer"
           >
             <Save className="h-5 w-5" strokeWidth={1.8} />
             {t("product.saveChanges")}
@@ -145,7 +145,7 @@ function EditProductPage() {
           <RequiredHint className="text-center" />
           <Link
             to={`/products/${id}`}
-            className="block w-full rounded-xl border border-gray-200 bg-white py-2.5 text-center text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="block w-full rounded-xl border border-neutral-200 bg-white py-2.5 text-center text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
           >
             {t("product.cancel")}
           </Link>

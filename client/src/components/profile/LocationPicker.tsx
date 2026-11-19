@@ -51,22 +51,22 @@ function LocationPicker({ value, onChange, cityCenter }: LocationPickerProps) {
   return (
     <div className="space-y-3">
       {value ? (
-        <p className="flex items-center gap-2 text-sm font-medium text-green-700" role="status">
+        <p className="flex items-center gap-2 text-sm font-medium text-success-800" role="status">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           {t("location.set")}
         </p>
       ) : (
         <p
-          className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+          className="flex items-start gap-2 rounded-xl border border-warning-200 bg-warning-50 px-3 py-2 text-sm text-warning-900"
           role="status"
         >
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
           {t("location.missing")}
         </p>
       )}
-      <p className="text-xs text-gray-500">{t("location.hint")}</p>
+      <p className="text-xs text-neutral-500">{t("location.hint")}</p>
 
-      <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-gray-100 sm:h-80" />}>
+      <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-neutral-100 sm:h-80" />}>
         <LocationMap
           value={value}
           center={cityCenter ?? DEFAULT_CENTER}
@@ -75,14 +75,14 @@ function LocationPicker({ value, onChange, cityCenter }: LocationPickerProps) {
         />
       </Suspense>
 
-      {geoError && <p className="text-sm text-red-600">{geoError}</p>}
+      {geoError && <p className="text-sm text-danger-700">{geoError}</p>}
       <div className="flex flex-wrap gap-2">
         {canLocate && (
           <button
             type="button"
             onClick={locateMe}
             disabled={locating}
-            className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border border-gray-200 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60 sm:min-h-0 sm:py-2"
+            className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border border-neutral-200 px-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-60 sm:min-h-0 sm:py-2"
           >
             <Crosshair className="h-4 w-4" />
             {locating ? t("location.locating") : t("location.useMine")}
@@ -92,7 +92,7 @@ function LocationPicker({ value, onChange, cityCenter }: LocationPickerProps) {
           <button
             type="button"
             onClick={() => set(null)}
-            className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border border-gray-200 px-3 text-sm font-medium text-red-600 hover:bg-red-50 sm:min-h-0 sm:py-2"
+            className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border border-neutral-200 px-3 text-sm font-medium text-danger-700 hover:bg-danger-50 sm:min-h-0 sm:py-2"
           >
             <MapPinOff className="h-4 w-4" />
             {t("location.remove")}

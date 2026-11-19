@@ -12,7 +12,7 @@ export interface DeliveryConfig {
 export class DeliveryConfigError extends Error {}
 
 // Only for the mock outside production: a real provider always needs its own secret.
-export const DEV_WEBHOOK_SECRET = "foodwise-mock-webhook-secret";
+export const DEV_WEBHOOK_SECRET = "josvrijedi-mock-webhook-secret";
 const MIN_SECRET_LENGTH = 16;
 
 const read = (env: NodeJS.ProcessEnv, name: string): string | null => {

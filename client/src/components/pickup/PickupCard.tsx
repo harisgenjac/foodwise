@@ -29,7 +29,7 @@ interface PickupCardProps {
 const shortDate = (date: Date) =>
   `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}.`;
 
-// One handover of a whole order: the time on the left (orange, red when overdue, green once
+// One handover of a whole order: the time on the left (brand, danger when overdue, success once
 // picked up), the order and the other party in the middle, the actions on the right.
 function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardProps) {
   const { t, i18n } = useTranslation();
@@ -49,17 +49,17 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
   const pickupHours = hoursText(order.party_pickup_schedule, t);
 
   const tone = isCompleted
-    ? "bg-green-50 text-green-700"
+    ? "bg-success-100 text-success-800"
     : isOverdue
-      ? "bg-red-50 text-red-700"
-      : "bg-orange-50 text-orange-700";
+      ? "bg-danger-50 text-danger-700"
+      : "bg-brand-50 text-brand-800";
 
   return (
     <article
       data-testid="pickup-card"
       onClick={() => navigate(`/orders/${order.id}`)}
       className={`group flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:flex-row ${
-        isOverdue ? "border-red-100" : "border-gray-100"
+        isOverdue ? "border-danger-100" : "border-neutral-100"
       }`}
     >
       <div
@@ -71,7 +71,7 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
           <span className="text-xs font-medium opacity-80">{shortDate(pickup)}</span>
         </div>
         {isOverdue && (
-          <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+          <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-danger-100 px-2 py-0.5 text-xs font-semibold text-danger-700">
             <AlertTriangle className="h-3 w-3" />
             {daysOverdue > 0 ? t("pickups.overdueDays", { count: daysOverdue }) : t("pickups.overdueToday")}
           </span>
@@ -87,46 +87,46 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
         />
         <div className="min-w-0 flex-1 space-y-2">
           <div>
-            <h3 className="flex min-w-0 items-center gap-2 text-base font-bold text-gray-900">
+            <h3 className="flex min-w-0 items-center gap-2 text-base font-bold text-neutral-900">
               <span className="truncate">{t("orders.title", { code: formatOrderCode(order.code) })}</span>
               {order.fulfilment_method === "DELIVERY" && (
-                <span className="shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700">
+                <span className="shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-800">
                   {t("orders.delivery.badge")}
                 </span>
               )}
             </h3>
-            <p className="text-sm text-gray-500">
-              <span className="font-medium text-gray-700">{itemsSummary(order, t)}</span>
+            <p className="text-sm text-neutral-500">
+              <span className="font-medium text-neutral-700">{itemsSummary(order, t)}</span>
               {" · "}
-              {t("pickups.total")} <span className="font-semibold text-green-700">{formatMoney(order.total)}</span>
+              {t("pickups.total")} <span className="font-semibold text-brand-800">{formatMoney(order.total)}</span>
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-600">
             <span className="inline-flex min-w-0 items-center gap-1.5">
-              <PartyIcon className="h-4 w-4 shrink-0 text-gray-400" />
-              <span className="truncate font-medium text-gray-800">{order.business_name}</span>
-              {order.city && <span className="text-gray-400">· {order.city}</span>}
+              <PartyIcon className="h-4 w-4 shrink-0 text-neutral-500" />
+              <span className="truncate font-medium text-neutral-800">{order.business_name}</span>
+              {order.city && <span className="text-neutral-500">· {order.city}</span>}
             </span>
             {order.party_phone && (
               <a
                 href={`tel:${order.party_phone}`}
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1.5 font-medium text-orange-700 hover:underline"
+                className="inline-flex items-center gap-1.5 font-medium text-brand-800 hover:underline"
               >
-                <Phone className="h-4 w-4 shrink-0 text-gray-400" />
+                <Phone className="h-4 w-4 shrink-0 text-neutral-500" />
                 {order.party_phone}
               </a>
             )}
             {!isStore && order.party_address && (
               <span className="inline-flex items-center gap-1.5">
-                <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
+                <MapPin className="h-4 w-4 shrink-0 text-neutral-500" />
                 {order.party_address}
               </span>
             )}
             {!isStore && pickupHours && (
               <span className="inline-flex items-center gap-1.5">
-                <Clock className="h-4 w-4 shrink-0 text-gray-400" />
+                <Clock className="h-4 w-4 shrink-0 text-neutral-500" />
                 {t("pickups.pickupHours")}: {pickupHours}
               </span>
             )}
@@ -134,9 +134,9 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-gray-100 p-4 sm:w-56 sm:flex-col sm:items-stretch sm:justify-center sm:border-t-0 sm:border-l">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-neutral-100 p-4 sm:w-56 sm:flex-col sm:items-stretch sm:justify-center sm:border-t-0 sm:border-l">
         {isCompleted ? (
-          <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+          <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-800">
             <PackageCheck className="h-4 w-4" />
             {isDelivery && !isStore && order.status === "Completed"
               ? t("pickups.deliveredAt", {
@@ -148,18 +148,18 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
           </span>
         ) : failedOnTheWay ? (
           // The courier had the goods and could not deliver them; an admin settles it.
-          <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+          <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-danger-50 px-3 py-1 text-xs font-semibold text-danger-700">
             <AlertTriangle className="h-4 w-4" />
             {t("pickups.deliveryFailedOnTheWay")}
           </span>
         ) : inDelivery ? (
-          <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+          <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-info-50 px-3 py-1 text-xs font-semibold text-info-700">
             <Truck className="h-4 w-4" />
             {t("pickups.onTheWay")}
           </span>
         ) : isDelivery ? (
           // The courier collects a delivery order; its delivery completes it.
-          <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+          <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-info-50 px-3 py-1 text-xs font-semibold text-info-700">
             <Truck className="h-4 w-4" />
             {t("pickups.courierCollects")}
           </span>
@@ -171,7 +171,7 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
                 e.stopPropagation();
                 onComplete?.(order);
               }}
-              className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm shadow-green-600/20 transition-colors hover:bg-green-700"
+              className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-brand-800 px-3 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900"
             >
               <PackageCheck className="h-4 w-4" />
               {t("pickups.completeButton")}
@@ -183,7 +183,7 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
                   e.stopPropagation();
                   onCancelOverdue?.(order);
                 }}
-                className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 px-3 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+                className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-danger-200 px-3 py-2.5 text-sm font-semibold text-danger-700 transition-colors hover:bg-danger-50"
               >
                 <CalendarX className="h-4 w-4" />
                 {t("pickups.cancelOverdueButton")}
@@ -192,7 +192,7 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
           </>
         ) : (
           !isOverdue && (
-            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
+            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-800">
               <CircleCheck className="h-4 w-4" />
               {t("pickups.readyForPickup")}
             </span>
@@ -201,7 +201,7 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
         <Link
           to={`/orders/${order.id}`}
           onClick={(e) => e.stopPropagation()}
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-50"
+          className="inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-50"
         >
           {t("pickups.details")}
           <ArrowRight className="h-4 w-4" />

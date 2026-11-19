@@ -104,28 +104,28 @@ function StoreDashboardPage() {
 
       <Link
         to="/packing"
-        className="group flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+        className="group flex items-center gap-4 rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
       >
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-800">
           <ClipboardList className="h-5 w-5" strokeWidth={2} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block font-semibold text-gray-900">{t("dashboard.packingTitle")}</span>
-          <span className="block text-sm text-gray-500">{t("dashboard.packingText")}</span>
+          <span className="block font-semibold text-neutral-900">{t("dashboard.packingTitle")}</span>
+          <span className="block text-sm text-neutral-500">{t("dashboard.packingText")}</span>
         </span>
-        <ArrowRight className="h-5 w-5 shrink-0 text-orange-600 transition-transform group-hover:translate-x-0.5" />
+        <ArrowRight className="h-5 w-5 shrink-0 text-brand-800 transition-transform group-hover:translate-x-0.5" />
       </Link>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard icon={Package} label={t("dashboard.statActiveProducts")} value={stats?.active_products ?? 0} />
-        <StatCard icon={Hourglass} label={t("dashboard.statPending")} value={stats?.pending_orders ?? 0} tone="amber" />
-        <StatCard icon={CheckCircle2} label={t("dashboard.statConfirmed")} value={stats?.successful_orders ?? 0} tone="green" />
+        <StatCard icon={Hourglass} label={t("dashboard.statPending")} value={stats?.pending_orders ?? 0} tone="warning" />
+        <StatCard icon={CheckCircle2} label={t("dashboard.statConfirmed")} value={stats?.successful_orders ?? 0} tone="success" />
         <StatCard
           icon={Leaf}
           label={t("dashboard.statSavedFood")}
           value={savedFood[0] ?? "0 kg"}
           units={savedFood.slice(1)}
-          tone="green"
+          tone="success"
         />
       </div>
 

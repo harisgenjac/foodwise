@@ -23,23 +23,24 @@ const SKELETON_CARDS = 6;
 
 // 170 px wide on phones, 210 px from md up; the cover 76 / 92 px.
 const ITEM = "flex w-[170px] flex-none snap-start md:w-[210px]";
-const CARD = "flex w-full flex-col overflow-hidden rounded-2xl border border-[#EEEDEB] bg-white";
+const CARD = "flex w-full flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white";
 const COVER = "h-[76px] w-full md:h-[92px]";
 
 // A store without a cover image gets a soft background with a large icon, and its initials (when
-// it has no logo) on the stronger colour.
+// it has no logo) on the stronger colour. The colours come from the palette (the 700/800 shades, so
+// the white initials pass WCAG AA), with purple as the one extra hue.
 interface Tone {
   soft: string;
   strong: string;
   icon: LucideIcon;
 }
 const TONES: Tone[] = [
-  { soft: "#FEE2E2", strong: "#DC2626", icon: ShoppingCart },
-  { soft: "#DCFCE7", strong: "#16A34A", icon: Leaf },
-  { soft: "#FFEDD5", strong: "#EA580C", icon: Croissant },
-  { soft: "#E0F2FE", strong: "#0284C7", icon: Beef },
-  { soft: "#FEF3C7", strong: "#D97706", icon: ShoppingBasket },
-  { soft: "#F3E8FF", strong: "#9333EA", icon: Apple },
+  { soft: "#FEE2E2", strong: "#B91C1C", icon: ShoppingCart },
+  { soft: "#DCFCE7", strong: "#166534", icon: Leaf },
+  { soft: "#FFEDD5", strong: "#C2410C", icon: Croissant },
+  { soft: "#E0F2FE", strong: "#0369A1", icon: Beef },
+  { soft: "#FEF3C7", strong: "#B45309", icon: ShoppingBasket },
+  { soft: "#F3E8FF", strong: "#7E22CE", icon: Apple },
 ];
 
 // The same store always gets the same tone (a multiplicative hash of its id, so neighbouring ids
@@ -63,7 +64,7 @@ function StoreCard({ store }: { store: User }) {
       to={`/stores/${store.id}`}
       draggable={false}
       data-testid="store-card"
-      className={`${CARD} transition duration-200 hover:-translate-y-[3px] hover:shadow-[0_8px_20px_rgba(0,0,0,0.08)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F766E]`}
+      className={`${CARD} transition duration-200 hover:-translate-y-[3px] hover:shadow-[0_8px_20px_rgba(0,0,0,0.08)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-800`}
     >
       {store.cover_url && !coverFailed ? (
         <img
@@ -93,9 +94,9 @@ function StoreCard({ store }: { store: User }) {
           className="relative -mt-7 h-14 w-14 rounded-[14px] text-lg"
         />
         {/* Block elements, so the link's name reads "name, place, offers" with pauses between. */}
-        <div data-testid="store-card-name" className="mt-2.5 mb-1 truncate text-[15px] font-semibold text-[#1C1917]">{store.business_name}</div>
+        <div data-testid="store-card-name" className="mt-2.5 mb-1 truncate text-[15px] font-semibold text-neutral-900">{store.business_name}</div>
         {location && (
-          <div className="flex items-center gap-1 text-[13px] text-[#78716C]">
+          <div className="flex items-center gap-1 text-[13px] text-neutral-500">
             <MapPin className="h-3.5 w-3.5 flex-none" aria-hidden="true" />
             <span className="truncate">{location}</span>
           </div>
@@ -103,7 +104,7 @@ function StoreCard({ store }: { store: User }) {
         {offers > 0 && (
           <div
             data-testid="store-card-offers"
-            className="mt-2.5 inline-flex items-center gap-1 self-start rounded-full bg-[#F0FDFA] px-2.5 py-1 text-xs font-semibold text-[#0F766E]"
+            className="mt-2.5 inline-flex items-center gap-1 self-start rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-800"
           >
             <Tag className="h-3.5 w-3.5" aria-hidden="true" />
             {t("storeCarousel.offers", { count: offers })}
@@ -117,12 +118,12 @@ function StoreCard({ store }: { store: User }) {
 function SkeletonCard() {
   return (
     <span className={CARD}>
-      <span className={`${COVER} animate-pulse bg-gray-100`} />
+      <span className={`${COVER} animate-pulse bg-neutral-100`} />
       <span className="flex flex-col px-3.5 pb-4">
-        <span className="-mt-7 h-14 w-14 animate-pulse rounded-[14px] border-[3px] border-white bg-gray-200" />
-        <span className="mt-2.5 h-4 w-3/4 animate-pulse rounded bg-gray-200" />
-        <span className="mt-2 h-3 w-1/2 animate-pulse rounded bg-gray-100" />
-        <span className="mt-3 h-5 w-20 animate-pulse rounded-full bg-gray-100" />
+        <span className="-mt-7 h-14 w-14 animate-pulse rounded-[14px] border-[3px] border-white bg-neutral-200" />
+        <span className="mt-2.5 h-4 w-3/4 animate-pulse rounded bg-neutral-200" />
+        <span className="mt-2 h-3 w-1/2 animate-pulse rounded bg-neutral-100" />
+        <span className="mt-3 h-5 w-20 animate-pulse rounded-full bg-neutral-100" />
       </span>
     </span>
   );
@@ -145,15 +146,15 @@ function StoreCarousel({ stores }: StoreCarouselProps) {
     <section aria-labelledby={titleId} aria-busy={!stores} data-testid="store-carousel">
       <div className="mt-1 mb-3.5 flex items-end justify-between gap-4">
         <div>
-          <h2 id={titleId} className="text-xl font-semibold text-[#1C1917]">
+          <h2 id={titleId} className="text-xl font-semibold text-neutral-900">
             {t("storeCarousel.title")}
           </h2>
-          <p className="mt-0.5 text-sm text-[#78716C]">{t("storeCarousel.subtitle")}</p>
+          <p className="mt-0.5 text-sm text-neutral-500">{t("storeCarousel.subtitle")}</p>
         </div>
         <Link
           to="/stores"
           data-testid="store-carousel-all"
-          className="inline-flex min-h-11 flex-none items-center gap-1 text-sm font-semibold text-[#0F766E] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F766E]"
+          className="inline-flex min-h-11 flex-none items-center gap-1 text-sm font-semibold text-brand-800 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-800"
         >
           {t("storeCarousel.allStores")}
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
