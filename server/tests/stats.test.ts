@@ -116,7 +116,6 @@ describe("GET /api/stats/my-impact", () => {
     await insertOrderItem({ productId: kg.id, restaurantId: await userId(OTHER), quantity: 7, unitPrice: 6, status: "Completed" });
 
     const impact = await myImpact(restaurant);
-    expect(impact.scope).toBe("own");
     expect(impact.food_kg).toBeCloseTo(5.75, 5);
     expect(impact.co2_kg).toBeCloseTo(5.75 * 2.5, 5);
     expect(impact.savings).toBeCloseTo(8 + 4998 + 6 + 750 + 8, 2);
@@ -133,23 +132,15 @@ describe("GET /api/stats/my-impact", () => {
     expect((await myImpact(restaurant)).savings).toBe(0);
   });
 
-  it("shows the platform's totals while the restaurant has picked up nothing", async () => {
+  it("shows zeros while the restaurant has picked up nothing, whatever other restaurants saved", async () => {
     const product = await createProduct(store, { unit: "kg", quantity: 100, original_price: 10, discounted_price: 6 });
     await insertOrderItem({ productId: product.id, restaurantId: await userId(OTHER), quantity: 3, unitPrice: 6, status: "Completed" });
     // Its own order that is not picked up yet does not count as picked-up food.
     await insertOrderItem({ productId: product.id, restaurantId: await userId(RESTAURANT), quantity: 1, unitPrice: 6, status: "Confirmed" });
 
-    const admin = await registerAndLogin(ADMIN, "ADMIN");
-    const { saved } = (await admin.get("/api/admin/stats")).body.stats;
-    const impact = await myImpact(restaurant);
-    expect(impact.scope).toBe("platform");
-    expect(impact.food_kg).toBeCloseTo(saved.kg + saved.l, 5);
-    expect(impact.food_kg).toBeGreaterThanOrEqual(3);
-    expect(impact.co2_kg).toBeCloseTo((saved.kg + saved.l) * 2.5, 5);
-    expect(impact.savings).toBe(saved.savings);
-
+    expect(await myImpact(restaurant)).toEqual({ food_kg: 0, co2_kg: 0, savings: 0 });
     // The other restaurant has its own numbers.
-    expect(await myImpact(other)).toEqual({ scope: "own", food_kg: 3, co2_kg: 7.5, savings: 12 });
+    expect(await myImpact(other)).toEqual({ food_kg: 3, co2_kg: 7.5, savings: 12 });
   });
 
   it("is only for restaurants", async () => {

@@ -12,8 +12,7 @@ export const getImpact = async (req: Request, res: Response) => {
   }
 };
 
-// The restaurant dashboard's impact strip: the restaurant's own totals, or the platform's while it
-// has picked up nothing yet (`scope`).
+// The restaurant home page's stats: the restaurant's own totals (zeros before its first pickup).
 export const getMyImpact = async (req: Request, res: Response) => {
   try {
     const impact = await getRestaurantImpact(req.user!.id);

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { assetUrl } from "../api/axios.js";
 import { useAuth } from "../context/AuthContext.js";
 import { useNavigate, useLocation, Link } from "react-router-dom";
@@ -14,6 +14,7 @@ import {
   Menu,
   PanelLeftClose,
   PanelLeftOpen,
+  Search,
   ShoppingCart,
   UserRound,
 } from "lucide-react";
@@ -25,6 +26,37 @@ import NotificationItem from "./notifications/NotificationItem.js";
 import { MOBILE_DRAWER_ID } from "./navigation/MobileDrawer.js";
 
 const DROPDOWN_LIMIT = 8;
+
+// The restaurant's search field (md and up; phones have Search in the bottom bar): Enter opens
+// /search?q=<text>, which fills its name filter with it. No suggestions yet.
+function HeaderSearch() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [text, setText] = useState("");
+
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = text.trim();
+    navigate(query ? `/search?q=${encodeURIComponent(query)}` : "/search");
+    setText("");
+  };
+
+  return (
+    <form role="search" onSubmit={onSubmit} className="mx-4 hidden max-w-[560px] flex-1 md:block">
+      <label className="flex h-[46px] items-center gap-2.5 rounded-xl bg-neutral-100 px-4 text-neutral-600 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand-800">
+        <Search className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />
+        <span className="sr-only">{t("header.search")}</span>
+        <input
+          type="search"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          placeholder={t("header.search")}
+          className="min-w-0 flex-1 bg-transparent text-[15px] text-neutral-900 outline-none placeholder:text-neutral-600"
+        />
+      </label>
+    </form>
+  );
+}
 
 interface HeaderProps {
   // The desktop rail (md and up).
@@ -165,6 +197,8 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
           )}
         </Link>
       </div>
+
+      {user?.role === "RESTAURANT" && !locked && <HeaderSearch />}
 
       <div className="flex shrink-0 items-center sm:gap-1">
         <LanguageSwitcher />

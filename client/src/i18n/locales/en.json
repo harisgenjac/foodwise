@@ -50,7 +50,8 @@
     "openMenu": "Open menu",
     "cartLabel": "Cart",
     "cartLabelCount_one": "Cart, {{count}} product",
-    "cartLabelCount_other": "Cart, {{count}} products"
+    "cartLabelCount_other": "Cart, {{count}} products",
+    "search": "Search products or stores"
   },
   "bottomNav": {
     "label": "Main navigation",
@@ -460,64 +461,6 @@
     "usesCompanyLogo": "Your company's logo is shown until you set your own.",
     "companyDescriptionHint": "Left empty, your company's description is shown.",
     "removeLogo": "Remove logo"
-  },
-  "restaurantHero": {
-    "title": "Još vrijedi animation",
-    "desc": "The shopkeeper says a discount is better than throwing food away, a delivery rider on a bicycle with a Još vrijedi backpack takes a crate from the store to the restaurant, and the chef says it will become today's menu.",
-    "store": "Store",
-    "restaurant": "Restaurant",
-    "storeBubble1": "Better a discount",
-    "storeBubble2": "than waste!",
-    "chefBubble1": "This becomes",
-    "chefBubble2": "today's menu!",
-    "backpack1": "Još",
-    "backpack2": "vrijedi"
-  },
-  "impactStrip": {
-    "label": "Your impact",
-    "together": "Together we have saved",
-    "foodSaved": "Food saved",
-    "foodSavedInfo": "How food saved is counted",
-    "foodSavedTip": "All food you picked up through the app. Litres are counted as kilograms; items sold by the piece are not included.",
-    "co2": "Less CO₂",
-    "co2Info": "How the CO₂ is estimated",
-    "co2Tip": "An estimate: each kilogram of food saved avoids about 2.5 kg of CO₂ from producing and throwing it away.",
-    "saved": "Saved",
-    "savedInfo": "How the savings are counted",
-    "savedTip": "The difference between the full price and the price you paid for all the food you picked up."
-  },
-  "restaurantIntro": {
-    "label": "Quick actions",
-    "text": "Food close to its expiry date is still worth it. Buy it for less, straight from stores near you, and turn it into today's menu.",
-    "search": "Search products",
-    "myOrders": "My orders",
-    "activeOrders_one": "{{count}} active order",
-    "activeOrders_other": "{{count}} active orders"
-  },
-  "storeCarousel": {
-    "title": "Stores near you",
-    "subtitle": "Nearest first",
-    "previous": "Previous stores",
-    "next": "Next stores",
-    "distance": "{{km}} km",
-    "allStores": "All stores",
-    "offers_one": "{{count}} offer",
-    "offers_other": "{{count}} offers"
-  },
-  "howItWorks": {
-    "title": "How it works",
-    "find": {
-      "title": "Find an offer",
-      "text": "Search for food close to its expiry date and add what you need from one store to your cart, <hl>at a lower price</hl>."
-    },
-    "choose": {
-      "title": "Choose how you get it",
-      "text": "Pick up your order <hl>in person at the store or get it delivered</hl> to your restaurant's address."
-    },
-    "cook": {
-      "title": "Cook it today",
-      "text": "The store confirms your order, and the food arrives <hl>ready for your kitchen</hl> instead of ending up in the bin."
-    }
   },
   "dashboard": {
     "appTitle": "Welcome to Još vrijedi",
@@ -2270,5 +2213,37 @@
     "untilResumed": "until the store turns it off",
     "badge": "Not taking orders",
     "notice": "This store is not taking orders right now ({{until}}). The products stay in your cart, so you can send the order later."
+  },
+  "restaurantHome": {
+    "hero": {
+      "text": "Buy food close to its expiry date straight from stores near you, for less. Pick it up yourself or have it delivered to your restaurant.",
+      "shopNow": "Shop now",
+      "trackDelivery": "Track delivery",
+      "comingSoon": "Coming soon",
+      "chef": "A chef holding a paper bag full of vegetables",
+      "bubble": [
+        "Cooking with rescued food today!",
+        "Same quality, lower price.",
+        "Ordered in the morning, on the plate by noon.",
+        "Less waste, more flavour!"
+      ]
+    },
+    "stats": {
+      "label": "Your impact",
+      "foodSaved": "Food saved",
+      "foodSavedInfo": "How food saved is counted",
+      "foodSavedTip": "All food you picked up through the app. Litres are counted as kilograms; items sold by the piece are not included.",
+      "co2": "Less CO₂",
+      "co2Info": "How the CO₂ is estimated",
+      "co2Tip": "An estimate: each kilogram of food saved avoids about 2.5 kg of CO₂ from producing and throwing it away.",
+      "saved": "Saved",
+      "savedInfo": "How the savings are counted",
+      "savedTip": "The difference between the full price and the price you paid for all the food you picked up."
+    },
+    "stores": {
+      "label": "Stores near you",
+      "previous": "Previous stores",
+      "next": "Next stores"
+    }
   }
 }

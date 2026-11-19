@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, CalendarClock, MapPin, Search, SearchX, ShoppingBasket, Tag } from "lucide-react";
 import LoadingSpinner from "../components/LoadingSpinner.js";
@@ -30,7 +30,15 @@ import StorePausedNotice from "../components/store/StorePausedNotice.js";
 // category, expiring (today, tomorrow, 3 days), city and the nearby radius; sorting.
 function SearchPage() {
   const { t } = useTranslation();
-  const [name, setName] = useState("");
+  // ?q= from the header's search field fills the name filter, on load and on every new search.
+  const [searchParams] = useSearchParams();
+  const q = searchParams.get("q") ?? "";
+  const [name, setName] = useState(q);
+  const [appliedQ, setAppliedQ] = useState(q);
+  if (q !== appliedQ) {
+    setAppliedQ(q);
+    setName(q);
+  }
   const [category, setCategory] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");
   const [cityId, setCityId] = useState("");

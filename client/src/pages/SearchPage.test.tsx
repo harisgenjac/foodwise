@@ -23,13 +23,13 @@ type Answer = { stores: SearchStore[]; total: number; outside_radius_count?: num
 let cart: Cart;
 
 // An Error makes the request fail.
-const renderPage = (answer: ((params: Record<string, unknown>) => Answer) | Error) =>
+const renderPage = (answer: ((params: Record<string, unknown>) => Answer) | Error, route = "/search") =>
   renderWithProviders(
     <CartProvider enabled>
       <SearchPage />
     </CartProvider>,
     {
-      route: "/search",
+      route,
       path: "/search",
       user: makeUser({ role: "RESTAURANT" }),
       get: {
@@ -131,5 +131,13 @@ describe("SearchPage", () => {
     await userEvent.click(screen.getByRole("button", { name: t("stepper.add", { name: "Piletina" }) }));
     expect(apiMock.put).toHaveBeenCalledWith("/cart/items/10", { quantity: 1 });
     expect(await screen.findByRole("group", { name: t("stepper.label", { name: "Piletina" }) })).toBeInTheDocument();
+  });
+
+  it("fills the name filter from ?q= (the header search) and searches with it", async () => {
+    renderPage(() => ({ stores: [makeStore()], total: 1 }), "/search?q=mlijeko");
+    expect(await screen.findByText("Piletina")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(t("filters.searchByName"))).toHaveValue("mlijeko");
+    expect(searchCalls().length).toBeGreaterThan(0);
+    expect(searchCalls().every(([, config]) => (config?.params as Record<string, unknown>).name === "mlijeko")).toBe(true);
   });
 });

@@ -51,7 +51,8 @@
     "cartLabel": "Korpa",
     "cartLabelCount_one": "Korpa, {{count}} proizvod",
     "cartLabelCount_few": "Korpa, {{count}} proizvoda",
-    "cartLabelCount_other": "Korpa, {{count}} proizvoda"
+    "cartLabelCount_other": "Korpa, {{count}} proizvoda",
+    "search": "Pretraži proizvode ili prodavnice"
   },
   "bottomNav": {
     "label": "Glavna navigacija",
@@ -474,66 +475,6 @@
     "usesCompanyLogo": "Prikazuje se logo firme dok ne postavite svoj.",
     "companyDescriptionHint": "Ako ostavite prazno, prikazuje se opis firme.",
     "removeLogo": "Ukloni logo"
-  },
-  "restaurantHero": {
-    "title": "Animacija Još vrijedi",
-    "desc": "Prodavač kaže da je bolje dati popust nego baciti hranu, dostavljač na biciklu s ruksakom Još vrijedi vozi gajbu od prodavnice do restorana, a kuhar kaže da će od toga napraviti današnji meni.",
-    "store": "Prodavnica",
-    "restaurant": "Restoran",
-    "storeBubble1": "Bolje popust",
-    "storeBubble2": "nego otpad!",
-    "chefBubble1": "Od ovoga je",
-    "chefBubble2": "današnji meni!",
-    "backpack1": "Još",
-    "backpack2": "vrijedi"
-  },
-  "impactStrip": {
-    "label": "Vaš uticaj",
-    "together": "Zajedno smo spasili",
-    "foodSaved": "Spašeno hrane",
-    "foodSavedInfo": "Kako se računa spašena hrana",
-    "foodSavedTip": "Sva hrana koju ste preuzeli preko aplikacije. Litre računamo kao kilograme, a proizvodi u komadima nisu uračunati.",
-    "co2": "Manje CO₂",
-    "co2Info": "Kako se računa CO₂",
-    "co2Tip": "Procjena: svaki spašeni kilogram hrane sprečava oko 2,5 kg CO₂ koji bi nastao njenom proizvodnjom i bacanjem.",
-    "saved": "Ušteđeno",
-    "savedInfo": "Kako se računa ušteda",
-    "savedTip": "Razlika između pune cijene i cijene koju ste platili za svu preuzetu hranu."
-  },
-  "restaurantIntro": {
-    "label": "Brze akcije",
-    "text": "Hrana kojoj uskoro ističe rok još uvijek vrijedi. Kupite je jeftinije, direktno od prodavnica u blizini, i pretvorite je u današnji meni.",
-    "search": "Pretraži proizvode",
-    "myOrders": "Moje narudžbe",
-    "activeOrders_one": "{{count}} aktivna narudžba",
-    "activeOrders_few": "{{count}} aktivne narudžbe",
-    "activeOrders_other": "{{count}} aktivnih narudžbi"
-  },
-  "storeCarousel": {
-    "title": "Prodavnice u blizini",
-    "subtitle": "Najbliže prve",
-    "previous": "Prethodne prodavnice",
-    "next": "Sljedeće prodavnice",
-    "distance": "{{km}} km",
-    "allStores": "Sve prodavnice",
-    "offers_one": "{{count}} ponuda",
-    "offers_few": "{{count}} ponude",
-    "offers_other": "{{count}} ponuda"
-  },
-  "howItWorks": {
-    "title": "Kako funkcioniše",
-    "find": {
-      "title": "Pronađite ponudu",
-      "text": "Pretražite hranu kojoj uskoro ističe rok i u korpu dodajte ono što vam treba iz jedne prodavnice, <hl>po nižoj cijeni</hl>."
-    },
-    "choose": {
-      "title": "Izaberite preuzimanje",
-      "text": "Pokupite narudžbu <hl>lično u prodavnici ili je primite dostavom</hl> na adresu vašeg restorana."
-    },
-    "cook": {
-      "title": "Kuhajte već danas",
-      "text": "Prodavnica potvrdi narudžbu, a hrana stiže <hl>spremna za vašu kuhinju</hl>, umjesto da završi u smeću."
-    }
   },
   "dashboard": {
     "appTitle": "Dobrodošli na platformu Još vrijedi",
@@ -2323,5 +2264,37 @@
     "untilResumed": "dok je prodavnica ne isključi",
     "badge": "Ne prima narudžbe",
     "notice": "Ova prodavnica trenutno ne prima narudžbe ({{until}}). Proizvodi ostaju u korpi pa narudžbu možete poslati kasnije."
+  },
+  "restaurantHome": {
+    "hero": {
+      "text": "Kupujte hranu kojoj uskoro ističe rok direktno od prodavnica u blizini, po nižoj cijeni. Preuzmite je lično ili naručite dostavu do svog restorana.",
+      "shopNow": "Kupi sada",
+      "trackDelivery": "Prati dostavu",
+      "comingSoon": "Uskoro",
+      "chef": "Kuhar drži papirnu kesu punu povrća",
+      "bubble": [
+        "Danas kuham od spašene hrane!",
+        "Ista kvaliteta, niža cijena.",
+        "Naručeno ujutro, na tanjiru u podne.",
+        "Manje otpada, više okusa!"
+      ]
+    },
+    "stats": {
+      "label": "Vaš uticaj",
+      "foodSaved": "Spašeno hrane",
+      "foodSavedInfo": "Kako se računa spašena hrana",
+      "foodSavedTip": "Sva hrana koju ste preuzeli preko aplikacije. Litre računamo kao kilograme, a proizvodi u komadima nisu uračunati.",
+      "co2": "Manje CO₂",
+      "co2Info": "Kako se računa CO₂",
+      "co2Tip": "Procjena: svaki spašeni kilogram hrane sprečava oko 2,5 kg CO₂ koji bi nastao njenom proizvodnjom i bacanjem.",
+      "saved": "Ušteđeno",
+      "savedInfo": "Kako se računa ušteda",
+      "savedTip": "Razlika između pune cijene i cijene koju ste platili za svu preuzetu hranu."
+    },
+    "stores": {
+      "label": "Prodavnice u blizini",
+      "previous": "Prethodne prodavnice",
+      "next": "Sljedeće prodavnice"
+    }
   }
 }

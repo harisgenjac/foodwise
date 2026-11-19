@@ -1,28 +1,22 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import api from "../api/axios.js";
-import RestaurantHero from "../components/dashboard/RestaurantHero.js";
-import ImpactStrip from "../components/dashboard/ImpactStrip.js";
-import RestaurantIntro from "../components/dashboard/RestaurantIntro.js";
-import StoreCarousel from "../components/dashboard/StoreCarousel.js";
-import HowItWorks from "../components/dashboard/HowItWorks.js";
+import HomeHero from "../components/dashboard/HomeHero.js";
+import HomeStoreSlider from "../components/dashboard/HomeStoreSlider.js";
 import LocationReminder from "../components/profile/LocationReminder.js";
 import type { RestaurantImpact, User } from "../types/index.js";
 
-// The carousel's stores: the store list's visibility rules, nearest first, from all cities.
-const CAROUSEL_STORES = { radius: "all", limit: 20 };
+// The slider's stores: the store list's visibility rules, nearest first, from all cities.
+const SLIDER_STORES = { radius: "all", limit: 20 };
 
-// The restaurant's home page, top to bottom: the map pin reminder (only without a pin), the hero
-// animation with the impact strip under it, the intro (the brand as the page's h1, a short text and
-// the two main links: search, My orders with the active-order count), the nearest stores and "How it
-// works" (three steps, no data). The three requests are independent: a failed one only hides its
-// own part (the strip, the badge, the carousel).
+// The restaurant's home page (design/restaurant-home/home.dc.html), in Plus Jakarta Sans: the map pin
+// reminder (only without a pin), the hero with the restaurant's impact stats across the full width
+// of the content, then the sections centred at most 1280 px wide: the store slider. The requests are
+// independent: a failed one only hides its own part (the stats, the slider).
 const RestaurantDashboardPage = () => {
-  // null while loading; the strip is hidden when it fails.
+  // null while loading.
   const [impact, setImpact] = useState<RestaurantImpact | null>(null);
   const [impactFailed, setImpactFailed] = useState(false);
-  // Pending + Confirmed + InDelivery, from the My orders summary; null = no badge.
-  const [activeOrders, setActiveOrders] = useState<number | null>(null);
-  // null while loading; [] (none, or a failed load) hides the carousel.
+  // null while loading; [] (none, or a failed load) hides the slider.
   const [stores, setStores] = useState<User[] | null>(null);
 
   useEffect(() => {
@@ -36,18 +30,9 @@ const RestaurantDashboardPage = () => {
       }
     };
 
-    const fetchActiveOrders = async () => {
-      try {
-        const response = await api.get("/orders/mine/summary");
-        setActiveOrders(response.data.summary.active);
-      } catch (err) {
-        console.error("Error fetching the order summary:", err);
-      }
-    };
-
     const fetchStores = async () => {
       try {
-        const response = await api.get("/users/stores", { params: CAROUSEL_STORES });
+        const response = await api.get("/users/stores", { params: SLIDER_STORES });
         setStores(response.data.stores);
       } catch (err) {
         console.error("Error fetching stores:", err);
@@ -56,24 +41,18 @@ const RestaurantDashboardPage = () => {
     };
 
     fetchImpact();
-    fetchActiveOrders();
     fetchStores();
   }, []);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-10">
+    <div data-testid="restaurant-home" className="space-y-6 pb-10 font-jakarta text-neutral-900">
       <LocationReminder />
 
-      <div>
-        <RestaurantHero attached={!impactFailed} />
-        {!impactFailed && <ImpactStrip impact={impact} />}
+      <HomeHero impact={impact} statsFailed={impactFailed} />
+
+      <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
+        {(stores === null || stores.length > 0) && <HomeStoreSlider stores={stores} />}
       </div>
-
-      <RestaurantIntro activeOrders={activeOrders} />
-
-      {(stores === null || stores.length > 0) && <StoreCarousel stores={stores} />}
-
-      <HowItWorks />
     </div>
   );
 };
