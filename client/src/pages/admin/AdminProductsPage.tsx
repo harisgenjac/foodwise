@@ -75,8 +75,8 @@ function AdminProductsPage() {
         onClick={() => setSelected(product)}
         className={
           card
-            ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
-            : "inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+            ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-danger-200 text-sm font-semibold text-danger-700 transition-colors hover:bg-danger-50"
+            : "inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-danger-700 transition-colors hover:bg-danger-50"
         }
       >
         <Trash2 className="h-4 w-4" />
@@ -92,8 +92,8 @@ function AdminProductsPage() {
       card: "title",
       cell: (product) => (
         <>
-          <p className="font-medium text-gray-900">{product.name}</p>
-          <p className="text-xs text-gray-500">
+          <p className="font-medium text-neutral-900">{product.name}</p>
+          <p className="text-xs text-neutral-500">
             {t("admin.products.quantity", {
               available: Math.max(parseFloat(product.available_quantity), 0),
               quantity: parseFloat(product.quantity),
@@ -108,10 +108,10 @@ function AdminProductsPage() {
       header: t("admin.products.columnStore"),
       cell: (product) => (
         <>
-          <Link to={`/admin/users/${product.store_id}`} className="font-medium text-gray-900 hover:text-orange-600">
+          <Link to={`/admin/users/${product.store_id}`} className="font-medium text-neutral-900 hover:text-brand-900">
             {product.business_name || product.store_email}
           </Link>
-          {product.store_is_blocked && <p className="text-xs font-semibold text-red-600">{t("admin.products.storeBlocked")}</p>}
+          {product.store_is_blocked && <p className="text-xs font-semibold text-danger-700">{t("admin.products.storeBlocked")}</p>}
         </>
       ),
     },
@@ -122,8 +122,8 @@ function AdminProductsPage() {
       className: "hidden md:table-cell",
       cell: (product) => (
         <>
-          <span className="font-semibold text-green-700">{formatMoney(product.discounted_price)}</span>
-          <span className="ml-1 text-xs text-gray-400 line-through">{parseFloat(product.original_price).toFixed(2)}</span>
+          <span className="font-semibold text-accent-700">{formatMoney(product.discounted_price)}</span>
+          <span className="ml-1 text-xs text-neutral-500 line-through">{parseFloat(product.original_price).toFixed(2)}</span>
         </>
       ),
     },
@@ -132,7 +132,7 @@ function AdminProductsPage() {
       header: t("admin.products.columnExpiry"),
       sortKey: "expiry_date",
       className: "hidden md:table-cell",
-      cellClassName: "text-gray-600",
+      cellClassName: "text-neutral-600",
       cell: (product) => formatDisplayDate(product.expiry_date),
     },
     {
@@ -165,7 +165,7 @@ function AdminProductsPage() {
       />
 
       {storeId && (
-        <p className="flex items-center justify-between gap-3 rounded-xl border border-orange-100 bg-orange-50/60 px-4 py-2 text-sm text-orange-800">
+        <p className="flex items-center justify-between gap-3 rounded-xl border border-brand-100 bg-brand-50/60 px-4 py-2 text-sm text-brand-800">
           {t("admin.products.filteredByUser")}
           <button
             type="button"

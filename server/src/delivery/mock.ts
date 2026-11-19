@@ -181,7 +181,7 @@ export class MockProvider implements DeliveryProvider {
     return { ...this.find(deliveryId) };
   }
 
-  // A cancel requested by FoodWise sends no webhook (we already know); `delivery.cancelled` is only
+  // A cancel requested by Još vrijedi sends no webhook (we already know); `delivery.cancelled` is only
   // for a cancel on the provider's side (see simulate).
   async cancelDelivery(deliveryId: string, reason: string): Promise<Delivery> {
     const delivery = this.find(deliveryId);
@@ -208,7 +208,7 @@ export class MockProvider implements DeliveryProvider {
     return this.deliveries.has(deliveryId);
   }
 
-  // Takes back a delivery FoodWise stored before a restart, so the dev courier can go on with it.
+  // Takes back a delivery Još vrijedi stored before a restart, so the dev courier can go on with it.
   remember(delivery: Delivery): void {
     this.deliveries.set(delivery.delivery_id, { ...delivery });
   }

@@ -123,25 +123,25 @@ function DonateFoodPage() {
       {creditError && <InsufficientCreditsNotice error={creditError} />}
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div className="flex gap-3 rounded-2xl border border-green-100 bg-green-50/60 p-4">
-          <Gift className="h-5 w-5 shrink-0 text-green-600" strokeWidth={1.8} />
+        <div className="flex gap-3 rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
+          <Gift className="h-5 w-5 shrink-0 text-brand-800" strokeWidth={1.8} />
           <div>
-            <p className="text-sm font-semibold text-gray-900">{t("donations.types.FREE")}</p>
-            <p className="mt-0.5 text-xs text-gray-600">{t("donations.typeDescriptions.FREE")}</p>
+            <p className="text-sm font-semibold text-neutral-900">{t("donations.types.FREE")}</p>
+            <p className="mt-0.5 text-xs text-neutral-600">{t("donations.typeDescriptions.FREE")}</p>
           </div>
         </div>
-        <div className="flex gap-3 rounded-2xl border border-violet-100 bg-violet-50/60 p-4">
-          <HandCoins className="h-5 w-5 shrink-0 text-violet-600" strokeWidth={1.8} />
+        <div className="flex gap-3 rounded-2xl border border-info-100 bg-info-50/60 p-4">
+          <HandCoins className="h-5 w-5 shrink-0 text-info-700" strokeWidth={1.8} />
           <div>
-            <p className="text-sm font-semibold text-gray-900">{t("donations.types.SPONSORED")}</p>
-            <p className="mt-0.5 text-xs text-gray-600">{t("donations.typeDescriptions.SPONSORED")}</p>
+            <p className="text-sm font-semibold text-neutral-900">{t("donations.types.SPONSORED")}</p>
+            <p className="mt-0.5 text-xs text-neutral-600">{t("donations.typeDescriptions.SPONSORED")}</p>
           </div>
         </div>
-        <div className="flex gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-          <Info className="h-5 w-5 shrink-0 text-orange-500" strokeWidth={1.8} />
+        <div className="flex gap-3 rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm">
+          <Info className="h-5 w-5 shrink-0 text-brand-800" strokeWidth={1.8} />
           <div>
-            <p className="text-sm font-semibold text-gray-900">{t("donations.info.title")}</p>
-            <p className="mt-0.5 text-xs text-gray-600">{t("donations.info.text")}</p>
+            <p className="text-sm font-semibold text-neutral-900">{t("donations.info.title")}</p>
+            <p className="mt-0.5 text-xs text-neutral-600">{t("donations.info.text")}</p>
           </div>
         </div>
       </div>
@@ -218,7 +218,7 @@ function DonateFoodPage() {
                   {donation.status === "Available" && (
                     <Link
                       to={`/donate-food/${donation.id}/edit`}
-                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-orange-50 py-2.5 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
+                      className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-50 py-2.5 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-900 hover:text-white"
                     >
                       <Pencil className="h-4 w-4" />
                       {t("donations.editButton")}
@@ -229,7 +229,7 @@ function DonateFoodPage() {
                     onClick={() => setSelectedDonation(donation)}
                     title={t("donations.delete.button")}
                     aria-label={t("donations.delete.button")}
-                    className={`inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 ${
+                    className={`inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-neutral-200 px-3 py-2.5 text-sm text-neutral-600 transition-colors hover:border-danger-200 hover:bg-danger-50 hover:text-danger-700 ${
                       donation.status === "Available" ? "" : "flex-1"
                     }`}
                   >
@@ -253,15 +253,15 @@ function DonateFoodPage() {
       {selectedDonation && (
         <Modal onClose={() => setSelectedDonation(null)} labelledBy="delete-donation-title">
           <ModalHeader className="flex flex-col items-center text-center">
-            <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+            <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-danger-50 text-danger-700">
               <AlertTriangle className="h-6 w-6" strokeWidth={1.8} />
             </span>
-            <h3 id="delete-donation-title" className="text-lg font-bold text-gray-900">
+            <h3 id="delete-donation-title" className="text-lg font-bold text-neutral-900">
               {canReturn ? t("donations.delete.returnTitle") : t("donations.delete.title")}
             </h3>
           </ModalHeader>
           <ModalBody className="pt-1">
-            <p className="text-center text-sm text-gray-500">
+            <p className="text-center text-sm text-neutral-500">
               {canReturn
                 ? t("donations.delete.returnText", { name: selectedDonation.name })
                 : t("donations.delete.text", { name: selectedDonation.name })}
@@ -273,7 +273,7 @@ function DonateFoodPage() {
                 type="button"
                 onClick={() => handleReturn(selectedDonation)}
                 disabled={deleting}
-                className="inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-wait disabled:opacity-60"
+                className="inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-brand-800 py-2.5 font-semibold text-white transition-colors hover:bg-brand-900 disabled:cursor-wait disabled:opacity-60"
               >
                 <Undo2 className="h-4 w-4" />
                 {t("donations.delete.returnButton")}
@@ -283,7 +283,7 @@ function DonateFoodPage() {
               <button
                 type="button"
                 onClick={() => setSelectedDonation(null)}
-                className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                className="flex-1 cursor-pointer rounded-xl bg-neutral-100 py-2.5 font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
               >
                 {t("donations.delete.cancel")}
               </button>
@@ -291,7 +291,7 @@ function DonateFoodPage() {
                 type="button"
                 onClick={() => handleDelete(selectedDonation)}
                 disabled={deleting}
-                className="flex-1 cursor-pointer rounded-xl bg-red-600 py-2.5 font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-wait disabled:opacity-60"
+                className="flex-1 cursor-pointer rounded-xl bg-danger-600 py-2.5 font-semibold text-white transition-colors hover:bg-danger-700 disabled:cursor-wait disabled:opacity-60"
               >
                 {canReturn ? t("donations.delete.deleteForGood") : t("donations.delete.confirm")}
               </button>

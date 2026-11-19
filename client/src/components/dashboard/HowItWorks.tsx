@@ -13,11 +13,11 @@ const STEPS: Step[] = [
   { key: "cook", Illustration: CookTodayIllustration },
 ];
 
-// The key phrase in a step's text: a soft orange pill that wraps across lines.
+// The key phrase in a step's text: a soft accent pill that wraps across lines.
 const HIGHLIGHT = (
   <span
     data-testid="how-it-works-highlight"
-    className="rounded-full bg-[#FED7AA] px-[7px] py-px [-webkit-box-decoration-break:clone] [box-decoration-break:clone]"
+    className="rounded-full bg-accent-200 px-[7px] py-px [-webkit-box-decoration-break:clone] [box-decoration-break:clone]"
   />
 );
 
@@ -30,7 +30,7 @@ function HowItWorks() {
 
   return (
     <section aria-labelledby={titleId} data-testid="how-it-works" className="px-4 pt-14 pb-[60px] text-center">
-      <h2 id={titleId} className="mb-9 text-[28px] font-bold text-[#1C1917] md:text-[34px]">
+      <h2 id={titleId} className="mb-9 text-[28px] font-bold text-neutral-900 md:text-[34px]">
         {t("howItWorks.title")}
       </h2>
       <ol className="mx-auto grid max-w-5xl grid-cols-1 gap-10 md:grid-cols-3 md:gap-8">
@@ -39,12 +39,12 @@ function HowItWorks() {
             <Illustration />
             <span
               aria-hidden="true"
-              className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#0F766E] text-sm font-semibold text-white"
+              className="mb-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-brand-800 text-sm font-semibold text-white"
             >
               {index + 1}
             </span>
-            <h3 className="mb-2.5 text-xl font-bold text-[#1C1917]">{t(`howItWorks.${key}.title`)}</h3>
-            <p className="mx-auto max-w-[300px] text-base leading-[1.7] text-[#44403C]">
+            <h3 className="mb-2.5 text-xl font-bold text-neutral-900">{t(`howItWorks.${key}.title`)}</h3>
+            <p className="mx-auto max-w-[300px] text-base leading-[1.7] text-neutral-700">
               <Trans i18nKey={`howItWorks.${key}.text`} components={{ hl: HIGHLIGHT }} />
             </p>
           </li>

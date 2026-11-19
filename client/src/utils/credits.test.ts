@@ -26,13 +26,13 @@ describe("getCreditError", () => {
 });
 
 describe("usage bar", () => {
-  it("is green up to 70%, orange above 70% and below 90%, red from 90%", () => {
-    expect(usageBarColor(0)).toBe("bg-green-500");
-    expect(usageBarColor(70)).toBe("bg-green-500");
-    expect(usageBarColor(70.01)).toBe("bg-orange-500");
-    expect(usageBarColor(89.99)).toBe("bg-orange-500");
-    expect(usageBarColor(90)).toBe("bg-red-500");
-    expect(usageBarColor(100)).toBe("bg-red-500");
+  it("is success up to 70%, warning above 70% and below 90%, danger from 90%", () => {
+    expect(usageBarColor(0)).toBe("bg-success-600");
+    expect(usageBarColor(70)).toBe("bg-success-600");
+    expect(usageBarColor(70.01)).toBe("bg-warning-500");
+    expect(usageBarColor(89.99)).toBe("bg-warning-500");
+    expect(usageBarColor(90)).toBe("bg-danger-500");
+    expect(usageBarColor(100)).toBe("bg-danger-500");
   });
 
   it("computes the used share, 0 without credits", () => {

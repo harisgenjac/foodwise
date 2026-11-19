@@ -10,15 +10,15 @@ body{margin:0;padding:24px;font-family:system-ui,sans-serif;background:#FFFFFF}
 .wrap{max-width:1024px}
 .hero{height:260px;background:#FFF7ED;border-radius:16px 16px 0 0;position:relative;overflow:hidden}
 .road{position:absolute;left:0;right:0;bottom:0;height:40px;background:#57534E}
-.strip{background:#0F766E;border-radius:0 0 16px 16px;padding:22px 24px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.strip{background:#166534;border-radius:0 0 16px 16px;padding:22px 24px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
 .stat{display:flex;align-items:center;gap:14px;justify-content:center;position:relative}
-.stat>i{font-size:40px;color:#99F6E4}
-.lbl{display:flex;align-items:center;gap:6px;font-size:15px;color:#F0FDFA}
+.stat>i{font-size:40px;color:#86EFAC}
+.lbl{display:flex;align-items:center;gap:6px;font-size:15px;color:#F0FDF4}
 .val{font-size:30px;font-weight:600;color:#FFFFFF;line-height:1.2}
-.info{background:none;border:none;padding:0;cursor:help;color:#D9F99D;font-size:19px;display:inline-flex}
-.tip{position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);width:240px;background:#064E46;border-radius:12px;padding:18px 20px 20px;text-align:center;opacity:0;pointer-events:none;transition:opacity .15s;z-index:3}
-.tip i{font-size:40px;color:#5EEAD4}
-.tip .tt{color:#D9F99D;font-size:17px;font-weight:600;margin:6px 0 10px}
+.info{background:none;border:none;padding:0;cursor:help;color:#BBF7D0;font-size:19px;display:inline-flex}
+.tip{position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);width:240px;background:#052E16;border-radius:12px;padding:18px 20px 20px;text-align:center;opacity:0;pointer-events:none;transition:opacity .15s;z-index:3}
+.tip i{font-size:40px;color:#86EFAC}
+.tip .tt{color:#BBF7D0;font-size:17px;font-weight:600;margin:6px 0 10px}
 .tip .tb{color:#FFFFFF;font-size:14px;line-height:1.55;text-align:left}
 .stat.open .tip{opacity:1}
 @media (max-width:639px){.strip{grid-template-columns:1fr;gap:14px;padding:16px}.stat{justify-content:flex-start}.stat>i{font-size:32px}.val{font-size:24px}.tip{left:0;transform:none;width:min(260px,calc(100vw - 64px))}}

@@ -21,7 +21,7 @@ function OrderImage({ logoUrl, className = "", imageClassName = "" }: OrderImage
   const showLogo = src !== null && failedSrc !== src;
 
   return (
-    <div className={`overflow-hidden ${showLogo ? "bg-gray-50" : ""} ${className}`}>
+    <div className={`overflow-hidden ${showLogo ? "bg-neutral-50" : ""} ${className}`}>
       {showLogo ? (
         <img
           src={src}

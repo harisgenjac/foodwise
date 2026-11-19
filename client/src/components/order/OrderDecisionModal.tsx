@@ -300,7 +300,7 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
         />
       )}
       {showErrors && error && (error === "orders.decision.errors.reason" || error === "orders.decision.errors.note") && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-danger-700">
           {t(error)}
         </p>
       )}
@@ -317,8 +317,8 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
     error: string | null,
   ) => (
     <div className="space-y-1">
-      <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-        <input type="checkbox" checked={checked} onChange={(e) => onToggle(e.target.checked)} className="h-4 w-4 accent-orange-500" />
+      <label className="flex cursor-pointer items-center gap-2 text-sm text-neutral-700">
+        <input type="checkbox" checked={checked} onChange={(e) => onToggle(e.target.checked)} className="h-4 w-4 accent-brand-800" />
         {label}
       </label>
       {checked && (
@@ -333,11 +333,11 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
             onChange={(e) => onQuantity(e.target.value)}
             className={`${inputStyle} w-28`}
           />
-          <span className="text-sm text-gray-500">{t(`units.${unit}`, { defaultValue: unit })}</span>
+          <span className="text-sm text-neutral-500">{t(`units.${unit}`, { defaultValue: unit })}</span>
         </div>
       )}
       {showErrors && error === "orders.decision.errors.sale" && (
-        <p role="alert" className="pl-6 text-sm text-red-600">
+        <p role="alert" className="pl-6 text-sm text-danger-700">
           {t(error)}
         </p>
       )}
@@ -349,7 +349,7 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
     if (shortageOf(item) <= 0) return null;
     const max = maxAcceptable(item);
     return (
-      <p data-testid="shortage-note" className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+      <p data-testid="shortage-note" className="flex items-start gap-2 rounded-lg bg-warning-50 px-3 py-2 text-sm text-warning-800">
         <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
         {max > 0
           ? t("orders.decision.shortage", { amount: formatAmount(max, item.unit) })
@@ -361,12 +361,12 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
   const itemHeader = (item: OrderItem) => (
     <div className="flex items-baseline justify-between gap-3">
       <div className="min-w-0">
-        <p className="truncate font-semibold text-gray-900">{item.product_name}</p>
-        <p className="text-sm text-gray-500">
+        <p className="truncate font-semibold text-neutral-900">{item.product_name}</p>
+        <p className="text-sm text-neutral-500">
           {formatAmount(item.quantity, item.unit)} × {formatMoney(item.unit_price)}
         </p>
       </div>
-      <p className="shrink-0 font-semibold text-gray-800 tabular-nums">{formatMoney(ordered(item) * price(item))}</p>
+      <p className="shrink-0 font-semibold text-neutral-800 tabular-nums">{formatMoney(ordered(item) * price(item))}</p>
     </div>
   );
 
@@ -377,10 +377,10 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
         const error = lineError(item, line);
         const freed = ordered(item) - acceptedOf(item, line);
         return (
-          <section key={item.id} data-testid="decision-line" className="space-y-3 rounded-xl border border-gray-100 p-3">
+          <section key={item.id} data-testid="decision-line" className="space-y-3 rounded-xl border border-neutral-100 p-3">
             {itemHeader(item)}
             {shortageNote(item)}
-            <div role="radiogroup" aria-label={item.product_name} className="grid grid-cols-3 gap-1 rounded-xl bg-gray-50 p-1">
+            <div role="radiogroup" aria-label={item.product_name} className="grid grid-cols-3 gap-1 rounded-xl bg-neutral-50 p-1">
               {(["ACCEPT", "ACCEPT_LESS", "REJECT"] as const).map((action) => (
                 <button
                   key={action}
@@ -391,9 +391,9 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
                   className={`min-h-11 cursor-pointer rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors sm:min-h-0 sm:text-sm ${
                     line.action === action
                       ? action === "REJECT"
-                        ? "bg-red-600 text-white"
-                        : "bg-orange-500 text-white"
-                      : "text-gray-600 hover:bg-white"
+                        ? "bg-danger-600 text-white"
+                        : "bg-brand-800 text-white"
+                      : "text-neutral-600 hover:bg-white"
                   }`}
                 >
                   {t(`orders.decision.actions.${action}`)}
@@ -414,10 +414,10 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
                     onChange={(e) => setLine(item, { quantity: e.target.value })}
                     className={`${inputStyle} w-40`}
                   />
-                  <span className="text-sm text-gray-500">{t(`units.${item.unit}`, { defaultValue: item.unit })}</span>
+                  <span className="text-sm text-neutral-500">{t(`units.${item.unit}`, { defaultValue: item.unit })}</span>
                 </div>
                 {showErrors && (error === "orders.decision.errors.quantity" || error === "orders.decision.errors.shortage") && (
-                  <p role="alert" className="text-sm text-red-600">
+                  <p role="alert" className="text-sm text-danger-700">
                     {t(error)}
                   </p>
                 )}
@@ -445,11 +445,11 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
     </div>
   ) : (
     <div className="space-y-3">
-      <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
+      <p className="rounded-xl bg-warning-50 p-3 text-sm text-warning-800">
         {shortageItems.length > 0 ? t("orders.decision.wholeOnlySold") : t("orders.decision.wholeOnly")}
       </p>
       {items.map((item) => (
-        <div key={item.id} className="space-y-2 rounded-xl border border-gray-100 p-3">
+        <div key={item.id} className="space-y-2 rounded-xl border border-neutral-100 p-3">
           {itemHeader(item)}
           {shortageNote(item)}
         </div>
@@ -459,7 +459,7 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
 
   const rejectStep = (
     <div className="space-y-4">
-      <p className="text-sm text-gray-600">{t("orders.decision.rejectText", { code, restaurant })}</p>
+      <p className="text-sm text-neutral-600">{t("orders.decision.rejectText", { code, restaurant })}</p>
       {reasonFields(
         "order",
         rejection.reason,
@@ -474,7 +474,7 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
             const setSale = (change: Partial<typeof sale>) =>
               setRejection((current) => ({ ...current, sales: { ...current.sales, [item.id]: { ...sale, ...change } } }));
             return (
-              <div key={item.id} className="rounded-xl border border-gray-100 p-3">
+              <div key={item.id} className="rounded-xl border border-neutral-100 p-3">
                 {saleField(
                   t("orders.decision.recordSaleOf", { product: item.product_name }),
                   sale.sale,
@@ -506,33 +506,33 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
 
   const confirmStep = (
     <div className="space-y-3">
-      <p className="font-medium text-gray-900">{summary}</p>
-      <p className="text-sm text-gray-600">{t("orders.decision.irreversible")}</p>
+      <p className="font-medium text-neutral-900">{summary}</p>
+      <p className="text-sm text-neutral-600">{t("orders.decision.irreversible")}</p>
       {needsReadyTime && <ReadyTimePicker value={ready} onChange={setReady} showError={readyError} />}
     </div>
   );
 
   const secondaryButton =
-    "inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200";
+    "inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-neutral-100 py-2.5 font-medium text-neutral-700 transition-colors hover:bg-neutral-200";
   const dangerButton =
-    "inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 py-2.5 font-semibold text-red-600 transition-colors hover:bg-red-50";
+    "inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-danger-200 py-2.5 font-semibold text-danger-700 transition-colors hover:bg-danger-50";
   const primaryButton =
-    "inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2.5 font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-wait disabled:opacity-60";
+    "inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-brand-800 py-2.5 font-semibold text-white transition-colors hover:bg-brand-900 disabled:cursor-wait disabled:opacity-60";
 
   return (
     <Modal onClose={onClose} labelledBy={titleId}>
       <ModalHeader>
-        <h3 id={titleId} className="text-lg font-bold text-gray-900">
+        <h3 id={titleId} className="text-lg font-bold text-neutral-900">
           {step === "reject" ? t("orders.decision.rejectTitle", { code }) : t("orders.decision.title", { code })}
         </h3>
-        <p className="text-sm text-gray-500">{restaurant}</p>
+        <p className="text-sm text-neutral-500">{restaurant}</p>
         <AnswerDeadline order={order} viewer="STORE" className="mt-1" />
       </ModalHeader>
 
       <ModalBody>{step === "decide" ? decideStep : step === "reject" ? rejectStep : confirmStep}</ModalBody>
 
       {step === "decide" && order.accept_partial && (
-        <p data-testid="decision-total" className="shrink-0 px-6 pt-3 text-sm text-gray-600">
+        <p data-testid="decision-total" className="shrink-0 px-6 pt-3 text-sm text-neutral-600">
           {Math.round(newTotal * 100) === Math.round(orderedTotal * 100)
             ? t("orders.decision.total", { total: formatMoney(orderedTotal) })
             : t("orders.decision.newTotal", { total: formatMoney(newTotal), ordered: formatMoney(orderedTotal) })}
@@ -575,7 +575,7 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
             <button
               type="button"
               onClick={() => toConfirm("reject")}
-              className={`${primaryButton} bg-red-600 hover:bg-red-700`}
+              className={`${primaryButton} bg-danger-600 hover:bg-danger-700`}
             >
               <X className="h-4 w-4" />
               {t("orders.decision.rejectOrder")}
@@ -592,7 +592,7 @@ function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparation
               type="button"
               onClick={save}
               disabled={busy}
-              className={confirming === "reject" ? `${primaryButton} bg-red-600 hover:bg-red-700` : primaryButton}
+              className={confirming === "reject" ? `${primaryButton} bg-danger-600 hover:bg-danger-700` : primaryButton}
             >
               <Check className="h-4 w-4" />
               {confirming === "reject" ? t("orders.decision.saveReject") : t("orders.decision.save")}

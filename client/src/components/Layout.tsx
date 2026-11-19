@@ -62,7 +62,7 @@ function Layout() {
       <CreditsProvider enabled={user?.role === "STORE" && !setup.locked}>
       {/* Only restaurants order, from one cart. */}
       <CartProvider enabled={user?.role === "RESTAURANT" && !setup.locked}>
-        <div className="flex min-h-dvh flex-col bg-gray-50">
+        <div className="flex min-h-dvh flex-col bg-neutral-50">
           {/* Printing a page (the packing list) prints only its content: the app's frame stays on screen. */}
           <div className="contents print:hidden">
             <Header

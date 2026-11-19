@@ -17,7 +17,7 @@ const FIRST_CREDIT_YEAR = 2026;
 
 type HistoryTab = "month" | "category";
 
-const boxStyle = "rounded-2xl border border-gray-100 bg-white p-6 shadow-sm";
+const boxStyle = "rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm";
 
 // Stores and restaurants: this month's credits (Box 1) and the usage of a year by month or by
 // product category (Box 2).
@@ -66,24 +66,24 @@ function CreditsPage() {
       <ProductPageHeader title={t("credits.page.title")} subtitle={t("credits.page.subtitle")} icon={Coins} />
 
       <section className={boxStyle} aria-labelledby="credits-summary">
-        <h2 id="credits-summary" className="text-lg font-bold text-gray-900">
+        <h2 id="credits-summary" className="text-lg font-bold text-neutral-900">
           {t("credits.page.summaryTitle")}
         </h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-neutral-500">
           {t("credits.page.explanationStore")}
         </p>
 
         {!credits.hasActiveSubscription && credits.managedByCompany && (
-          <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <p className="mt-4 rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-900">
             {t("credits.banner.companyNone", { company: credits.companyName ?? "" })}
           </p>
         )}
         {!credits.hasActiveSubscription && !credits.managedByCompany && (
-          <p className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <p className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-warning-200 bg-warning-50 px-4 py-3 text-sm text-warning-900">
             {t("credits.page.noSubscription")}
             <Link
               to={`/my-profile#${SUBSCRIPTION_SECTION}`}
-              className="inline-flex items-center gap-1 font-semibold text-orange-600 hover:text-orange-700"
+              className="inline-flex items-center gap-1 font-semibold text-brand-800 hover:text-brand-900"
             >
               {t("credits.banner.noneLink")}
               <ArrowRight className="h-4 w-4" />
@@ -98,15 +98,15 @@ function CreditsPage() {
             [t("credits.page.period"), `${formatDisplayDate(credits.periodStart)} – ${formatDisplayDate(credits.periodEnd)}`],
             [t("credits.page.total"), String(credits.total)],
           ].map(([label, value]) => (
-            <div key={label} className="rounded-xl bg-gray-50 p-4">
-              <dt className="text-xs font-medium text-gray-500">{label}</dt>
-              <dd className="mt-1 text-lg font-bold text-gray-900">{value}</dd>
+            <div key={label} className="rounded-xl bg-neutral-50 p-4">
+              <dt className="text-xs font-medium text-neutral-500">{label}</dt>
+              <dd className="mt-1 text-lg font-bold text-neutral-900">{value}</dd>
             </div>
           ))}
         </dl>
 
         <div className="mt-5">
-          <div className="mb-1.5 flex justify-end text-sm font-semibold text-gray-700">
+          <div className="mb-1.5 flex justify-end text-sm font-semibold text-neutral-700">
             {t("credits.page.usedPercent", { percent: Math.round(percent) })}
           </div>
           <div
@@ -115,12 +115,12 @@ function CreditsPage() {
             aria-valuemin={0}
             aria-valuemax={100}
             aria-label={t("credits.page.usageLabel")}
-            className="h-3 overflow-hidden rounded-full bg-gray-100"
+            className="h-3 overflow-hidden rounded-full bg-neutral-100"
           >
             <div className={`h-full rounded-full ${usageBarColor(percent)}`} style={{ width: `${percent}%` }} />
           </div>
           {loadedAt && (
-            <p className="mt-2 text-xs text-gray-500">
+            <p className="mt-2 text-xs text-neutral-500">
               {t("credits.page.lastRefreshed", { time: formatDateTime(loadedAt.toISOString()) })}
             </p>
           )}
@@ -129,7 +129,7 @@ function CreditsPage() {
 
       <section className={boxStyle} aria-labelledby="credits-history">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 id="credits-history" className="text-lg font-bold text-gray-900">
+          <h2 id="credits-history" className="text-lg font-bold text-neutral-900">
             {t("credits.page.historyTitle")}
           </h2>
           <div className="flex flex-wrap items-center gap-3">
@@ -137,7 +137,7 @@ function CreditsPage() {
               value={year}
               onChange={(e) => setYear(Number(e.target.value))}
               aria-label={t("credits.page.year")}
-              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-base sm:py-2 sm:text-sm"
+              className="rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-base sm:py-2 sm:text-sm"
             >
               {years.map((option) => (
                 <option key={option} value={option}>
@@ -145,7 +145,7 @@ function CreditsPage() {
                 </option>
               ))}
             </select>
-            <div role="tablist" className="flex rounded-full border border-gray-200 bg-white p-1">
+            <div role="tablist" className="flex rounded-full border border-neutral-200 bg-white p-1">
               {(["month", "category"] as const).map((key) => (
                 <button
                   key={key}
@@ -154,7 +154,7 @@ function CreditsPage() {
                   aria-selected={tab === key}
                   onClick={() => setTab(key)}
                   className={`min-h-11 sm:min-h-0 cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                    tab === key ? "bg-orange-500 text-white" : "text-gray-600 hover:bg-gray-100"
+                    tab === key ? "bg-brand-800 text-white" : "text-neutral-600 hover:bg-neutral-100"
                   }`}
                 >
                   {t(key === "month" ? "credits.page.byMonth" : "credits.page.byCategory")}
@@ -177,52 +177,52 @@ function CreditsPage() {
                 const share = usagePercent(month.used, month.total);
                 return (
                   <li key={month.month} className="grid grid-cols-[6.5rem_1fr_5rem] items-center gap-3 text-sm">
-                    <span className="text-gray-700">{monthNames[index]}</span>
+                    <span className="text-neutral-700">{monthNames[index]}</span>
                     <div
                       data-testid={`month-bar-${index + 1}`}
-                      className={`h-3 overflow-hidden rounded-full ${inactive ? "bg-gray-200" : "bg-blue-200"}`}
+                      className={`h-3 overflow-hidden rounded-full ${inactive ? "bg-neutral-100" : "bg-neutral-300"}`}
                     >
-                      {!inactive && <div className="h-full bg-blue-800" style={{ width: `${share}%` }} />}
+                      {!inactive && <div className="h-full bg-brand-800" style={{ width: `${share}%` }} />}
                     </div>
-                    <span className="text-right tabular-nums text-gray-700">
+                    <span className="text-right tabular-nums text-neutral-700">
                       {inactive ? "—" : `${month.used} / ${month.total}`}
                     </span>
                   </li>
                 );
               })}
             </ul>
-            <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-500">
+            <div className="mt-4 flex flex-wrap gap-4 text-xs text-neutral-500">
               <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-blue-800" />
+                <span className="h-2.5 w-2.5 rounded-full bg-brand-800" />
                 {t("credits.page.legendUsed")}
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-blue-200" />
+                <span className="h-2.5 w-2.5 rounded-full bg-neutral-300" />
                 {t("credits.page.legendUnused")}
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-gray-200" />
+                <span className="h-2.5 w-2.5 rounded-full bg-neutral-100 ring-1 ring-neutral-200" />
                 {t("credits.page.legendNone")}
               </span>
             </div>
           </>
         ) : (
           <>
-            {categoryTotal === 0 && <p className="mt-4 text-sm text-gray-500">{t("credits.page.noUsage")}</p>}
+            {categoryTotal === 0 && <p className="mt-4 text-sm text-neutral-500">{t("credits.page.noUsage")}</p>}
             <ul className="mt-5 space-y-2.5" aria-label={t("credits.page.byCategory")}>
               {Object.entries(categories).map(([code, label]) => {
                 const used = usedByCategory(code);
                 return (
                   <li key={code} className="grid grid-cols-[6.5rem_1fr_3rem] items-center gap-3 text-sm">
-                    <span className="truncate text-gray-700">{label}</span>
-                    <div className="h-3 overflow-hidden rounded-full bg-gray-100">
+                    <span className="truncate text-neutral-700">{label}</span>
+                    <div className="h-3 overflow-hidden rounded-full bg-neutral-100">
                       <div
                         data-testid={`category-bar-${code}`}
-                        className="h-full bg-blue-800"
+                        className="h-full bg-brand-800"
                         style={{ width: `${usagePercent(used, categoryTotal)}%` }}
                       />
                     </div>
-                    <span className="text-right tabular-nums text-gray-700">{used}</span>
+                    <span className="text-right tabular-nums text-neutral-700">{used}</span>
                   </li>
                 );
               })}

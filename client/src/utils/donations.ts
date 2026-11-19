@@ -35,14 +35,14 @@ export const getDonationIcon = (category: string): LucideIcon =>
   category === MEAL_CATEGORY ? UtensilsCrossed : getCategoryIcon(category);
 
 export const DONATION_STATUS_STYLES: Record<DonationOffer["status"], string> = {
-  Available: "bg-green-50 text-green-700",
-  Expired: "bg-red-50 text-red-600",
-  Removed: "bg-gray-100 text-gray-500",
+  Available: "bg-success-100 text-success-800",
+  Expired: "bg-danger-50 text-danger-700",
+  Removed: "bg-neutral-100 text-neutral-500",
 };
 
 export const DONATION_TYPE_STYLES: Record<DonationOffer["donation_type"], string> = {
-  FREE: "bg-green-600 text-white",
-  SPONSORED: "bg-violet-600 text-white",
+  FREE: "bg-brand-800 text-white",
+  SPONSORED: "bg-info-700 text-white",
 };
 
 // "19:00:00" → "19:00"; the time input and the card show hours and minutes only.

@@ -52,7 +52,7 @@ const ADMIN = "email-settings-admin@test.com";
 const HQ = "email-settings-hq@test.com";
 const COMPANY = "Email Settings d.o.o.";
 const EMAILS = [STORE, RESTAURANT, ADMIN, HQ];
-const CONFIG = { from: "FoodWise <no-reply@example.com>", redirectTo: null, appUrl: "https://app.example.com" };
+const CONFIG = { from: "Još vrijedi <no-reply@example.com>", redirectTo: null, appUrl: "https://app.example.com" };
 
 interface QueueRow {
   id: number;

@@ -37,7 +37,7 @@ function AnswerDeadline({ order, viewer, className = "" }: AnswerDeadlineProps) 
   return (
     <p
       data-testid="answer-deadline"
-      className={`flex items-center gap-1.5 text-sm font-medium ${soon ? "text-amber-700" : "text-gray-600"} ${className}`}
+      className={`flex items-center gap-1.5 text-sm font-medium ${soon ? "text-warning-700" : "text-neutral-600"} ${className}`}
     >
       <Timer className="h-4 w-4 shrink-0" />
       {t(viewer === "STORE" ? "orders.autoReject.storeDeadline" : "orders.autoReject.deadline", { time })}

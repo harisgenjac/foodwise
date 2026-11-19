@@ -9,13 +9,13 @@ interface StoreAvatarProps {
   // The name is already next to it (e.g. inside the same link): the image gets an empty alt and the
   // initials are hidden from screen readers, so the name is not read twice.
   decorative?: boolean;
-  // Replaces the default frame (4 px white border, shadow, orange initials on orange-100), e.g. for
+  // Replaces the default frame (4 px white border, shadow, brand initials on brand-100), e.g. for
   // another border or initials colour; `style` can then set the colours.
   frameClassName?: string;
   style?: CSSProperties;
 }
 
-const DEFAULT_FRAME = "border-4 border-white bg-orange-100 font-bold text-orange-700 shadow-md";
+const DEFAULT_FRAME = "border-4 border-white bg-brand-100 font-bold text-brand-800 shadow-md";
 
 const getInitials = (name: string | undefined) =>
   (name ?? "")

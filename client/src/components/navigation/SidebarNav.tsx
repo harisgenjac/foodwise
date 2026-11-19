@@ -150,21 +150,21 @@ function SidebarNav({ expanded, locked = false, onNavigate, replace = false }: S
             expanded ? "px-3" : "justify-center px-0"
           } ${
             isActive
-              ? "bg-orange-50 text-orange-600 font-medium"
-              : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+              ? "bg-brand-50 text-brand-800 font-medium"
+              : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
           }`
         }
       >
         {({ isActive }) => (
           <>
             {isActive && (
-              <span className="absolute -left-3 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-orange-500" />
+              <span className="absolute -left-3 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-brand-800" />
             )}
             <Icon className="h-5 w-5 shrink-0" strokeWidth={1.8} />
             {expanded && <span className="truncate">{label}</span>}
             {badge !== undefined && badge > 0 && (
               <span
-                className={`rounded-full bg-orange-500 text-xs font-semibold text-white ${
+                className={`rounded-full bg-brand-800 text-xs font-semibold text-white ${
                   expanded ? "ml-auto px-2 py-0.5" : "absolute right-2 top-1 h-2 w-2"
                 }`}
               >
@@ -183,9 +183,9 @@ function SidebarNav({ expanded, locked = false, onNavigate, replace = false }: S
 
       {!isAdmin && !isCompany && (
         <>
-          <div className="my-4 border-t border-gray-100" />
+          <div className="my-4 border-t border-neutral-100" />
           {expanded && (
-            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">
               {t("sidebar.humanitarian")}
             </p>
           )}

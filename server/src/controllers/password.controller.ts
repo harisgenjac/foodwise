@@ -115,7 +115,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     if (invitation) {
       setSessionCookie(res, user);
       return res.status(200).json({
-        message: "Your password was set. Welcome to FoodWise.",
+        message: "Your password was set. Welcome to Još vrijedi.",
         purpose: token.purpose,
         user: {
           id: user.id,

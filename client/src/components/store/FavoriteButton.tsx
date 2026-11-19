@@ -20,8 +20,8 @@ function FavoriteButton({ isFavorite, onToggle, variant = "icon" }: FavoriteButt
         aria-pressed={isFavorite}
         className={`inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
           isFavorite
-            ? "bg-orange-500 text-white shadow-sm shadow-orange-500/20 hover:bg-orange-600"
-            : "border border-orange-200 bg-white text-orange-600 hover:bg-orange-50"
+            ? "bg-brand-800 text-white shadow-sm shadow-brand-800/20 hover:bg-brand-900"
+            : "border border-brand-200 bg-white text-brand-800 hover:bg-brand-50"
         }`}
       >
         <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
@@ -41,7 +41,7 @@ function FavoriteButton({ isFavorite, onToggle, variant = "icon" }: FavoriteButt
       aria-label={label}
       title={label}
       className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur transition-all hover:scale-105 ${
-        isFavorite ? "text-orange-500" : "text-gray-400 hover:text-orange-500"
+        isFavorite ? "text-brand-800" : "text-neutral-500 hover:text-brand-900"
       }`}
     >
       <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />

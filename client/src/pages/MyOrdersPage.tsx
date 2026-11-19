@@ -181,8 +181,8 @@ function MyOrdersPage() {
     list = groupByDay(orders, (r) => r.created_at, t).map((group) => (
       <section key={group.key}>
         {/* A day may continue on the next page, so the heading has no count. */}
-        <h2 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{group.title}</h2>
-        <div className="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <h2 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">{group.title}</h2>
+        <div className="divide-y divide-neutral-100 overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
           {group.items.map((order) => (
             <OrderHistoryRow key={order.id} order={order} />
           ))}
@@ -204,7 +204,7 @@ function MyOrdersPage() {
                 <>
                   <Link
                     to={`/orders/${order.id}`}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-orange-50 py-2.5 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-50 py-2.5 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-900 hover:text-white"
                   >
                     {t("dashboard.detailsButton")}
                     <ArrowRight className="h-4 w-4" />
@@ -214,7 +214,7 @@ function MyOrdersPage() {
                     onClick={() =>
                       cancelOrder.request({ id: order.id, code: order.code, storeName: order.business_name ?? "" })
                     }
-                    className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                    className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-neutral-200 py-2.5 text-sm font-semibold text-neutral-700 transition-colors hover:border-danger-200 hover:bg-danger-50 hover:text-danger-700"
                   >
                     <X className="h-4 w-4" />
                     {t("orders.cancelShortButton")}
@@ -239,7 +239,7 @@ function MyOrdersPage() {
         action={{ to: "/search", label: t("dashboard.browseOffers"), icon: ShoppingBasket }}
       />
 
-      <div role="tablist" className="inline-flex w-fit flex-wrap rounded-full border border-gray-100 bg-white p-1 shadow-sm">
+      <div role="tablist" className="inline-flex w-fit flex-wrap rounded-full border border-neutral-100 bg-white p-1 shadow-sm">
         {tabs.map(({ key, label, icon: Icon, count }) => (
           <button
             key={key}
@@ -248,7 +248,7 @@ function MyOrdersPage() {
             aria-selected={tab === key}
             onClick={() => switchTab(key)}
             className={`inline-flex min-h-11 sm:min-h-0 cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              tab === key ? "bg-orange-500 text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"
+              tab === key ? "bg-brand-800 text-white shadow-sm" : "text-neutral-600 hover:bg-neutral-50"
             }`}
           >
             <Icon className="h-4 w-4" strokeWidth={1.8} />
@@ -256,7 +256,7 @@ function MyOrdersPage() {
             {!!count && (
               <span
                 className={`rounded-full px-1.5 text-xs font-semibold ${
-                  tab === key ? "bg-white/25 text-white" : "bg-orange-100 text-orange-700"
+                  tab === key ? "bg-white/25 text-white" : "bg-brand-100 text-brand-800"
                 }`}
               >
                 {count}

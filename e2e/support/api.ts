@@ -214,7 +214,7 @@ export const cancelOrder = async (api: APIRequestContext, orderId: number) =>
 export const createStoreWithoutPlan = async (role: "STORE" | "RESTAURANT" = "STORE") => {
   const id = runId();
   const store = {
-    email: `e2e-${role.toLowerCase()}-${id}@foodwise.test`,
+    email: `e2e-${role.toLowerCase()}-${id}@josvrijedi.test`,
     firstName: "Lejla",
     lastName: "Prodavac",
     businessName: `${role === "STORE" ? "E2E Market" : "E2E Bistro"} ${id}`,

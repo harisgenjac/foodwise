@@ -5,8 +5,8 @@ import { useCredits } from "../../context/CreditsContext.js";
 import { LOW_CREDITS_PERCENT, SUBSCRIPTION_SECTION, TOPUP_SECTION, usagePercent } from "../../utils/credits.js";
 
 const TONES = {
-  amber: "border-amber-200 bg-amber-50 text-amber-900",
-  red: "border-red-200 bg-red-50 text-red-900",
+  amber: "border-warning-200 bg-warning-50 text-warning-900",
+  red: "border-danger-200 bg-danger-50 text-danger-900",
 };
 
 // One credit banner on every page for stores and restaurants, the most urgent one first:
@@ -90,7 +90,7 @@ function CreditBanner() {
       {banner.to && (
         <Link
           to={banner.to}
-          className="inline-flex min-h-11 max-w-[45%] shrink-0 items-center justify-center gap-1 rounded-xl border border-orange-200 bg-white px-3 text-center font-semibold leading-tight text-orange-600 hover:text-orange-700 sm:min-h-0 sm:max-w-none sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0"
+          className="inline-flex min-h-11 max-w-[45%] shrink-0 items-center justify-center gap-1 rounded-xl border border-brand-200 bg-white px-3 text-center font-semibold leading-tight text-brand-800 hover:text-brand-900 sm:min-h-0 sm:max-w-none sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0"
         >
           {banner.link}
           <ArrowRight className="hidden h-4 w-4 shrink-0 sm:block" />

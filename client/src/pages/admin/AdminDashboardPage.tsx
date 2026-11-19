@@ -26,20 +26,22 @@ import { formatCreditMonth, usagePercent } from "../../utils/credits.js";
 import { formatSavedFood } from "../../utils/savedFood.js";
 import type { AdminStats } from "../../types/index.js";
 
-// Bar colors by meaning, ordered so that easily confused hues (amber/red, amber/green) are not
-// neighbours; gray marks closed or removed items. Every bar has a legend with counts.
+// Bar colors by meaning (the design system's chart rules): brand for the main series, accent for
+// the second, neutral for closed or removed items, and the status colours where a bar shows
+// statuses (success, warning, danger, info). Similar hues are not neighbours. Every bar has a
+// legend with counts.
 const ORDER_COLORS = {
-  Confirmed: "bg-green-600",
-  Completed: "bg-blue-600",
-  InDelivery: "bg-indigo-400",
-  Pending: "bg-amber-600",
-  Cancelled: "bg-slate-500",
-  Rejected: "bg-red-600",
+  Confirmed: "bg-success-500",
+  Completed: "bg-brand-800",
+  InDelivery: "bg-info-500",
+  Pending: "bg-warning-500",
+  Cancelled: "bg-neutral-400",
+  Rejected: "bg-danger-600",
 } as const;
-const PRODUCT_COLORS = { active: "bg-green-600", sold: "bg-blue-600", expired: "bg-amber-600", removed: "bg-slate-500" } as const;
-const DONATION_COLORS = { available: "bg-green-600", removed: "bg-slate-500", expired: "bg-amber-600" } as const;
-// Plans from small to large on one orange ramp, light to dark.
-const PLAN_COLORS = ["bg-orange-300", "bg-orange-500", "bg-orange-700", "bg-orange-900"];
+const PRODUCT_COLORS = { active: "bg-brand-800", sold: "bg-accent-500", expired: "bg-danger-600", removed: "bg-neutral-400" } as const;
+const DONATION_COLORS = { available: "bg-brand-800", removed: "bg-neutral-400", expired: "bg-danger-600" } as const;
+// Plans from small to large on one brand ramp, light to dark.
+const PLAN_COLORS = ["bg-brand-300", "bg-brand-500", "bg-brand-700", "bg-brand-900"];
 
 // Admin landing page: headline numbers, what needs attention, and one panel per area with its
 // distribution, instead of a wall of equal cards.
@@ -162,7 +164,7 @@ function AdminDashboardPage() {
               items={credits.by_plan.map((row, index) => ({
                 label: row.plan,
                 value: row.count,
-                color: PLAN_COLORS[index] ?? "bg-orange-900",
+                color: PLAN_COLORS[index] ?? "bg-brand-900",
               }))}
             />
             <dl className="space-y-2 text-sm">
@@ -175,17 +177,17 @@ function AdminDashboardPage() {
                   [t("admin.dashboard.pendingCreditRequests"), credits.pending_requests],
                 ] as [string, number, string?][]
               ).map(([label, value, to]) => (
-                <div key={label} className="flex items-center justify-between gap-3 border-b border-gray-100 pb-2 last:border-0">
-                  <dt className="text-gray-600">
+                <div key={label} className="flex items-center justify-between gap-3 border-b border-neutral-100 pb-2 last:border-0">
+                  <dt className="text-neutral-600">
                     {to ? (
-                      <Link to={to} className="hover:text-orange-600 hover:underline">
+                      <Link to={to} className="hover:text-brand-900 hover:underline">
                         {label}
                       </Link>
                     ) : (
                       label
                     )}
                   </dt>
-                  <dd className="font-semibold tabular-nums text-gray-900">{value}</dd>
+                  <dd className="font-semibold tabular-nums text-neutral-900">{value}</dd>
                 </div>
               ))}
             </dl>
@@ -248,8 +250,8 @@ function AdminDashboardPage() {
             [t("admin.dashboard.savings"), money(stats.saved.savings)],
           ].map(([label, value]) => (
             <div key={label}>
-              <dt className="text-xs text-gray-500">{label}</dt>
-              <dd className="mt-1 text-xl font-bold tracking-tight text-gray-900">{value}</dd>
+              <dt className="text-xs text-neutral-500">{label}</dt>
+              <dd className="mt-1 text-xl font-bold tracking-tight text-neutral-900">{value}</dd>
             </div>
           ))}
         </dl>

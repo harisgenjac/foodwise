@@ -34,12 +34,12 @@ function ProductPreview({ values }: ProductPreviewProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-      <h2 className="mb-1 flex items-center gap-2 text-base font-semibold text-gray-900">
-        <Eye className="h-4 w-4 text-orange-600" />
+    <div className="rounded-2xl border border-neutral-100 bg-white p-5 shadow-sm">
+      <h2 className="mb-1 flex items-center gap-2 text-base font-semibold text-neutral-900">
+        <Eye className="h-4 w-4 text-brand-800" />
         {t("product.previewTitle")}
       </h2>
-      <p className="mb-4 text-xs text-gray-500">{t("product.previewHint")}</p>
+      <p className="mb-4 text-xs text-neutral-500">{t("product.previewHint")}</p>
       {/* inert keeps the card's links (Details, store name) out of the tab order. */}
       <div aria-hidden="true" inert className="pointer-events-none select-none">
         <DashboardProductCard product={previewProduct} showStore />

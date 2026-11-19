@@ -171,7 +171,7 @@ function ProductDetailsPage() {
     <div className="max-w-5xl mx-auto space-y-6 pb-10">
       <Breadcrumbs items={breadcrumbs} />
 
-      <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm md:flex">
+      <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm md:flex">
         <div className="relative h-56 shrink-0 md:h-auto md:w-2/5">
           <ProductImage
             imageUrl={product.image_url}
@@ -195,7 +195,7 @@ function ProductDetailsPage() {
               {product.status === "Available" && (
                 <span
                   className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                    isUrgent ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-600"
+                    isUrgent ? "bg-danger-50 text-danger-700" : "bg-neutral-100 text-neutral-600"
                   }`}
                 >
                   <Hourglass className="h-3 w-3" />
@@ -203,35 +203,35 @@ function ProductDetailsPage() {
                 </span>
               )}
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-neutral-900 md:text-3xl">
               {product.name}
             </h1>
             {!isOwner && product.business_name && (
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-neutral-500">
                 {[product.business_name, product.city].filter(Boolean).join(" · ")}
               </p>
             )}
             {product.description && (
-              <p className="mt-2 text-gray-600">{product.description}</p>
+              <p className="mt-2 text-neutral-600">{product.description}</p>
             )}
           </div>
 
           <div className="flex flex-wrap items-baseline gap-3">
-            <span className="text-3xl font-bold text-green-600">
+            <span className="text-3xl font-bold text-accent-700">
               {product.discounted_price} KM
             </span>
-            <span className="text-lg text-gray-400 line-through">
+            <span className="text-lg text-neutral-500 line-through">
               {product.original_price} KM
             </span>
             {discountPercent > 0 && (
-              <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-semibold text-green-700">
+              <span className="rounded-full bg-accent-100 px-2 py-0.5 text-xs font-semibold text-accent-700">
                 {t("product.discountBadge", { percent: discountPercent })}
               </span>
             )}
-            <span className="text-sm text-gray-500">/ {unit}</span>
+            <span className="text-sm text-neutral-500">/ {unit}</span>
           </div>
 
-          <dl className="grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2">
+          <dl className="grid grid-cols-1 gap-4 rounded-xl bg-neutral-50 p-4 sm:grid-cols-2">
             <DetailItem
               icon={Scale}
               label={t("myProducts.availableQuantity")}
@@ -246,7 +246,7 @@ function ProductDetailsPage() {
               icon={CalendarClock}
               label={t("dashboard.expiryDate")}
               value={new Date(product.expiry_date).toLocaleDateString()}
-              valueClassName={isUrgent && product.status === "Available" ? "text-red-600" : "text-gray-900"}
+              valueClassName={isUrgent && product.status === "Available" ? "text-danger-700" : "text-neutral-900"}
             />
             <DetailItem
               icon={PackagePlus}
@@ -257,28 +257,28 @@ function ProductDetailsPage() {
 
           <div>
             <div className="mb-1.5 flex items-center justify-between text-sm">
-              <span className="font-medium text-gray-700">{t("myProducts.stockTitle")}</span>
-              <span className="text-gray-500">
+              <span className="font-medium text-neutral-700">{t("myProducts.stockTitle")}</span>
+              <span className="text-neutral-500">
                 {t("myProducts.orderedQuantity")}: {inOrders} {unit}
                 {soldInShop > 0 && (
                   <>
-                    <span className="text-gray-300"> · </span>
+                    <span className="text-neutral-300"> · </span>
                     {t("soldInShop.stockLabel")}: {soldInShop} {unit}
                   </>
                 )}
                 {shopShortage > 0 && (
                   <>
-                    <span className="text-gray-300"> · </span>
-                    <span className="font-medium text-amber-700">
+                    <span className="text-neutral-300"> · </span>
+                    <span className="font-medium text-warning-700">
                       {t("soldInShop.shortageLabel")}: {shopShortage} {unit}
                     </span>
                   </>
                 )}
               </span>
             </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-gray-100">
+            <div className="h-2.5 overflow-hidden rounded-full bg-neutral-100">
               <div
-                className="h-full rounded-full bg-green-500 transition-all"
+                className="h-full rounded-full bg-brand-800 transition-all"
                 style={{ width: `${availablePercent}%` }}
               />
             </div>
@@ -288,7 +288,7 @@ function ProductDetailsPage() {
             <div className="mt-auto flex flex-col gap-2 sm:flex-row">
               <Link
                 to={`/edit-product/${product.id}`}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-800 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900"
               >
                 <Pencil className="h-4 w-4" />
                 {t("myProducts.editButton")}
@@ -297,7 +297,7 @@ function ProductDetailsPage() {
                 <button
                   type="button"
                   onClick={() => setDonating(true)}
-                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 font-semibold text-gray-700 transition-colors hover:border-green-200 hover:bg-green-50 hover:text-green-700"
+                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-neutral-200 py-2.5 font-semibold text-neutral-700 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-900"
                 >
                   <HandHeart className="h-4 w-4" />
                   {t("donations.fromProduct.button")}
@@ -307,7 +307,7 @@ function ProductDetailsPage() {
                 <button
                   type="button"
                   onClick={() => setSellingInShop(true)}
-                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 font-semibold text-gray-700 transition-colors hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
+                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-neutral-200 py-2.5 font-semibold text-neutral-700 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-900"
                 >
                   <Store className="h-4 w-4" />
                   {t("soldInShop.button")}
@@ -317,7 +317,7 @@ function ProductDetailsPage() {
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 font-semibold text-gray-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-neutral-200 py-2.5 font-semibold text-neutral-700 transition-colors hover:border-danger-200 hover:bg-danger-50 hover:text-danger-700"
                 >
                   <Trash2 className="h-4 w-4" />
                   {t("myProducts.deleteButton")}
@@ -331,14 +331,14 @@ function ProductDetailsPage() {
               <button
                 type="button"
                 onClick={() => setOrdering(true)}
-                className="mt-auto inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
+                className="mt-auto inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-brand-800 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900"
               >
                 <ShoppingCart className="h-4 w-4" />
                 {t("cart.add")}
               </button>
             ) : (
-              <p className="mt-auto flex items-center gap-2 rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-600">
-                <Info className="h-4 w-4 shrink-0 text-gray-400" />
+              <p className="mt-auto flex items-center gap-2 rounded-xl bg-neutral-50 px-4 py-3 text-sm text-neutral-600">
+                <Info className="h-4 w-4 shrink-0 text-neutral-500" />
                 {t("myProducts.notAvailable")}
               </p>
             ))}
@@ -346,9 +346,9 @@ function ProductDetailsPage() {
       </section>
 
       {!isOwner && (
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+        <section className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-neutral-900">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-800">
               <Store className="h-4 w-4" strokeWidth={2} />
             </span>
             {t("myProducts.store")}
@@ -356,28 +356,28 @@ function ProductDetailsPage() {
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
-              <p className="text-lg font-bold text-gray-900">
+              <p className="text-lg font-bold text-neutral-900">
                 {product.business_name || "-"}
               </p>
               <ChainLabel company={product.company_name} />
               {(product.store_address || product.city) && (
-                <p className="flex items-center gap-2 text-sm text-gray-600">
-                  <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
+                <p className="flex items-center gap-2 text-sm text-neutral-600">
+                  <MapPin className="h-4 w-4 shrink-0 text-neutral-500" />
                   {[product.store_address, product.city].filter(Boolean).join(", ")}
                 </p>
               )}
               {product.store_phone && (
                 <a
                   href={`tel:${product.store_phone}`}
-                  className="flex w-fit items-center gap-2 text-sm font-medium text-orange-700 hover:underline"
+                  className="flex w-fit items-center gap-2 text-sm font-medium text-brand-800 hover:underline"
                 >
-                  <Phone className="h-4 w-4 shrink-0 text-gray-400" />
+                  <Phone className="h-4 w-4 shrink-0 text-neutral-500" />
                   {product.store_phone}
                 </a>
               )}
               {storePickupHours && (
-                <p className="flex items-center gap-2 text-sm text-gray-600">
-                  <Clock className="h-4 w-4 shrink-0 text-gray-400" />
+                <p className="flex items-center gap-2 text-sm text-neutral-600">
+                  <Clock className="h-4 w-4 shrink-0 text-neutral-500" />
                   {t("orders.pickupHours")}: {storePickupHours}
                 </p>
               )}
@@ -386,7 +386,7 @@ function ProductDetailsPage() {
             {user?.role === "RESTAURANT" && (
               <Link
                 to={`/stores/${product.store_id}`}
-                className="group inline-flex w-fit shrink-0 items-center gap-1.5 rounded-xl bg-orange-50 px-4 py-2.5 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
+                className="group inline-flex w-fit shrink-0 items-center gap-1.5 rounded-xl bg-brand-50 px-4 py-2.5 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-900 hover:text-white"
               >
                 {t("orders.viewStore")}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

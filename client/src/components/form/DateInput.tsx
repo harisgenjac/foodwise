@@ -53,7 +53,7 @@ function DateInput({ label, value, onChange, min, max, required = false, error, 
 
   return (
     <div>
-      <label htmlFor={id} className={`mb-1.5 block text-sm font-medium text-gray-700 ${required ? requiredMark : ""}`}>
+      <label htmlFor={id} className={`mb-1.5 block text-sm font-medium text-neutral-700 ${required ? requiredMark : ""}`}>
         {label}
       </label>
       <div className="relative">
@@ -84,7 +84,7 @@ function DateInput({ label, value, onChange, min, max, required = false, error, 
           onClick={openPicker}
           aria-label={t("common.pickDate")}
           // A 44 px wide touch target over the field's full height (at least 44 px).
-          className="absolute inset-y-0 right-0 flex w-11 cursor-pointer items-center justify-center rounded-r-xl text-gray-400 transition-colors hover:bg-orange-50 hover:text-orange-600"
+          className="absolute inset-y-0 right-0 flex w-11 cursor-pointer items-center justify-center rounded-r-xl text-neutral-500 transition-colors hover:bg-brand-50 hover:text-brand-900"
         >
           <CalendarDays className="h-4 w-4" strokeWidth={1.8} />
         </button>

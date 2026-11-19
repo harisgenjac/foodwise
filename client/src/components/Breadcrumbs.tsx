@@ -13,7 +13,7 @@ interface BreadcrumbsProps {
   className?: string;
 }
 
-const linkStyle = "block max-w-48 truncate transition-colors hover:text-orange-600";
+const linkStyle = "block max-w-48 truncate transition-colors hover:text-brand-900";
 
 const titleOf = (label: ReactNode) => (typeof label === "string" ? label : undefined);
 
@@ -26,12 +26,12 @@ function Breadcrumbs({ items, className = "" }: BreadcrumbsProps) {
   const parent = (current ? items.slice(0, -1) : items).at(-1);
 
   return (
-    <nav aria-label={t("breadcrumbs.label")} className={`text-sm text-gray-500 ${className}`}>
+    <nav aria-label={t("breadcrumbs.label")} className={`text-sm text-neutral-500 ${className}`}>
       {parent?.to && (
         <Link
           to={parent.to}
           title={titleOf(parent.label)}
-          className="inline-flex max-w-full items-center gap-1 transition-colors hover:text-orange-600 sm:hidden"
+          className="inline-flex max-w-full items-center gap-1 transition-colors hover:text-brand-900 sm:hidden"
         >
           <ChevronLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span className="truncate">{parent.label}</span>
@@ -40,12 +40,12 @@ function Breadcrumbs({ items, className = "" }: BreadcrumbsProps) {
       <ol className="hidden min-w-0 items-center gap-1.5 sm:flex">
         {items.map((item, index) => (
           <li key={index} className="flex min-w-0 items-center gap-1.5">
-            {index > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-gray-400" aria-hidden="true" />}
+            {index > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-neutral-500" aria-hidden="true" />}
             {item === current || !item.to ? (
               <span
                 aria-current={item === current ? "page" : undefined}
                 title={titleOf(item.label)}
-                className="block max-w-64 truncate font-medium text-gray-700"
+                className="block max-w-64 truncate font-medium text-neutral-700"
               >
                 {item.label}
               </span>
@@ -66,7 +66,7 @@ export function BreadcrumbPlaceholder() {
   const { t } = useTranslation();
   return (
     <>
-      <span className="inline-block h-3 w-24 animate-pulse rounded bg-gray-200 align-middle" aria-hidden="true" />
+      <span className="inline-block h-3 w-24 animate-pulse rounded bg-neutral-200 align-middle" aria-hidden="true" />
       <span className="sr-only">{t("common.loading")}</span>
     </>
   );

@@ -26,7 +26,7 @@ import {
 } from "../../utils/credits.js";
 import type { CompanyBranchCredits, CompanyCredits, CreditRequest } from "../../types/index.js";
 
-const cardStyle = "rounded-2xl border border-gray-100 bg-white p-6 shadow-sm";
+const cardStyle = "rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm";
 // "Krediti i pretplate": the headquarters asks and pays for its branches' credits. This month's
 // totals, one row per branch (plan, usage, next month's plan, auto-renew and the two actions),
 // the top-ups the branches asked for and the request history across branches.
@@ -141,7 +141,7 @@ function CompanyCreditsPage() {
   const openRequests = (branch: Branch) =>
     branch.open_requests.length > 0 &&
     branch.open_requests.map((request) => (
-      <p key={request.id} className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-600">
+      <p key={request.id} className="mt-1 flex flex-wrap items-center gap-2 text-xs text-neutral-600">
         <span className={`rounded-full px-2 py-0.5 font-semibold ${CREDIT_REQUEST_STATUS_STYLES[request.status]}`}>
           {requestStatuses[request.status] || request.status}
         </span>
@@ -152,7 +152,7 @@ function CompanyCreditsPage() {
             type="button"
             onClick={() => withdraw(request)}
             disabled={busy}
-            className="cursor-pointer font-medium text-amber-800 hover:underline disabled:opacity-60"
+            className="cursor-pointer font-medium text-warning-800 hover:underline disabled:opacity-60"
           >
             {t("credits.profile.withdraw")}
           </button>
@@ -160,7 +160,7 @@ function CompanyCreditsPage() {
       </p>
     ));
   const branchLink = (branch: Branch) => (
-    <Link to={`/company/branches/${branch.id}`} className="font-medium text-gray-900 hover:text-orange-600">
+    <Link to={`/company/branches/${branch.id}`} className="font-medium text-neutral-900 hover:text-brand-900">
       {branch.business_name}
     </Link>
   );
@@ -203,9 +203,9 @@ function CompanyCreditsPage() {
       header: t("company.credits.columnPlan"),
       cell: (branch) =>
         branch.has_subscription ? (
-          <span className="font-medium text-gray-800">{branch.plan_name}</span>
+          <span className="font-medium text-neutral-800">{branch.plan_name}</span>
         ) : (
-          <span className="text-gray-400">{t("company.credits.noPlan")}</span>
+          <span className="text-neutral-500">{t("company.credits.noPlan")}</span>
         ),
     },
     {
@@ -225,8 +225,8 @@ function CompanyCreditsPage() {
       id: "next",
       header: t("company.credits.columnNextMonth"),
       className: "hidden md:table-cell",
-      cellClassName: "text-gray-700",
-      cell: (branch) => branch.next_plan_name ?? <span className="text-gray-400">{t("company.credits.noPlan")}</span>,
+      cellClassName: "text-neutral-700",
+      cell: (branch) => branch.next_plan_name ?? <span className="text-neutral-500">{t("company.credits.noPlan")}</span>,
     },
     {
       id: "autoRenew",
@@ -262,10 +262,10 @@ function CompanyCreditsPage() {
       {header}
 
       <section className={cardStyle} aria-labelledby="company-credits-month">
-        <h2 id="company-credits-month" className="text-lg font-bold text-gray-900">
+        <h2 id="company-credits-month" className="text-lg font-bold text-neutral-900">
           {t("company.credits.monthTitle", { month: formatCreditMonth(overview.periodStart, monthNames) })}
         </h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-neutral-500">
           {t("company.credits.period", {
             from: formatDisplayDate(overview.periodStart),
             to: formatDisplayDate(overview.periodEnd),
@@ -273,9 +273,9 @@ function CompanyCreditsPage() {
         </p>
         <dl className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           {tiles.map(([label, value]) => (
-            <div key={label} className="rounded-xl bg-gray-50 p-4">
-              <dt className="text-xs font-medium text-gray-500">{label}</dt>
-              <dd className="mt-1 text-lg font-bold text-gray-900">{value}</dd>
+            <div key={label} className="rounded-xl bg-neutral-50 p-4">
+              <dt className="text-xs font-medium text-neutral-500">{label}</dt>
+              <dd className="mt-1 text-lg font-bold text-neutral-900">{value}</dd>
             </div>
           ))}
         </dl>
@@ -288,12 +288,12 @@ function CompanyCreditsPage() {
       </section>
 
       <section className={cardStyle} aria-labelledby="company-credits-branches">
-        <h2 id="company-credits-branches" className="text-lg font-bold text-gray-900">
+        <h2 id="company-credits-branches" className="text-lg font-bold text-neutral-900">
           {t("company.credits.branchesTitle")}
         </h2>
-        <p className="mt-1 text-sm text-gray-500">{t("company.credits.branchesSubtitle")}</p>
+        <p className="mt-1 text-sm text-neutral-500">{t("company.credits.branchesSubtitle")}</p>
         {overview.branches.length === 0 ? (
-          <p className="mt-4 text-sm text-gray-500">{t("company.credits.noBranches")}</p>
+          <p className="mt-4 text-sm text-neutral-500">{t("company.credits.noBranches")}</p>
         ) : (
           <DataTable
             embedded
@@ -309,20 +309,20 @@ function CompanyCreditsPage() {
       </section>
 
       <section className={cardStyle} aria-labelledby="company-branch-requests">
-        <h2 id="company-branch-requests" className="flex items-center gap-2 text-lg font-bold text-gray-900">
-          <Inbox className="h-5 w-5 text-orange-600" />
+        <h2 id="company-branch-requests" className="flex items-center gap-2 text-lg font-bold text-neutral-900">
+          <Inbox className="h-5 w-5 text-brand-800" />
           {t("company.credits.branchRequestsTitle")}
         </h2>
-        <p className="mt-1 text-sm text-gray-500">{t("company.credits.branchRequestsSubtitle")}</p>
+        <p className="mt-1 text-sm text-neutral-500">{t("company.credits.branchRequestsSubtitle")}</p>
         {branchRequests.length === 0 ? (
-          <p className="mt-3 text-sm text-gray-500">{t("company.credits.noBranchRequests")}</p>
+          <p className="mt-3 text-sm text-neutral-500">{t("company.credits.noBranchRequests")}</p>
         ) : (
-          <ul className="mt-4 divide-y divide-gray-100">
+          <ul className="mt-4 divide-y divide-neutral-100">
             {branchRequests.map((request) => (
               <li key={request.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm">
-                  <p className="font-medium text-gray-900">{request.branch_name}</p>
-                  <p className="text-gray-600">
+                  <p className="font-medium text-neutral-900">{request.branch_name}</p>
+                  <p className="text-neutral-600">
                     {describeCreditRequest(request, t)} · {t("credits.profile.price", { price: request.price })} ·{" "}
                     {formatDateTime(request.created_at)}
                   </p>
@@ -331,7 +331,7 @@ function CompanyCreditsPage() {
                   <button
                     type="button"
                     onClick={() => setDecision({ request, action: "approve" })}
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-green-700 transition-colors hover:bg-green-50"
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-brand-800 transition-colors hover:bg-brand-50"
                   >
                     <Check className="h-4 w-4" />
                     {t("company.credits.approve")}
@@ -339,7 +339,7 @@ function CompanyCreditsPage() {
                   <button
                     type="button"
                     onClick={() => setDecision({ request, action: "reject" })}
-                    className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-danger-700 transition-colors hover:bg-danger-50"
                   >
                     <X className="h-4 w-4" />
                     {t("company.credits.reject")}
@@ -352,24 +352,24 @@ function CompanyCreditsPage() {
       </section>
 
       <section className={cardStyle} aria-labelledby="company-credit-history">
-        <h2 id="company-credit-history" className="flex items-center gap-2 text-lg font-bold text-gray-900">
-          <History className="h-5 w-5 text-orange-600" />
+        <h2 id="company-credit-history" className="flex items-center gap-2 text-lg font-bold text-neutral-900">
+          <History className="h-5 w-5 text-brand-800" />
           {t("company.credits.historyTitle")}
         </h2>
         {history.length === 0 ? (
-          <p className="mt-3 text-sm text-gray-500">{t("company.credits.noHistory")}</p>
+          <p className="mt-3 text-sm text-neutral-500">{t("company.credits.noHistory")}</p>
         ) : (
           <>
-            <ul className="mt-3 divide-y divide-gray-100 text-sm">
+            <ul className="mt-3 divide-y divide-neutral-100 text-sm">
               {history.map((request) => (
                 <li key={request.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                  <span className="text-gray-700">
-                    <span className="font-medium text-gray-900">{request.branch_name}</span> ·{" "}
+                  <span className="text-neutral-700">
+                    <span className="font-medium text-neutral-900">{request.branch_name}</span> ·{" "}
                     {requestTypes[request.request_type]} {describeCreditRequest(request, t)} ·{" "}
                     {formatCreditMonth(request.period_month, monthNames)}
-                    <span className="ml-1 text-xs text-gray-400">({formatDateTime(request.created_at)})</span>
+                    <span className="ml-1 text-xs text-neutral-500">({formatDateTime(request.created_at)})</span>
                     {request.company_note && (
-                      <span className="block text-xs italic text-gray-500">
+                      <span className="block text-xs italic text-neutral-500">
                         {t("credits.profile.companyNote", { note: request.company_note })}
                       </span>
                     )}

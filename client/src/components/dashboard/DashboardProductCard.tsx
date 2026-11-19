@@ -24,10 +24,10 @@ function DashboardProductCard({ product, showStore = false, actions }: Dashboard
   const units = t("units", { returnObjects: true }) as Record<string, string>;
 
   const expiryStyle =
-    getDaysUntilExpiry(product) <= 3 ? "text-red-600" : "text-gray-800";
+    getDaysUntilExpiry(product) <= 3 ? "text-danger-700" : "text-neutral-800";
 
   return (
-    <div data-testid="product-card" className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+    <div data-testid="product-card" className="group flex flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
       <div className="relative h-36 overflow-hidden">
         <ProductImage
           imageUrl={product.image_url}
@@ -44,8 +44,8 @@ function DashboardProductCard({ product, showStore = false, actions }: Dashboard
         <div>
           {showStore ? (
             // The store name links to its profile; the product name below stays the main text.
-            <p className="flex min-w-0 items-center gap-1 text-xs text-gray-400">
-              <Store className="h-3.5 w-3.5 shrink-0 text-gray-500" aria-hidden="true" />
+            <p className="flex min-w-0 items-center gap-1 text-xs text-neutral-500">
+              <Store className="h-3.5 w-3.5 shrink-0 text-neutral-500" aria-hidden="true" />
               {product.business_name && (
                 <StoreNameLink storeId={product.store_id} name={product.business_name} />
               )}
@@ -58,9 +58,9 @@ function DashboardProductCard({ product, showStore = false, actions }: Dashboard
               )}
             </p>
           ) : (
-            <p className="text-xs text-gray-400">{new Date(product.created_at).toLocaleDateString()}</p>
+            <p className="text-xs text-neutral-500">{new Date(product.created_at).toLocaleDateString()}</p>
           )}
-          <h3 className="text-lg font-bold text-gray-800 line-clamp-1">{product.name}</h3>
+          <h3 className="text-lg font-bold text-neutral-800 line-clamp-1">{product.name}</h3>
         </div>
 
         <span className={`w-fit rounded-full px-2 py-1 text-xs font-medium ${PRODUCT_STATUS_STYLES[product.status]}`}>
@@ -68,25 +68,25 @@ function DashboardProductCard({ product, showStore = false, actions }: Dashboard
         </span>
 
         {product.description && (
-          <p className="text-sm text-gray-500 line-clamp-2">{product.description}</p>
+          <p className="text-sm text-neutral-500 line-clamp-2">{product.description}</p>
         )}
 
-        <dl className="flex flex-col gap-2 rounded-xl bg-gray-50 p-3 text-sm">
+        <dl className="flex flex-col gap-2 rounded-xl bg-neutral-50 p-3 text-sm">
           <div className="flex justify-between gap-2">
-            <dt className="text-gray-500">{t("dashboard.price")}</dt>
+            <dt className="text-neutral-500">{t("dashboard.price")}</dt>
             <dd className="text-right">
-              <span className="mr-1 text-gray-400 line-through">{product.original_price} KM</span>
-              <span className="font-semibold text-green-600">{product.discounted_price} KM</span>
+              <span className="mr-1 text-neutral-500 line-through">{product.original_price} KM</span>
+              <span className="font-semibold text-accent-700">{product.discounted_price} KM</span>
             </dd>
           </div>
           <div className="flex justify-between gap-2">
-            <dt className="text-gray-500">{t("dashboard.quantity")}</dt>
-            <dd className="font-medium text-gray-800">
+            <dt className="text-neutral-500">{t("dashboard.quantity")}</dt>
+            <dd className="font-medium text-neutral-800">
               {product.available_quantity ?? product.quantity} {units[product.unit] || product.unit}
             </dd>
           </div>
           <div className="flex justify-between gap-2">
-            <dt className="text-gray-500">{t("dashboard.expiryDate")}</dt>
+            <dt className="text-neutral-500">{t("dashboard.expiryDate")}</dt>
             <dd className={`font-medium ${expiryStyle}`}>
               {new Date(product.expiry_date).toLocaleDateString()}
             </dd>
@@ -98,7 +98,7 @@ function DashboardProductCard({ product, showStore = false, actions }: Dashboard
         ) : (
           <Link
             to={`/products/${product.id}`}
-            className="mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-orange-50 py-2.5 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
+            className="mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand-50 py-2.5 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-900 hover:text-white"
           >
             {t("dashboard.detailsButton")}
             <ArrowRight className="h-4 w-4" />

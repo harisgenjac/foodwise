@@ -32,8 +32,8 @@ interface ConfirmModalProps {
 const MAX_REASON_LENGTH = 500;
 
 const VARIANT_STYLES: Record<ConfirmVariant, { icon: string; button: string }> = {
-  success: { icon: "bg-green-50 text-green-600", button: "bg-green-600 hover:bg-green-700" },
-  danger: { icon: "bg-red-50 text-red-600", button: "bg-red-600 hover:bg-red-700" },
+  success: { icon: "bg-brand-50 text-brand-800", button: "bg-brand-800 hover:bg-brand-900" },
+  danger: { icon: "bg-danger-50 text-danger-700", button: "bg-danger-600 hover:bg-danger-700" },
 };
 
 // The one confirmation dialog for actions that cannot be undone, notify another party or
@@ -76,13 +76,13 @@ function ConfirmModal({
         <span className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${styles.icon}`}>
           <Icon className="h-6 w-6" strokeWidth={1.8} />
         </span>
-        <h3 id={titleId} className="text-lg font-bold text-gray-900">
+        <h3 id={titleId} className="text-lg font-bold text-neutral-900">
           {title}
         </h3>
       </ModalHeader>
       <form ref={formRef} noValidate onSubmit={handleSubmit} className={modalFormStyle}>
         <ModalBody className="pt-1">
-          <div className="text-center text-sm text-gray-500">{message}</div>
+          <div className="text-center text-sm text-neutral-500">{message}</div>
 
           {children}
 
@@ -96,10 +96,10 @@ function ConfirmModal({
                   maxLength={MAX_REASON_LENGTH}
                   rows={3}
                   placeholder={t("admin.common.reasonPlaceholder")}
-                  className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-base text-gray-900 sm:text-sm placeholder:text-gray-400 focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100"
+                  className="w-full resize-none rounded-xl border border-neutral-200 px-3 py-2.5 text-base text-neutral-900 sm:text-sm placeholder:text-neutral-400 focus:border-brand-800 focus:outline-none focus:ring-4 focus:ring-brand-100"
                 />
               </FormField>
-              {!reasonError && <p className="mt-1 text-xs text-gray-500">{t("admin.common.reasonHint")}</p>}
+              {!reasonError && <p className="mt-1 text-xs text-neutral-500">{t("admin.common.reasonHint")}</p>}
               <RequiredHint className="mt-1" />
             </div>
           )}
@@ -110,7 +110,7 @@ function ConfirmModal({
             type="button"
             onClick={onClose}
             autoFocus={isDanger}
-            className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+            className="flex-1 cursor-pointer rounded-xl bg-neutral-100 py-2.5 font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
           >
             {cancelLabel ?? t("common.cancel")}
           </button>

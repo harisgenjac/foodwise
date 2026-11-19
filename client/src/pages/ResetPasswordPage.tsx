@@ -86,19 +86,19 @@ function ResetPasswordPage() {
   if (linkState === "invalid") {
     return (
       <AuthLayout title={t("auth.reset.invalidTitle")}>
-        <p role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
+        <p role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-warning-200 bg-warning-50 px-3 py-3 text-sm text-warning-800">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
           {t(`${texts}.invalidText`)}
         </p>
         <Link
           to="/forgot-password"
-          className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-orange-500 py-2.5 font-semibold text-white hover:bg-orange-600"
+          className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand-800 py-2.5 font-semibold text-white hover:bg-brand-900"
         >
           {t("auth.reset.newLink")}
         </Link>
         <Link
           to="/login"
-          className="mt-3 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-orange-600 hover:text-orange-700 hover:underline"
+          className="mt-3 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-brand-800 hover:text-brand-900 hover:underline"
         >
           <ArrowLeft className="h-4 w-4" />
           {t("auth.forgot.backToLogin")}
@@ -110,7 +110,7 @@ function ResetPasswordPage() {
   return (
     <AuthLayout title={t(`${texts}.title`)} subtitle={t(`${texts}.subtitle`)}>
       {error && (
-        <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+        <p className="mb-4 rounded-xl border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700">{error}</p>
       )}
       <form ref={formRef} noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
         <FormField label={t("user.newPassword")} icon={Lock} required error={errorFor("next")}>
@@ -133,11 +133,11 @@ function ResetPasswordPage() {
             className={inputStyle}
           />
         </FormField>
-        <p className="-mt-2 text-xs text-gray-500">{t("auth.passwordHint")}</p>
+        <p className="-mt-2 text-xs text-neutral-500">{t("auth.passwordHint")}</p>
         <button
           type="submit"
           disabled={saving}
-          className="mt-2 inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 disabled:opacity-60"
+          className="mt-2 inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-brand-800 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900 disabled:opacity-60"
         >
           {t(`${texts}.submit`)}
         </button>

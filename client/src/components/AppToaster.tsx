@@ -38,7 +38,7 @@ function AppToaster() {
                   type="button"
                   onClick={() => toast.dismiss(item.id)}
                   aria-label={t("common.closeToast")}
-                  className="shrink-0 cursor-pointer rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                  className="shrink-0 cursor-pointer rounded-lg p-1 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-600"
                 >
                   <X className="h-4 w-4" />
                 </button>

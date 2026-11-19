@@ -21,7 +21,7 @@ interface ImpactStripProps {
   impact: RestaurantImpact | null;
 }
 
-// The teal band under RestaurantHero (design/restaurant-home/impact-strip.html): food saved, CO₂
+// The green band under RestaurantHero (design/restaurant-home/impact-strip.html): food saved, CO₂
 // avoided and money saved, each with an InfoTooltip. A restaurant that has picked up nothing yet
 // sees the platform's totals under "Together we have saved".
 function ImpactStrip({ impact }: ImpactStripProps) {
@@ -35,17 +35,17 @@ function ImpactStrip({ impact }: ImpactStripProps) {
       data-testid="impact-strip"
       // -mt-px and relative: the strip overlaps the hero by 1 px and paints above it, so no light
       // seam shows where the hero ends on a fraction of a pixel.
-      className="relative -mt-px rounded-b-2xl bg-[#0F766E] p-4 sm:px-6 sm:py-[22px]"
+      className="relative -mt-px rounded-b-2xl bg-brand-800 p-4 sm:px-6 sm:py-[22px]"
     >
       {together && (
-        <p className="mb-3 text-sm font-medium text-[#D9F99D] sm:text-center">{t("impactStrip.together")}</p>
+        <p className="mb-3 text-sm font-medium text-brand-200 sm:text-center">{t("impactStrip.together")}</p>
       )}
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3 sm:gap-5">
         {STATS.map(({ key, icon: Icon, value }) => (
           <div key={key} className="relative flex items-center justify-start gap-3.5 sm:justify-center">
-            <Icon className="h-8 w-8 shrink-0 text-[#99F6E4] sm:h-10 sm:w-10" strokeWidth={1.5} aria-hidden="true" />
+            <Icon className="h-8 w-8 shrink-0 text-brand-300 sm:h-10 sm:w-10" strokeWidth={1.5} aria-hidden="true" />
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5 text-[15px] text-[#F0FDFA]">
+              <div className="flex items-center gap-1.5 text-[15px] text-brand-50">
                 <span>{t(`impactStrip.${key}`)}</span>
                 <InfoTooltip
                   icon={Icon}

@@ -70,9 +70,9 @@ function AdminUsersPage() {
       card: "title",
       cell: (user) => (
         <>
-          <p className="font-medium text-gray-900">{accountName(user)}</p>
-          <p className="text-xs text-gray-500">{user.email}</p>
-          {user.company_name && <p className="text-xs text-teal-700">{user.company_name}</p>}
+          <p className="font-medium text-neutral-900">{accountName(user)}</p>
+          <p className="text-xs text-neutral-500">{user.email}</p>
+          {user.company_name && <p className="text-xs text-brand-800">{user.company_name}</p>}
         </>
       ),
     },
@@ -87,7 +87,7 @@ function AdminUsersPage() {
       id: "city",
       header: t("admin.users.columnCity"),
       className: "hidden md:table-cell",
-      cellClassName: "text-gray-600",
+      cellClassName: "text-neutral-600",
       cell: (user) => user.city || "—",
     },
     {
@@ -97,20 +97,20 @@ function AdminUsersPage() {
       cell: (user) => (
         <>
           {user.deactivated_at && !isEffectivelyBlocked(user) ? (
-            <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
+            <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-semibold text-neutral-600">
               {t("company.branchStatus.deactivated")}
             </span>
           ) : isEffectivelyBlocked(user) ? (
-            <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">{t("admin.common.blocked")}</span>
+            <span className="rounded-full bg-danger-50 px-2.5 py-1 text-xs font-semibold text-danger-700">{t("admin.common.blocked")}</span>
           ) : getAccountSetup(user).missingFields.length > 0 ? (
-            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+            <span className="rounded-full bg-warning-50 px-2.5 py-1 text-xs font-semibold text-warning-700">
               {t("admin.common.incompleteProfile")}
             </span>
           ) : (
-            <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">{t("admin.common.active")}</span>
+            <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-800">{t("admin.common.active")}</span>
           )}
           {user.must_change_password && (
-            <span className="mt-1 block w-fit rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+            <span className="mt-1 block w-fit rounded-full bg-info-50 px-2.5 py-1 text-xs font-semibold text-info-700">
               {t("admin.common.pendingPassword")}
             </span>
           )}
@@ -122,7 +122,7 @@ function AdminUsersPage() {
       header: t("admin.users.columnCreated"),
       sortKey: "created_at",
       className: "hidden md:table-cell",
-      cellClassName: "text-gray-500",
+      cellClassName: "text-neutral-500",
       cell: (user) => (user.created_at ? formatDateTime(user.created_at) : ""),
     },
   ];
@@ -215,7 +215,7 @@ function AdminUsersPage() {
             rows={users}
             rowKey={(user) => user.id}
             rowHref={(user) => `/admin/users/${user.id}`}
-            rowClassName="hover:bg-orange-50/40"
+            rowClassName="hover:bg-brand-50/40"
             sort={{ sort, dir, onSort: toggleSort, setSort }}
             columns={columns}
           />

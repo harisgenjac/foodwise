@@ -51,7 +51,7 @@ const fakeTransport = () => {
   const transport: EmailTransport = { name: "smtp", send: async (message) => void sent.push(message) };
   return { transport, sent };
 };
-const CONFIG = { from: "FoodWise <no-reply@example.com>", redirectTo: null, appUrl: "https://app.example.com" };
+const CONFIG = { from: "Još vrijedi <no-reply@example.com>", redirectTo: null, appUrl: "https://app.example.com" };
 
 beforeEach(async () => {
   await pool.query("DELETE FROM email_queue");

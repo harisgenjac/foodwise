@@ -35,23 +35,23 @@ function ShopSalesCard({ productId, unit, reloadKey }: ShopSalesCardProps) {
   const total = sales.reduce((sum, sale) => sum + parseFloat(sale.quantity), 0);
 
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-      <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-gray-900">
-        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+    <section className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
+      <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-neutral-900">
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-800">
           <Store className="h-4 w-4" strokeWidth={2} />
         </span>
         {t("soldInShop.historyTitle")}
       </h2>
-      <p className="mb-4 text-sm text-gray-500">
+      <p className="mb-4 text-sm text-neutral-500">
         {t("soldInShop.historyTotal", { amount: Math.round(total * 1000) / 1000, unit })}
       </p>
-      <ul className="divide-y divide-gray-100">
+      <ul className="divide-y divide-neutral-100">
         {sales.map((sale) => (
           <li key={sale.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-            <span className="font-medium text-gray-900">
+            <span className="font-medium text-neutral-900">
               {parseFloat(sale.quantity)} {unit}
             </span>
-            <span className="text-gray-500">{formatDateTime(sale.created_at)}</span>
+            <span className="text-neutral-500">{formatDateTime(sale.created_at)}</span>
           </li>
         ))}
       </ul>

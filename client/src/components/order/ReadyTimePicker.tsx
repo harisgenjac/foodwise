@@ -32,16 +32,16 @@ function ReadyTimePicker({ value, onChange, showError }: ReadyTimePickerProps) {
   const invalid = value.kind === "exact" && readyAtOf(value) === null;
   const chip = (active: boolean) =>
     `min-h-11 cursor-pointer rounded-xl border px-3 text-sm transition-colors sm:min-h-9 ${
-      active ? "border-orange-400 bg-orange-50 font-semibold text-orange-800" : "border-gray-200 text-gray-700 hover:bg-gray-50"
+      active ? "border-brand-800 bg-brand-50 font-semibold text-brand-800" : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"
     }`;
 
   return (
-    <fieldset data-testid="ready-time" className="space-y-2 rounded-xl border border-gray-100 p-3">
-      <legend className="flex items-center gap-1.5 px-1 text-sm font-medium text-gray-900">
-        <Clock className="h-4 w-4 text-gray-400" aria-hidden="true" />
+    <fieldset data-testid="ready-time" className="space-y-2 rounded-xl border border-neutral-100 p-3">
+      <legend className="flex items-center gap-1.5 px-1 text-sm font-medium text-neutral-900">
+        <Clock className="h-4 w-4 text-neutral-500" aria-hidden="true" />
         {t("orders.decision.ready.title")}
       </legend>
-      <p className="text-xs text-gray-500">{t("orders.decision.ready.hint")}</p>
+      <p className="text-xs text-neutral-500">{t("orders.decision.ready.hint")}</p>
       <div className="flex flex-wrap gap-2">
         {PREPARATION_MINUTES.map((minutes) => {
           const active = value.kind === "minutes" && value.minutes === minutes;
@@ -68,7 +68,7 @@ function ReadyTimePicker({ value, onChange, showError }: ReadyTimePickerProps) {
       </div>
       {value.kind === "exact" && (
         <div>
-          <label htmlFor={timeId} className="mb-1 block text-sm text-gray-700">
+          <label htmlFor={timeId} className="mb-1 block text-sm text-neutral-700">
             {t("orders.decision.ready.timeLabel")}
           </label>
           <input
@@ -84,7 +84,7 @@ function ReadyTimePicker({ value, onChange, showError }: ReadyTimePickerProps) {
             className={`${inputStyle.replace("pl-10", "pl-3")} sm:w-32`}
           />
           {showError && invalid && (
-            <p id={errorId} className="mt-1 text-sm text-red-600">
+            <p id={errorId} className="mt-1 text-sm text-danger-700">
               {t("orders.decision.ready.invalid")}
             </p>
           )}

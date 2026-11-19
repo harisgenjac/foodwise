@@ -59,17 +59,17 @@ function EmailNotificationsSection({ initial }: { initial: boolean }) {
           className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-4 rounded-xl text-left disabled:cursor-wait"
         >
           <span className="min-w-0">
-            <span id={labelId} className="block font-medium text-gray-900">
+            <span id={labelId} className="block font-medium text-neutral-900">
               {t("user.emailNotifications.label")}
             </span>
-            <span id={descriptionId} className="mt-0.5 block text-sm text-gray-500">
+            <span id={descriptionId} className="mt-0.5 block text-sm text-neutral-500">
               {t(enabled ? "user.emailNotifications.onHint" : "user.emailNotifications.offHint")}
             </span>
           </span>
           <span
             aria-hidden="true"
             className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors ${
-              enabled ? "bg-orange-500" : "bg-gray-300"
+              enabled ? "bg-brand-800" : "bg-neutral-300"
             }`}
           >
             <span

@@ -50,12 +50,12 @@ function AdminCreateCompanyPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
       <div className="flex items-start gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-800">
           <Building2 className="h-5 w-5" strokeWidth={2} />
         </span>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t("admin.createCompany.title")}</h1>
-          <p className="mt-0.5 text-sm text-gray-500">{t("admin.createCompany.subtitle")}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">{t("admin.createCompany.title")}</h1>
+          <p className="mt-0.5 text-sm text-neutral-500">{t("admin.createCompany.subtitle")}</p>
         </div>
       </div>
 
@@ -100,14 +100,14 @@ function AdminCreateCompanyPage() {
                     className={inputStyle}
                   />
                 </FormField>
-                <p className="mt-2 text-xs text-gray-500">{t("admin.createUser.passwordHint")}</p>
+                <p className="mt-2 text-xs text-neutral-500">{t("admin.createUser.passwordHint")}</p>
               </div>
             )}
           </FormSection>
         </div>
 
         <div className="space-y-4 lg:sticky lg:top-22 lg:self-start">
-          <div className="rounded-2xl border border-orange-100 bg-orange-50/60 p-5 text-sm text-orange-900">
+          <div className="rounded-2xl border border-brand-100 bg-brand-50/60 p-5 text-sm text-brand-900">
             <p className="flex items-center gap-2 font-semibold">
               <Info className="h-4 w-4" />
               {t("admin.createCompany.infoTitle")}
@@ -119,14 +119,14 @@ function AdminCreateCompanyPage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full cursor-pointer rounded-xl bg-orange-500 px-8 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 disabled:opacity-60"
+            className="w-full cursor-pointer rounded-xl bg-brand-800 px-8 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900 disabled:opacity-60"
           >
             {t("admin.createCompany.submit")}
           </button>
           <RequiredHint className="text-center" />
           <Link
             to="/admin/companies"
-            className="block rounded-xl border border-gray-200 bg-white px-8 py-2.5 text-center font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="block rounded-xl border border-neutral-200 bg-white px-8 py-2.5 text-center font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
           >
             {t("admin.common.cancel")}
           </Link>

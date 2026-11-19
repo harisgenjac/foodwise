@@ -53,20 +53,20 @@ function LanguageSwitcher() {
         onClick={() => setIsLangOpen(!isLangOpen)}
         aria-expanded={isLangOpen}
         // 44 px high touch target below md.
-        className="flex min-h-11 items-center gap-1 px-2 py-2 rounded-lg hover:bg-gray-100 text-sm font-medium md:min-h-0 md:px-3"
+        className="flex min-h-11 items-center gap-1 px-2 py-2 rounded-lg hover:bg-neutral-100 text-sm font-medium md:min-h-0 md:px-3"
       >
         <img src={currentLanguage.flag} alt={currentLanguage.label} className="w-5 h-4 object-cover rounded-sm" />
         <span>{currentLanguage.code.toUpperCase()}</span>
       </button>
 
       {isLangOpen && (
-        <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+        <div className="absolute right-0 top-full mt-2 w-40 bg-white border border-neutral-200 rounded-lg shadow-lg z-50">
           {LANGUAGES.map((lang) => (
             <button
               key={lang.code}
               onClick={() => handleLanguageChange(lang.code)}
-              className={`w-full flex min-h-11 items-center gap-2 px-4 py-2 text-left hover:bg-gray-100 md:min-h-0 ${
-                lang.code === i18n.language ? "bg-orange-50 text-orange-600" : ""
+              className={`w-full flex min-h-11 items-center gap-2 px-4 py-2 text-left hover:bg-neutral-100 md:min-h-0 ${
+                lang.code === i18n.language ? "bg-brand-50 text-brand-800" : ""
               }`}
             >
               <img src={lang.flag} alt={lang.label} className="w-5 h-4 object-cover rounded-sm" />

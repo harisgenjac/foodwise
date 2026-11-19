@@ -104,7 +104,7 @@ function OrderDetailsPage() {
                 <button
                   type="button"
                   onClick={() => setDeciding(true)}
-                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2.5 font-semibold text-white shadow-sm shadow-green-600/20 transition-colors hover:bg-green-700"
+                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-brand-800 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900"
                 >
                   <Check className="h-4 w-4" />
                   {t("orders.decideButton")}
@@ -116,7 +116,7 @@ function OrderDetailsPage() {
                 <button
                   type="button"
                   onClick={() => cancelOrder.request({ id: order.id, code: order.code, storeName: order.store.business_name ?? "" })}
-                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 font-semibold text-gray-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-neutral-200 py-2.5 font-semibold text-neutral-700 transition-colors hover:border-danger-200 hover:bg-danger-50 hover:text-danger-700"
                 >
                   <X className="h-4 w-4" />
                   {t("orders.cancelButton")}
@@ -125,7 +125,7 @@ function OrderDetailsPage() {
             )}
             {deliveryFailed && !isStore && <DeliveryFailedActions order={order} onDone={fetchOrder} />}
             {deliveryFailed && isStore && (
-              <p data-testid="delivery-failed" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              <p data-testid="delivery-failed" className="rounded-xl border border-warning-200 bg-warning-50 p-4 text-sm text-warning-800">
                 {t("orders.deliveryFailed.storeWaiting")}
               </p>
             )}
@@ -134,7 +134,7 @@ function OrderDetailsPage() {
                 <button
                   type="button"
                   onClick={() => pickupActions.request("complete", handOver)}
-                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-green-600 py-2.5 font-semibold text-white shadow-sm shadow-green-600/20 transition-colors hover:bg-green-700"
+                  className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-brand-800 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900"
                 >
                   <PackageCheck className="h-4 w-4" />
                   {t("pickups.completeButton")}
@@ -143,7 +143,7 @@ function OrderDetailsPage() {
                   <button
                     type="button"
                     onClick={() => pickupActions.request("cancel-overdue", handOver)}
-                    className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 py-2.5 font-semibold text-red-600 transition-colors hover:bg-red-50"
+                    className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-danger-200 py-2.5 font-semibold text-danger-700 transition-colors hover:bg-danger-50"
                   >
                     <CalendarX className="h-4 w-4" />
                     {t("pickups.cancelOverdueButton")}

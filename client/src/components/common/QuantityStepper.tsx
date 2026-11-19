@@ -14,7 +14,7 @@ interface QuantityStepperProps {
 }
 
 const buttonStyle =
-  "flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-orange-700 transition-colors hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-40 sm:h-9 sm:w-9";
+  "flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-brand-800 transition-colors hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-40 sm:h-9 sm:w-9";
 
 // − amount + for a product in the cart: steps of 1 (the last step up takes what is left), and −
 // at 1 or less removes the line (a bin icon then).
@@ -27,7 +27,7 @@ function QuantityStepper({ name, unit, value, max, busy = false, onChange }: Qua
     <div
       role="group"
       aria-label={t("stepper.label", { name })}
-      className="inline-flex items-center gap-1 rounded-full bg-orange-50 p-0.5"
+      className="inline-flex items-center gap-1 rounded-full bg-brand-50 p-0.5"
     >
       <button
         type="button"
@@ -38,7 +38,7 @@ function QuantityStepper({ name, unit, value, max, busy = false, onChange }: Qua
       >
         {removes ? <Trash2 className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
       </button>
-      <span aria-live="polite" className="min-w-12 text-center text-sm font-semibold text-gray-900 tabular-nums">
+      <span aria-live="polite" className="min-w-12 text-center text-sm font-semibold text-neutral-900 tabular-nums">
         {formatAmount(value, unit)}
       </span>
       <button

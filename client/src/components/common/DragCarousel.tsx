@@ -142,7 +142,7 @@ function DragCarousel({
     }
   };
 
-  const arrow = `absolute z-10 hidden h-10 w-10 items-center justify-center rounded-full border border-[#E7E5E4] bg-white text-gray-700 shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F766E] md:flex ${arrowPositionClassName}`;
+  const arrow = `absolute z-10 hidden h-10 w-10 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 shadow-[0_4px_12px_rgba(0,0,0,0.1)] hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-800 md:flex ${arrowPositionClassName}`;
 
   return (
     <div className="relative">

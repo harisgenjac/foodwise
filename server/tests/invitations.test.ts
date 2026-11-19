@@ -12,7 +12,7 @@ const STORE = "invitations-store@test.com";
 const EMAILS = [ADMIN, NEW_USER, STORE];
 const OWN_PASSWORD = "moja-lozinka-123";
 const INVALID_LINK = "This link is invalid or has expired.";
-const CONFIG = { from: "FoodWise <no-reply@example.com>", redirectTo: null, appUrl: "https://app.example.com" };
+const CONFIG = { from: "Još vrijedi <no-reply@example.com>", redirectTo: null, appUrl: "https://app.example.com" };
 
 // The raw tokens of the emails of a template queued for an address, oldest first.
 const tokensSentTo = async (email: string, template = "INVITATION"): Promise<string[]> =>
@@ -83,7 +83,7 @@ describe("creating an account with an invitation", () => {
     const transport: EmailTransport = { name: "smtp", send: async (message) => void sent.push(message) };
     await processEmailQueue({ transport, config: CONFIG });
     expect(sent).toHaveLength(1);
-    expect(sent[0]!.subject).toBe("Pozivnica za FoodWise");
+    expect(sent[0]!.subject).toBe("Pozivnica za Još vrijedi");
     expect(sent[0]!.text).toMatch(/Postavi lozinku: https:\/\/app\.example\.com\/set-password\?token=[A-Za-z0-9_-]{43}/);
     expect(sent[0]!.text).toContain("Link vrijedi 72 sata");
     expect(sent[0]!.text).not.toContain("Isključite email obavijesti");
@@ -124,7 +124,7 @@ describe("accepting the invitation", () => {
     const response = await agent.post("/api/auth/reset-password").send({ token, password: OWN_PASSWORD });
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
-      message: "Your password was set. Welcome to FoodWise.",
+      message: "Your password was set. Welcome to Još vrijedi.",
       purpose: "INVITATION",
       user: { email: NEW_USER, role: "STORE", must_change_password: false },
     });

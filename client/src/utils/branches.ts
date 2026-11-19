@@ -4,7 +4,7 @@ import type { BranchStatus } from "../types/index.js";
 export const BRANCH_STATUSES: BranchStatus[] = ["active", "deactivated", "blocked"];
 
 export const BRANCH_STATUS_STYLES: Record<BranchStatus, string> = {
-  active: "bg-green-50 text-green-700",
-  deactivated: "bg-gray-100 text-gray-600",
-  blocked: "bg-red-50 text-red-600",
+  active: "bg-brand-50 text-brand-800",
+  deactivated: "bg-neutral-100 text-neutral-600",
+  blocked: "bg-danger-50 text-danger-700",
 };

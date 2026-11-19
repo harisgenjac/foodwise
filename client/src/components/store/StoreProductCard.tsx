@@ -30,12 +30,12 @@ function StoreProductCard({ product, inCart, busy, onSetQuantity }: StoreProduct
   return (
     <article
       data-testid="store-product-card"
-      className="flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+      className="flex flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm"
     >
       <Link to={`/products/${product.id}`} state={{ fromStore: true }} className="relative block aspect-4/3 overflow-hidden">
         <ProductImage imageUrl={product.image_url} alt={product.name} className="h-full w-full object-cover" />
         {discount > 0 && (
-          <span className="absolute top-2 left-2 rounded-full bg-green-600 px-2 py-0.5 text-xs font-bold text-white">
+          <span className="absolute top-2 left-2 rounded-full bg-accent-700 px-2 py-0.5 text-xs font-bold text-white">
             −{discount}%
           </span>
         )}
@@ -44,22 +44,22 @@ function StoreProductCard({ product, inCart, busy, onSetQuantity }: StoreProduct
         <Link
           to={`/products/${product.id}`}
           state={{ fromStore: true }}
-          className="line-clamp-2 text-sm font-semibold text-gray-900 hover:text-orange-700"
+          className="line-clamp-2 text-sm font-semibold text-neutral-900 hover:text-brand-900"
         >
           {product.name}
         </Link>
-        <p className={`flex items-center gap-1 text-xs ${days <= 1 ? "font-medium text-red-600" : "text-gray-500"}`}>
+        <p className={`flex items-center gap-1 text-xs ${days <= 1 ? "font-medium text-danger-700" : "text-neutral-500"}`}>
           <CalendarClock className="h-3.5 w-3.5 shrink-0" />
           {expiry}
         </p>
-        <p className="text-xs text-gray-500">{t("store.page.available", { amount: formatAmount(available, product.unit) })}</p>
+        <p className="text-xs text-neutral-500">{t("store.page.available", { amount: formatAmount(available, product.unit) })}</p>
         <div className="mt-auto flex flex-wrap items-end justify-between gap-2 pt-1">
           <p className="leading-tight">
-            <span className="block text-base font-bold text-gray-900">
+            <span className="block text-base font-bold text-accent-700">
               {formatMoney(product.discounted_price)}
-              <span className="text-xs font-normal text-gray-500"> / {product.unit}</span>
+              <span className="text-xs font-normal text-neutral-500"> / {product.unit}</span>
             </span>
-            {discount > 0 && <span className="text-xs text-gray-400 line-through">{formatMoney(product.original_price)}</span>}
+            {discount > 0 && <span className="text-xs text-neutral-500 line-through">{formatMoney(product.original_price)}</span>}
           </p>
           {inCart > 0 ? (
             <QuantityStepper
@@ -76,7 +76,7 @@ function StoreProductCard({ product, inCart, busy, onSetQuantity }: StoreProduct
               disabled={busy || available <= 0}
               onClick={() => onSetQuantity(Math.min(1, available))}
               aria-label={t("stepper.add", { name: product.name })}
-              className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-orange-500 text-white shadow-sm shadow-orange-500/30 transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 sm:w-9"
+              className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-brand-800 text-white shadow-sm shadow-brand-800/30 transition-colors hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-50 sm:h-9 sm:w-9"
             >
               <Plus className="h-5 w-5" />
             </button>

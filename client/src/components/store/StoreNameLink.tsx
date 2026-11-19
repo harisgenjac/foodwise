@@ -13,7 +13,7 @@ function StoreNameLink({ storeId, name, className = "" }: StoreNameLinkProps) {
     <Link
       to={`/stores/${storeId}`}
       title={name}
-      className={`min-w-0 truncate rounded font-semibold text-gray-800 transition-colors hover:text-orange-600 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 ${className}`}
+      className={`min-w-0 truncate rounded font-semibold text-neutral-800 transition-colors hover:text-brand-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 ${className}`}
     >
       {name}
     </Link>

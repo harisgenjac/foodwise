@@ -44,8 +44,8 @@ describe("FormField", () => {
     const input = screen.getByLabelText("Email");
     expect(input).toHaveAttribute("aria-invalid", "true");
     expect(input).toHaveAccessibleDescription("This field is required.");
-    expect(input).toHaveClass("border-red-400");
-    expect(input).not.toHaveClass("border-gray-200");
+    expect(input).toHaveClass("border-danger-400");
+    expect(input).not.toHaveClass("border-neutral-200");
     // The message is outside the label, so it is not part of the field's name.
     expect(input).toHaveAccessibleName("Email");
   });

@@ -10,8 +10,8 @@ test("a chain's branch in Breza publishes a product that a restaurant in Visoko 
   const company = `E2E Lanac ${id}`;
   const branch = `E2E Poslovnica ${id}`;
   const productName = `E2E Burek ${id}`;
-  const hq = { email: `e2e-hq-${id}@foodwise.test`, temporaryPassword: `Privremena-hq-${id}` };
-  const branchLogin = { email: `e2e-branch-${id}@foodwise.test`, temporaryPassword: `Privremena-br-${id}` };
+  const hq = { email: `e2e-hq-${id}@josvrijedi.test`, temporaryPassword: `Privremena-hq-${id}` };
+  const branchLogin = { email: `e2e-branch-${id}@josvrijedi.test`, temporaryPassword: `Privremena-br-${id}` };
 
   const adminContext = await browser.newContext({ storageState: storageState("admin") });
   const hqContext = await browser.newContext();

@@ -10,13 +10,13 @@ interface UsageBarProps {
 }
 
 // A month's used share of its credits as a small bar with "used / total", in the Credits page
-// colours (green up to 70%, orange to 90%, red from 90%).
+// colours (success up to 70%, warning to 90%, danger from 90%).
 function UsageBar({ used, total, label, className = "" }: UsageBarProps) {
   const { t } = useTranslation();
   const percent = usagePercent(used, total);
   return (
     <div className={className}>
-      <div className="mb-1 flex justify-between gap-2 text-xs text-gray-600">
+      <div className="mb-1 flex justify-between gap-2 text-xs text-neutral-600">
         <span className="tabular-nums">{t("credits.usage.usedOfTotal", { used, total })}</span>
         <span className="font-semibold tabular-nums">{Math.round(percent)}%</span>
       </div>
@@ -26,7 +26,7 @@ function UsageBar({ used, total, label, className = "" }: UsageBarProps) {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-label={label}
-        className="h-2 overflow-hidden rounded-full bg-gray-100"
+        className="h-2 overflow-hidden rounded-full bg-neutral-100"
       >
         <div className={`h-full rounded-full ${usageBarColor(percent)}`} style={{ width: `${percent}%` }} />
       </div>

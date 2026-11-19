@@ -2,14 +2,16 @@ import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import UnitChips from "./UnitChips.js";
 
-type StatTone = "orange" | "amber" | "green" | "red" | "gray";
+// The icon tile's colours: the status colours keep their fixed meaning, accent is for discounts.
+type StatTone = "brand" | "accent" | "success" | "warning" | "danger" | "neutral";
 
 const TONE_STYLES: Record<StatTone, string> = {
-  orange: "bg-orange-50 text-orange-600",
-  amber: "bg-amber-50 text-amber-600",
-  green: "bg-green-50 text-green-600",
-  red: "bg-red-50 text-red-600",
-  gray: "bg-gray-100 text-gray-600",
+  brand: "bg-brand-50 text-brand-800",
+  accent: "bg-accent-100 text-accent-700",
+  success: "bg-success-100 text-success-800",
+  warning: "bg-warning-50 text-warning-700",
+  danger: "bg-danger-50 text-danger-700",
+  neutral: "bg-neutral-100 text-neutral-600",
 };
 
 interface StatCardProps {
@@ -23,12 +25,12 @@ interface StatCardProps {
   children?: ReactNode;
 }
 
-function StatCard({ icon: Icon, label, value, units = [], tone = "orange", children }: StatCardProps) {
+function StatCard({ icon: Icon, label, value, units = [], tone = "brand", children }: StatCardProps) {
   return (
-    <div className="flex items-start justify-between gap-2 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5 transition-shadow hover:shadow-md">
+    <div className="flex items-start justify-between gap-2 rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm sm:p-5 transition-shadow hover:shadow-md">
       <div className="min-w-0 flex-1">
-        <p data-testid="stat-label" className="break-words text-sm font-medium leading-snug text-gray-500">{label}</p>
-        <p className="mt-1 text-2xl font-bold tracking-tight text-gray-900">{value}</p>
+        <p data-testid="stat-label" className="break-words text-sm font-medium leading-snug text-neutral-500">{label}</p>
+        <p className="mt-1 text-2xl font-bold tracking-tight text-neutral-900">{value}</p>
         <UnitChips units={units} />
         {children}
       </div>

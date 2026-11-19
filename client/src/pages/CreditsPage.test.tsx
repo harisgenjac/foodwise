@@ -39,27 +39,27 @@ describe("CreditsPage", () => {
 
     const bar = await screen.findByRole("progressbar");
     expect(bar).toHaveAttribute("aria-valuenow", "90");
-    expect(bar.firstElementChild).toHaveClass("bg-red-500");
+    expect(bar.firstElementChild).toHaveClass("bg-danger-500");
     expect(screen.getByText(t("credits.page.usedPercent", { percent: 90 }))).toBeInTheDocument();
     expect(screen.getByText("01/01/2030 – 31/01/2030")).toBeInTheDocument();
     expect(screen.getByText(t("credits.page.explanationStore"))).toBeInTheDocument();
     expect(screen.getByText(t("credits.page.lastRefreshed", { time: "" }).trim(), { exact: false })).toBeInTheDocument();
   });
 
-  it("uses green for low usage", async () => {
+  it("uses the success colour for low usage", async () => {
     renderPage(makeCreditSummary());
-    expect((await screen.findByRole("progressbar")).firstElementChild).toHaveClass("bg-green-500");
+    expect((await screen.findByRole("progressbar")).firstElementChild).toHaveClass("bg-success-600");
   });
 
   it("shows months with used and unused credits, and grey months without a subscription or in the future", async () => {
     renderPage(makeCreditSummary());
 
     const january = await screen.findByTestId("month-bar-1");
-    expect(january).toHaveClass("bg-blue-200");
-    expect(january.firstElementChild).toHaveClass("bg-blue-800");
+    expect(january).toHaveClass("bg-neutral-300");
+    expect(january.firstElementChild).toHaveClass("bg-brand-800");
     expect(january.firstElementChild).toHaveStyle({ width: "20%" });
     expect(screen.getByText("10 / 50")).toBeInTheDocument();
-    expect(screen.getByTestId("month-bar-2")).toHaveClass("bg-gray-200");
+    expect(screen.getByTestId("month-bar-2")).toHaveClass("bg-neutral-100");
     expect(screen.getByTestId("month-bar-2")).toBeEmptyDOMElement();
   });
 

@@ -25,13 +25,13 @@ export const creditRequestSender = (request: AdminCreditRequest, t: TFunction) =
 };
 
 export const CREDIT_REQUEST_STATUS_STYLES: Record<CreditRequestStatus, string> = {
-  PENDING: "bg-amber-50 text-amber-700",
-  APPROVED: "bg-green-50 text-green-700",
-  REJECTED: "bg-red-50 text-red-700",
-  CANCELLED: "bg-gray-100 text-gray-600",
-  EXPIRED: "bg-gray-100 text-gray-600",
-  COMPANY_REVIEW: "bg-sky-50 text-sky-700",
-  COMPANY_REJECTED: "bg-red-50 text-red-700",
+  PENDING: "bg-warning-50 text-warning-700",
+  APPROVED: "bg-success-100 text-success-800",
+  REJECTED: "bg-danger-50 text-danger-700",
+  CANCELLED: "bg-neutral-100 text-neutral-600",
+  EXPIRED: "bg-neutral-100 text-neutral-600",
+  COMPANY_REVIEW: "bg-info-50 text-info-700",
+  COMPANY_REJECTED: "bg-danger-50 text-danger-700",
 };
 
 // The server's 402 when a product or order needs a credit the user does not have.
@@ -59,12 +59,12 @@ export const TOPUP_SECTION = "topup";
 export const usagePercent = (used: number, total: number) =>
   total > 0 ? Math.min(100, Math.max(0, (used / total) * 100)) : 0;
 
-// Progress bar color: green up to 70%, orange above 70% and below 90%, red from 90%.
+// Progress bar color: success up to 70%, warning above 70% and below 90%, danger from 90%.
 export const usageBarColor = (percent: number) =>
-  percent >= 90 ? "bg-red-500" : percent > 70 ? "bg-orange-500" : "bg-green-500";
+  percent >= 90 ? "bg-danger-500" : percent > 70 ? "bg-warning-500" : "bg-success-600";
 
 // The same thresholds as a StatCard tone.
-export const usageTone = (percent: number) => (percent >= 90 ? "red" : percent > 70 ? "orange" : "green");
+export const usageTone = (percent: number) => (percent >= 90 ? "danger" : percent > 70 ? "warning" : "success");
 
 // From this share of used credits on, the banner tells the user how many are left.
 export const LOW_CREDITS_PERCENT = 80;

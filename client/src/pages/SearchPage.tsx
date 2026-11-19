@@ -151,17 +151,17 @@ function SearchPage() {
               key={store.id}
               data-testid="search-store"
               aria-labelledby={`search-store-${store.id}`}
-              className="space-y-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5"
+              className="space-y-3 rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm sm:p-5"
             >
               <header className="flex items-center gap-3">
                 <StoreLogo logoUrl={store.logo_url} className="h-12 w-12 rounded-xl" />
                 <div className="min-w-0 flex-1">
-                  <h2 id={`search-store-${store.id}`} className="truncate text-base font-bold text-gray-900">
-                    <Link to={`/stores/${store.id}`} className="hover:text-orange-700">
+                  <h2 id={`search-store-${store.id}`} className="truncate text-base font-bold text-neutral-900">
+                    <Link to={`/stores/${store.id}`} className="hover:text-brand-900">
                       {store.business_name}
                     </Link>
                   </h2>
-                  <p className="flex min-w-0 flex-wrap items-center gap-x-2 text-sm text-gray-500">
+                  <p className="flex min-w-0 flex-wrap items-center gap-x-2 text-sm text-neutral-500">
                     {store.city && <span>{formatCityDistance(t, store.city, store.distance_km)}</span>}
                     <ChainLabel company={store.company_name} className="px-1.5" />
                     <StorePausedNotice pause={store} variant="badge" />
@@ -169,7 +169,7 @@ function SearchPage() {
                 </div>
                 <Link
                   to={`/stores/${store.id}`}
-                  className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-orange-700 hover:bg-orange-50 sm:min-h-0 sm:py-1.5"
+                  className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-brand-800 hover:bg-brand-50 sm:min-h-0 sm:py-1.5"
                 >
                   {t("search.seeAll", { count: store.match_count })}
                   <ArrowRight className="h-4 w-4" />

@@ -16,7 +16,7 @@ interface ProductImagePickerProps {
 }
 
 const buttonStyle =
-  "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-orange-200 hover:bg-orange-50/50 disabled:opacity-60 cursor-pointer";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:border-brand-200 hover:bg-brand-50/50 disabled:opacity-60 cursor-pointer";
 
 // The product's own image on Add product and Edit product: an upload (sent to the server at once,
 // the form then saves its URL) or one of the suggested images. No camera option for now.
@@ -52,7 +52,7 @@ function ProductImagePicker({ value, onChange }: ProductImagePickerProps) {
   return (
     <FormSection title={t("productImage.title")} icon={ImageIcon} description={t("productImage.hint")}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="relative h-32 w-full shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50 sm:w-44">
+        <div className="relative h-32 w-full shrink-0 overflow-hidden rounded-xl border border-neutral-100 bg-neutral-50 sm:w-44">
           <ProductImage
             imageUrl={value || null}
             alt={value ? t("productImage.current") : t("productImage.none")}
@@ -60,7 +60,7 @@ function ProductImagePicker({ value, onChange }: ProductImagePickerProps) {
           />
           {uploading && (
             <span className="absolute inset-0 flex items-center justify-center bg-white/70">
-              <Loader2 className="h-6 w-6 animate-spin text-orange-600" aria-hidden="true" />
+              <Loader2 className="h-6 w-6 animate-spin text-brand-800" aria-hidden="true" />
             </span>
           )}
         </div>
@@ -78,7 +78,7 @@ function ProductImagePicker({ value, onChange }: ProductImagePickerProps) {
               type="button"
               onClick={() => onChange("")}
               disabled={uploading}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60 cursor-pointer"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-danger-700 transition-colors hover:bg-danger-50 disabled:opacity-60 cursor-pointer"
             >
               <Trash2 className="h-4 w-4" />
               {t("productImage.remove")}

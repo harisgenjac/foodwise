@@ -118,27 +118,27 @@ function CompanyBranchesPage() {
               <Link
                 key={branch.id}
                 to={`/company/branches/${branch.id}`}
-                className="group flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                className="group flex flex-col gap-3 rounded-2xl border border-neutral-100 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="line-clamp-1 text-lg font-bold text-gray-800">{branch.business_name}</h3>
+                  <h3 className="line-clamp-1 text-lg font-bold text-neutral-800">{branch.business_name}</h3>
                   <span
                     className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${BRANCH_STATUS_STYLES[branch.status]}`}
                   >
                     {t(`company.branchStatus.${branch.status}`)}
                   </span>
                 </div>
-                <div className="space-y-1 text-sm text-gray-600">
+                <div className="space-y-1 text-sm text-neutral-600">
                   <p className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
+                    <MapPin className="h-4 w-4 shrink-0 text-neutral-500" />
                     <span className="truncate">{[branch.address, branch.city].filter(Boolean).join(", ") || "—"}</span>
                   </p>
                   <p className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 shrink-0 text-gray-400" />
+                    <Mail className="h-4 w-4 shrink-0 text-neutral-500" />
                     <span className="truncate">{branch.email}</span>
                   </p>
                 </div>
-                <div className="flex flex-wrap gap-2 rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
+                <div className="flex flex-wrap gap-2 rounded-xl bg-neutral-50 p-3 text-xs text-neutral-600">
                   <span className="inline-flex items-center gap-1">
                     <Package className="h-3.5 w-3.5" />
                     {t("company.branches.activeProducts", { count: branch.active_products })}
@@ -148,7 +148,7 @@ function CompanyBranchesPage() {
                     {t("company.branches.pendingOrders", { count: branch.pending_orders })}
                   </span>
                 </div>
-                <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-orange-600">
+                <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-brand-800">
                   {t("company.branches.open")}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </span>

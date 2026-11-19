@@ -54,16 +54,16 @@ function CompanyOverviewPage() {
       header: t("company.overview.columnBranch"),
       card: "title",
       cell: (branch) => (
-        <Link to={`/company/branches/${branch.id}`} className="font-medium text-gray-900 hover:text-orange-600">
+        <Link to={`/company/branches/${branch.id}`} className="font-medium text-neutral-900 hover:text-brand-900">
           {branch.name}
         </Link>
       ),
       cardCell: (branch) => (
         <>
-          <Link to={`/company/branches/${branch.id}`} className="font-medium text-gray-900 hover:text-orange-600">
+          <Link to={`/company/branches/${branch.id}`} className="font-medium text-neutral-900 hover:text-brand-900">
             {branch.name}
           </Link>
-          {branch.city && <p className="text-xs text-gray-500">{branch.city}</p>}
+          {branch.city && <p className="text-xs text-neutral-500">{branch.city}</p>}
         </>
       ),
     },
@@ -71,7 +71,7 @@ function CompanyOverviewPage() {
       id: "city",
       header: t("company.overview.columnCity"),
       className: "hidden md:table-cell",
-      cellClassName: "text-gray-600",
+      cellClassName: "text-neutral-600",
       card: "none",
       cell: (branch) => branch.city ?? "—",
     },
@@ -89,7 +89,7 @@ function CompanyOverviewPage() {
       id: "plan",
       header: t("company.overview.columnPlan"),
       className: "hidden md:table-cell",
-      cellClassName: "text-gray-700",
+      cellClassName: "text-neutral-700",
       cell: (branch) => branch.plan_name ?? t("company.credits.noPlan"),
     },
     {
@@ -156,10 +156,10 @@ function CompanyOverviewPage() {
                 active: totals.branches.active,
                 all: totals.branches.all,
               })}
-              tone="green"
+              tone="success"
             >
               {totals.branches.deactivated > 0 && (
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-neutral-500">
                   {t("company.overview.deactivated", { count: totals.branches.deactivated })}
                 </p>
               )}
@@ -181,9 +181,9 @@ function CompanyOverviewPage() {
               icon={ReceiptText}
               label={t("company.overview.statOrders")}
               value={totals.orders.total}
-              tone="amber"
+              tone="warning"
             >
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-neutral-500">
                 {t("company.overview.ordersDetail", {
                   pickedUp: totals.orders.picked_up,
                   pending: totals.orders.pending,
@@ -195,19 +195,19 @@ function CompanyOverviewPage() {
               label={t("company.overview.statSaved")}
               value={t("company.overview.savedValue", { value: totals.saved.value.toFixed(2) })}
               units={savedUnits}
-              tone="green"
+              tone="success"
             />
           </div>
 
-          <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm" aria-labelledby="company-branches">
+          <section className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm" aria-labelledby="company-branches">
             <div className="flex items-center justify-between gap-4">
-              <h2 id="company-branches" className="flex items-center gap-2 text-lg font-bold text-gray-900">
-                <Store className="h-5 w-5 text-orange-600" />
+              <h2 id="company-branches" className="flex items-center gap-2 text-lg font-bold text-neutral-900">
+                <Store className="h-5 w-5 text-brand-800" />
                 {t("company.overview.branchesTitle")}
               </h2>
               <Link
                 to="/company/branches"
-                className="inline-flex items-center gap-1 text-sm font-medium text-orange-600 hover:text-orange-700"
+                className="inline-flex items-center gap-1 text-sm font-medium text-brand-800 hover:text-brand-900"
               >
                 {t("company.overview.viewBranches")}
                 <ArrowRight className="h-4 w-4" />

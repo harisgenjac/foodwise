@@ -14,7 +14,7 @@ vi.mock("../src/email/queue.js", () => ({ startEmailWorker: vi.fn() }));
 
 const RESEND = {
   EMAIL_PROVIDER: "resend",
-  EMAIL_FROM: "FoodWise <no-reply@example.com>",
+  EMAIL_FROM: "Još vrijedi <no-reply@example.com>",
   RESEND_API_KEY: "re_test_key",
 };
 
@@ -63,8 +63,8 @@ describe("loadEmailConfig", () => {
 
   it("checks EMAIL_FROM and EMAIL_REDIRECT_TO", () => {
     expect(loadEmailConfig({ EMAIL_FROM: "no-reply@example.com" }).from).toBe("no-reply@example.com");
-    expect(() => loadEmailConfig({ EMAIL_FROM: "FoodWise" })).toThrow('EMAIL_FROM is not a valid sender: "FoodWise".');
-    expect(() => loadEmailConfig({ EMAIL_FROM: "FoodWise <nobody>" })).toThrow(EmailConfigError);
+    expect(() => loadEmailConfig({ EMAIL_FROM: "Još vrijedi" })).toThrow('EMAIL_FROM is not a valid sender: "Još vrijedi".');
+    expect(() => loadEmailConfig({ EMAIL_FROM: "Još vrijedi <nobody>" })).toThrow(EmailConfigError);
     expect(loadEmailConfig({ EMAIL_REDIRECT_TO: " Inbox@Example.com " }).redirectTo).toBe("inbox@example.com");
     expect(() => loadEmailConfig({ EMAIL_REDIRECT_TO: "not-an-email" })).toThrow(
       'EMAIL_REDIRECT_TO is not a valid email address: "not-an-email".',

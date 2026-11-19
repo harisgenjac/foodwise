@@ -141,7 +141,7 @@ describe("OrderDetailsPage", () => {
   it("shows the deadline in amber when it is close, and none for a decided order", async () => {
     const pending = makeOrderDetails({ id: 8, auto_reject_at: new Date(Date.now() + 2 * 60 * 1000).toISOString() });
     const { unmount } = renderPage(STORE, pending);
-    expect(await screen.findByTestId("answer-deadline")).toHaveClass("text-amber-700");
+    expect(await screen.findByTestId("answer-deadline")).toHaveClass("text-warning-700");
     unmount();
 
     renderPage(STORE, PARTIAL);

@@ -55,7 +55,7 @@ function NotificationsPage() {
       ) : (
         <>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="inline-flex w-fit rounded-full border border-gray-100 bg-white p-1 shadow-sm">
+            <div className="inline-flex w-fit rounded-full border border-neutral-100 bg-white p-1 shadow-sm">
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
@@ -63,15 +63,15 @@ function NotificationsPage() {
                   onClick={() => setFilter(tab.key)}
                   className={`inline-flex min-h-11 sm:min-h-0 cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                     filter === tab.key
-                      ? "bg-orange-500 text-white shadow-sm"
-                      : "text-gray-600 hover:bg-gray-50"
+                      ? "bg-brand-800 text-white shadow-sm"
+                      : "text-neutral-600 hover:bg-neutral-50"
                   }`}
                 >
                   {tab.label}
                   {!!tab.count && (
                     <span
                       className={`rounded-full px-1.5 text-xs font-semibold ${
-                        filter === tab.key ? "bg-white/25 text-white" : "bg-orange-100 text-orange-700"
+                        filter === tab.key ? "bg-white/25 text-white" : "bg-brand-100 text-brand-800"
                       }`}
                     >
                       {tab.count}
@@ -86,7 +86,7 @@ function NotificationsPage() {
                 <button
                   type="button"
                   onClick={markAllAsRead}
-                  className="inline-flex min-h-11 sm:min-h-0 cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-orange-600 transition-colors hover:bg-orange-50"
+                  className="inline-flex min-h-11 sm:min-h-0 cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-brand-800 transition-colors hover:bg-brand-50"
                 >
                   <CheckCheck className="h-4 w-4" />
                   {t("notifications.markAllRead")}
@@ -96,7 +96,7 @@ function NotificationsPage() {
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(true)}
-                  className="inline-flex min-h-11 sm:min-h-0 cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                  className="inline-flex min-h-11 sm:min-h-0 cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-neutral-500 transition-colors hover:bg-danger-50 hover:text-danger-700"
                 >
                   <Trash2 className="h-4 w-4" />
                   {t("notifications.deleteRead")}
@@ -142,8 +142,8 @@ function NotificationsPage() {
 function NotificationSection({ title, items }: { title: string; items: Notification[] }) {
   return (
     <section>
-      <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{title}</h2>
-      <div className="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">{title}</h2>
+      <div className="divide-y divide-neutral-100 overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
         {items.map((notification) => (
           <NotificationItem key={notification.id} notification={notification} />
         ))}

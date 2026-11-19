@@ -7,7 +7,7 @@ const { Client } = pkg;
 const LIVE_CHANNEL = "live_events";
 
 // The listener's connection shows under this name in pg_stat_activity.
-export const LIVE_APPLICATION_NAME = "foodwise-live-events";
+export const LIVE_APPLICATION_NAME = "josvrijedi-live-events";
 
 interface Routed {
   userIds: number[];

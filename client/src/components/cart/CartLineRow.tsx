@@ -45,7 +45,7 @@ function CartLineRow({ line, blockedSending, busy, onSetQuantity, onRemove }: Ca
     <li
       data-testid="cart-line"
       className={`flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-sm sm:flex-row sm:items-start ${
-        blockedSending ? "border-red-200" : "border-gray-100"
+        blockedSending ? "border-danger-200" : "border-neutral-100"
       }`}
     >
       <ProductImage
@@ -57,7 +57,7 @@ function CartLineRow({ line, blockedSending, busy, onSetQuantity, onRemove }: Ca
         <div className="flex items-start justify-between gap-3">
           <Link
             to={`/products/${line.product_id}`}
-            className={`font-semibold hover:text-orange-700 ${flags.unavailable ? "text-gray-400" : "text-gray-900"}`}
+            className={`font-semibold hover:text-brand-900 ${flags.unavailable ? "text-neutral-500" : "text-neutral-900"}`}
           >
             {line.name}
           </Link>
@@ -66,14 +66,14 @@ function CartLineRow({ line, blockedSending, busy, onSetQuantity, onRemove }: Ca
             onClick={onRemove}
             disabled={busy}
             aria-label={t("cart.remove", { name: line.name })}
-            className="-m-1.5 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="-m-1.5 flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-danger-50 hover:text-danger-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
 
         {flags.unavailable ? (
-          <p className="flex items-center gap-1.5 text-sm font-medium text-gray-500">
+          <p className="flex items-center gap-1.5 text-sm font-medium text-neutral-500">
             <Ban className="h-4 w-4" />
             {t("cart.unavailable")}
             {flags.unavailable_reason && <span className="font-normal">· {t(`cart.reasons.${flags.unavailable_reason}`)}</span>}
@@ -82,15 +82,15 @@ function CartLineRow({ line, blockedSending, busy, onSetQuantity, onRemove }: Ca
           <>
             <p className="text-sm">
               {flags.price_lowered && (
-                <span className="mr-1.5 text-gray-400 line-through">{formatMoney(line.unit_price_seen)}</span>
+                <span className="mr-1.5 text-neutral-500 line-through">{formatMoney(line.unit_price_seen)}</span>
               )}
-              <span className="font-semibold text-green-600">{formatMoney(flags.price_raised ? line.unit_price_seen : line.discounted_price)}</span>
-              <span className="text-gray-500"> / {unit}</span>
-              {flags.price_lowered && <span className="ml-1.5 text-xs font-medium text-green-700">{t("cart.priceLowered")}</span>}
+              <span className="font-semibold text-accent-700">{formatMoney(flags.price_raised ? line.unit_price_seen : line.discounted_price)}</span>
+              <span className="text-neutral-500"> / {unit}</span>
+              {flags.price_lowered && <span className="ml-1.5 text-xs font-medium text-brand-800">{t("cart.priceLowered")}</span>}
             </p>
 
             <div className="flex flex-wrap items-center gap-3">
-              <span className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="flex items-center gap-2 text-sm text-neutral-600">
                 <input
                   aria-label={t("cart.quantityLabel", { name: line.name })}
                   type="number"
@@ -107,22 +107,22 @@ function CartLineRow({ line, blockedSending, busy, onSetQuantity, onRemove }: Ca
                       commit();
                     }
                   }}
-                  className="w-24 rounded-lg border border-gray-200 px-2.5 py-1.5 text-gray-900 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-100"
+                  className="w-24 rounded-lg border border-neutral-200 px-2.5 py-1.5 text-neutral-900 focus:border-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-100"
                 />
                 {unit}
               </span>
-              {lineTotal !== null && <span className="text-sm font-semibold text-gray-900">{formatMoney(lineTotal)}</span>}
+              {lineTotal !== null && <span className="text-sm font-semibold text-neutral-900">{formatMoney(lineTotal)}</span>}
             </div>
 
             {flags.quantity_exceeds && (
-              <div className="flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              <div className="flex flex-wrap items-center gap-2 rounded-lg bg-warning-50 px-3 py-2 text-sm text-warning-800">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 {t("cart.lessStock", { amount: formatAmount(available, unit) })}
                 <button
                   type="button"
                   onClick={() => onSetQuantity(available)}
                   disabled={busy}
-                  className="cursor-pointer font-semibold underline underline-offset-2 hover:text-amber-900 disabled:cursor-not-allowed"
+                  className="cursor-pointer font-semibold underline underline-offset-2 hover:text-warning-900 disabled:cursor-not-allowed"
                 >
                   {t("cart.reduceTo", { amount: formatAmount(available, unit) })}
                 </button>
@@ -130,14 +130,14 @@ function CartLineRow({ line, blockedSending, busy, onSetQuantity, onRemove }: Ca
             )}
 
             {flags.price_raised && (
-              <div className="flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              <div className="flex flex-wrap items-center gap-2 rounded-lg bg-warning-50 px-3 py-2 text-sm text-warning-800">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 {t("cart.priceRaised", { price: formatMoney(line.discounted_price), old: formatMoney(line.unit_price_seen) })}
                 <button
                   type="button"
                   onClick={() => onSetQuantity(Math.min(quantity, available), { acceptPrice: true })}
                   disabled={busy}
-                  className="cursor-pointer font-semibold underline underline-offset-2 hover:text-amber-900 disabled:cursor-not-allowed"
+                  className="cursor-pointer font-semibold underline underline-offset-2 hover:text-warning-900 disabled:cursor-not-allowed"
                 >
                   {t("cart.acceptPrice")}
                 </button>
@@ -147,7 +147,7 @@ function CartLineRow({ line, blockedSending, busy, onSetQuantity, onRemove }: Ca
         )}
 
         {blockedSending && (
-          <p role="alert" className="text-sm font-medium text-red-700">
+          <p role="alert" className="text-sm font-medium text-danger-700">
             {t("cart.notSentLine")}
           </p>
         )}

@@ -2,11 +2,11 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { DeliveryError, type WebhookHeaders } from "./types.js";
 
 // Webhook signatures (openapi.yaml, "Webhook signature"): the provider sends
-//   X-FoodWise-Timestamp: <unix seconds>
-//   X-FoodWise-Signature: sha256=<hex HMAC-SHA256(secret, "<timestamp>.<raw body>")>
+//   X-JosVrijedi-Timestamp: <unix seconds>
+//   X-JosVrijedi-Signature: sha256=<hex HMAC-SHA256(secret, "<timestamp>.<raw body>")>
 // The timestamp is signed too, so an old call cannot be replayed with a fresh timestamp.
-export const TIMESTAMP_HEADER = "x-foodwise-timestamp";
-export const SIGNATURE_HEADER = "x-foodwise-signature";
+export const TIMESTAMP_HEADER = "x-josvrijedi-timestamp";
+export const SIGNATURE_HEADER = "x-josvrijedi-signature";
 // How far the timestamp may be from our clock, in either direction.
 export const WEBHOOK_TOLERANCE_SECONDS = 5 * 60;
 

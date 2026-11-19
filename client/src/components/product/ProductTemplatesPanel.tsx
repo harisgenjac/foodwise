@@ -35,7 +35,7 @@ function ProductTemplatesPanel({
   );
 
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+    <section className="rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm sm:p-6">
       <button
         type="button"
         onClick={() => setExpanded((value) => !value)}
@@ -43,21 +43,21 @@ function ProductTemplatesPanel({
         aria-controls={bodyId}
         className="flex min-h-11 w-full cursor-pointer items-center gap-2 text-left lg:hidden"
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-800">
           <Bookmark className="h-4 w-4" strokeWidth={2} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-base font-semibold text-gray-900">
+          <span className="block text-base font-semibold text-neutral-900">
             {t("templates.toggle", { count: templates.length })}
           </span>
           {applied && (
-            <span className="block truncate text-sm text-orange-700">
+            <span className="block truncate text-sm text-brand-800">
               {t("templates.appliedShort", { name: applied.name })}
             </span>
           )}
         </span>
         <ChevronDown
-          className={`h-5 w-5 shrink-0 text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`}
+          className={`h-5 w-5 shrink-0 text-neutral-500 transition-transform ${expanded ? "rotate-180" : ""}`}
           aria-hidden="true"
         />
       </button>
@@ -71,34 +71,34 @@ function ProductTemplatesPanel({
           className={`mb-4 flex-wrap items-start justify-between gap-3 ${templates.length > SEARCH_THRESHOLD ? "flex" : "hidden lg:flex"}`}
         >
           <div className="hidden items-start gap-2 lg:flex">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-800">
               <Bookmark className="h-4 w-4" strokeWidth={2} />
             </span>
             <div>
-              <h2 className="text-base font-semibold leading-8 text-gray-900">
+              <h2 className="text-base font-semibold leading-8 text-neutral-900">
                 {t("templates.title")}
               </h2>
-              <p className="-mt-1 text-sm text-gray-500">
+              <p className="-mt-1 text-sm text-neutral-500">
                 {t("templates.subtitle")}
               </p>
             </div>
           </div>
           {templates.length > SEARCH_THRESHOLD && (
             <label className="relative w-full sm:w-56">
-              <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-gray-400 sm:top-2.5" />
+              <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-neutral-500 sm:top-2.5" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t("templates.search")}
-                className="w-full rounded-xl border border-gray-200 py-2.5 pl-9 pr-3 text-base sm:py-2 sm:text-sm focus:border-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-100"
+                className="w-full rounded-xl border border-neutral-200 py-2.5 pl-9 pr-3 text-base sm:py-2 sm:text-sm focus:border-brand-800 focus:outline-none focus:ring-4 focus:ring-brand-100"
               />
             </label>
           )}
         </div>
 
         {templates.length === 0 ? (
-          <p className="rounded-xl border-2 border-dashed border-gray-200 px-4 py-5 text-center text-sm text-gray-500">
+          <p className="rounded-xl border-2 border-dashed border-neutral-200 px-4 py-5 text-center text-sm text-neutral-500">
             {t("templates.empty")}
           </p>
         ) : (
@@ -120,8 +120,8 @@ function ProductTemplatesPanel({
                   key={template.id}
                   className={`flex items-center gap-2 rounded-xl border p-2 transition-colors ${
                     applied
-                      ? "border-orange-400 bg-orange-50 ring-4 ring-orange-100"
-                      : "border-gray-200 hover:border-orange-200 hover:bg-orange-50/40"
+                      ? "border-brand-800 bg-brand-50 ring-4 ring-brand-100"
+                      : "border-neutral-200 hover:border-brand-200 hover:bg-brand-50/40"
                   }`}
                 >
                   <button
@@ -133,7 +133,7 @@ function ProductTemplatesPanel({
                     className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left cursor-pointer"
                   >
                     <span
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${applied ? "bg-white text-orange-600" : "bg-gray-50 text-gray-500"}`}
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${applied ? "bg-white text-brand-800" : "bg-neutral-50 text-neutral-500"}`}
                     >
                       {applied ? (
                         <Check className="h-4 w-4" />
@@ -142,11 +142,11 @@ function ProductTemplatesPanel({
                       )}
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium text-gray-900">
+                      <span className="block truncate text-sm font-medium text-neutral-900">
                         {template.name}
                       </span>
                       {details && (
-                        <span className="block truncate text-xs text-gray-500">
+                        <span className="block truncate text-xs text-neutral-500">
                           {details}
                         </span>
                       )}
@@ -161,7 +161,7 @@ function ProductTemplatesPanel({
                           setConfirmingId(null);
                           onDelete(template);
                         }}
-                        className="min-h-11 rounded-lg bg-red-500 px-3 py-1 text-xs font-semibold sm:min-h-0 sm:px-2 text-white hover:bg-red-600 cursor-pointer"
+                        className="min-h-11 rounded-lg bg-danger-500 px-3 py-1 text-xs font-semibold sm:min-h-0 sm:px-2 text-white hover:bg-danger-600 cursor-pointer"
                       >
                         {t("templates.deleteConfirm")}
                       </button>
@@ -169,7 +169,7 @@ function ProductTemplatesPanel({
                         type="button"
                         onClick={() => setConfirmingId(null)}
                         aria-label={t("product.cancel")}
-                        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-1 text-gray-400 sm:min-h-0 sm:min-w-0 hover:bg-gray-100 hover:text-gray-600 cursor-pointer"
+                        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg p-1 text-neutral-500 sm:min-h-0 sm:min-w-0 hover:bg-neutral-100 hover:text-neutral-600 cursor-pointer"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -180,7 +180,7 @@ function ProductTemplatesPanel({
                       onClick={() => setConfirmingId(template.id)}
                       aria-label={t("templates.delete")}
                       title={t("templates.delete")}
-                      className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg p-1.5 text-gray-400 sm:min-h-0 sm:min-w-0 transition-colors hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                      className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg p-1.5 text-neutral-500 sm:min-h-0 sm:min-w-0 transition-colors hover:bg-danger-50 hover:text-danger-700 cursor-pointer"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -189,7 +189,7 @@ function ProductTemplatesPanel({
               );
             })}
             {visible.length === 0 && (
-              <li className="col-span-full py-3 text-center text-sm text-gray-500">
+              <li className="col-span-full py-3 text-center text-sm text-neutral-500">
                 {t("templates.noResults")}
               </li>
             )}

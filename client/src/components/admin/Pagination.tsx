@@ -22,7 +22,7 @@ function Pagination({ total, limit, offset, onChange }: PaginationProps) {
 
   // 44 px tap targets below sm, the old size from sm up.
   const buttonStyle =
-    "inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:min-w-0";
+    "inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center gap-1 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:min-w-0";
   const pageStyle = "min-h-11 min-w-11 rounded-xl px-3 py-2 text-sm sm:min-h-0 sm:min-w-9";
 
   // Below sm only the first, current and last page fit next to 44 px arrows, with an ellipsis for
@@ -33,7 +33,7 @@ function Pagination({ total, limit, offset, onChange }: PaginationProps) {
 
   return (
     <nav aria-label={t("admin.common.pagination")} className="flex flex-wrap items-center justify-between gap-3">
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-neutral-500">
         {t("admin.common.range", { from: offset + 1, to: Math.min(offset + limit, total), total })}
       </p>
       <div className="flex flex-wrap items-center gap-1.5">
@@ -44,7 +44,7 @@ function Pagination({ total, limit, offset, onChange }: PaginationProps) {
         {items.map((item, index) => {
           if (item === "ellipsis") {
             return (
-              <span key={`ellipsis-${index}`} className="hidden px-1 text-sm text-gray-400 sm:inline" aria-hidden="true">
+              <span key={`ellipsis-${index}`} className="hidden px-1 text-sm text-neutral-500 sm:inline" aria-hidden="true">
                 …
               </span>
             );
@@ -55,7 +55,7 @@ function Pagination({ total, limit, offset, onChange }: PaginationProps) {
           return (
             <Fragment key={item}>
               {phoneGap && (
-                <span className="px-1 text-sm text-gray-400 sm:hidden" aria-hidden="true">
+                <span className="px-1 text-sm text-neutral-500 sm:hidden" aria-hidden="true">
                   …
                 </span>
               )}
@@ -66,8 +66,8 @@ function Pagination({ total, limit, offset, onChange }: PaginationProps) {
                 aria-current={item === current ? "page" : undefined}
                 className={`${shown ? "" : "hidden sm:inline-block "}${pageStyle} ${
                   item === current
-                    ? "cursor-default bg-orange-500 font-semibold text-white shadow-sm"
-                    : "cursor-pointer border border-gray-200 bg-white font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                    ? "cursor-default bg-brand-800 font-semibold text-white shadow-sm"
+                    : "cursor-pointer border border-neutral-200 bg-white font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
                 }`}
               >
                 {item}

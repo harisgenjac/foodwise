@@ -80,8 +80,8 @@ function AdminDonationsPage() {
         onClick={() => setSelected(donation)}
         className={
           card
-            ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-200 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
-            : "inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+            ? "inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-danger-200 text-sm font-semibold text-danger-700 transition-colors hover:bg-danger-50"
+            : "inline-flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium text-danger-700 transition-colors hover:bg-danger-50"
         }
       >
         <Trash2 className="h-4 w-4" />
@@ -97,8 +97,8 @@ function AdminDonationsPage() {
       card: "title",
       cell: (donation) => (
         <>
-          <p className="font-medium text-gray-900">{donation.name}</p>
-          <p className="text-xs text-gray-500">
+          <p className="font-medium text-neutral-900">{donation.name}</p>
+          <p className="text-xs text-neutral-500">
             {parseFloat(donation.quantity)} {labels.units[donation.unit] || donation.unit}
             {" · "}
             {labels.categories[donation.category] || donation.category}
@@ -110,7 +110,7 @@ function AdminDonationsPage() {
       id: "donor",
       header: t("admin.donations.columnDonor"),
       cell: (donation) => (
-        <Link to={`/admin/users/${donation.donor_id}`} className="font-medium text-gray-900 hover:text-orange-600">
+        <Link to={`/admin/users/${donation.donor_id}`} className="font-medium text-neutral-900 hover:text-brand-900">
           {donation.business_name || donation.donor_email}
         </Link>
       ),
@@ -130,7 +130,7 @@ function AdminDonationsPage() {
       header: t("admin.donations.columnExpiry"),
       sortKey: "expiry_date",
       className: "hidden md:table-cell",
-      cellClassName: "text-gray-600",
+      cellClassName: "text-neutral-600",
       cell: (donation) => formatDisplayDate(donation.expiry_date),
     },
     {
@@ -163,7 +163,7 @@ function AdminDonationsPage() {
       />
 
       {donorId && (
-        <p className="flex items-center justify-between gap-3 rounded-xl border border-orange-100 bg-orange-50/60 px-4 py-2 text-sm text-orange-800">
+        <p className="flex items-center justify-between gap-3 rounded-xl border border-brand-100 bg-brand-50/60 px-4 py-2 text-sm text-brand-800">
           {t("admin.donations.filteredByUser")}
           <button
             type="button"

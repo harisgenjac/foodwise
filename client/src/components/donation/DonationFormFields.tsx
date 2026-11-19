@@ -68,8 +68,8 @@ function DonationFormFields({
   const chipStyle = (selected: boolean) =>
     `min-h-11 sm:min-h-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${
       selected
-        ? "border-orange-400 bg-orange-50 text-orange-700"
-        : "border-gray-200 text-gray-600 hover:border-orange-200 hover:bg-orange-50/50"
+        ? "border-brand-800 bg-brand-50 text-brand-800"
+        : "border-neutral-200 text-neutral-600 hover:border-brand-200 hover:bg-brand-50/50"
     }`;
 
   return (
@@ -88,20 +88,20 @@ function DonationFormFields({
                 onClick={() => onChange("donation_type", type)}
                 className={`flex items-start gap-3 rounded-xl border p-4 text-left transition-colors cursor-pointer ${
                   selected
-                    ? "border-orange-400 bg-orange-50 ring-4 ring-orange-100"
-                    : "border-gray-200 bg-white hover:border-orange-200 hover:bg-orange-50/50"
+                    ? "border-brand-800 bg-brand-50 ring-4 ring-brand-100"
+                    : "border-neutral-200 bg-white hover:border-brand-200 hover:bg-brand-50/50"
                 }`}
               >
                 <span
                   className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                    type === "FREE" ? "bg-green-50 text-green-600" : "bg-violet-50 text-violet-600"
+                    type === "FREE" ? "bg-brand-50 text-brand-800" : "bg-info-50 text-info-700"
                   }`}
                 >
                   <Icon className="h-5 w-5" strokeWidth={1.8} />
                 </span>
                 <span>
-                  <span className="block text-sm font-semibold text-gray-900">{t(`donations.types.${type}`)}</span>
-                  <span className="mt-0.5 block text-xs text-gray-500">{t(`donations.typeDescriptions.${type}`)}</span>
+                  <span className="block text-sm font-semibold text-neutral-900">{t(`donations.types.${type}`)}</span>
+                  <span className="mt-0.5 block text-xs text-neutral-500">{t(`donations.typeDescriptions.${type}`)}</span>
                 </span>
               </button>
             );
@@ -149,11 +149,11 @@ function DonationFormFields({
                     aria-pressed={selected}
                     className={`flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition-colors cursor-pointer ${
                       selected
-                        ? "border-orange-400 bg-orange-50 text-orange-700 ring-4 ring-orange-100"
-                        : "border-gray-200 bg-white text-gray-700 hover:border-orange-200 hover:bg-orange-50/50"
+                        ? "border-brand-800 bg-brand-50 text-brand-800 ring-4 ring-brand-100"
+                        : "border-neutral-200 bg-white text-neutral-700 hover:border-brand-200 hover:bg-brand-50/50"
                     }`}
                   >
-                    <Icon className={`h-4 w-4 shrink-0 ${selected ? "text-orange-600" : "text-gray-400"}`} strokeWidth={1.8} />
+                    <Icon className={`h-4 w-4 shrink-0 ${selected ? "text-brand-800" : "text-neutral-500"}`} strokeWidth={1.8} />
                     <span className="min-w-0 break-words leading-tight">{label}</span>
                   </button>
                 );
@@ -171,7 +171,7 @@ function DonationFormFields({
         >
           <div className="space-y-4">
             <div>
-              <span className="mb-1.5 block text-sm font-medium text-gray-700">{t("donations.form.allergens")}</span>
+              <span className="mb-1.5 block text-sm font-medium text-neutral-700">{t("donations.form.allergens")}</span>
               <div className="flex flex-wrap gap-2">
                 {ALLERGENS.map((allergen) => {
                   const selected = values.allergens.includes(allergen);
@@ -244,11 +244,11 @@ function DonationFormFields({
         </div>
         {isSponsored && hasPrices && !donationPriceError && (
           discountPercent !== null ? (
-            <p className="mt-4 inline-flex items-center rounded-full bg-violet-50 px-3 py-1 text-sm font-semibold text-violet-700">
+            <p className="mt-4 inline-flex items-center rounded-full bg-info-50 px-3 py-1 text-sm font-semibold text-info-700">
               {t("donations.form.donorPays", { price: values.donation_price, percent: discountPercent })}
             </p>
           ) : (
-            <p className="mt-4 flex items-center gap-2 text-sm text-amber-700">
+            <p className="mt-4 flex items-center gap-2 text-sm text-warning-700">
               <AlertCircle className="h-4 w-4 shrink-0" />
               {t("donations.form.priceInvalid")}
             </p>
@@ -334,7 +334,7 @@ function DonationFormFields({
               className={inputStyle}
             />
           </FormField>
-          <p className="-mt-2 text-xs text-gray-500 sm:col-span-2">{t("donations.form.pickupHint")}</p>
+          <p className="-mt-2 text-xs text-neutral-500 sm:col-span-2">{t("donations.form.pickupHint")}</p>
         </div>
       </FormSection>
     </>

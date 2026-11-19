@@ -9,10 +9,10 @@ export const ROLES: Role[] = ["STORE", "RESTAURANT", "COMPANY", "ADMIN"];
 export const CREATABLE_ROLES: Role[] = ["STORE", "RESTAURANT", "ADMIN"];
 
 export const ROLE_STYLES: Record<Role, string> = {
-  STORE: "bg-orange-50 text-orange-700",
-  RESTAURANT: "bg-blue-50 text-blue-700",
-  ADMIN: "bg-violet-50 text-violet-700",
-  COMPANY: "bg-teal-50 text-teal-700",
+  STORE: "bg-brand-50 text-brand-800",
+  RESTAURANT: "bg-info-50 text-info-700",
+  ADMIN: "bg-neutral-800 text-white",
+  COMPANY: "bg-neutral-100 text-neutral-700",
 };
 
 // Blocked on its own or through its company (the admin endpoints send both flags).

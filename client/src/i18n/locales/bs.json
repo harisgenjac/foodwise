@@ -64,13 +64,13 @@
   },
   "auth": {
     "welcomeBack": "Dobrodošli nazad",
-    "loginSubtitle": "Prijavite se na svoj FoodWise nalog",
+    "loginSubtitle": "Prijavite se na svoj nalog na platformi Još vrijedi",
     "email": "Email",
     "password": "Lozinka",
     "loginButton": "Prijavi se",
     "loginError": "Pogrešan email ili lozinka. Molimo pokušajte ponovo.",
     "createAccount": "Napravite nalog",
-    "registrationSubtitle": "Pridružite se FoodWise platformi",
+    "registrationSubtitle": "Pridružite se platformi Još vrijedi",
     "firstName": "Ime",
     "lastName": "Prezime",
     "roleLabel": "Vrsta naloga",
@@ -107,7 +107,7 @@
     },
     "invite": {
       "title": "Postavite svoju lozinku",
-      "subtitle": "Dobrodošli na FoodWise! Unesite lozinku dva puta, a zatim popunite profil.",
+      "subtitle": "Dobrodošli na platformu Još vrijedi! Unesite lozinku dva puta, a zatim popunite profil.",
       "submit": "Postavi lozinku",
       "invalidText": "Ova pozivnica je istekla, već je iskorištena ili je poslana novija. Zatražite novi link ili se javite administratoru."
     }
@@ -536,7 +536,7 @@
     }
   },
   "dashboard": {
-    "appTitle": "Dobrodošli na FoodWise",
+    "appTitle": "Dobrodošli na platformu Još vrijedi",
     "appSubtitle": "Ne bacaj hranu. Uživaj u ukusu.",
     "price": "Cijena",
     "quantity": "Količina",

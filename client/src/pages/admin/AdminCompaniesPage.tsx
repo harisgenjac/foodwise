@@ -50,15 +50,15 @@ function AdminCompaniesPage() {
       card: "title",
       cell: (company) => (
         <>
-          <p className="font-medium text-gray-900">{company.name}</p>
-          <p className="text-xs text-gray-500">{company.hq_email ?? "—"}</p>
+          <p className="font-medium text-neutral-900">{company.name}</p>
+          <p className="text-xs text-neutral-500">{company.hq_email ?? "—"}</p>
         </>
       ),
     },
     {
       id: "branches",
       header: t("admin.companies.columnBranches"),
-      cellClassName: "text-gray-600",
+      cellClassName: "text-neutral-600",
       cell: (company) => company.branch_count,
     },
     {
@@ -67,16 +67,16 @@ function AdminCompaniesPage() {
       card: "status",
       cell: (company) =>
         company.is_blocked ? (
-          <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">{t("admin.common.blocked")}</span>
+          <span className="rounded-full bg-danger-50 px-2.5 py-1 text-xs font-semibold text-danger-700">{t("admin.common.blocked")}</span>
         ) : (
-          <span className="rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">{t("admin.common.active")}</span>
+          <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-800">{t("admin.common.active")}</span>
         ),
     },
     {
       id: "created",
       header: t("admin.companies.columnCreated"),
       className: "hidden md:table-cell",
-      cellClassName: "text-gray-500",
+      cellClassName: "text-neutral-500",
       cell: (company) => formatDateTime(company.created_at),
     },
   ];
@@ -150,7 +150,7 @@ function AdminCompaniesPage() {
             rows={companies}
             rowKey={(company) => company.id}
             rowHref={(company) => `/admin/companies/${company.id}`}
-            rowClassName="hover:bg-orange-50/40"
+            rowClassName="hover:bg-brand-50/40"
             columns={columns}
           />
           <Pagination

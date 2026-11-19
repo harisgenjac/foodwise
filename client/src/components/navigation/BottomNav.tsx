@@ -23,7 +23,7 @@ function BottomNav({ role, onOpenMore, isMoreOpen, locked = false }: BottomNavPr
       aria-label={t("bottomNav.label")}
       aria-disabled={locked}
       inert={locked}
-      className={`fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden ${
+      className={`fixed inset-x-0 bottom-0 z-30 border-t border-neutral-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden ${
         locked ? "pointer-events-none select-none opacity-50" : ""
       }`}
     >
@@ -34,12 +34,12 @@ function BottomNav({ role, onOpenMore, isMoreOpen, locked = false }: BottomNavPr
               to={to}
               end={to === "/dashboard"}
               className={({ isActive }) =>
-                `${itemStyle} ${isActive ? "font-medium text-orange-600" : "text-gray-500 hover:text-gray-900"}`
+                `${itemStyle} ${isActive ? "font-medium text-brand-800" : "text-neutral-500 hover:text-neutral-900"}`
               }
             >
               {({ isActive }) => (
                 <>
-                  {isActive && <span className="absolute inset-x-4 top-0 h-1 rounded-b-full bg-orange-500" />}
+                  {isActive && <span className="absolute inset-x-4 top-0 h-1 rounded-b-full bg-brand-800" />}
                   <Icon className="h-5 w-5 shrink-0" strokeWidth={1.8} />
                   <span className="max-w-full truncate">{t(labelKey)}</span>
                 </>
@@ -53,7 +53,7 @@ function BottomNav({ role, onOpenMore, isMoreOpen, locked = false }: BottomNavPr
             onClick={onOpenMore}
             aria-haspopup="dialog"
             aria-expanded={isMoreOpen}
-            className={`${itemStyle} cursor-pointer text-gray-500 hover:text-gray-900`}
+            className={`${itemStyle} cursor-pointer text-neutral-500 hover:text-neutral-900`}
           >
             <Menu className="h-5 w-5 shrink-0" strokeWidth={1.8} />
             <span className="max-w-full truncate">{t("bottomNav.more")}</span>

@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
-import logo from "../../assets/logoApp.png";
+import Logo from "../brand/Logo.js";
 import SidebarNav from "./SidebarNav.js";
 import { useOverlay } from "../../hooks/useOverlay.js";
 
@@ -53,19 +53,16 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
         tabIndex={-1}
         className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-xl outline-none"
       >
-        <div className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 px-4">
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-neutral-200 px-4">
           <Link to="/dashboard" replace onClick={onClose} className="flex items-center gap-2">
-            <img src={logo} alt="FoodWise" className="h-10 w-10 object-contain" />
-            <span className="text-xl font-bold tracking-tight text-gray-900">
-              Food<span className="text-orange-600">Wise</span>
-            </span>
+            <Logo variant="full" className="h-10 w-10" textClassName="text-xl" />
           </Link>
           <button
             ref={closeRef}
             type="button"
             onClick={onClose}
             aria-label={t("sidebar.closeMenu")}
-            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
           >
             <X className="h-5 w-5" strokeWidth={1.8} />
           </button>

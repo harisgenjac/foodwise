@@ -17,7 +17,7 @@ import {
   ShoppingCart,
   UserRound,
 } from "lucide-react";
-import logo from "../assets/logoApp.png";
+import Logo from "./brand/Logo.js";
 import { useNotifications } from "../context/NotificationsContext.js";
 import { useCart } from "../context/CartContext.js";
 import LanguageSwitcher from "./LanguageSwitcher.js";
@@ -123,7 +123,7 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
     : displayName.slice(0, 1).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-50 flex items-center justify-between h-16 px-4 bg-white/90 backdrop-blur border-b border-gray-200">
+    <header className="sticky top-0 z-50 flex items-center justify-between h-16 px-4 bg-white/90 backdrop-blur border-b border-neutral-200">
       <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         {/* Phones open the drawer; from md up the same place collapses the rail. */}
         <button
@@ -134,7 +134,7 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
           aria-haspopup="dialog"
           aria-expanded={isMenuOpen}
           aria-controls={isMenuOpen ? MOBILE_DRAWER_ID : undefined}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent md:hidden"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent md:hidden"
         >
           <Menu className="h-5 w-5" strokeWidth={1.8} />
         </button>
@@ -143,7 +143,7 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
           disabled={locked}
           aria-label={toggleLabel}
           title={toggleLabel}
-          className="hidden md:inline-flex p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+          className="hidden md:inline-flex p-2 rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
         >
           <ToggleIcon className="h-5 w-5" strokeWidth={1.8} />
         </button>
@@ -153,10 +153,16 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
           tabIndex={locked ? -1 : undefined}
           className={`flex items-center gap-2 ${locked ? "pointer-events-none" : ""}`}
         >
-          <img src={logo} alt="FoodWise" className="h-9 w-9 object-contain sm:h-10 sm:w-10" />
-          <span className="text-lg font-bold tracking-tight text-gray-900 sm:text-xl">
-            Food<span className="text-orange-600">Wise</span>
+          {/* The full logo on a computer with the sidebar open; the mark alone on phones and with the
+              sidebar collapsed (it is then named for screen readers). */}
+          <span className={isSidebarOpen ? "md:hidden" : ""}>
+            <Logo variant="mark" className="h-9 w-9 sm:h-10 sm:w-10" />
           </span>
+          {isSidebarOpen && (
+            <span className="hidden md:inline-flex">
+              <Logo variant="full" className="h-10 w-10" textClassName="text-xl" />
+            </span>
+          )}
         </Link>
       </div>
 
@@ -169,13 +175,13 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
             aria-label={cartCount > 0 ? t("header.cartLabelCount", { count: cartCount }) : t("header.cartLabel")}
             aria-disabled={locked || undefined}
             tabIndex={locked ? -1 : undefined}
-            className={`relative flex h-11 w-11 items-center justify-center md:h-auto md:w-auto md:p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-colors ${
+            className={`relative flex h-11 w-11 items-center justify-center md:h-auto md:w-auto md:p-2 rounded-full text-neutral-600 hover:bg-neutral-100 transition-colors ${
               locked ? "pointer-events-none opacity-40" : ""
             }`}
           >
             <ShoppingCart className="h-5 w-5" strokeWidth={1.8} />
             {cartCount > 0 && (
-              <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
+              <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-brand-800 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
                 {cartCount > 9 ? "9+" : cartCount}
               </span>
             )}
@@ -190,11 +196,11 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
             aria-label={t("header.notificationsLabel")}
             aria-expanded={isNotifOpen}
             // 44 px touch target below md; the icon keeps its size.
-            className="relative flex h-11 w-11 items-center justify-center md:h-auto md:w-auto md:p-2 rounded-full text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+            className="relative flex h-11 w-11 items-center justify-center md:h-auto md:w-auto md:p-2 rounded-full text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
           >
             <Bell className="h-5 w-5" strokeWidth={1.8} />
             {unreadCount > 0 && (
-              <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
+              <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-brand-800 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
@@ -206,15 +212,15 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
             // left edge); from sm up a dropdown under the bell.
             <div
               data-testid="notifications-panel"
-              className="fixed inset-x-0 top-16 z-50 flex max-h-[calc(100dvh-4rem)] flex-col overflow-hidden border-y border-gray-100 bg-white pb-[env(safe-area-inset-bottom)] shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:max-h-none sm:w-96 sm:rounded-2xl sm:border sm:pb-0"
+              className="fixed inset-x-0 top-16 z-50 flex max-h-[calc(100dvh-4rem)] flex-col overflow-hidden border-y border-neutral-100 bg-white pb-[env(safe-area-inset-bottom)] shadow-xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:max-h-none sm:w-96 sm:rounded-2xl sm:border sm:pb-0"
             >
-              <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-3">
+              <div className="flex items-center justify-between gap-2 border-b border-neutral-100 px-4 py-3">
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="font-semibold text-gray-900">
+                  <span className="font-semibold text-neutral-900">
                     {t("header.notificationsLabel")}
                   </span>
                   {unreadCount > 0 && (
-                    <span className="min-w-5 rounded-full bg-orange-500 px-1.5 text-center text-xs font-semibold leading-5 text-white">
+                    <span className="min-w-5 rounded-full bg-brand-800 px-1.5 text-center text-xs font-semibold leading-5 text-white">
                       {unreadCount}
                     </span>
                   )}
@@ -223,7 +229,7 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
                   <button
                     type="button"
                     onClick={markAllAsRead}
-                    className="inline-flex min-h-11 sm:min-h-0 shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium text-orange-600 transition-colors hover:bg-orange-50"
+                    className="inline-flex min-h-11 sm:min-h-0 shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 text-xs font-medium text-brand-800 transition-colors hover:bg-brand-50"
                   >
                     <CheckCheck className="h-3.5 w-3.5" />
                     {t("notifications.markAllReadShort")}
@@ -233,13 +239,13 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
 
               {notifications.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-neutral-100 text-neutral-500">
                     <BellOff className="h-5 w-5" strokeWidth={1.8} />
                   </span>
-                  <p className="text-sm text-gray-500">{t("header.noNotifications")}</p>
+                  <p className="text-sm text-neutral-500">{t("header.noNotifications")}</p>
                 </div>
               ) : (
-                <div data-testid="notifications-list" className="min-h-0 flex-1 divide-y divide-gray-50 overflow-y-auto sm:max-h-[22rem] sm:flex-none">
+                <div data-testid="notifications-list" className="min-h-0 flex-1 divide-y divide-neutral-50 overflow-y-auto sm:max-h-[22rem] sm:flex-none">
                   {notifications.slice(0, DROPDOWN_LIMIT).map((notification) => (
                     <NotificationItem
                       key={notification.id}
@@ -254,7 +260,7 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
               <Link
                 to="/notifications"
                 onClick={() => setIsNotifOpen(false)}
-                className="group flex items-center justify-center gap-1 border-t border-gray-100 bg-gray-50/60 p-3 text-sm font-semibold text-orange-600 transition-colors hover:bg-orange-50"
+                className="group flex items-center justify-center gap-1 border-t border-neutral-100 bg-neutral-50/60 p-3 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-50"
               >
                 {t("header.viewAllNotifications")}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -269,40 +275,40 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             aria-expanded={isDropdownOpen}
             // Below md only the 36 px avatar shows, so p-1 makes it a 44 px target.
-            className="flex items-center gap-2 p-1 md:pr-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+            className="flex items-center gap-2 p-1 md:pr-2 rounded-full hover:bg-neutral-100 transition-colors cursor-pointer"
           >
             {avatarUrl && failedLogo !== avatarUrl ? (
               <img
                 src={assetUrl(avatarUrl)}
                 alt={displayName}
                 onError={() => setFailedLogo(avatarUrl)}
-                className="w-9 h-9 rounded-full object-cover ring-1 ring-gray-200"
+                className="w-9 h-9 rounded-full object-cover ring-1 ring-neutral-200"
               />
             ) : (
-              <span className="w-9 h-9 rounded-full bg-orange-100 text-orange-700 text-sm font-semibold flex items-center justify-center">
+              <span className="w-9 h-9 rounded-full bg-brand-100 text-brand-800 text-sm font-semibold flex items-center justify-center">
                 {initials}
               </span>
             )}
             <span className="hidden md:flex flex-col items-start leading-tight">
-              <span className="text-sm font-medium text-gray-800">{displayName}</span>
-              <span className="text-xs text-gray-500">{roleLabel}</span>
+              <span className="text-sm font-medium text-neutral-800">{displayName}</span>
+              <span className="text-xs text-neutral-500">{roleLabel}</span>
             </span>
             <ChevronDown
-              className={`hidden md:block h-4 w-4 text-gray-400 transition-transform ${
+              className={`hidden md:block h-4 w-4 text-neutral-500 transition-transform ${
                 isDropdownOpen ? "rotate-180" : ""
               }`}
             />
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-100 rounded-xl shadow-lg z-50 overflow-hidden">
-              <div className="px-4 py-3 border-b border-gray-100">
-                <p className="font-semibold text-gray-800 truncate">{displayName}</p>
-                <p className="text-sm text-gray-500 truncate">{user?.email}</p>
+            <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-neutral-100 rounded-xl shadow-lg z-50 overflow-hidden">
+              <div className="px-4 py-3 border-b border-neutral-100">
+                <p className="font-semibold text-neutral-800 truncate">{displayName}</p>
+                <p className="text-sm text-neutral-500 truncate">{user?.email}</p>
               </div>
               <Link
                 to="/my-profile"
-                className="flex min-h-11 items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 md:min-h-0"
+                className="flex min-h-11 items-center gap-2 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 md:min-h-0"
                 onClick={() => setIsDropdownOpen(false)}
               >
                 <UserRound className="h-4 w-4" />
@@ -310,7 +316,7 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
               </Link>
               <button
                 onClick={handleLogout}
-                className="w-full flex min-h-11 items-center gap-2 text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 cursor-pointer md:min-h-0"
+                className="w-full flex min-h-11 items-center gap-2 text-left px-4 py-2.5 text-sm text-danger-700 hover:bg-danger-50 cursor-pointer md:min-h-0"
               >
                 <LogOut className="h-4 w-4" />
                 {t("header.logout")}

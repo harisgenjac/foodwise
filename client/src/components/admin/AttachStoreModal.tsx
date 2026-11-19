@@ -48,11 +48,11 @@ function AttachStoreModal({ companyId, companyName, onClose, onAttached }: Attac
       {/* The search stays above the scrolling list. */}
       <ModalHeader className="space-y-4">
         <div>
-          <h2 id={titleId} className="text-lg font-semibold text-gray-900">{t("admin.companyDetails.attachTitle")}</h2>
-          <p className="mt-1 text-sm text-gray-600">{t("admin.companyDetails.attachText", { name: companyName })}</p>
+          <h2 id={titleId} className="text-lg font-semibold text-neutral-900">{t("admin.companyDetails.attachTitle")}</h2>
+          <p className="mt-1 text-sm text-neutral-600">{t("admin.companyDetails.attachText", { name: companyName })}</p>
         </div>
         {error && (
-          <p className="flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="flex items-center gap-2 rounded-xl border border-danger-100 bg-danger-50 px-3 py-2 text-sm text-danger-700">
             <AlertCircle className="h-4 w-4 shrink-0" />
             {error}
           </p>
@@ -70,20 +70,20 @@ function AttachStoreModal({ companyId, companyName, onClose, onAttached }: Attac
       </ModalHeader>
       <ModalBody className="pt-2">
         {loading ? null : candidates.length === 0 ? (
-          <p className="pt-2 text-sm text-gray-500">{t("admin.companyDetails.attachNone")}</p>
+          <p className="pt-2 text-sm text-neutral-500">{t("admin.companyDetails.attachNone")}</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-neutral-100">
             {candidates.map((store) => (
               <li key={store.id} className="flex items-center justify-between gap-3 py-2.5">
                 <div className="min-w-0">
-                  <p className="truncate font-medium text-gray-900">{store.business_name || store.email}</p>
-                  <p className="truncate text-xs text-gray-500">{[store.email, store.city].filter(Boolean).join(" · ")}</p>
+                  <p className="truncate font-medium text-neutral-900">{store.business_name || store.email}</p>
+                  <p className="truncate text-xs text-neutral-500">{[store.email, store.city].filter(Boolean).join(" · ")}</p>
                 </div>
                 <button
                   type="button"
                   disabled={busyId !== null}
                   onClick={() => attach(store)}
-                  className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:opacity-60"
+                  className="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg bg-brand-800 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-brand-900 disabled:opacity-60"
                 >
                   <Store className="h-4 w-4" />
                   {t("admin.companyDetails.attach")}
@@ -97,7 +97,7 @@ function AttachStoreModal({ companyId, companyName, onClose, onAttached }: Attac
         <button
           type="button"
           onClick={onClose}
-          className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          className="cursor-pointer rounded-xl border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
         >
           {t("admin.common.cancel")}
         </button>

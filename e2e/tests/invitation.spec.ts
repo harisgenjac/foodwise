@@ -15,7 +15,7 @@ test.use({ storageState: storageState("admin") });
 test("a store invited by email sets its password and logs in", async ({ browser, page }) => {
   expect(MAILPIT_URL, "MAILPIT_URL must be set in CI").toBeTruthy();
   const id = runId();
-  const email = `e2e-invite-${id}@foodwise.test`;
+  const email = `e2e-invite-${id}@josvrijedi.test`;
   const password = `Moja-lozinka-${id}`;
 
   await test.step("Admin kreira prodavnicu s pozivnicom", async () => {
@@ -32,7 +32,7 @@ test("a store invited by email sets its password and logs in", async ({ browser,
   });
 
   const link = await test.step("Mailpit: pozivnica s linkom", async () => {
-    const message = await waitForEmail(`to:${email} subject:"Pozivnica za FoodWise"`);
+    const message = await waitForEmail(`to:${email} subject:"Pozivnica za Još vrijedi"`);
     expect(message.Text).toContain("Link vrijedi 72 sata");
     const url = /Postavi lozinku: (\S+)/.exec(message.Text)?.[1];
     expect(url).toMatch(/\/set-password\?token=[A-Za-z0-9_-]{43}$/);

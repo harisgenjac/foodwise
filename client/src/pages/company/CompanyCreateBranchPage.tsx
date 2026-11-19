@@ -86,12 +86,12 @@ function CompanyCreateBranchPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
       <div className="flex items-start gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-800">
           <Store className="h-5 w-5" strokeWidth={2} />
         </span>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t("company.createBranch.title")}</h1>
-          <p className="mt-0.5 text-sm text-gray-500">{t("company.createBranch.subtitle")}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">{t("company.createBranch.title")}</h1>
+          <p className="mt-0.5 text-sm text-neutral-500">{t("company.createBranch.subtitle")}</p>
         </div>
       </div>
 
@@ -120,7 +120,7 @@ function CompanyCreateBranchPage() {
             {method === "PASSWORD" && (
               <div className="mt-4">
                 {textField("password", t("company.createBranch.password"), Lock)}
-                <p className="mt-2 text-xs text-gray-500">{t("company.createBranch.passwordHint")}</p>
+                <p className="mt-2 text-xs text-neutral-500">{t("company.createBranch.passwordHint")}</p>
               </div>
             )}
           </FormSection>
@@ -128,7 +128,7 @@ function CompanyCreateBranchPage() {
 
         <div className="space-y-4 lg:sticky lg:top-22 lg:self-start">
           <div>
-            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-neutral-500">
               <Eye className="h-3.5 w-3.5" />
               {t("company.createBranch.preview")}
             </p>
@@ -136,9 +136,9 @@ function CompanyCreateBranchPage() {
               inert
               aria-hidden="true"
               data-testid="branch-preview"
-              className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
+              className="flex items-center gap-3 rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm"
             >
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-orange-100 text-orange-700">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-brand-100 text-brand-800">
                 {company?.logo_url ? (
                   <img src={assetUrl(company.logo_url)} alt="" className="h-full w-full object-cover" />
                 ) : (
@@ -146,11 +146,11 @@ function CompanyCreateBranchPage() {
                 )}
               </span>
               <div className="min-w-0 space-y-1">
-                <p className="truncate font-bold text-gray-800">
+                <p className="truncate font-bold text-neutral-800">
                   {values.business_name || t("company.createBranch.previewName")}
                 </p>
                 {cityName && (
-                  <p className="flex items-center gap-1 text-xs text-gray-500">
+                  <p className="flex items-center gap-1 text-xs text-neutral-500">
                     <MapPin className="h-3.5 w-3.5" />
                     {cityName}
                   </p>
@@ -159,7 +159,7 @@ function CompanyCreateBranchPage() {
               </div>
             </div>
           </div>
-          <div className="rounded-2xl border border-orange-100 bg-orange-50/60 p-5 text-sm text-orange-900">
+          <div className="rounded-2xl border border-brand-100 bg-brand-50/60 p-5 text-sm text-brand-900">
             <p className="flex items-center gap-2 font-semibold">
               <Info className="h-4 w-4" />
               {t("company.createBranch.infoTitle")}
@@ -171,14 +171,14 @@ function CompanyCreateBranchPage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full cursor-pointer rounded-xl bg-orange-500 px-8 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 disabled:opacity-60"
+            className="w-full cursor-pointer rounded-xl bg-brand-800 px-8 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900 disabled:opacity-60"
           >
             {t("company.createBranch.submit")}
           </button>
           <RequiredHint className="text-center" />
           <Link
             to="/company/branches"
-            className="block rounded-xl border border-gray-200 bg-white px-8 py-2.5 text-center font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="block rounded-xl border border-neutral-200 bg-white px-8 py-2.5 text-center font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
           >
             {t("admin.common.cancel")}
           </Link>

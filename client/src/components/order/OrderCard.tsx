@@ -33,7 +33,7 @@ function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = fals
   return (
     <div
       data-testid="order-card"
-      className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="relative h-32 overflow-hidden">
         <OrderImage
@@ -46,13 +46,13 @@ function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = fals
             {orderStatusLabel(t, order.status, order.fulfilment_method)}
           </span>
           {order.is_partial && (
-            <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
+            <span className="rounded-full bg-warning-50 px-2 py-1 text-xs font-semibold text-warning-700">
               {t("orders.partialBadge", { accepted: order.accepted_count, count: order.item_count })}
             </span>
           )}
         </div>
         {order.is_overdue && (
-          <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-1 text-xs font-semibold text-white">
+          <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-danger-600 px-2 py-1 text-xs font-semibold text-white">
             <AlertTriangle className="h-3 w-3" />
             {t("pickups.overdueToday")}
           </span>
@@ -62,37 +62,37 @@ function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = fals
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="text-lg font-bold text-gray-800">{t("orders.title", { code })}</h3>
-            <p className="truncate text-sm text-gray-500">{itemsSummary(order, t)}</p>
+            <h3 className="text-lg font-bold text-neutral-800">{t("orders.title", { code })}</h3>
+            <p className="truncate text-sm text-neutral-500">{itemsSummary(order, t)}</p>
           </div>
           <OrderItemThumbnails order={order} />
         </div>
 
-        <dl className="flex flex-col gap-2 rounded-xl bg-gray-50 p-3 text-sm">
+        <dl className="flex flex-col gap-2 rounded-xl bg-neutral-50 p-3 text-sm">
           <div className="flex justify-between gap-2">
-            <dt className="text-gray-500">{partyLabel}</dt>
-            <dd className="min-w-0 truncate font-medium text-gray-800">
+            <dt className="text-neutral-500">{partyLabel}</dt>
+            <dd className="min-w-0 truncate font-medium text-neutral-800">
               {linkStore && order.business_name ? (
                 <StoreNameLink storeId={order.store_id} name={order.business_name} className="block" />
               ) : (
                 order.business_name
               )}
-              {order.city && <span className="font-normal text-gray-500"> · {order.city}</span>}
+              {order.city && <span className="font-normal text-neutral-500"> · {order.city}</span>}
             </dd>
           </div>
           <div className="flex justify-between gap-2">
-            <dt className="text-gray-500">{t("orders.items")}</dt>
-            <dd className="font-medium text-gray-800">{t("orders.itemCount", { count: order.item_count })}</dd>
+            <dt className="text-neutral-500">{t("orders.items")}</dt>
+            <dd className="font-medium text-neutral-800">{t("orders.itemCount", { count: order.item_count })}</dd>
           </div>
           <div className="flex justify-between gap-2">
-            <dt className="text-gray-500">{t("orders.total")}</dt>
-            <dd className="font-semibold text-green-700">{formatMoney(order.total)}</dd>
+            <dt className="text-neutral-500">{t("orders.total")}</dt>
+            <dd className="font-semibold text-brand-800">{formatMoney(order.total)}</dd>
           </div>
           <div className="flex justify-between gap-2">
-            <dt className="text-gray-500">
+            <dt className="text-neutral-500">
               {order.fulfilment_method === "DELIVERY" ? t("orders.delivery.cardLabel") : t("dashboard.pickupDate")}
             </dt>
-            <dd className="text-right font-medium text-gray-800">
+            <dd className="text-right font-medium text-neutral-800">
               {formatOrderDateTime(
                 order.fulfilment_method === "DELIVERY" && order.delivery_estimated_at
                   ? order.delivery_estimated_at
@@ -102,8 +102,8 @@ function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = fals
           </div>
           {showCreatedAt && (
             <div className="flex justify-between gap-2">
-              <dt className="text-gray-500">{t("orders.sentAt")}</dt>
-              <dd className="text-right font-medium text-gray-800">{formatRelativeTime(order.created_at, t, i18n.language)}</dd>
+              <dt className="text-neutral-500">{t("orders.sentAt")}</dt>
+              <dd className="text-right font-medium text-neutral-800">{formatRelativeTime(order.created_at, t, i18n.language)}</dd>
             </div>
           )}
         </dl>
@@ -115,7 +115,7 @@ function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = fals
         ) : (
           <Link
             to={`/orders/${order.id}`}
-            className="mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-orange-50 py-2.5 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
+            className="mt-auto inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-brand-50 py-2.5 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-900 hover:text-white"
           >
             {t("dashboard.detailsButton")}
             <ArrowRight className="h-4 w-4" />

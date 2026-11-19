@@ -208,7 +208,7 @@ function MyProductsPage() {
                 <>
                   <Link
                     to={`/products/${product.id}`}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-orange-50 py-2.5 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
+                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-50 py-2.5 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-900 hover:text-white"
                   >
                     {t("dashboard.detailsButton")}
                     <ArrowRight className="h-4 w-4" />
@@ -217,7 +217,7 @@ function MyProductsPage() {
                     to={`/edit-product/${product.id}`}
                     title={t("myProducts.editButton")}
                     aria-label={t("myProducts.editButton")}
-                    className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-3 text-gray-600 transition-colors hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
+                    className="inline-flex items-center justify-center rounded-xl border border-neutral-200 px-3 text-neutral-600 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-900"
                   >
                     <Pencil className="h-4 w-4" />
                   </Link>
@@ -227,7 +227,7 @@ function MyProductsPage() {
                       onClick={() => setDonatingProduct(product)}
                       title={t("donations.fromProduct.button")}
                       aria-label={t("donations.fromProduct.button")}
-                      className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-gray-200 px-3 text-gray-600 transition-colors hover:border-green-200 hover:bg-green-50 hover:text-green-700"
+                      className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-neutral-200 px-3 text-neutral-600 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-900"
                     >
                       <HandHeart className="h-4 w-4" />
                     </button>
@@ -238,7 +238,7 @@ function MyProductsPage() {
                       onClick={() => setShopSaleProduct(product)}
                       title={t("soldInShop.button")}
                       aria-label={t("soldInShop.button")}
-                      className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-gray-200 px-3 text-gray-600 transition-colors hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700"
+                      className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-neutral-200 px-3 text-neutral-600 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-900"
                     >
                       <Store className="h-4 w-4" />
                     </button>
@@ -248,7 +248,7 @@ function MyProductsPage() {
                     onClick={() => setSelectedProduct(product)}
                     title={t("myProducts.deleteButton")}
                     aria-label={t("myProducts.deleteButton")}
-                    className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-gray-200 px-3 text-gray-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                    className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-neutral-200 px-3 text-neutral-600 transition-colors hover:border-danger-200 hover:bg-danger-50 hover:text-danger-700"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

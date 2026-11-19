@@ -74,21 +74,21 @@ function AnnouncementItem({ title, body, onDismiss }: { title: string; body: str
   }, [body, expanded]);
 
   return (
-    <div role="status" className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2.5 sm:p-4">
-      <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm sm:flex">
+    <div role="status" className="flex items-start gap-3 rounded-2xl border border-info-100 bg-info-50 px-3 py-2.5 sm:p-4">
+      <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-info-700 shadow-sm sm:flex">
         <Megaphone className="h-5 w-5" strokeWidth={1.8} />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="sr-only text-xs font-semibold uppercase tracking-wider text-blue-600 sm:not-sr-only">
+        <p className="sr-only text-xs font-semibold uppercase tracking-wider text-info-700 sm:not-sr-only">
           {t("announcements.label")}
         </p>
-        <p className="flex items-center gap-1.5 font-semibold text-blue-950 sm:mt-0.5 sm:block">
-          <Megaphone className="h-4 w-4 shrink-0 text-blue-600 sm:hidden" strokeWidth={1.8} aria-hidden="true" />
+        <p className="flex items-center gap-1.5 font-semibold text-info-950 sm:mt-0.5 sm:block">
+          <Megaphone className="h-4 w-4 shrink-0 text-info-700 sm:hidden" strokeWidth={1.8} aria-hidden="true" />
           <span className="truncate sm:whitespace-normal">{title}</span>
         </p>
         <p
           ref={bodyRef}
-          className={`mt-0.5 whitespace-pre-line text-sm text-blue-900 ${expanded ? "" : "line-clamp-2 sm:line-clamp-none"}`}
+          className={`mt-0.5 whitespace-pre-line text-sm text-info-900 ${expanded ? "" : "line-clamp-2 sm:line-clamp-none"}`}
         >
           {body}
         </p>
@@ -101,7 +101,7 @@ function AnnouncementItem({ title, body, onDismiss }: { title: string; body: str
             aria-expanded={expanded}
             aria-label={t(expanded ? "announcements.showLess" : "announcements.showMore")}
             title={t(expanded ? "announcements.showLess" : "announcements.showMore")}
-            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg text-blue-500 transition-colors hover:bg-blue-100 hover:text-blue-700 sm:hidden"
+            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg text-info-700 transition-colors hover:bg-info-100 hover:text-info-700 sm:hidden"
           >
             <ChevronDown className={`h-5 w-5 transition-transform ${expanded ? "rotate-180" : ""}`} />
           </button>
@@ -111,7 +111,7 @@ function AnnouncementItem({ title, body, onDismiss }: { title: string; body: str
           onClick={onDismiss}
           aria-label={t("announcements.dismiss")}
           title={t("announcements.dismiss")}
-          className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg text-blue-500 transition-colors hover:bg-blue-100 hover:text-blue-700 sm:h-auto sm:w-auto sm:p-1.5"
+          className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg text-info-700 transition-colors hover:bg-info-100 hover:text-info-700 sm:h-auto sm:w-auto sm:p-1.5"
         >
           <X className="h-4 w-4" />
         </button>

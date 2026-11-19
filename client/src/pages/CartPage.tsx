@@ -89,13 +89,13 @@ function CartPage() {
     const leftInCart = (cart?.items.length ?? 0) > 0;
     return (
       <div className="mx-auto max-w-2xl space-y-6 pb-10">
-        <section aria-labelledby="sent-title" className="space-y-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <h1 id="sent-title" className="flex items-center gap-2 text-xl font-bold text-gray-900">
-            <CheckCircle2 className="h-6 w-6 text-green-600" />
+        <section aria-labelledby="sent-title" className="space-y-4 rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
+          <h1 id="sent-title" className="flex items-center gap-2 text-xl font-bold text-neutral-900">
+            <CheckCircle2 className="h-6 w-6 text-brand-800" />
             {t("orders.send.sentTitle", { code: formatOrderCode(sent.order.code) })}
           </h1>
-          <p className="text-sm text-gray-700">{t("orders.send.sentText", { total: formatMoney(total), store: sent.storeName })}</p>
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-neutral-700">{t("orders.send.sentText", { total: formatMoney(total), store: sent.storeName })}</p>
+          <p className="text-sm text-neutral-700">
             {sent.order.fulfilment_method === "DELIVERY"
               ? t("cart.sent.delivery", {
                   time: formatClock(sent.order.delivery_estimated_at ?? ""),
@@ -105,8 +105,8 @@ function CartPage() {
           </p>
           <SendChangesList changes={sent.changes} />
           {leftInCart && (
-            <p className="flex gap-2 text-sm text-gray-600">
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
+            <p className="flex gap-2 text-sm text-neutral-600">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-neutral-500" />
               {t("cart.sent.leftInCart")}
             </p>
           )}
@@ -115,21 +115,21 @@ function CartPage() {
               <button
                 type="button"
                 onClick={() => setSent(null)}
-                className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                className="flex-1 cursor-pointer rounded-xl bg-neutral-100 py-2.5 font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
               >
                 {t("cart.sent.backToCart")}
               </button>
             ) : (
               <Link
                 to="/search"
-                className="flex-1 rounded-xl bg-gray-100 py-2.5 text-center font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                className="flex-1 rounded-xl bg-neutral-100 py-2.5 text-center font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
               >
                 {t("cart.sent.toOffers")}
               </Link>
             )}
             <Link
               to={`/orders/${sent.order.id}`}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-800 py-2.5 font-semibold text-white transition-colors hover:bg-brand-900"
             >
               {t("cart.sent.viewOrder")}
               <ArrowRight className="h-4 w-4" />
@@ -178,9 +178,9 @@ function CartPage() {
             {cart.store && (
               <Link
                 to={`/stores/${cart.store.id}`}
-                className="inline-flex items-center gap-2 font-semibold text-gray-900 hover:text-orange-700"
+                className="inline-flex items-center gap-2 font-semibold text-neutral-900 hover:text-brand-900"
               >
-                <Store className="h-4 w-4 text-orange-500" />
+                <Store className="h-4 w-4 text-brand-800" />
                 {cart.store.business_name}
               </Link>
             )}
@@ -190,7 +190,7 @@ function CartPage() {
                   type="button"
                   onClick={() => change(() => api.delete("/cart/unavailable"))}
                   disabled={busy}
-                  className="cursor-pointer rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="cursor-pointer rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:border-brand-200 hover:bg-brand-50 hover:text-brand-900 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {t("cart.removeUnavailable")}
                 </button>
@@ -199,7 +199,7 @@ function CartPage() {
                 type="button"
                 onClick={() => setConfirmEmpty(true)}
                 disabled={busy}
-                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:border-danger-200 hover:bg-danger-50 hover:text-danger-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Trash2 className="h-4 w-4" />
                 {t("cart.emptyCart")}
@@ -207,13 +207,13 @@ function CartPage() {
             </div>
           </div>
 
-          <p className="flex gap-2 rounded-xl bg-blue-50 p-3 text-sm text-blue-900">
+          <p className="flex gap-2 rounded-xl bg-info-50 p-3 text-sm text-info-900">
             <Info className="mt-0.5 h-4 w-4 shrink-0" />
             {t("cart.notHeld")}
           </p>
 
           {notSent.size > 0 && (
-            <p role="alert" className="flex gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-800">
+            <p role="alert" className="flex gap-2 rounded-xl bg-danger-50 p-3 text-sm text-danger-800">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               {t("cart.checkout.notSent")}
             </p>
@@ -234,7 +234,7 @@ function CartPage() {
 
           <Link
             to={cart.store ? `/stores/${cart.store.id}` : "/search"}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-700 hover:text-orange-800"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-800 hover:text-brand-900"
           >
             <ShoppingBasket className="h-4 w-4" />
             {t("cart.addMore")}

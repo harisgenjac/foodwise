@@ -12,7 +12,7 @@ interface SortableHeaderProps {
 }
 
 // A column title of an admin table that sorts it: a button that cycles unsorted → ascending →
-// descending (useAdminSort). Gray arrows mean "not sorted"; an orange arrow shows the direction.
+// descending (useAdminSort). Grey arrows mean "not sorted"; a brand arrow shows the direction.
 function SortableHeader({ label, sortKey, sort, dir, onSort, className = "px-4 py-3" }: SortableHeaderProps) {
   const active = sort === sortKey;
   const Icon = !active ? ArrowUpDown : dir === "desc" ? ArrowDown : ArrowUp;
@@ -21,12 +21,12 @@ function SortableHeader({ label, sortKey, sort, dir, onSort, className = "px-4 p
       <button
         type="button"
         onClick={() => onSort(sortKey)}
-        className={`inline-flex cursor-pointer items-center gap-1 rounded font-semibold uppercase tracking-wider transition-colors hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 ${
-          active ? "text-gray-800" : ""
+        className={`inline-flex cursor-pointer items-center gap-1 rounded font-semibold uppercase tracking-wider transition-colors hover:text-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 ${
+          active ? "text-neutral-800" : ""
         }`}
       >
         {label}
-        <Icon aria-hidden="true" className={`h-3.5 w-3.5 shrink-0 ${active ? "text-orange-500" : "text-gray-400"}`} />
+        <Icon aria-hidden="true" className={`h-3.5 w-3.5 shrink-0 ${active ? "text-brand-800" : "text-neutral-500"}`} />
       </button>
     </th>
   );

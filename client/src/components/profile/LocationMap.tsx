@@ -56,7 +56,7 @@ function LocationMap({ value, center, onChange, label }: LocationMapProps) {
   const start = value ?? center;
   return (
     <div
-      className="h-64 overflow-hidden rounded-xl border border-gray-200 sm:h-80"
+      className="h-64 overflow-hidden rounded-xl border border-neutral-200 sm:h-80"
       role="application"
       aria-label={label}
       data-testid="location-map"

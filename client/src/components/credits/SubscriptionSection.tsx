@@ -23,7 +23,7 @@ import {
 } from "../../utils/credits.js";
 import type { CreditRequest, Plan, TopupPackage } from "../../types/index.js";
 
-const cardStyle = "rounded-2xl border border-gray-100 bg-white p-6 shadow-sm";
+const cardStyle = "rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm";
 const PLAN_OPTIONS = "plan-options";
 const TOPUP_OPTIONS = "topup-options";
 
@@ -31,7 +31,7 @@ interface ToggleButtonProps {
   open: boolean;
   controls: string;
   onClick: () => void;
-  // Orange when the user should act (no plan after this month), else a quiet outline.
+  // The brand colour when the user should act (no plan after this month), else a quiet outline.
   prominent?: boolean;
   children: React.ReactNode;
 }
@@ -45,8 +45,8 @@ function ToggleButton({ open, controls, onClick, prominent = false, children }: 
       aria-controls={controls}
       className={`inline-flex w-fit shrink-0 cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${
         prominent
-          ? "bg-orange-500 text-white hover:bg-orange-600"
-          : "border border-gray-200 text-gray-700 hover:bg-gray-50"
+          ? "bg-brand-800 text-white hover:bg-brand-900"
+          : "border border-neutral-200 text-neutral-700 hover:bg-neutral-50"
       }`}
     >
       {children}
@@ -207,47 +207,47 @@ function SubscriptionSection() {
       <section id={SUBSCRIPTION_SECTION} className={`${cardStyle} scroll-mt-6`}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-800">
               <Coins className="h-5 w-5" strokeWidth={1.8} />
             </span>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">{t("credits.profile.title")}</h2>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-lg font-bold text-neutral-900">{t("credits.profile.title")}</h2>
+              <p className="text-sm text-neutral-500">
                 {managed ? t("credits.profile.paidByCompany", { company }) : t("credits.profile.subtitle")}
               </p>
             </div>
           </div>
-          <Link to="/credits" className="inline-flex items-center gap-1 text-sm font-semibold text-orange-600 hover:text-orange-700">
+          <Link to="/credits" className="inline-flex items-center gap-1 text-sm font-semibold text-brand-800 hover:text-brand-900">
             {t("credits.profile.viewCredits")}
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
 
         <dl className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-xl bg-gray-50 p-4">
-            <dt className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+          <div className="rounded-xl bg-neutral-50 p-4">
+            <dt className="flex items-center gap-1.5 text-xs font-medium text-neutral-500">
               <Wallet className="h-3.5 w-3.5" />
               {t("credits.profile.currentPlan")}
             </dt>
-            <dd className="mt-1 font-semibold text-gray-900">
+            <dd className="mt-1 font-semibold text-neutral-900">
               {subscription ? subscription.plan_name : t("credits.profile.noPlan")}
             </dd>
           </div>
-          <div className="rounded-xl bg-gray-50 p-4">
-            <dt className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+          <div className="rounded-xl bg-neutral-50 p-4">
+            <dt className="flex items-center gap-1.5 text-xs font-medium text-neutral-500">
               <CalendarRange className="h-3.5 w-3.5" />
               {t("credits.profile.period")}
             </dt>
-            <dd className="mt-1 font-semibold text-gray-900">
+            <dd className="mt-1 font-semibold text-neutral-900">
               {formatDisplayDate(credits.periodStart)} – {formatDisplayDate(credits.periodEnd)}
             </dd>
           </div>
-          <div className="rounded-xl bg-gray-50 p-4">
-            <dt className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+          <div className="rounded-xl bg-neutral-50 p-4">
+            <dt className="flex items-center gap-1.5 text-xs font-medium text-neutral-500">
               <Coins className="h-3.5 w-3.5" />
               {t("credits.profile.balance")}
             </dt>
-            <dd className="mt-1 font-semibold text-gray-900">
+            <dd className="mt-1 font-semibold text-neutral-900">
               {t("credits.profile.balanceValue", { available: credits.available, total: credits.total })}
             </dd>
           </div>
@@ -259,12 +259,12 @@ function SubscriptionSection() {
           </div>
         )}
         {managed && (
-          <p className="mt-4 rounded-xl bg-teal-50 px-4 py-3 text-sm text-teal-800">
+          <p className="mt-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800">
             {t("credits.profile.companyManagesPlan", { company })}
           </p>
         )}
         {credits.nextSubscription && (
-          <p className="mt-3 text-sm text-gray-600">
+          <p className="mt-3 text-sm text-neutral-600">
             {t("credits.profile.nextMonth", {
               month: formatCreditMonth(credits.nextSubscription.period_month, monthNames),
               plan: credits.nextSubscription.plan_name,
@@ -277,9 +277,9 @@ function SubscriptionSection() {
             {credits.pendingRequests.map((request) => (
               <li
                 key={request.id}
-                className="flex flex-col gap-2 rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-2 rounded-xl border border-warning-100 bg-warning-50/60 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
               >
-                <span className="text-amber-900">
+                <span className="text-warning-900">
                   {t(
                     request.status === "COMPANY_REVIEW"
                       ? "credits.profile.pendingAtCompany"
@@ -298,7 +298,7 @@ function SubscriptionSection() {
                     type="button"
                     onClick={() => requestWithdraw(request)}
                     disabled={busy}
-                    className="w-fit cursor-pointer rounded-lg px-3 py-1.5 font-medium text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-60"
+                    className="w-fit cursor-pointer rounded-lg px-3 py-1.5 font-medium text-warning-800 transition-colors hover:bg-warning-100 disabled:opacity-60"
                   >
                     {t("credits.profile.withdraw")}
                   </button>
@@ -310,7 +310,7 @@ function SubscriptionSection() {
 
         {subscription && planCollapsible && (
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-neutral-600">
               {subscription.auto_renew
                 ? t("credits.profile.renewsOn", {
                     plan: subscription.plan_name,
@@ -330,7 +330,7 @@ function SubscriptionSection() {
         )}
 
         {!managed && (!planCollapsible || planOpen) && (
-          <h3 className="mt-6 text-sm font-semibold text-gray-900">
+          <h3 className="mt-6 text-sm font-semibold text-neutral-900">
             {t(period === "current" ? "credits.profile.choosePlan" : "credits.profile.changePlan", {
               month: formatCreditMonth(requestMonth, monthNames),
             })}
@@ -339,15 +339,15 @@ function SubscriptionSection() {
         {showPlans ? (
           <div id={PLAN_OPTIONS} className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
             {plans.map((plan) => (
-              <div key={plan.id} className="flex flex-col rounded-xl border border-gray-200 p-4">
-                <p className="font-semibold text-gray-900">{plan.name}</p>
-                <p className="mt-1 text-2xl font-bold text-gray-900">{plan.credits_per_period}</p>
-                <p className="text-xs text-gray-500">{t("credits.profile.creditsPerMonth")}</p>
-                <p className="mt-2 text-sm font-semibold text-green-600">{t("credits.profile.price", { price: plan.price })}</p>
+              <div key={plan.id} className="flex flex-col rounded-xl border border-neutral-200 p-4">
+                <p className="font-semibold text-neutral-900">{plan.name}</p>
+                <p className="mt-1 text-2xl font-bold text-neutral-900">{plan.credits_per_period}</p>
+                <p className="text-xs text-neutral-500">{t("credits.profile.creditsPerMonth")}</p>
+                <p className="mt-2 text-sm font-semibold text-accent-700">{t("credits.profile.price", { price: plan.price })}</p>
                 <button
                   type="button"
                   onClick={() => setSelectedPlan(plan)}
-                  className="mt-3 cursor-pointer rounded-lg border border-orange-200 bg-orange-50 py-2 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-500 hover:text-white"
+                  className="mt-3 cursor-pointer rounded-lg border border-brand-200 bg-brand-50 py-2 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-900 hover:text-white"
                 >
                   {t("credits.profile.choose")}
                 </button>
@@ -357,7 +357,7 @@ function SubscriptionSection() {
         ) : (
           !canChoosePlan &&
           !managed && (
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-neutral-500">
               {t(pendingSubscription ? "credits.profile.planPending" : "credits.profile.planDecided")}
             </p>
           )
@@ -366,26 +366,26 @@ function SubscriptionSection() {
 
       <section id={TOPUP_SECTION} className={`${cardStyle} scroll-mt-6`}>
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-warning-50 text-warning-700">
             <PlusCircle className="h-5 w-5" strokeWidth={1.8} />
           </span>
           <div>
-            <h2 className="text-lg font-bold text-gray-900">
+            <h2 className="text-lg font-bold text-neutral-900">
               {t(managed ? "credits.profile.topupTitleCompany" : "credits.profile.topupTitle")}
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-neutral-500">
               {managed ? t("credits.profile.topupSubtitleCompany", { company }) : t("credits.profile.topupSubtitle")}
             </p>
           </div>
         </div>
         {!credits.hasActiveSubscription ? (
-          <p className="mt-4 text-sm text-gray-600">
+          <p className="mt-4 text-sm text-neutral-600">
             {managed
               ? t("credits.profile.topupNeedsCompanyPlan", { company })
               : t("credits.profile.topupNeedsSubscription")}
           </p>
         ) : pendingTopup ? (
-          <p className="mt-4 text-sm text-gray-600">
+          <p className="mt-4 text-sm text-neutral-600">
             {pendingTopup.status === "COMPANY_REVIEW"
               ? t("credits.profile.topupPendingAtCompany", { company })
               : t("credits.profile.topupPending")}
@@ -404,12 +404,12 @@ function SubscriptionSection() {
                 key={topup.id}
                 type="button"
                 onClick={() => setSelectedTopup(topup)}
-                className="flex cursor-pointer flex-col items-start rounded-xl border border-gray-200 p-4 text-left transition-colors hover:border-orange-300 hover:bg-orange-50/50 disabled:opacity-60"
+                className="flex cursor-pointer flex-col items-start rounded-xl border border-neutral-200 p-4 text-left transition-colors hover:border-brand-300 hover:bg-brand-50/50 disabled:opacity-60"
               >
-                <span className="text-lg font-bold text-gray-900">
+                <span className="text-lg font-bold text-neutral-900">
                   +{t("credits.profile.creditsCount", { count: topup.credits })}
                 </span>
-                <span className="mt-2 text-sm font-semibold text-green-600">{t("credits.profile.price", { price: topup.price })}</span>
+                <span className="mt-2 text-sm font-semibold text-accent-700">{t("credits.profile.price", { price: topup.price })}</span>
               </button>
             ))}
           </div>
@@ -417,20 +417,20 @@ function SubscriptionSection() {
 
         {requests.length > 0 && (
           <>
-            <h3 className="mt-6 text-sm font-semibold text-gray-900">{t("credits.profile.requestsTitle")}</h3>
-            <ul className="mt-2 divide-y divide-gray-100 text-sm">
+            <h3 className="mt-6 text-sm font-semibold text-neutral-900">{t("credits.profile.requestsTitle")}</h3>
+            <ul className="mt-2 divide-y divide-neutral-100 text-sm">
               {requests.map((request) => (
                 <li key={request.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                  <span className="text-gray-700">
+                  <span className="text-neutral-700">
                     {requestLabel(request)} · {formatCreditMonth(request.period_month, monthNames)}
                     {request.source === "AUTO_RENEW" && (
-                      <span className="ml-1 text-xs text-gray-400">({t("credits.profile.autoRenewSource")})</span>
+                      <span className="ml-1 text-xs text-neutral-500">({t("credits.profile.autoRenewSource")})</span>
                     )}
                     {managed && request.source === "COMPANY" && (
-                      <span className="ml-1 text-xs text-gray-400">({t("credits.profile.companySource", { company })})</span>
+                      <span className="ml-1 text-xs text-neutral-500">({t("credits.profile.companySource", { company })})</span>
                     )}
                     {request.company_note && (
-                      <span className="block text-xs italic text-gray-500">
+                      <span className="block text-xs italic text-neutral-500">
                         {t("credits.profile.companyNote", { note: request.company_note })}
                       </span>
                     )}

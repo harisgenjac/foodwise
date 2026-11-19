@@ -161,3 +161,29 @@ describe("Header cart", () => {
     expect(screen.queryByRole("link", { name: t("header.cartLabel") })).not.toBeInTheDocument();
   });
 });
+
+describe("Header logo", () => {
+  const renderWith = (isSidebarOpen: boolean) =>
+    renderWithProviders(
+      <NotificationsProvider enabled={false}>
+        <Header isSidebarOpen={isSidebarOpen} onToggleSidebar={() => {}} />
+      </NotificationsProvider>,
+      { route: "/dashboard", path: "/dashboard", user },
+    );
+
+  it("shows the full logo on a computer with the sidebar open, and the mark alone on phones", async () => {
+    renderWith(true);
+    await screen.findByRole("button", { name: /Amir Hodžić/ });
+    const home = screen.getAllByRole("link").find((link) => link.getAttribute("href") === "/dashboard")!;
+    expect(within(home).getByTestId("logo-full").parentElement).toHaveClass("hidden", "md:inline-flex");
+    // The named mark is the phone one (hidden from md up); the full logo's mark is decorative.
+    expect(within(home).getByRole("img", { name: "Još vrijedi" }).parentElement).toHaveClass("md:hidden");
+  });
+
+  it("shows only the mark, named for screen readers, with the sidebar collapsed", async () => {
+    renderWith(false);
+    await screen.findByRole("button", { name: /Amir Hodžić/ });
+    expect(screen.queryByTestId("logo-full")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Još vrijedi" })).toHaveAttribute("href", "/dashboard");
+  });
+});

@@ -137,14 +137,14 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
       noValidate
       onSubmit={handleSubmit}
       aria-labelledby="checkout-title"
-      className="space-y-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
+      className="space-y-4 rounded-2xl border border-neutral-100 bg-white p-5 shadow-sm"
     >
-      <h2 id="checkout-title" className="text-lg font-bold text-gray-900">
+      <h2 id="checkout-title" className="text-lg font-bold text-neutral-900">
         {t("cart.checkout.title")}
       </h2>
 
       <fieldset>
-        <legend className="mb-2 text-sm font-medium text-gray-700">{t("cart.method.label")}</legend>
+        <legend className="mb-2 text-sm font-medium text-neutral-700">{t("cart.method.label")}</legend>
         <div className="grid grid-cols-2 gap-2">
           {(["PICKUP", "DELIVERY"] as const).map((value) => {
             const Icon = value === "PICKUP" ? Store : Truck;
@@ -153,8 +153,8 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
                 key={value}
                 className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-colors ${
                   method === value
-                    ? "border-orange-400 bg-orange-50 font-semibold text-orange-800"
-                    : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                    ? "border-brand-800 bg-brand-50 font-semibold text-brand-800"
+                    : "border-neutral-200 text-neutral-700 hover:bg-neutral-50"
                 }`}
               >
                 <input
@@ -216,39 +216,39 @@ function CheckoutPanel({ cart, onSent, onNotSent }: CheckoutPanelProps) {
         </FormField>
       </div>
       {orderable.length > 0 && (
-        <p className="text-xs text-gray-500">{t("cart.checkout.pickupUntil", { date: formatDisplayDate(maxPickup) })}</p>
+        <p className="text-xs text-neutral-500">{t("cart.checkout.pickupUntil", { date: formatDisplayDate(maxPickup) })}</p>
       )}
       </>
       )}
 
-      <label className="flex cursor-pointer items-start gap-2 text-sm text-gray-700">
+      <label className="flex cursor-pointer items-start gap-2 text-sm text-neutral-700">
         <input
           type="checkbox"
           checked={acceptPartial}
           onChange={(e) => setAcceptPartial(e.target.checked)}
-          className="mt-0.5 h-4 w-4 accent-orange-500"
+          className="mt-0.5 h-4 w-4 accent-brand-800"
         />
         {t("orders.send.acceptPartial")}
       </label>
 
-      <div className="flex items-baseline justify-between border-t border-gray-100 pt-4">
-        <span className="text-sm text-gray-600">{t("cart.checkout.total")}</span>
-        <span className="text-xl font-bold text-gray-900">{formatMoney(cart.totals.total)}</span>
+      <div className="flex items-baseline justify-between border-t border-neutral-100 pt-4">
+        <span className="text-sm text-neutral-600">{t("cart.checkout.total")}</span>
+        <span className="text-xl font-bold text-neutral-900">{formatMoney(cart.totals.total)}</span>
       </div>
 
       {showPending && (
-        <p className="flex gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">
+        <p className="flex gap-2 rounded-xl bg-warning-50 p-3 text-sm text-warning-800">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           {t("cart.checkout.pending", { pending: cart.pending_orders, max: cart.max_pending_orders })}
         </p>
       )}
-      {orderable.length === 0 && <p className="text-sm text-gray-600">{t("cart.checkout.nothingToSend")}</p>}
+      {orderable.length === 0 && <p className="text-sm text-neutral-600">{t("cart.checkout.nothingToSend")}</p>}
       <StorePausedNotice pause={cart.store} />
 
       <button
         type="submit"
         disabled={submitting || paused || orderable.length === 0 || (isDelivery && !deliveryReady)}
-        className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-orange-500 py-3 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-800 py-3 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <Send className="h-4 w-4" />
         {t("orders.send.submit")}

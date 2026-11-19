@@ -171,7 +171,7 @@ describe("SubscriptionSection", () => {
     expect(await screen.findByText(t("credits.profile.endsOn", { date: formatDisplayDate("2030-01-31") }))).toBeInTheDocument();
     const toggle = screen.getByRole("button", { name: t("credits.profile.choosePlanNext") });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(toggle).toHaveClass("bg-orange-500");
+    expect(toggle).toHaveClass("bg-brand-800");
     expect(screen.queryByRole("button", { name: t("credits.profile.choose") })).not.toBeInTheDocument();
 
     await userEvent.click(toggle);
@@ -199,7 +199,7 @@ describe("SubscriptionSection", () => {
       await screen.findByText(t("credits.profile.renewsOn", { plan: "Standard", date: formatDisplayDate("2030-02-01") })),
     ).toBeInTheDocument();
     const toggle = screen.getByRole("button", { name: t("credits.profile.changePlanNext") });
-    expect(toggle).not.toHaveClass("bg-orange-500");
+    expect(toggle).not.toHaveClass("bg-brand-800");
     expect(screen.queryByRole("button", { name: t("credits.profile.choosePlanNext") })).not.toBeInTheDocument();
   });
 

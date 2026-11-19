@@ -16,27 +16,27 @@ function ComingSoon({ icon: Icon, title, description, highlights }: ComingSoonPr
 
   return (
     <div className="mx-auto max-w-3xl pb-10">
-      <section className="relative overflow-hidden rounded-2xl border border-orange-100 bg-linear-to-br from-orange-50 via-amber-50/60 to-white p-8 text-center shadow-sm md:p-12">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-orange-200/30 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-amber-200/30 blur-3xl" />
+      <section className="relative overflow-hidden rounded-2xl border border-brand-100 bg-linear-to-br from-brand-50 via-warning-50/60 to-white p-8 text-center shadow-sm md:p-12">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand-200/30 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-warning-200/30 blur-3xl" />
 
         <div className="relative flex flex-col items-center">
-          <span className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-orange-600 shadow-md">
+          <span className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-brand-800 shadow-md">
             <Icon className="h-8 w-8" strokeWidth={1.8} />
           </span>
-          <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white shadow-sm shadow-orange-500/20">
+          <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-brand-800 px-3 py-1 text-xs font-semibold text-white shadow-sm shadow-brand-800/20">
             <Sparkles className="h-3.5 w-3.5" />
             {t("comingSoon.badge")}
           </span>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">{title}</h1>
-          <p className="mt-3 max-w-xl text-gray-600">{description}</p>
+          <h1 className="text-3xl font-bold tracking-tight text-neutral-900">{title}</h1>
+          <p className="mt-3 max-w-xl text-neutral-600">{description}</p>
         </div>
 
         <ul className="relative mx-auto mt-8 grid max-w-xl gap-3 text-left sm:grid-cols-3">
           {highlights.map((item) => (
             <li
               key={item}
-              className="rounded-xl border border-white bg-white/80 p-4 text-sm font-medium text-gray-700 shadow-sm backdrop-blur"
+              className="rounded-xl border border-white bg-white/80 p-4 text-sm font-medium text-neutral-700 shadow-sm backdrop-blur"
             >
               {item}
             </li>

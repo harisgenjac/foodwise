@@ -94,26 +94,26 @@ function AddToCartModal({ product, storeLine, onClose }: AddToCartModalProps) {
   return (
     <Modal onClose={onClose} labelledBy={titleId}>
       <ModalHeader>
-        <h3 id={titleId} className="text-lg font-bold text-gray-900">
+        <h3 id={titleId} className="text-lg font-bold text-neutral-900">
           {inCart ? t("cart.changeTitle") : t("cart.addTitle")}
         </h3>
       </ModalHeader>
 
       <form ref={formRef} noValidate onSubmit={handleSubmit} className={modalFormStyle}>
         <ModalBody>
-          <div className="mb-5 flex items-center gap-3 rounded-xl bg-gray-50 p-3">
+          <div className="mb-5 flex items-center gap-3 rounded-xl bg-neutral-50 p-3">
             <ProductImage
               imageUrl={product.image_url}
               alt={product.name}
               className="h-14 w-14 shrink-0 rounded-lg object-cover"
             />
             <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold text-gray-900">{product.name}</p>
-              {subtitle && <p className="truncate text-xs text-gray-500">{subtitle}</p>}
+              <p className="truncate font-semibold text-neutral-900">{product.name}</p>
+              {subtitle && <p className="truncate text-xs text-neutral-500">{subtitle}</p>}
               <p className="mt-0.5 text-sm">
-                <span className="font-semibold text-green-600">{product.discounted_price} KM</span>
-                <span className="text-gray-400"> · </span>
-                <span className="text-gray-600">
+                <span className="font-semibold text-accent-700">{product.discounted_price} KM</span>
+                <span className="text-neutral-500"> · </span>
+                <span className="text-neutral-600">
                   {t("product.available")}: {parseFloat(available)} {unit}
                 </span>
               </p>
@@ -135,7 +135,7 @@ function AddToCartModal({ product, storeLine, onClose }: AddToCartModalProps) {
                 className={`${inputStyle} pr-14`}
               />
             </FormField>
-            <p className="text-xs text-gray-500">{t("cart.notHeld")}</p>
+            <p className="text-xs text-neutral-500">{t("cart.notHeld")}</p>
             <RequiredHint />
           </div>
         </ModalBody>
@@ -144,14 +144,14 @@ function AddToCartModal({ product, storeLine, onClose }: AddToCartModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 cursor-pointer rounded-xl bg-gray-100 py-2.5 font-medium text-gray-700 transition-colors hover:bg-gray-200"
+            className="flex-1 cursor-pointer rounded-xl bg-neutral-100 py-2.5 font-medium text-neutral-700 transition-colors hover:bg-neutral-200"
           >
             {t("orderForm.cancelButton")}
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="flex-1 cursor-pointer rounded-xl bg-orange-500 py-2.5 font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex-1 cursor-pointer rounded-xl bg-brand-800 py-2.5 font-semibold text-white transition-colors hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {inCart ? t("cart.save") : t("cart.add")}
           </button>

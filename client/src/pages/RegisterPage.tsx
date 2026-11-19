@@ -5,7 +5,8 @@ import api, { apiErrorMessage } from "../api/axios.js";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "../components/LanguageSwitcher.js";
 import { Lock, Mail, Store, UserRound, UtensilsCrossed } from "lucide-react";
-import logo from "../assets/logoApp.png";
+import Logo from "../components/brand/Logo.js";
+import { BRAND_NAME } from "../utils/brand.js";
 import FormField, { inputStyle } from "../components/form/FormField.js";
 
 function RegisterPage() {
@@ -36,12 +37,12 @@ function RegisterPage() {
     }
   };
 
-  const labelStyle = "mb-1.5 block text-sm font-medium text-gray-700";
+  const labelStyle = "mb-1.5 block text-sm font-medium text-neutral-700";
   const roleCardStyle =
     "flex cursor-pointer flex-col items-center gap-2 border-2 rounded-xl px-3 py-4 text-sm font-medium transition-colors";
-  const activeRoleStyle = "border-orange-500 bg-orange-50 text-orange-600";
+  const activeRoleStyle = "border-brand-800 bg-brand-50 text-brand-800";
   const inactiveRoleStyle =
-    "border-gray-200 text-gray-600 hover:border-orange-300 hover:bg-orange-50";
+    "border-neutral-200 text-neutral-600 hover:border-brand-300 hover:bg-brand-50";
 
   return (
     <div className="min-h-dvh flex">
@@ -55,8 +56,8 @@ function RegisterPage() {
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <div className="flex items-center gap-3 mb-8">
-            <img src={logo} alt="Logo" className="h-20 w-20" />
-            <span className="font-bold text-3xl">FoodWise</span>
+            <Logo variant="mark" className="h-20 w-20" decorative />
+            <span className="font-bold text-3xl">{BRAND_NAME}</span>
           </div>
           <h2 className="text-4xl font-bold leading-tight">
             {t("dashboard.appTitle")}
@@ -67,27 +68,26 @@ function RegisterPage() {
         </div>
       </div>
 
-      <div className="relative flex flex-1 items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="relative flex flex-1 items-center justify-center bg-neutral-50 px-4 py-12">
         <div className="absolute top-4 right-4">
           <LanguageSwitcher />
         </div>
 
         <div className="w-full max-w-md">
           <div className="flex items-center justify-center gap-2 mb-6 lg:hidden">
-            <img src={logo} alt="Logo" className="h-14 w-14" />
-            <span className="font-bold text-2xl">FoodWise</span>
+            <Logo variant="full" className="h-14 w-14" textClassName="text-2xl" />
           </div>
 
-          <div className="rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
-            <h1 className="text-2xl font-bold text-gray-800 mb-1">
+          <div className="rounded-2xl border border-neutral-100 bg-white p-8 shadow-sm">
+            <h1 className="text-2xl font-bold text-neutral-800 mb-1">
               {t("auth.createAccount")}
             </h1>
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-neutral-500 mb-6">
               {t("auth.registrationSubtitle")}
             </p>
 
             {error && (
-              <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+              <p className="mb-4 rounded-xl border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700">
                 {error}
               </p>
             )}
@@ -164,20 +164,20 @@ function RegisterPage() {
                   className={inputStyle}
                 />
               </FormField>
-              <p className="-mt-2 text-xs text-gray-500">{t("auth.passwordHint")}</p>
+              <p className="-mt-2 text-xs text-neutral-500">{t("auth.passwordHint")}</p>
               <button
                 type="submit"
-                className="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-orange-500 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600"
+                className="mt-2 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-800 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900"
               >
                 {t("auth.registerButton")}
               </button>
             </form>
 
-            <p className="text-sm text-gray-500 text-center mt-6">
+            <p className="text-sm text-neutral-500 text-center mt-6">
               {t("auth.alreadyHaveAccount")}{" "}
               <Link
                 to="/login"
-                className="text-orange-600 font-medium hover:underline"
+                className="text-brand-800 font-medium hover:underline"
               >
                 {t("auth.loginLink")}
               </Link>

@@ -23,8 +23,8 @@ function DistributionBar({ items, totalLabel, label }: DistributionBarProps) {
 
   return (
     <div>
-      <p className="mb-2 text-xs text-gray-500">{totalLabel}</p>
-      <div role="img" aria-label={description} className="flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-gray-100">
+      <p className="mb-2 text-xs text-neutral-500">{totalLabel}</p>
+      <div role="img" aria-label={description} className="flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-neutral-100">
         {visible.map((item) => (
           <div
             key={item.label}
@@ -38,11 +38,11 @@ function DistributionBar({ items, totalLabel, label }: DistributionBarProps) {
       <ul className="mt-3 space-y-1.5 text-sm">
         {items.map((item) => (
           <li key={item.label} className="flex items-center justify-between gap-3">
-            <span className="flex items-center gap-2 text-gray-600">
+            <span className="flex items-center gap-2 text-neutral-600">
               <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${item.color}`} />
               {item.label}
             </span>
-            <span className="font-semibold tabular-nums text-gray-900">{item.value}</span>
+            <span className="font-semibold tabular-nums text-neutral-900">{item.value}</span>
           </li>
         ))}
       </ul>

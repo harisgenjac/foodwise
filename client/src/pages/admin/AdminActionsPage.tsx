@@ -16,29 +16,29 @@ import type { AdminAction } from "../../types/index.js";
 import DataTable, { type DataColumn } from "../../components/common/DataTable.js";
 
 const ACTION_STYLES: Record<AdminAction["action"], string> = {
-  CREATE_USER: "bg-green-50 text-green-700",
-  RESET_PASSWORD: "bg-blue-50 text-blue-700",
-  BLOCK_USER: "bg-red-50 text-red-600",
-  UNBLOCK_USER: "bg-green-50 text-green-700",
-  REMOVE_PRODUCT: "bg-red-50 text-red-600",
-  REMOVE_DONATION: "bg-red-50 text-red-600",
-  CANCEL_ORDER: "bg-amber-50 text-amber-700",
-  UPDATE_PROFILE: "bg-blue-50 text-blue-700",
-  CREATE_ANNOUNCEMENT: "bg-blue-50 text-blue-700",
-  END_ANNOUNCEMENT: "bg-gray-100 text-gray-700",
-  APPROVE_CREDIT_REQUEST: "bg-green-50 text-green-700",
-  REJECT_CREDIT_REQUEST: "bg-red-50 text-red-600",
-  ADJUST_CREDITS: "bg-amber-50 text-amber-700",
-  CREATE_COMPANY: "bg-green-50 text-green-700",
-  UPDATE_COMPANY: "bg-blue-50 text-blue-700",
-  BLOCK_COMPANY: "bg-red-50 text-red-600",
-  UNBLOCK_COMPANY: "bg-green-50 text-green-700",
-  DEACTIVATE_BRANCH: "bg-gray-100 text-gray-700",
-  REACTIVATE_BRANCH: "bg-green-50 text-green-700",
-  ATTACH_BRANCH: "bg-blue-50 text-blue-700",
-  SEND_INVITATION: "bg-blue-50 text-blue-700",
-  RESEND_INVITATION: "bg-blue-50 text-blue-700",
-  SEND_PASSWORD_RESET_LINK: "bg-blue-50 text-blue-700",
+  CREATE_USER: "bg-success-100 text-success-800",
+  RESET_PASSWORD: "bg-info-50 text-info-700",
+  BLOCK_USER: "bg-danger-50 text-danger-700",
+  UNBLOCK_USER: "bg-success-100 text-success-800",
+  REMOVE_PRODUCT: "bg-danger-50 text-danger-700",
+  REMOVE_DONATION: "bg-danger-50 text-danger-700",
+  CANCEL_ORDER: "bg-warning-50 text-warning-700",
+  UPDATE_PROFILE: "bg-info-50 text-info-700",
+  CREATE_ANNOUNCEMENT: "bg-info-50 text-info-700",
+  END_ANNOUNCEMENT: "bg-neutral-100 text-neutral-700",
+  APPROVE_CREDIT_REQUEST: "bg-success-100 text-success-800",
+  REJECT_CREDIT_REQUEST: "bg-danger-50 text-danger-700",
+  ADJUST_CREDITS: "bg-warning-50 text-warning-700",
+  CREATE_COMPANY: "bg-success-100 text-success-800",
+  UPDATE_COMPANY: "bg-info-50 text-info-700",
+  BLOCK_COMPANY: "bg-danger-50 text-danger-700",
+  UNBLOCK_COMPANY: "bg-success-100 text-success-800",
+  DEACTIVATE_BRANCH: "bg-neutral-100 text-neutral-700",
+  REACTIVATE_BRANCH: "bg-success-100 text-success-800",
+  ATTACH_BRANCH: "bg-info-50 text-info-700",
+  SEND_INVITATION: "bg-info-50 text-info-700",
+  RESEND_INVITATION: "bg-info-50 text-info-700",
+  SEND_PASSWORD_RESET_LINK: "bg-info-50 text-info-700",
 };
 
 function AdminActionsPage() {
@@ -73,21 +73,21 @@ function AdminActionsPage() {
       card: "title",
       cell: (row) => (
         <>
-          {row.announcement_title && <p className="font-medium text-gray-900">{row.announcement_title}</p>}
+          {row.announcement_title && <p className="font-medium text-neutral-900">{row.announcement_title}</p>}
           {(row.product_name || row.donation_name) && (
-            <p className="font-medium text-gray-900">{row.product_name || row.donation_name}</p>
+            <p className="font-medium text-neutral-900">{row.product_name || row.donation_name}</p>
           )}
           {row.target_company_id && (
-            <Link to={`/admin/companies/${row.target_company_id}`} className="font-medium text-gray-900 hover:text-orange-600">
+            <Link to={`/admin/companies/${row.target_company_id}`} className="font-medium text-neutral-900 hover:text-brand-900">
               {row.company_name}
             </Link>
           )}
           {row.target_user_id ? (
-            <Link to={`/admin/users/${row.target_user_id}`} className="text-gray-600 hover:text-orange-600">
+            <Link to={`/admin/users/${row.target_user_id}`} className="text-neutral-600 hover:text-brand-900">
               {row.target_business_name || row.target_email}
             </Link>
           ) : (
-            !row.announcement_title && !row.target_company_id && <span className="text-gray-400">—</span>
+            !row.announcement_title && !row.target_company_id && <span className="text-neutral-500">—</span>
           )}
         </>
       ),
@@ -96,7 +96,7 @@ function AdminActionsPage() {
       id: "reason",
       header: t("admin.actions.columnReason"),
       className: "hidden lg:table-cell",
-      cellClassName: "max-w-xs text-gray-600",
+      cellClassName: "max-w-xs text-neutral-600",
       cardStacked: true,
       cell: (row) => row.reason || "—",
       cardCell: (row) => row.reason,
@@ -105,13 +105,13 @@ function AdminActionsPage() {
       id: "admin",
       header: t("admin.actions.columnAdmin"),
       className: "hidden md:table-cell",
-      cellClassName: "text-gray-600",
+      cellClassName: "text-neutral-600",
       cell: (row) => row.admin_email,
     },
     {
       id: "time",
       header: t("admin.actions.columnTime"),
-      cellClassName: "whitespace-nowrap text-gray-500",
+      cellClassName: "whitespace-nowrap text-neutral-500",
       cell: (row) => formatDateTime(row.created_at),
     },
   ];

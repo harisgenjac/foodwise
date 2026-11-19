@@ -23,17 +23,17 @@ function DashboardHero({ title, subtitle, details, action }: DashboardHeroProps)
   });
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-orange-100 bg-linear-to-br from-orange-50 via-amber-50/60 to-white p-6 shadow-sm md:p-8">
-      <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-orange-200/30 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-20 right-40 h-48 w-48 rounded-full bg-amber-200/30 blur-3xl" />
+    <section className="relative overflow-hidden rounded-2xl border border-brand-100 bg-linear-to-br from-brand-50 via-warning-50/60 to-white p-6 shadow-sm md:p-8">
+      <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-brand-200/30 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 right-40 h-48 w-48 rounded-full bg-warning-200/30 blur-3xl" />
 
       <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-orange-600/80">{today}</p>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 md:text-3xl">{title}</h1>
-          <p className="mt-1 text-gray-600">{subtitle}</p>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-brand-800/80">{today}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 md:text-3xl">{title}</h1>
+          <p className="mt-1 text-neutral-600">{subtitle}</p>
           {details && (
-            <p className="mt-3 inline-flex rounded-full border border-orange-100 bg-white/80 px-3 py-1 text-sm font-medium text-orange-700">
+            <p className="mt-3 inline-flex rounded-full border border-brand-100 bg-white/80 px-3 py-1 text-sm font-medium text-brand-800">
               {details}
             </p>
           )}
@@ -41,7 +41,7 @@ function DashboardHero({ title, subtitle, details, action }: DashboardHeroProps)
 
         <Link
           to={action.to}
-          className="inline-flex w-fit items-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-all hover:-translate-y-0.5 hover:bg-orange-600 hover:shadow-md"
+          className="inline-flex w-fit items-center gap-2 rounded-xl bg-brand-800 px-5 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-all hover:-translate-y-0.5 hover:bg-brand-900 hover:shadow-md"
         >
           <ActionIcon className="h-5 w-5" strokeWidth={1.8} />
           {action.label}

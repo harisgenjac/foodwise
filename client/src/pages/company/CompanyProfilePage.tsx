@@ -84,17 +84,17 @@ function CompanyProfilePage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-16">
-      <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="relative h-28 bg-linear-to-br from-orange-50 via-amber-50/60 to-white">
-          <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-orange-200/30 blur-3xl" />
+      <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
+        <div className="relative h-28 bg-linear-to-br from-brand-50 via-warning-50/60 to-white">
+          <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-brand-200/30 blur-3xl" />
         </div>
         <div className="flex flex-col gap-5 px-6 pb-6 sm:flex-row sm:items-end">
           <div className="-mt-14 shrink-0">
-            <label className="group relative block h-28 w-28 cursor-pointer overflow-hidden rounded-2xl border-4 border-white bg-orange-100 shadow-md">
+            <label className="group relative block h-28 w-28 cursor-pointer overflow-hidden rounded-2xl border-4 border-white bg-brand-100 shadow-md">
               {avatarSrc ? (
                 <img src={avatarSrc} alt={company.name} className="h-full w-full object-cover" />
               ) : (
-                <span className="flex h-full w-full items-center justify-center text-orange-700">
+                <span className="flex h-full w-full items-center justify-center text-brand-800">
                   <Building2 className="h-10 w-10" />
                 </span>
               )}
@@ -112,29 +112,29 @@ function CompanyProfilePage() {
             </label>
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-2xl font-bold tracking-tight text-gray-900">{company.name}</h1>
-            <p className="mt-1 text-sm text-gray-500">{t("company.profile.subtitle")}</p>
+            <h1 className="truncate text-2xl font-bold tracking-tight text-neutral-900">{company.name}</h1>
+            <p className="mt-1 text-sm text-neutral-500">{t("company.profile.subtitle")}</p>
           </div>
           {logoFile && (
             <div className="flex shrink-0 gap-2">
               <button
                 type="button"
                 onClick={handleLogoCancel}
-                className="cursor-pointer rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                className="cursor-pointer rounded-xl border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
               >
                 {t("user.cancel")}
               </button>
               <button
                 type="button"
                 onClick={handleLogoUpload}
-                className="cursor-pointer rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-600"
+                className="cursor-pointer rounded-xl bg-brand-800 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-900"
               >
                 {t("user.saveImage")}
               </button>
             </div>
           )}
         </div>
-        <p className="border-t border-gray-100 px-6 py-3 text-xs text-gray-400">{t("user.tooltipLogoText")}</p>
+        <p className="border-t border-neutral-100 px-6 py-3 text-xs text-neutral-500">{t("user.tooltipLogoText")}</p>
       </section>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -144,7 +144,7 @@ function CompanyProfilePage() {
               <FormField label={t("company.profile.name")} icon={Building2}>
                 <input type="text" value={company.name} disabled className={inputStyle} />
               </FormField>
-              <p className="mt-1.5 flex items-start gap-2 text-xs text-gray-500">
+              <p className="mt-1.5 flex items-start gap-2 text-xs text-neutral-500">
                 <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 {t("company.profile.nameNote")}
               </p>
@@ -164,7 +164,7 @@ function CompanyProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full cursor-pointer rounded-xl bg-orange-500 px-8 py-2.5 font-semibold text-white shadow-sm shadow-orange-500/20 transition-colors hover:bg-orange-600 disabled:opacity-60 sm:w-auto"
+            className="w-full cursor-pointer rounded-xl bg-brand-800 px-8 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900 disabled:opacity-60 sm:w-auto"
           >
             {t("user.saveButton")}
           </button>

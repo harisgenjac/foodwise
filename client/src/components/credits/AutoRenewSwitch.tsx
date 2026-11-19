@@ -16,7 +16,7 @@ function AutoRenewSwitch({ checked, disabled = false, onChange, label, hideLabel
   const { t } = useTranslation();
   return (
     <div className="flex items-center gap-2 text-sm">
-      <label className="flex cursor-pointer items-center gap-2 font-medium text-gray-800">
+      <label className="flex cursor-pointer items-center gap-2 font-medium text-neutral-800">
         <input
           type="checkbox"
           role="switch"
@@ -24,7 +24,7 @@ function AutoRenewSwitch({ checked, disabled = false, onChange, label, hideLabel
           onChange={onChange}
           disabled={disabled}
           aria-label={label}
-          className="h-4 w-4 accent-orange-500"
+          className="h-4 w-4 accent-brand-800"
         />
         {!hideLabel && t("credits.profile.autoRenew")}
       </label>

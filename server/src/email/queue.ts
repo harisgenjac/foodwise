@@ -194,7 +194,7 @@ export const processEmailQueue = async ({
 
     const message = applyRedirect({ from: config.from, to: email.recipient, ...rendered }, config.redirectTo);
     try {
-      await transport.send(message, { idempotencyKey: `foodwise-email-${email.id}` });
+      await transport.send(message, { idempotencyKey: `josvrijedi-email-${email.id}` });
       await db.query(
         `UPDATE email_queue SET status = 'SENT', sent_at = $2, locked_at = NULL, last_error = NULL, data = ${WITHOUT_TOKEN}
          WHERE id = $1`,
