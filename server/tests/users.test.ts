@@ -172,6 +172,15 @@ describe("Users routes", () => {
       });
     });
 
+    it("returns the store's cover image, null without one", async () => {
+      const list = async () =>
+        (await restaurant.get("/api/users/stores").query({ business_name: PROFILE.business_name })).body.stores[0];
+      expect((await list()).cover_url).toBeNull();
+
+      await pool.query("UPDATE users SET cover_url = '/uploads/covers/test.png' WHERE users.id = $1", [await userId(STORE)]);
+      expect((await list()).cover_url).toBe("/uploads/covers/test.png");
+    });
+
     it("ignores an empty city_id", async () => {
       const response = await restaurant.get("/api/users/stores").query({ city_id: "", business_name: PROFILE.business_name });
       expect(response.status).toBe(200);

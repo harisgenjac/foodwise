@@ -1,5 +1,5 @@
 import { act, render, screen, within } from "@testing-library/react";
-import ImpactStrip, { formatImpactNumber } from "./ImpactStrip.js";
+import ImpactStrip from "./ImpactStrip.js";
 import { t } from "../../test/utils.js";
 import i18n from "../../i18n/config.js";
 
@@ -8,13 +8,6 @@ const values = () => screen.getAllByTestId("impact-value").map((node) => node.te
 describe("ImpactStrip", () => {
   afterEach(async () => {
     await act(() => i18n.changeLanguage("bs"));
-  });
-
-  it("formats the numbers for the interface language", async () => {
-    expect(formatImpactNumber(1246.5, 2, "bs")).toBe("1.246,50");
-    expect(formatImpactNumber(873.94, 1, "bs")).toBe("873,9");
-    expect(formatImpactNumber(1246.5, 2, "en")).toBe("1,246.50");
-    expect(formatImpactNumber(873.94, 1, "en")).toBe("873.9");
   });
 
   it("shows the restaurant's own food saved, CO₂ and savings with an info button each", () => {

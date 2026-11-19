@@ -1,146 +1,184 @@
-import { useCallback, useEffect, useId, useRef, useState, type FocusEvent } from "react";
+import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ChevronLeft, ChevronRight, Store } from "lucide-react";
+import {
+  Apple,
+  ArrowRight,
+  Beef,
+  Croissant,
+  Leaf,
+  MapPin,
+  ShoppingBasket,
+  ShoppingCart,
+  Tag,
+  type LucideIcon,
+} from "lucide-react";
+import { assetUrl } from "../../api/axios.js";
+import DragCarousel from "../common/DragCarousel.js";
 import StoreAvatar from "../store/StoreAvatar.js";
+import { formatNumber } from "../../utils/numbers.js";
 import type { User } from "../../types/index.js";
 
 const SKELETON_CARDS = 6;
-// The arrows scroll by about two cards.
-const CARDS_PER_STEP = 2;
 
-// Every card, the skeletons and "All stores" too: 120 px wide on phones, 140 px from sm up.
-const CARD = "flex w-[120px] flex-none snap-start flex-col items-center rounded-xl border px-2.5 py-4 text-center sm:w-[140px]";
-const STORE_CARD = `${CARD} border-[#E7E5E4] bg-white`;
+// 170 px wide on phones, 210 px from md up; the cover 76 / 92 px.
+const ITEM = "flex w-[170px] flex-none snap-start md:w-[210px]";
+const CARD = "flex w-full flex-col overflow-hidden rounded-2xl border border-[#EEEDEB] bg-white";
+const COVER = "h-[76px] w-full md:h-[92px]";
+
+// A store without a cover image gets a soft background with a large icon, and its initials (when
+// it has no logo) on the stronger colour.
+interface Tone {
+  soft: string;
+  strong: string;
+  icon: LucideIcon;
+}
+const TONES: Tone[] = [
+  { soft: "#FEE2E2", strong: "#DC2626", icon: ShoppingCart },
+  { soft: "#DCFCE7", strong: "#16A34A", icon: Leaf },
+  { soft: "#FFEDD5", strong: "#EA580C", icon: Croissant },
+  { soft: "#E0F2FE", strong: "#0284C7", icon: Beef },
+  { soft: "#FEF3C7", strong: "#D97706", icon: ShoppingBasket },
+  { soft: "#F3E8FF", strong: "#9333EA", icon: Apple },
+];
+
+// The same store always gets the same tone (a multiplicative hash of its id, so neighbouring ids
+// differ).
+export const storeTone = (id: number): Tone => TONES[(Math.imul(id, 2654435761) >>> 0) % TONES.length]!;
+
+function StoreCard({ store }: { store: User }) {
+  const { t, i18n } = useTranslation();
+  const [coverFailed, setCoverFailed] = useState(false);
+  const tone = storeTone(store.id);
+  const ToneIcon = tone.icon;
+  const offers = Number(store.active_products ?? 0);
+  const distance =
+    store.distance_km == null
+      ? null
+      : t("storeCarousel.distance", { km: formatNumber(store.distance_km, i18n.language, 1, 0) });
+  const location = store.city && distance ? `${store.city} · ${distance}` : (store.city ?? distance);
+
+  return (
+    <Link
+      to={`/stores/${store.id}`}
+      draggable={false}
+      data-testid="store-card"
+      className={`${CARD} transition duration-200 hover:-translate-y-[3px] hover:shadow-[0_8px_20px_rgba(0,0,0,0.08)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F766E]`}
+    >
+      {store.cover_url && !coverFailed ? (
+        <img
+          src={assetUrl(store.cover_url)}
+          alt=""
+          draggable={false}
+          onError={() => setCoverFailed(true)}
+          data-testid="store-card-cover"
+          className={`${COVER} object-cover`}
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          data-testid="store-card-cover"
+          className={`${COVER} flex items-center justify-center`}
+          style={{ backgroundColor: tone.soft, color: tone.strong }}
+        >
+          <ToneIcon className="h-9 w-9" strokeWidth={1.75} />
+        </span>
+      )}
+      <div className="flex flex-col px-3.5 pb-4">
+        <StoreAvatar
+          store={store}
+          decorative
+          frameClassName="border-[3px] border-white font-semibold text-white"
+          style={{ backgroundColor: tone.strong }}
+          className="relative -mt-7 h-14 w-14 rounded-[14px] text-lg"
+        />
+        {/* Block elements, so the link's name reads "name, place, offers" with pauses between. */}
+        <div data-testid="store-card-name" className="mt-2.5 mb-1 truncate text-[15px] font-semibold text-[#1C1917]">{store.business_name}</div>
+        {location && (
+          <div className="flex items-center gap-1 text-[13px] text-[#78716C]">
+            <MapPin className="h-3.5 w-3.5 flex-none" aria-hidden="true" />
+            <span className="truncate">{location}</span>
+          </div>
+        )}
+        {offers > 0 && (
+          <div
+            data-testid="store-card-offers"
+            className="mt-2.5 inline-flex items-center gap-1 self-start rounded-full bg-[#F0FDFA] px-2.5 py-1 text-xs font-semibold text-[#0F766E]"
+          >
+            <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+            {t("storeCarousel.offers", { count: offers })}
+          </div>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <span className={CARD}>
+      <span className={`${COVER} animate-pulse bg-gray-100`} />
+      <span className="flex flex-col px-3.5 pb-4">
+        <span className="-mt-7 h-14 w-14 animate-pulse rounded-[14px] border-[3px] border-white bg-gray-200" />
+        <span className="mt-2.5 h-4 w-3/4 animate-pulse rounded bg-gray-200" />
+        <span className="mt-2 h-3 w-1/2 animate-pulse rounded bg-gray-100" />
+        <span className="mt-3 h-5 w-20 animate-pulse rounded-full bg-gray-100" />
+      </span>
+    </span>
+  );
+}
 
 interface StoreCarouselProps {
   // The nearest stores (GET /users/stores?radius=all&limit=20); null while loading.
   stores: User[] | null;
 }
 
-// "Stores near you" on the restaurant dashboard (design/restaurant-home/stores-carousel.html):
-// a horizontal track with scroll snap and no visible scrollbar (swipe on touch screens), round
-// previous/next buttons from md up (each hidden when the track cannot scroll that way), and an
-// "All stores" card at the end. Skeleton cards while loading; the parent leaves the section out
-// when there are no stores.
+// "Stores near you" on the restaurant dashboard (design/restaurant-home/stores-carousel.html): a
+// title with "Nearest first" and an "All stores" link, then a DragCarousel of store cards (cover,
+// logo, name, city and distance, active offers). Skeleton cards while loading; the parent leaves
+// the section out when there are no stores.
 function StoreCarousel({ stores }: StoreCarouselProps) {
   const { t } = useTranslation();
   const titleId = useId();
-  const trackId = useId();
-  const trackRef = useRef<HTMLUListElement>(null);
-  const [canScroll, setCanScroll] = useState({ back: false, forward: false });
-
-  const updateArrows = useCallback(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    setCanScroll({
-      back: track.scrollLeft > 1,
-      forward: track.scrollLeft + track.clientWidth < track.scrollWidth - 1,
-    });
-  }, []);
-
-  useEffect(() => {
-    updateArrows();
-    const track = trackRef.current;
-    if (!track || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(updateArrows);
-    observer.observe(track);
-    return () => observer.disconnect();
-  }, [stores, updateArrows]);
-
-  const scrollByCards = (direction: 1 | -1) => {
-    const track = trackRef.current;
-    const card = track?.querySelector("li");
-    if (!track || !card) return;
-    const gap = parseFloat(getComputedStyle(track).columnGap) || 0;
-    track.scrollBy({ left: direction * CARDS_PER_STEP * (card.getBoundingClientRect().width + gap), behavior: "smooth" });
-  };
-
-  // Keyboard focus brings the card fully into view inside the track.
-  const revealFocused = (event: FocusEvent<HTMLElement>) =>
-    event.currentTarget.scrollIntoView?.({ block: "nearest", inline: "nearest" });
-
-  const arrow =
-    "hidden h-9 w-9 items-center justify-center rounded-full border border-[#D6D3D1] bg-white text-gray-700 hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F766E]";
 
   return (
     <section aria-labelledby={titleId} aria-busy={!stores} data-testid="store-carousel">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 id={titleId} className="text-lg font-semibold text-[#1C1917]">
-          {t("storeCarousel.title")}
-        </h2>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            aria-label={t("storeCarousel.previous")}
-            aria-controls={trackId}
-            onClick={() => scrollByCards(-1)}
-            className={`${arrow} ${canScroll.back ? "md:flex" : ""}`}
-          >
-            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            aria-label={t("storeCarousel.next")}
-            aria-controls={trackId}
-            onClick={() => scrollByCards(1)}
-            className={`${arrow} ${canScroll.forward ? "md:flex" : ""}`}
-          >
-            <ChevronRight className="h-5 w-5" aria-hidden="true" />
-          </button>
+      <div className="mt-1 mb-3.5 flex items-end justify-between gap-4">
+        <div>
+          <h2 id={titleId} className="text-xl font-semibold text-[#1C1917]">
+            {t("storeCarousel.title")}
+          </h2>
+          <p className="mt-0.5 text-sm text-[#78716C]">{t("storeCarousel.subtitle")}</p>
         </div>
+        <Link
+          to="/stores"
+          data-testid="store-carousel-all"
+          className="inline-flex min-h-11 flex-none items-center gap-1 text-sm font-semibold text-[#0F766E] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F766E]"
+        >
+          {t("storeCarousel.allStores")}
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </Link>
       </div>
 
-      <ul
-        id={trackId}
-        ref={trackRef}
-        onScroll={updateArrows}
-        data-testid="store-carousel-track"
-        className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      <DragCarousel
+        previousLabel={t("storeCarousel.previous")}
+        nextLabel={t("storeCarousel.next")}
+        arrowPositionClassName="top-[50px] md:top-[70px]"
+        busy={!stores}
+        trackTestId="store-carousel-track"
       >
         {stores === null
           ? Array.from({ length: SKELETON_CARDS }, (_, index) => (
-              <li key={index} aria-hidden="true" data-testid="store-card-skeleton" className={STORE_CARD}>
-                <span className="mb-2.5 h-16 w-16 animate-pulse rounded-full bg-gray-200" />
-                <span className="h-4 w-20 animate-pulse rounded bg-gray-200" />
-                <span className="mt-2 h-3 w-10 animate-pulse rounded bg-gray-100" />
+              <li key={index} aria-hidden="true" data-testid="store-card-skeleton" className={ITEM}>
+                <SkeletonCard />
               </li>
             ))
           : stores.map((store) => (
-              <li key={store.id} className="flex flex-none snap-start">
-                <Link
-                  to={`/stores/${store.id}`}
-                  onFocus={revealFocused}
-                  data-testid="store-card"
-                  className={`${STORE_CARD} transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F766E]`}
-                >
-                  <StoreAvatar store={store} decorative className="mb-2.5 h-16 w-16 rounded-full text-xl" />
-                  {/* Block elements, so the link's name reads "name, distance" with a pause between. */}
-                  <div className="line-clamp-2 h-[36px] text-sm leading-[1.3] break-words text-[#1C1917]">
-                    {store.business_name}
-                  </div>
-                  {store.distance_km != null && (
-                    <div className="mt-1 text-xs text-[#78716C]">
-                      {t("storeCarousel.distance", { km: store.distance_km })}
-                    </div>
-                  )}
-                </Link>
+              <li key={store.id} className={ITEM}>
+                <StoreCard store={store} />
               </li>
             ))}
-        {stores !== null && (
-          <li className="flex flex-none snap-start">
-            <Link
-              to="/stores"
-              onFocus={revealFocused}
-              data-testid="store-card-all"
-              className={`${CARD} justify-center gap-1.5 border-dashed border-[#5EEAD4] bg-[#F0FDFA] text-sm text-[#0F766E] hover:bg-[#CCFBF1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F766E]`}
-            >
-              <Store className="h-6 w-6" aria-hidden="true" />
-              {t("storeCarousel.allStores")}
-            </Link>
-          </li>
-        )}
-      </ul>
+      </DragCarousel>
     </section>
   );
 }

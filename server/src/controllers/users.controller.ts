@@ -301,7 +301,7 @@ export const getStores = async (req: Request, res: Response) => {
     const fromCity = await userCityId(pool, req.user!.id);
     const distance = cityDistance("from_city.id", "users.city_id");
     const columns = `users.id, users.business_name, users.city_id, cities.name AS city, ${distance} AS distance_km,
-     users.address, ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
+     users.address, ${storeLogo("users")} AS logo_url, users.cover_url, ${storeDescription("users")} AS description,
      users.opening_schedule, users.pickup_schedule, users.phone,
      ${companyName("users")} AS company_name, ${pauseColumns("users")},
      (SELECT COUNT(*) FROM products

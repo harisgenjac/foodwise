@@ -504,10 +504,13 @@ test.describe("restaurant", () => {
     const { scrollWidth, clientWidth } = await track.evaluate((el) => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
     expect(scrollWidth).toBeGreaterThan(clientWidth);
     await expect(carousel.getByRole("button", { name: "Sljedeće prodavnice" })).toBeHidden();
-    // Swiping to the end brings the All stores card fully onto the screen.
+    // Cards are 170 px wide on a phone, and swiping to the end brings the last one fully onto the screen.
+    expect(Math.round((await carousel.getByTestId("store-card").first().boundingBox())!.width)).toBe(170);
+    const allStores = (await carousel.getByRole("link", { name: "Sve prodavnice" }).boundingBox())!;
+    expect(allStores.x + allStores.width).toBeLessThanOrEqual(WIDTH);
     await track.scrollIntoViewIfNeeded();
     await track.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
-    await expect(carousel.getByTestId("store-card-all")).toBeInViewport({ ratio: 1 });
+    await expect(carousel.getByTestId("store-card").last()).toBeInViewport({ ratio: 1 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(WIDTH);
     expect(await page.evaluate(() => window.scrollX)).toBe(0);
 

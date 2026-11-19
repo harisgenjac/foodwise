@@ -169,7 +169,7 @@ describe("RestaurantDashboardPage", () => {
     unmount();
 
     renderRestaurant({ active: 0 });
-    expect(await screen.findByRole("link", { name: "Zeleni Market 0 km" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: /^Zeleni Market/ })).toBeInTheDocument();
     expect(screen.queryByTestId("active-orders-badge")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Moje narudžbe" })).toBeInTheDocument();
   });

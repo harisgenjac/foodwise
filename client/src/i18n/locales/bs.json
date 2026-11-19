@@ -511,10 +511,14 @@
   },
   "storeCarousel": {
     "title": "Prodavnice u blizini",
+    "subtitle": "Najbliže prve",
     "previous": "Prethodne prodavnice",
     "next": "Sljedeće prodavnice",
     "distance": "{{km}} km",
-    "allStores": "Sve prodavnice"
+    "allStores": "Sve prodavnice",
+    "offers_one": "{{count}} ponuda",
+    "offers_few": "{{count}} ponude",
+    "offers_other": "{{count}} ponuda"
   },
   "dashboard": {
     "appTitle": "Dobrodošli na FoodWise",

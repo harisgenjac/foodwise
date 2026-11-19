@@ -496,10 +496,13 @@
   },
   "storeCarousel": {
     "title": "Stores near you",
+    "subtitle": "Nearest first",
     "previous": "Previous stores",
     "next": "Next stores",
     "distance": "{{km}} km",
-    "allStores": "All stores"
+    "allStores": "All stores",
+    "offers_one": "{{count}} offer",
+    "offers_other": "{{count}} offers"
   },
   "dashboard": {
     "appTitle": "Welcome to FoodWise",

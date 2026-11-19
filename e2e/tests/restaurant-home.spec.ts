@@ -22,6 +22,8 @@ test("the restaurant dashboard shows the wide hero, the intro with its two links
   // high and sized to their text (not full width).
   await expect(main.getByRole("heading", { level: 1 })).toHaveText("Još vrijedi");
   await expect(main.getByText(/^Hrana kojoj uskoro ističe rok još uvijek vrijedi\./)).toBeVisible();
+  // Measure once the strip has loaded: its "Together we have saved" line moves the content down.
+  await expect(page.getByTestId("impact-strip")).toHaveAttribute("aria-busy", "false");
   const search = (await main.getByRole("link", { name: "Pretraži proizvode" }).boundingBox())!;
   const orders = (await main.getByRole("link", { name: /^Moje narudžbe/ }).boundingBox())!;
   expect(Math.round(search.y)).toBe(Math.round(orders.y));
@@ -50,16 +52,19 @@ test("the two links open Search and My orders", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: "Moje narudžbe" })).toBeVisible();
 });
 
-test("the store carousel lists the nearest stores, a card opens its store, and the last card opens all stores", async ({ page }) => {
+test("the store carousel lists the nearest stores, a card opens its store, and the header link opens all stores", async ({ page }) => {
   await open(page, "/dashboard");
   const carousel = page.getByRole("region", { name: "Prodavnice u blizini" });
+  await expect(carousel.getByText("Najbliže prve")).toBeVisible();
   const cards = carousel.getByTestId("store-card");
   await expect(cards.first()).toBeVisible();
   expect(await cards.count()).toBeLessThanOrEqual(20);
-  // Nearest first: the distances never go down.
-  const distances = (await cards.allTextContents()).map((text) => Number(text.match(/(\d+) km$/)?.[1]));
+  // Nearest first: the distances ("Sarajevo · 16 km") never go down.
+  const distances = (await cards.allTextContents()).map((text) => Number(text.match(/· ([\d.]+) km/)?.[1]?.replace(".", "")));
+  expect(distances.every((km) => Number.isFinite(km))).toBe(true);
   expect(distances).toEqual([...distances].sort((a, b) => a - b));
-  await expect(carousel.getByRole("listitem").last()).toHaveText("Sve prodavnice");
+  // Every card is a store: the old "All stores" card at the end is gone.
+  expect(await carousel.getByRole("listitem").count()).toBe(await cards.count());
 
   // The previous arrow waits until the track has moved; next scrolls it.
   const previous = carousel.getByRole("button", { name: "Prethodne prodavnice" });
@@ -71,15 +76,41 @@ test("the store carousel lists the nearest stores, a card opens its store, and t
   }
 
   const first = cards.first();
-  const name = (await first.locator("div").first().textContent())!;
+  const name = (await first.getByTestId("store-card-name").textContent())!;
   const href = (await first.getAttribute("href"))!;
   await first.click();
   await expect(page).toHaveURL(new RegExp(`${href}$`));
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
 
   await open(page, "/dashboard");
-  await page.getByTestId("store-card-all").click();
+  await page.getByRole("region", { name: "Prodavnice u blizini" }).getByRole("link", { name: "Sve prodavnice" }).click();
   await expect(page).toHaveURL(/\/stores$/);
+});
+
+test("dragging the store carousel with the mouse scrolls it without opening a store", async ({ page }) => {
+  // A narrow desktop (md, with the sidebar), so the e2e seed's few stores overflow the track.
+  await page.setViewportSize({ width: 800, height: 900 });
+  await open(page, "/dashboard");
+  const carousel = page.getByRole("region", { name: "Prodavnice u blizini" });
+  const track = carousel.getByTestId("store-carousel-track");
+  const card = carousel.getByTestId("store-card").nth(1);
+  await expect(card).toBeVisible();
+  test.skip((await track.evaluate((el) => el.scrollWidth - el.clientWidth)) < 150, "Too few stores to scroll");
+
+  // The mouse works in window coordinates: bring the track on screen first.
+  await track.scrollIntoViewIfNeeded();
+  const box = (await card.boundingBox())!;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(box.x + box.width / 2, y);
+  await page.mouse.down();
+  for (let step = 1; step <= 10; step++) await page.mouse.move(box.x + box.width / 2 - step * 20, y);
+  await expect(track).toHaveAttribute("data-dragging", "true");
+  await page.mouse.up();
+
+  // Still on the dashboard, the track moved and settles on a card edge.
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await expect.poll(() => track.evaluate((el) => el.scrollLeft)).toBeGreaterThan(100);
+  await expect(track).not.toHaveAttribute("data-dragging");
 });
 
 test("the impact strip under the hero shows three numbers and explains them on focus", async ({ page }) => {
