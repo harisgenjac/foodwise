@@ -4,9 +4,9 @@ import { open } from "../support/ui.js";
 
 test.use({ storageState: storageState("restaurant") });
 
-// The restaurant's home page: the hero animation, the impact strip, the two main links and the
-// store carousel (the phone layout is checked in mobile-layout.spec.ts).
-test("the restaurant dashboard shows the wide hero, the two links and the stores, without the orders section", async ({ page }) => {
+// The restaurant's home page: the hero animation, the impact strip, the intro with the two main
+// links and the store carousel (the phone layout is checked in mobile-layout.spec.ts).
+test("the restaurant dashboard shows the wide hero, the intro with its two links and the stores, without the orders section", async ({ page }) => {
   await open(page, "/dashboard");
   const hero = page.getByRole("img", { name: "Animacija Još vrijedi" });
   await expect(hero).toHaveCount(1);
@@ -18,8 +18,18 @@ test("the restaurant dashboard shows the wide hero, the two links and the stores
   expect(box.width).toBeGreaterThan(600);
 
   const main = page.getByRole("main");
-  await expect(main.getByRole("link", { name: "Pretraži proizvode" })).toBeVisible();
-  await expect(main.getByRole("link", { name: /^Moje narudžbe/ })).toBeVisible();
+  // The intro: the brand is the page's h1, and the two links sit side by side, centred, 44 px
+  // high and sized to their text (not full width).
+  await expect(main.getByRole("heading", { level: 1 })).toHaveText("Još vrijedi");
+  await expect(main.getByText(/^Hrana kojoj uskoro ističe rok još uvijek vrijedi\./)).toBeVisible();
+  const search = (await main.getByRole("link", { name: "Pretraži proizvode" }).boundingBox())!;
+  const orders = (await main.getByRole("link", { name: /^Moje narudžbe/ }).boundingBox())!;
+  expect(Math.round(search.y)).toBe(Math.round(orders.y));
+  expect(Math.round(search.height)).toBe(44);
+  expect(Math.round(orders.height)).toBe(44);
+  expect(search.width + orders.width).toBeLessThan(box.width / 2);
+  const intro = (await main.getByTestId("restaurant-intro").boundingBox())!;
+  expect(Math.abs((search.x + orders.x + orders.width) / 2 - (intro.x + intro.width / 2))).toBeLessThan(2);
   await expect(page.getByRole("region", { name: "Prodavnice u blizini" })).toBeVisible();
   // The orders section, the old hero's stat cards and its offers are gone.
   await expect(main.getByRole("heading", { name: "Moje narudžbe" })).toHaveCount(0);

@@ -126,14 +126,18 @@ describe("RestaurantDashboardPage", () => {
   const heroBox = () => screen.getByTestId("restaurant-hero-wide").parentElement!;
   const pageUrls = () => apiMock.get.mock.calls.map(([url]) => url).filter((url) => url !== "/users/me").sort();
 
-  it("shows the hero with the impact strip, the two links and the nearest stores, without the orders section", async () => {
+  it("shows the hero with the impact strip, the intro with its two links and the nearest stores, without the orders section", async () => {
     renderRestaurant();
 
     expect(screen.getAllByRole("img", { name: t("restaurantHero.title") })).toHaveLength(2);
     expect(await screen.findByText("873,9 kg")).toBeInTheDocument();
     // The strip is attached under the hero: only the hero's top corners are rounded.
     expect(heroBox()).toHaveClass("rounded-t-2xl");
-    expect(screen.getByRole("link", { name: t("restaurantActions.search") })).toHaveAttribute("href", "/search");
+    // The intro: the brand is the page's only h1, then the short text and the two links.
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.getByRole("heading", { level: 1, name: "Još vrijedi" })).toBeInTheDocument();
+    expect(screen.getByText(t("restaurantIntro.text"))).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: t("restaurantIntro.search") })).toHaveAttribute("href", "/search");
     expect(await screen.findByRole("link", { name: /Moje narudžbe/ })).toHaveAttribute("href", "/my-orders");
     expect(await screen.findByRole("link", { name: /Zeleni Market/ })).toHaveAttribute("href", "/stores/21");
     // The carousel: the stores' visibility rules, nearest first, from all cities, at most 20.
@@ -174,7 +178,7 @@ describe("RestaurantDashboardPage", () => {
     const { unmount } = renderRestaurant({ stores: { stores: [], total: 0 } });
     expect(await screen.findByText("873,9 kg")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByTestId("store-carousel")).not.toBeInTheDocument());
-    expect(screen.getByRole("link", { name: t("restaurantActions.search") })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: t("restaurantIntro.search") })).toBeInTheDocument();
     unmount();
 
     renderRestaurant({ stores: new Error("Network Error") });

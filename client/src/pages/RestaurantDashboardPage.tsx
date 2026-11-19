@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import api from "../api/axios.js";
 import RestaurantHero from "../components/dashboard/RestaurantHero.js";
 import ImpactStrip from "../components/dashboard/ImpactStrip.js";
-import RestaurantActions from "../components/dashboard/RestaurantActions.js";
+import RestaurantIntro from "../components/dashboard/RestaurantIntro.js";
 import StoreCarousel from "../components/dashboard/StoreCarousel.js";
 import LocationReminder from "../components/profile/LocationReminder.js";
 import type { RestaurantImpact, User } from "../types/index.js";
@@ -12,8 +11,8 @@ import type { RestaurantImpact, User } from "../types/index.js";
 const CAROUSEL_STORES = { radius: "all", limit: 20 };
 
 // The restaurant's home page, top to bottom: the map pin reminder (only without a pin), the hero
-// animation with the impact strip under it, the two main links (search, My orders with the
-// active-order count) and the nearest stores. The three requests are independent: a failed one
+// animation with the impact strip under it, the intro (the brand as the page's h1, a short text and
+// the two main links: search, My orders with the active-order count) and the nearest stores. The three requests are independent: a failed one
 // only hides its own part (the strip, the badge, the carousel).
 const RestaurantDashboardPage = () => {
   // null while loading; the strip is hidden when it fails.
@@ -23,7 +22,6 @@ const RestaurantDashboardPage = () => {
   const [activeOrders, setActiveOrders] = useState<number | null>(null);
   // null while loading; [] (none, or a failed load) hides the carousel.
   const [stores, setStores] = useState<User[] | null>(null);
-  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchImpact = async () => {
@@ -62,7 +60,6 @@ const RestaurantDashboardPage = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-10">
-      <h1 className="sr-only">{t("sidebar.dashboard")}</h1>
       <LocationReminder />
 
       <div>
@@ -70,7 +67,7 @@ const RestaurantDashboardPage = () => {
         {!impactFailed && <ImpactStrip impact={impact} />}
       </div>
 
-      <RestaurantActions activeOrders={activeOrders} />
+      <RestaurantIntro activeOrders={activeOrders} />
 
       {(stores === null || stores.length > 0) && <StoreCarousel stores={stores} />}
     </div>

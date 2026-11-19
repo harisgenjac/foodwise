@@ -500,8 +500,9 @@
     "savedInfo": "Kako se računa ušteda",
     "savedTip": "Razlika između pune cijene i cijene koju ste platili za svu preuzetu hranu."
   },
-  "restaurantActions": {
+  "restaurantIntro": {
     "label": "Brze akcije",
+    "text": "Hrana kojoj uskoro ističe rok još uvijek vrijedi. Kupite je jeftinije, direktno od prodavnica u blizini, i pretvorite je u današnji meni.",
     "search": "Pretraži proizvode",
     "myOrders": "Moje narudžbe",
     "activeOrders_one": "{{count}} aktivna narudžba",

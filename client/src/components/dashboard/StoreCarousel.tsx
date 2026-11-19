@@ -18,7 +18,7 @@ interface StoreCarouselProps {
   stores: User[] | null;
 }
 
-// "Stores near you" on the restaurant dashboard (design/restaurant-home/actions-and-stores.html):
+// "Stores near you" on the restaurant dashboard (design/restaurant-home/stores-carousel.html):
 // a horizontal track with scroll snap and no visible scrollbar (swipe on touch screens), round
 // previous/next buttons from md up (each hidden when the track cannot scroll that way), and an
 // "All stores" card at the end. Skeleton cards while loading; the parent leaves the section out

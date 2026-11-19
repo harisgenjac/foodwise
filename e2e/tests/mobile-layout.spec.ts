@@ -473,7 +473,7 @@ test.describe("restaurant", () => {
     await expectFilterPanel(page, "/search", "Pretraga po imenu");
   });
 
-  test("the dashboard shows the phone hero, the stacked links and a store carousel that scrolls inside itself", async ({ page }) => {
+  test("the dashboard shows the phone hero, the intro with stacked links and a store carousel that scrolls inside itself", async ({ page }) => {
     await expectPhoneLayout(page, "/dashboard");
     const hero = page.getByRole("img", { name: "Animacija Još vrijedi" });
     await expect(hero).toHaveCount(1);
@@ -486,13 +486,15 @@ test.describe("restaurant", () => {
     });
     expect(bubblePx).toBeGreaterThanOrEqual(12);
 
-    // The two links stacked, full width, 56 px high.
+    // The intro's two links stacked at its full width, 44 px high.
     const main = page.getByRole("main");
+    await expect(main.getByRole("heading", { level: 1, name: "Još vrijedi" })).toBeVisible();
     const search = (await main.getByRole("link", { name: "Pretraži proizvode" }).boundingBox())!;
     const orders = (await main.getByRole("link", { name: /^Moje narudžbe/ }).boundingBox())!;
     expect(orders.y).toBeGreaterThan(search.y + search.height - 1);
     expect(Math.round(search.width)).toBe(Math.round(orders.width));
-    expect(Math.round(search.height)).toBe(56);
+    expect(search.width).toBeGreaterThan(WIDTH - 100);
+    expect(Math.round(search.height)).toBe(44);
 
     // The carousel is wider than the screen and scrolls inside itself; the page does not, and the
     // arrows are hidden on a phone (swipe).
