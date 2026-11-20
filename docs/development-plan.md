@@ -203,7 +203,7 @@ Older ideas moved here from `product.md`. Agreed as possible directions, not pla
 ### Platform
 
 - [ ] Public launch (deploy) with proper image storage.
-- [ ] Help, Terms of use and Privacy pages (the footer links are placeholders today).
+- [ ] The footer's pages and accounts: O nama, Podrška, Kontakt, Postani partner, Uslovi korištenja, Politika privatnosti, Politika kolačića, Kako računamo uticaj, Pomoć, and the Instagram, Facebook, LinkedIn, TikTok and YouTube accounts (the footer's links are placeholders that do not navigate today; their `href`s go in the lists in `client/src/components/Footer.tsx`).
 - [ ] Donation images: a donation gets its own image instead of the category photo.
 
 ### Emails

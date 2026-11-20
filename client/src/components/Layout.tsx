@@ -34,6 +34,8 @@ function Layout() {
   const { pathname } = useLocation();
   const setup = getAccountSetup(user);
   const bottomNavRole = hasBottomNav(user?.role) ? user.role : null;
+  // The restaurant home page ends with its donation band, which the footer's arch overlaps.
+  const flushFooter = user?.role === 'RESTAURANT' && pathname === '/dashboard' && !setup.locked;
 
   function onToggleSidebar() {
     const next = !isSidebarOpen;
@@ -78,24 +80,21 @@ function Layout() {
               <Sidebar isSidebarOpen={isSidebarOpen} locked={setup.locked} />
             </div>
             {/* A flex column, so the footer sits at the bottom of short pages and after the content of long
-                ones. With the bottom bar, the bottom padding keeps the footer and last buttons above it. */}
-            <main
-              className={`flex min-w-0 flex-1 flex-col px-4 pt-6 sm:px-6 ${
-                bottomNavRole ? 'pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-6' : 'pb-6'
-              }`}
-            >
-              <div className="flex-1 pb-6 print:pb-0">
+                ones, across the whole content width. With the bottom bar, the footer keeps room above it. */}
+            {/* The footer follows <main> (not inside it), so it is the page's contentinfo landmark. */}
+            <div className="flex min-w-0 flex-1 flex-col">
+              <main className={`flex-1 px-4 pt-6 sm:px-6 print:pb-0 ${flushFooter ? '' : 'pb-6'}`}>
                 <div className="contents print:hidden">
                   {!setup.locked && <AnnouncementBanner />}
                   {!setup.locked && <CreditBanner />}
                   <AccountSetupGate />
                 </div>
                 <Outlet />
-              </div>
+              </main>
               <div className="contents print:hidden">
-                <Footer showImpact={!setup.needsPassword} />
+                <Footer flush={flushFooter} bottomNavSpace={bottomNavRole !== null} />
               </div>
-            </main>
+            </div>
           </div>
           <div className="contents print:hidden">
             {isMenuOpen && !setup.locked && <MobileDrawer onClose={closeMenu} />}

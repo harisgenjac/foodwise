@@ -137,7 +137,7 @@ test.describe("store", () => {
 
   test("stat labels are not cut, and tabs, chips, report presets and footer links are 44 px", async ({ page }) => {
     await expectStatLabelsWhole(page);
-    await expectTapTargets(page.getByRole("navigation", { name: "Podnožje" }), "footer");
+    await expectTapTargets(page.getByRole("contentinfo"), "footer");
 
     // The three Pickups tabs share one row.
     await open(page, "/pickups");
@@ -473,7 +473,7 @@ test.describe("restaurant", () => {
     await expectFilterPanel(page, "/search", "Pretraga po imenu");
   });
 
-  test("the home page stacks the hero text, the chef and the stats, the slider scrolls inside itself, and nothing scrolls the page sideways", async ({ page }) => {
+  test("the home page stacks the hero text, the chef and the stats, the slider scrolls inside itself, the offer rows, steps and footer stack, and nothing scrolls the page sideways", async ({ page }) => {
     await expectPhoneLayout(page, "/dashboard");
     const hero = page.getByTestId("home-hero");
     const title = (await hero.getByRole("heading", { level: 1, name: "Još vrijedi" }).boundingBox())!;
@@ -508,6 +508,27 @@ test.describe("restaurant", () => {
     await track.scrollIntoViewIfNeeded();
     await track.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
     await expect(slider.getByTestId("store-card").last()).toBeInViewport({ ratio: 1 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(WIDTH);
+    expect(await page.evaluate(() => window.scrollX)).toBe(0);
+
+    // The offer rows wrap to one column, How it works stacks, the footer stacks: nothing is wider
+    // than the screen.
+    const offers = page.getByTestId("home-offer");
+    if ((await offers.count()) > 1) {
+      await offers.nth(1).scrollIntoViewIfNeeded();
+      const one = (await offers.nth(0).boundingBox())!;
+      const two = (await offers.nth(1).boundingBox())!;
+      expect(two.y).toBeGreaterThan(one.y + one.height - 1);
+      expect(one.x + one.width).toBeLessThanOrEqual(WIDTH);
+    }
+    const steps = page.getByRole("region", { name: "Od police do vaše kuhinje" }).getByRole("listitem");
+    await steps.nth(1).scrollIntoViewIfNeeded();
+    expect((await steps.nth(1).boundingBox())!.y).toBeGreaterThan((await steps.nth(0).boundingBox())!.y + 100);
+    const footer = page.getByRole("contentinfo");
+    await footer.scrollIntoViewIfNeeded();
+    const logo = (await footer.getByRole("link", { name: "Još vrijedi, početna" }).boundingBox())!;
+    const info = (await footer.getByRole("navigation", { name: "Informacije", exact: true }).boundingBox())!;
+    expect(info.y).toBeGreaterThan(logo.y + logo.height - 1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(WIDTH);
     expect(await page.evaluate(() => window.scrollX)).toBe(0);
   });

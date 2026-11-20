@@ -57,7 +57,7 @@
   "An error occurred while fetching notifications.": "Greška prilikom učitavanja notifikacija.",
   "An error occurred while fetching orders.": "Došlo je do greške pri učitavanju narudžbi.",
   "An error occurred while fetching pickups.": "Greška prilikom učitavanja preuzimanja.",
-  "An error occurred while fetching plans.":"Greška prilikom učitavanja planova.",
+  "An error occurred while fetching plans.": "Greška prilikom učitavanja planova.",
   "An error occurred while fetching products.": "Greška prilikom učitavanja proizvoda.",
   "An error occurred while fetching shop sales.": "Došlo je do greške prilikom učitavanja prodaja u radnji.",
   "An error occurred while fetching statistics.": "Greška prilikom učitavanja statistike.",
@@ -230,7 +230,7 @@
   "Orders fetched successfully.": "Narudžbe su uspješno učitane.",
   "Overdue order cancelled.": "Propuštena narudžba je otkazana.",
   "Packing list fetched successfully.": "Spisak za pakovanje je uspješno učitan.",
-  "Password changed successfully.":"Lozinka je uspješno promijenjena.",
+  "Password changed successfully.": "Lozinka je uspješno promijenjena.",
   "Password changed.": "Lozinka je promijenjena.",
   "Password must be at least {{min}} characters long.": "Lozinka mora imati najmanje {{min}} znakova.",
   "Password reset link sent.": "Link za novu lozinku je poslan.",
@@ -394,5 +394,6 @@
   "This courier step is not possible now.": "Ovaj korak kurira sada nije moguć.",
   "An error occurred while simulating the courier.": "Došlo je do greške pri simulaciji kurira.",
   "This order was not answered in time and can no longer be decided.": "Na ovu narudžbu nije odgovoreno na vrijeme i o njoj se više ne može odlučiti.",
-  "Pickup time must be in the future.": "Vrijeme preuzimanja mora biti u budućnosti."
+  "Pickup time must be in the future.": "Vrijeme preuzimanja mora biti u budućnosti.",
+  "Home offers fetched successfully.": "Ponude za početnu stranicu su uspješno učitane."
 }

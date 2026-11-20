@@ -15,7 +15,7 @@ interface SavedTotals {
 export const CO2_KG_PER_FOOD_KG = 2.5;
 
 // Food saved, platform-wide or (with `restaurantId`) one restaurant's, shared by the admin
-// statistics, the footer's impact counter and the restaurant home page's stats. It follows
+// statistics and the restaurant home page's stats. It follows
 // the store dashboard's rules: picked-up (Completed) order items only, g/kg as kg, ml/l as l, kom
 // and pak as pieces. Value and savings follow the impact report.
 export const getSavedTotals = async (

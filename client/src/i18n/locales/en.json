@@ -615,12 +615,20 @@
     "cancel": "Cancel"
   },
   "footer": {
-    "impact": "Together we have saved {{kg}} kg of food",
-    "linksLabel": "Footer",
-    "help": "Help",
+    "home": "Još vrijedi, home",
+    "infoLabel": "Information",
+    "socialLabel": "Social media",
+    "legalLabel": "Legal information",
+    "about": "About us",
+    "support": "Support",
     "contact": "Contact",
+    "partner": "Become a partner",
     "terms": "Terms of use",
-    "privacy": "Privacy"
+    "privacy": "Privacy policy",
+    "cookies": "Cookie policy",
+    "impact": "How we calculate impact",
+    "help": "Help",
+    "copyright": "© {{year}} Još vrijedi. All rights reserved."
   },
   "pickups": {
     "title": "Pickups",
@@ -2244,6 +2252,34 @@
       "label": "Stores near you",
       "previous": "Previous stores",
       "next": "Next stores"
+    },
+    "offers": {
+      "title": "Order now for less",
+      "distance": "{{km}} km",
+      "all": "All ({{count}})",
+      "allLabel": "All offers of {{store}} ({{count}})"
+    },
+    "howItWorks": {
+      "title": "From the shelf to your kitchen",
+      "subtitle": "Three steps to cheaper supplies",
+      "find": {
+        "title": "Find an offer",
+        "text": "Search for food close to its expiry date and add what you need from one store to your cart, <hl>at a lower price</hl>."
+      },
+      "choose": {
+        "title": "Choose how you get it",
+        "text": "Pick up your order <hl>in person at the store or get it delivered</hl> to your restaurant's address."
+      },
+      "cook": {
+        "title": "Cook it today",
+        "text": "The store confirms your order, and the food arrives <hl>ready for your kitchen</hl> instead of ending up in the bin."
+      }
+    },
+    "donate": {
+      "title": "Every meal is worth it, especially a shared one",
+      "text": "Donate a meal or sponsor a campaign and help people in your town.",
+      "donate": "Donate a meal",
+      "sponsor": "Become a sponsor"
     }
   }
 }

@@ -634,12 +634,20 @@
     "cancel": "Odustani"
   },
   "footer": {
-    "impact": "Zajedno smo spasili {{kg}} kg hrane",
-    "linksLabel": "Podnožje",
-    "help": "Pomoć",
+    "home": "Još vrijedi, početna",
+    "infoLabel": "Informacije",
+    "socialLabel": "Društvene mreže",
+    "legalLabel": "Pravne informacije",
+    "about": "O nama",
+    "support": "Podrška",
     "contact": "Kontakt",
+    "partner": "Postani partner",
     "terms": "Uslovi korištenja",
-    "privacy": "Privatnost"
+    "privacy": "Politika privatnosti",
+    "cookies": "Politika kolačića",
+    "impact": "Kako računamo uticaj",
+    "help": "Pomoć",
+    "copyright": "© {{year}} Još vrijedi. Sva prava zadržana."
   },
   "pickups": {
     "title": "Preuzimanja",
@@ -2295,6 +2303,34 @@
       "label": "Prodavnice u blizini",
       "previous": "Prethodne prodavnice",
       "next": "Sljedeće prodavnice"
+    },
+    "offers": {
+      "title": "Naruči sada po nižoj cijeni",
+      "distance": "{{km}} km",
+      "all": "Sve ({{count}})",
+      "allLabel": "Sve ponude prodavnice {{store}} ({{count}})"
+    },
+    "howItWorks": {
+      "title": "Od police do vaše kuhinje",
+      "subtitle": "Tri koraka do jeftinije nabavke",
+      "find": {
+        "title": "Pronađite ponudu",
+        "text": "Pretražite hranu kojoj uskoro ističe rok i u korpu dodajte ono što vam treba iz jedne prodavnice, <hl>po nižoj cijeni</hl>."
+      },
+      "choose": {
+        "title": "Izaberite preuzimanje",
+        "text": "Pokupite narudžbu <hl>lično u prodavnici ili je primite dostavom</hl> na adresu vašeg restorana."
+      },
+      "cook": {
+        "title": "Kuhajte već danas",
+        "text": "Prodavnica potvrdi narudžbu, a hrana stiže <hl>spremna za vašu kuhinju</hl>, umjesto da završi u smeću."
+      }
+    },
+    "donate": {
+      "title": "Svaki obrok vrijedi, pogotovo onaj podijeljen",
+      "text": "Donirajte obrok ili sponzorišite akciju i pomozite ljudima u svom gradu.",
+      "donate": "Doniraj obrok",
+      "sponsor": "Budi sponzor"
     }
   }
 }

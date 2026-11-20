@@ -1,5 +1,5 @@
 import express from "express";
-import { createProduct, importProducts, getProducts, getProductById, getMineProducts, updateProduct, deleteProduct, uploadProductImage, getProductsByStore } from "../controllers/products.controller.js";
+import { createProduct, importProducts, getProducts, getProductById, getMineProducts, updateProduct, deleteProduct, uploadProductImage, getProductsByStore, getHomeOffersForRestaurant } from "../controllers/products.controller.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
 import { uploadCsvFile, uploadProductImageFile } from "../middleware/upload.middleware.js";
 import { rateLimiters } from "../middleware/rateLimit.middleware.js";
@@ -15,6 +15,8 @@ router.post('/images', authenticate, authorize('STORE'), rateLimiters.upload, up
 router.get('/', authenticate, authorize('STORE', 'RESTAURANT'), getProducts);
 // Search: the marketplace grouped by store (before /:id).
 router.get('/by-store', authenticate, authorize('RESTAURANT'), getProductsByStore);
+// The restaurant home page's store rows with offers (before /:id).
+router.get('/home', authenticate, authorize('RESTAURANT'), getHomeOffersForRestaurant);
 router.get('/mine', authenticate, authorize('STORE'), getMineProducts);
 router.put('/:id', authenticate, authorize('STORE'), updateProduct);
 router.delete('/:id', authenticate, authorize('STORE'), deleteProduct);

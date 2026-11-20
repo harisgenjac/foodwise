@@ -110,3 +110,76 @@ test("the header search opens Search with the text in its name filter", async ({
   await expect(page).toHaveURL(/\/search\?q=hljeb$/);
   await expect(page.getByPlaceholder("Pretraga po imenu")).toHaveValue("hljeb");
 });
+
+test("the home page shows every section in order, ending with the donation band and the footer", async ({ page }) => {
+  await open(page, "/dashboard");
+  const sections = [
+    page.getByTestId("home-hero"),
+    page.getByRole("region", { name: "Prodavnice u blizini" }),
+    page.getByRole("region", { name: "Naruči sada po nižoj cijeni" }),
+    page.getByRole("region", { name: "Od police do vaše kuhinje" }),
+    page.getByRole("region", { name: "Svaki obrok vrijedi, pogotovo onaj podijeljen" }),
+    page.getByRole("contentinfo"),
+  ];
+  let previousBottom = -Infinity;
+  for (const section of sections) {
+    await section.scrollIntoViewIfNeeded();
+    await expect(section).toBeVisible();
+    const box = (await section.boundingBox())!;
+    const top = box.y + (await page.evaluate(() => window.scrollY));
+    expect(top).toBeGreaterThan(previousBottom - 60); // the footer's arch overlaps the band
+    previousBottom = top + box.height;
+  }
+
+  // At most three store rows, each with at most four offers and "Sve (N)" to its store.
+  const rows = page.getByTestId("home-store-row");
+  expect(await rows.count()).toBeGreaterThan(0);
+  expect(await rows.count()).toBeLessThanOrEqual(3);
+  const first = rows.first();
+  expect(await first.getByTestId("home-offer").count()).toBeLessThanOrEqual(4);
+  await expect(first.getByRole("link", { name: /^Sve ponude prodavnice .+ \(\d+\)$/ })).toHaveAttribute("href", /\/stores\/\d+$/);
+
+  // Every step of How it works, and the band's two buttons.
+  await expect(page.getByRole("region", { name: "Od police do vaše kuhinje" }).getByRole("listitem")).toHaveCount(3);
+  const band = page.getByRole("region", { name: "Svaki obrok vrijedi, pogotovo onaj podijeljen" });
+  await expect(band.getByRole("link", { name: "Doniraj obrok" })).toHaveAttribute("href", "/donate-food");
+  await expect(band.getByRole("link", { name: "Budi sponzor" })).toHaveAttribute("href", "/sponsor");
+  // The band's heading is Barlow Condensed, the page's text Plus Jakarta Sans.
+  expect(await band.getByRole("heading").evaluate((el) => getComputedStyle(el).fontFamily)).toContain("Barlow Condensed");
+});
+
+test("+ opens the quantity dialog for that product, and an offer card opens the product page", async ({ page }) => {
+  await open(page, "/dashboard");
+  const offer = page.getByTestId("home-offer").first();
+  await offer.scrollIntoViewIfNeeded();
+  const name = (await offer.getByRole("heading", { level: 4 }).textContent())!;
+  await offer.getByRole("button", { name: `Dodaj u korpu: ${name}` }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(name, { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+
+  const href = (await offer.getByRole("link", { name }).getAttribute("href"))!;
+  // A click on the card (here on its image, not the + button) opens the product.
+  await offer.click({ position: { x: 40, y: 40 } });
+  await expect(page).toHaveURL(new RegExp(`${href}$`));
+});
+
+test("the footer shows on another page, below the content and with links that stay on the page", async ({ page }) => {
+  await open(page, "/my-orders");
+  const footer = page.getByRole("contentinfo");
+  await footer.scrollIntoViewIfNeeded();
+  await expect(footer).toBeVisible();
+  await expect(footer.getByRole("navigation", { name: "Informacije", exact: true }).getByRole("link")).toHaveText([
+    "O nama",
+    "Podrška",
+    "Kontakt",
+    "Postani partner",
+  ]);
+  await expect(footer.getByRole("navigation", { name: "Pravne informacije" }).getByRole("link")).toHaveCount(5);
+  await expect(footer.getByText(`© ${new Date().getFullYear()} Još vrijedi. Sva prava zadržana.`)).toBeVisible();
+  await footer.getByRole("link", { name: "O nama" }).click();
+  await expect(page).toHaveURL(/\/my-orders$/);
+});
