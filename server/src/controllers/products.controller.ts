@@ -13,6 +13,7 @@ import { availableQuantity, pendingHeld, soldInShop } from '../services/stock.js
 import { saveImage } from '../services/storage.js';
 import { parseProductImage, productImageNamePrefix, releaseProductImage } from '../utils/productImages.js';
 import { pauseColumns } from '../utils/orderSettings.js';
+import { getHomeOffers } from '../services/homeOffers.js';
 
 export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
 
@@ -644,5 +645,18 @@ export const deleteProduct = async (req: Request, res: Response) => {
       .json({ error: "An error occurred while deleting the product." });
   } finally {
     if (client) client.release();
+  }
+};
+
+// The restaurant home page's offer rows (GET /products/home): up to three stores with
+// offers (its favourites first, then the nearest), each with its offer count and the four offers
+// that expire soonest. See services/homeOffers.ts.
+export const getHomeOffersForRestaurant = async (req: Request, res: Response) => {
+  try {
+    const stores = await getHomeOffers(req.user!.id);
+    return res.status(200).json({ message: "Home offers fetched successfully.", stores });
+  } catch (error) {
+    console.error("Error while fetching home offers:", error);
+    return res.status(500).json({ error: "An error occurred while fetching products." });
   }
 };

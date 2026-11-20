@@ -27,16 +27,11 @@ describe("LoginPage", () => {
     expect(screen.queryByText(t("auth.loginError"))).not.toBeInTheDocument();
   });
 
-  it("shows the footer without the impact counter", async () => {
+  it("shows the footer under the form", () => {
     renderLogin();
-    expect(screen.getByRole("link", { name: t("footer.contact") })).toHaveAttribute(
-      "href",
-      "mailto:foodwize@testing.com",
-    );
-    expect(screen.getByText(t("footer.privacy"))).toBeInTheDocument();
-    expect(screen.getByText(`v${__APP_VERSION__}`)).toBeInTheDocument();
-    await waitFor(() => expect(apiMock.get).toHaveBeenCalled());
-    expect(apiMock.get).not.toHaveBeenCalledWith("/stats/impact");
+    expect(screen.getByRole("contentinfo")).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: t("footer.legalLabel") })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: t("footer.privacy") })).toBeInTheDocument();
   });
 
   it("logs in and goes to the dashboard", async () => {

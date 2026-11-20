@@ -245,6 +245,22 @@ export interface SearchStore {
   products: Product[];
 }
 
+// A row of "Order now for less" on the restaurant home page (GET /products/home): a store with
+// offers (a favourite, or one of the nearest) and its four offers that expire soonest.
+export interface HomeStore {
+  id: number;
+  business_name: string;
+  logo_url: string | null;
+  company_name: string | null;
+  city: string | null;
+  // Straight-line km between the restaurant's and the store's map pins; null without either pin.
+  distance_km: number | null;
+  // The store's offers right now (the "All (N)" link).
+  offer_count: number;
+  is_favorite: boolean;
+  products: Product[];
+}
+
 // A store's pause on new orders: on (until a time, or until the store switches it off) or off.
 export interface StorePause {
   orders_paused: boolean;

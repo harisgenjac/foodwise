@@ -3,6 +3,7 @@ import StoreDashboardPage from "./StoreDashboardPage.js";
 import RestaurantDashboardPage from "./RestaurantDashboardPage.js";
 import toast from "react-hot-toast";
 import AppToaster from "../components/AppToaster.js";
+import { CartProvider } from "../context/CartContext.js";
 import { apiMock, makeOrder, makeOrderItem, makeProduct, makeUser, renderWithProviders, t } from "../test/utils.js";
 import type { StoreDashboardStats } from "../types/index.js";
 
@@ -110,21 +111,53 @@ describe("RestaurantDashboardPage", () => {
     ],
     total: 2,
   };
+  const OFFERS = {
+    stores: [
+      {
+        id: 31,
+        business_name: "Bingo Sarajevo Centar",
+        logo_url: null,
+        company_name: "Bingo d.o.o.",
+        city: "Sarajevo",
+        distance_km: 0.84,
+        offer_count: 11,
+        is_favorite: true,
+        products: [
+          makeProduct({ id: 101, store_id: 31, name: "Sir trapist", days_until_expiry: 1, original_price: "13.70", discounted_price: "7.20", available_quantity: "5", unit: "kg" }),
+          makeProduct({ id: 102, store_id: 31, name: "Hljeb bijeli", days_until_expiry: 2, original_price: "1.60", discounted_price: "0.70", available_quantity: "39", unit: "kom" }),
+          makeProduct({ id: 103, store_id: 31, name: "Kroasani", days_until_expiry: 0, unit: "pak" }),
+          makeProduct({ id: 104, store_id: 31, name: "Zelena salata", days_until_expiry: 5, unit: "kom" }),
+        ],
+      },
+      {
+        id: 32,
+        business_name: "Zelena Market",
+        logo_url: null,
+        company_name: null,
+        city: "Visoko",
+        distance_km: null,
+        offer_count: 1,
+        is_favorite: false,
+        products: [makeProduct({ id: 105, store_id: 32, name: "Paradajz", days_until_expiry: 3 })],
+      },
+    ],
+  };
   const renderRestaurant = ({
     impact = IMPACT as object | Error,
     stores = STORES as object | Error,
+    offers = OFFERS as object | Error,
     withToaster = false,
   } = {}) =>
     renderWithProviders(
-      <>
+      <CartProvider enabled>
         {withToaster && <AppToaster />}
         <RestaurantDashboardPage />
-      </>,
+      </CartProvider>,
       {
         route: "/dashboard",
         path: "/dashboard",
         user: makeUser({ role: "RESTAURANT", latitude: 43.98, longitude: 18.17 }),
-        get: { "/stats/my-impact": impact, "/users/stores": stores },
+        get: { "/stats/my-impact": impact, "/users/stores": stores, "/products/home": offers },
       },
     );
   const pageUrls = () => apiMock.get.mock.calls.map(([url]) => url).filter((url) => url !== "/users/me").sort();
@@ -153,7 +186,7 @@ describe("RestaurantDashboardPage", () => {
     expect(await within(slider).findByRole("link", { name: "Zeleni Market" })).toHaveAttribute("href", "/stores/21");
     expect(within(slider).getByRole("link", { name: "Pekara Kod Mirze" })).toHaveAttribute("href", "/stores/22");
     expect(paramsOf("/users/stores")).toEqual({ radius: "all", limit: 20 });
-    expect(pageUrls()).toEqual(["/stats/my-impact", "/users/stores"]);
+    expect(pageUrls()).toEqual(["/cart", "/products/home", "/stats/my-impact", "/users/stores"]);
     expect(screen.getByTestId("home-hero").compareDocumentPosition(slider) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // A store without a logo shows its initials, one with a logo the image.
     expect(within(slider).getByText("ZM")).toBeInTheDocument();
@@ -230,7 +263,7 @@ describe("RestaurantDashboardPage", () => {
       route: "/dashboard",
       path: "/dashboard",
       user: makeUser({ role: "RESTAURANT", latitude: null, longitude: null }),
-      get: { "/stats/my-impact": IMPACT, "/users/stores": STORES },
+      get: { "/stats/my-impact": IMPACT, "/users/stores": STORES, "/products/home": OFFERS },
     });
 
     const reminder = await screen.findByRole("link", { name: t("location.reminderLink") });
@@ -254,5 +287,90 @@ describe("RestaurantDashboardPage", () => {
     expect(await screen.findByRole("link", { name: "Zeleni Market" })).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByTestId("home-stats")).not.toBeInTheDocument());
     expect(screen.getByRole("link", { name: t("restaurantHome.hero.shopNow") })).toBeInTheDocument();
+  });
+
+  it("shows a row per store: name, city and distance, the chain chip and All (N) to the store page", async () => {
+    renderRestaurant();
+    const section = await screen.findByRole("region", { name: t("restaurantHome.offers.title") });
+    const rows = await within(section).findAllByTestId("home-store-row");
+    expect(rows).toHaveLength(2);
+
+    const bingo = within(rows[0]!);
+    expect(bingo.getByRole("heading", { level: 3, name: "Bingo Sarajevo Centar" })).toBeInTheDocument();
+    expect(bingo.getByText("Sarajevo · 0,8 km")).toBeInTheDocument();
+    expect(bingo.getByText("dio Bingo d.o.o.")).toBeInTheDocument();
+    const all = bingo.getByRole("link", { name: "Sve ponude prodavnice Bingo Sarajevo Centar (11)" });
+    expect(all).toHaveAttribute("href", "/stores/31");
+    expect(all).toHaveTextContent("Sve (11)");
+
+    // Without a pin on either side only the city; no chip for an independent store.
+    const zelena = within(rows[1]!);
+    expect(zelena.getByText("Visoko")).toBeInTheDocument();
+    expect(zelena.queryByText(/^dio /)).not.toBeInTheDocument();
+  });
+
+  it("shows each offer: discount, expiry (today and tomorrow in red), what is left and the prices, and links the card to the product", async () => {
+    renderRestaurant();
+    const [row] = await screen.findAllByTestId("home-store-row");
+    const cards = within(row!).getAllByTestId("home-offer");
+    expect(cards).toHaveLength(4);
+
+    const cheese = within(cards[0]!);
+    expect(cheese.getByRole("link", { name: "Sir trapist" })).toHaveAttribute("href", "/products/101");
+    expect(cheese.getByText("−47%")).toBeInTheDocument();
+    expect(cheese.getByTestId("home-offer-expiry")).toHaveTextContent("Sutra");
+    expect(cheese.getByTestId("home-offer-expiry")).toHaveClass("text-danger-700");
+    expect(cheese.getByText("Dostupno: 5 kg")).toBeInTheDocument();
+    expect(cheese.getByText("7,20 KM")).toBeInTheDocument();
+    expect(cheese.getByText("13,70 KM")).toHaveClass("line-through");
+
+    expect(within(cards[1]!).getByTestId("home-offer-expiry")).toHaveTextContent("Za 2 dana");
+    expect(within(cards[1]!).getByTestId("home-offer-expiry")).toHaveClass("text-neutral-600");
+    expect(within(cards[2]!).getByTestId("home-offer-expiry")).toHaveTextContent("Danas");
+    expect(within(cards[3]!).getByTestId("home-offer-expiry")).toHaveTextContent("Za 5 dana");
+  });
+
+  it("opens the add-to-cart dialog for the product with +", async () => {
+    renderRestaurant();
+    fireEvent.click(await screen.findByRole("button", { name: t("stepper.add", { name: "Hljeb bijeli" }) }));
+
+    const dialog = await screen.findByRole("dialog", { name: t("cart.addTitle") });
+    expect(within(dialog).getByText("Hljeb bijeli")).toBeInTheDocument();
+    // Still on the home page: + does not open the product.
+    expect(screen.queryByTestId("location")).not.toBeInTheDocument();
+  });
+
+  it("hides Order now without stores with offers, and when they fail to load", async () => {
+    const { unmount } = renderRestaurant({ offers: { stores: [] } });
+    await waitFor(() => expect(statValues()[0]).toBe("873,9 kg"));
+    await waitFor(() => expect(screen.queryByTestId("home-offers")).not.toBeInTheDocument());
+    unmount();
+
+    renderRestaurant({ offers: new Error("Network Error") });
+    await waitFor(() => expect(screen.queryByTestId("home-offers")).not.toBeInTheDocument());
+    expect(screen.getByRole("region", { name: t("restaurantHome.howItWorks.title") })).toBeInTheDocument();
+  });
+
+  it("ends with From the shelf to your kitchen and the donation band", async () => {
+    renderRestaurant();
+    const how = screen.getByRole("region", { name: t("restaurantHome.howItWorks.title") });
+    expect(within(how).getByText(t("restaurantHome.howItWorks.subtitle"))).toBeInTheDocument();
+    expect(within(how).getAllByRole("heading", { level: 3 }).map((node) => node.textContent)).toEqual([
+      "Pronađite ponudu",
+      "Izaberite preuzimanje",
+      "Kuhajte već danas",
+    ]);
+    expect(within(how).getAllByTestId("how-it-works-highlight").map((node) => node.textContent)).toEqual([
+      "po nižoj cijeni",
+      "lično u prodavnici ili je primite dostavom",
+      "spremna za vašu kuhinju",
+    ]);
+
+    const band = screen.getByRole("region", { name: t("restaurantHome.donate.title") });
+    expect(within(band).getByRole("link", { name: "Doniraj obrok" })).toHaveAttribute("href", "/donate-food");
+    expect(within(band).getByRole("link", { name: "Budi sponzor" })).toHaveAttribute("href", "/sponsor");
+    expect(how.compareDocumentPosition(band) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(await screen.findAllByTestId("home-store-row")).toHaveLength(2);
+    expect(screen.getByTestId("home-offers").compareDocumentPosition(how) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

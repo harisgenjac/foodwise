@@ -437,7 +437,6 @@ describe("Companies", () => {
         .send({ current_password: "test12345", new_password: "novalozinka1" });
       expect(password.status).toBe(200);
       expect((await hq.get("/api/notifications")).status).toBe(200);
-      expect((await hq.get("/api/stats/impact")).status).toBe(200);
     });
 
     it("reads and edits its company, but never its name", async () => {

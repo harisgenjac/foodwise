@@ -70,10 +70,10 @@ test("a new restaurant changes its temporary password and fills in its profile b
 
   // The dashboard is usable.
   await page.locator("aside").getByRole("link", { name: "Početna" }).click();
-  await expect(page.getByRole("img", { name: "Animacija Još vrijedi" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Kuhar drži papirnu kesu punu povrća" })).toBeVisible();
   await expect(gate).toBeHidden();
   // The main link to the offers.
-  await page.getByRole("main").getByRole("link", { name: "Pretraži proizvode" }).click();
+  await page.getByRole("main").getByRole("link", { name: "Kupi sada" }).click();
   await expect(page).toHaveURL(/\/search$/);
   await expect(page.getByRole("heading", { level: 1, name: "Pretraga" })).toBeVisible();
 });
