@@ -187,3 +187,31 @@ describe("Header logo", () => {
     expect(screen.getByRole("link", { name: "Još vrijedi" })).toHaveAttribute("href", "/dashboard");
   });
 });
+
+describe("Header search", () => {
+  const renderAs = (role: "RESTAURANT" | "STORE" | "COMPANY" | "ADMIN") =>
+    renderWithProviders(
+      <NotificationsProvider enabled={false}>
+        <Header isSidebarOpen onToggleSidebar={() => {}} />
+      </NotificationsProvider>,
+      { route: "/dashboard", path: "/dashboard", user: makeUser({ role }) },
+    );
+
+  it("lets a restaurant search: Enter opens /search?q=<text>", async () => {
+    renderAs("RESTAURANT");
+    const field = await screen.findByRole("searchbox", { name: t("header.search") });
+    expect(field).toHaveAttribute("placeholder", t("header.search"));
+
+    await userEvent.type(field, "sir trapist{Enter}");
+    expect(await screen.findByTestId("location")).toHaveTextContent("/search?q=sir%20trapist");
+  });
+
+  it("is not shown to stores, companies and admins", async () => {
+    for (const role of ["STORE", "COMPANY", "ADMIN"] as const) {
+      const { unmount } = renderAs(role);
+      await screen.findByRole("button", { name: /Amir Hodžić/ });
+      expect(screen.queryByRole("search")).not.toBeInTheDocument();
+      unmount();
+    }
+  });
+});

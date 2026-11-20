@@ -473,70 +473,43 @@ test.describe("restaurant", () => {
     await expectFilterPanel(page, "/search", "Pretraga po imenu");
   });
 
-  test("the dashboard shows the phone hero, the intro with stacked links and a store carousel that scrolls inside itself, then How it works stacked", async ({ page }) => {
+  test("the home page stacks the hero text, the chef and the stats, the slider scrolls inside itself, and nothing scrolls the page sideways", async ({ page }) => {
     await expectPhoneLayout(page, "/dashboard");
-    const hero = page.getByRole("img", { name: "Animacija Još vrijedi" });
-    await expect(hero).toHaveCount(1);
-    await expect(hero).toHaveAttribute("data-testid", "restaurant-hero-phone");
-    expect((await hero.boundingBox())!.width).toBeLessThanOrEqual(WIDTH);
-    // The bubble text renders at about 12 px or more on the phone (its font size × the SVG's scale).
-    const bubblePx = await hero.evaluate((svg) => {
-      const text = [...svg.querySelectorAll("text")].find((node) => node.textContent === "Bolje popust")!;
-      return parseFloat(text.getAttribute("font-size")!) * (svg as SVGSVGElement).getScreenCTM()!.a;
-    });
-    expect(bubblePx).toBeGreaterThanOrEqual(12);
+    const hero = page.getByTestId("home-hero");
+    const title = (await hero.getByRole("heading", { level: 1, name: "Još vrijedi" }).boundingBox())!;
+    const chef = (await hero.getByRole("img", { name: "Kuhar drži papirnu kesu punu povrća" }).boundingBox())!;
+    expect(chef.y).toBeGreaterThan(title.y + title.height);
+    expect(chef.x + chef.width).toBeLessThanOrEqual(WIDTH);
+    const bubble = (await hero.getByTestId("home-bubble").boundingBox())!;
+    expect(bubble.x).toBeGreaterThanOrEqual(0);
+    expect(bubble.x + bubble.width).toBeLessThanOrEqual(WIDTH);
 
-    // The intro's two links stacked at its full width, 44 px high.
-    const main = page.getByRole("main");
-    await expect(main.getByRole("heading", { level: 1, name: "Još vrijedi" })).toBeVisible();
-    const search = (await main.getByRole("link", { name: "Pretraži proizvode" }).boundingBox())!;
-    const orders = (await main.getByRole("link", { name: /^Moje narudžbe/ }).boundingBox())!;
-    expect(orders.y).toBeGreaterThan(search.y + search.height - 1);
-    expect(Math.round(search.width)).toBe(Math.round(orders.width));
-    expect(search.width).toBeGreaterThan(WIDTH - 100);
-    expect(Math.round(search.height)).toBe(44);
-
-    // The carousel is wider than the screen and scrolls inside itself; the page does not, and the
-    // arrows are hidden on a phone (swipe).
-    const carousel = page.getByRole("region", { name: "Prodavnice u blizini" });
-    const track = carousel.getByTestId("store-carousel-track");
-    await expect(carousel.getByTestId("store-card").first()).toBeVisible();
-    const { scrollWidth, clientWidth } = await track.evaluate((el) => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
-    expect(scrollWidth).toBeGreaterThan(clientWidth);
-    await expect(carousel.getByRole("button", { name: "Sljedeće prodavnice" })).toBeHidden();
-    // Cards are 170 px wide on a phone, and swiping to the end brings the last one fully onto the screen.
-    expect(Math.round((await carousel.getByTestId("store-card").first().boundingBox())!.width)).toBe(170);
-    const allStores = (await carousel.getByRole("link", { name: "Sve prodavnice" }).boundingBox())!;
-    expect(allStores.x + allStores.width).toBeLessThanOrEqual(WIDTH);
-    await track.scrollIntoViewIfNeeded();
-    await track.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
-    await expect(carousel.getByTestId("store-card").last()).toBeInViewport({ ratio: 1 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(WIDTH);
-    expect(await page.evaluate(() => window.scrollX)).toBe(0);
-
-    // How it works: the three steps stacked inside the screen, and still no sideways page scroll.
-    const howItWorks = page.getByRole("region", { name: "Kako funkcioniše" });
-    await howItWorks.scrollIntoViewIfNeeded();
-    const steps = howItWorks.getByRole("listitem");
-    await expect(steps).toHaveCount(3);
-    const first = (await steps.nth(0).boundingBox())!;
-    const second = (await steps.nth(1).boundingBox())!;
-    expect(second.y).toBeGreaterThan(first.y + first.height - 1);
-    expect(first.x).toBeGreaterThanOrEqual(0);
-    expect(first.x + first.width).toBeLessThanOrEqual(WIDTH);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(WIDTH);
-
-    // The impact strip: three numbers stacked, and a tapped tooltip stays inside the screen.
-    const strip = page.getByRole("region", { name: "Vaš uticaj" });
-    await expect(strip.getByTestId("impact-value")).toHaveCount(3);
-    await expect(strip.getByTestId("impact-value").last()).toHaveText(/KM$/);
-    await strip.getByRole("button", { name: "Kako se računa ušteda" }).click();
+    // The three stats stacked, and a tapped tooltip stays inside the screen.
+    const stats = page.getByRole("group", { name: "Vaš uticaj" });
+    const values = stats.getByTestId("home-stat-value");
+    await expect(values).toHaveCount(3);
+    await expect(values.last()).toHaveText(/KM$/);
+    const firstValue = (await values.nth(0).boundingBox())!;
+    expect((await values.nth(1).boundingBox())!.y).toBeGreaterThan(firstValue.y + firstValue.height);
+    await stats.getByRole("button", { name: "Kako se računa ušteda" }).click();
     const tooltip = page.getByRole("tooltip").filter({ hasText: "Razlika između pune cijene" });
     await expect(tooltip).toBeVisible();
     const box = (await tooltip.boundingBox())!;
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(WIDTH);
+
+    // The slider is wider than the screen and scrolls inside itself; its arrows are hidden (swipe).
+    const slider = page.getByRole("region", { name: "Prodavnice u blizini" });
+    const track = slider.getByTestId("store-slider-track");
+    await expect(slider.getByTestId("store-card").first()).toBeVisible();
+    const { scrollWidth, clientWidth } = await track.evaluate((el) => ({ scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
+    expect(scrollWidth).toBeGreaterThan(clientWidth);
+    await expect(slider.getByRole("button", { name: "Sljedeće prodavnice" })).toBeHidden();
+    await track.scrollIntoViewIfNeeded();
+    await track.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
+    await expect(slider.getByTestId("store-card").last()).toBeInViewport({ ratio: 1 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(WIDTH);
+    expect(await page.evaluate(() => window.scrollX)).toBe(0);
   });
 
   test("the order tabs are 44 px", async ({ page }) => {

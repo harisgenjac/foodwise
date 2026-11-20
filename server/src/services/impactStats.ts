@@ -15,7 +15,7 @@ interface SavedTotals {
 export const CO2_KG_PER_FOOD_KG = 2.5;
 
 // Food saved, platform-wide or (with `restaurantId`) one restaurant's, shared by the admin
-// statistics, the footer's impact counter and the restaurant dashboard's impact strip. It follows
+// statistics, the footer's impact counter and the restaurant home page's stats. It follows
 // the store dashboard's rules: picked-up (Completed) order items only, g/kg as kg, ml/l as l, kom
 // and pak as pieces. Value and savings follow the impact report.
 export const getSavedTotals = async (
@@ -50,23 +50,18 @@ export const getSavedTotals = async (
 };
 
 export interface RestaurantImpact {
-  // "own" = the restaurant's totals; "platform" = everyone's, while it has picked up nothing yet.
-  scope: "own" | "platform";
   food_kg: number;
   co2_kg: number;
   savings: number;
 }
 
-// The restaurant dashboard's impact strip: food saved (kg + l, a litre counted as a kilogram;
-// pieces left out), the CO₂ estimate and the savings, since the restaurant joined. A restaurant
-// without any picked-up item gets the platform's totals instead.
+// The restaurant home page's stats: food saved (kg + l, a litre counted as a kilogram; pieces left
+// out), the CO₂ estimate and the savings, over the restaurant's own picked-up items since it joined.
+// A restaurant that has picked up nothing yet gets zeros.
 export const getRestaurantImpact = async (restaurantId: number): Promise<RestaurantImpact> => {
-  const own = await getSavedTotals(pool, { restaurantId });
-  const pickedUpAnything = own.kg + own.l + own.pieces > 0;
-  const totals = pickedUpAnything ? own : await getSavedTotals();
+  const totals = await getSavedTotals(pool, { restaurantId });
   const food = totals.kg + totals.l;
   return {
-    scope: pickedUpAnything ? "own" : "platform",
     food_kg: food,
     co2_kg: food * CO2_KG_PER_FOOD_KG,
     savings: totals.savings,

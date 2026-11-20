@@ -99,6 +99,29 @@
   --color-info-800: #075985;
   --color-info-900: #0c4a6e;
   --color-info-950: #082f49;
+
+  /* lime: the highlight on the dark green of the restaurant home page's hero and the footer only
+     (the brand name's second word, the hero's buttons, the tooltip titles, the slider's arrows) */
+  --color-lime: #bef264;
+
+  /* The restaurant home page's content and the footer use Plus Jakarta Sans (font-jakarta), their
+     uppercase headings Barlow Condensed (font-condensed); the rest of the app keeps the default
+     font. Both are self-hosted (@fontsource, imported in main.tsx). */
+  --font-jakarta: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-condensed: "Barlow Condensed", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* The hero's speech bubble: each message rises in and fades in (RestaurantHomeHero). */
+  --animate-bubble-message: bubble-message 400ms ease-out both;
+  @keyframes bubble-message {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
 
 body {

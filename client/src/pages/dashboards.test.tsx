@@ -1,6 +1,8 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import StoreDashboardPage from "./StoreDashboardPage.js";
 import RestaurantDashboardPage from "./RestaurantDashboardPage.js";
+import toast from "react-hot-toast";
+import AppToaster from "../components/AppToaster.js";
 import { apiMock, makeOrder, makeOrderItem, makeProduct, makeUser, renderWithProviders, t } from "../test/utils.js";
 import type { StoreDashboardStats } from "../types/index.js";
 
@@ -100,56 +102,127 @@ describe("StoreDashboardPage", () => {
 });
 
 describe("RestaurantDashboardPage", () => {
-  const IMPACT = { impact: { scope: "own", food_kg: 873.94, co2_kg: 2184.85, savings: 1246.5 } };
+  const IMPACT = { impact: { food_kg: 873.94, co2_kg: 2184.85, savings: 1246.5 } };
   const STORES = {
     stores: [
       makeUser({ id: 21, role: "STORE", business_name: "Zeleni Market", distance_km: 0 }),
-      makeUser({ id: 22, role: "STORE", business_name: "Pekara Kod Mirze", distance_km: 16 }),
+      makeUser({ id: 22, role: "STORE", business_name: "Pekara Kod Mirze", distance_km: 16, logo_url: "/uploads/logos/pekara.png" }),
     ],
     total: 2,
   };
   const renderRestaurant = ({
     impact = IMPACT as object | Error,
-    active = 2,
     stores = STORES as object | Error,
+    withToaster = false,
   } = {}) =>
-    renderWithProviders(<RestaurantDashboardPage />, {
-      route: "/dashboard",
-      path: "/dashboard",
-      user: makeUser({ role: "RESTAURANT", latitude: 43.98, longitude: 18.17 }),
-      get: {
-        "/stats/my-impact": impact,
-        "/orders/mine/summary": { summary: { total: 9, active, counts: {} } },
-        "/users/stores": stores,
+    renderWithProviders(
+      <>
+        {withToaster && <AppToaster />}
+        <RestaurantDashboardPage />
+      </>,
+      {
+        route: "/dashboard",
+        path: "/dashboard",
+        user: makeUser({ role: "RESTAURANT", latitude: 43.98, longitude: 18.17 }),
+        get: { "/stats/my-impact": impact, "/users/stores": stores },
       },
-    });
-  const heroBox = () => screen.getByTestId("restaurant-hero-wide").parentElement!;
+    );
   const pageUrls = () => apiMock.get.mock.calls.map(([url]) => url).filter((url) => url !== "/users/me").sort();
+  const statValues = () => screen.getAllByTestId("home-stat-value").map((node) => node.textContent);
 
-  it("shows the hero with the impact strip, the intro with its two links and the nearest stores, without the orders section", async () => {
+  it("shows the hero (the brand as the only h1, the text, Shop now, Track delivery, the chef) with the stats, then the store slider", async () => {
     renderRestaurant();
 
-    expect(screen.getAllByRole("img", { name: t("restaurantHero.title") })).toHaveLength(2);
-    expect(await screen.findByText("873,9 kg")).toBeInTheDocument();
-    // The strip is attached under the hero: only the hero's top corners are rounded.
-    expect(heroBox()).toHaveClass("rounded-t-2xl");
-    // The intro: the brand is the page's only h1, then the short text and the two links.
     expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     expect(screen.getByRole("heading", { level: 1, name: "Još vrijedi" })).toBeInTheDocument();
-    expect(screen.getByText(t("restaurantIntro.text"))).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: t("restaurantIntro.search") })).toHaveAttribute("href", "/search");
-    expect(await screen.findByRole("link", { name: /Moje narudžbe/ })).toHaveAttribute("href", "/my-orders");
-    expect(await screen.findByRole("link", { name: /Zeleni Market/ })).toHaveAttribute("href", "/stores/21");
-    // The carousel: the stores' visibility rules, nearest first, from all cities, at most 20.
+    expect(screen.getByText(t("restaurantHome.hero.text"))).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: t("restaurantHome.hero.shopNow") })).toHaveAttribute("href", "/search");
+    expect(screen.getByRole("button", { name: t("restaurantHome.hero.trackDelivery") })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: t("restaurantHome.hero.chef") })).toBeInTheDocument();
+
+    // The restaurant's own numbers, formatted for Bosnian.
+    await waitFor(() => expect(statValues()).toEqual(["873,9 kg", "2.184,9 kg", "1.246,50 KM"]));
+    const stats = screen.getByRole("group", { name: t("restaurantHome.stats.label") });
+    expect(within(stats).getByRole("button", { name: t("restaurantHome.stats.co2Info") })).toHaveAccessibleDescription(
+      `${t("restaurantHome.stats.co2")} ${t("restaurantHome.stats.co2Tip")}`,
+    );
+
+    // The slider: the stores' visibility rules, nearest first, from all cities, at most 20; each
+    // card links to its store.
+    const slider = screen.getByRole("region", { name: t("restaurantHome.stores.label") });
+    expect(await within(slider).findByRole("link", { name: "Zeleni Market" })).toHaveAttribute("href", "/stores/21");
+    expect(within(slider).getByRole("link", { name: "Pekara Kod Mirze" })).toHaveAttribute("href", "/stores/22");
     expect(paramsOf("/users/stores")).toEqual({ radius: "all", limit: 20 });
-    expect(pageUrls()).toEqual(["/orders/mine/summary", "/stats/my-impact", "/users/stores"]);
-    // "How it works" comes last, after the carousel.
-    const howItWorks = screen.getByRole("region", { name: t("howItWorks.title") });
-    expect(screen.getByTestId("store-carousel").compareDocumentPosition(howItWorks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    // The orders section is gone, and so are the old stat cards.
-    expect(screen.queryByRole("heading", { name: "Moje narudžbe" })).not.toBeInTheDocument();
-    expect(screen.queryByTestId("order-card")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("stat-label")).not.toBeInTheDocument();
+    expect(pageUrls()).toEqual(["/stats/my-impact", "/users/stores"]);
+    expect(screen.getByTestId("home-hero").compareDocumentPosition(slider) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // A store without a logo shows its initials, one with a logo the image.
+    expect(within(slider).getByText("ZM")).toBeInTheDocument();
+    expect(within(slider).getByRole("link", { name: "Pekara Kod Mirze" }).querySelector("img")).toHaveAttribute(
+      "src",
+      expect.stringContaining("/uploads/logos/pekara.png"),
+    );
+  });
+
+  it("shows zeros to a restaurant that has picked nothing up yet", async () => {
+    renderRestaurant({ impact: { impact: { food_kg: 0, co2_kg: 0, savings: 0 } } });
+
+    await waitFor(() => expect(statValues()).toEqual(["0,0 kg", "0,0 kg", "0,00 KM"]));
+    expect(screen.queryByText(/Zajedno smo spasili/)).not.toBeInTheDocument();
+  });
+
+  it("opens a stat's tooltip on hover and focus and closes it on Escape", async () => {
+    renderRestaurant();
+    const button = await screen.findByRole("button", { name: t("restaurantHome.stats.savedInfo") });
+    const tip = screen
+      .getAllByRole("tooltip", { hidden: true })
+      .find((node) => node.textContent?.includes(t("restaurantHome.stats.savedTip")))!;
+    expect(tip).toHaveAttribute("data-open", "false");
+
+    fireEvent.mouseEnter(button);
+    expect(tip).toHaveAttribute("data-open", "true");
+    fireEvent.mouseLeave(button);
+    expect(tip).toHaveAttribute("data-open", "false");
+
+    fireEvent.focus(button);
+    expect(tip).toHaveAttribute("data-open", "true");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(tip).toHaveAttribute("data-open", "false");
+  });
+
+  it("shows a Coming soon toast for Track delivery and stays on the page", async () => {
+    // jsdom has no matchMedia; react-hot-toast asks it about reduced motion.
+    vi.stubGlobal("matchMedia", (query: string) => ({ matches: false, media: query }));
+    renderRestaurant({ withToaster: true });
+    fireEvent.click(screen.getByRole("button", { name: t("restaurantHome.hero.trackDelivery") }));
+
+    expect(await screen.findByText(t("restaurantHome.hero.comingSoon"))).toBeInTheDocument();
+    expect(screen.getByTestId("home-hero")).toBeInTheDocument();
+    act(() => toast.remove());
+    vi.unstubAllGlobals();
+  });
+
+  it("changes the chef's message every 3 seconds, and keeps the first one with reduced motion", () => {
+    vi.useFakeTimers();
+    try {
+      const messages = t("restaurantHome.hero.bubble", { returnObjects: true }) as unknown as string[];
+      const { unmount } = renderRestaurant();
+      const bubble = screen.getByTestId("home-bubble");
+      expect(bubble).toHaveAttribute("aria-live", "polite");
+      expect(bubble).toHaveTextContent(messages[0]!);
+      act(() => vi.advanceTimersByTime(3000));
+      expect(bubble).toHaveTextContent(messages[1]!);
+      act(() => vi.advanceTimersByTime(9000));
+      expect(bubble).toHaveTextContent(messages[0]!);
+      unmount();
+
+      vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce"), media: query }));
+      renderRestaurant();
+      act(() => vi.advanceTimersByTime(9000));
+      expect(screen.getByTestId("home-bubble")).toHaveTextContent(messages[0]!);
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
   });
 
   it("puts the map pin reminder first", async () => {
@@ -157,50 +230,29 @@ describe("RestaurantDashboardPage", () => {
       route: "/dashboard",
       path: "/dashboard",
       user: makeUser({ role: "RESTAURANT", latitude: null, longitude: null }),
-      get: { "/stats/my-impact": IMPACT, "/orders/mine/summary": { summary: { active: 0 } }, "/users/stores": STORES },
+      get: { "/stats/my-impact": IMPACT, "/users/stores": STORES },
     });
 
     const reminder = await screen.findByRole("link", { name: t("location.reminderLink") });
-    const hero = screen.getByTestId("restaurant-hero-wide");
-    expect(reminder.compareDocumentPosition(hero) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(reminder.compareDocumentPosition(screen.getByTestId("home-hero")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("shows the active-order count on My orders, and no badge without active orders", async () => {
-    const { unmount } = renderRestaurant({ active: 2 });
-    expect(await screen.findByTestId("active-orders-badge")).toHaveTextContent("2");
-    expect(screen.getByRole("link", { name: /^Moje narudžbe\s*, 2 aktivne narudžbe$/ })).toBeInTheDocument();
-    unmount();
-
-    renderRestaurant({ active: 0 });
-    expect(await screen.findByRole("link", { name: /^Zeleni Market/ })).toBeInTheDocument();
-    expect(screen.queryByTestId("active-orders-badge")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Moje narudžbe" })).toBeInTheDocument();
-  });
-
-  it("hides the carousel without stores, and when the stores fail to load", async () => {
+  it("hides the slider without stores, and when the stores fail to load", async () => {
     const { unmount } = renderRestaurant({ stores: { stores: [], total: 0 } });
-    expect(await screen.findByText("873,9 kg")).toBeInTheDocument();
-    await waitFor(() => expect(screen.queryByTestId("store-carousel")).not.toBeInTheDocument());
-    expect(screen.getByRole("link", { name: t("restaurantIntro.search") })).toBeInTheDocument();
+    await waitFor(() => expect(statValues()[0]).toBe("873,9 kg"));
+    await waitFor(() => expect(screen.queryByTestId("home-store-slider")).not.toBeInTheDocument());
     unmount();
 
     renderRestaurant({ stores: new Error("Network Error") });
-    expect(await screen.findByText("873,9 kg")).toBeInTheDocument();
-    await waitFor(() => expect(screen.queryByTestId("store-carousel")).not.toBeInTheDocument());
+    await waitFor(() => expect(statValues()[0]).toBe("873,9 kg"));
+    await waitFor(() => expect(screen.queryByTestId("home-store-slider")).not.toBeInTheDocument());
   });
 
-  it("hides the strip when the impact fails to load and keeps the rest of the page", async () => {
+  it("leaves the stats out when they fail to load and keeps the rest of the page", async () => {
     renderRestaurant({ impact: new Error("Network Error") });
 
-    expect(await screen.findByRole("link", { name: /Zeleni Market/ })).toBeInTheDocument();
-    await waitFor(() => expect(screen.queryByTestId("impact-strip")).not.toBeInTheDocument());
-    expect(heroBox()).toHaveClass("rounded-2xl");
-  });
-
-  it("shows the platform's totals with Together we have saved for a restaurant without pickups", async () => {
-    renderRestaurant({ impact: { impact: { scope: "platform", food_kg: 5000, co2_kg: 12500, savings: 9000 } } });
-
-    expect(await screen.findByText(t("impactStrip.together"))).toBeInTheDocument();
-    expect(screen.getByText("5.000,0 kg")).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Zeleni Market" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId("home-stats")).not.toBeInTheDocument());
+    expect(screen.getByRole("link", { name: t("restaurantHome.hero.shopNow") })).toBeInTheDocument();
   });
 });

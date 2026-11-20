@@ -63,7 +63,12 @@ export const mockGet = (routes: Record<string, MockResponse>) => {
 // Shows where the router ended up, for asserting redirects and navigation.
 export function LocationDisplay() {
   const location = useLocation();
-  return <div data-testid="location">{location.pathname}</div>;
+  return (
+    <div data-testid="location">
+      {location.pathname}
+      {location.search}
+    </div>
+  );
 }
 
 interface RenderOptions {
