@@ -1,167 +1,130 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
-import {
-  ArrowRight,
-  CheckCircle2,
-  ClipboardList,
-  Hourglass,
-  Leaf,
-  Package,
-  PackagePlus,
-  ReceiptText,
-} from "lucide-react";
+import { Cloud, Coins, Plus, ReceiptText, Salad } from "lucide-react";
 import api from "../api/axios.js";
-import { useAuth } from "../context/AuthContext.js";
-import LoadingSpinner from "../components/LoadingSpinner.js";
-import DashboardHero from "../components/dashboard/DashboardHero.js";
+import HomeHero, { type HeroStat } from "../components/dashboard/HomeHero.js";
+import { ShopkeeperIllustration } from "../components/dashboard/HomeIllustrations.js";
+import HomeHowItWorks, {
+  ChooseDeliveryIllustration,
+  ConfirmOrderIllustration,
+  PublishOfferIllustration,
+} from "../components/dashboard/HomeHowItWorks.js";
+import HomeDonateBand from "../components/dashboard/HomeDonateBand.js";
 import LocationReminder from "../components/profile/LocationReminder.js";
-import OrderPauseControl from "../components/profile/OrderPauseControl.js";
-import StatCard from "../components/dashboard/StatCard.js";
-import SectionCard from "../components/dashboard/SectionCard.js";
-import DashboardProductCard from "../components/dashboard/DashboardProductCard.js";
-import OrderCard from "../components/order/OrderCard.js";
-import { formatSavedFood } from "../utils/savedFood.js";
-import type { Order, Product, StoreDashboardStats } from "../types/index.js";
+import { formatNumber } from "../utils/numbers.js";
+import type { StoreImpact } from "../types/index.js";
 
-const SECTION_SIZE = 3;
-
+// The store's home page (design/store-home/store.dc.html), for every STORE account, branches
+// included, built from the restaurant home page's components and set in Plus Jakarta Sans: the map
+// pin reminder (only without a pin), the hero with the store's stats across the full width of the
+// content, then the sections centred at most 1280 px wide, and last the donation band across the
+// whole content area, which the footer's arch overlaps (Layout renders that footer flush).
 function StoreDashboardPage() {
-  const [productsList, setProductsList] = useState<Product[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [stats, setStats] = useState<StoreDashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { user, refreshUser } = useAuth();
-  const { t } = useTranslation();
-
-  // The stat cards come from the server over all data; the lists are only the newest few.
-  const fetchStats = async () => {
-    try {
-      const response = await api.get("/dashboard/stats");
-      setStats(response.data.stats);
-    } catch (err) {
-      console.error("Error fetching dashboard stats:", err);
-    }
-  };
-
-  const fetchProducts = async () => {
-    try {
-      const response = await api.get("/products/mine", {
-        params: { status: "Available", limit: SECTION_SIZE },
-      });
-      const data: Product[] = response.data.products;
-      setProductsList(data);
-    } catch (err) {
-      console.error("Error fetching products:", err);
-    }
-  };
-
-  const fetchOrders = async () => {
-    try {
-      const response = await api.get("/orders/store", { params: { limit: SECTION_SIZE } });
-      setOrders(response.data.orders);
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-    }
-  };
+  const { t, i18n } = useTranslation();
+  // null while loading.
+  const [impact, setImpact] = useState<StoreImpact | null>(null);
+  const [impactFailed, setImpactFailed] = useState(false);
 
   useEffect(() => {
-    const loadData = async () => {
-      await Promise.all([fetchStats(), fetchProducts(), fetchOrders()]);
-
-      setLoading(false);
-    };
-
-    loadData();
+    api
+      .get("/stats/my-impact")
+      .then((response) => setImpact(response.data.impact))
+      .catch((err) => {
+        console.error("Error fetching impact stats:", err);
+        setImpactFailed(true);
+      });
   }, []);
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
-  const details = [user?.business_name, user?.city].filter(Boolean).join(" · ");
-  const savedFood = stats ? formatSavedFood(stats.saved, t("dashboard.piecesShort")) : [];
+  const lang = i18n.language;
+  // What restaurants picked up from the store: food (kg), CO₂ avoided (kg) and money back in the
+  // till (KM), each with its tooltip.
+  const stats: HeroStat[] = [
+    {
+      key: "foodSaved",
+      icon: Salad,
+      label: t("home.stats.foodSaved"),
+      tip: t("storeHome.stats.foodSavedTip"),
+      infoLabel: t("home.stats.foodSavedInfo"),
+      value: impact && `${formatNumber(impact.food_kg, lang, 1)} kg`,
+    },
+    {
+      key: "co2",
+      icon: Cloud,
+      label: t("home.stats.co2"),
+      tip: t("home.stats.co2Tip"),
+      infoLabel: t("home.stats.co2Info"),
+      value: impact && `${formatNumber(impact.co2_kg, lang, 1)} kg`,
+    },
+    {
+      key: "revenue",
+      icon: Coins,
+      label: t("storeHome.stats.revenue"),
+      tip: t("storeHome.stats.revenueTip"),
+      infoLabel: t("storeHome.stats.revenueInfo"),
+      value: impact && `${formatNumber(impact.revenue, lang, 2)} KM`,
+    },
+  ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-10">
-      <DashboardHero
-        title={t("dashboard.greeting", { name: user?.first_name ?? "" })}
-        subtitle={t("dashboard.storeSubtitle")}
-        details={details || undefined}
-        action={{ to: "/add-product", label: t("dashboard.addProduct"), icon: PackagePlus }}
-      />
-
+    <div data-testid="store-home" className="space-y-6 font-jakarta text-neutral-900">
       <LocationReminder />
 
-      {/* Pausing new orders is urgent (a rush, no staff), so it is here as well as on My profile. */}
-      {user && (
-        <OrderPauseControl
-          variant="card"
-          pause={{ orders_paused: user.orders_paused ?? false, orders_paused_until: user.orders_paused_until ?? null }}
-          onChange={() => refreshUser().catch((err) => console.error("Error refreshing user:", err))}
-        />
-      )}
+      <HomeHero
+        text={t("storeHome.hero.text")}
+        actions={[
+          {
+            label: t("storeHome.hero.addProduct"),
+            to: "/add-product",
+            variant: "primary",
+            icon: <Plus className="h-[18px] w-[18px]" strokeWidth={2.6} aria-hidden="true" />,
+          },
+          {
+            label: t("storeHome.hero.orders"),
+            to: "/orders",
+            variant: "outline",
+            icon: <ReceiptText className="h-5 w-5" strokeWidth={2} aria-hidden="true" />,
+          },
+        ]}
+        illustration={<ShopkeeperIllustration label={t("storeHome.hero.shopkeeper")} />}
+        bubble={t("storeHome.hero.bubble", { returnObjects: true }) as string[]}
+        stats={stats}
+        statsLabel={t("home.stats.label")}
+        statsFailed={impactFailed}
+      />
 
-      <Link
-        to="/packing"
-        className="group flex items-center gap-4 rounded-2xl border border-neutral-100 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-      >
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-800">
-          <ClipboardList className="h-5 w-5" strokeWidth={2} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold text-neutral-900">{t("dashboard.packingTitle")}</span>
-          <span className="block text-sm text-neutral-500">{t("dashboard.packingText")}</span>
-        </span>
-        <ArrowRight className="h-5 w-5 shrink-0 text-brand-800 transition-transform group-hover:translate-x-0.5" />
-      </Link>
-
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard icon={Package} label={t("dashboard.statActiveProducts")} value={stats?.active_products ?? 0} />
-        <StatCard icon={Hourglass} label={t("dashboard.statPending")} value={stats?.pending_orders ?? 0} tone="warning" />
-        <StatCard icon={CheckCircle2} label={t("dashboard.statConfirmed")} value={stats?.successful_orders ?? 0} tone="success" />
-        <StatCard
-          icon={Leaf}
-          label={t("dashboard.statSavedFood")}
-          value={savedFood[0] ?? "0 kg"}
-          units={savedFood.slice(1)}
-          tone="success"
+      <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
+        {/* Today, New orders and Expiring soon in your offer come here (store home, part 2). */}
+        <HomeHowItWorks
+          title={t("storeHome.howItWorks.title")}
+          subtitle={t("storeHome.howItWorks.subtitle")}
+          steps={[
+            {
+              key: "publish",
+              illustration: PublishOfferIllustration,
+              title: t("storeHome.howItWorks.publish.title"),
+              textKey: "storeHome.howItWorks.publish.text",
+            },
+            {
+              key: "confirm",
+              illustration: ConfirmOrderIllustration,
+              title: t("storeHome.howItWorks.confirm.title"),
+              textKey: "storeHome.howItWorks.confirm.text",
+            },
+            {
+              key: "handOver",
+              illustration: ChooseDeliveryIllustration,
+              title: t("storeHome.howItWorks.handOver.title"),
+              textKey: "storeHome.howItWorks.handOver.text",
+            },
+          ]}
         />
       </div>
 
-      <div className="space-y-10">
-        <SectionCard
-          title={t("dashboard.myProductsTitle")}
-          icon={Package}
-          viewAll={{ to: "/my-products", label: t("dashboard.viewAllProducts") }}
-          isEmpty={productsList.length === 0}
-          empty={{
-            icon: Package,
-            text: t("dashboard.noProductsStore"),
-            action: { to: "/add-product", label: t("dashboard.addProduct") },
-          }}
-        >
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {productsList.map((product) => (
-              <DashboardProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </SectionCard>
-
-        <SectionCard
-          title={t("dashboard.recentOrdersTitle")}
-          icon={ReceiptText}
-          viewAll={{ to: "/orders", label: t("dashboard.viewAllOrders") }}
-          isEmpty={orders.length === 0}
-          empty={{ icon: ReceiptText, text: t("dashboard.noOrders") }}
-        >
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {orders.map((order) => (
-              <OrderCard key={order.id} order={order} partyLabel={t("dashboard.restaurantName")} viewer="STORE" />
-            ))}
-          </div>
-        </SectionCard>
-      </div>
+      <HomeDonateBand
+        title={t("home.donate.title")}
+        text={t("storeHome.donate.text")}
+        donateLabel={t("storeHome.donate.donate")}
+      />
     </div>
   );
 }

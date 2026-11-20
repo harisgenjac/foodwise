@@ -6,9 +6,9 @@ import { apiMock, makeProduct, makeUser, renderWithProviders, t } from "../test/
 const TOTAL = 30;
 
 // The server pages the store's products: `limit` rows out of TOTAL, or none for a name search.
-const renderPage = () =>
+const renderPage = (route = "/my-products") =>
   renderWithProviders(<MyProductsPage />, {
-    route: "/my-products",
+    route,
     path: "/my-products",
     user: makeUser({ role: "STORE" }),
     get: {
@@ -38,6 +38,12 @@ describe("MyProductsPage", () => {
     expect(await screen.findByText("Proizvod 24")).toBeInTheDocument();
     expect(lastParams()).toMatchObject({ limit: 24 });
     expect(screen.getByText(t("common.showingOf", { shown: 24, total: TOTAL }))).toBeInTheDocument();
+  });
+
+  it("fills the name filter from ?q= (the header search) and searches by it", async () => {
+    renderPage("/my-products?q=sir%20trapist");
+    expect(await screen.findByPlaceholderText(t("filters.searchByName"))).toHaveValue("sir trapist");
+    await waitFor(() => expect(lastParams()).toMatchObject({ name: "sir trapist", status: "Available" }));
   });
 
   it("goes back to the first page when a filter changes", async () => {

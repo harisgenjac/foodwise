@@ -32,7 +32,8 @@
     "closeMenu": "Close menu",
     "orders": "Orders",
     "myOrders": "My orders",
-    "search": "Search"
+    "search": "Search",
+    "donateFoodStore": "Donate food"
   },
   "breadcrumbs": {
     "label": "Breadcrumb",
@@ -51,7 +52,8 @@
     "cartLabel": "Cart",
     "cartLabelCount_one": "Cart, {{count}} product",
     "cartLabelCount_other": "Cart, {{count}} products",
-    "search": "Search products or stores"
+    "search": "Search products or stores",
+    "searchStore": "Search your products"
   },
   "bottomNav": {
     "label": "Main navigation",
@@ -468,20 +470,9 @@
     "price": "Price",
     "quantity": "Quantity",
     "expiryDate": "Expiry Date",
-    "viewAllProducts": "View all products",
     "pickupDate": "Pickup",
-    "greeting": "Welcome, {{name}}",
-    "storeSubtitle": "Here is an overview of your store today.",
-    "addProduct": "Add product",
     "browseOffers": "Browse offers",
-    "statActiveProducts": "Active products",
-    "statPending": "Pending",
-    "statConfirmed": "Accepted orders",
-    "noProductsStore": "You have no active products.",
     "detailsButton": "Details",
-    "restaurantName": "Restaurant",
-    "myProductsTitle": "My products",
-    "statSavedFood": "Food saved (picked up)",
     "piecesShort": "pcs",
     "weekdays": [
       "Sunday",
@@ -506,12 +497,7 @@
       "November",
       "December"
     ],
-    "dateFormat": "{{weekday}}, {{day}} {{month}}",
-    "recentOrdersTitle": "New orders",
-    "packingTitle": "Packing list",
-    "packingText": "What to prepare today and by when, by ready time.",
-    "viewAllOrders": "View all orders",
-    "noOrders": "No orders yet."
+    "dateFormat": "{{weekday}}, {{day}} {{month}}"
   },
   "productStatus": {
     "Available": "Available",
@@ -2222,6 +2208,20 @@
     "badge": "Not taking orders",
     "notice": "This store is not taking orders right now ({{until}}). The products stay in your cart, so you can send the order later."
   },
+  "home": {
+    "stats": {
+      "label": "Your impact",
+      "foodSaved": "Food saved",
+      "foodSavedInfo": "How food saved is counted",
+      "co2": "Less CO₂",
+      "co2Info": "How the CO₂ is estimated",
+      "co2Tip": "An estimate: each kilogram of food saved avoids about 2.5 kg of CO₂ from producing and throwing it away."
+    },
+    "donate": {
+      "title": "Every meal is worth it, especially a shared one",
+      "sponsor": "Become a sponsor"
+    }
+  },
   "restaurantHome": {
     "hero": {
       "text": "Buy food close to its expiry date straight from stores near you, for less. Pick it up yourself or have it delivered to your restaurant.",
@@ -2237,13 +2237,7 @@
       ]
     },
     "stats": {
-      "label": "Your impact",
-      "foodSaved": "Food saved",
-      "foodSavedInfo": "How food saved is counted",
       "foodSavedTip": "All food you picked up through the app. Litres are counted as kilograms; items sold by the piece are not included.",
-      "co2": "Less CO₂",
-      "co2Info": "How the CO₂ is estimated",
-      "co2Tip": "An estimate: each kilogram of food saved avoids about 2.5 kg of CO₂ from producing and throwing it away.",
       "saved": "Saved",
       "savedInfo": "How the savings are counted",
       "savedTip": "The difference between the full price and the price you paid for all the food you picked up."
@@ -2276,10 +2270,48 @@
       }
     },
     "donate": {
-      "title": "Every meal is worth it, especially a shared one",
       "text": "Donate a meal or sponsor a campaign and help people in your town.",
-      "donate": "Donate a meal",
-      "sponsor": "Become a sponsor"
+      "donate": "Donate a meal"
+    }
+  },
+  "storeHome": {
+    "hero": {
+      "text": "Sell food that is about to expire instead of throwing it away. Restaurants in your town are waiting for it, and you put money back in the till.",
+      "addProduct": "Add product",
+      "orders": "Orders",
+      "shopkeeper": "A shopkeeper holding a crate full of vegetables",
+      "bubble": [
+        "Better a discount than waste!",
+        "This crate goes to a restaurant, not the bin.",
+        "Sold before the date, saved from the bin.",
+        "Every kilogram counts!"
+      ]
+    },
+    "stats": {
+      "foodSavedTip": "All the food restaurants picked up from you instead of throwing it away. Litres are counted as kilograms; items sold by the piece are not included.",
+      "revenue": "Back in the till",
+      "revenueInfo": "How back in the till is counted",
+      "revenueTip": "Money from food that was about to expire and would otherwise have been thrown away: the total of all picked-up orders."
+    },
+    "howItWorks": {
+      "title": "From the shelf to the restaurant",
+      "subtitle": "Three steps to selling instead of throwing away",
+      "publish": {
+        "title": "Publish an offer",
+        "text": "Add a product that is about to expire, with a reduced price and the quantity. <hl>One listing costs 1 credit</hl>."
+      },
+      "confirm": {
+        "title": "Confirm the order",
+        "text": "Restaurants order from your offer, and you <hl>accept or reject the order in a few clicks</hl>."
+      },
+      "handOver": {
+        "title": "Hand over the goods",
+        "text": "The restaurant <hl>picks it up in person or a courier takes it</hl>, and the food ends up on a plate instead of in the bin."
+      }
+    },
+    "donate": {
+      "text": "Move surplus from your offer to donations or sponsor a campaign and help people in your town.",
+      "donate": "Donate food"
     }
   }
 }

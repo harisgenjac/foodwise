@@ -8,6 +8,7 @@ import { open } from "../support/ui.js";
 const PAGES: { role: SeededRole; url: string; name: string }[] = [
   { role: "restaurant", url: "/dashboard", name: "restaurant home" },
   { role: "restaurant", url: "/search", name: "search" },
+  { role: "store", url: "/dashboard", name: "store home" },
   { role: "store", url: "/my-products", name: "store products" },
   { role: "store", url: "/orders", name: "store orders" },
   { role: "admin", url: "/admin", name: "admin overview" },

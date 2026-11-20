@@ -34,8 +34,9 @@ function Layout() {
   const { pathname } = useLocation();
   const setup = getAccountSetup(user);
   const bottomNavRole = hasBottomNav(user?.role) ? user.role : null;
-  // The restaurant home page ends with its donation band, which the footer's arch overlaps.
-  const flushFooter = user?.role === 'RESTAURANT' && pathname === '/dashboard' && !setup.locked;
+  // The restaurant and store home pages end with the donation band, which the footer's arch overlaps.
+  const flushFooter =
+    (user?.role === 'RESTAURANT' || user?.role === 'STORE') && pathname === '/dashboard' && !setup.locked;
 
   function onToggleSidebar() {
     const next = !isSidebarOpen;

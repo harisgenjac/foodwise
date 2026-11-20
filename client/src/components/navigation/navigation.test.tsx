@@ -35,6 +35,7 @@ const renderLayout = (user: ReturnType<typeof makeUser>, route = "/dashboard") =
         "/stats/impact": { kg: 0 },
         "/admin/credits/requests/pending-count": { count: 0 },
         "/company/credits/branch-requests/count": { count: 0 },
+        "/orders/store": { orders: [], total: 0 },
       },
     },
   );
@@ -201,5 +202,28 @@ describe("BottomNav", () => {
     await userEvent.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(more).toHaveFocus();
+  });
+});
+
+describe("Footer on the home pages", () => {
+  const footer = () => screen.getByRole("contentinfo");
+
+  it("starts right after the restaurant and store home pages (their donation band) and keeps its margin elsewhere", async () => {
+    for (const user of [store, restaurant]) {
+      const { unmount } = renderLayout(user);
+      await menuButton();
+      expect(footer()).not.toHaveClass("mt-14");
+      unmount();
+    }
+
+    const { unmount } = renderLayout(store, "/my-products");
+    await menuButton();
+    expect(footer()).toHaveClass("mt-14");
+    unmount();
+
+    // The company headquarters' dashboard has no band.
+    renderLayout(makeUser({ role: "COMPANY", company_id: 3, phone: "035 000 111" }));
+    await menuButton();
+    expect(footer()).toHaveClass("mt-14");
   });
 });

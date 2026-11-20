@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext.js";
+import { useLiveOrderRefresh } from "../../context/LiveEventsContext.js";
 import { NavLink, useLocation } from "react-router-dom";
 import api from "../../api/axios.js";
 import { useTranslation } from "react-i18next";
@@ -32,8 +33,10 @@ interface SidebarLink {
   label: string;
   icon: LucideIcon;
   // A count shown next to the label (pending credit requests for admins, branch top-ups waiting
-  // for a headquarters).
+  // for a headquarters, a store's orders waiting for its answer).
   badge?: number;
+  // "accent": an orange badge for something that needs an answer soon.
+  badgeTone?: "brand" | "accent";
 }
 
 interface SidebarNavProps {
@@ -55,7 +58,9 @@ function SidebarNav({ expanded, locked = false, onNavigate, replace = false }: S
   const { pathname } = useLocation();
   const isAdmin = user?.role === "ADMIN";
   const isCompany = user?.role === "COMPANY";
+  const isStore = user?.role === "STORE";
   const [pendingRequests, setPendingRequests] = useState(0);
+  const [pendingOrders, setPendingOrders] = useState(0);
 
   // Admins see how many credit requests wait for a decision; reloaded on every page change.
   useEffect(() => {
@@ -75,16 +80,34 @@ function SidebarNav({ expanded, locked = false, onNavigate, replace = false }: S
       .catch((err) => console.error("Error loading branch credit requests:", err));
   }, [isCompany, locked, pathname]);
 
+  // A store sees how many orders wait for its answer: loaded on every page change and again when
+  // one of its orders changes (the live events).
+  const loadPendingOrders = useCallback(() => {
+    if (!isStore || locked) return;
+    api
+      .get("/orders/store", { params: { status: "Pending", limit: 1 } })
+      .then((response) => setPendingOrders(response.data.total))
+      .catch((err) => console.error("Error loading pending orders:", err));
+  }, [isStore, locked]);
+
+  useEffect(() => {
+    loadPendingOrders();
+  }, [loadPendingOrders, pathname]);
+
+  useLiveOrderRefresh(loadPendingOrders);
+
+  // The store home page's design (design/store-home/store.dc.html) orders the first six; the pages
+  // it does not show (pickups, add product, my profile) follow them.
   const storeLinks: SidebarLink[] = [
     { to: "/dashboard", label: t("sidebar.dashboard"), icon: LayoutDashboard },
-    { to: "/my-profile", label: t("sidebar.myProfile"), icon: UserRound },
-    { to: "/add-product", label: t("sidebar.addProduct"), icon: PackagePlus },
     { to: "/my-products", label: t("sidebar.myProducts"), icon: Package },
-    { to: "/orders", label: t("sidebar.orders"), icon: ReceiptText },
-    { to: "/pickups", label: t("sidebar.pickups"), icon: PackageCheck },
+    { to: "/orders", label: t("sidebar.orders"), icon: ReceiptText, badge: pendingOrders, badgeTone: "accent" },
     { to: "/packing", label: t("sidebar.packing"), icon: ClipboardList },
     { to: "/reports", label: t("sidebar.reports"), icon: FileChartColumn },
     { to: "/credits", label: t("sidebar.credits"), icon: Coins },
+    { to: "/pickups", label: t("sidebar.pickups"), icon: PackageCheck },
+    { to: "/add-product", label: t("sidebar.addProduct"), icon: PackagePlus },
+    { to: "/my-profile", label: t("sidebar.myProfile"), icon: UserRound },
   ];
 
   const restaurantLinks: SidebarLink[] = [
@@ -98,7 +121,7 @@ function SidebarNav({ expanded, locked = false, onNavigate, replace = false }: S
   ];
 
   const humanitarianLinks: SidebarLink[] = [
-    { to: "/donate-food", label: t("sidebar.donateFood"), icon: HeartHandshake },
+    { to: "/donate-food", label: t(isStore ? "sidebar.donateFoodStore" : "sidebar.donateFood"), icon: HeartHandshake },
     { to: "/sponsor", label: t("sidebar.sponsor"), icon: Handshake },
   ];
 
@@ -135,7 +158,7 @@ function SidebarNav({ expanded, locked = false, onNavigate, replace = false }: S
         ? storeLinks
         : restaurantLinks;
 
-  const renderLink = ({ to, label, icon: Icon, badge }: SidebarLink) => (
+  const renderLink = ({ to, label, icon: Icon, badge, badgeTone = "brand" }: SidebarLink) => (
     <li key={to}>
       <NavLink
         to={to}
@@ -164,7 +187,8 @@ function SidebarNav({ expanded, locked = false, onNavigate, replace = false }: S
             {expanded && <span className="truncate">{label}</span>}
             {badge !== undefined && badge > 0 && (
               <span
-                className={`rounded-full bg-brand-800 text-xs font-semibold text-white ${
+                data-testid="sidebar-badge"
+                className={`rounded-full text-xs font-semibold text-white ${badgeTone === "accent" ? "bg-accent-700" : "bg-brand-800"} ${
                   expanded ? "ml-auto px-2 py-0.5" : "absolute right-2 top-1 h-2 w-2"
                 }`}
               >

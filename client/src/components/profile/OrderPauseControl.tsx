@@ -12,13 +12,11 @@ interface OrderPauseControlProps {
   pause: StorePause;
   // The saved settings, after pausing or resuming.
   onChange: (settings: OrderSettings) => void;
-  // "card": a highlighted box for the dashboard; "row": a row inside the profile section.
-  variant?: "card" | "row";
 }
 
-// A store pauses new orders (asking how long) or resumes them; it saves at once. On the store's
-// dashboard and on My profile.
-function OrderPauseControl({ pause, onChange, variant = "row" }: OrderPauseControlProps) {
+// A store pauses new orders (asking how long) or resumes them; it saves at once. A row in the
+// order settings on My profile.
+function OrderPauseControl({ pause, onChange }: OrderPauseControlProps) {
   const { t } = useTranslation();
   const [asking, setAsking] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -41,16 +39,8 @@ function OrderPauseControl({ pause, onChange, variant = "row" }: OrderPauseContr
 
   const pauseFor = (option: PauseOption) => save({ orders_paused: true, orders_paused_until: pauseUntil(option) });
 
-  const box =
-    variant === "card"
-      ? `rounded-2xl border p-4 shadow-sm ${paused ? "border-warning-200 bg-warning-50" : "border-neutral-100 bg-white"}`
-      : "";
-
   return (
-    <div
-      data-testid="order-pause"
-      className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${box}`}
-    >
+    <div data-testid="order-pause" className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 gap-3">
         <span
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${

@@ -60,8 +60,8 @@ const expectTapTargets = async (scope: Locator, label: string) => {
   expect(small, `${label}: tap targets under 44 px`).toEqual([]);
 };
 
-// The store dashboard's stat cards sit two to a row on a phone; every label is shown whole (it wraps
-// instead of ending in "…").
+// Stat cards (StatCard, on the headquarters' overview) sit two to a row on a phone; every label is
+// shown whole (it wraps instead of ending in "…").
 const expectStatLabelsWhole = async (page: Page) => {
   await open(page, "/dashboard");
   const labels = page.getByTestId("stat-label");
@@ -135,8 +135,8 @@ test.describe("store", () => {
     await expectFilterPanel(page, "/my-products", "Pretraga po imenu");
   });
 
-  test("stat labels are not cut, and tabs, chips, report presets and footer links are 44 px", async ({ page }) => {
-    await expectStatLabelsWhole(page);
+  test("tabs, chips, report presets and footer links are 44 px", async ({ page }) => {
+    await open(page, "/dashboard");
     await expectTapTargets(page.getByRole("contentinfo"), "footer");
 
     // The three Pickups tabs share one row.
@@ -452,6 +452,10 @@ test.describe("company headquarters", () => {
       await expect(button, name).toBeInViewport({ ratio: 1 });
       expect((await button.boundingBox())!.height, name).toBeGreaterThanOrEqual(44);
     }
+  });
+
+  test("the overview's stat labels are not cut", async ({ page }) => {
+    await expectStatLabelsWhole(page);
   });
 
   test("the headquarters' other pages fit a phone screen", async ({ page }) => {

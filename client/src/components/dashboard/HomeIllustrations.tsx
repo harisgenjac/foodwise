@@ -1,4 +1,4 @@
-// The restaurant home page's drawings (design/restaurant-home/home.dc.html), copied as they are.
+// The home pages' drawings (design/restaurant-home/home.dc.html, design/store-home/store.dc.html), copied as they are.
 
 // Faint outline food drawings on the hero's dark green, behind its content. Decorative.
 export function HeroDoodles() {
@@ -99,6 +99,52 @@ export function ScooterIcon({ className }: { className?: string }) {
       <circle cx="5.5" cy="17.5" r="3" />
       <circle cx="18.5" cy="17.5" r="3" />
       <path d="M8.5 17.5h5l3-7h3M12 10.5h4M5.5 17.5 9 8h3" />
+    </svg>
+  );
+}
+
+// The shopkeeper holding a crate full of vegetables, on the right of the store home page's hero
+// (design/store-home/store.dc.html). `label` names it.
+export function ShopkeeperIllustration({ label }: { label: string }) {
+  return (
+    <svg
+      viewBox="0 0 340 330"
+      role="img"
+      aria-label={label}
+      focusable="false"
+      data-testid="home-shopkeeper"
+      className="relative block h-auto w-full max-w-[340px]"
+    >
+      <ellipse cx="170" cy="322" rx="130" ry="10" fill="#0F3F22" />
+      <path d="M40 330c0-70 40-118 130-118s130 48 130 118z" fill="#DBEAFE" />
+      <path d="M120 218h100l16 112H104z" fill="#15803D" />
+      <path d="M132 220l-6-12M208 220l6-12" stroke="#166534" strokeWidth="7" strokeLinecap="round" />
+      <rect x="148" y="258" width="44" height="28" rx="6" fill="#166534" />
+      <path d="M156 266h28" stroke="#BEF264" strokeWidth="3" strokeLinecap="round" />
+      <rect x="152" y="176" width="36" height="40" rx="10" fill="#C68863" />
+      <circle cx="170" cy="150" r="44" fill="#E0AC85" />
+      <path d="M128 140c0-28 18-46 44-46 26 0 42 18 40 44-8-12-22-20-40-20-18 0-34 8-44 22z" fill="#5B3A22" />
+      <circle cx="126" cy="154" r="9" fill="#D69A70" />
+      <circle cx="214" cy="154" r="9" fill="#D69A70" />
+      <circle cx="154" cy="150" r="4.5" fill="#1C1917" />
+      <circle cx="186" cy="150" r="4.5" fill="#1C1917" />
+      <path d="M156 172c8 8 20 8 28 0" fill="none" stroke="#9A3412" strokeWidth="3.5" strokeLinecap="round" />
+      <circle cx="144" cy="166" r="6" fill="#F4A07A" opacity="0.6" />
+      <circle cx="196" cy="166" r="6" fill="#F4A07A" opacity="0.6" />
+      <g>
+        <circle cx="200" cy="220" r="15" fill="#DC2626" />
+        <circle cx="224" cy="214" r="16" fill="#22C55E" />
+        <circle cx="248" cy="218" r="14" fill="#EAB308" />
+        <circle cx="270" cy="222" r="13" fill="#DC2626" />
+        <circle cx="236" cy="226" r="13" fill="#16A34A" />
+        <path d="M180 228h116v62H180z" fill="#B45309" />
+        <path d="M180 248h116M180 268h116" stroke="#92400E" strokeWidth="3" />
+        <path d="M188 228v62M288 228v62" stroke="#92400E" strokeWidth="3" />
+      </g>
+      <path d="M112 248c-20 18-22 42-8 56 10 10 28 8 40-2l40-14-6-24-36 8z" fill="#DBEAFE" />
+      <circle cx="180" cy="272" r="13" fill="#E0AC85" />
+      <circle cx="296" cy="260" r="13" fill="#E0AC85" />
+      <path d="M300 330c0-30-6-54-18-70" stroke="#DBEAFE" strokeWidth="20" strokeLinecap="round" fill="none" />
     </svg>
   );
 }

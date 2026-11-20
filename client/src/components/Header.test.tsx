@@ -206,8 +206,24 @@ describe("Header search", () => {
     expect(await screen.findByTestId("location")).toHaveTextContent("/search?q=sir%20trapist");
   });
 
-  it("is not shown to stores, companies and admins", async () => {
-    for (const role of ["STORE", "COMPANY", "ADMIN"] as const) {
+  it("lets a store search its own products: Enter opens /my-products?q=<text>", async () => {
+    renderAs("STORE");
+    const field = await screen.findByRole("searchbox", { name: "Pretraži svoje proizvode" });
+    expect(field).toHaveAttribute("placeholder", "Pretraži svoje proizvode");
+
+    await userEvent.type(field, "jogurt{Enter}");
+    expect(await screen.findByTestId("location")).toHaveTextContent("/my-products?q=jogurt");
+    expect(field).toHaveValue("");
+  });
+
+  it("shows a store no cart", async () => {
+    renderAs("STORE");
+    await screen.findByRole("button", { name: /Amir Hodžić/ });
+    expect(screen.queryByRole("link", { name: new RegExp(t("header.cartLabel")) })).not.toBeInTheDocument();
+  });
+
+  it("is not shown to companies and admins", async () => {
+    for (const role of ["COMPANY", "ADMIN"] as const) {
       const { unmount } = renderAs(role);
       await screen.findByRole("button", { name: /Amir Hodžić/ });
       expect(screen.queryByRole("search")).not.toBeInTheDocument();

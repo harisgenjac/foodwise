@@ -55,8 +55,8 @@ export const storesScope = (): PickupScope => ({
   partyJoin: "order_items.restaurant_id = parties.id",
 });
 
-// Food saved in one row: g/kg as kg, ml/l as l, kom and pak as pieces (like the dashboard's
-// "food saved" card), the value paid and the savings against the original price. A pickup is an
+// Food saved in one row: g/kg as kg, ml/l as l, kom and pak as pieces (like the admin statistics),
+// the value paid and the savings against the original price. A pickup is an
 // order (all its accepted items are handed over at once).
 export const IMPACT_COLUMNS = `
   COUNT(DISTINCT order_items.order_id) AS pickups,

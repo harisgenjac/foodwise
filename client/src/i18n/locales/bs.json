@@ -3,7 +3,7 @@
     "dashboard": "Početna",
     "myProfile": "Moj profil",
     "stores": "Prodavnice",
-    "myProducts": "Moji Proizvodi",
+    "myProducts": "Moji proizvodi",
     "addProduct": "Dodaj Proizvod",
     "donateFood": "Doniraj obrok",
     "sponsor": "Budi sponzor",
@@ -32,7 +32,8 @@
     "closeMenu": "Zatvori meni",
     "orders": "Narudžbe",
     "myOrders": "Moje narudžbe",
-    "search": "Pretraga"
+    "search": "Pretraga",
+    "donateFoodStore": "Doniraj hranu"
   },
   "breadcrumbs": {
     "label": "Putanja",
@@ -52,7 +53,8 @@
     "cartLabelCount_one": "Korpa, {{count}} proizvod",
     "cartLabelCount_few": "Korpa, {{count}} proizvoda",
     "cartLabelCount_other": "Korpa, {{count}} proizvoda",
-    "search": "Pretraži proizvode ili prodavnice"
+    "search": "Pretraži proizvode ili prodavnice",
+    "searchStore": "Pretraži svoje proizvode"
   },
   "bottomNav": {
     "label": "Glavna navigacija",
@@ -482,20 +484,9 @@
     "price": "Cijena",
     "quantity": "Količina",
     "expiryDate": "Datum isteka",
-    "viewAllProducts": "Vidi sve proizvode",
     "pickupDate": "Preuzimanje",
-    "greeting": "Dobro došli, {{name}}",
-    "storeSubtitle": "Evo pregleda vaše prodavnice za danas.",
-    "addProduct": "Dodaj proizvod",
     "browseOffers": "Pretraži ponude",
-    "statActiveProducts": "Aktivni proizvodi",
-    "statPending": "Na čekanju",
-    "statConfirmed": "Prihvaćene narudžbe",
-    "noProductsStore": "Nemate aktivnih proizvoda.",
     "detailsButton": "Detalji",
-    "restaurantName": "Restoran",
-    "myProductsTitle": "Moji proizvodi",
-    "statSavedFood": "Spašeno hrane (preuzeto)",
     "piecesShort": "kom",
     "weekdays": [
       "nedjelja",
@@ -520,12 +511,7 @@
       "novembar",
       "decembar"
     ],
-    "dateFormat": "{{weekday}}, {{day}}. {{month}}",
-    "recentOrdersTitle": "Nove narudžbe",
-    "packingTitle": "Spisak za pakovanje",
-    "packingText": "Šta spremiti danas i do kada, po vremenu spremnosti.",
-    "viewAllOrders": "Vidi sve narudžbe",
-    "noOrders": "Još nema narudžbi."
+    "dateFormat": "{{weekday}}, {{day}}. {{month}}"
   },
   "productStatus": {
     "Available": "Dostupno",
@@ -2273,6 +2259,20 @@
     "badge": "Ne prima narudžbe",
     "notice": "Ova prodavnica trenutno ne prima narudžbe ({{until}}). Proizvodi ostaju u korpi pa narudžbu možete poslati kasnije."
   },
+  "home": {
+    "stats": {
+      "label": "Vaš uticaj",
+      "foodSaved": "Spašeno hrane",
+      "foodSavedInfo": "Kako se računa spašena hrana",
+      "co2": "Manje CO₂",
+      "co2Info": "Kako se računa CO₂",
+      "co2Tip": "Procjena: svaki spašeni kilogram hrane sprečava oko 2,5 kg CO₂ koji bi nastao njenom proizvodnjom i bacanjem."
+    },
+    "donate": {
+      "title": "Svaki obrok vrijedi, pogotovo onaj podijeljen",
+      "sponsor": "Budi sponzor"
+    }
+  },
   "restaurantHome": {
     "hero": {
       "text": "Kupujte hranu kojoj uskoro ističe rok direktno od prodavnica u blizini, po nižoj cijeni. Preuzmite je lično ili naručite dostavu do svog restorana.",
@@ -2288,13 +2288,7 @@
       ]
     },
     "stats": {
-      "label": "Vaš uticaj",
-      "foodSaved": "Spašeno hrane",
-      "foodSavedInfo": "Kako se računa spašena hrana",
       "foodSavedTip": "Sva hrana koju ste preuzeli preko aplikacije. Litre računamo kao kilograme, a proizvodi u komadima nisu uračunati.",
-      "co2": "Manje CO₂",
-      "co2Info": "Kako se računa CO₂",
-      "co2Tip": "Procjena: svaki spašeni kilogram hrane sprečava oko 2,5 kg CO₂ koji bi nastao njenom proizvodnjom i bacanjem.",
       "saved": "Ušteđeno",
       "savedInfo": "Kako se računa ušteda",
       "savedTip": "Razlika između pune cijene i cijene koju ste platili za svu preuzetu hranu."
@@ -2327,10 +2321,48 @@
       }
     },
     "donate": {
-      "title": "Svaki obrok vrijedi, pogotovo onaj podijeljen",
       "text": "Donirajte obrok ili sponzorišite akciju i pomozite ljudima u svom gradu.",
-      "donate": "Doniraj obrok",
-      "sponsor": "Budi sponzor"
+      "donate": "Doniraj obrok"
+    }
+  },
+  "storeHome": {
+    "hero": {
+      "text": "Prodajte hranu kojoj uskoro ističe rok umjesto da je bacite. Restorani iz vašeg grada je čekaju, a vi vraćate novac u kasu.",
+      "addProduct": "Dodaj proizvod",
+      "orders": "Narudžbe",
+      "shopkeeper": "Prodavač drži gajbu punu povrća",
+      "bubble": [
+        "Bolje popust nego otpad!",
+        "Ova gajba ide restoranu, ne u kontejner.",
+        "Prodano prije roka, spašeno od bacanja.",
+        "Svaki kilogram se računa!"
+      ]
+    },
+    "stats": {
+      "foodSavedTip": "Sva hrana koju su restorani preuzeli od vas, umjesto da završi u smeću. Litre računamo kao kilograme, a proizvodi u komadima nisu uračunati.",
+      "revenue": "Vraćeno u kasu",
+      "revenueInfo": "Kako se računa vraćeno u kasu",
+      "revenueTip": "Novac od hrane kojoj je isticao rok i koja bi inače bila bačena: zbir svih preuzetih narudžbi."
+    },
+    "howItWorks": {
+      "title": "Od police do restorana",
+      "subtitle": "Tri koraka do prodaje umjesto bacanja",
+      "publish": {
+        "title": "Objavite ponudu",
+        "text": "Dodajte proizvod kojem uskoro ističe rok, sa sniženom cijenom i količinom. <hl>Jedna objava košta 1 kredit</hl>."
+      },
+      "confirm": {
+        "title": "Potvrdite narudžbu",
+        "text": "Restorani naručuju iz vaše ponude, a vi narudžbu <hl>prihvatite ili odbijete u par klikova</hl>."
+      },
+      "handOver": {
+        "title": "Predajte robu",
+        "text": "Restoran je <hl>preuzme lično ili je odnese kurir</hl>, a hrana završi na tanjiru umjesto u smeću."
+      }
+    },
+    "donate": {
+      "text": "Prebacite višak iz ponude u donacije ili sponzorišite akciju i pomozite ljudima u svom gradu.",
+      "donate": "Doniraj hranu"
     }
   }
 }

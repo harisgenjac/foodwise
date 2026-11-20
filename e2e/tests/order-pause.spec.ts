@@ -3,8 +3,8 @@ import { API_URL, storageState, uniqueName } from "../support/accounts.js";
 import { apiAs, createProduct, myId } from "../support/api.js";
 import { emptyCart, open, reload, toast } from "../support/ui.js";
 
-// A store's order settings: it pauses new orders from its dashboard, a restaurant sees the pause
-// on the store page and cannot send its cart, and the store resumes from My profile; the
+// A store's order settings: it pauses new orders on My profile, a restaurant sees the pause on
+// the store page and cannot send its cart, and the store resumes there; the
 // preparation time saves at once. Specs run one at a time, so pausing the shared store is safe;
 // afterEach puts every setting back, also when the test fails. Runs on desktop Chrome and on the
 // iPhone project (the pause is an urgent action, often taken on a phone).
@@ -31,8 +31,8 @@ test("a store pauses orders and a restaurant cannot send them meanwhile", async 
   const added = await restaurant.request.put(`${API_URL}/api/cart/items/${product.id}`, { data: { quantity: 1 } });
   expect(added.ok()).toBe(true);
 
-  await test.step("Prodavnica pauzira narudžbe s dashboarda", async () => {
-    await open(page, "/dashboard");
+  await test.step("Prodavnica pauzira narudžbe na Mom profilu", async () => {
+    await open(page, "/my-profile");
     const pause = page.getByTestId("order-pause");
     await expect(pause.getByText("Primate narudžbe")).toBeVisible();
     await pause.getByRole("button", { name: "Pauziraj narudžbe" }).click();
@@ -51,7 +51,7 @@ test("a store pauses orders and a restaurant cannot send them meanwhile", async 
     await expect(restaurant.getByRole("button", { name: "Pošalji narudžbu" })).toBeDisabled();
   });
 
-  await test.step("Prodavnica nastavlja na Mom profilu i mijenja vrijeme pripreme", async () => {
+  await test.step("Prodavnica nastavlja i mijenja vrijeme pripreme", async () => {
     await open(page, "/my-profile");
     const pause = page.getByTestId("order-pause");
     await pause.getByRole("button", { name: "Nastavi primati narudžbe" }).click();

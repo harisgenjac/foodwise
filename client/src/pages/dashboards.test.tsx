@@ -4,101 +4,132 @@ import RestaurantDashboardPage from "./RestaurantDashboardPage.js";
 import toast from "react-hot-toast";
 import AppToaster from "../components/AppToaster.js";
 import { CartProvider } from "../context/CartContext.js";
-import { apiMock, makeOrder, makeOrderItem, makeProduct, makeUser, renderWithProviders, t } from "../test/utils.js";
-import type { StoreDashboardStats } from "../types/index.js";
-
-// The value printed under a stat card's label (the label is the card's first, truncated line).
-const statValue = (label: string) =>
-  screen.getByText(label, { selector: '[data-testid="stat-label"]' }).nextElementSibling?.textContent;
-
-// The unit chips under a stat card's value (the shared UnitChips component).
-const chipsOf = (label: string) => {
-  const card = screen.getByText(label, { selector: '[data-testid="stat-label"]' }).parentElement!;
-  return within(within(card).getByTestId("unit-chips")).getAllByRole("listitem").map((chip) => chip.textContent);
-};
+import { apiMock, makeProduct, makeUser, renderWithProviders, t } from "../test/utils.js";
 
 const paramsOf = (url: string) => apiMock.get.mock.calls.find(([called]) => called === url)?.[1]?.params;
+const statValues = () => screen.getAllByTestId("home-stat-value").map((node) => node.textContent);
 
 describe("StoreDashboardPage", () => {
-  const renderStore = (stats: StoreDashboardStats | Error) =>
+  const IMPACT = { impact: { food_kg: 412.6, co2_kg: 1031.5, revenue: 2318.4 } };
+  const renderStore = ({ impact = IMPACT as object | Error, user = {} } = {}) =>
     renderWithProviders(<StoreDashboardPage />, {
       route: "/dashboard",
       path: "/dashboard",
-      user: makeUser({ role: "STORE" }),
-      get: {
-        "/dashboard/stats": stats instanceof Error ? stats : { stats },
-        "/products/mine": {
-          products: [
-            makeProduct({ id: 1, name: "Hljeb" }),
-            makeProduct({ id: 2, name: "Mlijeko" }),
-            makeProduct({ id: 3, name: "Sir" }),
-          ],
-          total: 40,
-        },
-        // A single Pending order: the cards must not be computed from this page of the list.
-        "/orders/store": { orders: [makeOrder({ id: 9, items: [makeOrderItem({ product_name: "Jogurt" })] })], total: 30 },
-      },
+      user: makeUser({ role: "STORE", latitude: 43.85, longitude: 18.41, ...user }),
+      get: { "/stats/my-impact": impact },
     });
 
-  it("shows the server's numbers on the stat cards", async () => {
-    renderStore({
-      active_products: 17,
-      pending_orders: 4,
-      successful_orders: 25,
-      saved: { kg: 12.5, l: 3, pieces: 8 },
-    });
+  it("shows the hero (the brand as the only h1, the store text, Add product, Orders, the shopkeeper) with the store's stats", async () => {
+    renderStore();
 
-    expect(await screen.findByText("Hljeb")).toBeInTheDocument();
-    expect(statValue(t("dashboard.statActiveProducts"))).toBe("17");
-    expect(statValue(t("dashboard.statPending"))).toBe("4");
-    expect(statValue(t("dashboard.statConfirmed"))).toBe("25");
-    expect(statValue(t("dashboard.statSavedFood"))).toBe("12.5 kg");
-    expect(chipsOf(t("dashboard.statSavedFood"))).toEqual(["3 l", `8 ${t("dashboard.piecesShort")}`]);
-    // In two columns on a phone the labels wrap instead of being cut off.
-    const label = screen.getByText(t("dashboard.statPending"), { selector: '[data-testid="stat-label"]' });
-    expect(label).toHaveClass("break-words");
-    expect(label).not.toHaveClass("truncate");
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.getByRole("heading", { level: 1, name: "Još vrijedi" })).toBeInTheDocument();
+    expect(screen.getByText(t("storeHome.hero.text"))).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Dodaj proizvod" })).toHaveAttribute("href", "/add-product");
+    expect(screen.getByRole("link", { name: "Narudžbe" })).toHaveAttribute("href", "/orders");
+    expect(screen.getByRole("img", { name: "Prodavač drži gajbu punu povrća" })).toBeInTheDocument();
+    expect(screen.queryByTestId("home-chef")).not.toBeInTheDocument();
+
+    // The store's own numbers, formatted for Bosnian; the third is "Vraćeno u kasu" (back in the till).
+    await waitFor(() => expect(statValues()).toEqual(["412,6 kg", "1.031,5 kg", "2.318,40 KM"]));
+    const stats = screen.getByRole("group", { name: t("home.stats.label") });
+    expect(within(stats).getByRole("button", { name: t("storeHome.stats.revenueInfo") })).toHaveAccessibleDescription(
+      `${t("storeHome.stats.revenue")} ${t("storeHome.stats.revenueTip")}`,
+    );
+    expect(within(stats).getByRole("button", { name: t("home.stats.foodSavedInfo") })).toHaveAccessibleDescription(
+      `${t("home.stats.foodSaved")} ${t("storeHome.stats.foodSavedTip")}`,
+    );
+    // Only the stats are loaded so far (Today, New orders and Expiring soon come later).
+    expect(apiMock.get.mock.calls.map(([url]) => url).filter((url) => url !== "/users/me")).toEqual(["/stats/my-impact"]);
   });
 
-  it("shows the other non-zero units of food saved as chips", async () => {
-    renderStore({ active_products: 0, pending_orders: 0, successful_orders: 0, saved: { kg: 0, l: 12, pieces: 40 } });
+  it("shows zeros to a store that has sold nothing yet", async () => {
+    renderStore({ impact: { impact: { food_kg: 0, co2_kg: 0, revenue: 0 } } });
 
-    expect(await screen.findByText("Hljeb")).toBeInTheDocument();
-    expect(statValue(t("dashboard.statSavedFood"))).toBe("12 l");
-    expect(chipsOf(t("dashboard.statSavedFood"))).toEqual([`40 ${t("dashboard.piecesShort")}`]);
+    await waitFor(() => expect(statValues()).toEqual(["0,0 kg", "0,0 kg", "0,00 KM"]));
   });
 
-  it("shows no chips when food was saved in a single unit", async () => {
-    renderStore({ active_products: 0, pending_orders: 0, successful_orders: 0, saved: { kg: 5, l: 0, pieces: 0 } });
+  it("shows pulse bars while loading and leaves the stats out when they fail, keeping the rest of the page", async () => {
+    renderStore({ impact: new Error("Network Error") });
 
-    expect(await screen.findByText("Hljeb")).toBeInTheDocument();
-    expect(statValue(t("dashboard.statSavedFood"))).toBe("5 kg");
-    expect(screen.queryByTestId("unit-chips")).not.toBeInTheDocument();
+    expect(screen.getByTestId("home-stats")).toHaveAttribute("aria-busy", "true");
+    await waitFor(() => expect(screen.queryByTestId("home-stats")).not.toBeInTheDocument());
+    expect(screen.getByRole("link", { name: "Dodaj proizvod" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: t("storeHome.howItWorks.title") })).toBeInTheDocument();
   });
 
-  it("asks only for the 3 newest available products and orders", async () => {
-    renderStore({ active_products: 0, pending_orders: 0, successful_orders: 0, saved: { kg: 0, l: 0, pieces: 0 } });
+  it("opens a stat's tooltip on hover and focus and closes it on Escape", async () => {
+    renderStore();
+    const button = await screen.findByRole("button", { name: t("storeHome.stats.revenueInfo") });
+    const tip = screen
+      .getAllByRole("tooltip", { hidden: true })
+      .find((node) => node.textContent?.includes(t("storeHome.stats.revenueTip")))!;
+    expect(tip).toHaveAttribute("data-open", "false");
 
-    expect(await screen.findByText(/Jogurt/)).toBeInTheDocument();
-    expect(screen.getByText("Sir")).toBeInTheDocument();
-    expect(paramsOf("/products/mine")).toEqual({ status: "Available", limit: 3 });
-    expect(paramsOf("/orders/store")).toEqual({ limit: 3 });
-    expect(statValue(t("dashboard.statSavedFood"))).toBe("0 kg");
+    fireEvent.mouseEnter(button);
+    expect(tip).toHaveAttribute("data-open", "true");
+    fireEvent.mouseLeave(button);
+    expect(tip).toHaveAttribute("data-open", "false");
+
+    fireEvent.focus(button);
+    expect(tip).toHaveAttribute("data-open", "true");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(tip).toHaveAttribute("data-open", "false");
   });
 
-  it("shows zeros when the stats cannot be loaded", async () => {
-    renderStore(new Error("Network Error"));
+  it("changes the shopkeeper's message every 3 seconds, and keeps the first one with reduced motion", () => {
+    vi.useFakeTimers();
+    try {
+      const messages = t("storeHome.hero.bubble", { returnObjects: true }) as unknown as string[];
+      expect(messages).toHaveLength(4);
+      const { unmount } = renderStore();
+      const bubble = screen.getByTestId("home-bubble");
+      expect(bubble).toHaveAttribute("aria-live", "polite");
+      expect(bubble).toHaveTextContent("Bolje popust nego otpad!");
+      act(() => vi.advanceTimersByTime(3000));
+      expect(bubble).toHaveTextContent(messages[1]!);
+      act(() => vi.advanceTimersByTime(9000));
+      expect(bubble).toHaveTextContent(messages[0]!);
+      unmount();
 
-    expect(await screen.findByText("Hljeb")).toBeInTheDocument();
-    expect(statValue(t("dashboard.statActiveProducts"))).toBe("0");
-    expect(statValue(t("dashboard.statSavedFood"))).toBe("0 kg");
+      vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce"), media: query }));
+      renderStore();
+      act(() => vi.advanceTimersByTime(9000));
+      expect(screen.getByTestId("home-bubble")).toHaveTextContent(messages[0]!);
+    } finally {
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
   });
 
-  it("titles the orders section New orders and links it to Orders", async () => {
-    renderStore({ active_products: 0, pending_orders: 0, successful_orders: 0, saved: { kg: 0, l: 0, pieces: 0 } });
+  it("puts the map pin reminder first", async () => {
+    renderStore({ user: { latitude: null, longitude: null } });
 
-    expect(await screen.findByRole("heading", { name: t("dashboard.recentOrdersTitle") })).toHaveTextContent("Nove narudžbe");
-    expect(screen.getByRole("link", { name: t("dashboard.viewAllOrders") })).toHaveAttribute("href", "/orders");
+    const reminder = await screen.findByRole("link", { name: t("location.reminderLink") });
+    expect(reminder.compareDocumentPosition(screen.getByTestId("home-hero")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("ends with From the shelf to the restaurant and the donation band", () => {
+    renderStore();
+    const how = screen.getByRole("region", { name: "Od police do restorana" });
+    expect(within(how).getByText("Tri koraka do prodaje umjesto bacanja")).toBeInTheDocument();
+    expect(within(how).getAllByRole("heading", { level: 3 }).map((node) => node.textContent)).toEqual([
+      "Objavite ponudu",
+      "Potvrdite narudžbu",
+      "Predajte robu",
+    ]);
+    expect(within(how).getAllByTestId("how-it-works-highlight").map((node) => node.textContent)).toEqual([
+      "Jedna objava košta 1 kredit",
+      "prihvatite ili odbijete u par klikova",
+      "preuzme lično ili je odnese kurir",
+    ]);
+
+    const band = screen.getByRole("region", { name: t("home.donate.title") });
+    expect(within(band).getByText(t("storeHome.donate.text"))).toBeInTheDocument();
+    expect(within(band).getByRole("link", { name: "Doniraj hranu" })).toHaveAttribute("href", "/donate-food");
+    expect(within(band).getByRole("link", { name: "Budi sponzor" })).toHaveAttribute("href", "/sponsor");
+    expect(screen.getByTestId("home-hero").compareDocumentPosition(how) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(how.compareDocumentPosition(band) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
 
@@ -161,7 +192,6 @@ describe("RestaurantDashboardPage", () => {
       },
     );
   const pageUrls = () => apiMock.get.mock.calls.map(([url]) => url).filter((url) => url !== "/users/me").sort();
-  const statValues = () => screen.getAllByTestId("home-stat-value").map((node) => node.textContent);
 
   it("shows the hero (the brand as the only h1, the text, Shop now, Track delivery, the chef) with the stats, then the store slider", async () => {
     renderRestaurant();
@@ -175,9 +205,9 @@ describe("RestaurantDashboardPage", () => {
 
     // The restaurant's own numbers, formatted for Bosnian.
     await waitFor(() => expect(statValues()).toEqual(["873,9 kg", "2.184,9 kg", "1.246,50 KM"]));
-    const stats = screen.getByRole("group", { name: t("restaurantHome.stats.label") });
-    expect(within(stats).getByRole("button", { name: t("restaurantHome.stats.co2Info") })).toHaveAccessibleDescription(
-      `${t("restaurantHome.stats.co2")} ${t("restaurantHome.stats.co2Tip")}`,
+    const stats = screen.getByRole("group", { name: t("home.stats.label") });
+    expect(within(stats).getByRole("button", { name: t("home.stats.co2Info") })).toHaveAccessibleDescription(
+      `${t("home.stats.co2")} ${t("home.stats.co2Tip")}`,
     );
 
     // The slider: the stores' visibility rules, nearest first, from all cities, at most 20; each
@@ -366,7 +396,7 @@ describe("RestaurantDashboardPage", () => {
       "spremna za vašu kuhinju",
     ]);
 
-    const band = screen.getByRole("region", { name: t("restaurantHome.donate.title") });
+    const band = screen.getByRole("region", { name: t("home.donate.title") });
     expect(within(band).getByRole("link", { name: "Doniraj obrok" })).toHaveAttribute("href", "/donate-food");
     expect(within(band).getByRole("link", { name: "Budi sponzor" })).toHaveAttribute("href", "/sponsor");
     expect(how.compareDocumentPosition(band) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
