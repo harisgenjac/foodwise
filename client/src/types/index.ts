@@ -523,14 +523,12 @@ export interface RestaurantImpact {
   savings: number;
 }
 
-// The store dashboard's stat cards (GET /dashboard/stats), all numbers. The counts are orders:
-// `successful_orders` = accepted (Confirmed + Completed); `saved` = the picked-up (Completed)
-// items only.
-export interface StoreDashboardStats {
-  active_products: number;
-  pending_orders: number;
-  successful_orders: number;
-  saved: { kg: number; l: number; pieces: number };
+// The store home page's stats (GET /stats/my-impact as a store), over what restaurants picked up
+// from it: `revenue` is "back in the till", the agreed prices × quantities.
+export interface StoreImpact {
+  food_kg: number;
+  co2_kg: number;
+  revenue: number;
 }
 
 // Admin panel (GET /admin/*). Counts arrive as numbers.

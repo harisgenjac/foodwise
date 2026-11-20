@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
@@ -46,7 +46,15 @@ const SORT_OPTIONS = [
 type SortValue = (typeof SORT_OPTIONS)[number]["value"];
 
 function MyProductsPage() {
-  const [name, setName] = useState("");
+  // ?q= from the header's search field fills the name filter, on load and on every new search.
+  const [searchParams] = useSearchParams();
+  const q = searchParams.get("q") ?? "";
+  const [name, setName] = useState(q);
+  const [appliedQ, setAppliedQ] = useState(q);
+  if (q !== appliedQ) {
+    setAppliedQ(q);
+    setName(q);
+  }
   const [status, setStatus] = useState("Available");
   const [category, setCategory] = useState("");
   const [expiryWithinDays, setExpiryWithinDays] = useState("");

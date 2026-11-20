@@ -63,7 +63,7 @@ export const updateEmailNotifications = async (req: Request, res: Response) => {
   }
 };
 
-// A store's order settings on My profile (and the pause on its dashboard). They save at once,
+// A store's order settings on My profile. They save at once,
 // each field on its own; see utils/orderSettings.ts.
 export const updateOrderSettings = async (req: Request, res: Response) => {
   const parsed = parseOrderSettings(req.body ?? {});

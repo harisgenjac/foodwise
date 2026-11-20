@@ -1,4 +1,4 @@
-// Food handed over through picked-up (Completed) orders, as GET /dashboard/stats returns it:
+// Food handed over through picked-up (Completed) orders, as the admin and company statistics return it:
 // weight and volume normalised to kg and l, kom and pak counted together as pieces.
 interface SavedFoodTotals {
   kg: number;

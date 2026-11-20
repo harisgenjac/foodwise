@@ -1,25 +1,19 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import toast from "react-hot-toast";
-import { ArrowRight, Cloud, Coins, Salad, type LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import InfoTooltip from "../common/InfoTooltip.js";
-import { ChefIllustration, HeroDoodles, ScooterIcon } from "./HomeIllustrations.js";
+import { HeroDoodles } from "./HomeIllustrations.js";
 import { BRAND_NAME } from "../../utils/brand.js";
-import { formatNumber } from "../../utils/numbers.js";
-import type { RestaurantImpact } from "../../types/index.js";
 
-// The chef's speech bubble shows its next message after this long.
+// The speech bubble shows its next message after this long.
 export const BUBBLE_INTERVAL_MS = 3000;
 
 const prefersReducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
 
-// The bubble above the chef: the messages take turns every 3 s, each fading in; with reduced motion
-// the first one stays. A polite live region, so screen readers hear the new message.
-function SpeechBubble() {
-  const { t } = useTranslation();
-  const messages = t("restaurantHome.hero.bubble", { returnObjects: true }) as string[];
+// The bubble above the illustration: the messages take turns every 3 s, each fading in; with
+// reduced motion the first one stays. A polite live region, so screen readers hear the new message.
+function SpeechBubble({ messages }: { messages: string[] }) {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -33,7 +27,7 @@ function SpeechBubble() {
       role="status"
       aria-live="polite"
       data-testid="home-bubble"
-      // In the design the bubble starts 230 px left of the column's centre; never past its left edge.
+      // In the designs the bubble starts 230 px left of the column's centre; never past its left edge.
       className="absolute top-[34px] left-[max(12px,calc(50%-230px))] z-[1] h-[76px] w-[250px] rounded-[18px] bg-white text-brand-900 shadow-[0_10px_24px_rgba(0,0,0,0.18)]"
     >
       <p
@@ -49,48 +43,81 @@ function SpeechBubble() {
   );
 }
 
-interface Stat {
-  key: "foodSaved" | "co2" | "saved";
+// One number at the bottom of the hero, with its InfoTooltip.
+export interface HeroStat {
+  key: string;
   icon: LucideIcon;
-  value: (impact: RestaurantImpact, language: string) => string;
+  label: string;
+  // The tooltip's text and the info button's name.
+  tip: string;
+  infoLabel: string;
+  // The formatted value; null while loading (a pulse bar).
+  value: string | null;
 }
 
-const STATS: Stat[] = [
-  { key: "foodSaved", icon: Salad, value: (impact, lang) => `${formatNumber(impact.food_kg, lang, 1)} kg` },
-  { key: "co2", icon: Cloud, value: (impact, lang) => `${formatNumber(impact.co2_kg, lang, 1)} kg` },
-  { key: "saved", icon: Coins, value: (impact, lang) => `${formatNumber(impact.savings, lang, 2)} KM` },
-];
+// A pill button of the hero: `primary` is filled lime, `outline` has a lime border. `to` makes it
+// a router link, otherwise it is a button calling `onClick`. `icon` (decorative, sized by the
+// caller) goes before the label, or after it with `iconAfter`.
+export interface HeroAction {
+  label: string;
+  icon: ReactNode;
+  iconAfter?: boolean;
+  variant: "primary" | "outline";
+  to?: string;
+  onClick?: () => void;
+}
 
-// The three numbers at the bottom of the hero, under a thin line: the restaurant's own food saved,
-// CO₂ avoided and money saved, each with an InfoTooltip. Pulse bars while loading.
-function HeroStats({ impact }: { impact: RestaurantImpact | null }) {
-  const { t, i18n } = useTranslation();
+const ACTION_CLASSES: Record<HeroAction["variant"], string> = {
+  primary:
+    "inline-flex h-[50px] items-center gap-2 rounded-full bg-lime px-[26px] text-base font-extrabold text-brand-900 transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime",
+  outline:
+    "inline-flex h-[50px] cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-lime bg-transparent px-6 text-base font-bold text-white transition hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime",
+};
 
+function HeroActionButton({ label, icon, iconAfter = false, variant, to, onClick }: HeroAction) {
+  const content = iconAfter ? (
+    <>
+      {label}
+      {icon}
+    </>
+  ) : (
+    <>
+      {icon}
+      {label}
+    </>
+  );
+  return to ? (
+    <Link to={to} className={ACTION_CLASSES[variant]}>
+      {content}
+    </Link>
+  ) : (
+    <button type="button" onClick={onClick} className={ACTION_CLASSES[variant]}>
+      {content}
+    </button>
+  );
+}
+
+// The numbers at the bottom of the hero, under a thin line, each with an InfoTooltip. Pulse bars
+// while loading.
+function HeroStats({ stats, label }: { stats: HeroStat[]; label: string }) {
   return (
     <div
       role="group"
-      aria-label={t("restaurantHome.stats.label")}
-      aria-busy={!impact}
+      aria-label={label}
+      aria-busy={stats.some((stat) => stat.value === null)}
       data-testid="home-stats"
       className="relative mx-6 grid basis-full grid-cols-1 gap-5 border-t border-[#1F6B3D] pt-[26px] pb-16 sm:mx-10 sm:grid-cols-3 sm:gap-4 sm:pb-[70px]"
     >
-      {STATS.map(({ key, icon: Icon, value }) => (
+      {stats.map(({ key, icon: Icon, label: statLabel, tip, infoLabel, value }) => (
         <div key={key} className="relative flex items-center gap-3.5 sm:justify-center">
           <Icon className="h-9 w-9 shrink-0 text-brand-300 sm:h-[42px] sm:w-[42px]" strokeWidth={1.6} aria-hidden="true" />
           <div className="min-w-0">
             <div className="flex items-center gap-1 text-[15px] text-brand-100">
-              <span>{t(`restaurantHome.stats.${key}`)}</span>
-              <InfoTooltip
-                icon={Icon}
-                title={t(`restaurantHome.stats.${key}`)}
-                text={t(`restaurantHome.stats.${key}Tip`)}
-                label={t(`restaurantHome.stats.${key}Info`)}
-              />
+              <span>{statLabel}</span>
+              <InfoTooltip icon={Icon} title={statLabel} text={tip} label={infoLabel} />
             </div>
             <p data-testid="home-stat-value" className="text-[26px] leading-[1.1] font-extrabold text-white sm:text-[32px]">
-              {impact ? (
-                value(impact, i18n.language)
-              ) : (
+              {value ?? (
                 <span className="inline-block h-[1em] w-28 animate-pulse rounded bg-white/20 align-middle" aria-hidden="true" />
               )}
             </p>
@@ -102,18 +129,23 @@ function HeroStats({ impact }: { impact: RestaurantImpact | null }) {
 }
 
 interface HomeHeroProps {
-  // The restaurant's impact; null while loading.
-  impact: RestaurantImpact | null;
-  // The stats are left out when they fail to load.
+  // The sentence under the brand.
+  text: string;
+  actions: HeroAction[];
+  // The drawing on the right (role="img" with a name) and the messages of its speech bubble.
+  illustration: ReactNode;
+  bubble: string[];
+  // The numbers at the bottom and the name of their group. Left out when `statsFailed`.
+  stats: HeroStat[];
+  statsLabel: string;
   statsFailed?: boolean;
 }
 
-// The top of the restaurant home page (design/restaurant-home/home.dc.html): a dark green band with
-// faint food drawings, the brand as the page's h1 ("vrijedi" in lime), a short text, "Shop now"
-// (to Search) and "Track delivery" (not built yet: a "Coming soon" toast), the chef with his speech
-// bubble on the right, the impact stats at the bottom, and a soft curve into the page.
-function HomeHero({ impact, statsFailed = false }: HomeHeroProps) {
-  const { t } = useTranslation();
+// The top of the restaurant and store home pages (design/restaurant-home/home.dc.html,
+// design/store-home/store.dc.html): a dark green band with faint food drawings, the brand as the
+// page's h1 ("vrijedi" in lime), the role's text and pill buttons, its illustration with a speech
+// bubble on the right, the stats at the bottom, and a soft curve into the page.
+function HomeHero({ text, actions, illustration, bubble, stats, statsLabel, statsFailed = false }: HomeHeroProps) {
   const titleId = useId();
   const [firstWord, ...rest] = BRAND_NAME.split(" ");
 
@@ -129,33 +161,20 @@ function HomeHero({ impact, statsFailed = false }: HomeHeroProps) {
         <h1 id={titleId} className="text-[40px] leading-[1.05] font-extrabold tracking-[-1.5px] sm:text-[56px]">
           {firstWord} <span className="text-lime">{rest.join(" ")}</span>
         </h1>
-        <p className="max-w-[470px] text-base leading-[1.6] text-brand-100 sm:text-lg">{t("restaurantHome.hero.text")}</p>
+        <p className="max-w-[470px] text-base leading-[1.6] text-brand-100 sm:text-lg">{text}</p>
         <div className="mt-2 flex flex-wrap gap-3">
-          <Link
-            to="/search"
-            className="inline-flex h-[50px] items-center gap-2 rounded-full bg-lime px-[26px] text-base font-extrabold text-brand-900 transition hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime"
-          >
-            {t("restaurantHome.hero.shopNow")}
-            <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.4} aria-hidden="true" />
-          </Link>
-          {/* The live tracking page does not exist yet. */}
-          <button
-            type="button"
-            onClick={() => toast(t("restaurantHome.hero.comingSoon"))}
-            className="inline-flex h-[50px] cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-lime bg-transparent px-6 text-base font-bold text-white transition hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime"
-          >
-            <ScooterIcon className="h-5 w-5" />
-            {t("restaurantHome.hero.trackDelivery")}
-          </button>
+          {actions.map((action) => (
+            <HeroActionButton key={action.label} {...action} />
+          ))}
         </div>
       </div>
 
       <div className="relative flex min-h-[300px] flex-[1_1_380px] items-end justify-center px-6 sm:min-h-[360px] sm:px-0">
-        <SpeechBubble />
-        <ChefIllustration label={t("restaurantHome.hero.chef")} />
+        <SpeechBubble messages={bubble} />
+        {illustration}
       </div>
 
-      {statsFailed ? <div className="basis-full pb-12" /> : <HeroStats impact={impact} />}
+      {statsFailed ? <div className="basis-full pb-12" /> : <HeroStats stats={stats} label={statsLabel} />}
 
       <svg
         viewBox="0 0 1100 48"

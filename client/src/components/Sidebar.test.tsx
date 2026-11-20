@@ -1,8 +1,8 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import Sidebar from "./Sidebar.js";
-import { makeUser, renderWithProviders, t } from "../test/utils.js";
+import { apiMock, makeUser, renderWithProviders, t } from "../test/utils.js";
 
-const renderSidebar = (user: ReturnType<typeof makeUser>, branchRequests = 0) =>
+const renderSidebar = (user: ReturnType<typeof makeUser>, branchRequests = 0, pendingOrders = 0) =>
   renderWithProviders(<Sidebar isSidebarOpen />, {
     route: "/dashboard",
     path: "/dashboard",
@@ -10,6 +10,7 @@ const renderSidebar = (user: ReturnType<typeof makeUser>, branchRequests = 0) =>
     get: {
       "/admin/credits/requests/pending-count": { count: 0 },
       "/company/credits/branch-requests/count": { count: branchRequests },
+      "/orders/store": { orders: [], total: pendingOrders },
     },
   });
 
@@ -42,12 +43,45 @@ describe("Sidebar", () => {
     );
   });
 
-  it("keeps the store links and the humanitarian section for stores", async () => {
+  it("orders a store's links as the store home design, then the pages it does not show, then Donate food", async () => {
     renderSidebar(makeUser({ role: "STORE" }));
-    expect(await screen.findByRole("link", { name: t("sidebar.myProducts") })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Moji proizvodi" })).toBeInTheDocument();
+    expect(links()).toEqual([
+      "/dashboard",
+      "/my-products",
+      "/orders",
+      "/packing",
+      "/reports",
+      "/credits",
+      "/pickups",
+      "/add-product",
+      "/my-profile",
+      "/donate-food",
+      "/sponsor",
+    ]);
     expect(screen.getByText(t("sidebar.humanitarian"))).toBeInTheDocument();
-    expect(links()).not.toContain("/company/profile");
-    expect(links()).toContain("/credits");
+    expect(screen.getByRole("link", { name: "Doniraj hranu" })).toHaveAttribute("href", "/donate-food");
+  });
+
+  it("shows a store how many orders wait for its answer, in orange, and nothing without any", async () => {
+    renderSidebar(makeUser({ role: "STORE" }), 0, 3);
+    const orders = await screen.findByRole("link", { name: t("sidebar.orders") });
+    const badge = await within(orders).findByTestId("sidebar-badge");
+    expect(badge).toHaveTextContent("3");
+    expect(badge).toHaveClass("bg-accent-700");
+    expect(apiMock.get).toHaveBeenCalledWith("/orders/store", { params: { status: "Pending", limit: 1 } });
+  });
+
+  it("shows no orders badge to a store with no pending orders", async () => {
+    renderSidebar(makeUser({ role: "STORE" }));
+    await waitFor(() => expect(apiMock.get).toHaveBeenCalledWith("/orders/store", expect.anything()));
+    expect(screen.queryByTestId("sidebar-badge")).not.toBeInTheDocument();
+  });
+
+  it("keeps Donate meal for a restaurant and asks no order count", async () => {
+    renderSidebar(makeUser({ role: "RESTAURANT" }));
+    expect(await screen.findByRole("link", { name: t("sidebar.donateFood") })).toHaveAttribute("href", "/donate-food");
+    expect(apiMock.get).not.toHaveBeenCalledWith("/orders/store", expect.anything());
   });
 
   it("gives restaurants no credits page: they pay no credits", async () => {

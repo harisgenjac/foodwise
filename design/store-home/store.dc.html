@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="bs">
+<head>
+<meta charset="utf-8">
+<title>Početna restorana – računar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FAFAF7}
+.jv-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0 18px;text-align:center;font-size:16px;font-weight:700;line-height:1.3;opacity:0;animation:jvcycle 12s infinite}
+@keyframes jvcycle{0%{opacity:0;transform:translateY(8px)}4%{opacity:1;transform:translateY(0)}21%{opacity:1;transform:translateY(0)}25%{opacity:0;transform:translateY(-8px)}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.jv-msg{animation:none}.jv-msg:first-child{opacity:1}}
+.jv-tip{position:absolute;bottom:calc(100% + 14px);left:50%;transform:translateX(-50%) translateY(6px);width:270px;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;z-index:5}
+.jv-stat:hover .jv-tip,.jv-stat:focus-within .jv-tip{opacity:1;transform:translateX(-50%) translateY(0)}
+.jv-info{background:none;border:0;padding:0;margin:0;color:#BEF264;cursor:help;display:inline-flex;width:24px;height:24px;align-items:center;justify-content:center;border-radius:50%}
+.jv-tipwrap{position:relative;display:inline-flex}
+.jv-tip2{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1C1917;color:#FFFFFF;font-size:13px;font-weight:600;line-height:1.4;padding:8px 12px;border-radius:10px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;z-index:5}
+.jv-tipwrap:hover .jv-tip2,.jv-tipwrap:focus-within .jv-tip2{opacity:1}
+.jv-price:focus{outline:2px solid #166534;outline-offset:1px}
+.jv-info:focus-visible{outline:2px solid #BEF264;outline-offset:2px}
+a{color:#166534;text-decoration:none}a:hover{color:#14532D}
+</style>
+</helmet>
+<div style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #1C1917; background: #FAFAF7; display: flex; flex-wrap: wrap; min-height: 100vh">
+
+<nav aria-label="Glavni meni" style="flex: 1 1 232px; max-width: 260px; background: #FFFFFF; border-right: 1px solid #E7E5E4; padding: 20px 16px; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box">
+<a href="#" style="display: flex; align-items: center; gap: 10px; padding: 4px 8px 20px">
+<svg width="34" height="34" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="22" fill="#166534"></rect><path d="M22 44 A30 30 0 0 1 78 44" fill="none" stroke="#86EFAC" stroke-width="8" stroke-linecap="round"></path><polygon points="70,42 88,42 79,56" fill="#86EFAC"></polygon><circle cx="50" cy="56" r="15" fill="#E4572E"></circle><path d="M14 82 C22 70 36 66 52 66 L66 67 C73 68 73 75 66 75 L56 76 C63 78 70 77 75 74 L84 66 C89 62 95 67 90 72 C82 82 66 88 48 88 C34 88 22 86 14 82 Z" fill="#FFFFFF"></path></svg>
+<span style="font-size: 19px; font-weight: 800; color: #166534">Još <span style="color: #C2410C">vrijedi</span></span>
+</a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 10px; background: #DCFCE7; color: #14532D; font-weight: 700; font-size: 15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Početna</a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 10px; color: #44403C; font-weight: 500; font-size: 15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7 12 3 4 7v10l8 4 8-4z"></path><path d="M4 7l8 4 8-4M12 11v10"></path></svg>Moji proizvodi</a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 10px; color: #44403C; font-weight: 500; font-size: 15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg>Narudžbe<span style="margin-left: auto; background: #C2410C; color: #FFFFFF; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 1px 8px">3</span></a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 10px; color: #44403C; font-weight: 500; font-size: 15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6v3H9z"></path><path d="M7 5H5v16h14V5h-2"></path><path d="m9 13 2 2 4-4"></path></svg>Pakovanje</a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 10px; color: #44403C; font-weight: 500; font-size: 15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>Izvještaji</a>
+<a href="#" style="display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 10px; color: #44403C; font-weight: 500; font-size: 15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M15 9.5c-.5-1-1.6-1.5-3-1.5-1.7 0-3 .9-3 2s1.3 1.6 3 2 3 .9 3 2-1.3 2-3 2c-1.4 0-2.5-.5-3-1.5M12 6v2M12 16v2"></path></svg>Krediti</a>
+<div style="height: 1px; background: #E7E5E4; margin: 12px 4px"></div>
+<a href="#" style="display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 10px; color: #44403C; font-weight: 500; font-size: 15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"></path></svg>Doniraj hranu</a>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 0">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 16px 32px; background: #FFFFFF; border-bottom: 1px solid #E7E5E4">
+<label style="flex: 1 1 320px; max-width: 560px; display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 16px; border-radius: 12px; background: #F5F5F4; color: #57534E">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Pretraži</span>
+<input type="search" placeholder="Pretraži svoje proizvode i narudžbe" style="border: 0; background: transparent; outline: none; font: inherit; font-size: 15px; color: #1C1917; flex: 1; min-width: 0">
+</label>
+<div style="margin-left: auto; display: flex; align-items: center; gap: 8px">
+<button type="button" aria-label="Obavještenja" style="width: 44px; height: 44px; border-radius: 12px; border: 1px solid #E7E5E4; background: #FFFFFF; color: #1C1917; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"></path><path d="M10 21h4"></path></svg></button>
+<button type="button" style="display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px 0 4px; border-radius: 12px; border: 1px solid #E7E5E4; background: #FFFFFF; cursor: pointer; font: inherit"><span style="width: 36px; height: 36px; border-radius: 10px; background: #FFEDD5; color: #9A3412; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center">B</span><span style="text-align: left; line-height: 1.2"><span style="display: block; font-size: 14px; font-weight: 600; color: #1C1917">Bingo Sarajevo Centar</span><span style="display: block; font-size: 12px; color: #57534E">Prodavnica · Sarajevo</span></span></button>
+</div>
+</header>
+
+<div style="max-width: 1180px; margin: 0 auto; padding: 24px 32px 0; display: flex; flex-direction: column; gap: 28px">
+
+<section aria-labelledby="hero-title" style="position: relative; overflow: hidden; background: #14532D; border-radius: 28px 28px 0 0; color: #FFFFFF; min-height: 400px; display: flex; flex-wrap: wrap; align-items: stretch">
+<svg width="100%" height="100%" viewBox="0 0 1100 420" preserveAspectRatio="xMidYMid slice" aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none">
+<g fill="none" stroke="#1F6B3D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M560 60c18-18 46-14 56 6 8 18-4 40-26 44-20 4-38-10-38-28 0-8 3-16 8-22z"></path><path d="M588 52c2-10 8-18 18-20"></path>
+<path d="M660 300l60-60M670 310c-14-4-22-18-16-30l40-40c10-6 26 0 30 14 2 8-2 16-8 22l-30 30c-4 4-10 6-16 4z"></path>
+<circle cx="740" cy="110" r="28"></circle><path d="M740 82v-14M726 70c6 6 22 6 28 0"></path>
+<path d="M860 40c-20 10-30 34-20 56 22-6 36-28 30-52-4-2-6-4-10-4z"></path><path d="M846 92l20-44"></path>
+<path d="M610 380c10-30 40-46 70-40-4 30-34 50-64 46z"></path>
+<path d="M960 300c0-26 20-44 44-44s44 18 44 44H960z"></path><path d="M980 300v-12M1004 300v-20M1028 300v-12"></path>
+<path d="M1030 90c14 0 26 12 26 26s-12 26-26 26-26-12-26-26 12-26 26-26zM1030 64v26"></path>
+<path d="M500 250c14-10 34-6 42 8"></path><circle cx="520" cy="300" r="10"></circle><circle cx="900" cy="370" r="12"></circle>
+</g>
+</svg>
+
+<div style="position: relative; flex: 1 1 460px; padding: 56px 24px 72px 56px; display: flex; flex-direction: column; justify-content: center; gap: 18px; box-sizing: border-box">
+<h1 id="hero-title" style="margin: 0; font-size: 56px; line-height: 1.05; font-weight: 800; letter-spacing: -1.5px">Još <span style="color: #BEF264">vrijedi</span></h1>
+<p style="margin: 0; max-width: 470px; font-size: 18px; line-height: 1.6; color: #DCFCE7">Prodajte hranu kojoj uskoro ističe rok umjesto da je bacite. Restorani iz vašeg grada je čekaju, a vi vraćate novac u kasu.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px">
+<a href="#" style="display: inline-flex; align-items: center; gap: 8px; height: 50px; padding: 0 26px; border-radius: 999px; background: #BEF264; color: #14532D; font-weight: 800; font-size: 16px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Dodaj proizvod</a>
+<a href="#" style="display: inline-flex; align-items: center; gap: 10px; height: 50px; padding: 0 22px 0 24px; border-radius: 999px; color: #FFFFFF; border: 1.5px solid #BEF264; font-weight: 700; font-size: 16px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg>Narudžbe</a>
+</div>
+</div>
+
+<div style="position: relative; flex: 1 1 380px; min-height: 360px; display: flex; align-items: flex-end; justify-content: center">
+<div style="position: absolute; top: 34px; left: 50%; margin-left: -230px; width: 250px; height: 76px; background: #FFFFFF; color: #14532D; border-radius: 18px; box-shadow: 0 10px 24px rgba(0,0,0,0.18)" role="status" aria-live="polite">
+<span class="jv-msg" style="animation-delay: 0s">Bolje popust nego otpad!</span>
+<span class="jv-msg" style="animation-delay: 3s">Ova gajba ide restoranu, ne u kontejner.</span>
+<span class="jv-msg" style="animation-delay: 6s">Prodano prije roka, spašeno od bacanja.</span>
+<span class="jv-msg" style="animation-delay: 9s">Svaki kilogram se računa!</span>
+<svg width="28" height="18" viewBox="0 0 28 18" aria-hidden="true" style="position: absolute; right: 34px; bottom: -14px"><path d="M0 0h28L22 18z" fill="#FFFFFF"></path></svg>
+</div>
+<svg width="340" height="330" viewBox="0 0 340 330" role="img" aria-label="Prodavač drži gajbu punu povrća" style="position: relative; display: block">
+<ellipse cx="170" cy="322" rx="130" ry="10" fill="#0F3F22"></ellipse>
+<path d="M40 330c0-70 40-118 130-118s130 48 130 118z" fill="#DBEAFE"></path>
+<path d="M120 218h100l16 112H104z" fill="#15803D"></path>
+<path d="M132 220l-6-12M208 220l6-12" stroke="#166534" stroke-width="7" stroke-linecap="round"></path>
+<rect x="148" y="258" width="44" height="28" rx="6" fill="#166534"></rect>
+<path d="M156 266h28" stroke="#BEF264" stroke-width="3" stroke-linecap="round"></path>
+<rect x="152" y="176" width="36" height="40" rx="10" fill="#C68863"></rect>
+<circle cx="170" cy="150" r="44" fill="#E0AC85"></circle>
+<path d="M128 140c0-28 18-46 44-46 26 0 42 18 40 44-8-12-22-20-40-20-18 0-34 8-44 22z" fill="#5B3A22"></path>
+<circle cx="126" cy="154" r="9" fill="#D69A70"></circle><circle cx="214" cy="154" r="9" fill="#D69A70"></circle>
+<circle cx="154" cy="150" r="4.5" fill="#1C1917"></circle><circle cx="186" cy="150" r="4.5" fill="#1C1917"></circle>
+<path d="M156 172c8 8 20 8 28 0" fill="none" stroke="#9A3412" stroke-width="3.5" stroke-linecap="round"></path>
+<circle cx="144" cy="166" r="6" fill="#F4A07A" opacity="0.6"></circle><circle cx="196" cy="166" r="6" fill="#F4A07A" opacity="0.6"></circle>
+<g>
+<circle cx="200" cy="220" r="15" fill="#DC2626"></circle><circle cx="224" cy="214" r="16" fill="#22C55E"></circle><circle cx="248" cy="218" r="14" fill="#EAB308"></circle><circle cx="270" cy="222" r="13" fill="#DC2626"></circle><circle cx="236" cy="226" r="13" fill="#16A34A"></circle>
+<path d="M180 228h116v62H180z" fill="#B45309"></path>
+<path d="M180 248h116M180 268h116" stroke="#92400E" stroke-width="3"></path>
+<path d="M188 228v62M288 228v62" stroke="#92400E" stroke-width="3"></path>
+</g>
+<path d="M112 248c-20 18-22 42-8 56 10 10 28 8 40-2l40-14-6-24-36 8z" fill="#DBEAFE"></path>
+<circle cx="180" cy="272" r="13" fill="#E0AC85"></circle><circle cx="296" cy="260" r="13" fill="#E0AC85"></circle>
+<path d="M300 330c0-30-6-54-18-70" stroke="#DBEAFE" stroke-width="20" stroke-linecap="round" fill="none"></path>
+</svg>
+</div>
+
+<div style="position: relative; flex: 1 1 100%; border-top: 1px solid #1F6B3D; margin: 0 40px; padding: 26px 0 70px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+
+<div class="jv-stat" style="position: relative; display: flex; align-items: center; justify-content: center; gap: 14px">
+<svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#86EFAC" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18a9 9 0 0 1-18 0z"></path><path d="M8 12c0-3 2-5 4-6M12 12c0-2 1-4 3-5M16 12c0-2 1-3 3-3"></path></svg>
+<div><div style="display: flex; align-items: center; gap: 4px; font-size: 15px; color: #DCFCE7">Spašeno hrane<button type="button" class="jv-info" aria-label="Kako se računa spašena hrana" aria-describedby="tip-food"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg></button></div><div style="font-size: 32px; font-weight: 800; line-height: 1.1">412,6 kg</div></div>
+<div class="jv-tip" id="tip-food" role="tooltip" style="background: #052E16; border: 1px solid #166534; border-radius: 14px; padding: 18px 20px 20px; text-align: center; box-shadow: 0 14px 30px rgba(0,0,0,0.3)"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#86EFAC" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18a9 9 0 0 1-18 0z"></path><path d="M8 12c0-3 2-5 4-6M12 12c0-2 1-4 3-5M16 12c0-2 1-3 3-3"></path></svg><div style="color: #BEF264; font-size: 17px; font-weight: 800; margin: 6px 0 8px">Spašeno hrane</div><div style="color: #FFFFFF; font-size: 14px; line-height: 1.55; text-align: left">Sva hrana koju su restorani preuzeli od vas, umjesto da završi u smeću. Litre računamo kao kilograme, a proizvodi u komadima nisu uračunati.</div></div>
+</div>
+
+<div class="jv-stat" style="position: relative; display: flex; align-items: center; justify-content: center; gap: 14px">
+<svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#86EFAC" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a5 5 0 0 1-.6-9.96A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9z"></path></svg>
+<div><div style="display: flex; align-items: center; gap: 4px; font-size: 15px; color: #DCFCE7">Manje CO₂<button type="button" class="jv-info" aria-label="Kako se računa CO2" aria-describedby="tip-co2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg></button></div><div style="font-size: 32px; font-weight: 800; line-height: 1.1">1.031,5 kg</div></div>
+<div class="jv-tip" id="tip-co2" role="tooltip" style="background: #052E16; border: 1px solid #166534; border-radius: 14px; padding: 18px 20px 20px; text-align: center; box-shadow: 0 14px 30px rgba(0,0,0,0.3)"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#86EFAC" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a5 5 0 0 1-.6-9.96A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9z"></path></svg><div style="color: #BEF264; font-size: 17px; font-weight: 800; margin: 6px 0 8px">Manje CO₂</div><div style="color: #FFFFFF; font-size: 14px; line-height: 1.55; text-align: left">Procjena: svaki spašeni kilogram hrane sprečava oko 2,5 kg CO₂ koji bi nastao njenom proizvodnjom i bacanjem.</div></div>
+</div>
+
+<div class="jv-stat" style="position: relative; display: flex; align-items: center; justify-content: center; gap: 14px">
+<svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#86EFAC" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="6"></circle><path d="M15.5 9.2a6 6 0 1 1-6.3 6.3"></path><path d="M8 7h1.5v4"></path></svg>
+<div><div style="display: flex; align-items: center; gap: 4px; font-size: 15px; color: #DCFCE7">Vraćeno u kasu<button type="button" class="jv-info" aria-label="Kako se računa vraćeno u kasu" aria-describedby="tip-money"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg></button></div><div style="font-size: 32px; font-weight: 800; line-height: 1.1">2.318,40 KM</div></div>
+<div class="jv-tip" id="tip-money" role="tooltip" style="background: #052E16; border: 1px solid #166534; border-radius: 14px; padding: 18px 20px 20px; text-align: center; box-shadow: 0 14px 30px rgba(0,0,0,0.3)"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#86EFAC" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="6"></circle><path d="M15.5 9.2a6 6 0 1 1-6.3 6.3"></path><path d="M8 7h1.5v4"></path></svg><div style="color: #BEF264; font-size: 17px; font-weight: 800; margin: 6px 0 8px">Vraćeno u kasu</div><div style="color: #FFFFFF; font-size: 14px; line-height: 1.55; text-align: left">Novac od hrane kojoj je isticao rok i koja bi inače bila bačena: zbir svih preuzetih narudžbi.</div></div>
+</div>
+
+</div>
+
+<svg width="100%" height="48" viewBox="0 0 1100 48" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: -1px; display: block"><path d="M0 48V26C300 -4 800 -4 1100 26V48z" fill="#FAFAF7"></path></svg>
+</section>
+
+<section aria-labelledby="today-title" style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: baseline; gap: 12px"><h2 id="today-title" style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px">Danas</h2><span style="font-size: 15px; color: #57534E">Petak, 20. novembar</span></div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px">
+<a href="#" style="background: #FFFFFF; border: 1px solid #FDBA74; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 10px; color: #1C1917; box-shadow: 0 2px 10px rgba(28,25,23,0.04)">
+<span style="display: flex; align-items: center; justify-content: space-between"><span style="width: 44px; height: 44px; border-radius: 12px; background: #FFEDD5; color: #C2410C; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2M9 2h6"></path></svg></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span>
+<span style="font-size: 34px; font-weight: 800; line-height: 1">3</span>
+<span style="font-size: 15px; font-weight: 700">Čeka odgovor</span>
+<span style="font-size: 13px; color: #C2410C; font-weight: 700">Prva ističe za 8 min</span>
+</a>
+<a href="#" style="background: #FFFFFF; border: 1px solid #EEEDEB; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 10px; color: #1C1917; box-shadow: 0 2px 10px rgba(28,25,23,0.04)">
+<span style="display: flex; align-items: center; justify-content: space-between"><span style="width: 44px; height: 44px; border-radius: 12px; background: #DCFCE7; color: #166534; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7 12 3 4 7v10l8 4 8-4z"></path><path d="M4 7l8 4 8-4M12 11v10"></path></svg></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span>
+<span style="font-size: 34px; font-weight: 800; line-height: 1">5</span>
+<span style="font-size: 15px; font-weight: 700">Za pripremu danas</span>
+<span style="font-size: 13px; color: #57534E; font-weight: 500">Prva do 12:00</span>
+</a>
+<a href="#" style="background: #FFFFFF; border: 1px solid #EEEDEB; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 10px; color: #1C1917; box-shadow: 0 2px 10px rgba(28,25,23,0.04)">
+<span style="display: flex; align-items: center; justify-content: space-between"><span style="width: 44px; height: 44px; border-radius: 12px; background: #E0F2FE; color: #0369A1; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17.5" r="3"></circle><circle cx="18.5" cy="17.5" r="3"></circle><path d="M8.5 17.5h5l3-7h3M12 10.5h4M5.5 17.5 9 8h3"></path></svg></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span>
+<span style="font-size: 34px; font-weight: 800; line-height: 1">2</span>
+<span style="font-size: 15px; font-weight: 700">Za predaju</span>
+<span style="font-size: 13px; color: #57534E; font-weight: 500">1 kurir · 1 lično preuzimanje</span>
+</a>
+<a href="#" style="background: #FFFFFF; border: 1px solid #EEEDEB; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 10px; color: #1C1917; box-shadow: 0 2px 10px rgba(28,25,23,0.04)">
+<span style="display: flex; align-items: center; justify-content: space-between"><span style="width: 44px; height: 44px; border-radius: 12px; background: #FEE2E2; color: #B91C1C; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M3 10h18M12 13v3M12 18.5h.01"></path></svg></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span>
+<span style="font-size: 34px; font-weight: 800; line-height: 1">4</span>
+<span style="font-size: 15px; font-weight: 700">Ističe danas</span>
+<span style="font-size: 13px; color: #57534E; font-weight: 500">proizvoda u vašoj ponudi</span>
+</a>
+<a href="#" style="background: #FFFFFF; border: 1px solid #EEEDEB; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 10px; color: #1C1917; box-shadow: 0 2px 10px rgba(28,25,23,0.04)">
+<span style="display: flex; align-items: center; justify-content: space-between"><span style="width: 44px; height: 44px; border-radius: 12px; background: #F0FDF4; color: #166534; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M15 9.5c-.5-1-1.6-1.5-3-1.5-1.7 0-3 .9-3 2s1.3 1.6 3 2 3 .9 3 2-1.3 2-3 2c-1.4 0-2.5-.5-3-1.5M12 6v2M12 16v2"></path></svg></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A8A29E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span>
+<span style="font-size: 34px; font-weight: 800; line-height: 1">34<span style="font-size: 18px; color: #57534E; font-weight: 700"> / 50</span></span>
+<span style="font-size: 15px; font-weight: 700">Krediti</span><span style="height: 8px; border-radius: 999px; background: #E7E5E4; overflow: hidden"><span style="display: block; width: 68%; height: 100%; background: #16A34A; border-radius: 999px"></span></span>
+<span style="font-size: 13px; color: #57534E; font-weight: 500">Ovaj mjesec · dovoljno za 34 objave</span>
+</a>
+</div>
+</section>
+
+<section aria-labelledby="orders-title" style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 12px"><div><h2 id="orders-title" style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px">Nove narudžbe</h2><p style="margin: 2px 0 0; font-size: 15px; color: #57534E">Odgovorite prije nego istekne vrijeme</p></div><a href="#" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 15px; padding: 10px 4px">Sve narudžbe<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; align-items: stretch">
+<sc-for list="{{orders}}" as="o" hint-placeholder-count="3">
+<article style="background: #FFFFFF; border: 1px solid #EEEDEB; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 2px 10px rgba(28,25,23,0.04)">
+<header style="display: flex; align-items: center; gap: 12px">
+<span style="width: 44px; height: 44px; flex: none; border-radius: 12px; background: {{o.bg}}; color: {{o.fg}}; font-weight: 800; display: flex; align-items: center; justify-content: center">{{o.initials}}</span>
+<div style="flex: 1; min-width: 0; line-height: 1.35"><h3 style="margin: 0; font-size: 16px; font-weight: 800">{{o.name}}</h3><div style="font-size: 13px; color: #57534E">{{o.meta}}</div></div>
+<span style="font-size: 12px; font-weight: 700; border-radius: 999px; padding: 4px 10px; background: {{o.chipBg}}; color: {{o.chipFg}}">{{o.method}}</span>
+</header>
+<div style="display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; color: #57534E"><span>{{o.count}} · {{o.when}}</span><span style="font-size: 18px; font-weight: 800; color: #1C1917">{{o.total}}</span></div>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-top: 1px solid #F5F5F4; border-bottom: 1px solid #F5F5F4">
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px">
+<sc-for list="{{o.items}}" as="it" hint-placeholder-count="3"><li style="display: flex; justify-content: space-between; gap: 8px"><span>{{it.name}}</span><span style="color: #57534E">{{it.qty}}</span></li></sc-for>
+</ul>
+<sc-if value="{{o.hasMore}}" hint-placeholder-val="{{false}}"><a href="#" style="font-size: 14px; font-weight: 700">{{o.more}}</a></sc-if>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; background: {{o.urgBg}}; color: {{o.urgFg}}; border-radius: 10px; padding: 8px 12px; font-size: 14px; font-weight: 700"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 2"></path></svg>{{o.left}}</div>
+<div style="display: flex; gap: 10px">
+<button type="button" style="flex: 1; height: 46px; border-radius: 999px; border: 0; background: #166534; color: #FFFFFF; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer">Prihvati</button>
+<button type="button" style="flex: 1; height: 46px; border-radius: 999px; border: 1.5px solid #E7E5E4; background: #FFFFFF; color: #B91C1C; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer">Odbij</button>
+</div>
+</article>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="exp-title" style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 12px"><div><h2 id="exp-title" style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px">Ističe uskoro u vašoj ponudi</h2><p style="margin: 2px 0 0; font-size: 15px; color: #57534E">Snizite cijenu da se proda prije isteka roka</p></div><a href="#" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 15px; padding: 10px 4px">Moji proizvodi<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a></div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px">
+<sc-for list="{{products}}" as="p" hint-placeholder-count="4">
+<div style="border: 1px solid #EEEDEB; border-radius: 16px; display: flex; flex-direction: column; background: #FFFFFF; box-shadow: 0 2px 8px rgba(28,25,23,0.05)">
+<div style="position: relative; height: 176px; border-radius: 15px 15px 0 0; background: {{p.bg}}; color: {{p.fg}}; display: flex; align-items: center; justify-content: center">
+<sc-if value="{{p.isDairy}}" hint-placeholder-val="{{false}}"><svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16 15 6l6 4v8H3z"></path><path d="M3 16h18"></path><circle cx="9" cy="19" r="0.6"></circle><circle cx="15" cy="13" r="1.2"></circle><circle cx="11" cy="14" r="0.8"></circle></svg></sc-if>
+<sc-if value="{{p.isBakery}}" hint-placeholder-val="{{false}}"><svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12c0-4 4-7 8-7s8 3 8 7c0 2-1 3-2 3v4H6v-4c-1 0-2-1-2-3z"></path><path d="M9 10v3M12 9v4M15 10v3"></path></svg></sc-if>
+<sc-if value="{{p.isProduce}}" hint-placeholder-val="{{true}}"><svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="14" r="7"></circle><path d="M12 7V4M12 7c-2-2-4-2-5-1M12 7c2-2 4-2 5-1"></path></svg></sc-if>
+<sc-if value="{{p.isMeat}}" hint-placeholder-val="{{false}}"><svg width="76" height="76" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4a5 5 0 0 1 5 5c0 4-5 9-9 9a5 5 0 0 1-5-4l-2 2-1.5-1.5 2-2A5 5 0 0 1 10 6a5 5 0 0 1 5-2z"></path><circle cx="14" cy="10" r="1.6"></circle></svg></sc-if>
+<span style="position: absolute; top: 12px; left: 12px; background: #C2410C; color: #FFFFFF; font-size: 13px; font-weight: 800; border-radius: 999px; padding: 3px 10px">{{p.discount}}</span>
+</div>
+<div style="padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 7px; flex: 1">
+<h4 style="margin: 0; font-size: 16px; font-weight: 700">{{p.name}}</h4>
+<div style="display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: {{p.expWeight}}; color: {{p.expColor}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M3 10h18M12 14v3l2 1"></path></svg>{{p.expiry}}</div>
+<div style="font-size: 14px; color: #57534E">{{p.available}}</div>
+<div style="font-size: 14px; color: #57534E">{{p.reserved}}</div>
+<div style="margin-top: 4px"><span style="font-size: 20px; font-weight: 800; color: #C2410C">{{p.price}}</span><span style="font-size: 14px; color: #57534E"> / {{p.unit}}</span> <span style="font-size: 14px; color: #57534E; text-decoration: line-through; margin-left: 4px">{{p.old}}</span></div>
+<div style="margin-top: auto; padding-top: 10px; border-top: 1px solid #F5F5F4; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: #44403C">Nova cijena<span class="jv-tipwrap"><button type="button" class="jv-info" aria-label="Za koje narudžbe važi nova cijena" style="color: #57534E"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg></button><span class="jv-tip2" role="tooltip">Važi za nove narudžbe</span></span></div>
+<div style="display: flex; gap: 8px">
+<label style="flex: 1; min-width: 0; display: flex; align-items: center; height: 44px; border: 1.5px solid {{p.inputBorder}}; border-radius: 12px; padding: 0 12px; background: #FFFFFF"><span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Nova cijena za {{p.name}}</span><input class="jv-price" type="text" inputmode="decimal" value="{{p.val}}" onChange="{{p.onInput}}" placeholder="{{p.priceNum}}" style="border: 0; outline: none; background: transparent; font: inherit; font-size: 15px; font-weight: 700; color: #1C1917; width: 100%; min-width: 0"><span style="font-size: 14px; color: #57534E; font-weight: 600">KM</span></label>
+<button type="button" onClick="{{p.onSave}}" style="height: 44px; padding: 0 16px; border-radius: 12px; border: 0; background: #166534; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer">Spremi</button>
+</div>
+<div style="font-size: 13px; font-weight: 600; min-height: 18px; color: {{p.hintColor}}">{{p.hint}}</div>
+</div>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="how-title" style="margin: 24px 0 56px; padding: 56px 40px 64px; background: #F0FDF4; border: 1px solid #DCFCE7; border-radius: 28px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 40px">
+<div style="display: flex; flex-direction: column; gap: 8px; align-items: center">
+<h2 id="how-title" style="margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -0.5px">Od police do restorana</h2>
+<p style="margin: 0; font-size: 17px; color: #57534E">Tri koraka do prodaje umjesto bacanja</p>
+</div>
+<div style="width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px">
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px">
+<svg width="170" height="138" viewBox="0 0 160 130" aria-hidden="true"><path d="M30 78 Q22 40 60 30 Q100 18 122 44 Q144 70 124 98 Q104 122 66 116 Q36 110 30 78 Z" fill="#BBF7D0"></path><g fill="none" stroke="#14532D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M70 26 H108 Q114 26 114 32 V66 L76 104 Q72 108 68 104 L34 70 Q30 66 34 62 Z" fill="#FFFFFF"></path><circle cx="100" cy="40" r="5"></circle><path d="M58 70 L80 48 M60 52 h.01 M78 70 h.01" stroke-width="3"></path><circle cx="124" cy="92" r="16" fill="#FFFFFF"></circle><path d="M124 84 v16 M116 92 h16"></path></g></svg>
+<span style="width: 30px; height: 30px; border-radius: 50%; background: #166534; color: #FFFFFF; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center">1</span>
+<h3 style="margin: 4px 0 0; font-size: 20px; font-weight: 800">Objavite ponudu</h3>
+<p style="margin: 0; max-width: 300px; font-size: 16px; line-height: 1.75; color: #44403C">Dodajte proizvod kojem uskoro ističe rok, sa sniženom cijenom i količinom. <span style="background: #BBF7D0; color: #14532D; font-weight: 600; border-radius: 999px; padding: 2px 8px; -webkit-box-decoration-break: clone; box-decoration-break: clone">Jedna objava košta 1 kredit</span>.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px">
+<svg width="170" height="138" viewBox="0 0 160 130" aria-hidden="true"><path d="M26 70 Q24 34 62 28 Q104 20 126 50 Q146 78 120 102 Q94 122 60 112 Q28 104 26 70 Z" fill="#BBF7D0"></path><g fill="none" stroke="#14532D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="46" y="24" width="68" height="92" rx="8" fill="#FFFFFF"></rect><rect x="64" y="16" width="32" height="16" rx="5" fill="#FFFFFF"></rect><path d="M58 52 l5 5 9-10 M80 52 h22 M58 74 l5 5 9-10 M80 74 h22 M58 96 l5 5 9-10 M80 96 h16"></path></g></svg>
+<span style="width: 30px; height: 30px; border-radius: 50%; background: #166534; color: #FFFFFF; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center">2</span>
+<h3 style="margin: 4px 0 0; font-size: 20px; font-weight: 800">Potvrdite narudžbu</h3>
+<p style="margin: 0; max-width: 300px; font-size: 16px; line-height: 1.75; color: #44403C">Restorani naručuju iz vaše ponude, a vi narudžbu <span style="background: #BBF7D0; color: #14532D; font-weight: 600; border-radius: 999px; padding: 2px 8px; -webkit-box-decoration-break: clone; box-decoration-break: clone">prihvatite ili odbijete u par klikova</span>.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 10px">
+<svg width="170" height="138" viewBox="0 0 160 130" aria-hidden="true"><path d="M26 70 Q24 34 62 28 Q104 20 126 50 Q146 78 120 102 Q94 122 60 112 Q28 104 26 70 Z" fill="#BBF7D0"></path><g fill="none" stroke="#14532D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="22" y="60" width="54" height="48" fill="#FFFFFF"></rect><path d="M18 50 L80 50 L76 62 L22 62 Z" fill="#FFFFFF"></path><path d="M34 50 L32 62 M48 50 L48 62 M62 50 L64 62"></path><rect x="30" y="78" width="16" height="30" fill="#FFFFFF"></rect><rect x="54" y="74" width="14" height="12" fill="#FFFFFF"></rect><path d="M80 76 Q100 56 116 60" stroke-dasharray="4 5"></path><path d="M124 20 C113 20 108 28 108 35 C108 46 124 60 124 60 C124 60 140 46 140 35 C140 28 135 20 124 20 Z" fill="#FFFFFF"></path><circle cx="124" cy="35" r="5"></circle><path d="M98 82 L134 82 L138 116 L94 116 Z" fill="#FFFFFF"></path><path d="M106 82 Q106 70 116 70 Q126 70 126 82"></path></g></svg>
+<span style="width: 30px; height: 30px; border-radius: 50%; background: #166534; color: #FFFFFF; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center">3</span>
+<h3 style="margin: 4px 0 0; font-size: 20px; font-weight: 800">Predajte robu</h3>
+<p style="margin: 0; max-width: 300px; font-size: 16px; line-height: 1.75; color: #44403C">Restoran je <span style="background: #BBF7D0; color: #14532D; font-weight: 600; border-radius: 999px; padding: 2px 8px; -webkit-box-decoration-break: clone; box-decoration-break: clone">preuzme lično ili je odnese kurir</span>, a hrana završi na tanjiru umjesto u smeću.</p>
+</div>
+
+</div>
+</section>
+
+<section aria-labelledby="give-title" style="margin: 0 -32px; padding: 72px 32px 128px; background: #F3F1EA; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px">
+<h2 id="give-title" style="margin: 0; max-width: 900px; font-family: 'Barlow Condensed', 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 44px; line-height: 1.05; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #14532D">Svaki obrok vrijedi, pogotovo onaj podijeljen</h2>
+<p style="margin: 0; max-width: 560px; font-size: 17px; line-height: 1.6; color: #44403C">Prebacite višak iz ponude u donacije ili sponzorišite akciju i pomozite ljudima u svom gradu.</p>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: 18px">
+<a href="#" style="display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 28px; border-radius: 999px; background: #166534; color: #FFFFFF; font-weight: 700; font-size: 16px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"></path></svg>Doniraj hranu</a>
+<a href="#" style="display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 28px; border-radius: 999px; background: #166534; color: #FFFFFF; font-weight: 700; font-size: 16px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5 6.7 19.4l1.2-6L3.4 9.3l6-.7z"></path></svg>Budi sponzor</a>
+</div>
+</section>
+
+</div>
+
+<footer style="position: relative; background: #14532D; color: #FFFFFF">
+<svg width="100%" height="57" viewBox="0 0 1440 57" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; left: 0; right: 0; top: -56px; display: block"><path d="M0 57C360 0 1080 0 1440 57z" fill="#14532D"></path></svg>
+<svg width="100%" height="100%" viewBox="0 0 1100 260" preserveAspectRatio="xMidYMid slice" aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none">
+<g fill="none" stroke="#1F6B3D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60 60c18-18 46-14 56 6 8 18-4 40-26 44-20 4-38-10-38-28 0-8 3-16 8-22z"></path><path d="M88 52c2-10 8-18 18-20"></path>
+<circle cx="260" cy="190" r="26"></circle><path d="M260 164v-12M247 154c6 6 20 6 26 0"></path>
+<path d="M420 40c-20 10-30 34-20 56 22-6 36-28 30-52-4-2-6-4-10-4z"></path><path d="M406 92l20-44"></path>
+<path d="M700 200c0-26 20-44 44-44s44 18 44 44H700z"></path><path d="M720 200v-12M744 200v-20M768 200v-12"></path>
+<path d="M880 60l50-50M890 70c-12-4-20-16-14-26l34-34c8-6 22 0 26 12 2 6-2 14-6 18l-26 26c-4 4-8 6-14 4z"></path>
+<path d="M1010 160c14 0 26 12 26 26s-12 26-26 26-26-12-26-26 12-26 26-26zM1010 134v26"></path>
+<path d="M560 230c10-24 34-38 58-32-4 24-28 40-52 36z"></path><circle cx="160" cy="230" r="10"></circle><circle cx="980" cy="40" r="12"></circle>
+</g>
+</svg>
+
+<div style="position: relative; padding: 28px 48px 40px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 24px">
+<a href="#" aria-label="Još vrijedi, početna" style="display: inline-flex; align-items: center; gap: 12px; color: #FFFFFF; justify-self: start">
+<svg width="56" height="56" viewBox="0 0 100 100" aria-hidden="true"><path d="M22 44 A30 30 0 0 1 78 44" fill="none" stroke="#86EFAC" stroke-width="8" stroke-linecap="round"></path><polygon points="70,42 88,42 79,56" fill="#86EFAC"></polygon><circle cx="50" cy="56" r="15" fill="#E4572E"></circle><path d="M50 42 L50 35" stroke="#86EFAC" stroke-width="3.5" stroke-linecap="round"></path><path d="M51 39 C55 32 62 32 66 34 C62 40 56 41 51 39 Z" fill="#86EFAC"></path><path d="M14 82 C22 70 36 66 52 66 L66 67 C73 68 73 75 66 75 L56 76 C63 78 70 77 75 74 L84 66 C89 62 95 67 90 72 C82 82 66 88 48 88 C34 88 22 86 14 82 Z" fill="#FFFFFF"></path></svg>
+<span style="font-size: 22px; font-weight: 800; letter-spacing: -0.3px">Još <span style="color: #BEF264">vrijedi</span></span>
+</a>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 18px">
+<nav aria-label="Informacije" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 32px; font-family: 'Barlow Condensed', 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 21px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px">
+<a href="#" style="color: #FFFFFF">O nama</a><a href="#" style="color: #FFFFFF">Podrška</a><a href="#" style="color: #FFFFFF">Kontakt</a><a href="#" style="color: #FFFFFF">Postani partner</a>
+</nav>
+<div style="display: flex; gap: 10px">
+<a href="#" aria-label="Instagram" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #86EFAC"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><path d="M17.5 6.5h.01"></path></svg></a>
+<a href="#" aria-label="Facebook" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #86EFAC"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h-2.5A3.5 3.5 0 0 0 9 6.5V10H6v3h3v8h3.5v-8h3l.5-3h-3.5V7a1 1 0 0 1 1-1H15z"></path></svg></a>
+<a href="#" aria-label="LinkedIn" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #86EFAC"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4v11H4zM6 4.5h.01M11 20V9h3.6v1.6c.7-1.1 2-1.9 3.4-1.9 2.2 0 3 1.5 3 4V20h-4v-6c0-1-.4-1.8-1.5-1.8S14 13 14 14v6z"></path></svg></a>
+<a href="#" aria-label="TikTok" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #86EFAC"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5M14 3c.5 2.6 2.4 4.4 5 4.6"></path></svg></a>
+<a href="#" aria-label="YouTube" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #86EFAC"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="4"></rect><path d="M10 9.5v5l4.5-2.5z"></path></svg></a>
+</div>
+</div>
+<div aria-hidden="true"></div>
+</div>
+
+<div style="position: relative; background: #0F4423; padding: 22px 48px 26px; display: flex; flex-direction: column; align-items: center; gap: 14px">
+<nav aria-label="Pravne informacije" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 44px; font-size: 14px; font-weight: 500">
+<a href="#" style="color: #DCFCE7">Uslovi korištenja</a><a href="#" style="color: #DCFCE7">Politika privatnosti</a><a href="#" style="color: #DCFCE7">Politika kolačića</a><a href="#" style="color: #DCFCE7">Kako računamo uticaj</a><a href="#" style="color: #DCFCE7">Pomoć</a>
+</nav>
+<p style="margin: 0; font-size: 13px; color: #BBF7D0">© 2026 Još vrijedi. Sva prava zadržana.</p>
+</div>
+</footer>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":3300}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { vals: {}, saved: {} }; }
+  renderVals() {
+    const fmt = (n) => n.toFixed(2).replace('.', ',') + ' KM';
+    const look = { dairy: ['#FEF3C7', '#B45309'], bakery: ['#FFEDD5', '#C2410C'], produce: ['#DCFCE7', '#15803D'], meat: ['#FFE4E6', '#BE123C'] };
+    const exp = (t) => t === 'Danas' || t === 'Sutra' ? { expColor: '#B91C1C', expWeight: 700 } : { expColor: '#57534E', expWeight: 500 };
+    const raw = [
+      ['k1', 'Kroasani', 'bakery', 'Danas', 'Dostupno: 7 pak', 'Rezervisano: 3 pak', 3.6, 'pak', 6.0],
+      ['k2', 'Jogurt 2,8%, 1 l', 'dairy', 'Danas', 'Dostupno: 18 kom', 'Rezervisano: 6 kom', 0.99, 'kom', 1.79],
+      ['k3', 'Sir trapist', 'dairy', 'Sutra', 'Dostupno: 5 kg', 'Rezervisano: 2 kg', 7.2, 'kg', 13.7],
+      ['k4', 'Zelena salata', 'produce', 'Za 3 dana', 'Dostupno: 27 kom', 'Nema rezervacija', 0.7, 'kom', 1.2]
+    ];
+    const products = raw.map(([id, name, kind, expiry, available, reserved, price0, unit, full]) => {
+      const price = this.state.saved[id] != null ? this.state.saved[id] : price0;
+      const val = this.state.vals[id] != null ? this.state.vals[id] : '';
+      const n = parseFloat(String(val).replace(',', '.'));
+      let hint = '', hintColor = '#57534E', inputBorder = '#D6D3D1', ok = false;
+      if (val !== '') {
+        if (isNaN(n) || n <= 0) { hint = 'Upišite cijenu veću od 0'; hintColor = '#B91C1C'; inputBorder = '#B91C1C'; }
+        else if (n >= full) { hint = 'Mora biti niža od ' + fmt(full); hintColor = '#B91C1C'; inputBorder = '#B91C1C'; }
+        else { hint = 'Novi popust: \u2212' + Math.round((1 - n / full) * 100) + '%'; hintColor = '#166534'; inputBorder = '#166534'; ok = true; }
+      } else if (this.state.saved[id] != null) { hint = 'Cijena promijenjena'; hintColor = '#166534'; }
+      return {
+        name, expiry, available, reserved, unit, val,
+        price: fmt(price), old: fmt(full), priceNum: price.toFixed(2).replace('.', ','),
+        discount: '\u2212' + Math.round((1 - price / full) * 100) + '%',
+        bg: look[kind][0], fg: look[kind][1], isDairy: kind === 'dairy', isBakery: kind === 'bakery', isProduce: kind === 'produce', isMeat: kind === 'meat', ...exp(expiry),
+        hint, hintColor, inputBorder,
+        onInput: (e) => this.setState({ vals: { ...this.state.vals, [id]: e.target.value } }),
+        onSave: () => { if (ok) this.setState({ saved: { ...this.state.saved, [id]: n }, vals: { ...this.state.vals, [id]: '' } }); }
+      };
+    });
+    const urgent = (m) => m <= 10 ? { urgBg: '#FFEDD5', urgFg: '#C2410C' } : { urgBg: '#F5F5F4', urgFg: '#44403C' };
+    const plural = (n) => n % 10 === 1 && n % 100 !== 11 ? 'artikal' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'artikla' : 'artikala');
+    const order = (o, all) => ({ ...o, count: all.length + ' ' + plural(all.length), items: all.slice(0, 3), hasMore: all.length > 3, more: '+ jo\u0161 ' + (all.length - 3) + ' ' + plural(all.length - 3) });
+    const orders = [
+      order({ name: 'Restoran Ukus', initials: 'RU', bg: '#FFEDD5', fg: '#9A3412', meta: '#1051 \u00b7 prije 4 min', method: 'Dostava', chipBg: '#E0F2FE', chipFg: '#0369A1', when: 'danas u 12:30', total: '52,30 KM', left: 'Odgovorite za 8 min', ...urgent(8) },
+        [{ name: 'Sir trapist', qty: '2 kg' }, { name: 'Kroasani', qty: '3 pak' }, { name: 'Zelena salata', qty: '10 kom' }, { name: 'Jogurt 2,8%, 1 l', qty: '6 kom' }, { name: 'Hljeb bijeli', qty: '8 kom' }]),
+      order({ name: 'Bistro Kod Lejle', initials: 'BL', bg: '#F3E8FF', fg: '#7E22CE', meta: '#1052 \u00b7 prije 11 min', method: 'Li\u010dno', chipBg: '#DCFCE7', chipFg: '#166534', when: 'danas u 14:00', total: '21,40 KM', left: 'Odgovorite za 19 min', ...urgent(19) },
+        [{ name: 'Jogurt 2,8%, 1 l', qty: '6 kom' }, { name: 'Hljeb bijeli', qty: '12 kom' }]),
+      order({ name: 'A\u0161\u0107inica Had\u017eija', initials: 'AH', bg: '#ECFCCB', fg: '#3F6212', meta: '#1053 \u00b7 prije 18 min', method: 'Li\u010dno', chipBg: '#DCFCE7', chipFg: '#166534', when: 'danas u 16:00', total: '54,90 KM', left: 'Odgovorite za 27 min', ...urgent(27) },
+        [{ name: 'Mljeveno june\u0107e', qty: '3 kg' }, { name: 'Paradajz', qty: '5 kg' }, { name: 'Luk', qty: '4 kg' }])
+    ];
+    return { orders, products };
+  }
+}
+</script>
+</body>
+</html>

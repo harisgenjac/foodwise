@@ -27,17 +27,23 @@ import { MOBILE_DRAWER_ID } from "./navigation/MobileDrawer.js";
 
 const DROPDOWN_LIMIT = 8;
 
-// The restaurant's search field (md and up; phones have Search in the bottom bar): Enter opens
-// /search?q=<text>, which fills its name filter with it. No suggestions yet.
-function HeaderSearch() {
+// The search field (md and up) of a restaurant (the marketplace) and a store (its own products):
+// Enter opens `path`?q=<text>, whose name filter it fills, and clears the field. No suggestions yet.
+const SEARCH = {
+  RESTAURANT: { path: "/search", label: "header.search" },
+  STORE: { path: "/my-products", label: "header.searchStore" },
+} as const;
+
+function HeaderSearch({ role }: { role: keyof typeof SEARCH }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [text, setText] = useState("");
+  const { path, label } = SEARCH[role];
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const query = text.trim();
-    navigate(query ? `/search?q=${encodeURIComponent(query)}` : "/search");
+    navigate(query ? `${path}?q=${encodeURIComponent(query)}` : path);
     setText("");
   };
 
@@ -45,12 +51,12 @@ function HeaderSearch() {
     <form role="search" onSubmit={onSubmit} className="mx-4 hidden max-w-[560px] flex-1 md:block">
       <label className="flex h-[46px] items-center gap-2.5 rounded-xl bg-neutral-100 px-4 text-neutral-600 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand-800">
         <Search className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />
-        <span className="sr-only">{t("header.search")}</span>
+        <span className="sr-only">{t(label)}</span>
         <input
           type="search"
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder={t("header.search")}
+          placeholder={t(label)}
           className="min-w-0 flex-1 bg-transparent text-[15px] text-neutral-900 outline-none placeholder:text-neutral-600"
         />
       </label>
@@ -198,7 +204,7 @@ function Header({ isSidebarOpen, onToggleSidebar, isMenuOpen = false, onOpenMenu
         </Link>
       </div>
 
-      {user?.role === "RESTAURANT" && !locked && <HeaderSearch />}
+      {(user?.role === "RESTAURANT" || user?.role === "STORE") && !locked && <HeaderSearch role={user.role} />}
 
       <div className="flex shrink-0 items-center sm:gap-1">
         <LanguageSwitcher />

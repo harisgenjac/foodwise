@@ -1,11 +1,20 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import toast from "react-hot-toast";
+import { ArrowRight, Cloud, Coins, Salad } from "lucide-react";
 import api from "../api/axios.js";
-import HomeHero from "../components/dashboard/HomeHero.js";
+import HomeHero, { type HeroStat } from "../components/dashboard/HomeHero.js";
+import { ChefIllustration, ScooterIcon } from "../components/dashboard/HomeIllustrations.js";
 import HomeStoreSlider from "../components/dashboard/HomeStoreSlider.js";
 import HomeOffers from "../components/dashboard/HomeOffers.js";
-import HomeHowItWorks from "../components/dashboard/HomeHowItWorks.js";
+import HomeHowItWorks, {
+  ChooseDeliveryIllustration,
+  CookTodayIllustration,
+  FindOfferIllustration,
+} from "../components/dashboard/HomeHowItWorks.js";
 import HomeDonateBand from "../components/dashboard/HomeDonateBand.js";
 import LocationReminder from "../components/profile/LocationReminder.js";
+import { formatNumber } from "../utils/numbers.js";
 import type { HomeStore, RestaurantImpact, User } from "../types/index.js";
 
 // The slider's stores: the store list's visibility rules, nearest first, from all cities.
@@ -18,6 +27,7 @@ const SLIDER_STORES = { radius: "all", limit: 20 };
 // the whole content area, which the footer's arch overlaps (Layout renders that footer flush). The
 // requests are independent: a failed one only hides its own part (the stats, the slider, the rows).
 const RestaurantDashboardPage = () => {
+  const { t, i18n } = useTranslation();
   // null while loading.
   const [impact, setImpact] = useState<RestaurantImpact | null>(null);
   const [impactFailed, setImpactFailed] = useState(false);
@@ -61,19 +71,83 @@ const RestaurantDashboardPage = () => {
     fetchOffers();
   }, []);
 
+  const lang = i18n.language;
+  // The hero: food saved (kg), CO₂ avoided (kg) and money saved (KM), each with its tooltip.
+  const stats: HeroStat[] = [
+    {
+      key: "foodSaved",
+      icon: Salad,
+      label: t("home.stats.foodSaved"),
+      tip: t("restaurantHome.stats.foodSavedTip"),
+      infoLabel: t("home.stats.foodSavedInfo"),
+      value: impact && `${formatNumber(impact.food_kg, lang, 1)} kg`,
+    },
+    {
+      key: "co2",
+      icon: Cloud,
+      label: t("home.stats.co2"),
+      tip: t("home.stats.co2Tip"),
+      infoLabel: t("home.stats.co2Info"),
+      value: impact && `${formatNumber(impact.co2_kg, lang, 1)} kg`,
+    },
+    {
+      key: "saved",
+      icon: Coins,
+      label: t("restaurantHome.stats.saved"),
+      tip: t("restaurantHome.stats.savedTip"),
+      infoLabel: t("restaurantHome.stats.savedInfo"),
+      value: impact && `${formatNumber(impact.savings, lang, 2)} KM`,
+    },
+  ];
+
   return (
     <div data-testid="restaurant-home" className="space-y-6 font-jakarta text-neutral-900">
       <LocationReminder />
 
-      <HomeHero impact={impact} statsFailed={impactFailed} />
+      <HomeHero
+        text={t("restaurantHome.hero.text")}
+        actions={[
+          {
+            label: t("restaurantHome.hero.shopNow"),
+            to: "/search",
+            variant: "primary",
+            icon: <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.4} aria-hidden="true" />,
+            iconAfter: true,
+          },
+          // The live tracking page does not exist yet.
+          {
+            label: t("restaurantHome.hero.trackDelivery"),
+            onClick: () => toast(t("restaurantHome.hero.comingSoon")),
+            variant: "outline",
+            icon: <ScooterIcon className="h-5 w-5" />,
+          },
+        ]}
+        illustration={<ChefIllustration label={t("restaurantHome.hero.chef")} />}
+        bubble={t("restaurantHome.hero.bubble", { returnObjects: true }) as string[]}
+        stats={stats}
+        statsLabel={t("home.stats.label")}
+        statsFailed={impactFailed}
+      />
 
       <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
         {(stores === null || stores.length > 0) && <HomeStoreSlider stores={stores} />}
         {(offers === null || offers.length > 0) && <HomeOffers stores={offers} />}
-        <HomeHowItWorks />
+        <HomeHowItWorks
+          title={t("restaurantHome.howItWorks.title")}
+          subtitle={t("restaurantHome.howItWorks.subtitle")}
+          steps={[
+            { key: "find", illustration: FindOfferIllustration, title: t("restaurantHome.howItWorks.find.title"), textKey: "restaurantHome.howItWorks.find.text" },
+            { key: "choose", illustration: ChooseDeliveryIllustration, title: t("restaurantHome.howItWorks.choose.title"), textKey: "restaurantHome.howItWorks.choose.text" },
+            { key: "cook", illustration: CookTodayIllustration, title: t("restaurantHome.howItWorks.cook.title"), textKey: "restaurantHome.howItWorks.cook.text" },
+          ]}
+        />
       </div>
 
-      <HomeDonateBand />
+      <HomeDonateBand
+        title={t("home.donate.title")}
+        text={t("restaurantHome.donate.text")}
+        donateLabel={t("restaurantHome.donate.donate")}
+      />
     </div>
   );
 };

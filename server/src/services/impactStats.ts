@@ -14,13 +14,13 @@ interface SavedTotals {
 // verify the source and the number before launch.
 export const CO2_KG_PER_FOOD_KG = 2.5;
 
-// Food saved, platform-wide or (with `restaurantId`) one restaurant's, shared by the admin
-// statistics and the restaurant home page's stats. It follows
-// the store dashboard's rules: picked-up (Completed) order items only, g/kg as kg, ml/l as l, kom
-// and pak as pieces. Value and savings follow the impact report.
+// Food saved, platform-wide, one restaurant's (`restaurantId`: what it picked up) or one store's
+// (`storeId`: what restaurants picked up from it), shared by the admin statistics and the home
+// pages' stats. Picked-up (Completed) order items only, g/kg as kg, ml/l as l, kom and pak as
+// pieces. Value (the agreed prices × quantities) and savings follow the impact report.
 export const getSavedTotals = async (
   db: Pool | PoolClient = pool,
-  { restaurantId }: { restaurantId?: number } = {},
+  { restaurantId, storeId }: { restaurantId?: number; storeId?: number } = {},
 ): Promise<SavedTotals> => {
   const result = await db.query<Record<keyof SavedTotals, string>>(
     `SELECT
@@ -36,8 +36,9 @@ export const getSavedTotals = async (
      FROM order_items
      JOIN products ON order_items.product_id = products.id
      WHERE order_items.status = 'Completed'
-       AND ($1::integer IS NULL OR order_items.restaurant_id = $1)`,
-    [restaurantId ?? null],
+       AND ($1::integer IS NULL OR order_items.restaurant_id = $1)
+       AND ($2::integer IS NULL OR products.store_id = $2)`,
+    [restaurantId ?? null, storeId ?? null],
   );
   const row = result.rows[0]!;
   return {
@@ -65,5 +66,24 @@ export const getRestaurantImpact = async (restaurantId: number): Promise<Restaur
     food_kg: food,
     co2_kg: food * CO2_KG_PER_FOOD_KG,
     savings: totals.savings,
+  };
+};
+
+export interface StoreImpact {
+  food_kg: number;
+  co2_kg: number;
+  revenue: number;
+}
+
+// The store home page's stats, over what restaurants picked up from the store since it joined:
+// food saved and CO₂ as for a restaurant, and "back in the till" (`revenue`), the agreed prices ×
+// quantities of those items. A store with no pickups yet gets zeros.
+export const getStoreImpact = async (storeId: number): Promise<StoreImpact> => {
+  const totals = await getSavedTotals(pool, { storeId });
+  const food = totals.kg + totals.l;
+  return {
+    food_kg: food,
+    co2_kg: food * CO2_KG_PER_FOOD_KG,
+    revenue: totals.value,
   };
 };

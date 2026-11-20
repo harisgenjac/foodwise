@@ -270,7 +270,7 @@ interface BranchStats {
 }
 
 // Numbers for the branch page and the headquarters' dashboard, per branch. This month is the
-// local calendar month (APP_TIMEZONE), like the store dashboard. Pending orders are the ones open
+// local calendar month (APP_TIMEZONE). Pending orders are the ones open
 // now; orders this month by when they were sent, picked up ones by their pickup. Food saved and
 // its value count the items picked up this month (their accepted quantities).
 export const getBranchesStats = async (
