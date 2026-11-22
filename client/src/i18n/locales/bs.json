@@ -2420,6 +2420,24 @@
       "reject": "Odbij",
       "acceptLabel": "Prihvati narudžbu {{code}} ({{name}})",
       "rejectLabel": "Odbij narudžbu {{code}} ({{name}})"
+    },
+    "products": {
+      "title": "Ističe uskoro u vašoj ponudi",
+      "subtitle": "Snizite cijenu da se proda prije isteka roka",
+      "all": "Moji proizvodi",
+      "reserved": "Rezervisano: {{amount}}",
+      "noReservations": "Nema rezervacija",
+      "newPrice": "Nova cijena",
+      "newPriceFor": "Nova cijena za {{name}}",
+      "tip": "Važi za nove narudžbe",
+      "tipLabel": "Za koje narudžbe važi nova cijena",
+      "save": "Spremi",
+      "newDiscount": "Novi popust: −{{percent}}%",
+      "priceAboveZero": "Upišite cijenu veću od 0",
+      "priceBelowFull": "Mora biti niža od {{price}}",
+      "changed": "Cijena promijenjena",
+      "saved": "Cijena je promijenjena.",
+      "saveError": "Cijena nije spremljena. Pokušajte ponovo."
     }
   }
 }

@@ -20,7 +20,8 @@ export const getStoreHome = async (storeId: number) => {
     countStoreToday(storeId),
     listUrgentPendingOrders(storeId, STORE_HOME_ORDERS),
     pool.query(
-      `SELECT products.id, products.name, products.category, products.unit, products.image_url,
+      `SELECT products.id, products.store_id, products.name, products.description, products.category, products.unit,
+         products.image_url, products.quantity,
          products.original_price, products.discounted_price, products.expiry_date, products.status,
          (products.expiry_date - CURRENT_DATE) AS days_until_expiry,
          ${availableQuantity("products")}::text AS available_quantity,

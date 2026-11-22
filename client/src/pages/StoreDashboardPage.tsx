@@ -13,6 +13,7 @@ import HomeDonateBand from "../components/dashboard/HomeDonateBand.js";
 import LocationReminder from "../components/profile/LocationReminder.js";
 import TodayCards from "../components/storeHome/TodayCards.js";
 import StoreHomeOrders from "../components/storeHome/StoreHomeOrders.js";
+import StoreHomeProducts from "../components/storeHome/StoreHomeProducts.js";
 import { useLiveOrderRefresh } from "../context/LiveEventsContext.js";
 import { formatNumber } from "../utils/numbers.js";
 import type { StoreHomeData, StoreImpact } from "../types/index.js";
@@ -114,6 +115,7 @@ function StoreDashboardPage() {
       <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
         <TodayCards today={home?.today ?? null} />
         <StoreHomeOrders orders={home?.orders ?? null} onDecided={loadHome} />
+        {home && home.products.length > 0 && <StoreHomeProducts products={home.products} />}
         <HomeHowItWorks
           title={t("storeHome.howItWorks.title")}
           subtitle={t("storeHome.howItWorks.subtitle")}
