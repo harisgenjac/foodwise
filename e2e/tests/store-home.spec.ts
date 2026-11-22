@@ -1,11 +1,23 @@
 import { expect, test } from "@playwright/test";
 import { storageState } from "../support/accounts.js";
 import { open, toast } from "../support/ui.js";
-import { apiAs, createProduct, sendOrder } from "../support/api.js";
+import { apiAs, cancelOrder, createProduct, sendOrder } from "../support/api.js";
 import { uniqueName } from "../support/accounts.js";
 import { isoDate } from "../support/dates.js";
 
 test.use({ storageState: storageState("store") });
+
+// The orders these tests send. The seeded restaurant is shared and may have at most 10 orders
+// waiting for an answer, so the ones still Pending are withdrawn after each test (an accepted one
+// cannot be, and does not count).
+const sentOrders: number[] = [];
+test.afterEach(async () => {
+  const restaurant = await apiAs("restaurant");
+  for (const id of sentOrders.splice(0)) {
+    await cancelOrder(restaurant, id).catch(() => undefined);
+  }
+  await restaurant.dispose();
+});
 
 // The store's home page on desktop (design/store-home/store.dc.html): the hero with its stats, How it
 // works and the donation band. Today, New orders and Expiring soon are not built yet.
@@ -98,7 +110,7 @@ test("Danas, New orders and Expiring soon follow the hero, before How it works",
   const store = await apiAs("store");
   const restaurant = await apiAs("restaurant");
   const product = await createProduct(store, { name: uniqueName("E2E Početna Sir"), expiry_date: isoDate(1) });
-  await sendOrder(restaurant, product.id, 1);
+  sentOrders.push((await sendOrder(restaurant, product.id, 1)).id);
   await store.dispose();
   await restaurant.dispose();
 
@@ -137,7 +149,7 @@ test("accepting an order from the home removes its card and lowers Awaiting repl
   const store = await apiAs("store");
   const restaurant = await apiAs("restaurant");
   const product = await createProduct(store, { name: uniqueName("E2E Početna Prihvati") });
-  await sendOrder(restaurant, product.id, 1);
+  sentOrders.push((await sendOrder(restaurant, product.id, 1)).id);
   await store.dispose();
   await restaurant.dispose();
 
@@ -189,8 +201,15 @@ test("a new price from the home shows on the product page", async ({ page }) => 
   await expect(page.getByText(new RegExp(`^${String(next).replace(".", "[.,]")}0? KM$`)).first()).toBeVisible();
 });
 
-// After the tests above, so the order and product cards are on the page.
+// With its own order and product, so the cards are on the page.
 test("the store home has no horizontal scroll at 375 px", async ({ page }) => {
+  const store = await apiAs("store");
+  const restaurant = await apiAs("restaurant");
+  const product = await createProduct(store, { name: uniqueName("E2E Početna Telefon"), expiry_date: isoDate(1) });
+  sentOrders.push((await sendOrder(restaurant, product.id, 1)).id);
+  await store.dispose();
+  await restaurant.dispose();
+
   await page.setViewportSize({ width: 375, height: 812 });
   await open(page, "/dashboard");
   await expect(page.getByTestId("home-hero")).toBeVisible();
