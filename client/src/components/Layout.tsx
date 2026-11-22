@@ -34,7 +34,8 @@ function Layout() {
   const { pathname } = useLocation();
   const setup = getAccountSetup(user);
   const bottomNavRole = hasBottomNav(user?.role) ? user.role : null;
-  // The restaurant and store home pages end with the donation band, which the footer's arch overlaps.
+  // The restaurant and store home pages start with the hero right under the header (no top padding)
+  // and end with the donation band, which the footer's arch overlaps.
   const flushFooter =
     (user?.role === 'RESTAURANT' || user?.role === 'STORE') && pathname === '/dashboard' && !setup.locked;
 
@@ -84,7 +85,7 @@ function Layout() {
                 ones, across the whole content width. With the bottom bar, the footer keeps room above it. */}
             {/* The footer follows <main> (not inside it), so it is the page's contentinfo landmark. */}
             <div className="flex min-w-0 flex-1 flex-col">
-              <main className={`flex-1 px-4 pt-6 sm:px-6 print:pb-0 ${flushFooter ? '' : 'pb-6'}`}>
+              <main className={`flex-1 px-4 sm:px-6 print:pb-0 ${flushFooter ? '' : 'pt-6 pb-6'}`}>
                 <div className="contents print:hidden">
                   {!setup.locked && <AnnouncementBanner />}
                   {!setup.locked && <CreditBanner />}

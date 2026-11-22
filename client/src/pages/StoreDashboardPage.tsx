@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Cloud, Coins, Plus, ReceiptText, Salad } from "lucide-react";
 import api from "../api/axios.js";
@@ -11,8 +11,12 @@ import HomeHowItWorks, {
 } from "../components/dashboard/HomeHowItWorks.js";
 import HomeDonateBand from "../components/dashboard/HomeDonateBand.js";
 import LocationReminder from "../components/profile/LocationReminder.js";
+import TodayCards from "../components/storeHome/TodayCards.js";
+import StoreHomeOrders from "../components/storeHome/StoreHomeOrders.js";
+import StoreHomeProducts from "../components/storeHome/StoreHomeProducts.js";
+import { useLiveOrderRefresh } from "../context/LiveEventsContext.js";
 import { formatNumber } from "../utils/numbers.js";
-import type { StoreImpact } from "../types/index.js";
+import type { StoreHomeData, StoreImpact } from "../types/index.js";
 
 // The store's home page (design/store-home/store.dc.html), for every STORE account, branches
 // included, built from the restaurant home page's components and set in Plus Jakarta Sans: the map
@@ -24,6 +28,22 @@ function StoreDashboardPage() {
   // null while loading.
   const [impact, setImpact] = useState<StoreImpact | null>(null);
   const [impactFailed, setImpactFailed] = useState(false);
+  // The Danas counts and the two lists; null while loading.
+  const [home, setHome] = useState<StoreHomeData | null>(null);
+
+  const loadHome = useCallback(() => {
+    api
+      .get("/stats/store-home")
+      .then((response) => setHome(response.data))
+      .catch((err) => console.error("Error fetching the store home:", err));
+  }, []);
+
+  useEffect(() => {
+    loadHome();
+  }, [loadHome]);
+
+  // A new order, a decision elsewhere or the courier's progress updates the counts and the lists.
+  useLiveOrderRefresh(loadHome);
 
   useEffect(() => {
     api
@@ -66,34 +86,42 @@ function StoreDashboardPage() {
   ];
 
   return (
-    <div data-testid="store-home" className="space-y-6 font-jakarta text-neutral-900">
-      <LocationReminder />
+    <div data-testid="store-home" className="font-jakarta text-neutral-900">
+      {/* Hero, the beige section band, How it works and the donation band follow each other with no gaps. */}
+      <div>
+        <HomeHero
+          text={t("storeHome.hero.text")}
+          actions={[
+            {
+              label: t("storeHome.hero.addProduct"),
+              to: "/add-product",
+              variant: "primary",
+              icon: <Plus className="h-[18px] w-[18px]" strokeWidth={2.6} aria-hidden="true" />,
+            },
+            {
+              label: t("storeHome.hero.orders"),
+              to: "/orders",
+              variant: "outline",
+              icon: <ReceiptText className="h-5 w-5" strokeWidth={2} aria-hidden="true" />,
+            },
+          ]}
+          illustration={<ShopkeeperIllustration label={t("storeHome.hero.shopkeeper")} />}
+          bubble={t("storeHome.hero.bubble", { returnObjects: true }) as string[]}
+          stats={stats}
+          statsLabel={t("home.stats.label")}
+          statsFailed={impactFailed}
+        />
 
-      <HomeHero
-        text={t("storeHome.hero.text")}
-        actions={[
-          {
-            label: t("storeHome.hero.addProduct"),
-            to: "/add-product",
-            variant: "primary",
-            icon: <Plus className="h-[18px] w-[18px]" strokeWidth={2.6} aria-hidden="true" />,
-          },
-          {
-            label: t("storeHome.hero.orders"),
-            to: "/orders",
-            variant: "outline",
-            icon: <ReceiptText className="h-5 w-5" strokeWidth={2} aria-hidden="true" />,
-          },
-        ]}
-        illustration={<ShopkeeperIllustration label={t("storeHome.hero.shopkeeper")} />}
-        bubble={t("storeHome.hero.bubble", { returnObjects: true }) as string[]}
-        stats={stats}
-        statsLabel={t("home.stats.label")}
-        statsFailed={impactFailed}
-      />
+        <div className="-mx-4 bg-sand px-4 pt-8 pb-14 sm:-mx-6 sm:px-6">
+          <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
+            {/* The map pin reminder (only without a pin) right under the hero. */}
+            <LocationReminder />
+            <TodayCards today={home?.today ?? null} />
+            <StoreHomeOrders orders={home?.orders ?? null} onDecided={loadHome} />
+            {home && home.products.length > 0 && <StoreHomeProducts products={home.products} />}
+          </div>
+        </div>
 
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
-        {/* Today, New orders and Expiring soon in your offer come here (store home, part 2). */}
         <HomeHowItWorks
           title={t("storeHome.howItWorks.title")}
           subtitle={t("storeHome.howItWorks.subtitle")}
@@ -118,13 +146,13 @@ function StoreDashboardPage() {
             },
           ]}
         />
-      </div>
 
-      <HomeDonateBand
-        title={t("home.donate.title")}
-        text={t("storeHome.donate.text")}
-        donateLabel={t("storeHome.donate.donate")}
-      />
+        <HomeDonateBand
+          title={t("home.donate.title")}
+          text={t("storeHome.donate.text")}
+          donateLabel={t("storeHome.donate.donate")}
+        />
+      </div>
     </div>
   );
 }

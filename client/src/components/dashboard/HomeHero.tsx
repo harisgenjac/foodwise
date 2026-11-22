@@ -144,7 +144,7 @@ interface HomeHeroProps {
 // The top of the restaurant and store home pages (design/restaurant-home/home.dc.html,
 // design/store-home/store.dc.html): a dark green band with faint food drawings, the brand as the
 // page's h1 ("vrijedi" in lime), the role's text and pill buttons, its illustration with a speech
-// bubble on the right, the stats at the bottom, and a soft curve into the page.
+// bubble on the right, the stats at the bottom, and a soft curve into the beige section band.
 function HomeHero({ text, actions, illustration, bubble, stats, statsLabel, statsFailed = false }: HomeHeroProps) {
   const titleId = useId();
   const [firstWord, ...rest] = BRAND_NAME.split(" ");
@@ -153,28 +153,32 @@ function HomeHero({ text, actions, illustration, bubble, stats, statsLabel, stat
     <section
       aria-labelledby={titleId}
       data-testid="home-hero"
-      className="relative flex flex-wrap overflow-hidden rounded-t-[28px] bg-brand-900 text-white"
+      // Edge to edge across the content area, like the footer (it cancels the layout's side padding).
+      className="relative -mx-4 overflow-hidden bg-brand-900 text-white sm:-mx-6"
     >
       <HeroDoodles />
 
-      <div className="relative flex flex-[1_1_460px] flex-col justify-center gap-[18px] px-6 pt-10 pb-4 sm:px-10 md:pt-14 md:pr-6 md:pb-[72px] md:pl-14">
-        <h1 id={titleId} className="text-[40px] leading-[1.05] font-extrabold tracking-[-1.5px] sm:text-[56px]">
-          {firstWord} <span className="text-lime">{rest.join(" ")}</span>
-        </h1>
-        <p className="max-w-[470px] text-base leading-[1.6] text-brand-100 sm:text-lg">{text}</p>
-        <div className="mt-2 flex flex-wrap gap-3">
-          {actions.map((action) => (
-            <HeroActionButton key={action.label} {...action} />
-          ))}
+      {/* The content at the sections' width; the green and the drawings reach the edges. */}
+      <div className="relative mx-auto flex max-w-[1280px] flex-wrap">
+        <div className="relative flex flex-[1_1_460px] flex-col justify-center gap-[18px] px-6 pt-10 pb-4 sm:px-10 md:pt-14 md:pr-6 md:pb-[72px] md:pl-14">
+          <h1 id={titleId} className="text-[40px] leading-[1.05] font-extrabold tracking-[-1.5px] sm:text-[56px]">
+            {firstWord} <span className="text-lime">{rest.join(" ")}</span>
+          </h1>
+          <p className="max-w-[470px] text-base leading-[1.6] text-brand-100 sm:text-lg">{text}</p>
+          <div className="mt-2 flex flex-wrap gap-3">
+            {actions.map((action) => (
+              <HeroActionButton key={action.label} {...action} />
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="relative flex min-h-[300px] flex-[1_1_380px] items-end justify-center px-6 sm:min-h-[360px] sm:px-0">
-        <SpeechBubble messages={bubble} />
-        {illustration}
-      </div>
+        <div className="relative flex min-h-[300px] flex-[1_1_380px] items-end justify-center px-6 sm:min-h-[360px] sm:px-0">
+          <SpeechBubble messages={bubble} />
+          {illustration}
+        </div>
 
-      {statsFailed ? <div className="basis-full pb-12" /> : <HeroStats stats={stats} label={statsLabel} />}
+        {statsFailed ? <div className="basis-full pb-12" /> : <HeroStats stats={stats} label={statsLabel} />}
+      </div>
 
       <svg
         viewBox="0 0 1100 48"
@@ -182,7 +186,7 @@ function HomeHero({ text, actions, illustration, bubble, stats, statsLabel, stat
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 -bottom-px block h-12 w-full"
       >
-        <path d="M0 48V26C300 -4 800 -4 1100 26V48z" className="fill-neutral-50" />
+        <path d="M0 48V26C300 -4 800 -4 1100 26V48z" className="fill-sand" />
       </svg>
     </section>
   );

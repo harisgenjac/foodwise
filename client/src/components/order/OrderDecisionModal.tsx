@@ -48,6 +48,8 @@ interface OrderDecisionModalProps {
   onDecided: () => void;
   // The store's default preparation time, preselected as the ready time of a delivery order.
   preparationMinutes?: number;
+  // "reject" opens straight on rejecting the whole order (the store home's Reject button).
+  initialStep?: "decide" | "reject";
 }
 
 const EMPTY_LINE: Line = { action: "ACCEPT", quantity: "", reason: "", note: "", sale: false, saleQuantity: "" };
@@ -120,11 +122,18 @@ const saleAmount = (sale: boolean, quantity: string, reason: ChangeReason | "") 
 // on, each item is accepted, accepted with less or rejected (the last two with a reason, and with
 // "not enough in stock" the difference can be recorded as sold in the shop); with it off, only the
 // whole order can be accepted or rejected. A summary step comes before the irreversible save.
-function OrderDecisionModal({ order, restaurant, onClose, onDecided, preparationMinutes = 30 }: OrderDecisionModalProps) {
+function OrderDecisionModal({
+  order,
+  restaurant,
+  onClose,
+  onDecided,
+  preparationMinutes = 30,
+  initialStep = "decide",
+}: OrderDecisionModalProps) {
   const { t } = useTranslation();
   const titleId = useId();
   const items = order.items.filter((item) => item.status === "Pending");
-  const [step, setStep] = useState<Step>("decide");
+  const [step, setStep] = useState<Step>(initialStep);
   // Where the summary goes back to.
   const [confirming, setConfirming] = useState<"decide" | "reject">("decide");
   const [lines, setLines] = useState<Record<number, Line>>(() =>

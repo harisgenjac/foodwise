@@ -103,6 +103,8 @@
   /* lime: the highlight on the dark green of the restaurant home page's hero and the footer only
      (the brand name's second word, the hero's buttons, the tooltip titles, the slider's arrows) */
   --color-lime: #bef264;
+  /* The warm beige of the home pages' bands (the sections under the hero, the donation band). */
+  --color-sand: #f3f1ea;
 
   /* The restaurant home page's content and the footer use Plus Jakarta Sans (font-jakarta), their
      uppercase headings Barlow Condensed (font-condensed); the rest of the app keeps the default

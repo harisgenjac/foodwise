@@ -401,6 +401,57 @@ export const listPackingList = async (storeId: number) => {
   return { orders: orders.rows, products: products.rows };
 };
 
+// The store home page's "Danas" order counts. Each accepted order is in at most one of them, by its
+// ready time (the app has no "ready" status):
+// - to_prepare: accepted, ready today and that time still ahead (the earliest as first_ready_at);
+// - to_hand_over: accepted and that time already passed, missed ones from earlier days included,
+//   split by method (a delivery order leaves this once the courier has it: InDelivery).
+// `pending` waits for the store's answer; first_deadline is the closest automatic rejection.
+export const countStoreToday = async (storeId: number) => {
+  const result = await pool.query(
+    `SELECT
+       COUNT(*) FILTER (WHERE orders.status = 'Pending') AS pending,
+       MIN(${AUTO_REJECT_AT}) FILTER (WHERE orders.status = 'Pending') AS first_deadline,
+       COUNT(*) FILTER (WHERE ${TO_PREPARE}) AS to_prepare,
+       MIN(${READY_TIME}) FILTER (WHERE ${TO_PREPARE}) AS first_ready_at,
+       COUNT(*) FILTER (WHERE ${TO_HAND_OVER} AND orders.fulfilment_method = 'DELIVERY') AS hand_over_courier,
+       COUNT(*) FILTER (WHERE ${TO_HAND_OVER} AND orders.fulfilment_method = 'PICKUP') AS hand_over_pickup
+     FROM orders
+     WHERE orders.store_id = $1 AND orders.status IN ('Pending', 'Confirmed')`,
+    [storeId],
+  );
+  const row = result.rows[0];
+  return {
+    pending: parseInt(row.pending, 10),
+    first_deadline: row.first_deadline as Date | null,
+    to_prepare: parseInt(row.to_prepare, 10),
+    first_ready_at: row.first_ready_at as Date | null,
+    hand_over_courier: parseInt(row.hand_over_courier, 10),
+    hand_over_pickup: parseInt(row.hand_over_pickup, 10),
+  };
+};
+
+const TO_PREPARE = `(orders.status = 'Confirmed' AND ${READY_TIME}::date = CURRENT_DATE AND ${READY_TIME} > LOCALTIMESTAMP)`;
+const TO_HAND_OVER = `(orders.status = 'Confirmed' AND ${READY_TIME} <= LOCALTIMESTAMP)`;
+
+// The store's most urgent orders waiting for its answer: the closest automatic rejection first
+// (every Pending order has one), then the oldest. List rows with all their items and the restaurant.
+export const listUrgentPendingOrders = async (storeId: number, limit: number) => {
+  const result = await pool.query(
+    `SELECT ${ORDER_COLUMNS},
+       restaurants.business_name, cities.name AS city, ${storeLogo("restaurants")} AS party_logo_url
+     FROM orders
+     JOIN users AS restaurants ON restaurants.id = orders.restaurant_id
+     LEFT JOIN cities ON cities.id = restaurants.city_id
+     ${LINES}
+     WHERE orders.store_id = $1 AND orders.status = 'Pending'
+     ORDER BY ${AUTO_REJECT_AT} ASC, orders.created_at ASC, orders.id ASC
+     LIMIT $2`,
+    [storeId, limit],
+  );
+  return result.rows;
+};
+
 const PARTY_COLUMNS = (alias: string, cityAlias: string) => `json_build_object(
     'id', ${alias}.id,
     'business_name', ${alias}.business_name,

@@ -25,7 +25,7 @@ function HomeDonateBand({ title, text, donateLabel }: HomeDonateBandProps) {
     <section
       aria-labelledby={titleId}
       data-testid="home-donate"
-      className="-mx-4 flex flex-col items-center gap-3.5 bg-[#F3F1EA] px-6 pt-14 pb-28 text-center sm:-mx-6 sm:px-8 sm:pt-[72px] sm:pb-32"
+      className="-mx-4 flex flex-col items-center gap-3.5 bg-sand px-6 pt-14 pb-28 text-center sm:-mx-6 sm:px-8 sm:pt-[72px] sm:pb-32"
     >
       <h2
         id={titleId}

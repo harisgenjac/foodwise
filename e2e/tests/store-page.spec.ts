@@ -87,6 +87,9 @@ test.describe("the store's own side", () => {
   test.use({ storageState: storageState("store") });
 
   test("a store sets its weekly hours and cover image on My profile", async ({ page, browser }) => {
+    const storeApi = await apiAs("store");
+    // The profile as the seed made it, to put back exactly at the end.
+    const { user: before } = await (await storeApi.get("/api/users/me")).json();
     await open(page, "/my-profile");
     await page.getByLabel("Postavi naslovnu sliku").setInputFiles(PNG);
     await expect(toast(page, "Naslovna slika je postavljena.")).toBeVisible();
@@ -99,7 +102,6 @@ test.describe("the store's own side", () => {
 
     const restaurantContext = await browser.newContext({ storageState: storageState("restaurant") });
     const restaurant = await restaurantContext.newPage();
-    const storeApi = await apiAs("store");
     await open(restaurant, `/stores/${await myId(storeApi)}`);
     await expect(restaurant.getByTestId("store-cover")).toBeVisible();
     await restaurant.getByRole("tab", { name: "Informacije" }).click();
@@ -108,12 +110,22 @@ test.describe("the store's own side", () => {
     await expect(info.getByText("zatvoreno")).toBeVisible();
     await restaurantContext.close();
 
-    // Leave the shared store as the seed made it: no cover, pickup every day.
+    // Leave the shared store as the seed made it: no cover, its own pickup hours every day (ticking
+    // Sunday again in the form would give it the default 08:00–20:00, which breaks the next run
+    // that reads today's hours on a Sunday).
     await storeApi.delete("/api/users/me/cover");
-    await page.reload();
-    await page.getByRole("group", { name: "Vrijeme preuzimanja" }).getByLabel("Otvoreno: Nedjelja").check();
-    await page.getByRole("button", { name: "Sačuvaj", exact: true }).click();
-    await expect(toast(page, "Profil uspješno ažuriran.")).toBeVisible();
+    const restored = await storeApi.put("/api/users/me", {
+      data: {
+        first_name: before.first_name,
+        last_name: before.last_name,
+        business_name: before.business_name,
+        city_id: before.city_id,
+        address: before.address,
+        phone: before.phone,
+        pickup_schedule: before.pickup_schedule,
+      },
+    });
+    expect(restored.ok()).toBe(true);
     await storeApi.dispose();
   });
 });

@@ -101,37 +101,43 @@ const RestaurantDashboardPage = () => {
   ];
 
   return (
-    <div data-testid="restaurant-home" className="space-y-6 font-jakarta text-neutral-900">
-      <LocationReminder />
+    <div data-testid="restaurant-home" className="font-jakarta text-neutral-900">
+      {/* Hero, the beige section band, How it works and the donation band follow each other with no gaps. */}
+      <div>
+        <HomeHero
+          text={t("restaurantHome.hero.text")}
+          actions={[
+            {
+              label: t("restaurantHome.hero.shopNow"),
+              to: "/search",
+              variant: "primary",
+              icon: <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.4} aria-hidden="true" />,
+              iconAfter: true,
+            },
+            // The live tracking page does not exist yet.
+            {
+              label: t("restaurantHome.hero.trackDelivery"),
+              onClick: () => toast(t("restaurantHome.hero.comingSoon")),
+              variant: "outline",
+              icon: <ScooterIcon className="h-5 w-5" />,
+            },
+          ]}
+          illustration={<ChefIllustration label={t("restaurantHome.hero.chef")} />}
+          bubble={t("restaurantHome.hero.bubble", { returnObjects: true }) as string[]}
+          stats={stats}
+          statsLabel={t("home.stats.label")}
+          statsFailed={impactFailed}
+        />
 
-      <HomeHero
-        text={t("restaurantHome.hero.text")}
-        actions={[
-          {
-            label: t("restaurantHome.hero.shopNow"),
-            to: "/search",
-            variant: "primary",
-            icon: <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.4} aria-hidden="true" />,
-            iconAfter: true,
-          },
-          // The live tracking page does not exist yet.
-          {
-            label: t("restaurantHome.hero.trackDelivery"),
-            onClick: () => toast(t("restaurantHome.hero.comingSoon")),
-            variant: "outline",
-            icon: <ScooterIcon className="h-5 w-5" />,
-          },
-        ]}
-        illustration={<ChefIllustration label={t("restaurantHome.hero.chef")} />}
-        bubble={t("restaurantHome.hero.bubble", { returnObjects: true }) as string[]}
-        stats={stats}
-        statsLabel={t("home.stats.label")}
-        statsFailed={impactFailed}
-      />
+        <div className="-mx-4 bg-sand px-4 pt-8 pb-14 sm:-mx-6 sm:px-6">
+          <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
+            {/* The map pin reminder (only without a pin) right under the hero. */}
+            <LocationReminder />
+            {(stores === null || stores.length > 0) && <HomeStoreSlider stores={stores} />}
+            {(offers === null || offers.length > 0) && <HomeOffers stores={offers} />}
+          </div>
+        </div>
 
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
-        {(stores === null || stores.length > 0) && <HomeStoreSlider stores={stores} />}
-        {(offers === null || offers.length > 0) && <HomeOffers stores={offers} />}
         <HomeHowItWorks
           title={t("restaurantHome.howItWorks.title")}
           subtitle={t("restaurantHome.howItWorks.subtitle")}
@@ -141,13 +147,13 @@ const RestaurantDashboardPage = () => {
             { key: "cook", illustration: CookTodayIllustration, title: t("restaurantHome.howItWorks.cook.title"), textKey: "restaurantHome.howItWorks.cook.text" },
           ]}
         />
-      </div>
 
-      <HomeDonateBand
-        title={t("home.donate.title")}
-        text={t("restaurantHome.donate.text")}
-        donateLabel={t("restaurantHome.donate.donate")}
-      />
+        <HomeDonateBand
+          title={t("home.donate.title")}
+          text={t("restaurantHome.donate.text")}
+          donateLabel={t("restaurantHome.donate.donate")}
+        />
+      </div>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, CalendarX, CircleDot, ReceiptText, Hash, MapPin, PackageCheck, Scale, Search, SearchX } from "lucide-react";
 import LoadingSpinner from "../components/LoadingSpinner.js";
@@ -28,9 +28,14 @@ const detailsLinkStyle =
 
 // The store's orders, Pending first: decide a new one, hand over or cancel a missed pickup.
 function StoreOrdersPage() {
+  // ?status= (the store home's "Čeka odgovor" card) sets the status filter when the page opens.
+  const [searchParams] = useSearchParams();
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(() => {
+    const initial = searchParams.get("status") ?? "";
+    return (STATUSES as string[]).includes(initial) ? initial : "";
+  });
   const [cityId, setCityId] = useState("");
   const [deciding, setDeciding] = useState<Order | null>(null);
   const { t } = useTranslation();

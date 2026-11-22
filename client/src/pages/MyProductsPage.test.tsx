@@ -46,6 +46,11 @@ describe("MyProductsPage", () => {
     await waitFor(() => expect(lastParams()).toMatchObject({ name: "sir trapist", status: "Available" }));
   });
 
+  it("starts on products expiring today with ?expiry=0 (the store home's Expires today card)", async () => {
+    renderPage("/my-products?expiry=0");
+    await waitFor(() => expect(lastParams()).toMatchObject({ expiryWithinDays: "0", status: "Available" }));
+  });
+
   it("goes back to the first page when a filter changes", async () => {
     renderPage();
     await screen.findByText("Proizvod 12");
