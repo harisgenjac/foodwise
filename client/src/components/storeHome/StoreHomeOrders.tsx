@@ -143,7 +143,7 @@ interface StoreHomeOrdersProps {
   onDecided: () => void;
 }
 
-// "Nove narudžbe" on the store home page: up to three waiting orders as equal-height cards and
+// "Nove narudžbe" on the store home page: up to four waiting orders as equal-height cards and
 // "Sve narudžbe →". Accept and Reject open the same decision dialog as the Orders page (Reject on
 // its reject step).
 function StoreHomeOrders({ orders, onDecided }: StoreHomeOrdersProps) {
@@ -176,8 +176,8 @@ function StoreHomeOrders({ orders, onDecided }: StoreHomeOrdersProps) {
       </div>
 
       {orders === null ? (
-        <div aria-busy="true" className="grid grid-cols-[repeat(auto-fill,minmax(min(300px,100%),1fr))] gap-[18px]">
-          {Array.from({ length: 3 }, (_, index) => (
+        <div aria-busy="true" className="grid grid-cols-1 gap-[18px] sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }, (_, index) => (
             <div key={index} className="h-[340px] animate-pulse rounded-[18px] bg-neutral-100" />
           ))}
         </div>
@@ -189,7 +189,7 @@ function StoreHomeOrders({ orders, onDecided }: StoreHomeOrdersProps) {
           {t("storeHome.orders.empty")}
         </p>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(300px,100%),1fr))] items-stretch gap-[18px]">
+        <div className="grid grid-cols-1 items-stretch gap-[18px] sm:grid-cols-2 xl:grid-cols-4">
           {orders.map((order) => (
             <StoreHomeOrderCard
               key={order.id}

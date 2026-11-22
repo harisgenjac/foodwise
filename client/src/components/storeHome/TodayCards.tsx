@@ -24,21 +24,16 @@ interface TodayCardProps {
   value: ReactNode;
   title: string;
   line: string;
-  // An orange frame and line: something waits for the store.
-  highlight?: boolean;
   children?: ReactNode;
   testId: string;
 }
 
-function TodayCard({ to, icon: Icon, tone, value, title, line, highlight = false, children, testId }: TodayCardProps) {
+function TodayCard({ to, icon: Icon, tone, value, title, line, children, testId }: TodayCardProps) {
   return (
     <Link
       to={to}
       data-testid={testId}
-      data-highlight={highlight || undefined}
-      className={`flex min-h-11 flex-col gap-2.5 rounded-[18px] border bg-white p-[18px] text-neutral-900 shadow-[0_2px_10px_rgba(28,25,23,0.04)] transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-800 ${
-        highlight ? "border-accent-300" : "border-neutral-100"
-      }`}
+      className="flex min-h-11 flex-col gap-2.5 rounded-[18px] border border-neutral-100 bg-white p-[18px] text-neutral-900 shadow-[0_2px_10px_rgba(28,25,23,0.04)] transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-800"
     >
       <span className="flex items-center justify-between">
         <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${TONES[tone]}`}>
@@ -51,7 +46,7 @@ function TodayCard({ to, icon: Icon, tone, value, title, line, highlight = false
       {children}
       <span
         data-testid="today-card-line"
-        className={`text-[13px] ${highlight ? "font-bold text-accent-700" : "font-medium text-neutral-600"}`}
+        className="text-[13px] font-medium text-neutral-600"
       >
         {line}
       </span>
@@ -133,7 +128,6 @@ function TodayCards({ today }: TodayCardsProps) {
                 ? deadlineLine(today.first_deadline, now, t, i18n.language)
                 : t("storeHome.today.pendingNone")
             }
-            highlight={today.pending > 0}
           />
           <TodayCard
             testId="today-prepare"

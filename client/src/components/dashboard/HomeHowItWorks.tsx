@@ -126,7 +126,7 @@ interface HomeHowItWorksProps {
   steps: HowItWorksStep[];
 }
 
-// "How it works" on the home pages: a light green card with the title, the subtitle and the
+// "How it works" on the home pages: a light green band across the content area with the title, the subtitle and the
 // numbered steps with their drawings (three columns from md up, stacked below). Each step's text
 // is one translated sentence with its key phrase highlighted.
 function HomeHowItWorks({ title, subtitle, steps }: HomeHowItWorksProps) {
@@ -136,31 +136,35 @@ function HomeHowItWorks({ title, subtitle, steps }: HomeHowItWorksProps) {
     <section
       aria-labelledby={titleId}
       data-testid="home-how-it-works"
-      className="mt-6 mb-8 flex flex-col items-center gap-10 rounded-[28px] border border-brand-100 bg-brand-50 px-5 pt-12 pb-14 text-center sm:px-10 sm:pt-14 sm:pb-16"
+      // Edge to edge across the content area, like the donation band and the footer (it cancels the
+      // layout's side padding); the content stays centred at the sections' width.
+      className="-mx-4 mb-8 border-y border-brand-100 bg-brand-50 px-5 pt-12 pb-14 text-center sm:-mx-6 sm:px-10 sm:pt-14 sm:pb-16"
     >
-      <div className="flex flex-col items-center gap-2">
-        <h2 id={titleId} className="text-[28px] leading-tight font-extrabold tracking-[-0.5px] sm:text-[34px]">
-          {title}
-        </h2>
-        <p className="text-[17px] text-neutral-600">{subtitle}</p>
+      <div className="mx-auto flex max-w-[1280px] flex-col items-center gap-10">
+        <div className="flex flex-col items-center gap-2">
+          <h2 id={titleId} className="text-[28px] leading-tight font-extrabold tracking-[-0.5px] sm:text-[34px]">
+            {title}
+          </h2>
+          <p className="text-[17px] text-neutral-600">{subtitle}</p>
+        </div>
+        <ol className="grid w-full grid-cols-1 gap-10 md:grid-cols-3 md:gap-8">
+          {steps.map(({ key, illustration: Illustration, title: stepTitle, textKey }, index) => (
+            <li key={key} className="flex flex-col items-center gap-2.5">
+              <Illustration />
+              <span
+                aria-hidden="true"
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-brand-800 text-sm font-extrabold text-white"
+              >
+                {index + 1}
+              </span>
+              <h3 className="mt-1 text-xl font-extrabold">{stepTitle}</h3>
+              <p className="max-w-[300px] text-base leading-[1.75] text-neutral-700">
+                <Trans i18nKey={textKey} components={{ hl: <Highlight /> }} />
+              </p>
+            </li>
+          ))}
+        </ol>
       </div>
-      <ol className="grid w-full grid-cols-1 gap-10 md:grid-cols-3 md:gap-8">
-        {steps.map(({ key, illustration: Illustration, title: stepTitle, textKey }, index) => (
-          <li key={key} className="flex flex-col items-center gap-2.5">
-            <Illustration />
-            <span
-              aria-hidden="true"
-              className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-brand-800 text-sm font-extrabold text-white"
-            >
-              {index + 1}
-            </span>
-            <h3 className="mt-1 text-xl font-extrabold">{stepTitle}</h3>
-            <p className="max-w-[300px] text-base leading-[1.75] text-neutral-700">
-              <Trans i18nKey={textKey} components={{ hl: <Highlight /> }} />
-            </p>
-          </li>
-        ))}
-      </ol>
     </section>
   );
 }

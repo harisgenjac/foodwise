@@ -3,7 +3,7 @@ import { availableQuantity } from "./stock.js";
 import { countStoreToday, listUrgentPendingOrders } from "./orders/queries.js";
 
 // How many of each list the store home page shows.
-export const STORE_HOME_ORDERS = 3;
+export const STORE_HOME_ORDERS = 4;
 export const STORE_HOME_PRODUCTS = 4;
 
 // What restaurants' open orders hold of a product right now (Pending, Confirmed, InDelivery).

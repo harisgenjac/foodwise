@@ -37,8 +37,9 @@ describe("TodayCards", () => {
     expect(screen.getByTestId("today-pending")).toHaveAttribute("href", "/orders?status=Pending");
     expect(card("today-pending").getByText("3")).toBeInTheDocument();
     expect(lineOf("today-pending")).toBe("Prva ističe za 9 min");
-    // Something waits for the store: the card is orange.
-    expect(screen.getByTestId("today-pending")).toHaveClass("border-accent-300");
+    // Like every other card: no orange frame or line.
+    expect(screen.getByTestId("today-pending")).toHaveClass("border-neutral-100");
+    expect(card("today-pending").getByTestId("today-card-line")).toHaveClass("text-neutral-600");
 
     expect(screen.getByTestId("today-prepare")).toHaveAttribute("href", "/packing");
     expect(lineOf("today-prepare")).toBe("Prva do 12:00");
@@ -62,7 +63,6 @@ describe("TodayCards", () => {
 
     renderCards({ ...TODAY, pending: 0, to_prepare: 0, hand_over_courier: 0, hand_over_pickup: 0 });
     expect(lineOf("today-pending")).toBe(t("storeHome.today.pendingNone"));
-    expect(screen.getByTestId("today-pending")).not.toHaveClass("border-accent-300");
     expect(lineOf("today-prepare")).toBe(t("storeHome.today.prepareNone"));
     expect(lineOf("today-hand-over")).toBe(t("storeHome.today.handOverNone"));
   });

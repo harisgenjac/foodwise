@@ -73,7 +73,7 @@ describe("GET /api/stats/store-home", () => {
     expect(today.first_deadline).not.toBeNull();
   });
 
-  it("lists the three most urgent pending orders, the closest automatic rejection first, with all items", async () => {
+  it("lists the four most urgent pending orders, the closest automatic rejection first, with all items", async () => {
     const product = await createProduct(store, { unit: "kg", quantity: 100 });
     const pending = (pickupAt: string, createdAt = "NOW()") =>
       insertOrderItem({ productId: product.id, restaurantId, quantity: 1, status: "Pending", pickupAt, createdAt });
@@ -83,7 +83,8 @@ describe("GET /api/stats/store-home", () => {
     // A delivery order is rejected 15 minutes after it was sent: the most urgent.
     const delivery = await pending(TOMORROW, "NOW() - INTERVAL '5 minutes'");
     await makeDelivery(delivery.orderId, TODAY_AHEAD);
-    await pending(`${TOMORROW} + INTERVAL '1 hour'`); // the fourth
+    const fourth = await pending(`${TOMORROW} + INTERVAL '1 hour'`);
+    await pending(`${TOMORROW} + INTERVAL '2 hours'`); // the fifth
     await pool.query(
       `INSERT INTO order_items (order_id, product_id, restaurant_id, quantity, ordered_quantity, unit_price, status)
        VALUES ($1, $2, $3, 2, 2, 5, 'Pending')`,
@@ -95,7 +96,7 @@ describe("GET /api/stats/store-home", () => {
     await insertOrderItem({ productId: foreign.id, restaurantId, quantity: 1, status: "Pending", pickupAt: TODAY_PASSED });
 
     const { orders } = await home();
-    expect(orders.map((row: { id: number }) => row.id)).toEqual([delivery.orderId, today.orderId, tomorrow.orderId]);
+    expect(orders.map((row: { id: number }) => row.id)).toEqual([delivery.orderId, today.orderId, tomorrow.orderId, fourth.orderId]);
     expect(orders[0].items).toHaveLength(2);
     expect(orders[0]).toMatchObject({ business_name: expect.any(String), fulfilment_method: "DELIVERY", item_count: 2 });
     expect(orders[0].auto_reject_at).not.toBeNull();

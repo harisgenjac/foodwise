@@ -116,31 +116,32 @@ function StoreDashboardPage() {
         <TodayCards today={home?.today ?? null} />
         <StoreHomeOrders orders={home?.orders ?? null} onDecided={loadHome} />
         {home && home.products.length > 0 && <StoreHomeProducts products={home.products} />}
-        <HomeHowItWorks
-          title={t("storeHome.howItWorks.title")}
-          subtitle={t("storeHome.howItWorks.subtitle")}
-          steps={[
-            {
-              key: "publish",
-              illustration: PublishOfferIllustration,
-              title: t("storeHome.howItWorks.publish.title"),
-              textKey: "storeHome.howItWorks.publish.text",
-            },
-            {
-              key: "confirm",
-              illustration: ConfirmOrderIllustration,
-              title: t("storeHome.howItWorks.confirm.title"),
-              textKey: "storeHome.howItWorks.confirm.text",
-            },
-            {
-              key: "handOver",
-              illustration: ChooseDeliveryIllustration,
-              title: t("storeHome.howItWorks.handOver.title"),
-              textKey: "storeHome.howItWorks.handOver.text",
-            },
-          ]}
-        />
       </div>
+
+      <HomeHowItWorks
+        title={t("storeHome.howItWorks.title")}
+        subtitle={t("storeHome.howItWorks.subtitle")}
+        steps={[
+          {
+            key: "publish",
+            illustration: PublishOfferIllustration,
+            title: t("storeHome.howItWorks.publish.title"),
+            textKey: "storeHome.howItWorks.publish.text",
+          },
+          {
+            key: "confirm",
+            illustration: ConfirmOrderIllustration,
+            title: t("storeHome.howItWorks.confirm.title"),
+            textKey: "storeHome.howItWorks.confirm.text",
+          },
+          {
+            key: "handOver",
+            illustration: ChooseDeliveryIllustration,
+            title: t("storeHome.howItWorks.handOver.title"),
+            textKey: "storeHome.howItWorks.handOver.text",
+          },
+        ]}
+      />
 
       <HomeDonateBand
         title={t("home.donate.title")}

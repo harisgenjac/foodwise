@@ -132,16 +132,17 @@ const RestaurantDashboardPage = () => {
       <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
         {(stores === null || stores.length > 0) && <HomeStoreSlider stores={stores} />}
         {(offers === null || offers.length > 0) && <HomeOffers stores={offers} />}
-        <HomeHowItWorks
-          title={t("restaurantHome.howItWorks.title")}
-          subtitle={t("restaurantHome.howItWorks.subtitle")}
-          steps={[
-            { key: "find", illustration: FindOfferIllustration, title: t("restaurantHome.howItWorks.find.title"), textKey: "restaurantHome.howItWorks.find.text" },
-            { key: "choose", illustration: ChooseDeliveryIllustration, title: t("restaurantHome.howItWorks.choose.title"), textKey: "restaurantHome.howItWorks.choose.text" },
-            { key: "cook", illustration: CookTodayIllustration, title: t("restaurantHome.howItWorks.cook.title"), textKey: "restaurantHome.howItWorks.cook.text" },
-          ]}
-        />
       </div>
+
+      <HomeHowItWorks
+        title={t("restaurantHome.howItWorks.title")}
+        subtitle={t("restaurantHome.howItWorks.subtitle")}
+        steps={[
+          { key: "find", illustration: FindOfferIllustration, title: t("restaurantHome.howItWorks.find.title"), textKey: "restaurantHome.howItWorks.find.text" },
+          { key: "choose", illustration: ChooseDeliveryIllustration, title: t("restaurantHome.howItWorks.choose.title"), textKey: "restaurantHome.howItWorks.choose.text" },
+          { key: "cook", illustration: CookTodayIllustration, title: t("restaurantHome.howItWorks.cook.title"), textKey: "restaurantHome.howItWorks.cook.text" },
+        ]}
+      />
 
       <HomeDonateBand
         title={t("home.donate.title")}

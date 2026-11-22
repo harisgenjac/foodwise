@@ -124,7 +124,7 @@ test("Danas, New orders and Expiring soon follow the hero, before How it works",
 
   const orders = page.getByRole("region", { name: "Nove narudžbe" });
   await expect(orders.getByTestId("store-home-order").first()).toBeVisible();
-  expect(await orders.getByTestId("store-home-order").count()).toBeLessThanOrEqual(3);
+  expect(await orders.getByTestId("store-home-order").count()).toBeLessThanOrEqual(4);
   const products = page.getByRole("region", { name: "Ističe uskoro u vašoj ponudi" });
   await expect(products.getByTestId("store-home-product").first()).toBeVisible();
   expect(await products.getByTestId("store-home-product").count()).toBeLessThanOrEqual(4);

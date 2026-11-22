@@ -38,7 +38,7 @@ function StoreHomeProducts({ products }: StoreHomeProductsProps) {
           <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.2} aria-hidden="true" />
         </Link>
       </div>
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(220px,100%),1fr))] gap-[18px]">
+      <div className="grid grid-cols-1 gap-[18px] sm:grid-cols-2 xl:grid-cols-4">
         {products.map((original) => {
           const product = saved[original.id] ?? original;
           const reserved = parseFloat(product.reserved_quantity);
