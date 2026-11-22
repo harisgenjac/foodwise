@@ -393,5 +393,7 @@
   "An error occurred while simulating the courier.": "Došlo je do greške pri simulaciji kurira.",
   "This order was not answered in time and can no longer be decided.": "Na ovu narudžbu nije odgovoreno na vrijeme i o njoj se više ne može odlučiti.",
   "Pickup time must be in the future.": "Vrijeme preuzimanja mora biti u budućnosti.",
-  "Home offers fetched successfully.": "Ponude za početnu stranicu su uspješno učitane."
+  "Home offers fetched successfully.": "Ponude za početnu stranicu su uspješno učitane.",
+  "Store home fetched successfully.": "Početna prodavnice je uspješno učitana.",
+  "An error occurred while fetching the store home.": "Greška prilikom učitavanja početne prodavnice."
 }
