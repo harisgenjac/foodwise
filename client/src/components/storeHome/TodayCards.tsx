@@ -5,7 +5,7 @@ import { ArrowRight, CalendarX, CircleDollarSign, Package, Timer, type LucideIco
 import { ScooterIcon } from "../dashboard/HomeIllustrations.js";
 import { useCredits } from "../../context/CreditsContext.js";
 import { SUBSCRIPTION_SECTION, usageBarColor, usagePercent } from "../../utils/credits.js";
-import { ORDER_DATE_TIME } from "../../utils/orders.js";
+import { dayAndTime } from "../../utils/storeHome.js";
 import type { StoreHomeToday } from "../../types/index.js";
 
 // The tones of the card icons (design/store-home/store.dc.html).
@@ -46,7 +46,7 @@ function TodayCard({ to, icon: Icon, tone, value, title, line, highlight = false
         </span>
         <ArrowRight className="h-[18px] w-[18px] text-neutral-400" aria-hidden="true" />
       </span>
-      <span className="text-[34px] leading-none font-extrabold">{value}</span>
+      <span data-testid="today-card-value" className="text-[34px] leading-none font-extrabold">{value}</span>
       <span className="text-[15px] font-bold">{title}</span>
       {children}
       <span
@@ -59,14 +59,11 @@ function TodayCard({ to, icon: Icon, tone, value, title, line, highlight = false
   );
 }
 
-// "Prva ističe za 8 min" under an hour away, otherwise the time (and the date when not today).
-const deadlineLine = (deadline: string, now: number, t: ReturnType<typeof useTranslation>["t"]) => {
-  const date = new Date(deadline);
-  const minutes = Math.max(0, Math.ceil((date.getTime() - now) / 60000));
+// "Prva ističe za 8 min" under an hour away, otherwise "Prva ističe sutra u 12:00".
+const deadlineLine = (deadline: string, now: number, t: ReturnType<typeof useTranslation>["t"], language: string) => {
+  const minutes = Math.max(0, Math.ceil((new Date(deadline).getTime() - now) / 60000));
   if (minutes < 60) return t("storeHome.today.pendingIn", { count: minutes });
-  const sameDay = new Date(now).toDateString() === date.toDateString();
-  const time = date.toLocaleString(undefined, sameDay ? { timeStyle: "short", hourCycle: "h23" } : ORDER_DATE_TIME);
-  return t("storeHome.today.pendingAt", { time });
+  return t("storeHome.today.pendingAt", { time: dayAndTime(deadline, now, t, language) });
 };
 
 const timeOf = (value: string) => new Date(value).toLocaleTimeString(undefined, { timeStyle: "short", hourCycle: "h23" });
@@ -79,7 +76,7 @@ interface TodayCardsProps {
 // desktop, two columns on a tablet, one on a phone): orders waiting for an answer, to prepare today,
 // to hand over, products expiring today, and this month's credits. Pulse cards while loading.
 function TodayCards({ today }: TodayCardsProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const titleId = useId();
   const { credits } = useCredits();
   // The deadline line counts down by itself.
@@ -133,7 +130,7 @@ function TodayCards({ today }: TodayCardsProps) {
             title={t("storeHome.today.pending")}
             line={
               today.pending > 0 && today.first_deadline
-                ? deadlineLine(today.first_deadline, now, t)
+                ? deadlineLine(today.first_deadline, now, t, i18n.language)
                 : t("storeHome.today.pendingNone")
             }
             highlight={today.pending > 0}

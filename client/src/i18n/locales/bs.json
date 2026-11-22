@@ -2370,7 +2370,7 @@
       "pendingIn_one": "Prva ističe za {{count}} min",
       "pendingIn_few": "Prva ističe za {{count}} min",
       "pendingIn_other": "Prva ističe za {{count}} min",
-      "pendingAt": "Prva ističe u {{time}}",
+      "pendingAt": "Prva ističe {{time}}",
       "pendingNone": "Nema narudžbi na čekanju",
       "prepare": "Za pripremu danas",
       "prepareBy": "Prva do {{time}}",

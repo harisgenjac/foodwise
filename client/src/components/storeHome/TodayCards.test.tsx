@@ -57,7 +57,7 @@ describe("TodayCards", () => {
 
   it("shows a later deadline as a time, and quiet cards when nothing waits", () => {
     const { unmount } = renderCards({ ...TODAY, first_deadline: inMinutes(120) });
-    expect(lineOf("today-pending")).toMatch(/^Prva ističe u \d{2}:\d{2}$/);
+    expect(lineOf("today-pending")).toMatch(/^Prva ističe (danas|sutra) u \d{2}:\d{2}$/);
     unmount();
 
     renderCards({ ...TODAY, pending: 0, to_prepare: 0, hand_over_courier: 0, hand_over_pickup: 0 });

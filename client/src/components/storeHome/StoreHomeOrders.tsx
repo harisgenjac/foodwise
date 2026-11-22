@@ -8,6 +8,7 @@ import { useAuth } from "../../context/AuthContext.js";
 import { formatAmount, formatOrderCode } from "../../utils/orders.js";
 import { formatNumber } from "../../utils/numbers.js";
 import { storeTone } from "../../utils/storeTone.js";
+import { dayAndTime } from "../../utils/storeHome.js";
 import type { Order } from "../../types/index.js";
 
 // A card lists at most this many items; the rest is "+ još N artikla".
@@ -17,16 +18,6 @@ const URGENT_MINUTES = 10;
 
 const minutesBetween = (from: number, to: string | Date) => Math.round((new Date(to).getTime() - from) / 60000);
 
-// "danas u 12:30", "sutra u 9:00", otherwise the date and time.
-const handoverText = (value: string, now: number, t: ReturnType<typeof useTranslation>["t"]) => {
-  const date = new Date(value);
-  const time = date.toLocaleTimeString(undefined, { timeStyle: "short", hourCycle: "h23" });
-  const today = new Date(now);
-  const tomorrow = new Date(now + 24 * 60 * 60 * 1000);
-  if (date.toDateString() === today.toDateString()) return t("storeHome.orders.todayAt", { time });
-  if (date.toDateString() === tomorrow.toDateString()) return t("storeHome.orders.tomorrowAt", { time });
-  return date.toLocaleString(undefined, { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
-};
 
 interface OrderCardProps {
   order: Order;
@@ -82,7 +73,7 @@ function StoreHomeOrderCard({ order, now, onAccept, onReject }: OrderCardProps) 
 
       <div className="flex items-baseline justify-between gap-3 text-sm text-neutral-600">
         <span>
-          {t("storeHome.orders.items", { count: order.item_count })} · {handoverText(order.pickup_at, now, t)}
+          {t("storeHome.orders.items", { count: order.item_count })} · {dayAndTime(order.pickup_at, now, t, i18n.language)}
         </span>
         <span className="text-lg font-extrabold whitespace-nowrap text-neutral-900">
           {formatNumber(Number(order.total), i18n.language, 2)} KM
@@ -119,7 +110,7 @@ function StoreHomeOrderCard({ order, now, onAccept, onReject }: OrderCardProps) 
           <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
           {minutesLeft < 60
             ? t("storeHome.orders.answerIn", { count: Math.max(0, minutesLeft) })
-            : t("storeHome.orders.answerBy", { time: handoverText(order.auto_reject_at!, now, t) })}
+            : t("storeHome.orders.answerBy", { time: dayAndTime(order.auto_reject_at!, now, t, i18n.language) })}
         </p>
       )}
 

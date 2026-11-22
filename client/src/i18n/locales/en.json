@@ -2318,7 +2318,7 @@
       "pending": "Awaiting reply",
       "pendingIn_one": "First expires in {{count}} min",
       "pendingIn_other": "First expires in {{count}} min",
-      "pendingAt": "First expires at {{time}}",
+      "pendingAt": "First expires {{time}}",
       "pendingNone": "No orders waiting",
       "prepare": "To prepare today",
       "prepareBy": "First by {{time}}",
