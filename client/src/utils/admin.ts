@@ -23,10 +23,18 @@ export const isEffectivelyBlocked = (user: Pick<User, "is_blocked" | "company_is
 export const accountName = (user: Pick<User, "email" | "first_name" | "last_name" | "business_name">) =>
   user.business_name || `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.email;
 
+const pad = (value: number) => String(value).padStart(2, "0");
+
+// A timestamp as dd/mm/yyyy in local time (e.g. the store page's order list).
+export const formatDate = (iso: string) => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
+};
+
 // A timestamp as dd/mm/yyyy hh:mm in local time, the same in every browser language.
 export const formatDateTime = (iso: string) => {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return `${formatDate(iso)} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };

@@ -1,20 +1,12 @@
 import pool from "../config/db.js";
 import type { Pool, PoolClient } from "pg";
 import { companyName, storeLogo } from "../utils/branding.js";
-import { cityDistance } from "../utils/cities.js";
+import { businessDistance, pinDistance } from "../utils/location.js";
 import { availableQuantity, onOffer } from "./stock.js";
 
 // The restaurant home page's offer rows: how many stores, and how many offers each.
 export const HOME_STORES = 3;
 export const HOME_PRODUCTS_PER_STORE = 4;
-
-// Straight-line km between the restaurant's pin (`me`) and a store's (`users`), the haversine of
-// city_distance_km and delivery/distance.ts; null when either has no pin.
-const PIN_DISTANCE = `CASE WHEN users.latitude IS NOT NULL AND me.latitude IS NOT NULL THEN
-  2 * 6371 * ASIN(LEAST(1, SQRT(
-    POWER(SIN(RADIANS(users.latitude - me.latitude) / 2), 2)
-    + COS(RADIANS(me.latitude)) * COS(RADIANS(users.latitude)) * POWER(SIN(RADIANS(users.longitude - me.longitude) / 2), 2)
-  ))) END`;
 
 // The stores for the restaurant's home page: its favourite stores first, then the nearest other
 // stores, only stores restaurants can see that have at least one offer right now (onOffer), at most
@@ -44,7 +36,7 @@ export const getHomeOffers = async (restaurantId: number, db: Pool | PoolClient 
      )
      SELECT users.id, users.business_name, ${storeLogo("users")} AS logo_url,
             ${companyName("users")} AS company_name, cities.name AS city,
-            (${PIN_DISTANCE})::float AS distance_km, offers.offer_count,
+            (${pinDistance("me", "users")})::float AS distance_km, offers.offer_count,
             EXISTS (
               SELECT 1 FROM favorites WHERE favorites.restaurant_id = $1 AND favorites.store_id = users.id
             ) AS is_favorite
@@ -53,7 +45,7 @@ export const getHomeOffers = async (restaurantId: number, db: Pool | PoolClient 
      LEFT JOIN cities ON cities.id = users.city_id
      CROSS JOIN me
      ORDER BY is_favorite DESC,
-              COALESCE(${PIN_DISTANCE}, ${cityDistance("me.city_id", "users.city_id")}) ASC NULLS LAST,
+              ${businessDistance("me", "users")} ASC NULLS LAST,
               users.id ASC
      LIMIT $2`,
     [restaurantId, HOME_STORES],

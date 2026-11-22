@@ -22,12 +22,28 @@ interface OfferCardProps {
   // Under the price (the store home's price editor), above the stretched link.
   footer?: ReactNode;
   testId?: string;
+  // A green border: the store page marks a product that is in the cart.
+  selected?: boolean;
+  // Opened from the store page: the product page's breadcrumbs then go through the store.
+  fromStore?: boolean;
+  // The name's link covers the whole card (the home pages). The store page turns it off, so a tap
+  // next to "+" or the stepper does not open the product; only the name is a link there.
+  stretchedLink?: boolean;
 }
 
-// One offer of the home pages: the image with the discount, the name (a link to the product page,
-// stretched over the card), the expiry, what is left, the price per unit with the old one struck
-// through, and the page's own action or footer.
-function OfferCard({ product, details, action, footer, testId = "home-offer" }: OfferCardProps) {
+// One offer of the home pages and the store page: the image with the discount, the name (a link to
+// the product page, by default stretched over the card), the expiry, what is left, the price per
+// unit with the old one struck through, and the page's own action or footer.
+function OfferCard({
+  product,
+  details,
+  action,
+  footer,
+  testId = "home-offer",
+  selected = false,
+  fromStore = false,
+  stretchedLink = true,
+}: OfferCardProps) {
   const { t, i18n } = useTranslation();
   const original = Number(product.original_price);
   const discounted = Number(product.discounted_price);
@@ -41,7 +57,11 @@ function OfferCard({ product, details, action, footer, testId = "home-offer" }: 
   return (
     <article
       data-testid={testId}
-      className="relative flex flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-[0_2px_8px_rgba(28,25,23,0.05)] transition hover:shadow-[0_8px_20px_rgba(0,0,0,0.08)] has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-brand-800"
+      className={`relative flex h-full flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_2px_8px_rgba(28,25,23,0.05)] ${
+        stretchedLink
+          ? "transition hover:shadow-[0_8px_20px_rgba(0,0,0,0.08)] has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-2 has-[a:focus-visible]:outline-brand-800"
+          : ""
+      } ${selected ? "border-brand-300" : "border-neutral-200"}`}
     >
       <div className="relative h-[176px] bg-neutral-100">
         <ProductImage imageUrl={product.image_url} alt="" className="h-full w-full object-cover" />
@@ -56,8 +76,16 @@ function OfferCard({ product, details, action, footer, testId = "home-offer" }: 
       </div>
       <div className="flex flex-1 flex-col gap-[7px] px-4 pt-3.5 pb-4">
         <h4 className="text-base font-bold">
-          {/* The whole card opens the product; the action and footer sit above this link. */}
-          <Link to={`/products/${product.id}`} className="outline-none after:absolute after:inset-0 after:content-['']">
+          {/* Stretched: the whole card opens the product; the action and footer sit above this link. */}
+          <Link
+            to={`/products/${product.id}`}
+            state={fromStore ? { fromStore: true } : undefined}
+            className={
+              stretchedLink
+                ? "outline-none after:absolute after:inset-0 after:content-['']"
+                : "rounded-sm hover:text-brand-800 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-800"
+            }
+          >
             {product.name}
           </Link>
         </h4>

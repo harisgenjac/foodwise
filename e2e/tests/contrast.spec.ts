@@ -1,13 +1,19 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { storageState, type SeededRole } from "../support/accounts.js";
+import { apiAs, myId } from "../support/api.js";
 import { open } from "../support/ui.js";
+
+const STORE_PAGE = "/stores/:store";
 
 // WCAG AA colour contrast (axe's color-contrast rule: 4.5:1 for text, 3:1 for large text) on the
 // main page of each role, on desktop. The page is checked once its data has loaded.
 const PAGES: { role: SeededRole; url: string; name: string }[] = [
   { role: "restaurant", url: "/dashboard", name: "restaurant home" },
   { role: "restaurant", url: "/search", name: "search" },
+  { role: "restaurant", url: "/stores", name: "store list" },
+  // The seeded store's page (STORE_PAGE is replaced by its id).
+  { role: "restaurant", url: STORE_PAGE, name: "store page" },
   { role: "store", url: "/dashboard", name: "store home" },
   { role: "store", url: "/my-profile", name: "store profile" },
   { role: "restaurant", url: "/my-profile", name: "restaurant profile" },
@@ -33,7 +39,13 @@ for (const { role, url, name } of PAGES) {
     test.skip(({ isMobile }) => isMobile, "Checked on desktop");
 
     test(`the ${name} page meets WCAG AA colour contrast`, async ({ page }, testInfo) => {
-      await open(page, url);
+      if (url === STORE_PAGE) {
+        const storeApi = await apiAs("store");
+        await open(page, `/stores/${await myId(storeApi)}`);
+        await storeApi.dispose();
+      } else {
+        await open(page, url);
+      }
       await expect(page.getByRole("main").getByRole("heading", { level: 1 }).first()).toBeVisible();
       // Wait for the requests to finish and the spinners and placeholders to go.
       await page.waitForLoadState("networkidle");
