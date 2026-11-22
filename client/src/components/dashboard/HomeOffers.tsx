@@ -38,7 +38,9 @@ function StoreRow({ store, onAdd }: { store: HomeStore; onAdd: (product: Product
     <article
       aria-labelledby={titleId}
       data-testid="home-store-row"
-      className="flex flex-col gap-4 rounded-[20px] border border-neutral-200 bg-white p-4 shadow-[0_2px_10px_rgba(28,25,23,0.04)] sm:p-5"
+      // No card of its own: the store line and its offers sit on the page, a thin line above every
+      // store after the first.
+      className="flex flex-col gap-4 border-t border-neutral-200 pt-8 first-of-type:border-t-0 first-of-type:pt-0"
     >
       <header className="flex flex-wrap items-center gap-3.5">
         <StoreAvatar
@@ -93,7 +95,7 @@ function HomeOffers({ stores }: HomeOffersProps) {
   const [adding, setAdding] = useState<Product | null>(null);
 
   return (
-    <section aria-labelledby={titleId} aria-busy={!stores} data-testid="home-offers" className="flex flex-col gap-5">
+    <section aria-labelledby={titleId} aria-busy={!stores} data-testid="home-offers" className="flex flex-col gap-8">
       <h2 id={titleId} className="mt-2 text-2xl font-extrabold tracking-[-0.5px] sm:text-[28px]">
         {t("restaurantHome.offers.title")}
       </h2>
