@@ -35,7 +35,23 @@ export const loginViaForm = async (page: Page, email: string, password: string) 
   await expect(page).toHaveURL(/\/dashboard$/);
 };
 
-// The forced change of an admin-set temporary password, on My profile.
+// A restaurant's or store's My profile: opens a section of the accordion by its title.
+export const openProfileSection = async (page: Page, title: string | RegExp) => {
+  const header = page.locator("[data-testid^=profile-section-] h2").getByRole("button", { name: title }).first();
+  await expect(header).toBeVisible();
+  if ((await header.getAttribute("aria-expanded")) !== "true") await header.click();
+  await expect(header).toHaveAttribute("aria-expanded", "true");
+};
+
+// Saves a restaurant's or store's My profile with the button at the bottom (the round one at the
+// top has the same name) and waits for the confirmation.
+export const saveProfile = async (page: Page) => {
+  await page.getByRole("button", { name: "Sačuvaj izmjene" }).last().click();
+  await expect(toast(page, "Izmjene su sačuvane.")).toBeVisible();
+};
+
+// The forced change of an admin-set temporary password on the old My profile (a company
+// headquarters or an admin).
 export const changeTemporaryPassword = async (page: Page, temporaryPassword: string, newPassword: string) => {
   await open(page, "/my-profile");
   await page.getByLabel("Trenutna lozinka").fill(temporaryPassword);

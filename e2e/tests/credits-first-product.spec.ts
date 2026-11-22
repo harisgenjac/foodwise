@@ -24,12 +24,14 @@ test("a store without a plan requests one, the admin approves it and the store p
   });
 
   await test.step("Prodavnica traži plan Standard za ovaj mjesec", async () => {
-    const standard = store.locator("#plan-options > div").filter({ has: store.getByText("Standard", { exact: true }) });
-    await standard.getByRole("button", { name: "Odaberi" }).click();
+    // The plan is chosen on the page; the save explains credits first, then sends the request.
+    await store.getByTestId("plan-options").getByRole("button", { name: /^Standard/ }).click();
+    await store.getByRole("button", { name: "Sačuvaj izmjene" }).last().click();
     const dialog = dialogWith(store, "Pretplata: Standard");
     await expect(dialog.getByRole("radio", { name: "Samo ovaj mjesec" })).toBeChecked();
     await dialog.getByRole("button", { name: "Pošalji zahtjev" }).click();
-    await expect(toast(store, "Zahtjev je poslan. Administrator će ga uskoro pregledati.")).toBeVisible();
+    await expect(toast(store, "Izmjene su sačuvane.")).toBeVisible();
+    await expect(store.getByTestId("credit-request").filter({ hasText: "Standard" }).getByText("Na čekanju")).toBeVisible();
   });
 
   await test.step("Admin vidi zahtjev i odobrava ga", async () => {

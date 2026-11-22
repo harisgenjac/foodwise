@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { ACCOUNTS, storageState, uniqueName } from "../support/accounts.js";
 import { apiAs, createProduct, myId } from "../support/api.js";
 import { isoDate, sarajevoDate } from "../support/dates.js";
-import { emptyCart, open, sentOrderCode, toast } from "../support/ui.js";
+import { emptyCart, open, openProfileSection, saveProfile, sentOrderCode, toast } from "../support/ui.js";
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1280) < 1024;
 
@@ -81,10 +81,11 @@ test.describe("the store's own side", () => {
     // The profile as the seed made it, to put back exactly at the end.
     const { user: before } = await (await storeApi.get("/api/users/me")).json();
     await open(page, "/my-profile");
+    await openProfileSection(page, /Radno vrijeme i preuzimanje/);
     const pickup = page.getByRole("group", { name: "Vrijeme preuzimanja" });
-    await pickup.getByLabel("Otvoreno: Nedjelja").uncheck();
-    await page.getByRole("button", { name: "Sačuvaj", exact: true }).click();
-    await expect(toast(page, "Profil uspješno ažuriran.")).toBeVisible();
+    await pickup.getByRole("switch", { name: "Otvoreno: Nedjelja" }).click();
+    await expect(pickup.getByTestId("hours-row-sun").getByText("Zatvoreno")).toBeVisible();
+    await saveProfile(page);
 
     const restaurantContext = await browser.newContext({ storageState: storageState("restaurant") });
     const restaurant = await restaurantContext.newPage();

@@ -8,6 +8,7 @@ import { useAuth } from "../context/AuthContext.js";
 import { useCredits } from "../context/CreditsContext.js";
 import { useCities } from "../hooks/useCities.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
+import LoadErrorState from "../components/product/LoadErrorState.js";
 import RequiredHint from "../components/form/RequiredHint.js";
 import SubscribeModal from "../components/credits/SubscribeModal.js";
 import { ProfileSection } from "../components/businessProfile/ui.js";
@@ -92,6 +93,7 @@ function BusinessProfilePage() {
     password: Boolean(sessionUser?.must_change_password),
   });
   const [saving, setSaving] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [confirmingPlan, setConfirmingPlan] = useState(false);
   const [creditsReload, setCreditsReload] = useState(0);
   // Bumped after a failed validation, so the first error is focused once the sections are open.
@@ -114,7 +116,10 @@ function BusinessProfilePage() {
         setDraft(initial);
         setSaved(initial);
       })
-      .catch((err) => console.error("Error fetching profile:", err));
+      .catch((err) => {
+        console.error("Error fetching profile:", err);
+        setLoadFailed(true);
+      });
   }, [load]);
 
   // Links to a section open it and scroll to it.
@@ -149,6 +154,7 @@ function BusinessProfilePage() {
   const city = cities.find((entry) => String(entry.id) === draft?.cityId);
   const dirty = useMemo(() => (draft && saved ? hasChanges(draft, saved) : false), [draft, saved]);
 
+  if (loadFailed) return <LoadErrorState />;
   if (!user || !draft || !saved) return <LoadingSpinner />;
 
   const update = (change: Partial<ProfileDraft>) => {

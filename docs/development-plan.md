@@ -196,6 +196,11 @@ The "Become a sponsor" page becomes real: campaigns with a goal and a progress b
 - [ ] Can an organization also buy food from the marketplace, or only claim donations?
 - [ ] Which email service to use (price, free plan limit, domain)? Resend was chosen (Nov 5, 2026); its plan limit and the domain are still open.
 
+## My profile follow-ups
+
+- [ ] Warn before leaving a restaurant's or store's My profile with unsaved changes (the page already knows when its draft differs from what is saved: `hasChanges` in `components/businessProfile/draft.ts`).
+- [ ] The same redesign for a company headquarters' and an admin's My profile (they keep the old page for now).
+
 ## Ideas backlog (not scheduled)
 
 Older ideas moved here from `product.md`. Agreed as possible directions, not planned or ordered.

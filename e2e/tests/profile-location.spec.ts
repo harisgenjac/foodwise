@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { storageState, type SeededRole } from "../support/accounts.js";
 import { setPinAs } from "../support/api.js";
-import { open, reload, toast } from "../support/ui.js";
+import { open, openProfileSection, reload, saveProfile, toast } from "../support/ui.js";
 
 // A store sets its location with a pin on the map on My profile: the dashboard reminds it while
 // the pin is missing and links to the map; a click on the map sets the pin, saving keeps it.
@@ -45,15 +45,26 @@ test("a store sets its location with a pin on the map", async ({ page }) => {
   await test.step("Klik na mapu postavlja pin, čuvanje ga sprema", async () => {
     // The map starts at the store's city centre, so its middle is well inside the 30 km limit.
     await map(page).click();
-    await expect(page.getByText("Lokacija je označena na mapi.")).toBeVisible();
+    await expect(page.getByText("Lokacija još nije označena. Bit će potrebna za dostavu.")).toBeHidden();
     await expect(page.getByTitle("Vaša lokacija (povucite za pomjeranje)")).toBeVisible();
-    await page.getByRole("button", { name: "Sačuvaj", exact: true }).click();
-    await expect(toast(page, "Profil uspješno ažuriran.")).toBeVisible();
+    await saveProfile(page);
+  });
+
+  await test.step("Pomjeranje postavljenog pina traži potvrdu, Odustani ga ostavlja", async () => {
+    await map(page).scrollIntoViewIfNeeded();
+    const box = (await map(page).boundingBox())!;
+    await page.mouse.click(box.x + box.width / 4, box.y + box.height / 4);
+    const dialog = page.getByRole("dialog", { name: "Promijeniti lokaciju?" });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "Odustani" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByTitle("Vaša lokacija (povucite za pomjeranje)")).toBeVisible();
   });
 
   await test.step("Pin ostaje nakon osvježavanja, a podsjetnik nestaje", async () => {
     await reload(page);
-    await expect(page.getByText("Lokacija je označena na mapi.")).toBeVisible();
+    await openProfileSection(page, /Lokacija/);
+    await expect(page.getByTitle("Vaša lokacija (povucite za pomjeranje)")).toBeVisible();
     await open(page, "/dashboard");
     await expect(page.getByRole("link", { name: "Označi lokaciju" })).toHaveCount(0);
   });

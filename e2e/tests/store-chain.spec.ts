@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { PASSWORD, runId, storageState } from "../support/accounts.js";
-import { changeTemporaryPassword, dialogWith, fillProductForm, loginViaForm, open, searchMarketplace, toast } from "../support/ui.js";
+import { changeTemporaryPassword, dialogWith, fillProductForm, loginViaForm, open, saveProfile, searchMarketplace, toast } from "../support/ui.js";
 
 test("a chain's branch in Breza publishes a product that a restaurant in Visoko sees with the chain label", async ({
   browser,
@@ -85,16 +85,19 @@ test("a chain's branch in Breza publishes a product that a restaurant in Visoko 
   await test.step("Poslovnica se prijavljuje; naziv i grad mijenja samo centrala", async () => {
     await loginViaForm(branchPage, branchLogin.email, branchLogin.temporaryPassword);
     await expect(gate(branchPage).getByText(/Popunite obavezne podatke: Ime, Prezime\./)).toBeVisible();
-    await changeTemporaryPassword(branchPage, branchLogin.temporaryPassword, PASSWORD);
+    await open(branchPage, "/my-profile");
     await expect(branchPage.getByLabel("Email", { exact: true })).toHaveValue(branchLogin.email);
+    await expect(branchPage.getByTestId("branch-chip")).toBeVisible();
     await expect(branchPage.getByLabel("Naziv biznisa")).toHaveValue(branch);
     await expect(branchPage.getByLabel("Naziv biznisa")).toBeDisabled();
     await expect(branchPage.getByLabel("Grad")).toBeDisabled();
     await expect(branchPage.getByText("Mijenja centrala")).toHaveCount(2);
     await branchPage.getByLabel("Ime", { exact: true }).fill("Poslovnica");
     await branchPage.getByLabel("Prezime").fill("Breza");
-    await branchPage.getByRole("button", { name: "Sačuvaj" }).click();
-    await expect(toast(branchPage, "Profil uspješno ažuriran.")).toBeVisible();
+    await branchPage.getByLabel("Trenutna lozinka", { exact: true }).fill(branchLogin.temporaryPassword);
+    await branchPage.getByLabel("Nova lozinka", { exact: true }).fill(PASSWORD);
+    await branchPage.getByLabel("Ponovite novu lozinku", { exact: true }).fill(PASSWORD);
+    await saveProfile(branchPage);
   });
 
   await test.step("Poslovnica objavljuje proizvod", async () => {
