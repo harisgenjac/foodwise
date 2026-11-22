@@ -2131,15 +2131,6 @@
       "sun": "Sun"
     }
   },
-  "cover": {
-    "alt": "Store cover image",
-    "add": "Add a cover image",
-    "change": "Change the cover image",
-    "upload": "Upload a cover image",
-    "remove": "Remove the cover image",
-    "saved": "The cover image was uploaded.",
-    "hint": "The cover image is shown at the top of your store page (JPG, PNG or WEBP, at most 5 MB)."
-  },
   "location": {
     "title": "Location on the map",
     "description": "The exact location of your business, needed for delivery.",

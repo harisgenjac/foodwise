@@ -2180,15 +2180,6 @@
       "sun": "Ned"
     }
   },
-  "cover": {
-    "alt": "Naslovna slika prodavnice",
-    "add": "Dodaj naslovnu sliku",
-    "change": "Promijeni naslovnu sliku",
-    "upload": "Postavi naslovnu sliku",
-    "remove": "Ukloni naslovnu sliku",
-    "saved": "Naslovna slika je postavljena.",
-    "hint": "Naslovna slika se prikazuje na vrhu vaše stranice prodavnice (JPG, PNG ili WEBP, najviše 5 MB)."
-  },
   "location": {
     "title": "Lokacija na mapi",
     "description": "Tačna lokacija vašeg objekta, potrebna za dostavu.",

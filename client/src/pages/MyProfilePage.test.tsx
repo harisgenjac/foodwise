@@ -200,7 +200,7 @@ describe("MyProfilePage for a branch", () => {
   });
 });
 
-describe("MyProfilePage weekly hours and cover", () => {
+describe("MyProfilePage weekly hours", () => {
   const store = makeUser({
     role: "STORE",
     business_name: "Market Centar",
@@ -243,21 +243,6 @@ describe("MyProfilePage weekly hours and cover", () => {
     await screen.findByDisplayValue("Bistro Most");
     expect(screen.getAllByRole("group", { name: t("user.workingHours") })).toHaveLength(1);
     expect(screen.queryByRole("group", { name: t("user.pickupHours") })).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(t("cover.upload"))).not.toBeInTheDocument();
-  });
-
-  it("uploads and removes the store's cover image", async () => {
-    apiMock.post.mockResolvedValue({ data: { cover_url: "/uploads/covers/2-1-ab.png" } });
-    apiMock.delete.mockResolvedValue({ data: { message: "Naslovna slika je uklonjena." } });
-    renderStore();
-    await screen.findByDisplayValue("Market Centar");
-    await userEvent.upload(screen.getByLabelText(t("cover.upload")), new File(["x"], "c.png", { type: "image/png" }));
-    expect(apiMock.post).toHaveBeenCalledWith("/users/me/cover", expect.any(FormData));
-    expect(await screen.findByAltText(t("cover.alt"))).toHaveAttribute("src", expect.stringContaining("/uploads/covers/"));
-
-    await userEvent.click(screen.getByRole("button", { name: t("cover.remove") }));
-    expect(apiMock.delete).toHaveBeenCalledWith("/users/me/cover");
-    await waitFor(() => expect(screen.queryByAltText(t("cover.alt"))).not.toBeInTheDocument());
   });
 });
 

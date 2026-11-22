@@ -20,7 +20,7 @@ export const getUser = async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const result = await pool.query(
       `SELECT users.id, users.first_name, users.last_name, users.email, users.role, users.business_name,
-         users.logo_url, users.cover_url, users.address, users.city_id, cities.name AS city,
+         users.logo_url, users.address, users.city_id, cities.name AS city,
          users.opening_schedule, users.pickup_schedule, users.description, users.phone, users.must_change_password, users.email_notifications,
          users.latitude, users.longitude, ${orderSettingsColumns("users")},
          users.created_at,
@@ -104,7 +104,7 @@ function validateUserFields(fields: UserFields) {
   }
 }
 
-const PROFILE_COLUMNS = `id, first_name, last_name, email, role, business_name, logo_url, cover_url, address, city_id,
+const PROFILE_COLUMNS = `id, first_name, last_name, email, role, business_name, logo_url, address, city_id,
   ${CITY_NAME}, opening_schedule, pickup_schedule, description, phone, latitude, longitude`;
 
 type ProfileResult = { error: string; user?: never } | { user: Record<string, unknown> | undefined; error?: never };
@@ -301,7 +301,7 @@ export const getStores = async (req: Request, res: Response) => {
     const fromCity = await userCityId(pool, req.user!.id);
     const distance = cityDistance("from_city.id", "users.city_id");
     const columns = `users.id, users.business_name, users.city_id, cities.name AS city, ${distance} AS distance_km,
-     users.address, ${storeLogo("users")} AS logo_url, users.cover_url, ${storeDescription("users")} AS description,
+     users.address, ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
      users.opening_schedule, users.pickup_schedule, users.phone,
      ${companyName("users")} AS company_name, ${pauseColumns("users")},
      (SELECT COUNT(*) FROM products
@@ -382,7 +382,7 @@ export const getStoreDetails = async (req: Request, res: Response) => {
 
     const result = await pool.query(
       `SELECT users.id, users.business_name, users.city_id, cities.name AS city, users.address,
-       ${storeLogo("users")} AS logo_url, users.cover_url, ${storeDescription("users")} AS description,
+       ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
        users.opening_schedule, users.pickup_schedule,
        users.phone, ${companyName("users")} AS company_name, ${pauseColumns("users")}
        FROM users LEFT JOIN cities ON cities.id = users.city_id
@@ -422,37 +422,6 @@ export const getStoreDetails = async (req: Request, res: Response) => {
     return res
       .status(500)
       .json({ error: "An error occurred while fetching the store." });
-  }
-};
-
-// The store page's cover image (stores only), with the same rules as a logo; the previous file is
-// deleted. Without one the page shows a plain banner.
-export const uploadCover = async (req: Request, res: Response) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: "No image was uploaded." });
-    }
-    const userId = req.user!.id;
-    const coverUrl = await saveImage("covers", req.file, `${userId}-`);
-    const previous = await pool.query("SELECT users.cover_url FROM users WHERE users.id = $1", [userId]);
-    await pool.query("UPDATE users SET cover_url = $1 WHERE users.id = $2", [coverUrl, userId]);
-    await removeStoredFile(previous.rows[0]?.cover_url);
-    return res.status(200).json({ message: "Image uploaded successfully.", cover_url: coverUrl });
-  } catch (error) {
-    console.error("Error while uploading image:", error);
-    return res.status(500).json({ error: "An error occurred while uploading the image." });
-  }
-};
-
-export const removeCover = async (req: Request, res: Response) => {
-  try {
-    const previous = await pool.query("SELECT users.cover_url FROM users WHERE users.id = $1", [req.user!.id]);
-    await pool.query("UPDATE users SET cover_url = NULL WHERE users.id = $1", [req.user!.id]);
-    await removeStoredFile(previous.rows[0]?.cover_url);
-    return res.status(200).json({ message: "Cover image removed." });
-  } catch (error) {
-    console.error("Error while removing cover image:", error);
-    return res.status(500).json({ error: "An error occurred while removing the cover image." });
   }
 };
 

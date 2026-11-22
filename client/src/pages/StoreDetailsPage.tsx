@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { Clock, Flame, Hourglass, MapPin, PackageOpen, Percent, Phone, Search, ShoppingBag, Store } from "lucide-react";
-import api, { apiErrorMessage, assetUrl } from "../api/axios.js";
+import api, { apiErrorMessage } from "../api/axios.js";
 import LoadMore from "../components/LoadMore.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { usePagedLimit } from "../hooks/usePagedLimit.js";
@@ -38,7 +38,7 @@ const SOON_DAYS = 1;
 
 const productGrid = "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4";
 
-// The store page (restaurants): the cover, logo, name, address, today's pickup hours and "open now";
+// The store page (restaurants): a soft banner, the logo, name, address, today's pickup hours and "open now";
 // short stats; the Products tab (search, category chips, "Expiring soon" first, then by category,
 // each with + and a quantity stepper) and the Information tab. The cart is a bar on phones and a
 // panel on the right from lg up.
@@ -188,11 +188,7 @@ function StoreDetailsPage() {
 
       <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
         <div className="relative h-32 bg-linear-to-br from-brand-50 via-warning-50/60 to-white sm:h-44">
-          {store.cover_url ? (
-            <img src={assetUrl(store.cover_url)} alt="" data-testid="store-cover" className="h-full w-full object-cover" />
-          ) : (
-            <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-brand-200/30 blur-3xl" />
-          )}
+          <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-brand-200/30 blur-3xl" />
         </div>
 
         <div className="flex flex-col gap-4 px-5 pb-5 sm:flex-row sm:items-end sm:px-6">

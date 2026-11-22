@@ -8,8 +8,6 @@ import {
   Building2,
   Camera,
   Clock,
-  ImageIcon,
-  Trash2,
   FileText,
   Mail,
   MapPin,
@@ -37,7 +35,6 @@ import OrderSettingsSection from "../components/profile/OrderSettingsSection.js"
 import WeeklyHoursEditor from "../components/profile/WeeklyHoursEditor.js";
 import LocationPicker, { LOCATION_SECTION } from "../components/profile/LocationPicker.js";
 import { isScheduleValid, type Schedule } from "../utils/schedule.js";
-import { MAX_PRODUCT_IMAGE_MB, PRODUCT_IMAGE_TYPES } from "../utils/productImages.js";
 
 function MyProfilePage() {
   const { user, refreshUser } = useAuth();
@@ -53,9 +50,6 @@ function MyProfilePage() {
   const [location, setLocation] = useState<GeoPoint | null>(null);
   const [openingSchedule, setOpeningSchedule] = useState<Schedule | null>(null);
   const [pickupSchedule, setPickupSchedule] = useState<Schedule | null>(null);
-  // A store's cover image on its store page.
-  const [coverUrl, setCoverUrl] = useState("");
-  const [coverBusy, setCoverBusy] = useState(false);
   const [description, setDescription] = useState("");
   const [companyName, setCompanyName] = useState("");
   // A branch without its own logo or description shows its company's.
@@ -88,7 +82,6 @@ function MyProfilePage() {
       );
       setOpeningSchedule(data.opening_schedule ?? null);
       setPickupSchedule(data.pickup_schedule ?? null);
-      setCoverUrl(data.cover_url || "");
       setDescription(data.description || "");
       setCompanyName(data.company_name || "");
       setCompanyLogoUrl(data.company_logo_url || "");
@@ -153,48 +146,6 @@ function MyProfilePage() {
       console.error(err);
       const message = apiErrorMessage(err);
       toast.error(message || t("user.uploadError"));
-    }
-  };
-
-  // The cover is uploaded as soon as it is chosen (same rules as product images).
-  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    if (!PRODUCT_IMAGE_TYPES.includes(file.type)) {
-      toast.error(t("productImage.invalidType"));
-      return;
-    }
-    if (file.size > MAX_PRODUCT_IMAGE_MB * 1024 * 1024) {
-      toast.error(t("productImage.tooLarge"));
-      return;
-    }
-    setCoverBusy(true);
-    try {
-      const formData = new FormData();
-      formData.append("cover", file);
-      const response = await api.post("/users/me/cover", formData);
-      setCoverUrl(response.data.cover_url);
-      toast.success(t("cover.saved"));
-    } catch (err) {
-      const message = apiErrorMessage(err);
-      toast.error(message || t("user.uploadError"));
-    } finally {
-      setCoverBusy(false);
-    }
-  };
-
-  const handleCoverRemove = async () => {
-    setCoverBusy(true);
-    try {
-      const response = await api.delete("/users/me/cover");
-      setCoverUrl("");
-      toast.success(response.data.message);
-    } catch (err) {
-      const message = apiErrorMessage(err);
-      toast.error(message || t("user.uploadError"));
-    } finally {
-      setCoverBusy(false);
     }
   };
 
@@ -285,42 +236,7 @@ function MyProfilePage() {
     <div className="max-w-5xl mx-auto space-y-6 pb-16">
       <section className="overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
         <div className="relative h-28 bg-linear-to-br from-brand-50 via-warning-50/60 to-white sm:h-36">
-          {isStore && coverUrl ? (
-            <img src={assetUrl(coverUrl)} alt={t("cover.alt")} className="h-full w-full object-cover" />
-          ) : (
-            <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-brand-200/30 blur-3xl" />
-          )}
-          {isStore && (
-            // The store page's cover: uploaded at once, removable.
-            <div className="absolute top-3 right-3 flex gap-2">
-              <label
-                className={`inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl bg-white/90 px-3 text-sm font-medium text-neutral-700 shadow-sm hover:bg-white sm:min-h-0 sm:py-1.5 ${coverBusy ? "pointer-events-none opacity-60" : ""}`}
-              >
-                <ImageIcon className="h-4 w-4" />
-                {coverUrl ? t("cover.change") : t("cover.add")}
-                <input
-                  type="file"
-                  accept={PRODUCT_IMAGE_TYPES.join(",")}
-                  onChange={handleCoverChange}
-                  disabled={coverBusy}
-                  aria-label={t("cover.upload")}
-                  className="hidden"
-                />
-              </label>
-              {coverUrl && (
-                <button
-                  type="button"
-                  onClick={handleCoverRemove}
-                  disabled={coverBusy}
-                  aria-label={t("cover.remove")}
-                  title={t("cover.remove")}
-                  className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-xl bg-white/90 text-danger-700 shadow-sm hover:bg-white disabled:opacity-60 sm:min-h-0 sm:min-w-0 sm:p-1.5"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          )}
+          <div className="pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-brand-200/30 blur-3xl" />
         </div>
 
         <div className="flex flex-col gap-5 px-6 pb-6 sm:flex-row sm:items-end">
@@ -403,7 +319,6 @@ function MyProfilePage() {
           <p className="border-t border-neutral-100 px-6 py-3 text-xs text-neutral-500">
             {usesCompanyLogo ? `${t("user.usesCompanyLogo")} ` : ""}
             {t("user.tooltipLogoText")}
-            {isStore && ` ${t("cover.hint")}`}
           </p>
         )}
       </section>

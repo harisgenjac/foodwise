@@ -1,5 +1,5 @@
 // npm run db:reset: a fresh local database. Drops and recreates the public schema, runs the
-// migrations, empties the local uploads (logos, covers, product images) and runs the seed
+// migrations, empties the local uploads (logos, product images) and runs the seed
 // (`npm run db:reset -- --demo` runs the demo seed instead). Refuses to run in production or on a database whose name looks like a production one. Uses
 // DATABASE_URL and UPLOADS_DIR from .env.
 import "dotenv/config";
@@ -11,7 +11,7 @@ import { fileURLToPath } from "url";
 import pg from "pg";
 
 const SERVER_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const UPLOAD_KINDS = ["logos", "covers", "products"];
+const UPLOAD_KINDS = ["logos", "products"];
 const PRODUCTION_NAME = /prod|live/i;
 
 const fail = (message: string): never => {

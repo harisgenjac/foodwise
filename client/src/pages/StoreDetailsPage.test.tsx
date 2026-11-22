@@ -19,7 +19,6 @@ const STORE = makeUser({
   opening_schedule: { ...everyDay({ open: "08:00", close: "20:00" }), sun: null },
   pickup_schedule: everyDay({ open: "15:00", close: "19:00" }),
   open_now: true,
-  cover_url: null,
 });
 
 const PRODUCTS = [
@@ -65,13 +64,11 @@ describe("StoreDetailsPage", () => {
     expect(screen.getByText("Titova 1, Sarajevo")).toBeInTheDocument();
     expect(screen.getByText(t("store.page.activeOffers"))).toBeInTheDocument();
     expect(screen.getByText("50%")).toBeInTheDocument();
-    expect(screen.queryByTestId("store-cover")).not.toBeInTheDocument();
   });
 
-  it("shows the cover and Closed, and no badge without weekly hours", async () => {
-    const { unmount } = renderPage({ store: { ...STORE, cover_url: "/uploads/covers/2-1-ab.png", open_now: false } });
-    expect(await screen.findByTestId("store-cover")).toHaveAttribute("src", expect.stringContaining("/uploads/covers/"));
-    expect(screen.getByText(t("store.page.closedNow"))).toBeInTheDocument();
+  it("shows Closed, and no badge without weekly hours", async () => {
+    const { unmount } = renderPage({ store: { ...STORE, open_now: false } });
+    expect(await screen.findByText(t("store.page.closedNow"))).toBeInTheDocument();
     unmount();
 
     renderPage({ store: { ...STORE, open_now: null, opening_schedule: null } });

@@ -74,7 +74,6 @@ const uploadImageFile = (field: string) =>
 
 export const uploadLogoFile = uploadImageFile('logo');
 export const uploadProductImageFile = uploadImageFile('image');
-export const uploadCoverFile = uploadImageFile('cover');
 
 export const uploadCsvFile = handleUpload(
   csvUpload.single('file'),
