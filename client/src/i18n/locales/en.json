@@ -2337,6 +2337,29 @@
       "creditsLine_other": "This month · enough for {{count}} listings",
       "creditsUsed": "Credits used this month",
       "noPlan": "No subscription"
+    },
+    "orders": {
+      "title": "New orders",
+      "subtitle": "Answer before the time runs out",
+      "all": "All orders",
+      "empty": "No new orders",
+      "ago_one": "{{count}} min ago",
+      "ago_other": "{{count}} min ago",
+      "delivery": "Delivery",
+      "pickup": "In person",
+      "items_one": "{{count}} item",
+      "items_other": "{{count}} items",
+      "todayAt": "today at {{time}}",
+      "tomorrowAt": "tomorrow at {{time}}",
+      "more_one": "+ {{count}} more item",
+      "more_other": "+ {{count}} more items",
+      "answerIn_one": "Answer within {{count}} min",
+      "answerIn_other": "Answer within {{count}} min",
+      "answerBy": "Answer by: {{time}}",
+      "accept": "Accept",
+      "reject": "Reject",
+      "acceptLabel": "Accept order {{code}} ({{name}})",
+      "rejectLabel": "Reject order {{code}} ({{name}})"
     }
   }
 }

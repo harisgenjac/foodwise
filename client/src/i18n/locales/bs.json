@@ -2393,6 +2393,33 @@
       "creditsLine_other": "Ovaj mjesec · dovoljno za {{count}} objava",
       "creditsUsed": "Iskorišteni krediti ovog mjeseca",
       "noPlan": "Nema pretplate"
+    },
+    "orders": {
+      "title": "Nove narudžbe",
+      "subtitle": "Odgovorite prije nego istekne vrijeme",
+      "all": "Sve narudžbe",
+      "empty": "Nema novih narudžbi",
+      "ago_one": "prije {{count}} min",
+      "ago_few": "prije {{count}} min",
+      "ago_other": "prije {{count}} min",
+      "delivery": "Dostava",
+      "pickup": "Lično",
+      "items_one": "{{count}} artikal",
+      "items_few": "{{count}} artikla",
+      "items_other": "{{count}} artikala",
+      "todayAt": "danas u {{time}}",
+      "tomorrowAt": "sutra u {{time}}",
+      "more_one": "+ još {{count}} artikal",
+      "more_few": "+ još {{count}} artikla",
+      "more_other": "+ još {{count}} artikala",
+      "answerIn_one": "Odgovorite za {{count}} min",
+      "answerIn_few": "Odgovorite za {{count}} min",
+      "answerIn_other": "Odgovorite za {{count}} min",
+      "answerBy": "Odgovorite do: {{time}}",
+      "accept": "Prihvati",
+      "reject": "Odbij",
+      "acceptLabel": "Prihvati narudžbu {{code}} ({{name}})",
+      "rejectLabel": "Odbij narudžbu {{code}} ({{name}})"
     }
   }
 }
