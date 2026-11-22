@@ -265,6 +265,7 @@ describe("Users routes", () => {
         opening_schedule: null,
         open_now: null,
       });
+      expect(response.body.store.email).toBeUndefined();
       expect(response.body.products).toBeUndefined();
       expect(response.body.myOrders).toBeUndefined();
 
@@ -287,7 +288,7 @@ describe("Users routes", () => {
       expect(response.body.stats).toEqual({ active_offers: 2, expiring_today: 1, max_discount: 70 });
     });
 
-    it("returns the contact email, the order settings and the distance from the restaurant", async () => {
+    it("returns the order settings and the distance from the restaurant, without the email", async () => {
       const store = await registerAndLogin(STORE, "STORE");
       await store.put("/api/users/me").send(PROFILE);
       await store.patch("/api/users/me/order-settings").send({ delivery_enabled: true, preparation_minutes: 45 });
@@ -296,7 +297,6 @@ describe("Users routes", () => {
 
       const response = await restaurant.get(`/api/users/stores/${await userId(STORE)}`);
       expect(response.body.store).toMatchObject({
-        email: STORE,
         delivery_enabled: true,
         preparation_minutes: 45,
         orders_paused: false,

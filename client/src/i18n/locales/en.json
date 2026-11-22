@@ -374,7 +374,9 @@
     "viewLabel": "Store view",
     "allStores": "All stores",
     "favoritesTab": "Favourites",
-    "searchPlaceholder": "Search by store name"
+    "searchPlaceholder": "Search by store name",
+    "favoriteAdded": "{{store}} was added to your favourites.",
+    "favoriteRemoved": "{{store}} was removed from your favourites."
   },
   "categories": {
     "Meat": "Meat",

@@ -71,7 +71,7 @@ function hoursItem(schedule: Schedule | null | undefined, title: string, t: TFun
 // open-state chip, a branch's chain chip, the description and the favourite pill; under it the info
 // row in five equal columns (two on tablets, stacked on phones): address with the city and the
 // distance, today's opening hours and pickup hours with the week popover, delivery with the
-// preparation time (or the order pause in orange) and the contact phone and email.
+// preparation time (or the order pause in orange) and the contact phone.
 function StoreHeaderCard({ store, isFavorite, onToggleFavorite }: StoreHeaderCardProps) {
   const { t, i18n } = useTranslation();
   const tone = storeTone(store.id);
@@ -158,18 +158,6 @@ function StoreHeaderCard({ store, isFavorite, onToggleFavorite }: StoreHeaderCar
               </a>
             ) : (
               "—"
-            )
-          }
-          line={
-            store.email && (
-              <a
-                href={`mailto:${store.email}`}
-                title={store.email}
-                data-testid="store-email"
-                className="block truncate hover:text-brand-800 hover:underline"
-              >
-                {store.email}
-              </a>
             )
           }
         />

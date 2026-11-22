@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, ShoppingCart } from "lucide-react";
+import { ArrowRight, ShoppingCart, Trash2 } from "lucide-react";
+import api, { apiErrorMessage } from "../../api/axios.js";
 import { useCart } from "../../context/CartContext.js";
+import ConfirmModal from "../common/ConfirmModal.js";
 import { formatKm } from "../dashboard/OfferCard.js";
 import type { Cart } from "../../types/index.js";
 
@@ -15,13 +19,29 @@ export const cartSaving = (cart: Cart) =>
 // The store page's cart bar (design/stores/store-products.html): while the cart is not empty, a dark
 // green bar sticks to the bottom of the content area (above the bottom navigation on phones) with
 // "Korpa · <store>" (the cart's store, which may be another one), the item count and total, the
-// saving, and "Idi na korpu →". It is the page's last element, so at the end of the page it stops
-// above the footer and never covers the last cards.
+// saving, "Isprazni korpu" (asks first, as on the cart page) and "Idi na korpu →". It is the page's
+// last element, so at the end of the page it stops above the footer and never covers the last cards.
 function StoreCartBar() {
   const { t, i18n } = useTranslation();
-  const { cart } = useCart();
+  const { cart, setCart } = useCart();
+  const [confirmEmpty, setConfirmEmpty] = useState(false);
+  const [busy, setBusy] = useState(false);
   if (!cart || cart.items.length === 0) return null;
   const saving = cartSaving(cart);
+
+  const emptyCart = async () => {
+    setBusy(true);
+    try {
+      const response = await api.delete("/cart");
+      setCart(response.data.cart);
+      setConfirmEmpty(false);
+    } catch (err) {
+      console.error(err);
+      toast.error(apiErrorMessage(err) || t("cart.updateError"));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div
@@ -50,13 +70,40 @@ function StoreCartBar() {
           )}
         </div>
       </div>
-      <Link
-        to="/cart"
-        className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-lime px-6 text-[15px] font-extrabold text-brand-900 hover:brightness-95 focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-lime sm:flex-none"
-      >
-        {t("storePage.cartBar.goToCart")}
-        <ArrowRight className="h-4 w-4" aria-hidden="true" />
-      </Link>
+      <div className="flex flex-1 gap-2 sm:flex-none">
+        <button
+          type="button"
+          onClick={() => setConfirmEmpty(true)}
+          disabled={busy}
+          aria-label={t("cart.emptyCart")}
+          className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border border-brand-200/40 text-sm font-bold text-white hover:bg-brand-800 focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-lime disabled:cursor-wait disabled:opacity-60 sm:w-auto sm:px-5"
+        >
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
+          <span className="hidden sm:inline" aria-hidden="true">
+            {t("cart.emptyCart")}
+          </span>
+        </button>
+        <Link
+          to="/cart"
+          className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-lime px-6 text-[15px] font-extrabold text-brand-900 hover:brightness-95 focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-lime sm:flex-none"
+        >
+          {t("storePage.cartBar.goToCart")}
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </Link>
+      </div>
+
+      {confirmEmpty && (
+        <ConfirmModal
+          title={t("cart.emptyConfirm.title")}
+          message={t("cart.emptyConfirm.message")}
+          confirmLabel={t("cart.emptyCart")}
+          variant="danger"
+          icon={Trash2}
+          busy={busy}
+          onConfirm={emptyCart}
+          onClose={() => setConfirmEmpty(false)}
+        />
+      )}
     </div>
   );
 }

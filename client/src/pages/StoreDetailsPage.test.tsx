@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import toast from "react-hot-toast";
 import StoreDetailsPage from "./StoreDetailsPage.js";
 import { CartProvider } from "../context/CartContext.js";
 import { apiMock, makeCart, makeCartLine, makeOrder, makeOrderItem, makeProduct, makeUser, renderWithProviders, t } from "../test/utils.js";
@@ -104,13 +105,23 @@ describe("StoreDetailsPage", () => {
       expect(item).toHaveTextContent("Otvara sutra u 09:00");
     });
 
-    it("keeps a long email on one line with an ellipsis and the full address as its title", async () => {
+    it("shows the phone as the contact on one line, and no email", async () => {
       renderPage();
-      const email = await screen.findByTestId("store-email");
-      expect(email).toHaveAttribute("href", `mailto:${STORE.email}`);
-      expect(email).toHaveAttribute("title", STORE.email);
-      expect(email).toHaveClass("truncate");
-      expect(screen.getByRole("link", { name: "033 111 222" })).toHaveAttribute("href", "tel:033 111 222");
+      const phone = await screen.findByRole("link", { name: "033 111 222" });
+      expect(phone).toHaveAttribute("href", "tel:033 111 222");
+      expect(phone).toHaveAttribute("title", "033 111 222");
+      expect(phone).toHaveClass("truncate");
+      expect(screen.getByTestId("info-contact")).not.toHaveTextContent(STORE.email);
+      expect(screen.queryByRole("link", { name: STORE.email })).not.toBeInTheDocument();
+    });
+
+    it("confirms adding the store to the favourites with a toast", async () => {
+      apiMock.post.mockResolvedValue({ data: {} });
+      const success = vi.spyOn(toast, "success");
+      renderPage();
+      await userEvent.click(await screen.findByRole("button", { name: t("store.addToFavorites") }));
+      expect(screen.getByRole("button", { name: t("store.inFavorites") })).toHaveAttribute("aria-pressed", "true");
+      await waitFor(() => expect(success).toHaveBeenCalledWith(t("store.favoriteAdded", { store: "Market Centar" })));
     });
 
     it("shows the order pause in the delivery column", async () => {
@@ -134,6 +145,17 @@ describe("StoreDetailsPage", () => {
       expect(within(dairy).getByText("Jogurt")).toBeInTheDocument();
       expect(within(dairy).getByText("Kefir")).toBeInTheDocument();
       expect(screen.getByRole("tab", { name: /Proizvodi/ })).toHaveTextContent("3");
+    });
+
+    it("opens a product only from its name, not from a click elsewhere on the card", async () => {
+      renderPage();
+      await screen.findByText("Hljeb");
+      const card = cardOf("Hljeb");
+      const name = within(card).getByRole("link", { name: "Hljeb" });
+      expect(name).toHaveAttribute("href", "/products/3");
+      expect(name.className).not.toContain("after:inset-0");
+      await userEvent.click(within(card).getByText(/Dostupno/));
+      expect(screen.queryByTestId("location")).not.toBeInTheDocument();
     });
 
     it("makes a row a slider only with more than four products", async () => {
@@ -238,6 +260,19 @@ describe("StoreDetailsPage", () => {
       renderPage();
       await screen.findByText("Hljeb");
       expect(screen.queryByTestId("store-cart-bar")).not.toBeInTheDocument();
+    });
+
+    it("empties the cart after asking, as the cart page does", async () => {
+      cart = makeCart([makeCartLine({ product_id: 3, name: "Hljeb" })]);
+      apiMock.delete.mockResolvedValue({ data: { cart: makeCart([]) } });
+      renderPage();
+      const bar = await screen.findByTestId("store-cart-bar");
+      await userEvent.click(within(bar).getByRole("button", { name: t("cart.emptyCart") }));
+      const dialog = screen.getByRole("dialog", { name: t("cart.emptyConfirm.title") });
+      expect(apiMock.delete).not.toHaveBeenCalled();
+      await userEvent.click(within(dialog).getByRole("button", { name: t("cart.emptyCart") }));
+      expect(apiMock.delete).toHaveBeenCalledWith("/cart");
+      await waitFor(() => expect(screen.queryByTestId("store-cart-bar")).not.toBeInTheDocument());
     });
   });
 

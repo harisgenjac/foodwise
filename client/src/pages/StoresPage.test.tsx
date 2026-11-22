@@ -59,9 +59,10 @@ describe("StoresPage", () => {
     ]);
   });
 
-  it("flips the heart at once and adds the store to the favourites without a toast", async () => {
+  it("flips the heart at once and confirms adding and removing with a toast", async () => {
     let resolve: () => void = () => {};
     apiMock.post.mockImplementation(() => new Promise((done) => (resolve = () => done({ data: {} }))));
+    apiMock.delete.mockResolvedValue({ data: {} });
     const success = vi.spyOn(toast, "success");
     renderPage();
     const card = (await screen.findByText("Prva")).closest("article")!;
@@ -70,8 +71,14 @@ describe("StoresPage", () => {
     expect(within(card).getByRole("button", { name: t("store.removeFromFavorites") })).toHaveAttribute("aria-pressed", "true");
     expect(apiMock.post).toHaveBeenCalledWith("/favorites", { store_id: 1 });
     expect(screen.getByTestId("favorites-count")).toHaveTextContent("1");
-    resolve();
     expect(success).not.toHaveBeenCalled();
+    resolve();
+    await waitFor(() => expect(success).toHaveBeenCalledWith(t("store.favoriteAdded", { store: "Prva" })));
+
+    await userEvent.click(within(card).getByRole("button", { name: t("store.removeFromFavorites") }));
+    expect(apiMock.delete).toHaveBeenCalledWith("/favorites/1");
+    await waitFor(() => expect(success).toHaveBeenCalledWith(t("store.favoriteRemoved", { store: "Prva" })));
+    expect(within(card).getByRole("button", { name: t("store.addToFavorites") })).toHaveAttribute("aria-pressed", "false");
   });
 
   it("puts the heart back and shows the server's reason when it fails", async () => {
@@ -100,7 +107,7 @@ describe("StoresPage", () => {
     expect(screen.queryAllByTestId("active-filter")).toHaveLength(0);
   });
 
-  it("shows the active filters as chips; × removes one and Očisti goes back to the defaults", async () => {
+  it("shows the active filters as chips; × removes one and Očisti removes all, the default 10 km too", async () => {
     renderPage();
     await screen.findByText("Prva");
     expect(screen.getAllByTestId("active-filter").map((chip) => chip.textContent)).toEqual(["Do 10 km"]);
@@ -119,8 +126,23 @@ describe("StoresPage", () => {
 
     await userEvent.click(screen.getByRole("button", { name: t("listFilters.clear") }));
     expect(screen.getByPlaceholderText(t("store.searchPlaceholder"))).toHaveValue("");
-    expect(screen.getAllByTestId("active-filter").map((chip) => chip.textContent)).toEqual(["Do 10 km"]);
-    await waitFor(() => expect(lastParams()).toMatchObject({ business_name: "", city_id: "", radius: "10" }));
+    expect(screen.queryAllByTestId("active-filter")).toHaveLength(0);
+    expect(screen.queryByTestId("filter-count")).not.toBeInTheDocument();
+    await waitFor(() => expect(lastParams()).toMatchObject({ business_name: "", city_id: "", radius: "all" }));
+  });
+
+  it("disables Očisti while no filter is set", async () => {
+    renderPage();
+    await screen.findByText("Prva");
+    const clear = screen.getByRole("button", { name: t("listFilters.clear") });
+    // The default 10 km counts as a filter.
+    expect(clear).toBeEnabled();
+    await userEvent.click(screen.getByRole("button", { name: t("listFilters.remove", { filter: t("radius.label") }) }));
+    expect(clear).toBeDisabled();
+    const drawer = await openFilters();
+    expect(within(drawer).getByRole("button", { name: t("listFilters.clear") })).toBeDisabled();
+    await userEvent.click(within(drawer).getByRole("button", { name: "Do 5 km" }));
+    expect(within(drawer).getByRole("button", { name: t("listFilters.clear") })).toBeEnabled();
   });
 
   it("switches the distance to no limit when another city is chosen, and keeps it for the own city", async () => {

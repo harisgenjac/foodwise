@@ -67,8 +67,8 @@ function StoresPage() {
     fetchFavorites();
   }, []);
 
-  // The heart flips at once; a failure puts it back and says why.
-  const toggleFavorite = async (storeId: number) => {
+  // The heart flips at once and a toast confirms it; a failure puts it back and says why.
+  const toggleFavorite = async (storeId: number, storeName: string) => {
     const wasFavorite = favoriteIds.includes(storeId);
     setFavoriteIds((ids) => (wasFavorite ? ids.filter((id) => id !== storeId) : [...ids, storeId]));
     try {
@@ -77,6 +77,7 @@ function StoresPage() {
       } else {
         await api.post("/favorites", { store_id: storeId });
       }
+      toast.success(t(wasFavorite ? "store.favoriteRemoved" : "store.favoriteAdded", { store: storeName }));
       // A store taken out of the favourites leaves that list.
       if (favoritesView) refetch();
     } catch (err) {
@@ -92,10 +93,11 @@ function StoresPage() {
     if (id && Number(id) !== user?.city_id) setRadius("all");
   };
 
+  // Removes every filter, the default 10 km too (the page starts with it, Očisti takes it away).
   const clearFilters = () => {
     setSearch("");
     setCityId("");
-    setRadius(DEFAULT_RADIUS);
+    setRadius("all");
   };
 
   const radiusLabel = (value: Radius) => (value === "all" ? t("listFilters.noLimit") : t("radius.upTo", { km: value }));
@@ -119,6 +121,8 @@ function StoresPage() {
     });
   }
 
+  const canClear = search.trim() !== "" || activeFilters.length > 0;
+
   if (loading) return <LoadingSpinner />;
 
   const radiusApplies = radius !== "all" && !favoritesView && user?.city_id != null;
@@ -130,19 +134,13 @@ function StoresPage() {
       return <EmptyCard testId="stores-empty" icon={HeartOff} title={t("store.noFavoritesTitle")} text={t("store.noFavoritesSubtitle")} />;
     }
     if (filtered) {
-      // At the default filters "Očisti filtere" would change nothing: widen the radius instead.
-      const changed = search.trim() !== "" || cityId !== "" || radius !== DEFAULT_RADIUS;
       return (
         <EmptyCard
           testId="stores-empty"
           icon={SearchX}
           title={t("store.noResultsTitle")}
           text={radiusApplies && outsideCount > 0 ? t("radius.emptyStores", { radius }) : t("store.noResultsSubtitle")}
-          action={
-            changed
-              ? { label: t("filters.clear"), onClick: clearFilters }
-              : { label: widenLabel(t, radius), onClick: () => setRadius(nextRadius(radius)) }
-          }
+          action={{ label: t("filters.clear"), onClick: clearFilters }}
         />
       );
     }
@@ -191,6 +189,7 @@ function StoresPage() {
         filtersOpen={drawerOpen}
         drawerId={DRAWER_ID}
         onClear={clearFilters}
+        canClear={canClear}
       />
 
       {error && stores.length === 0 ? (
@@ -204,7 +203,7 @@ function StoresPage() {
               key={store.id}
               store={store}
               isFavorite={favoriteIds.includes(store.id)}
-              onToggleFavorite={() => toggleFavorite(store.id)}
+              onToggleFavorite={() => toggleFavorite(store.id, store.business_name ?? "")}
             />
           ))}
         </div>
@@ -232,7 +231,7 @@ function StoresPage() {
       )}
 
       {drawerOpen && (
-        <FilterDrawer id={DRAWER_ID} onClose={() => setDrawerOpen(false)} onClear={clearFilters}>
+        <FilterDrawer id={DRAWER_ID} onClose={() => setDrawerOpen(false)} onClear={clearFilters} canClear={canClear}>
           <FilterField label={t("listFilters.city")} htmlFor="stores-filter-city">
             <span className="relative block">
               <MapPin className="pointer-events-none absolute top-1/2 left-3.5 h-[18px] w-[18px] -translate-y-1/2 text-neutral-500" aria-hidden="true" />

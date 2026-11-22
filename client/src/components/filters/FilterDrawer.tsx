@@ -7,8 +7,9 @@ interface FilterDrawerProps {
   // The panel's id, for the FilterBar button's aria-controls.
   id: string;
   onClose: () => void;
-  // Clears every filter in the panel (the search stays).
+  // Removes every filter (as FilterBar's Očisti); disabled while nothing is set.
   onClear: () => void;
+  canClear: boolean;
   // The filter fields (FilterField, FilterPills).
   children: ReactNode;
 }
@@ -18,7 +19,7 @@ interface FilterDrawerProps {
 // "Filteri", the fields, and "Očisti" / "Zatvori" at the bottom. Filters apply as they change, so
 // "Zatvori" only closes. Focus moves into it and stays inside; Escape, the overlay, the close
 // buttons and Back close it, and focus goes back to the "Filteri" button (useOverlay).
-function FilterDrawer({ id, onClose, onClear, children }: FilterDrawerProps) {
+function FilterDrawer({ id, onClose, onClear, canClear, children }: FilterDrawerProps) {
   const { t } = useTranslation();
   const titleId = useId();
   const panelRef = useRef<HTMLElement>(null);
@@ -68,7 +69,8 @@ function FilterDrawer({ id, onClose, onClear, children }: FilterDrawerProps) {
           <button
             type="button"
             onClick={onClear}
-            className="flex h-12 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white text-[15px] font-bold text-neutral-600 hover:bg-brand-50 focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-brand-300"
+            disabled={!canClear}
+            className="flex h-12 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white text-[15px] font-bold text-neutral-600 hover:bg-brand-50 focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-brand-300 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white"
           >
             <Trash2 className="h-[18px] w-[18px]" aria-hidden="true" />
             {t("listFilters.clear")}

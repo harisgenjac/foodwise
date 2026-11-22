@@ -87,7 +87,15 @@ test("a restaurant filters the stores, opens one, adds a product with + and the 
     await expect(page.getByTestId("cart-line").filter({ hasText: soonName })).toBeVisible();
   });
 
-  await emptyCart(page);
+  await test.step("Traka korpe prazni korpu nakon potvrde", async () => {
+    await page.goBack();
+    const bar = page.getByTestId("store-cart-bar");
+    await bar.getByRole("button", { name: "Isprazni korpu" }).click();
+    const dialog = page.getByRole("dialog", { name: "Isprazniti korpu?" });
+    await dialog.getByRole("button", { name: "Isprazni korpu" }).click();
+    await expect(bar).toBeHidden();
+    await expect(page.getByTestId("store-product-card").filter({ hasText: soonName }).getByRole("button", { name: `Dodaj u korpu: ${soonName}` }).first()).toBeVisible();
+  });
 });
 
 test("the My orders tab lists the restaurant's orders at the store with their statuses", async ({ page }) => {

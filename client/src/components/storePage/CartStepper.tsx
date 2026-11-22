@@ -65,12 +65,15 @@ function CartStepper({ name, unit, value, max, busy = false, onChange }: CartSte
       >
         {removes ? <Trash2 className="h-4 w-4" aria-hidden="true" /> : <Minus className="h-4 w-4" aria-hidden="true" />}
       </button>
-      <span className="flex min-w-0 items-center gap-1">
+      {/* The amount and the unit as one centred group: the field is as wide as its text. */}
+      <span className="flex min-w-0 flex-1 items-center justify-center gap-1">
         <input
           type="text"
           inputMode="decimal"
           value={draft ?? shown}
-          disabled={busy}
+          // Read-only while saving (not disabled), so the number keeps its colour.
+          readOnly={busy}
+          style={{ width: `${Math.max((draft ?? shown).length, 1) + 1}ch` }}
           onChange={(event) => setDraft(event.target.value)}
           onFocus={(event) => event.target.select()}
           onBlur={commit}
@@ -79,7 +82,8 @@ function CartStepper({ name, unit, value, max, busy = false, onChange }: CartSte
             if (event.key === "Escape") setDraft(null);
           }}
           aria-label={t("storePage.quantityField", { name, unit })}
-          className="w-12 min-w-0 rounded-md bg-transparent text-right text-base font-bold text-neutral-900 tabular-nums outline-none focus:bg-white focus:ring-2 focus:ring-brand-300"
+          // The design's quantity: the card's font, extrabold dark green, centred (16 px on phones, so iOS does not zoom).
+          className="h-9 min-w-[3ch] rounded-lg bg-transparent p-0 text-center font-[inherit] text-base font-extrabold sm:text-[15px] text-brand-900 outline-none focus:bg-white focus:ring-2 focus:ring-brand-300"
         />
         <span className="text-sm font-semibold text-brand-800">{unit}</span>
       </span>

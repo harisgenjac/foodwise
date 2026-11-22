@@ -133,6 +133,7 @@ function StoreProductsTab({ products, total, loading, fetching, onLoadMore, cart
         testId="store-product-card"
         selected={inCart > 0}
         fromStore
+        stretchedLink={false}
         action={
           inCart > 0 ? undefined : (
             <button

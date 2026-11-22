@@ -60,7 +60,7 @@ function StoreDetailsPage() {
     fetchFavorites();
   }, [id, storeId]);
 
-  // The pill flips at once; a failure puts it back and says why.
+  // The pill flips at once and a toast confirms it; a failure puts it back and says why.
   const toggleFavorite = async () => {
     const wasFavorite = isFavorite;
     setIsFavorite(!wasFavorite);
@@ -70,6 +70,7 @@ function StoreDetailsPage() {
       } else {
         await api.post("/favorites", { store_id: storeId });
       }
+      toast.success(t(wasFavorite ? "store.favoriteRemoved" : "store.favoriteAdded", { store: store?.business_name ?? "" }));
     } catch (err) {
       console.error(err);
       setIsFavorite(wasFavorite);

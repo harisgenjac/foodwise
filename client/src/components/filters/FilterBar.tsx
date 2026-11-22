@@ -20,8 +20,9 @@ interface FilterBarProps {
   onOpenFilters: () => void;
   filtersOpen: boolean;
   drawerId: string;
-  // Sets the search and every filter back to the page's defaults.
+  // Removes the search and every filter; disabled while nothing is set.
   onClear: () => void;
+  canClear: boolean;
 }
 
 // The app-wide list filter (design/stores/stores-list.html): a white card with the search field,
@@ -37,6 +38,7 @@ function FilterBar({
   filtersOpen,
   drawerId,
   onClear,
+  canClear,
 }: FilterBarProps) {
   const { t } = useTranslation();
 
@@ -78,7 +80,8 @@ function FilterBar({
           <button
             type="button"
             onClick={onClear}
-            className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-5 text-sm font-bold text-neutral-600 hover:bg-brand-50 focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-brand-300"
+            disabled={!canClear}
+            className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border border-neutral-200 bg-white px-5 text-sm font-bold text-neutral-600 hover:bg-brand-50 focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-brand-300 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white"
           >
             <Trash2 className="h-[18px] w-[18px]" aria-hidden="true" />
             {t("listFilters.clear")}

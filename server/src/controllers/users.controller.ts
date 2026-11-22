@@ -390,12 +390,12 @@ export const getStoreDetails = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Store not found." });
     }
 
-    // The header card: the contact email, the order settings (delivery, preparation time, the
-    // pause now) and the distance from the restaurant ($2), as on the store list.
+    // The header card: the order settings (delivery, preparation time, the pause now) and the
+    // distance from the restaurant ($2), as on the store list. No email: the phone is the contact.
     const result = await pool.query(
       `SELECT users.id, users.business_name, users.city_id, cities.name AS city, users.address,
        ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
-       users.opening_schedule, users.pickup_schedule, users.phone, users.email,
+       users.opening_schedule, users.pickup_schedule, users.phone,
        ${companyName("users")} AS company_name, ${orderSettingsColumns("users")},
        ROUND((${businessDistance("me", "users")})::numeric, 1)::float AS distance_km
        FROM users

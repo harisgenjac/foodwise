@@ -385,7 +385,9 @@
     "viewLabel": "Prikaz prodavnica",
     "allStores": "Sve prodavnice",
     "favoritesTab": "Omiljene",
-    "searchPlaceholder": "Pretraga po nazivu prodavnice"
+    "searchPlaceholder": "Pretraga po nazivu prodavnice",
+    "favoriteAdded": "Prodavnica {{store}} je dodana u omiljene.",
+    "favoriteRemoved": "Prodavnica {{store}} je uklonjena iz omiljenih."
   },
   "categories": {
     "Meat": "Meso",
