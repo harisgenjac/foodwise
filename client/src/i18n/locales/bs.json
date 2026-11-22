@@ -434,24 +434,17 @@
     "tooltipLogoText": "Kvadratna slika, minimalno 200x200px. JPEG, PNG ili WEBP, do 5MB.",
     "saveImage": "Sačuvaj sliku",
     "email": "Email",
-    "storeRole": "Prodavnica",
-    "restaurantRole": "Restoran",
     "firstName": "Ime",
     "lastName": "Prezime",
     "businessName": "Naziv biznisa",
-    "city": "Grad",
     "phone": "Telefon",
     "address": "Adresa",
     "workingHours": "Radno vrijeme",
     "pickupHours": "Vrijeme preuzimanja",
-    "description": "Opis",
     "saveButton": "Sačuvaj",
     "changeLogo": "Promijeni sliku",
     "cancel": "Odustani",
     "personalSection": "Lični podaci",
-    "businessSection": "Podaci o biznisu",
-    "hoursSection": "Radno vrijeme i preuzimanje",
-    "aboutSection": "O nama",
     "adminRole": "Administrator",
     "requiredHint": "Polja označena sa * su obavezna.",
     "passwordSection": "Promjena lozinke",
@@ -475,8 +468,7 @@
     "companyRole": "Centrala",
     "managedByCompany": "Mijenja centrala",
     "usesCompanyLogo": "Prikazuje se logo firme dok ne postavite svoj.",
-    "companyDescriptionHint": "Ako ostavite prazno, prikazuje se opis firme.",
-    "removeLogo": "Ukloni logo"
+    "companyDescriptionHint": "Ako ostavite prazno, prikazuje se opis firme."
   },
   "dashboard": {
     "appTitle": "Dobrodošli na platformu Još vrijedi",
@@ -1484,7 +1476,6 @@
     },
     "profile": {
       "title": "Pretplata i krediti",
-      "subtitle": "Plan, stanje kredita i vaši zahtjevi. Plaćanje je za sada van aplikacije, a administrator odobrava zahtjeve.",
       "viewCredits": "Pregled kredita",
       "currentPlan": "Trenutni plan",
       "noPlan": "Bez pretplate",
@@ -1493,26 +1484,13 @@
       "balanceValue": "{{available}} od {{total}} kredita",
       "autoRenew": "Automatsko obnavljanje",
       "autoRenewTooltip": "Dva dana prije početka novog mjeseca automatski šaljemo zahtjev za novu pretplatu administratoru, da je može odobriti na vrijeme. Možete ga isključiti bilo kada.",
-      "autoRenewOn": "Automatsko obnavljanje je uključeno.",
-      "autoRenewOff": "Automatsko obnavljanje je isključeno.",
-      "autoRenewOnRenewalSent": "Automatsko obnavljanje je uključeno. Zahtjev za obnovu za {{month}} je poslan.",
       "nextMonth": "{{month}}: plan {{plan}} je odobren.",
-      "pendingRequest": "Na čekanju: {{what}} za {{month}}",
       "withdraw": "Povuci",
-      "withdrawn": "Zahtjev je povučen.",
       "choosePlan": "Odaberite plan za {{month}}",
-      "changePlan": "Plan za {{month}} (promjena važi od sljedećeg mjeseca)",
       "creditsPerMonth": "kredita mjesečno",
       "price": "{{price}} KM",
-      "choose": "Odaberi",
       "planPending": "Vaš zahtjev za pretplatu čeka odobrenje.",
       "planDecided": "Plan za sljedeći mjesec je već odobren.",
-      "renewsOn": "Plan {{plan}} se automatski obnavlja {{date}}.",
-      "endsOn": "Pretplata ističe {{date}}.",
-      "changePlanNext": "Promijeni plan od sljedećeg mjeseca",
-      "choosePlanNext": "Izaberi plan za sljedeći mjesec",
-      "topupTitle": "Dodatni krediti",
-      "topupSubtitle": "Dodaju se ovom mjesecu i ističu s njim.",
       "topupNeedsSubscription": "Dodatne kredite možete kupiti kada imate aktivnu pretplatu za ovaj mjesec.",
       "topupPending": "Vaš zahtjev za dodatne kredite čeka odobrenje.",
       "topupSent": "Zahtjev za dodatne kredite je poslan.",
@@ -1526,10 +1504,6 @@
       "creditsCount_one": "{{count}} kredit",
       "creditsCount_few": "{{count}} kredita",
       "creditsCount_other": "{{count}} kredita",
-      "paidByCompany": "Paket plaća {{company}}",
-      "companyManagesPlan": "Paket za vašu poslovnicu bira i plaća {{company}}. Ako vam zatreba više kredita ovaj mjesec, zatražite ih od centrale ispod.",
-      "pendingAtCompany": "{{what}} za {{month}} čeka odobrenje centrale.",
-      "pendingAtAdmin": "{{what}} za {{month}} čeka odobrenje administratora.",
       "topupTitleCompany": "Zatraži dodatne kredite od centrale",
       "topupSubtitleCompany": "Ako potrošite kredite prije kraja mjeseca, {{company}} može odobriti dodatne.",
       "topupNeedsCompanyPlan": "{{company}} još nije izabrala paket za ovaj mjesec, pa dodatni krediti još nisu mogući.",
@@ -2180,15 +2154,6 @@
       "sun": "Ned"
     }
   },
-  "cover": {
-    "alt": "Naslovna slika prodavnice",
-    "add": "Dodaj naslovnu sliku",
-    "change": "Promijeni naslovnu sliku",
-    "upload": "Postavi naslovnu sliku",
-    "remove": "Ukloni naslovnu sliku",
-    "saved": "Naslovna slika je postavljena.",
-    "hint": "Naslovna slika se prikazuje na vrhu vaše stranice prodavnice (JPG, PNG ili WEBP, najviše 5 MB)."
-  },
   "location": {
     "title": "Lokacija na mapi",
     "description": "Tačna lokacija vašeg objekta, potrebna za dostavu.",
@@ -2221,7 +2186,6 @@
   },
   "orderSettings": {
     "title": "Narudžbe i dostava",
-    "description": "Kako vaša prodavnica prima narudžbe. Promjene se čuvaju odmah.",
     "delivery": "Nudim dostavu",
     "deliveryOnHint": "Restorani mogu birati dostavu ili preuzimanje (kad dostava bude dostupna).",
     "deliveryOffHint": "Restorani mogu samo preuzeti narudžbu u prodavnici.",
@@ -2230,16 +2194,12 @@
     "minutes_one": "{{count}} minuta",
     "minutes_few": "{{count}} minute",
     "minutes_other": "{{count}} minuta",
-    "adminPaused": "Primanje narudžbi pauzirano",
-    "error": "Postavke nisu sačuvane. Pokušajte ponovo."
+    "adminPaused": "Primanje narudžbi pauzirano"
   },
   "orderPause": {
-    "receivingTitle": "Primate narudžbe",
     "receivingText": "Restorani vam mogu slati narudžbe.",
-    "pausedTitle": "Primanje narudžbi je pauzirano",
     "pausedText": "Restorani vide vašu ponudu, ali ne mogu slati narudžbe {{until}}.",
     "pause": "Pauziraj narudžbe",
-    "resume": "Nastavi primati narudžbe",
     "modalTitle": "Pauzirati narudžbe?",
     "modalText": "Vaši proizvodi ostaju vidljivi, ali restorani ne mogu slati nove narudžbe dok traje pauza. Narudžbe koje već čekaju ostaju.",
     "howLong": "Koliko dugo?",
@@ -2438,6 +2398,110 @@
       "changed": "Cijena promijenjena",
       "saved": "Cijena je promijenjena.",
       "saveError": "Cijena nije spremljena. Pokušajte ponovo."
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "Moj profil",
+      "restaurantSubtitle": "podaci, lokacija, radno vrijeme i lozinka",
+      "storeSubtitle": "podaci, lokacija, radno vrijeme, narudžbe, krediti i lozinka",
+      "back": "Nazad",
+      "save": "Sačuvaj izmjene",
+      "branchChip": "Poslovnica · {{company}}"
+    },
+    "sections": {
+      "basic": {
+        "title": "Osnovne informacije",
+        "restaurantDescription": "Logo, lični i poslovni podaci, opis restorana i email obavijesti",
+        "storeDescription": "Logo, lični i poslovni podaci, opis i email obavijesti"
+      },
+      "location": {
+        "title": "Lokacija",
+        "description": "Tačna lokacija vašeg objekta, potrebna za dostavu"
+      },
+      "hours": {
+        "title": "Radno vrijeme",
+        "description": "Kada ste otvoreni i možete preuzeti narudžbe",
+        "storeTitle": "Radno vrijeme i preuzimanje",
+        "storeDescription": "Kada ste otvoreni i kada restorani mogu preuzeti narudžbe"
+      },
+      "orders": {
+        "title": "Narudžbe i dostava",
+        "description": "Kako vaša prodavnica prima narudžbe"
+      },
+      "credits": {
+        "title": "Pretplata i krediti",
+        "description": "Plan, stanje kredita, dodatni krediti i vaši zahtjevi",
+        "branchDescription": "Stanje kredita i dodatni krediti od centrale"
+      },
+      "password": {
+        "title": "Promjena lozinke",
+        "description": "Nova lozinka mora imati najmanje 8 znakova"
+      }
+    },
+    "basic": {
+      "logoAlt": "Logo",
+      "changeLogo": "Promijeni logo",
+      "logoChosen": "Novi logo se sprema kad sačuvate izmjene.",
+      "about": "O nama",
+      "emailNotifications": "Email obavijesti",
+      "emailNotificationsInfo": "Koji emailovi stižu",
+      "emailTipRestaurant": "Kad je uključeno, stiže vam email za svaku obavijest iz aplikacije: kad prodavnica prihvati, djelimično prihvati ili odbije vašu narudžbu, o dostavi i propuštenom preuzimanju, te obavještenja platforme. Sistemske poruke (npr. nova lozinka) stižu uvijek.",
+      "emailTipStore": "Kad je uključeno, stiže vam email za svaku obavijest iz aplikacije: nove i otkazane narudžbe, dostava, proizvodi kojima ističe rok, krediti i pretplata, te obavještenja platforme. Sistemske poruke (npr. nova lozinka) stižu uvijek."
+    },
+    "location": {
+      "hint": "Kliknite na mapu na mjesto ulaza u vaš objekat ili povucite pin.",
+      "noAddress": "Adresa nije unesena",
+      "changeTitle": "Promijeniti lokaciju?",
+      "changeText": "Pin će se pomjeriti na novo mjesto. Lokacija se sprema kad sačuvate izmjene.",
+      "changeConfirm": "Promijeni lokaciju",
+      "removeTitle": "Ukloniti lokaciju?",
+      "removeText": "Bez lokacije dostava nije moguća.",
+      "removeConfirm": "Ukloni lokaciju"
+    },
+    "hours": {
+      "daysAndHours": "Dani i sati",
+      "opening": "Radno vrijeme",
+      "pickup": "Vrijeme preuzimanja",
+      "closed": "Zatvoreno"
+    },
+    "orders": {
+      "receiving": "Primanje narudžbi",
+      "active": "Aktivno",
+      "pausedChip": "Pauzirano {{until}}",
+      "resume": "Nastavi primanje"
+    },
+    "credits": {
+      "paymentNote": "Plaćanje je za sada van aplikacije, a administrator odobrava zahtjeve.",
+      "companyManages": "Pretplatu i kredite vodi centrala ({{company}}).",
+      "ofTotal": "od {{total}} kredita",
+      "usage": "Iskorišteni krediti ovog mjeseca",
+      "changePlan": "Promijeni plan",
+      "changePlanInfo": "Od kada važi novi plan",
+      "changePlanTip": "Novi plan važi od sljedećeg mjeseca",
+      "extra": "Dodatni krediti",
+      "extraText": "Dodaju se ovom mjesecu i ističu s njim.",
+      "chosenPlan": "Odabrano: {{plan}} za {{month}}. Zahtjev se šalje kad sačuvate izmjene.",
+      "chosenTopup_one": "Odabrano: +{{count}} kredit. Zahtjev se šalje kad sačuvate izmjene.",
+      "chosenTopup_few": "Odabrano: +{{count}} kredita. Zahtjev se šalje kad sačuvate izmjene.",
+      "chosenTopup_other": "Odabrano: +{{count}} kredita. Zahtjev se šalje kad sačuvate izmjene.",
+      "chosenTopupCompany_one": "Odabrano: +{{count}} kredit od centrale ({{company}}). Zahtjev se šalje kad sačuvate izmjene.",
+      "chosenTopupCompany_few": "Odabrano: +{{count}} kredita od centrale ({{company}}). Zahtjev se šalje kad sačuvate izmjene.",
+      "chosenTopupCompany_other": "Odabrano: +{{count}} kredita od centrale ({{company}}). Zahtjev se šalje kad sačuvate izmjene.",
+      "cancelChoice": "Poništi",
+      "withdraw": "Povuci zahtjev",
+      "keepRequest": "Ne povlači",
+      "willWithdraw": "Povlači se pri spremanju"
+    },
+    "password": {
+      "show": "Prikaži lozinku: {{field}}",
+      "hide": "Sakrij lozinku: {{field}}",
+      "leaveEmpty": "Ostavite prazno ako ne mijenjate lozinku.",
+      "tooShort": "Nova lozinka mora imati najmanje 8 znakova."
+    },
+    "save": {
+      "saved": "Izmjene su sačuvane.",
+      "error": "Izmjene nisu sačuvane. Pokušajte ponovo."
     }
   }
 }

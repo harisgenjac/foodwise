@@ -358,8 +358,6 @@
   "Only JPEG, PNG and WEBP images are allowed.": "Dozvoljene su samo JPEG, PNG i WEBP slike.",
   "Opening hours are not valid.": "Radno vrijeme nije ispravno.",
   "Pickup hours are not valid.": "Vrijeme preuzimanja nije ispravno.",
-  "Cover image removed.": "Naslovna slika je uklonjena.",
-  "An error occurred while removing the cover image.": "Došlo je do greške prilikom uklanjanja naslovne slike.",
   "Location is not valid.": "Lokacija nije ispravna.",
   "The location on the map is too far from the chosen city.": "Lokacija na mapi je predaleko od odabranog grada.",
   "Order settings saved.": "Postavke narudžbi su sačuvane.",

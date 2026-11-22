@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { API_URL, storageState, uniqueName } from "../support/accounts.js";
 import { apiAs, createProduct, myId } from "../support/api.js";
-import { emptyCart, open, reload, toast } from "../support/ui.js";
+import { emptyCart, open, openProfileSection, reload, saveProfile, toast } from "../support/ui.js";
 
 // A store's order settings: it pauses new orders on My profile, a restaurant sees the pause on
 // the store page and cannot send its cart, and the store resumes there; the
@@ -33,14 +33,20 @@ test("a store pauses orders and a restaurant cannot send them meanwhile", async 
 
   await test.step("Prodavnica pauzira narudžbe na Mom profilu", async () => {
     await open(page, "/my-profile");
+    await openProfileSection(page, /Narudžbe i dostava/);
     const pause = page.getByTestId("order-pause");
-    await expect(pause.getByText("Primate narudžbe")).toBeVisible();
+    await expect(pause.getByText("Aktivno")).toBeVisible();
     await pause.getByRole("button", { name: "Pauziraj narudžbe" }).click();
     const dialog = page.getByRole("dialog", { name: "Pauzirati narudžbe?" });
     await dialog.getByText("Dok je ne isključim").click();
     await dialog.getByRole("button", { name: "Pauziraj", exact: true }).click();
-    await expect(toast(page, "Primanje narudžbi je pauzirano.")).toBeVisible();
-    await expect(pause.getByText("Primanje narudžbi je pauzirano")).toBeVisible();
+    // Only chosen so far: the page shows it, the save applies it.
+    await expect(pause.getByText(/^Pauzirano/)).toBeVisible();
+    await expect(pause.getByRole("button", { name: "Nastavi primanje" })).toBeVisible();
+    await saveProfile(page);
+    await reload(page);
+    await openProfileSection(page, /Narudžbe i dostava/);
+    await expect(page.getByTestId("order-pause").getByText(/^Pauzirano/)).toBeVisible();
   });
 
   await test.step("Restoran vidi pauzu i ne može poslati korpu", async () => {
@@ -53,15 +59,15 @@ test("a store pauses orders and a restaurant cannot send them meanwhile", async 
 
   await test.step("Prodavnica nastavlja i mijenja vrijeme pripreme", async () => {
     await open(page, "/my-profile");
+    await openProfileSection(page, /Narudžbe i dostava/);
     const pause = page.getByTestId("order-pause");
-    await pause.getByRole("button", { name: "Nastavi primati narudžbe" }).click();
-    await expect(toast(page, "Primanje narudžbi je ponovo uključeno.")).toBeVisible();
-    await expect(pause.getByText("Primate narudžbe")).toBeVisible();
-
-    await page.getByLabel(/Vrijeme pripreme/).selectOption("45");
-    await expect(toast(page, "Postavke narudžbi su sačuvane.")).toBeVisible();
+    await pause.getByRole("button", { name: "Nastavi primanje" }).click();
+    await expect(pause.getByText("Aktivno")).toBeVisible();
+    await page.getByLabel("Vrijeme pripreme").selectOption("45");
+    await saveProfile(page);
     await reload(page);
-    await expect(page.getByLabel(/Vrijeme pripreme/)).toHaveValue("45");
+    await openProfileSection(page, /Narudžbe i dostava/);
+    await expect(page.getByLabel("Vrijeme pripreme")).toHaveValue("45");
   });
 
   await test.step("Restoran opet može poslati narudžbu", async () => {

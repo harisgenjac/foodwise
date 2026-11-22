@@ -4,7 +4,6 @@ import { CreditsProvider } from "../../context/CreditsContext.js";
 import CreditBanner from "./CreditBanner.js";
 import CreditHint from "./CreditHint.js";
 import InsufficientCreditsNotice from "./InsufficientCreditsNotice.js";
-import SubscriptionSection from "./SubscriptionSection.js";
 import { apiMock, makeCreditSummary, makeUser, renderWithProviders, t } from "../../test/utils.js";
 import type { CreditRequest, CreditSummary } from "../../types/index.js";
 
@@ -49,58 +48,6 @@ const renderBranch = (ui: React.ReactElement, credits: CreditSummary, requests: 
       "/credits/requests": { requests, total: requests.length },
     },
   });
-
-describe("a branch's subscription section", () => {
-  it("shows the plan paid by the company, without plan choice or auto-renew", async () => {
-    renderBranch(<SubscriptionSection />, branchSummary());
-    expect(await screen.findByText(t("credits.profile.paidByCompany", { company: COMPANY }))).toBeInTheDocument();
-    expect(screen.getByText(t("credits.profile.companyManagesPlan", { company: COMPANY }))).toBeInTheDocument();
-    expect(screen.getByText("Standard")).toBeInTheDocument();
-    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: t("credits.profile.choose") })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: t("credits.profile.choosePlanNext") })).not.toBeInTheDocument();
-  });
-
-  it("asks the headquarters for extra credits", async () => {
-    apiMock.post.mockResolvedValue({ data: {} });
-    renderBranch(<SubscriptionSection />, branchSummary());
-    expect(await screen.findByRole("heading", { name: t("credits.profile.topupTitleCompany") })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: t("credits.profile.requestTopupFromCompany") }));
-    await userEvent.click(await screen.findByRole("button", { name: /\+20/ }));
-
-    const dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveTextContent(t("credits.topupModal.paymentByCompany", { company: COMPANY }));
-    await userEvent.click(within(dialog).getByRole("button", { name: t("credits.modal.submit") }));
-    expect(apiMock.post).toHaveBeenCalledWith("/credits/requests", { request_type: "TOPUP", topup_package_id: 4 });
-  });
-
-  it("shows a request waiting for the headquarters, which the branch can withdraw", async () => {
-    apiMock.delete.mockResolvedValue({ data: {} });
-    renderBranch(<SubscriptionSection />, branchSummary({ pendingRequests: [TOPUP] }));
-    expect(
-      await screen.findByText(t("credits.profile.topupPendingAtCompany", { company: COMPANY })),
-    ).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: t("credits.profile.withdraw") }));
-    expect(apiMock.delete).toHaveBeenCalledWith("/credits/requests/9");
-  });
-
-  it("cannot withdraw what the headquarters sent to the admin", async () => {
-    renderBranch(
-      <SubscriptionSection />,
-      branchSummary({ pendingRequests: [{ ...TOPUP, status: "PENDING", source: "COMPANY", requested_by: 2 }] }),
-    );
-    expect(await screen.findByText(t("credits.profile.topupPending"))).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: t("credits.profile.withdraw") })).not.toBeInTheDocument();
-  });
-
-  it("shows the headquarters' note on a rejected request", async () => {
-    renderBranch(<SubscriptionSection />, branchSummary(), [
-      { ...TOPUP, status: "COMPANY_REJECTED", company_note: "Ne ovaj mjesec." },
-    ]);
-    expect(await screen.findByText(t("credits.profile.companyNote", { note: "Ne ovaj mjesec." }))).toBeInTheDocument();
-    expect(screen.getByText(t("credits.requestStatuses.COMPANY_REJECTED"))).toBeInTheDocument();
-  });
-});
 
 describe("a branch's banners and hints", () => {
   it("says the company has not chosen a plan, with nothing to buy", async () => {

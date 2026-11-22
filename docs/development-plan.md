@@ -9,7 +9,7 @@ Finished work, described in `product.md`:
 - **Mobile layout, step 1** (Nov 4–5, 2026): a drawer and a bottom bar, 44 px targets, phone-friendly forms, dialogs and banners, tables as cards, filters behind a button. The open findings are under Mobile layout below.
 - **Email notifications, foundation** (Nov 5–6, 2026): a queue with retries, Mailpit for local testing, an email for every notification type, one switch on My profile, forgot password and invitation emails, Resend built in but not configured.
 - **Orders and cart, delivery phase 1** (Nov 6–15, 2026): orders from one store with a short code, a server cart, per-item decisions with reasons and partial fulfilment, "Sold in shop", restaurants without credits, a pending-order limit, and the reservation era removed.
-- **Order and store UI** (Nov 15–16, 2026): product images, order images, the store page with weekly hours and a cover, and Search.
+- **Order and store UI** (Nov 15–16, 2026): product images, order images, the store page with weekly hours and a cover (the cover was dropped again with the profile redesign, Nov 2026), and Search.
 - **Delivery with a mock provider, phase 2** (Nov 16–18, 2026): pins on a map, store order settings and the pause, delivery in the cart, accepting with a ready time, the provider contract (`server/src/delivery/openapi.yaml`), webhooks and the InDelivery status, failure before and after the pickup, live updates (SSE; the missed-event gap on a fresh page load was fixed Nov 18), automatic rejection, the packing list and the e2e delivery flow.
 - **Cleanup before the next phase** (Nov 18, 2026): the free-text hour columns dropped, unused code, files and i18n keys removed, a targeted code cleanup, one TypeScript baseline migration instead of 54, `npm run db:reset`, the new seeds (`seed`, `seed:demo`) with account helpers shared with the e2e seed, and these four docs.
 
@@ -195,6 +195,11 @@ The "Become a sponsor" page becomes real: campaigns with a goal and a progress b
 - [ ] Do public kitchens need something humanitarian organizations do not (e.g. standing donations), or is an organization type enough?
 - [ ] Can an organization also buy food from the marketplace, or only claim donations?
 - [ ] Which email service to use (price, free plan limit, domain)? Resend was chosen (Nov 5, 2026); its plan limit and the domain are still open.
+
+## My profile follow-ups
+
+- [ ] Warn before leaving a restaurant's or store's My profile with unsaved changes (the page already knows when its draft differs from what is saved: `hasChanges` in `components/businessProfile/draft.ts`).
+- [ ] The same redesign for a company headquarters' and an admin's My profile (they keep the old page for now).
 
 ## Ideas backlog (not scheduled)
 

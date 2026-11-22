@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { ACCOUNTS, storageState, uniqueName } from "../support/accounts.js";
 import { apiAs, createProduct, orderCode, sendOrder } from "../support/api.js";
 import { MAILPIT_URL, countEmails, waitForEmail } from "../support/mailpit.js";
-import { open, reload, toast } from "../support/ui.js";
+import { open, reload, saveProfile, toast } from "../support/ui.js";
 
 // The store switches its email notifications off on My profile: a new order sends it no
 // email. Switched on again, the next one does. Uses brezaStore (only nearby-offers.spec.ts reads its
@@ -22,7 +22,7 @@ test.afterEach(async () => {
   await api.dispose();
 });
 
-const emailSwitch = (page: Page) => page.getByRole("switch", { name: "Obavijesti emailom" });
+const emailSwitch = (page: Page) => page.getByRole("switch", { name: "Email obavijesti" });
 
 // A product of the store, ordered by the restaurant through the API.
 const orderNew = async (prefix: string) => {
@@ -43,7 +43,7 @@ test("a store with email notifications off gets no email, and gets one again onc
     await open(page, "/my-profile");
     await expect(emailSwitch(page)).toHaveAttribute("aria-checked", "true");
     await emailSwitch(page).click();
-    await expect(toast(page, "Email obavijesti su isključene.")).toBeVisible();
+    await saveProfile(page);
     await expect(emailSwitch(page)).toHaveAttribute("aria-checked", "false");
     // Saved: still off after a reload.
     await reload(page);
@@ -54,7 +54,7 @@ test("a store with email notifications off gets no email, and gets one again onc
 
   await test.step("Prodavnica ponovo uključuje email obavijesti", async () => {
     await emailSwitch(page).click();
-    await expect(toast(page, "Email obavijesti su uključene.")).toBeVisible();
+    await saveProfile(page);
     await expect(emailSwitch(page)).toHaveAttribute("aria-checked", "true");
   });
 

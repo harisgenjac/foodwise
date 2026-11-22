@@ -420,24 +420,17 @@
     "tooltipLogoText": "Square image, minimum 200x200px. JPEG, PNG or WEBP, up to 5MB.",
     "saveImage": "Save Image",
     "email": "Email",
-    "storeRole": "Store",
-    "restaurantRole": "Restaurant",
     "firstName": "First Name",
     "lastName": "Last Name",
     "businessName": "Business Name",
-    "city": "City",
     "phone": "Phone",
     "address": "Address",
     "workingHours": "Working Hours",
     "pickupHours": "Pickup Hours",
-    "description": "Description",
     "saveButton": "Save",
     "changeLogo": "Change image",
     "cancel": "Cancel",
     "personalSection": "Personal details",
-    "businessSection": "Business details",
-    "hoursSection": "Opening and pickup hours",
-    "aboutSection": "About",
     "adminRole": "Administrator",
     "requiredHint": "Fields marked with * are required.",
     "passwordSection": "Change password",
@@ -461,8 +454,7 @@
     "companyRole": "Company HQ",
     "managedByCompany": "Managed by your company",
     "usesCompanyLogo": "Your company's logo is shown until you set your own.",
-    "companyDescriptionHint": "Left empty, your company's description is shown.",
-    "removeLogo": "Remove logo"
+    "companyDescriptionHint": "Left empty, your company's description is shown."
   },
   "dashboard": {
     "appTitle": "Welcome to Još vrijedi",
@@ -1445,7 +1437,6 @@
     },
     "profile": {
       "title": "Subscription and credits",
-      "subtitle": "Your plan, credit balance and requests. Payment happens outside the app for now, and an administrator approves requests.",
       "viewCredits": "View credits",
       "currentPlan": "Current plan",
       "noPlan": "No subscription",
@@ -1454,26 +1445,13 @@
       "balanceValue": "{{available}} of {{total}} credits",
       "autoRenew": "Auto-renew",
       "autoRenewTooltip": "Two days before a new month starts we automatically send the administrator a request for your next subscription, so it can be approved in time. You can turn it off at any time.",
-      "autoRenewOn": "Auto-renew is on.",
-      "autoRenewOff": "Auto-renew is off.",
-      "autoRenewOnRenewalSent": "Auto-renew is on. The renewal request for {{month}} was sent.",
       "nextMonth": "{{month}}: the {{plan}} plan is approved.",
-      "pendingRequest": "Pending: {{what}} for {{month}}",
       "withdraw": "Withdraw",
-      "withdrawn": "Request withdrawn.",
       "choosePlan": "Choose a plan for {{month}}",
-      "changePlan": "Plan for {{month}} (a change applies from next month)",
       "creditsPerMonth": "credits per month",
       "price": "{{price}} KM",
-      "choose": "Choose",
       "planPending": "Your subscription request is waiting for approval.",
       "planDecided": "Next month's plan is already approved.",
-      "renewsOn": "Your {{plan}} plan renews automatically on {{date}}.",
-      "endsOn": "Your subscription ends on {{date}}.",
-      "changePlanNext": "Change plan from next month",
-      "choosePlanNext": "Choose a plan for next month",
-      "topupTitle": "Extra credits",
-      "topupSubtitle": "Added to this month and expire with it.",
       "topupNeedsSubscription": "You can buy extra credits once you have an active subscription for this month.",
       "topupPending": "Your request for extra credits is waiting for approval.",
       "topupSent": "Request for extra credits sent.",
@@ -1485,10 +1463,6 @@
       "planCredits_other": "{{count}} credits per month",
       "creditsCount_one": "{{count}} credit",
       "creditsCount_other": "{{count}} credits",
-      "paidByCompany": "Your plan is paid by {{company}}",
-      "companyManagesPlan": "{{company}} chooses and pays your branch's plan. If you need more credits this month, ask your headquarters below.",
-      "pendingAtCompany": "{{what}} for {{month}} is waiting for your headquarters.",
-      "pendingAtAdmin": "{{what}} for {{month}} is waiting for an administrator.",
       "topupTitleCompany": "Request extra credits from headquarters",
       "topupSubtitleCompany": "If you run out of credits before the month ends, {{company}} can approve extra ones.",
       "topupNeedsCompanyPlan": "{{company}} has not chosen a plan for this month yet, so extra credits are not possible yet.",
@@ -2131,15 +2105,6 @@
       "sun": "Sun"
     }
   },
-  "cover": {
-    "alt": "Store cover image",
-    "add": "Add a cover image",
-    "change": "Change the cover image",
-    "upload": "Upload a cover image",
-    "remove": "Remove the cover image",
-    "saved": "The cover image was uploaded.",
-    "hint": "The cover image is shown at the top of your store page (JPG, PNG or WEBP, at most 5 MB)."
-  },
   "location": {
     "title": "Location on the map",
     "description": "The exact location of your business, needed for delivery.",
@@ -2171,7 +2136,6 @@
   },
   "orderSettings": {
     "title": "Orders and delivery",
-    "description": "How your store receives orders. Changes are saved at once.",
     "delivery": "I offer delivery",
     "deliveryOnHint": "Restaurants can choose delivery or pickup (once delivery is available).",
     "deliveryOffHint": "Restaurants can only pick the order up at the store.",
@@ -2179,16 +2143,12 @@
     "preparationHint": "How long you usually need to prepare an order. Suggested when you accept an order.",
     "minutes_one": "{{count}} minute",
     "minutes_other": "{{count}} minutes",
-    "adminPaused": "Receiving orders paused",
-    "error": "The settings were not saved. Try again."
+    "adminPaused": "Receiving orders paused"
   },
   "orderPause": {
-    "receivingTitle": "You are receiving orders",
     "receivingText": "Restaurants can send you orders.",
-    "pausedTitle": "Receiving orders is paused",
     "pausedText": "Restaurants see your offer but cannot send orders {{until}}.",
     "pause": "Pause orders",
-    "resume": "Resume orders",
     "modalTitle": "Pause orders?",
     "modalText": "Your products stay visible, but restaurants cannot send new orders while the pause lasts. Orders already waiting stay.",
     "howLong": "For how long?",
@@ -2378,6 +2338,108 @@
       "changed": "Price changed",
       "saved": "The price was changed.",
       "saveError": "The price was not saved. Try again."
+    }
+  },
+  "profile": {
+    "header": {
+      "title": "My profile",
+      "restaurantSubtitle": "details, location, opening hours and password",
+      "storeSubtitle": "details, location, opening hours, orders, credits and password",
+      "back": "Back",
+      "save": "Save changes",
+      "branchChip": "Branch · {{company}}"
+    },
+    "sections": {
+      "basic": {
+        "title": "Basic information",
+        "restaurantDescription": "Logo, personal and business details, the restaurant's description and email notifications",
+        "storeDescription": "Logo, personal and business details, description and email notifications"
+      },
+      "location": {
+        "title": "Location",
+        "description": "The exact location of your business, needed for delivery"
+      },
+      "hours": {
+        "title": "Opening hours",
+        "description": "When you are open and can pick up orders",
+        "storeTitle": "Opening and pickup hours",
+        "storeDescription": "When you are open and when restaurants can pick up orders"
+      },
+      "orders": {
+        "title": "Orders and delivery",
+        "description": "How your store takes orders"
+      },
+      "credits": {
+        "title": "Subscription and credits",
+        "description": "Plan, credit balance, extra credits and your requests",
+        "branchDescription": "Credit balance and extra credits from your headquarters"
+      },
+      "password": {
+        "title": "Change password",
+        "description": "The new password needs at least 8 characters"
+      }
+    },
+    "basic": {
+      "logoAlt": "Logo",
+      "changeLogo": "Change logo",
+      "logoChosen": "The new logo is saved when you save your changes.",
+      "about": "About us",
+      "emailNotifications": "Email notifications",
+      "emailNotificationsInfo": "Which emails you get",
+      "emailTipRestaurant": "When on, you get an email for every notification in the app: when a store accepts, partly accepts or rejects your order, about delivery and a missed pickup, and platform announcements. System messages (e.g. a new password) always arrive.",
+      "emailTipStore": "When on, you get an email for every notification in the app: new and cancelled orders, delivery, products about to expire, credits and your subscription, and platform announcements. System messages (e.g. a new password) always arrive."
+    },
+    "location": {
+      "hint": "Click the map where the entrance of your business is, or drag the pin.",
+      "noAddress": "No address entered",
+      "changeTitle": "Change the location?",
+      "changeText": "The pin moves to the new place. The location is saved when you save your changes.",
+      "changeConfirm": "Change location",
+      "removeTitle": "Remove the location?",
+      "removeText": "Without it, delivery is not possible.",
+      "removeConfirm": "Remove location"
+    },
+    "hours": {
+      "daysAndHours": "Days and hours",
+      "opening": "Opening hours",
+      "pickup": "Pickup hours",
+      "closed": "Closed"
+    },
+    "orders": {
+      "receiving": "Taking orders",
+      "active": "Active",
+      "pausedChip": "Paused {{until}}",
+      "resume": "Resume orders"
+    },
+    "credits": {
+      "paymentNote": "Payment happens outside the app for now, and an administrator approves requests.",
+      "companyManages": "Your headquarters ({{company}}) runs your subscription and credits.",
+      "ofTotal": "of {{total}} credits",
+      "usage": "Credits used this month",
+      "changePlan": "Change plan",
+      "changePlanInfo": "When the new plan applies",
+      "changePlanTip": "The new plan applies from next month",
+      "extra": "Extra credits",
+      "extraText": "Added to this month and expire with it.",
+      "chosenPlan": "Chosen: {{plan}} for {{month}}. The request is sent when you save your changes.",
+      "chosenTopup_one": "Chosen: +{{count}} credit. The request is sent when you save your changes.",
+      "chosenTopup_other": "Chosen: +{{count}} credits. The request is sent when you save your changes.",
+      "chosenTopupCompany_one": "Chosen: +{{count}} credit from your headquarters ({{company}}). The request is sent when you save your changes.",
+      "chosenTopupCompany_other": "Chosen: +{{count}} credits from your headquarters ({{company}}). The request is sent when you save your changes.",
+      "cancelChoice": "Cancel",
+      "withdraw": "Withdraw request",
+      "keepRequest": "Keep it",
+      "willWithdraw": "Withdrawn on save"
+    },
+    "password": {
+      "show": "Show password: {{field}}",
+      "hide": "Hide password: {{field}}",
+      "leaveEmpty": "Leave empty if you are not changing your password.",
+      "tooShort": "The new password needs at least 8 characters."
+    },
+    "save": {
+      "saved": "Your changes are saved.",
+      "error": "Your changes were not saved. Try again."
     }
   }
 }

@@ -291,8 +291,6 @@ export interface User {
   // Weekly hours (utils/schedule.ts); null until entered. Pickup hours are a store's only.
   opening_schedule?: Schedule | null;
   pickup_schedule?: Schedule | null;
-  // A store's cover image on its store page.
-  cover_url?: string | null;
   // The pin on the map (My profile); null until the business sets it. On GET /users/me and the
   // admin's user details.
   latitude?: number | null;

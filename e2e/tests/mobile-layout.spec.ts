@@ -253,8 +253,8 @@ test.describe("dialogs on a short phone (667 px)", () => {
 
     test("the subscribe dialog shows its buttons", async ({ page }) => {
       await open(page, "/my-profile#subscription");
-      const standard = page.locator("#plan-options > div").filter({ has: page.getByText("Standard", { exact: true }) });
-      await standard.getByRole("button", { name: "Odaberi" }).click();
+      await page.getByTestId("plan-options").getByRole("button", { name: /^Standard/ }).click();
+      await page.getByRole("button", { name: "Sačuvaj izmjene" }).last().click();
       await expectButtonsOnScreen(page, page.getByRole("dialog", { name: "Pretplata: Standard" }), ["Odustani", "Pošalji zahtjev"]);
     });
   });

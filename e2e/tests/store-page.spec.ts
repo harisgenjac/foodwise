@@ -2,17 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { ACCOUNTS, storageState, uniqueName } from "../support/accounts.js";
 import { apiAs, createProduct, myId } from "../support/api.js";
 import { isoDate, sarajevoDate } from "../support/dates.js";
-import { emptyCart, open, sentOrderCode, toast } from "../support/ui.js";
-
-// A 1×1 PNG for the cover image.
-const PNG = {
-  name: "naslovna.png",
-  mimeType: "image/png",
-  buffer: Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-    "base64",
-  ),
-};
+import { emptyCart, open, openProfileSection, saveProfile, sentOrderCode, toast } from "../support/ui.js";
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1280) < 1024;
 
@@ -86,34 +76,29 @@ test("a restaurant shops on the store page with + and the stepper", async ({ pag
 test.describe("the store's own side", () => {
   test.use({ storageState: storageState("store") });
 
-  test("a store sets its weekly hours and cover image on My profile", async ({ page, browser }) => {
+  test("a store sets its weekly pickup hours on My profile", async ({ page, browser }) => {
     const storeApi = await apiAs("store");
     // The profile as the seed made it, to put back exactly at the end.
     const { user: before } = await (await storeApi.get("/api/users/me")).json();
     await open(page, "/my-profile");
-    await page.getByLabel("Postavi naslovnu sliku").setInputFiles(PNG);
-    await expect(toast(page, "Naslovna slika je postavljena.")).toBeVisible();
-    await expect(page.getByAltText("Naslovna slika prodavnice")).toBeVisible();
-
+    await openProfileSection(page, /Radno vrijeme i preuzimanje/);
     const pickup = page.getByRole("group", { name: "Vrijeme preuzimanja" });
-    await pickup.getByLabel("Otvoreno: Nedjelja").uncheck();
-    await page.getByRole("button", { name: "Sačuvaj", exact: true }).click();
-    await expect(toast(page, "Profil uspješno ažuriran.")).toBeVisible();
+    await pickup.getByRole("switch", { name: "Otvoreno: Nedjelja" }).click();
+    await expect(pickup.getByTestId("hours-row-sun").getByText("Zatvoreno")).toBeVisible();
+    await saveProfile(page);
 
     const restaurantContext = await browser.newContext({ storageState: storageState("restaurant") });
     const restaurant = await restaurantContext.newPage();
     await open(restaurant, `/stores/${await myId(storeApi)}`);
-    await expect(restaurant.getByTestId("store-cover")).toBeVisible();
     await restaurant.getByRole("tab", { name: "Informacije" }).click();
     const info = restaurant.getByRole("tabpanel");
     await expect(info.getByText("Pon–Sub")).toBeVisible();
     await expect(info.getByText("zatvoreno")).toBeVisible();
     await restaurantContext.close();
 
-    // Leave the shared store as the seed made it: no cover, its own pickup hours every day (ticking
+    // Leave the shared store as the seed made it: its own pickup hours every day (ticking
     // Sunday again in the form would give it the default 08:00–20:00, which breaks the next run
     // that reads today's hours on a Sunday).
-    await storeApi.delete("/api/users/me/cover");
     const restored = await storeApi.put("/api/users/me", {
       data: {
         first_name: before.first_name,

@@ -172,15 +172,6 @@ describe("Users routes", () => {
       });
     });
 
-    it("returns the store's cover image, null without one", async () => {
-      const list = async () =>
-        (await restaurant.get("/api/users/stores").query({ business_name: PROFILE.business_name })).body.stores[0];
-      expect((await list()).cover_url).toBeNull();
-
-      await pool.query("UPDATE users SET cover_url = '/uploads/covers/test.png' WHERE users.id = $1", [await userId(STORE)]);
-      expect((await list()).cover_url).toBe("/uploads/covers/test.png");
-    });
-
     it("ignores an empty city_id", async () => {
       const response = await restaurant.get("/api/users/stores").query({ city_id: "", business_name: PROFILE.business_name });
       expect(response.status).toBe(200);
@@ -234,7 +225,6 @@ describe("Users routes", () => {
         business_name: PROFILE.business_name,
         city_id: PROFILE.city_id,
         city: "Olovo",
-        cover_url: null,
         opening_schedule: null,
         open_now: null,
       });
@@ -420,43 +410,6 @@ describe("Users routes", () => {
         .put("/api/users/me")
         .send({ ...PROFILE, city_id: zenica, location: zenicaCentre.rows[0] });
       expect(moved.status).toBe(200);
-    });
-  });
-
-  describe("cover image", () => {
-    const coverPath = (url: string) => path.join(UPLOADS_DIR, "covers", path.basename(url));
-    const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-
-    it("uploads, replaces (deleting the old file), shows on the store page and removes the cover", async () => {
-      const store = await registerAndLogin(STORE, "STORE");
-      const first = await store.post("/api/users/me/cover").attach("cover", PNG, { filename: "a.png", contentType: "image/png" });
-      expect(first.status).toBe(200);
-      expect(first.body.message).toBe("Image uploaded successfully.");
-      expect(first.body.cover_url).toMatch(/^\/uploads\/covers\/\d+-\d+-[0-9a-f]+\.png$/);
-      const second = await store.post("/api/users/me/cover").attach("cover", PNG, { filename: "b.png", contentType: "image/png" });
-      expect(fs.existsSync(coverPath(first.body.cover_url))).toBe(false);
-      expect(fs.existsSync(coverPath(second.body.cover_url))).toBe(true);
-
-      const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
-      const page = await restaurant.get(`/api/users/stores/${await userId(STORE)}`);
-      expect(page.body.store.cover_url).toBe(second.body.cover_url);
-
-      const removed = await store.delete("/api/users/me/cover");
-      expect(removed.body.message).toBe("Cover image removed.");
-      expect(fs.existsSync(coverPath(second.body.cover_url))).toBe(false);
-      expect((await store.get("/api/users/me")).body.user.cover_url).toBeNull();
-    });
-
-    it("refuses another file type and other roles", async () => {
-      const store = await registerAndLogin(STORE, "STORE");
-      const gif = await store
-        .post("/api/users/me/cover")
-        .attach("cover", Buffer.from("GIF89a"), { filename: "a.gif", contentType: "image/gif" });
-      expect(gif.status).toBe(400);
-      expect(gif.body.error).toBe("Only JPEG, PNG and WEBP images are allowed.");
-      const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
-      const response = await restaurant.post("/api/users/me/cover").attach("cover", PNG, { filename: "a.png", contentType: "image/png" });
-      expect(response.status).toBe(403);
     });
   });
 

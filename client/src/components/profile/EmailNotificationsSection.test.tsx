@@ -38,9 +38,9 @@ describe("EmailNotificationsSection", () => {
     expect(theSwitch()).toHaveAttribute("aria-checked", "false");
   });
 
-  it("is on My profile for every role, starting from the saved value", async () => {
+  it("is on the headquarters' and the admin's My profile, starting from the saved value", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    for (const role of ["STORE", "ADMIN", "COMPANY"] as const) {
+    for (const role of ["ADMIN", "COMPANY"] as const) {
       const { unmount } = renderWithProviders(<MyProfilePage />, {
         route: "/my-profile",
         path: "/my-profile",

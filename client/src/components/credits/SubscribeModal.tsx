@@ -16,14 +16,18 @@ interface SubscribeModalProps {
   // True when the current month has already started (any day but the 1st).
   monthStarted: boolean;
   onClose: () => void;
-  onSent: () => void;
+  onSent?: () => void;
+  // Only confirms the choice (this month only or auto-renew) without sending: My profile sends the
+  // request itself when the page is saved.
+  onConfirm?: (autoRenew: boolean) => void;
   // A headquarters choosing for its branch: where the request goes and the branch's name for the title.
   endpoint?: string;
   branchName?: string;
 }
 
 // Explains credits in plain words before the user (or a headquarters for its branch) sends a
-// subscription request, and lets them choose this month only or auto-renew.
+// subscription request, and lets them choose this month only or auto-renew. With `onConfirm` it
+// sends nothing and hands the choice back (My profile sends it with the rest of the page).
 function SubscribeModal({
   plan,
   period,
@@ -31,6 +35,7 @@ function SubscribeModal({
   monthStarted,
   onClose,
   onSent,
+  onConfirm,
   endpoint = "/credits/requests",
   branchName,
 }: SubscribeModalProps) {
@@ -41,6 +46,10 @@ function SubscribeModal({
   const monthNames = t("dashboard.months", { returnObjects: true }) as string[];
 
   const send = async () => {
+    if (onConfirm) {
+      onConfirm(autoRenew);
+      return;
+    }
     if (sending) return;
     setSending(true);
     try {
@@ -51,7 +60,7 @@ function SubscribeModal({
         auto_renew: autoRenew,
       });
       toast.success(t("credits.modal.sent"));
-      onSent();
+      onSent?.();
     } catch (err) {
       const message = apiErrorMessage(err);
       toast.error(message || t("credits.profile.requestError"));

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ACCOUNTS, runId, storageState } from "../support/accounts.js";
-import { open, toast } from "../support/ui.js";
+import { open, saveProfile, toast } from "../support/ui.js";
 
 test.use({ storageState: storageState("admin") });
 
@@ -38,21 +38,11 @@ test("a new restaurant changes its temporary password and fills in its profile b
   await expect(gate).toBeVisible();
   await expect(gate.getByText("Postavite svoju lozinku umjesto privremene")).toBeVisible();
 
-  // The forced password change.
+  // My profile: the new password and the required fields are saved together (the password section
+  // is open, since the temporary password must be replaced).
   await gate.getByRole("link", { name: "Idi na Moj profil" }).click();
   await expect(page).toHaveURL(/\/my-profile$/);
-  await page.getByLabel("Trenutna lozinka").fill(temporaryPassword);
-  await page.getByLabel("Nova lozinka", { exact: true }).fill(newPassword);
-  await page.getByLabel("Ponovite novu lozinku").fill(newPassword);
-  await page.getByRole("button", { name: "Promijeni lozinku" }).click();
-  await expect(toast(page, "Lozinka je promijenjena.")).toBeVisible();
-
-  // The profile gate still blocks the app until the required fields are saved.
   await expect(page.getByText(/Popunite obavezne podatke: Ime, Prezime/)).toBeVisible();
-  await open(page, "/dashboard");
-  await expect(gate).toBeVisible();
-  await expect(gate.getByText(/Popunite obavezne podatke/)).toBeVisible();
-  await gate.getByRole("link", { name: "Idi na Moj profil" }).click();
 
   // The page fills the form from GET /users/me when it opens; typing before that answer arrives
   // gets overwritten. The read-only Email field is filled only by that answer.
@@ -65,8 +55,10 @@ test("a new restaurant changes its temporary password and fills in its profile b
   await city.selectOption({ label: "Visoko" });
   await page.getByLabel("Telefon").fill("061 111 222");
   await page.getByLabel("Adresa").fill("Musala 5");
-  await page.getByRole("button", { name: "Sačuvaj" }).click();
-  await expect(toast(page, "Profil uspješno ažuriran.")).toBeVisible();
+  await page.getByLabel("Trenutna lozinka", { exact: true }).fill(temporaryPassword);
+  await page.getByLabel("Nova lozinka", { exact: true }).fill(newPassword);
+  await page.getByLabel("Ponovite novu lozinku", { exact: true }).fill(newPassword);
+  await saveProfile(page);
 
   // The dashboard is usable.
   await page.locator("aside").getByRole("link", { name: "Početna" }).click();
