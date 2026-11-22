@@ -95,13 +95,8 @@ function BasicInfoSection({
             />
           </label>
         </div>
-        {/* The accepted format and size in a tooltip next to the logo. */}
-        <span className="mt-2 flex items-center gap-1 text-xs font-semibold text-neutral-700">
-          {t("profile.basic.logoLabel")}
-          <HintTip label={t("profile.basic.logoInfo")} text={t("profile.basic.logoHint")} align="start" />
-        </span>
         {(draft.logoFile || companyLogo) && (
-          <p className="max-w-[9rem] text-center text-xs text-neutral-600 md:text-left">
+          <p className="mt-2 max-w-[9rem] text-center text-xs text-neutral-600 md:text-left">
             {draft.logoFile ? t("profile.basic.logoChosen") : t("user.usesCompanyLogo")}
           </p>
         )}

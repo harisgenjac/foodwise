@@ -356,138 +356,144 @@ function BusinessProfilePage() {
         </button>
       </header>
 
-      <ProfileSection
-        id={SECTION_DOM_ID.basic}
-        icon={IdCard}
-        title={t("profile.sections.basic.title")}
-        description={t(isStore ? "profile.sections.basic.storeDescription" : "profile.sections.basic.restaurantDescription")}
-        open={open.basic}
-        onToggle={() => toggle("basic")}
-        invalid={hasErrorIn("basic")}
+      {/* One white card around every section and the save button. */}
+      <div
+        data-testid="profile-card"
+        className="space-y-5 rounded-[28px] border border-neutral-100 bg-white p-3 shadow-[0_2px_10px_rgba(28,25,23,0.04)] sm:p-5"
       >
-        {(errors.profile || errors.logo || errors.emailNotifications) && (
-          <p role="alert" data-invalid className="mb-4 rounded-xl bg-danger-50 px-3 py-2 text-sm font-medium text-danger-700">
-            {t((errors.profile ?? errors.logo ?? errors.emailNotifications)!)}
-          </p>
-        )}
-        <BasicInfoSection
-          draft={draft}
-          update={update}
-          errors={errors}
-          email={user.email}
-          isStore={isStore}
-          isBranch={isBranch}
-          logoUrl={user.logo_url ?? ""}
-          companyLogoUrl={user.company_logo_url ?? ""}
-          companyDescription={user.company_description ?? ""}
-        />
-      </ProfileSection>
-
-      <ProfileSection
-        id={SECTION_DOM_ID.location}
-        icon={MapPin}
-        title={t("profile.sections.location.title")}
-        description={t("profile.sections.location.description")}
-        open={open.location}
-        onToggle={() => toggle("location")}
-        invalid={hasErrorIn("location")}
-      >
-        {errors.location && (
-          <p role="alert" data-invalid className="mb-4 rounded-xl bg-danger-50 px-3 py-2 text-sm font-medium text-danger-700">
-            {t(errors.location)}
-          </p>
-        )}
-        {open.location && (
-          <LocationSection
-            value={draft.location}
-            onChange={(location) => update({ location })}
-            cityCenter={city ? { latitude: city.latitude, longitude: city.longitude } : null}
-            addressLine={addressLine}
-          />
-        )}
-      </ProfileSection>
-
-      <ProfileSection
-        id={SECTION_DOM_ID.hours}
-        icon={Clock}
-        title={t(isStore ? "profile.sections.hours.storeTitle" : "profile.sections.hours.title")}
-        description={t(isStore ? "profile.sections.hours.storeDescription" : "profile.sections.hours.description")}
-        open={open.hours}
-        onToggle={() => toggle("hours")}
-        invalid={hasErrorIn("hours")}
-      >
-        <HoursSection
-          isStore={isStore}
-          opening={draft.openingSchedule}
-          pickup={draft.pickupSchedule}
-          onOpening={(openingSchedule) => update({ openingSchedule })}
-          onPickup={(pickupSchedule) => update({ pickupSchedule })}
-          openingError={errors.openingSchedule ? t(errors.openingSchedule) : undefined}
-          pickupError={errors.pickupSchedule ? t(errors.pickupSchedule) : undefined}
-        />
-      </ProfileSection>
-
-      {isStore && draft.orders && (
         <ProfileSection
-          id={SECTION_DOM_ID.orders}
-          icon={Truck}
-          title={t("profile.sections.orders.title")}
-          description={t("profile.sections.orders.description")}
-          open={open.orders}
-          onToggle={() => toggle("orders")}
-          invalid={hasErrorIn("orders")}
+          id={SECTION_DOM_ID.basic}
+          icon={IdCard}
+          title={t("profile.sections.basic.title")}
+          description={t(isStore ? "profile.sections.basic.storeDescription" : "profile.sections.basic.restaurantDescription")}
+          open={open.basic}
+          onToggle={() => toggle("basic")}
+          invalid={hasErrorIn("basic")}
         >
-          <OrdersSection value={draft.orders} onChange={(orders) => update({ orders })} error={sectionError("orders")} />
-        </ProfileSection>
-      )}
-
-      {isStore && (
-        <ProfileSection
-          id={SECTION_DOM_ID.credits}
-          icon={Coins}
-          title={t("profile.sections.credits.title")}
-          description={t(isBranch ? "profile.sections.credits.branchDescription" : "profile.sections.credits.description")}
-          open={open.credits}
-          onToggle={() => toggle("credits")}
-          invalid={hasErrorIn("credits")}
-        >
-          <CreditsSection
-            value={draft.credits}
-            onChange={(creditDraft) => update({ credits: creditDraft })}
-            error={sectionError("credits")}
-            reloadKey={creditsReload}
+          {(errors.profile || errors.logo || errors.emailNotifications) && (
+            <p role="alert" data-invalid className="mb-4 rounded-xl bg-danger-50 px-3 py-2 text-sm font-medium text-danger-700">
+              {t((errors.profile ?? errors.logo ?? errors.emailNotifications)!)}
+            </p>
+          )}
+          <BasicInfoSection
+            draft={draft}
+            update={update}
+            errors={errors}
+            email={user.email}
+            isStore={isStore}
+            isBranch={isBranch}
+            logoUrl={user.logo_url ?? ""}
+            companyLogoUrl={user.company_logo_url ?? ""}
+            companyDescription={user.company_description ?? ""}
           />
         </ProfileSection>
-      )}
 
-      <ProfileSection
-        id={SECTION_DOM_ID.password}
-        icon={Lock}
-        title={t("profile.sections.password.title")}
-        description={t("profile.sections.password.description")}
-        open={open.password}
-        onToggle={() => toggle("password")}
-        invalid={hasErrorIn("password")}
-      >
-        <PasswordSection
-          value={draft.password}
-          onChange={(password) => update({ password })}
-          errors={errors}
-          required={passwordRequired}
-        />
-      </ProfileSection>
-
-      <div className="flex flex-col items-center gap-2 pt-2">
-        <button
-          type="button"
-          onClick={() => save()}
-          disabled={saving}
-          className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-full bg-brand-800 px-7 text-base font-bold text-white shadow-[0_6px_16px_rgba(22,101,52,0.25)] hover:bg-brand-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-800 disabled:cursor-wait disabled:opacity-60"
+        <ProfileSection
+          id={SECTION_DOM_ID.location}
+          icon={MapPin}
+          title={t("profile.sections.location.title")}
+          description={t("profile.sections.location.description")}
+          open={open.location}
+          onToggle={() => toggle("location")}
+          invalid={hasErrorIn("location")}
         >
-          <Check className="h-5 w-5" aria-hidden="true" />
-          {t("profile.header.save")}
-        </button>
-        <RequiredHint />
+          {errors.location && (
+            <p role="alert" data-invalid className="mb-4 rounded-xl bg-danger-50 px-3 py-2 text-sm font-medium text-danger-700">
+              {t(errors.location)}
+            </p>
+          )}
+          {open.location && (
+            <LocationSection
+              value={draft.location}
+              onChange={(location) => update({ location })}
+              cityCenter={city ? { latitude: city.latitude, longitude: city.longitude } : null}
+              addressLine={addressLine}
+            />
+          )}
+        </ProfileSection>
+
+        <ProfileSection
+          id={SECTION_DOM_ID.hours}
+          icon={Clock}
+          title={t(isStore ? "profile.sections.hours.storeTitle" : "profile.sections.hours.title")}
+          description={t(isStore ? "profile.sections.hours.storeDescription" : "profile.sections.hours.description")}
+          open={open.hours}
+          onToggle={() => toggle("hours")}
+          invalid={hasErrorIn("hours")}
+        >
+          <HoursSection
+            isStore={isStore}
+            opening={draft.openingSchedule}
+            pickup={draft.pickupSchedule}
+            onOpening={(openingSchedule) => update({ openingSchedule })}
+            onPickup={(pickupSchedule) => update({ pickupSchedule })}
+            openingError={errors.openingSchedule ? t(errors.openingSchedule) : undefined}
+            pickupError={errors.pickupSchedule ? t(errors.pickupSchedule) : undefined}
+          />
+        </ProfileSection>
+
+        {isStore && draft.orders && (
+          <ProfileSection
+            id={SECTION_DOM_ID.orders}
+            icon={Truck}
+            title={t("profile.sections.orders.title")}
+            description={t("profile.sections.orders.description")}
+            open={open.orders}
+            onToggle={() => toggle("orders")}
+            invalid={hasErrorIn("orders")}
+          >
+            <OrdersSection value={draft.orders} onChange={(orders) => update({ orders })} error={sectionError("orders")} />
+          </ProfileSection>
+        )}
+
+        {isStore && (
+          <ProfileSection
+            id={SECTION_DOM_ID.credits}
+            icon={Coins}
+            title={t("profile.sections.credits.title")}
+            description={t(isBranch ? "profile.sections.credits.branchDescription" : "profile.sections.credits.description")}
+            open={open.credits}
+            onToggle={() => toggle("credits")}
+            invalid={hasErrorIn("credits")}
+          >
+            <CreditsSection
+              value={draft.credits}
+              onChange={(creditDraft) => update({ credits: creditDraft })}
+              error={sectionError("credits")}
+              reloadKey={creditsReload}
+            />
+          </ProfileSection>
+        )}
+
+        <ProfileSection
+          id={SECTION_DOM_ID.password}
+          icon={Lock}
+          title={t("profile.sections.password.title")}
+          description={t("profile.sections.password.description")}
+          open={open.password}
+          onToggle={() => toggle("password")}
+          invalid={hasErrorIn("password")}
+        >
+          <PasswordSection
+            value={draft.password}
+            onChange={(password) => update({ password })}
+            errors={errors}
+            required={passwordRequired}
+          />
+        </ProfileSection>
+
+        <div className="flex flex-col items-center gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => save()}
+            disabled={saving}
+            className="inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-full bg-brand-800 px-7 text-base font-bold text-white shadow-[0_6px_16px_rgba(22,101,52,0.25)] hover:bg-brand-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-800 disabled:cursor-wait disabled:opacity-60"
+          >
+            <Check className="h-5 w-5" aria-hidden="true" />
+            {t("profile.header.save")}
+          </button>
+          <RequiredHint />
+        </div>
       </div>
 
       {confirmingPlan && draft.credits.plan && credits && (

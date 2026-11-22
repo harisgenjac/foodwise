@@ -2382,15 +2382,12 @@
     "basic": {
       "logoAlt": "Logo",
       "changeLogo": "Change logo",
-      "logoHint": "A square image, at least 200 × 200 px, JPG, PNG or WEBP, up to 5 MB.",
       "logoChosen": "The new logo is saved when you save your changes.",
       "about": "About us",
       "emailNotifications": "Email notifications",
       "emailNotificationsInfo": "Which emails you get",
       "emailTipRestaurant": "When on, you get an email for every notification in the app: when a store accepts, partly accepts or rejects your order, about delivery and a missed pickup, and platform announcements. System messages (e.g. a new password) always arrive.",
-      "emailTipStore": "When on, you get an email for every notification in the app: new and cancelled orders, delivery, products about to expire, credits and your subscription, and platform announcements. System messages (e.g. a new password) always arrive.",
-      "logoLabel": "Logo",
-      "logoInfo": "Logo format and size"
+      "emailTipStore": "When on, you get an email for every notification in the app: new and cancelled orders, delivery, products about to expire, credits and your subscription, and platform announcements. System messages (e.g. a new password) always arrive."
     },
     "location": {
       "hint": "Click the map where the entrance of your business is, or drag the pin.",

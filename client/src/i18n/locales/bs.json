@@ -2442,15 +2442,12 @@
     "basic": {
       "logoAlt": "Logo",
       "changeLogo": "Promijeni logo",
-      "logoHint": "Kvadratna slika, najmanje 200 × 200 px, JPG, PNG ili WEBP, najviše 5 MB.",
       "logoChosen": "Novi logo se sprema kad sačuvate izmjene.",
       "about": "O nama",
       "emailNotifications": "Email obavijesti",
       "emailNotificationsInfo": "Koji emailovi stižu",
       "emailTipRestaurant": "Kad je uključeno, stiže vam email za svaku obavijest iz aplikacije: kad prodavnica prihvati, djelimično prihvati ili odbije vašu narudžbu, o dostavi i propuštenom preuzimanju, te obavještenja platforme. Sistemske poruke (npr. nova lozinka) stižu uvijek.",
-      "emailTipStore": "Kad je uključeno, stiže vam email za svaku obavijest iz aplikacije: nove i otkazane narudžbe, dostava, proizvodi kojima ističe rok, krediti i pretplata, te obavještenja platforme. Sistemske poruke (npr. nova lozinka) stižu uvijek.",
-      "logoLabel": "Logo",
-      "logoInfo": "Format i veličina loga"
+      "emailTipStore": "Kad je uključeno, stiže vam email za svaku obavijest iz aplikacije: nove i otkazane narudžbe, dostava, proizvodi kojima ističe rok, krediti i pretplata, te obavještenja platforme. Sistemske poruke (npr. nova lozinka) stižu uvijek."
     },
     "location": {
       "hint": "Kliknite na mapu na mjesto ulaza u vaš objekat ili povucite pin.",
