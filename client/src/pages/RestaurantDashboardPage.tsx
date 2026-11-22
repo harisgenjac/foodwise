@@ -104,51 +104,56 @@ const RestaurantDashboardPage = () => {
     <div data-testid="restaurant-home" className="space-y-6 font-jakarta text-neutral-900">
       <LocationReminder />
 
-      <HomeHero
-        text={t("restaurantHome.hero.text")}
-        actions={[
-          {
-            label: t("restaurantHome.hero.shopNow"),
-            to: "/search",
-            variant: "primary",
-            icon: <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.4} aria-hidden="true" />,
-            iconAfter: true,
-          },
-          // The live tracking page does not exist yet.
-          {
-            label: t("restaurantHome.hero.trackDelivery"),
-            onClick: () => toast(t("restaurantHome.hero.comingSoon")),
-            variant: "outline",
-            icon: <ScooterIcon className="h-5 w-5" />,
-          },
-        ]}
-        illustration={<ChefIllustration label={t("restaurantHome.hero.chef")} />}
-        bubble={t("restaurantHome.hero.bubble", { returnObjects: true }) as string[]}
-        stats={stats}
-        statsLabel={t("home.stats.label")}
-        statsFailed={impactFailed}
-      />
+      {/* Hero, the beige section band, How it works and the donation band follow each other with no gaps. */}
+      <div>
+        <HomeHero
+          text={t("restaurantHome.hero.text")}
+          actions={[
+            {
+              label: t("restaurantHome.hero.shopNow"),
+              to: "/search",
+              variant: "primary",
+              icon: <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.4} aria-hidden="true" />,
+              iconAfter: true,
+            },
+            // The live tracking page does not exist yet.
+            {
+              label: t("restaurantHome.hero.trackDelivery"),
+              onClick: () => toast(t("restaurantHome.hero.comingSoon")),
+              variant: "outline",
+              icon: <ScooterIcon className="h-5 w-5" />,
+            },
+          ]}
+          illustration={<ChefIllustration label={t("restaurantHome.hero.chef")} />}
+          bubble={t("restaurantHome.hero.bubble", { returnObjects: true }) as string[]}
+          stats={stats}
+          statsLabel={t("home.stats.label")}
+          statsFailed={impactFailed}
+        />
 
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
-        {(stores === null || stores.length > 0) && <HomeStoreSlider stores={stores} />}
-        {(offers === null || offers.length > 0) && <HomeOffers stores={offers} />}
+        <div className="-mx-4 bg-sand px-4 pt-8 pb-14 sm:-mx-6 sm:px-6">
+          <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
+            {(stores === null || stores.length > 0) && <HomeStoreSlider stores={stores} />}
+            {(offers === null || offers.length > 0) && <HomeOffers stores={offers} />}
+          </div>
+        </div>
+
+        <HomeHowItWorks
+          title={t("restaurantHome.howItWorks.title")}
+          subtitle={t("restaurantHome.howItWorks.subtitle")}
+          steps={[
+            { key: "find", illustration: FindOfferIllustration, title: t("restaurantHome.howItWorks.find.title"), textKey: "restaurantHome.howItWorks.find.text" },
+            { key: "choose", illustration: ChooseDeliveryIllustration, title: t("restaurantHome.howItWorks.choose.title"), textKey: "restaurantHome.howItWorks.choose.text" },
+            { key: "cook", illustration: CookTodayIllustration, title: t("restaurantHome.howItWorks.cook.title"), textKey: "restaurantHome.howItWorks.cook.text" },
+          ]}
+        />
+
+        <HomeDonateBand
+          title={t("home.donate.title")}
+          text={t("restaurantHome.donate.text")}
+          donateLabel={t("restaurantHome.donate.donate")}
+        />
       </div>
-
-      <HomeHowItWorks
-        title={t("restaurantHome.howItWorks.title")}
-        subtitle={t("restaurantHome.howItWorks.subtitle")}
-        steps={[
-          { key: "find", illustration: FindOfferIllustration, title: t("restaurantHome.howItWorks.find.title"), textKey: "restaurantHome.howItWorks.find.text" },
-          { key: "choose", illustration: ChooseDeliveryIllustration, title: t("restaurantHome.howItWorks.choose.title"), textKey: "restaurantHome.howItWorks.choose.text" },
-          { key: "cook", illustration: CookTodayIllustration, title: t("restaurantHome.howItWorks.cook.title"), textKey: "restaurantHome.howItWorks.cook.text" },
-        ]}
-      />
-
-      <HomeDonateBand
-        title={t("home.donate.title")}
-        text={t("restaurantHome.donate.text")}
-        donateLabel={t("restaurantHome.donate.donate")}
-      />
     </div>
   );
 };

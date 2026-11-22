@@ -144,7 +144,7 @@ interface HomeHeroProps {
 // The top of the restaurant and store home pages (design/restaurant-home/home.dc.html,
 // design/store-home/store.dc.html): a dark green band with faint food drawings, the brand as the
 // page's h1 ("vrijedi" in lime), the role's text and pill buttons, its illustration with a speech
-// bubble on the right, the stats at the bottom, and a soft curve into the page.
+// bubble on the right, the stats at the bottom, and a soft curve into the beige section band.
 function HomeHero({ text, actions, illustration, bubble, stats, statsLabel, statsFailed = false }: HomeHeroProps) {
   const titleId = useId();
   const [firstWord, ...rest] = BRAND_NAME.split(" ");
@@ -182,7 +182,7 @@ function HomeHero({ text, actions, illustration, bubble, stats, statsLabel, stat
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 -bottom-px block h-12 w-full"
       >
-        <path d="M0 48V26C300 -4 800 -4 1100 26V48z" className="fill-neutral-50" />
+        <path d="M0 48V26C300 -4 800 -4 1100 26V48z" className="fill-sand" />
       </svg>
     </section>
   );

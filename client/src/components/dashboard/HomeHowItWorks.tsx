@@ -138,7 +138,7 @@ function HomeHowItWorks({ title, subtitle, steps }: HomeHowItWorksProps) {
       data-testid="home-how-it-works"
       // Edge to edge across the content area, like the donation band and the footer (it cancels the
       // layout's side padding); the content stays centred at the sections' width.
-      className="-mx-4 mb-8 border-y border-brand-100 bg-brand-50 px-5 pt-12 pb-14 text-center sm:-mx-6 sm:px-10 sm:pt-14 sm:pb-16"
+      className="-mx-4 border-y border-brand-100 bg-brand-50 px-5 pt-12 pb-14 text-center sm:-mx-6 sm:px-10 sm:pt-14 sm:pb-16"
     >
       <div className="mx-auto flex max-w-[1280px] flex-col items-center gap-10">
         <div className="flex flex-col items-center gap-2">

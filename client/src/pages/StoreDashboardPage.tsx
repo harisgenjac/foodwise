@@ -89,65 +89,70 @@ function StoreDashboardPage() {
     <div data-testid="store-home" className="space-y-6 font-jakarta text-neutral-900">
       <LocationReminder />
 
-      <HomeHero
-        text={t("storeHome.hero.text")}
-        actions={[
-          {
-            label: t("storeHome.hero.addProduct"),
-            to: "/add-product",
-            variant: "primary",
-            icon: <Plus className="h-[18px] w-[18px]" strokeWidth={2.6} aria-hidden="true" />,
-          },
-          {
-            label: t("storeHome.hero.orders"),
-            to: "/orders",
-            variant: "outline",
-            icon: <ReceiptText className="h-5 w-5" strokeWidth={2} aria-hidden="true" />,
-          },
-        ]}
-        illustration={<ShopkeeperIllustration label={t("storeHome.hero.shopkeeper")} />}
-        bubble={t("storeHome.hero.bubble", { returnObjects: true }) as string[]}
-        stats={stats}
-        statsLabel={t("home.stats.label")}
-        statsFailed={impactFailed}
-      />
+      {/* Hero, the beige section band, How it works and the donation band follow each other with no gaps. */}
+      <div>
+        <HomeHero
+          text={t("storeHome.hero.text")}
+          actions={[
+            {
+              label: t("storeHome.hero.addProduct"),
+              to: "/add-product",
+              variant: "primary",
+              icon: <Plus className="h-[18px] w-[18px]" strokeWidth={2.6} aria-hidden="true" />,
+            },
+            {
+              label: t("storeHome.hero.orders"),
+              to: "/orders",
+              variant: "outline",
+              icon: <ReceiptText className="h-5 w-5" strokeWidth={2} aria-hidden="true" />,
+            },
+          ]}
+          illustration={<ShopkeeperIllustration label={t("storeHome.hero.shopkeeper")} />}
+          bubble={t("storeHome.hero.bubble", { returnObjects: true }) as string[]}
+          stats={stats}
+          statsLabel={t("home.stats.label")}
+          statsFailed={impactFailed}
+        />
 
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
-        <TodayCards today={home?.today ?? null} />
-        <StoreHomeOrders orders={home?.orders ?? null} onDecided={loadHome} />
-        {home && home.products.length > 0 && <StoreHomeProducts products={home.products} />}
+        <div className="-mx-4 bg-sand px-4 pt-8 pb-14 sm:-mx-6 sm:px-6">
+          <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
+            <TodayCards today={home?.today ?? null} />
+            <StoreHomeOrders orders={home?.orders ?? null} onDecided={loadHome} />
+            {home && home.products.length > 0 && <StoreHomeProducts products={home.products} />}
+          </div>
+        </div>
+
+        <HomeHowItWorks
+          title={t("storeHome.howItWorks.title")}
+          subtitle={t("storeHome.howItWorks.subtitle")}
+          steps={[
+            {
+              key: "publish",
+              illustration: PublishOfferIllustration,
+              title: t("storeHome.howItWorks.publish.title"),
+              textKey: "storeHome.howItWorks.publish.text",
+            },
+            {
+              key: "confirm",
+              illustration: ConfirmOrderIllustration,
+              title: t("storeHome.howItWorks.confirm.title"),
+              textKey: "storeHome.howItWorks.confirm.text",
+            },
+            {
+              key: "handOver",
+              illustration: ChooseDeliveryIllustration,
+              title: t("storeHome.howItWorks.handOver.title"),
+              textKey: "storeHome.howItWorks.handOver.text",
+            },
+          ]}
+        />
+
+        <HomeDonateBand
+          title={t("home.donate.title")}
+          text={t("storeHome.donate.text")}
+          donateLabel={t("storeHome.donate.donate")}
+        />
       </div>
-
-      <HomeHowItWorks
-        title={t("storeHome.howItWorks.title")}
-        subtitle={t("storeHome.howItWorks.subtitle")}
-        steps={[
-          {
-            key: "publish",
-            illustration: PublishOfferIllustration,
-            title: t("storeHome.howItWorks.publish.title"),
-            textKey: "storeHome.howItWorks.publish.text",
-          },
-          {
-            key: "confirm",
-            illustration: ConfirmOrderIllustration,
-            title: t("storeHome.howItWorks.confirm.title"),
-            textKey: "storeHome.howItWorks.confirm.text",
-          },
-          {
-            key: "handOver",
-            illustration: ChooseDeliveryIllustration,
-            title: t("storeHome.howItWorks.handOver.title"),
-            textKey: "storeHome.howItWorks.handOver.text",
-          },
-        ]}
-      />
-
-      <HomeDonateBand
-        title={t("home.donate.title")}
-        text={t("storeHome.donate.text")}
-        donateLabel={t("storeHome.donate.donate")}
-      />
     </div>
   );
 }
