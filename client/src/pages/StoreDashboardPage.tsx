@@ -86,9 +86,7 @@ function StoreDashboardPage() {
   ];
 
   return (
-    <div data-testid="store-home" className="space-y-6 font-jakarta text-neutral-900">
-      <LocationReminder />
-
+    <div data-testid="store-home" className="font-jakarta text-neutral-900">
       {/* Hero, the beige section band, How it works and the donation band follow each other with no gaps. */}
       <div>
         <HomeHero
@@ -116,6 +114,8 @@ function StoreDashboardPage() {
 
         <div className="-mx-4 bg-sand px-4 pt-8 pb-14 sm:-mx-6 sm:px-6">
           <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
+            {/* The map pin reminder (only without a pin) right under the hero. */}
+            <LocationReminder />
             <TodayCards today={home?.today ?? null} />
             <StoreHomeOrders orders={home?.orders ?? null} onDecided={loadHome} />
             {home && home.products.length > 0 && <StoreHomeProducts products={home.products} />}

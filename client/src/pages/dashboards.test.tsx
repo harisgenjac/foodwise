@@ -108,11 +108,11 @@ describe("StoreDashboardPage", () => {
     }
   });
 
-  it("puts the map pin reminder first", async () => {
+  it("puts the map pin reminder right under the hero", async () => {
     renderStore({ user: { latitude: null, longitude: null } });
 
     const reminder = await screen.findByRole("link", { name: t("location.reminderLink") });
-    expect(reminder.compareDocumentPosition(screen.getByTestId("home-hero")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByTestId("home-hero").compareDocumentPosition(reminder) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("ends with From the shelf to the restaurant and the donation band", () => {
@@ -294,7 +294,7 @@ describe("RestaurantDashboardPage", () => {
     }
   });
 
-  it("puts the map pin reminder first", async () => {
+  it("puts the map pin reminder right under the hero", async () => {
     renderWithProviders(<RestaurantDashboardPage />, {
       route: "/dashboard",
       path: "/dashboard",
@@ -303,7 +303,7 @@ describe("RestaurantDashboardPage", () => {
     });
 
     const reminder = await screen.findByRole("link", { name: t("location.reminderLink") });
-    expect(reminder.compareDocumentPosition(screen.getByTestId("home-hero")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByTestId("home-hero").compareDocumentPosition(reminder) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("hides the slider without stores, and when the stores fail to load", async () => {

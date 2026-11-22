@@ -101,9 +101,7 @@ const RestaurantDashboardPage = () => {
   ];
 
   return (
-    <div data-testid="restaurant-home" className="space-y-6 font-jakarta text-neutral-900">
-      <LocationReminder />
-
+    <div data-testid="restaurant-home" className="font-jakarta text-neutral-900">
       {/* Hero, the beige section band, How it works and the donation band follow each other with no gaps. */}
       <div>
         <HomeHero
@@ -133,6 +131,8 @@ const RestaurantDashboardPage = () => {
 
         <div className="-mx-4 bg-sand px-4 pt-8 pb-14 sm:-mx-6 sm:px-6">
           <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
+            {/* The map pin reminder (only without a pin) right under the hero. */}
+            <LocationReminder />
             {(stores === null || stores.length > 0) && <HomeStoreSlider stores={stores} />}
             {(offers === null || offers.length > 0) && <HomeOffers stores={offers} />}
           </div>
