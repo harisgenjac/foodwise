@@ -1,4 +1,5 @@
 import type { TFunction } from "i18next";
+import { formatNumber } from "./numbers.js";
 
 // The marketplace radius (`radius` on GET /products and /users/stores): km from the restaurant's
 // city, or "all". The server applies 10 km when the parameter is missing.
@@ -17,6 +18,10 @@ export const formatCityDistance = (t: TFunction, city: string, distanceKm: numbe
   const distance = distanceKm === 0 ? t("radius.inYourCity") : t("radius.km", { km: distanceKm });
   return `${city} · ${distance}`;
 };
+
+// "0,8 km", "24 km": a store's distance (`distance_km`, one decimal between pins, whole km between
+// cities) in the interface language.
+export const formatKmDistance = (km: number, language: string) => `${formatNumber(km, language, 1, 0)} km`;
 
 // The label of the button that widens the radius one step ("Show up to 20 km", "Show all cities").
 export const widenLabel = (t: TFunction, radius: Radius) => {

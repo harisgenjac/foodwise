@@ -286,7 +286,8 @@ export interface User {
   // The city's name (for display) and its id in the city list (for forms and filters).
   city?: string;
   city_id?: number | null;
-  // On GET /users/stores: km from the restaurant's city.
+  // On GET /users/stores and /users/stores/:id: km from the restaurant, between the two map pins
+  // (one decimal), or between the two cities' centres (whole km) when either has no pin.
   distance_km?: number | null;
   // Weekly hours (utils/schedule.ts); null until entered. Pickup hours are a store's only.
   opening_schedule?: Schedule | null;
@@ -302,12 +303,14 @@ export interface User {
   created_at?: string;
   // Only on GET /users/stores (COUNT, so a string).
   active_products?: string;
+  // Only on GET /users/stores: the biggest discount of its offers in whole percent (0 without).
+  max_discount?: number;
   // Set while the user still has a temporary password from an admin.
   must_change_password?: boolean;
   // The "Email notifications" switch on My profile (GET /users/me).
   email_notifications?: boolean;
-  // A store's order settings: on GET /users/me and the admin's user (all four); the pause also on
-  // the store page and the store list.
+  // A store's order settings: on GET /users/me, the admin's user and the store page (all four);
+  // the pause also on the store list.
   delivery_enabled?: boolean;
   preparation_minutes?: number;
   orders_paused?: boolean;

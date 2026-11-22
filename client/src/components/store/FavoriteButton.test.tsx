@@ -9,13 +9,10 @@ describe("FavoriteButton", () => {
     expect(screen.getByRole("button", { name: t("store.addToFavorites") })).toHaveAttribute("aria-pressed", "false");
 
     rerender(<FavoriteButton isFavorite onToggle={() => {}} />);
-    expect(screen.getByRole("button", { name: t("store.removeFromFavorites") })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(screen.getByRole("button", { name: t("store.removeFromFavorites") })).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("toggles without triggering the card click underneath", async () => {
+  it("toggles without following the card link around it", async () => {
     const onToggle = vi.fn();
     const onCardClick = vi.fn();
     render(
@@ -36,6 +33,6 @@ describe("FavoriteButton", () => {
     expect(onToggle).toHaveBeenCalled();
 
     rerender(<FavoriteButton variant="pill" isFavorite onToggle={onToggle} />);
-    expect(screen.getByRole("button", { name: t("store.inFavorites") })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: t("store.inFavorites") })).toHaveAttribute("aria-pressed", "true");
   });
 });

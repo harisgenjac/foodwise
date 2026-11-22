@@ -204,6 +204,43 @@ describe("Users routes", () => {
       expect(response.body.error).toBe("Invalid filter.");
     });
 
+    it("returns each store's biggest discount over its offers, 0 without offers", async () => {
+      await createProduct(store, { original_price: 10, discounted_price: 6 });
+      await createProduct(store, { original_price: 10, discounted_price: 4.4 });
+      // Fully ordered: not on offer, so its 90% does not count.
+      const soldOut = await createProduct(store, { original_price: 10, discounted_price: 1, quantity: 1 });
+      await orderOne(restaurant, soldOut.id, 1);
+      const other = await registerAndLogin(STORE_2, "STORE");
+      await other.put("/api/users/me").send({ ...PROFILE, business_name: "Empty Market Users" });
+
+      const response = await restaurant.get("/api/users/stores").query({ city_id: PROFILE.city_id, sort: "name" });
+      expect(response.body.stores.map((s: { business_name: string; max_discount: number }) => [s.business_name, s.max_discount])).toEqual([
+        ["Empty Market Users", 0],
+        [PROFILE.business_name, 56],
+      ]);
+    });
+
+    it("orders by the distance between the map pins, and by city when a pin is missing", async () => {
+      const olovo = (await pool.query("SELECT latitude::float8 AS lat, longitude::float8 AS lng FROM cities WHERE id = $1", [PROFILE.city_id]))
+        .rows[0] as { lat: number; lng: number };
+      // The restaurant at the centre, the first store about 4.4 km north, the second about 1.1 km north.
+      await restaurant.put("/api/users/me").send({ ...PROFILE, business_name: "Restoran", location: { latitude: olovo.lat, longitude: olovo.lng } });
+      await store.put("/api/users/me").send({ ...PROFILE, location: { latitude: olovo.lat + 0.04, longitude: olovo.lng } });
+      const near = await registerAndLogin(STORE_2, "STORE");
+      await near.put("/api/users/me").send({ ...PROFILE, business_name: "Near Market Users", location: { latitude: olovo.lat + 0.01, longitude: olovo.lng } });
+
+      const response = await restaurant.get("/api/users/stores").query({ radius: "all", business_name: "Market Users" });
+      expect(response.body.stores.map((s: { business_name: string; distance_km: number }) => [s.business_name, s.distance_km])).toEqual([
+        ["Near Market Users", 1.1],
+        [PROFILE.business_name, 4.4],
+      ]);
+
+      // Without the store's pin: the distance between the two cities (0 in the same city).
+      await near.put("/api/users/me").send({ ...PROFILE, business_name: "Near Market Users", location: null });
+      const fallback = await restaurant.get("/api/users/stores").query({ radius: "all", business_name: "Near Market Users" });
+      expect(fallback.body.stores[0].distance_km).toBe(0);
+    });
+
     it("returns 403 for a STORE", async () => {
       const response = await store.get("/api/users/stores");
       expect(response.status).toBe(403);
@@ -228,7 +265,6 @@ describe("Users routes", () => {
         opening_schedule: null,
         open_now: null,
       });
-      expect(response.body.store.email).toBeUndefined();
       expect(response.body.products).toBeUndefined();
       expect(response.body.myOrders).toBeUndefined();
 
@@ -249,6 +285,26 @@ describe("Users routes", () => {
       const response = await restaurant.get(`/api/users/stores/${await userId(STORE)}`);
       // The fully ordered product is not on offer, so its 90% does not count.
       expect(response.body.stats).toEqual({ active_offers: 2, expiring_today: 1, max_discount: 70 });
+    });
+
+    it("returns the contact email, the order settings and the distance from the restaurant", async () => {
+      const store = await registerAndLogin(STORE, "STORE");
+      await store.put("/api/users/me").send(PROFILE);
+      await store.patch("/api/users/me/order-settings").send({ delivery_enabled: true, preparation_minutes: 45 });
+      const restaurant = await registerAndLogin(RESTAURANT, "RESTAURANT");
+      await restaurant.put("/api/users/me").send({ ...PROFILE, business_name: "Restoran", city_id: zenica });
+
+      const response = await restaurant.get(`/api/users/stores/${await userId(STORE)}`);
+      expect(response.body.store).toMatchObject({
+        email: STORE,
+        delivery_enabled: true,
+        preparation_minutes: 45,
+        orders_paused: false,
+        orders_paused_until: null,
+      });
+      // No pins: the distance between Zenica and Olovo.
+      expect(response.body.store.distance_km).toBeGreaterThan(0);
+      expect(Number.isInteger(response.body.store.distance_km)).toBe(true);
     });
 
     it("has zero stats without offers", async () => {

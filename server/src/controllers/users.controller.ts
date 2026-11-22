@@ -6,13 +6,13 @@ import { CARD_PAGE_SIZE, listPage, parsePage } from "../utils/pagination.js";
 import type { Role } from "../types/auth.js";
 import bcrypt from "bcrypt";
 import { hashPassword, validatePassword } from "../utils/accounts.js";
-import { CITY_NAME, cityDistance, cityExists, parseCityFilter, parseRadius, userCityId } from "../utils/cities.js";
+import { CITY_NAME, cityExists, parseCityFilter, parseRadius, userCityId } from "../utils/cities.js";
 import { visibleStore } from "../utils/visibility.js";
 import { onOffer } from "../services/stock.js";
 import { companyName, storeDescription, storeLogo } from "../utils/branding.js";
 import { removeStoredFile, saveImage } from "../services/storage.js";
 import { isOpenAt, parseSchedule } from "../utils/schedule.js";
-import { kmFromCity, MAX_KM_FROM_CITY, parseLocation } from "../utils/location.js";
+import { businessDistance, kmFromCity, MAX_KM_FROM_CITY, parseLocation } from "../utils/location.js";
 import { orderSettingsColumns, parseOrderSettings, pauseColumns, saveOrderSettings } from "../utils/orderSettings.js";
 
 export const getUser = async (req: Request, res: Response) => {
@@ -281,12 +281,17 @@ export const changePassword = async (req: Request, res: Response) => {
   }
 };
 
-// The store list's `sort` values; {distance} is the distance expression from the caller's city.
-// Nearest first is the default, a store without a distance (no city on either side) comes last.
+// The store list's `sort` values; {distance} is the distance expression from the caller (see
+// businessDistance). Nearest first is the default, a store without a distance comes last.
 const STORE_SORTS: Record<string, string> = {
   distance: "{distance} ASC NULLS LAST, users.business_name ASC, users.id DESC",
   name: "users.business_name ASC, users.id DESC",
 };
+
+// A product's discount in whole percent: the store list's and the store page's "up to −N%".
+const MAX_DISCOUNT = `COALESCE(ROUND(MAX(
+  (products.original_price - products.discounted_price) / products.original_price * 100
+)), 0)::int`;
 
 export const getStores = async (req: Request, res: Response) => {
   try {
@@ -297,21 +302,26 @@ export const getStores = async (req: Request, res: Response) => {
     if (!page || "invalid" in radiusFilter || typeof sortKey !== "string" || !Object.hasOwn(STORE_SORTS, sortKey)) {
       return res.status(400).json({ error: "Invalid filter." });
     }
-    // Distances start at the restaurant's city ($1, joined as `from_city` so every query, the counts too, uses it).
+    // Distances start at the restaurant ($1, joined as `me` so every query, the counts too, uses it):
+    // between the two map pins, or between the two cities' centres when either has no pin.
     const fromCity = await userCityId(pool, req.user!.id);
-    const distance = cityDistance("from_city.id", "users.city_id");
-    const columns = `users.id, users.business_name, users.city_id, cities.name AS city, ${distance} AS distance_km,
+    const distance = businessDistance("me", "users");
+    // active_products and max_discount are the store's products on offer now (the marketplace's rules).
+    const columns = `users.id, users.business_name, users.city_id, cities.name AS city,
+     ROUND((${distance})::numeric, 1)::float AS distance_km,
      users.address, ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
      users.opening_schedule, users.pickup_schedule, users.phone,
      ${companyName("users")} AS company_name, ${pauseColumns("users")},
      (SELECT COUNT(*) FROM products
-      WHERE products.store_id = users.id AND ${onOffer("products", "users")}) AS active_products`;
+      WHERE products.store_id = users.id AND ${onOffer("products", "users")}) AS active_products,
+     (SELECT ${MAX_DISCOUNT} FROM products
+      WHERE products.store_id = users.id AND ${onOffer("products", "users")}) AS max_discount`;
     let query = `FROM users
      LEFT JOIN cities ON cities.id = users.city_id
-     LEFT JOIN cities AS from_city ON from_city.id = $1::integer
+     LEFT JOIN users AS me ON me.id = $1::integer
      WHERE users.role = 'STORE' AND ${visibleStore("users")}`;
 
-    const values: (string | number | null)[] = [fromCity];
+    const values: (string | number | null)[] = [req.user!.id];
 
     // "Favorites only" on the store list: the caller's favorite stores.
     const favoritesOnly = favorites !== undefined && favorites !== "";
@@ -319,8 +329,7 @@ export const getStores = async (req: Request, res: Response) => {
       if (favorites !== "true") {
         return res.status(400).json({ error: "Invalid filter." });
       }
-      values.push(req.user!.id);
-      query += ` AND EXISTS (SELECT 1 FROM favorites WHERE favorites.store_id = users.id AND favorites.restaurant_id = $${values.length})`;
+      query += ` AND EXISTS (SELECT 1 FROM favorites WHERE favorites.store_id = users.id AND favorites.restaurant_id = $1)`;
     }
 
     const cityFilter = await parseCityFilter(pool, city_id);
@@ -337,9 +346,10 @@ export const getStores = async (req: Request, res: Response) => {
       query += ` AND users.business_name ILIKE $${values.length}`;
     }
 
-    // The radius limits the list unless the restaurant chose a city or its favorites.
-    const radius =
-      fromCity !== null && cityFilter.cityId === null && !favoritesOnly ? radiusFilter.radius : null;
+    // The radius limits the list unless the restaurant asks for its favorites. Unlike the
+    // marketplace, a chosen city keeps it: inside its own city a restaurant can still narrow the
+    // list, and the client sends radius=all with another city.
+    const radius = fromCity !== null && !favoritesOnly ? radiusFilter.radius : null;
     let outsideRadiusCount = 0;
     if (radius !== null) {
       values.push(radius);
@@ -380,14 +390,19 @@ export const getStoreDetails = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Store not found." });
     }
 
+    // The header card: the contact email, the order settings (delivery, preparation time, the
+    // pause now) and the distance from the restaurant ($2), as on the store list.
     const result = await pool.query(
       `SELECT users.id, users.business_name, users.city_id, cities.name AS city, users.address,
        ${storeLogo("users")} AS logo_url, ${storeDescription("users")} AS description,
-       users.opening_schedule, users.pickup_schedule,
-       users.phone, ${companyName("users")} AS company_name, ${pauseColumns("users")}
-       FROM users LEFT JOIN cities ON cities.id = users.city_id
+       users.opening_schedule, users.pickup_schedule, users.phone, users.email,
+       ${companyName("users")} AS company_name, ${orderSettingsColumns("users")},
+       ROUND((${businessDistance("me", "users")})::numeric, 1)::float AS distance_km
+       FROM users
+       LEFT JOIN cities ON cities.id = users.city_id
+       LEFT JOIN users AS me ON me.id = $2::integer
        WHERE users.id = $1 AND users.role = 'STORE' AND ${visibleStore("users")}`,
-      [storeId],
+      [storeId, req.user!.id],
     );
 
     if (result.rows.length === 0) {
@@ -402,9 +417,7 @@ export const getStoreDetails = async (req: Request, res: Response) => {
       `SELECT
          COUNT(*)::int AS active_offers,
          (COUNT(*) FILTER (WHERE products.expiry_date = CURRENT_DATE))::int AS expiring_today,
-         COALESCE(ROUND(MAX(
-           (products.original_price - products.discounted_price) / products.original_price * 100
-         )), 0)::int AS max_discount
+         ${MAX_DISCOUNT} AS max_discount
        FROM products
        JOIN users ON users.id = products.store_id
        WHERE products.store_id = $1 AND products.expiry_date >= CURRENT_DATE AND ${onOffer("products", "users")}`,

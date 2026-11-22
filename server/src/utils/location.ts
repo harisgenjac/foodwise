@@ -1,4 +1,5 @@
 import type { Pool, PoolClient } from "pg";
+import { cityDistance } from "./cities.js";
 
 // A business's exact location: the pin on the map on My profile (users.latitude/longitude).
 interface Location {
@@ -44,3 +45,17 @@ export const kmFromCity = async (db: Pool | PoolClient, cityId: number, point: L
   );
   return result.rows[0]?.km ?? null;
 };
+
+// Straight-line km between two businesses' map pins (`from` and `to` are table aliases with
+// latitude/longitude), the haversine of city_distance_km and delivery/distance.ts; NULL when
+// either has no pin.
+export const pinDistance = (from: string, to: string) => `CASE WHEN ${to}.latitude IS NOT NULL AND ${from}.latitude IS NOT NULL THEN
+  2 * 6371 * ASIN(LEAST(1, SQRT(
+    POWER(SIN(RADIANS(${to}.latitude - ${from}.latitude) / 2), 2)
+    + COS(RADIANS(${from}.latitude)) * COS(RADIANS(${to}.latitude)) * POWER(SIN(RADIANS(${to}.longitude - ${from}.longitude) / 2), 2)
+  ))) END`;
+
+// The distance a restaurant (`from`) sees to a store (`to`): between the two pins, or between the
+// two cities' centres when either has no pin (whole km); NULL when a city is missing too.
+export const businessDistance = (from: string, to: string) =>
+  `COALESCE(${pinDistance(from, to)}, ${cityDistance(`${from}.city_id`, `${to}.city_id`)})`;

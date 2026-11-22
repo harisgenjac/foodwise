@@ -51,7 +51,7 @@ test("a store pauses orders and a restaurant cannot send them meanwhile", async 
 
   await test.step("Restoran vidi pauzu i ne može poslati korpu", async () => {
     await open(restaurant, `/stores/${storeId}`);
-    await expect(restaurant.getByText(/Ova prodavnica trenutno ne prima narudžbe/).first()).toBeVisible();
+    await expect(restaurant.getByTestId("info-delivery")).toContainText("Narudžbe pauzirane");
     await open(restaurant, "/cart");
     await expect(restaurant.getByText(productName)).toBeVisible();
     await expect(restaurant.getByRole("button", { name: "Pošalji narudžbu" })).toBeDisabled();

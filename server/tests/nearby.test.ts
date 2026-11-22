@@ -110,15 +110,24 @@ describe("Nearby offers (radius and distance)", () => {
     }
   });
 
-  it("shows a chosen city whatever the radius", async () => {
+  it("shows a chosen city's offers whatever the radius", async () => {
     const zenica = await cityId("Zenica");
     const response = await products({ radius: "5", city_id: zenica });
     expect(productCities(response.body.products)).toEqual(["Zenica"]);
     expect(response.body.outside_radius_count).toBe(0);
+  });
 
-    const list = await stores({ radius: "5", city_id: zenica });
-    expect(storeCities(list.body.stores)).toEqual(["Zenica"]);
-    expect(list.body.outside_radius_count).toBe(0);
+  it("keeps the radius with a chosen city on the store list", async () => {
+    const zenica = await cityId("Zenica");
+    const limited = await stores({ radius: "5", city_id: zenica });
+    expect(storeCities(limited.body.stores)).toEqual([]);
+    expect(limited.body.outside_radius_count).toBe(1);
+
+    const all = await stores({ radius: "all", city_id: zenica });
+    expect(storeCities(all.body.stores)).toEqual(["Zenica"]);
+
+    const own = await stores({ radius: "5", city_id: await cityId("Visoko") });
+    expect(storeCities(own.body.stores)).toEqual(["Visoko"]);
   });
 
   it("shows a store's own offers (its profile) whatever the radius", async () => {
