@@ -99,8 +99,9 @@ export function Switch({ checked, onChange, label, showLabel = false, disabled =
 }
 
 // An info button with a small dark tooltip: opens on hover, focus and click (a tap), closes on
-// Escape, mouse leave and blur.
-export function HintTip({ text, label }: { text: string; label: string }) {
+// Escape, mouse leave and blur. `align="start"` starts it at the button instead of centring it
+// (near the left edge of a card, which would cut it off).
+export function HintTip({ text, label, align = "center" }: { text: string; label: string; align?: "center" | "start" }) {
   const tipId = useId();
   const [open, setOpen] = useState(false);
 
@@ -131,7 +132,7 @@ export function HintTip({ text, label }: { text: string; label: string }) {
         id={tipId}
         role="tooltip"
         data-open={open}
-        className={`absolute bottom-[calc(100%+8px)] left-1/2 z-20 w-[min(280px,80vw)] -translate-x-1/2 rounded-[10px] bg-neutral-900 px-3 py-2 text-[13px] leading-[1.45] font-medium text-white transition-opacity ${
+        className={`absolute bottom-[calc(100%+8px)] z-20 w-[min(280px,80vw)] rounded-[10px] ${align === "start" ? "left-0" : "left-1/2 -translate-x-1/2"} bg-neutral-900 px-3 py-2 text-[13px] leading-[1.45] font-medium text-white transition-opacity ${
           open ? "opacity-100" : "invisible opacity-0"
         }`}
       >

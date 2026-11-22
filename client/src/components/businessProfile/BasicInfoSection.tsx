@@ -1,7 +1,7 @@
 import { useEffect, useMemo, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
-import { Building2, Camera, Lock, Mail, MapPin, Phone, Trash2, UserRound } from "lucide-react";
+import { Building2, Camera, Lock, Mail, MapPin, Phone, UserRound } from "lucide-react";
 import FormField, { inputStyle } from "../form/FormField.js";
 import CitySelect from "../form/CitySelect.js";
 import { LOGO_ACCEPT } from "../../hooks/useLogoPreview.js";
@@ -46,8 +46,8 @@ function BasicInfoSection({
     if (preview) URL.revokeObjectURL(preview);
   }, [preview]);
 
-  const savedLogo = !draft.removeLogo && logoUrl ? assetUrl(logoUrl) : null;
-  const companyLogo = isBranch && !draft.removeLogo && !logoUrl && companyLogoUrl ? assetUrl(companyLogoUrl) : null;
+  const savedLogo = logoUrl ? assetUrl(logoUrl) : null;
+  const companyLogo = isBranch && !logoUrl && companyLogoUrl ? assetUrl(companyLogoUrl) : null;
   const logoSrc = preview ?? savedLogo ?? companyLogo;
   const initials =
     (draft.businessName.trim().split(/\s+/).slice(0, 2).map((word) => word[0]).join("") ||
@@ -61,7 +61,7 @@ function BasicInfoSection({
       toast.error(t("user.invalidImageType"));
       return;
     }
-    update({ logoFile: file, removeLogo: false });
+    update({ logoFile: file });
   };
 
   const field = (name: keyof ProfileDraft & string, value: string) => ({
@@ -95,25 +95,16 @@ function BasicInfoSection({
             />
           </label>
         </div>
-        {(draft.logoFile || (logoUrl && !draft.removeLogo)) && (
-          <button
-            type="button"
-            onClick={() => update(draft.logoFile ? { logoFile: null } : { removeLogo: true })}
-            className="mt-2 inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-xs font-semibold text-danger-700 hover:bg-danger-50"
-          >
-            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-            {draft.logoFile ? t("profile.basic.cancelLogo") : t("user.removeLogo")}
-          </button>
+        {/* The accepted format and size in a tooltip next to the logo. */}
+        <span className="mt-2 flex items-center gap-1 text-xs font-semibold text-neutral-700">
+          {t("profile.basic.logoLabel")}
+          <HintTip label={t("profile.basic.logoInfo")} text={t("profile.basic.logoHint")} align="start" />
+        </span>
+        {(draft.logoFile || companyLogo) && (
+          <p className="max-w-[9rem] text-center text-xs text-neutral-600 md:text-left">
+            {draft.logoFile ? t("profile.basic.logoChosen") : t("user.usesCompanyLogo")}
+          </p>
         )}
-        <p className="max-w-[9rem] text-center text-xs text-neutral-600 md:text-left">
-          {draft.logoFile
-            ? t("profile.basic.logoChosen")
-            : draft.removeLogo
-              ? t("profile.basic.logoRemoved")
-              : companyLogo
-                ? t("user.usesCompanyLogo")
-                : t("profile.basic.logoHint")}
-        </p>
       </div>
 
       <div className="grid min-w-0 flex-1 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

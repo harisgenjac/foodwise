@@ -468,8 +468,7 @@
     "companyRole": "Centrala",
     "managedByCompany": "Mijenja centrala",
     "usesCompanyLogo": "Prikazuje se logo firme dok ne postavite svoj.",
-    "companyDescriptionHint": "Ako ostavite prazno, prikazuje se opis firme.",
-    "removeLogo": "Ukloni logo"
+    "companyDescriptionHint": "Ako ostavite prazno, prikazuje se opis firme."
   },
   "dashboard": {
     "appTitle": "Dobrodošli na platformu Još vrijedi",
@@ -2443,15 +2442,15 @@
     "basic": {
       "logoAlt": "Logo",
       "changeLogo": "Promijeni logo",
-      "cancelLogo": "Otkaži novi logo",
       "logoHint": "Kvadratna slika, najmanje 200 × 200 px, JPG, PNG ili WEBP, najviše 5 MB.",
       "logoChosen": "Novi logo se sprema kad sačuvate izmjene.",
-      "logoRemoved": "Logo se uklanja kad sačuvate izmjene.",
       "about": "O nama",
       "emailNotifications": "Email obavijesti",
       "emailNotificationsInfo": "Koji emailovi stižu",
       "emailTipRestaurant": "Kad je uključeno, stiže vam email za svaku obavijest iz aplikacije: kad prodavnica prihvati, djelimično prihvati ili odbije vašu narudžbu, o dostavi i propuštenom preuzimanju, te obavještenja platforme. Sistemske poruke (npr. nova lozinka) stižu uvijek.",
-      "emailTipStore": "Kad je uključeno, stiže vam email za svaku obavijest iz aplikacije: nove i otkazane narudžbe, dostava, proizvodi kojima ističe rok, krediti i pretplata, te obavještenja platforme. Sistemske poruke (npr. nova lozinka) stižu uvijek."
+      "emailTipStore": "Kad je uključeno, stiže vam email za svaku obavijest iz aplikacije: nove i otkazane narudžbe, dostava, proizvodi kojima ističe rok, krediti i pretplata, te obavještenja platforme. Sistemske poruke (npr. nova lozinka) stižu uvijek.",
+      "logoLabel": "Logo",
+      "logoInfo": "Format i veličina loga"
     },
     "location": {
       "hint": "Kliknite na mapu na mjesto ulaza u vaš objekat ili povucite pin.",

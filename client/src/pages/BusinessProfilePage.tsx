@@ -198,8 +198,6 @@ function BusinessProfilePage() {
       const form = new FormData();
       form.append("logo", draft.logoFile);
       await step("logo", () => api.post("/users/me/logo", form, { headers: { "Content-Type": "multipart/form-data" } }));
-    } else if (draft.removeLogo) {
-      await step("logo", () => api.delete("/users/me/logo"));
     }
     if (what.profile) {
       await step("profile", () =>
@@ -297,7 +295,6 @@ function BusinessProfilePage() {
           ? {
               ...draft,
               logoFile: done.has("logo") ? null : draft.logoFile,
-              removeLogo: done.has("logo") ? false : draft.removeLogo,
               credits: {
                 autoRenew: done.has("autoRenew") ? null : draft.credits.autoRenew,
                 plan: done.has("plan") ? null : draft.credits.plan,

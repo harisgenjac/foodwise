@@ -108,6 +108,10 @@ describe("BusinessProfilePage", () => {
     for (const id of ["location", "hours", "password"]) expect(header(id)).toHaveAttribute("aria-expanded", "false");
     expect(header("hours")).toHaveAttribute("aria-controls", "hours-body");
     expect(screen.queryByTestId("branch-chip")).not.toBeInTheDocument();
+    // The logo can be replaced but not removed; its format and size are in a tooltip.
+    expect(screen.getByLabelText(t("profile.basic.changeLogo"))).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Ukloni logo/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: t("profile.basic.logoInfo") })).toHaveAccessibleDescription(t("profile.basic.logoHint"));
   });
 
   it("gives a store the six sections", async () => {

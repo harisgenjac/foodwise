@@ -42,9 +42,8 @@ export interface ProfileDraft {
   location: GeoPoint | null;
   openingSchedule: Schedule | null;
   pickupSchedule: Schedule | null;
-  // A logo chosen on the page (uploaded on save), or the saved one removed on save.
+  // A logo chosen on the page (uploaded on save). A logo cannot be removed, only replaced.
   logoFile: File | null;
-  removeLogo: boolean;
   // A store's order settings; null for a restaurant.
   orders: OrderDraft | null;
   credits: CreditDraft;
@@ -67,7 +66,6 @@ export const draftFromUser = (user: User, autoRenew: boolean | null): ProfileDra
   openingSchedule: user.opening_schedule ?? null,
   pickupSchedule: user.pickup_schedule ?? null,
   logoFile: null,
-  removeLogo: false,
   orders:
     user.role === "STORE"
       ? {
@@ -91,7 +89,7 @@ export const changes = (draft: ProfileDraft, saved: ProfileDraft) => ({
     [saved.businessName, saved.firstName, saved.lastName, saved.phone, saved.cityId, saved.address, saved.description,
       saved.location, saved.openingSchedule, saved.pickupSchedule],
   ),
-  logo: draft.logoFile !== null || draft.removeLogo,
+  logo: draft.logoFile !== null,
   emailNotifications: draft.emailNotifications !== saved.emailNotifications,
   orders: !same(draft.orders, saved.orders),
   autoRenew: draft.credits.autoRenew !== saved.credits.autoRenew,
