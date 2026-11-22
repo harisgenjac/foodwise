@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Cloud, Coins, Plus, ReceiptText, Salad } from "lucide-react";
 import api from "../api/axios.js";
@@ -11,8 +11,10 @@ import HomeHowItWorks, {
 } from "../components/dashboard/HomeHowItWorks.js";
 import HomeDonateBand from "../components/dashboard/HomeDonateBand.js";
 import LocationReminder from "../components/profile/LocationReminder.js";
+import TodayCards from "../components/storeHome/TodayCards.js";
+import { useLiveOrderRefresh } from "../context/LiveEventsContext.js";
 import { formatNumber } from "../utils/numbers.js";
-import type { StoreImpact } from "../types/index.js";
+import type { StoreHomeData, StoreImpact } from "../types/index.js";
 
 // The store's home page (design/store-home/store.dc.html), for every STORE account, branches
 // included, built from the restaurant home page's components and set in Plus Jakarta Sans: the map
@@ -24,6 +26,22 @@ function StoreDashboardPage() {
   // null while loading.
   const [impact, setImpact] = useState<StoreImpact | null>(null);
   const [impactFailed, setImpactFailed] = useState(false);
+  // The Danas counts and the two lists; null while loading.
+  const [home, setHome] = useState<StoreHomeData | null>(null);
+
+  const loadHome = useCallback(() => {
+    api
+      .get("/stats/store-home")
+      .then((response) => setHome(response.data))
+      .catch((err) => console.error("Error fetching the store home:", err));
+  }, []);
+
+  useEffect(() => {
+    loadHome();
+  }, [loadHome]);
+
+  // A new order, a decision elsewhere or the courier's progress updates the counts and the lists.
+  useLiveOrderRefresh(loadHome);
 
   useEffect(() => {
     api
@@ -93,7 +111,7 @@ function StoreDashboardPage() {
       />
 
       <div className="mx-auto flex max-w-[1280px] flex-col gap-7">
-        {/* Today, New orders and Expiring soon in your offer come here (store home, part 2). */}
+        <TodayCards today={home?.today ?? null} />
         <HomeHowItWorks
           title={t("storeHome.howItWorks.title")}
           subtitle={t("storeHome.howItWorks.subtitle")}

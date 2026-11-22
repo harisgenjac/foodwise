@@ -531,6 +531,30 @@ export interface StoreImpact {
   revenue: number;
 }
 
+// The store home page's lists and "Danas" counts (GET /stats/store-home). Each accepted order is
+// in at most one card: to_prepare (ready today, that time ahead) or hand_over (that time passed).
+export interface StoreHomeToday {
+  pending: number;
+  // The closest automatic rejection of a Pending order.
+  first_deadline: string | null;
+  to_prepare: number;
+  first_ready_at: string | null;
+  hand_over_courier: number;
+  hand_over_pickup: number;
+  expiring_today: number;
+}
+
+// A product of the store home's "Expiring soon": what is free and what open orders hold.
+export interface StoreHomeProduct extends Product {
+  reserved_quantity: string;
+}
+
+export interface StoreHomeData {
+  today: StoreHomeToday;
+  orders: Order[];
+  products: StoreHomeProduct[];
+}
+
 // Admin panel (GET /admin/*). Counts arrive as numbers.
 export interface AdminStats {
   users: { stores: number; restaurants: number; admins: number; blocked: number; incomplete_profiles: number };

@@ -16,7 +16,10 @@ describe("StoreDashboardPage", () => {
       route: "/dashboard",
       path: "/dashboard",
       user: makeUser({ role: "STORE", latitude: 43.85, longitude: 18.41, ...user }),
-      get: { "/stats/my-impact": impact },
+      get: {
+        "/stats/my-impact": impact,
+        "/stats/store-home": { today: { pending: 0, first_deadline: null, to_prepare: 0, first_ready_at: null, hand_over_courier: 0, hand_over_pickup: 0, expiring_today: 0 }, orders: [], products: [] },
+      },
     });
 
   it("shows the hero (the brand as the only h1, the store text, Add product, Orders, the shopkeeper) with the store's stats", async () => {
@@ -39,8 +42,11 @@ describe("StoreDashboardPage", () => {
     expect(within(stats).getByRole("button", { name: t("home.stats.foodSavedInfo") })).toHaveAccessibleDescription(
       `${t("home.stats.foodSaved")} ${t("storeHome.stats.foodSavedTip")}`,
     );
-    // Only the stats are loaded so far (Today, New orders and Expiring soon come later).
-    expect(apiMock.get.mock.calls.map(([url]) => url).filter((url) => url !== "/users/me")).toEqual(["/stats/my-impact"]);
+    // The stats and the store home data (Danas and the two lists) in two requests.
+    expect(apiMock.get.mock.calls.map(([url]) => url).filter((url) => url !== "/users/me").sort()).toEqual([
+      "/stats/my-impact",
+      "/stats/store-home",
+    ]);
   });
 
   it("shows zeros to a store that has sold nothing yet", async () => {

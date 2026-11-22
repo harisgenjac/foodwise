@@ -2312,6 +2312,31 @@
     "donate": {
       "text": "Move surplus from your offer to donations or sponsor a campaign and help people in your town.",
       "donate": "Donate food"
+    },
+    "today": {
+      "title": "Today",
+      "pending": "Awaiting reply",
+      "pendingIn_one": "First expires in {{count}} min",
+      "pendingIn_other": "First expires in {{count}} min",
+      "pendingAt": "First expires at {{time}}",
+      "pendingNone": "No orders waiting",
+      "prepare": "To prepare today",
+      "prepareBy": "First by {{time}}",
+      "prepareNone": "Nothing to prepare",
+      "handOver": "To hand over",
+      "courier_one": "{{count}} courier",
+      "courier_other": "{{count}} couriers",
+      "inPerson_one": "{{count}} in-person pickup",
+      "inPerson_other": "{{count}} in-person pickups",
+      "handOverNone": "Nothing to hand over",
+      "expiring": "Expires today",
+      "expiringLine_one": "product in your offer",
+      "expiringLine_other": "products in your offer",
+      "credits": "Credits",
+      "creditsLine_one": "This month · enough for {{count}} listing",
+      "creditsLine_other": "This month · enough for {{count}} listings",
+      "creditsUsed": "Credits used this month",
+      "noPlan": "No subscription"
     }
   }
 }

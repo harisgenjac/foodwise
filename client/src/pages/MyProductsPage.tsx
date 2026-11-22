@@ -57,7 +57,10 @@ function MyProductsPage() {
   }
   const [status, setStatus] = useState("Available");
   const [category, setCategory] = useState("");
-  const [expiryWithinDays, setExpiryWithinDays] = useState("");
+  // ?expiry= (the store home's "Ističe danas" card: 0 = today) sets the expiry filter when the page opens.
+  const [expiryWithinDays, setExpiryWithinDays] = useState(() =>
+    ["0", "1", "3", "7"].includes(searchParams.get("expiry") ?? "") ? searchParams.get("expiry")! : "",
+  );
   const [sort, setSort] = useState<SortValue>("newest");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [donatingProduct, setDonatingProduct] = useState<Product | null>(null);

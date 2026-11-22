@@ -2363,6 +2363,36 @@
     "donate": {
       "text": "Prebacite višak iz ponude u donacije ili sponzorišite akciju i pomozite ljudima u svom gradu.",
       "donate": "Doniraj hranu"
+    },
+    "today": {
+      "title": "Danas",
+      "pending": "Čeka odgovor",
+      "pendingIn_one": "Prva ističe za {{count}} min",
+      "pendingIn_few": "Prva ističe za {{count}} min",
+      "pendingIn_other": "Prva ističe za {{count}} min",
+      "pendingAt": "Prva ističe u {{time}}",
+      "pendingNone": "Nema narudžbi na čekanju",
+      "prepare": "Za pripremu danas",
+      "prepareBy": "Prva do {{time}}",
+      "prepareNone": "Ništa za pripremu",
+      "handOver": "Za predaju",
+      "courier_one": "{{count}} kurir",
+      "courier_few": "{{count}} kurira",
+      "courier_other": "{{count}} kurira",
+      "inPerson_one": "{{count}} lično preuzimanje",
+      "inPerson_few": "{{count}} lična preuzimanja",
+      "inPerson_other": "{{count}} ličnih preuzimanja",
+      "handOverNone": "Ništa za predaju",
+      "expiring": "Ističe danas",
+      "expiringLine_one": "proizvod u vašoj ponudi",
+      "expiringLine_few": "proizvoda u vašoj ponudi",
+      "expiringLine_other": "proizvoda u vašoj ponudi",
+      "credits": "Krediti",
+      "creditsLine_one": "Ovaj mjesec · dovoljno za {{count}} objavu",
+      "creditsLine_few": "Ovaj mjesec · dovoljno za {{count}} objave",
+      "creditsLine_other": "Ovaj mjesec · dovoljno za {{count}} objava",
+      "creditsUsed": "Iskorišteni krediti ovog mjeseca",
+      "noPlan": "Nema pretplate"
     }
   }
 }

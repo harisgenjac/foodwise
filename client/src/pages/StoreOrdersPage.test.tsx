@@ -6,9 +6,9 @@ import type { Order } from "../types/index.js";
 
 const STORE = makeUser({ role: "STORE" });
 
-const renderPage = (orders: Order[]) =>
+const renderPage = (orders: Order[], route = "/orders") =>
   renderWithProviders(<StoreOrdersPage />, {
-    route: "/orders",
+    route,
     path: "/orders",
     user: STORE,
     get: { "/orders/store": { orders, total: orders.length } },
@@ -45,6 +45,15 @@ describe("StoreOrdersPage", () => {
     expect(within(card("BBBB")).getByRole("button", { name: t("pickups.cancelOverdueButton") })).toBeInTheDocument();
     expect(within(card("CCCC")).getByText(t("orders.partialBadge", { accepted: 1, count: 2 }))).toBeInTheDocument();
     expect(within(card("CCCC")).getByRole("link", { name: t("dashboard.detailsButton") })).toHaveAttribute("href", "/orders/3");
+  });
+
+  it("starts filtered by ?status= (the store home's Awaiting reply card) and ignores an unknown status", async () => {
+    const { unmount } = renderPage([], "/orders?status=Pending");
+    await waitFor(() => expect(lastParams()).toMatchObject({ status: "Pending" }));
+    unmount();
+
+    renderPage([], "/orders?status=Nope");
+    await waitFor(() => expect(lastParams()).toMatchObject({ status: "" }));
   });
 
   it("searches by the code without its # and keeps only letters and digits", async () => {
