@@ -292,7 +292,7 @@ const STORE_SORT_VALUES: Record<string, string> = {
 };
 
 // Search shows every match of a store in its slider; this cap only keeps one store with a huge
-// offer from making the page heavy (the rest is behind "Sve (N)", the store page).
+// offer from making the page heavy (the rest is behind the store page link).
 const SEARCH_PRODUCTS_PER_STORE = 50;
 
 // Search (GET /products/by-store): the marketplace's matches grouped by store, paged by store

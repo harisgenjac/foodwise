@@ -55,7 +55,8 @@ test.describe("cart", () => {
     // A link clicked before the closed dialogs' Back lands would be undone by it.
     await settleOverlays(restaurant);
     await restaurant.getByRole("link", { name: "Korpa, 1 proizvod" }).click();
-    await expect(restaurant.getByRole("link", { name: ACCOUNTS.brezaStore.businessName })).toBeVisible();
+    await expect(restaurant).toHaveURL(/\/cart$/);
+    await expect(restaurant.getByRole("link", { name: ACCOUNTS.brezaStore.businessName, exact: true })).toBeVisible();
     await expect(cartLine(restaurant, theirs)).toBeVisible();
     await expect(cartLine(restaurant, mine)).toHaveCount(0);
   });
