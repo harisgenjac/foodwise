@@ -6,6 +6,9 @@ import AddToCartModal from "../cart/AddToCartModal.js";
 import OfferCard from "./OfferCard.js";
 import StoreAvatar from "../store/StoreAvatar.js";
 import ChainLabel from "../store/ChainLabel.js";
+import StoreAvailabilityChip from "../store/StoreAvailabilityChip.js";
+import { UnavailableAddButton } from "../storePage/CartOfferCard.js";
+import { serverOpenState, storeUnavailable } from "../../utils/storeHours.js";
 import { formatNumber } from "../../utils/numbers.js";
 import { storeTone } from "../../utils/storeTone.js";
 import type { HomeStore, Product } from "../../types/index.js";
@@ -26,13 +29,17 @@ function AddButton({ product, onAdd }: { product: Product; onAdd: () => void }) 
 }
 
 // One store's row: logo, name, city and distance, the chain chip, "All (N) →" to the store page,
-// and its offers that expire soonest.
+// and its offers that expire soonest. A store that takes no orders right now (paused, or closed by
+// its weekly hours) says why in a chip, and its cards are grayscale with a disabled "+" (the card
+// still opens the product page).
 function StoreRow({ store, onAdd }: { store: HomeStore; onAdd: (product: Product) => void }) {
   const { t, i18n } = useTranslation();
   const titleId = useId();
   const distance =
     store.distance_km == null ? null : t("restaurantHome.offers.distance", { km: formatNumber(store.distance_km, i18n.language, 1) });
   const location = [store.city, distance].filter(Boolean).join(" · ");
+  const openState = serverOpenState(store);
+  const unavailable = storeUnavailable(store, openState);
 
   return (
     <article
@@ -57,6 +64,7 @@ function StoreRow({ store, onAdd }: { store: HomeStore; onAdd: (product: Product
           <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-600">
             {location && <span>{location}</span>}
             <ChainLabel company={store.company_name} className="bg-brand-100 font-bold" />
+            <StoreAvailabilityChip pause={store} state={openState} />
           </div>
         </div>
         <Link
@@ -71,9 +79,15 @@ function StoreRow({ store, onAdd }: { store: HomeStore; onAdd: (product: Product
       {/* Four columns where they fit (220 px or more each), two on narrow screens, one on phones. */}
       <div className="@container">
         <div className="grid grid-cols-1 gap-[18px] @min-[460px]:grid-cols-2 @min-[940px]:grid-cols-4">
-          {store.products.map((product) => (
-            <OfferCard key={product.id} product={product} action={<AddButton product={product} onAdd={() => onAdd(product)} />} />
-          ))}
+          {store.products.map((product) =>
+            unavailable ? (
+              <div key={product.id} className="h-full grayscale" data-unavailable>
+                <OfferCard product={product} action={<UnavailableAddButton name={product.name} />} />
+              </div>
+            ) : (
+              <OfferCard key={product.id} product={product} action={<AddButton product={product} onAdd={() => onAdd(product)} />} />
+            ),
+          )}
         </div>
       </div>
     </article>

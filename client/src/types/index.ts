@@ -264,6 +264,13 @@ export interface HomeStore {
   // The store's offers right now (the "All (N)" link).
   offer_count: number;
   is_favorite: boolean;
+  // The order pause and the open state, as on SearchStore.
+  orders_paused: boolean;
+  orders_paused_until: string | null;
+  open_now: boolean | null;
+  closes_at: string | null;
+  opens_at: string | null;
+  opens_on: "today" | "tomorrow" | Weekday | null;
   products: Product[];
 }
 

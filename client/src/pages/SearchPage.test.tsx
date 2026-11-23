@@ -198,8 +198,8 @@ describe("SearchPage", () => {
       total: 3,
     }));
     const [paused, closed, open] = await screen.findAllByTestId("search-store");
-    expect(within(paused!).getByTestId("search-store-paused")).toHaveTextContent(`Narudžbe pauzirane do ${time}`);
-    expect(within(closed!).getByTestId("search-store-closed")).toHaveTextContent("Zatvoreno · otvara sutra u 08:00");
+    expect(within(paused!).getByTestId("store-paused-chip")).toHaveTextContent(`Narudžbe pauzirane do ${time}`);
+    expect(within(closed!).getByTestId("store-closed-chip")).toHaveTextContent("Zatvoreno · otvara sutra u 08:00");
 
     const pausedAdd = within(paused!).getByRole("button", { name: t("search.unavailableAdd", { name: "Piletina" }) });
     expect(pausedAdd).toBeDisabled();
@@ -207,7 +207,7 @@ describe("SearchPage", () => {
     expect(within(paused!).getByTestId("store-product-card").parentElement).toHaveClass("grayscale");
     expect(within(paused!).getByRole("link", { name: "Piletina" })).toHaveAttribute("href", "/products/10");
 
-    expect(within(open!).queryByTestId("search-store-closed")).not.toBeInTheDocument();
+    expect(within(open!).queryByTestId("store-closed-chip")).not.toBeInTheDocument();
     expect(within(open!).getByRole("button", { name: t("stepper.add", { name: "Jaja" }) })).toBeEnabled();
     expect(within(open!).getByTestId("store-product-card").parentElement).not.toHaveClass("grayscale");
   });

@@ -205,6 +205,26 @@ describe("StoreDetailsPage", () => {
       await waitFor(() => expect(field).toHaveValue("2"));
     });
 
+    it.each([
+      ["paused", { orders_paused: true, orders_paused_until: null }],
+      ["closed today", { opening_schedule: { ...everyDay({ open: "00:00", close: "24:00" }), [todayWeekday()]: null } as Schedule }],
+    ])("shows grayscale cards with a disabled + while the store is %s", async (_label, change) => {
+      renderPage({ store: { ...STORE, ...change } });
+      await screen.findAllByText("Jogurt");
+      const add = screen.getAllByRole("button", { name: t("search.unavailableAdd", { name: "Jogurt" }) })[0]!;
+      expect(add).toBeDisabled();
+      expect(screen.queryByRole("button", { name: t("stepper.add", { name: "Jogurt" }) })).not.toBeInTheDocument();
+      expect(cardOf("Jogurt").parentElement).toHaveClass("grayscale");
+      expect(within(cardOf("Jogurt")).getByRole("link", { name: "Jogurt" })).toHaveAttribute("href", "/products/1");
+    });
+
+    it("keeps the cards in colour with an active + while the store is open", async () => {
+      renderPage();
+      await screen.findAllByText("Jogurt");
+      expect(cardOf("Jogurt").parentElement).not.toHaveClass("grayscale");
+      expect(screen.getAllByRole("button", { name: t("stepper.add", { name: "Jogurt" }) })[0]).toBeEnabled();
+    });
+
     it("steps grams by 100", async () => {
       apiMock.put.mockResolvedValue({ data: { cart: makeCart([]) } });
       renderPage({ products: [makeProduct({ id: 5, name: "Šafran", category: "Other", unit: "g", available_quantity: "500" })] });

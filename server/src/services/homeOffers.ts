@@ -3,6 +3,8 @@ import type { Pool, PoolClient } from "pg";
 import { companyName, storeLogo } from "../utils/branding.js";
 import { businessDistance, pinDistance } from "../utils/location.js";
 import { availableQuantity, onOffer } from "./stock.js";
+import { pauseColumns } from "../utils/orderSettings.js";
+import { openStateAt, type Schedule } from "../utils/schedule.js";
 
 // The restaurant home page's offer rows: how many stores, and how many offers each.
 export const HOME_STORES = 3;
@@ -12,7 +14,9 @@ export const HOME_PRODUCTS_PER_STORE = 4;
 // stores, only stores restaurants can see that have at least one offer right now (onOffer), at most
 // HOME_STORES. "Nearest" is the distance between the two map pins, or between the two cities when
 // either has no pin; ties (and stores without any distance, last) by id. Each store comes with its
-// offer count and its HOME_PRODUCTS_PER_STORE offers that expire soonest (marketplace rows).
+// offer count, its order pause and open state (from the weekly hours, worked out from the schedule
+// this query returns; the schedule itself is not sent), and its HOME_PRODUCTS_PER_STORE offers that
+// expire soonest (marketplace rows).
 export const getHomeOffers = async (restaurantId: number, db: Pool | PoolClient = pool) => {
   const stores = await db.query<{
     id: number;
@@ -23,6 +27,9 @@ export const getHomeOffers = async (restaurantId: number, db: Pool | PoolClient 
     distance_km: number | null;
     offer_count: number;
     is_favorite: boolean;
+    orders_paused: boolean;
+    orders_paused_until: string | null;
+    opening_schedule: Schedule | null;
   }>(
     `WITH me AS (
        SELECT users.city_id, users.latitude, users.longitude FROM users WHERE users.id = $1
@@ -37,6 +44,7 @@ export const getHomeOffers = async (restaurantId: number, db: Pool | PoolClient 
      SELECT users.id, users.business_name, ${storeLogo("users")} AS logo_url,
             ${companyName("users")} AS company_name, cities.name AS city,
             (${pinDistance("me", "users")})::float AS distance_km, offers.offer_count,
+            ${pauseColumns("users")}, users.opening_schedule,
             EXISTS (
               SELECT 1 FROM favorites WHERE favorites.restaurant_id = $1 AND favorites.store_id = users.id
             ) AS is_favorite
@@ -73,8 +81,10 @@ export const getHomeOffers = async (restaurantId: number, db: Pool | PoolClient 
   // The shop's shortage is the store's own business.
   const rows = products.rows.map(({ shop_shortage: _shortage, rank_in_store: _rank, ...product }) => product);
 
-  return stores.rows.map((store) => ({
+  const now = new Date();
+  return stores.rows.map(({ opening_schedule, ...store }) => ({
     ...store,
+    ...openStateAt(opening_schedule, now),
     products: rows.filter((product) => product.store_id === store.id),
   }));
 };

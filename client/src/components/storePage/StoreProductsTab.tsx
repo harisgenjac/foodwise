@@ -38,6 +38,9 @@ interface StoreProductsTabProps {
   fetching: boolean;
   onLoadMore: () => void;
   cart: CartActions;
+  // The store takes no orders right now (paused, or closed by its weekly hours): grayscale cards
+  // with a disabled "+".
+  unavailable?: boolean;
 }
 
 // One row: its heading and the cards (a slider with more than four).
@@ -61,7 +64,7 @@ function ProductRow({ id, title, soon = false, products, renderCard }: { id: str
 // one row per category (a product in "Ističe uskoro" is in its category row too). With a category
 // or a search: every match in a grid of four per row. Each card's "+" puts the minimum amount in
 // the cart at once and becomes the quantity stepper.
-function StoreProductsTab({ products, total, loading, fetching, onLoadMore, cart }: StoreProductsTabProps) {
+function StoreProductsTab({ products, total, loading, fetching, onLoadMore, cart, unavailable = false }: StoreProductsTabProps) {
   const { t } = useTranslation();
   const categoryLabels = t("categories", { returnObjects: true }) as Record<string, string>;
   const [search, setSearch] = useState("");
@@ -84,7 +87,7 @@ function StoreProductsTab({ products, total, loading, fetching, onLoadMore, cart
     (product) => (!category || product.category === category) && (!query || product.name.toLocaleLowerCase("bs").includes(query)),
   );
 
-  const renderCard = (product: Product) => <CartOfferCard product={product} cart={cart} />;
+  const renderCard = (product: Product) => <CartOfferCard product={product} cart={cart} unavailable={unavailable} />;
 
   const soon = sorted.filter((product) => getDaysUntilExpiry(product) <= SOON_DAYS);
   const chip = (selected: boolean) =>

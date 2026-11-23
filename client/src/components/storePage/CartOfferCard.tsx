@@ -10,6 +10,22 @@ export interface CartActions {
   busyId: number | null;
 }
 
+// The "+" of a product whose store takes no orders right now: grey and disabled (a real disabled
+// button, so it is not clickable), named "<product>: prodavnica trenutno ne prima narudžbe".
+export function UnavailableAddButton({ name }: { name: string }) {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      disabled
+      aria-label={t("search.unavailableAdd", { name })}
+      className="relative z-10 flex h-11 w-11 shrink-0 cursor-not-allowed items-center justify-center rounded-full bg-neutral-200 text-neutral-500"
+    >
+      <Plus className="h-5 w-5" strokeWidth={2.4} aria-hidden="true" />
+    </button>
+  );
+}
+
 interface CartOfferCardProps {
   product: Product;
   cart: CartActions;
@@ -30,14 +46,7 @@ function CartOfferCard({ product, cart, unavailable = false }: CartOfferCardProp
   const busy = cart.busyId === product.id;
 
   const addButton = unavailable ? (
-    <button
-      type="button"
-      disabled
-      aria-label={t("search.unavailableAdd", { name: product.name })}
-      className="flex h-11 w-11 shrink-0 cursor-not-allowed items-center justify-center rounded-full bg-neutral-200 text-neutral-500"
-    >
-      <Plus className="h-5 w-5" strokeWidth={2.4} aria-hidden="true" />
-    </button>
+    <UnavailableAddButton name={product.name} />
   ) : (
     <button
       type="button"

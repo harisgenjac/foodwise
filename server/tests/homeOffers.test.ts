@@ -12,6 +12,7 @@ import {
   userId,
   type Agent,
 } from "./helpers.js";
+import { WEEKDAYS } from "../src/utils/schedule.js";
 
 const NEAR = "home-near@test.com";
 const MID = "home-mid@test.com";
@@ -130,6 +131,22 @@ describe("GET /api/products/home", () => {
     const stores = await home();
     expect(stores[0]).toMatchObject({ business_name: "home-near", company_name: COMPANY, logo_url: "/uploads/logos/lanac.png" });
     expect(stores[1]).toMatchObject({ business_name: "home-mid", company_name: null });
+  });
+
+  it("gives each store its order pause and open state from its weekly hours, without the schedule", async () => {
+    for (const email of [NEAR, MID, FAR]) await createProduct(agents[email]!, { name: `Ponuda ${email}` });
+    const always = Object.fromEntries(WEEKDAYS.map((day) => [day, { open: "00:00", close: "24:00" }]));
+    const never = Object.fromEntries(WEEKDAYS.map((day) => [day, null]));
+    await pool.query("UPDATE users SET opening_schedule = $1, orders_paused = true WHERE email = $2", [always, NEAR]);
+    await pool.query("UPDATE users SET opening_schedule = $1 WHERE email = $2", [never, MID]);
+    await pool.query("UPDATE users SET opening_schedule = NULL WHERE email = $1", [FAR]);
+
+    const stores = await home();
+    const byName = (email: string) => stores.find((store) => store.business_name === email.split("@")[0])!;
+    expect(byName(NEAR)).toMatchObject({ orders_paused: true, orders_paused_until: null, open_now: true, closes_at: "24:00", opens_at: null });
+    expect(byName(MID)).toMatchObject({ orders_paused: false, open_now: false, closes_at: null, opens_at: null, opens_on: null });
+    expect(byName(FAR)).toMatchObject({ open_now: null });
+    expect(byName(NEAR)).not.toHaveProperty("opening_schedule");
   });
 
   it("is only for restaurants", async () => {

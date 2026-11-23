@@ -122,7 +122,7 @@ test("a paused store's products cannot be added from Search", async ({ page }) =
   await open(page, "/search");
   await page.getByPlaceholder("Pretraga po nazivu proizvoda").fill(name);
   const store = page.getByTestId("search-store").filter({ hasText: name });
-  await expect(store.getByTestId("search-store-paused")).toContainText("Narudžbe pauzirane");
+  await expect(store.getByTestId("store-paused-chip")).toContainText("Narudžbe pauzirane");
   const add = store.getByRole("button", { name: `${name}: prodavnica trenutno ne prima narudžbe` });
   await expect(add).toBeDisabled();
   await expect(store.getByRole("link", { name })).toHaveAttribute("href", /\/products\/\d+$/);

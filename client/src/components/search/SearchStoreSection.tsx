@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowRight, Clock, MapPin, PauseCircle } from "lucide-react";
+import { ArrowRight, MapPin } from "lucide-react";
 import StoreAvatar from "../store/StoreAvatar.js";
 import StoreKindChip from "../store/StoreKindChip.js";
+import StoreAvailabilityChip from "../store/StoreAvailabilityChip.js";
 import CartOfferCard, { type CartActions } from "../storePage/CartOfferCard.js";
 import ProductTrack from "../storePage/ProductTrack.js";
 import { formatKmDistance } from "../../utils/radius.js";
-import { formatPauseEnd, isPaused } from "../../utils/orderPause.js";
-import { openStateText, serverOpenState } from "../../utils/storeHours.js";
+import { serverOpenState, storeUnavailable } from "../../utils/storeHours.js";
 import { storeTone } from "../../utils/storeTone.js";
 import type { SearchStore } from "../../types/index.js";
 
@@ -15,8 +15,6 @@ import type { SearchStore } from "../../types/index.js";
 // small tablets (no sidebar yet), two again next to the sidebar (md), four from lg up (20 px gaps).
 const SEARCH_ITEM =
   "w-[78%] min-[440px]:w-[calc(50%-10px)] sm:w-[calc((100%-40px)/3)] md:w-[calc(50%-10px)] lg:w-[calc(25%-15px)]";
-
-const chip = "inline-flex h-6 max-w-full min-w-0 items-center gap-[5px] rounded-full px-2.5 text-xs font-bold";
 
 // One store on Search (design/search/search.html): a white card with the logo or initials on the
 // store's tone, the name (a link to the store page), the distance and city, the chain or
@@ -26,9 +24,8 @@ const chip = "inline-flex h-6 max-w-full min-w-0 items-center gap-[5px] rounded-
 function SearchStoreSection({ store, cart }: { store: SearchStore; cart: CartActions }) {
   const { t, i18n } = useTranslation();
   const tone = storeTone(store.id);
-  const paused = isPaused(store);
   const openState = serverOpenState(store);
-  const closed = openState !== null && !openState.open;
+  const unavailable = storeUnavailable(store, openState);
   const headingId = `search-store-${store.id}`;
   const place = [
     store.distance_km !== null ? formatKmDistance(store.distance_km, i18n.language) : null,
@@ -66,20 +63,7 @@ function SearchStoreSection({ store, cart }: { store: SearchStore; cart: CartAct
               </span>
             )}
             <StoreKindChip company={store.company_name} />
-            {paused && (
-              <span data-testid="search-store-paused" className={`${chip} bg-accent-100 text-accent-700`}>
-                <PauseCircle className="h-3 w-3 shrink-0" aria-hidden="true" />
-                <span className="truncate">
-                  {t("storePage.paused", { until: formatPauseEnd(store.orders_paused_until, t) })}
-                </span>
-              </span>
-            )}
-            {closed && (
-              <span data-testid="search-store-closed" className={`${chip} bg-neutral-100 text-neutral-700`}>
-                <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
-                <span className="truncate">{openStateText(openState, t)}</span>
-              </span>
-            )}
+            <StoreAvailabilityChip pause={store} state={openState} />
           </div>
         </div>
         <Link
@@ -95,7 +79,7 @@ function SearchStoreSection({ store, cart }: { store: SearchStore; cart: CartAct
       <ProductTrack
         products={store.products}
         itemClassName={SEARCH_ITEM}
-        renderCard={(product) => <CartOfferCard product={product} cart={cart} unavailable={paused || closed} />}
+        renderCard={(product) => <CartOfferCard product={product} cart={cart} unavailable={unavailable} />}
       />
     </section>
   );
