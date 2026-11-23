@@ -20,10 +20,10 @@ test("a restaurant withdraws a pending order and the store finds it by its code"
 
   await test.step("Restoran otkazuje narudžbu na čekanju", async () => {
     await open(restaurant, "/my-orders");
-    await restaurant.getByPlaceholder("Pretraga po proizvodu").fill(productName);
-    const card = restaurant.getByTestId("order-card").filter({ hasText: productName });
-    await expect(card.getByText("Na čekanju")).toBeVisible();
-    await card.getByRole("button", { name: "Otkaži" }).click();
+    await restaurant.getByPlaceholder("Proizvod, prodavnica ili kod (#K7PM)").fill(productName);
+    const card = restaurant.getByTestId("my-order-card").filter({ hasText: productName });
+    await expect(card.getByTestId("order-status")).toHaveText("Na čekanju");
+    await card.getByRole("button", { name: `Otkaži narudžbu #${code}` }).click();
     const dialog = restaurant.getByRole("dialog", { name: "Otkazati ovu narudžbu?" });
     await expect(dialog.getByText(`Narudžba #${code} kod ${ACCOUNTS.store.businessName} će biti otkazana.`)).toBeVisible();
     await dialog.getByRole("button", { name: "Otkaži narudžbu" }).click();
@@ -31,8 +31,8 @@ test("a restaurant withdraws a pending order and the store finds it by its code"
     await expect(card).toHaveCount(0);
 
     await restaurant.getByRole("tab", { name: /Historija/ }).click();
-    const row = restaurant.getByRole("link").filter({ hasText: productName });
-    await expect(row.getByText("Otkazano", { exact: true })).toBeVisible();
+    const row = restaurant.getByRole("table", { name: "Historija narudžbi" }).getByRole("row").filter({ hasText: productName });
+    await expect(row.getByTestId("order-status")).toHaveText("Otkazano");
   });
 
   await test.step("Prodavnica dobija obavijest i nalazi narudžbu po kodu", async () => {

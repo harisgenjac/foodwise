@@ -115,6 +115,9 @@ describe("POST /api/delivery/webhooks/:provider", () => {
     let order = await orderOf(orderId);
     expect(order.status).toBe("Confirmed");
     expect(order.delivery).toMatchObject({ status: "COURIER_ASSIGNED", courier_name: "Mock Kurir", courier_phone: "+38761000000" });
+    // When the courier was assigned (My orders shows it on the step).
+    expect(order.delivery.courier_assigned_at).not.toBeNull();
+    expect(order.delivery.failed_at).toBeNull();
 
     await courier(deliveryId, "delivery.picked_up");
     order = await orderOf(orderId);
@@ -226,6 +229,8 @@ describe("after a failure before the pickup", () => {
     const order = await orderOf(orderId);
     expect(order.status).toBe("Confirmed");
     expect(order.delivery.status).toBe("FAILED");
+    expect(order.delivery.failed_at).not.toBeNull();
+    expect(order.delivery.picked_up_at).toBeNull();
     expect(await notificationTypes(restaurantId)).toEqual(["ORDER_ACCEPTED", "DELIVERY_FAILED"]);
     expect(await notificationTypes(storeId)).toContain("DELIVERY_FAILED");
   });
@@ -300,6 +305,8 @@ describe("after a failure before the pickup", () => {
       items: [{ item_id: sent.body.order.items[0].id, action: "ACCEPT" }],
       ready_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
     });
+    // The failure is timed when it was recorded.
+    expect((await orderOf(sent.body.order.id)).delivery).toMatchObject({ status: "FAILED", failed_at: expect.any(String) });
     const response = await restaurant.post(`/api/orders/${sent.body.order.id}/cancel-failed-delivery`);
     expect(response.status).toBe(200);
   });
@@ -323,7 +330,11 @@ describe("delivery orders and the store's pickup actions", () => {
     const admin = await registerAndLogin(ADMIN, "ADMIN");
     const response = await admin.post(`/api/admin/orders/${orderId}/cancel`).send({ reason: "Spor oko narudžbe" });
     expect(response.status).toBe(200);
-    expect((await orderOf(orderId)).delivery).toMatchObject({ status: "CANCELLED", failure_reason: "CANCELLED_BY_ADMIN" });
+    expect((await orderOf(orderId)).delivery).toMatchObject({
+      status: "CANCELLED",
+      failure_reason: "CANCELLED_BY_ADMIN",
+      failed_at: expect.any(String),
+    });
     expect((await mock().getDelivery(deliveryId)).status).toBe("CANCELLED");
   });
 });

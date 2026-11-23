@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowUpDown, ChevronDown, CloudOff, MapPin, Navigation, Search, SearchX, ShoppingBasket } from "lucide-react";
+import { ChevronDown, CloudOff, MapPin, Navigation, Search, SearchX, ShoppingBasket } from "lucide-react";
 import LoadingSpinner from "../components/LoadingSpinner.js";
 import LoadMore from "../components/LoadMore.js";
 import EmptyCard from "../components/common/EmptyCard.js";
 import CitySelect from "../components/form/CitySelect.js";
 import FilterBar, { type ActiveFilter } from "../components/filters/FilterBar.js";
 import FilterDrawer, { FilterField, FilterPills } from "../components/filters/FilterDrawer.js";
+import SortField, { FILTER_SELECT_CLASS as selectClass } from "../components/filters/SortField.js";
 import { MARKETPLACE_SORT_OPTIONS, type MarketplaceSort } from "../components/product/SortSelect.js";
 import SearchStoreSection from "../components/search/SearchStoreSection.js";
 import StoreCartBar from "../components/storePage/StoreCartBar.js";
@@ -27,9 +28,6 @@ const EXPIRY_OPTIONS = ["", "0", "1", "3"] as const;
 type Expiry = (typeof EXPIRY_OPTIONS)[number];
 const EXPIRY_PILL: Record<Expiry, string> = { "": "search.expiryAny", "0": "search.expiryToday", "1": "search.expiryTomorrow", "3": "search.expiry3Days" };
 const EXPIRY_CHIP: Record<Exclude<Expiry, "">, string> = { "0": "search.expiresToday", "1": "search.expiresTomorrow", "3": "search.expires3Days" };
-
-const selectClass =
-  "h-12 w-full cursor-pointer appearance-none rounded-xl border border-neutral-200 bg-white pr-10 pl-11 text-base text-neutral-900 outline-none focus:border-brand-800 focus:ring-[3px] focus:ring-brand-100 sm:text-[15px]";
 
 // Search ("Pretraga", restaurants; design/search/search.html and search-filters.html): the
 // marketplace grouped by store, since an order comes from one store. The FilterBar (product name,
@@ -186,27 +184,7 @@ function SearchPage() {
         canClear={canClear}
       />
 
-      <div className="flex flex-wrap items-center justify-end gap-2.5">
-        <label htmlFor="search-sort" className="text-sm font-semibold text-neutral-600">
-          {t("filters.sortBy")}
-        </label>
-        <span className="relative block w-full max-w-[230px] min-w-0 flex-1 sm:flex-none">
-          <ArrowUpDown className="pointer-events-none absolute top-1/2 left-3.5 h-[18px] w-[18px] -translate-y-1/2 text-neutral-500" aria-hidden="true" />
-          <select
-            id="search-sort"
-            value={sort}
-            onChange={(event) => setSort(event.target.value as MarketplaceSort)}
-            className={`${selectClass} font-semibold`}
-          >
-            {MARKETPLACE_SORT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {t(option.label)}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute top-1/2 right-3.5 h-[18px] w-[18px] -translate-y-1/2 text-neutral-600" aria-hidden="true" />
-        </span>
-      </div>
+      <SortField id="search-sort" value={sort} onChange={setSort} options={MARKETPLACE_SORT_OPTIONS} />
 
       {error && stores.length === 0 ? (
         <EmptyCard testId="search-error" icon={CloudOff} title={t("common.loadErrorTitle")} text={t("common.loadErrorSubtitle")} />

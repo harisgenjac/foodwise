@@ -6,7 +6,7 @@ import { formatOrderCode, type OrderRow } from "./orders/codes.js";
 import { lockOrder, moveItems, syncOrderStatus } from "./orders/status.js";
 
 // The provider's status webhooks (delivery phase 2, src/delivery/openapi.yaml "deliveryEvent"):
-// - courier assigned: the courier's name and phone are kept;
+// - courier assigned: the courier's name and phone and the time (courier_assigned_at) are kept;
 // - picked up: the courier has the goods, the order becomes InDelivery (source PROVIDER, no
 //   notification: the order page shows it);
 // - delivered: the order becomes Completed and both sides get DELIVERY_DELIVERED (a missed
@@ -15,6 +15,7 @@ import { lockOrder, moveItems, syncOrderStatus } from "./orders/status.js";
 //   the restaurant switches to pickup or cancels; after the pickup DELIVERY_FAILED_AFTER_PICKUP and
 //   the order stays InDelivery (the goods left the store) until an admin cancels it;
 // - cancelled by the provider (only before the pickup): like a failure before the pickup.
+// A failure or cancellation stores its time in failed_at.
 // Every event is stored in delivery_events in the same transaction, so a repeated event_id is
 // ignored, and an event that would move the delivery backwards (out of order, or after it
 // closed) is stored but changes nothing.
@@ -88,7 +89,11 @@ const applyEvent = async (
   switch (event.type) {
     case "delivery.courier_assigned":
       if (!BEFORE_PICKUP.includes(delivery.status)) return false;
-      await client.query("UPDATE deliveries SET status = 'COURIER_ASSIGNED' WHERE deliveries.id = $1", [delivery.id]);
+      await client.query(
+        `UPDATE deliveries SET status = 'COURIER_ASSIGNED', courier_assigned_at = COALESCE(deliveries.courier_assigned_at, $2)
+         WHERE deliveries.id = $1`,
+        [delivery.id, event.occurred_at],
+      );
       await setCourier(client, delivery.id, event);
       return true;
     case "delivery.picked_up":
@@ -109,9 +114,10 @@ const applyEvent = async (
       return true;
     case "delivery.failed": {
       if (!OPEN.includes(delivery.status)) return false;
-      await client.query("UPDATE deliveries SET status = 'FAILED', failure_reason = $2 WHERE deliveries.id = $1", [
+      await client.query("UPDATE deliveries SET status = 'FAILED', failure_reason = $2, failed_at = $3 WHERE deliveries.id = $1", [
         delivery.id,
         event.failure_reason,
+        event.occurred_at,
       ]);
       if (!notify) return true;
       if (delivery.status === "PICKED_UP") {
@@ -128,9 +134,10 @@ const applyEvent = async (
     }
     case "delivery.cancelled":
       if (!BEFORE_PICKUP.includes(delivery.status)) return false;
-      await client.query("UPDATE deliveries SET status = 'CANCELLED', failure_reason = $2 WHERE deliveries.id = $1", [
+      await client.query("UPDATE deliveries SET status = 'CANCELLED', failure_reason = $2, failed_at = $3 WHERE deliveries.id = $1", [
         delivery.id,
         event.failure_reason ?? "CANCELLED_BY_PROVIDER",
+        event.occurred_at,
       ]);
       if (notify) await notifyBoth(client, order, "DELIVERY_FAILED", `The delivery of order ${code} was cancelled.`);
       return true;

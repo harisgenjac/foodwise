@@ -24,3 +24,11 @@ export const makePickupOverdue = (orderId: number) =>
     const result = await client.query("UPDATE orders SET pickup_at = pickup_at - INTERVAL '3 days' WHERE id = $1", [orderId]);
     if (result.rowCount !== 1) throw new Error(`Order ${orderId} not found.`);
   });
+
+// Moves an accepted pickup order's time by a Postgres interval (e.g. '-1 day -10 hours'), for a
+// pickup earlier today or on a past day; the API only takes pickups that are still ahead.
+export const shiftPickup = (orderId: number, interval: string) =>
+  withClient(async (client) => {
+    const result = await client.query("UPDATE orders SET pickup_at = pickup_at + $2::interval WHERE id = $1", [orderId, interval]);
+    if (result.rowCount !== 1) throw new Error(`Order ${orderId} not found.`);
+  });

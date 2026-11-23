@@ -4,9 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AlertTriangle, ArrowRight } from "lucide-react";
 import OrderImage from "./OrderImage.js";
 import OrderItemThumbnails from "./OrderItemThumbnails.js";
-import { formatRelativeTime } from "../../utils/notifications.js";
 import { formatMoney, formatOrderCode, formatOrderDateTime, itemsSummary, ORDER_STATUS_STYLES, orderStatusLabel } from "../../utils/orders.js";
-import StoreNameLink from "../store/StoreNameLink.js";
 import AnswerDeadline from "./AnswerDeadline.js";
 import type { Order } from "../../types/index.js";
 
@@ -16,18 +14,14 @@ interface OrderCardProps {
   partyLabel: string;
   // Replaces the default "Details" link, e.g. with the decision or pickup buttons.
   actions?: ReactNode;
-  // Shows when the order was sent ("5 min ago"); the restaurant's list only.
-  showCreatedAt?: boolean;
-  // Links the store name to its profile; restaurant side only, and not on that store's own page.
-  linkStore?: boolean;
   // Whose list it is: a Pending order tells the store when it is rejected automatically, and the
   // restaurant until when the store can answer.
   viewer?: "STORE" | "RESTAURANT";
 }
 
 // One order on a list or dashboard: its code, products, the other party, total and pickup.
-function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = false, viewer = "RESTAURANT" }: OrderCardProps) {
-  const { t, i18n } = useTranslation();
+function OrderCard({ order, partyLabel, actions, viewer = "RESTAURANT" }: OrderCardProps) {
+  const { t } = useTranslation();
   const code = formatOrderCode(order.code);
 
   return (
@@ -72,11 +66,7 @@ function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = fals
           <div className="flex justify-between gap-2">
             <dt className="text-neutral-500">{partyLabel}</dt>
             <dd className="min-w-0 truncate font-medium text-neutral-800">
-              {linkStore && order.business_name ? (
-                <StoreNameLink storeId={order.store_id} name={order.business_name} className="block" />
-              ) : (
-                order.business_name
-              )}
+              {order.business_name}
               {order.city && <span className="font-normal text-neutral-500"> · {order.city}</span>}
             </dd>
           </div>
@@ -100,12 +90,6 @@ function OrderCard({ order, partyLabel, actions, showCreatedAt, linkStore = fals
               )}
             </dd>
           </div>
-          {showCreatedAt && (
-            <div className="flex justify-between gap-2">
-              <dt className="text-neutral-500">{t("orders.sentAt")}</dt>
-              <dd className="text-right font-medium text-neutral-800">{formatRelativeTime(order.created_at, t, i18n.language)}</dd>
-            </div>
-          )}
         </dl>
 
         <AnswerDeadline order={order} viewer={viewer} />

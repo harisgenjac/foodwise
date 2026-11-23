@@ -195,7 +195,6 @@
   },
   "filters": {
     "searchByName": "Search by name",
-    "searchByStore": "Search by store",
     "allCategories": "-- All categories --",
     "selectStatus": "-- Product status --",
     "expiryDate": "-- Expiry date --",
@@ -1893,20 +1892,14 @@
       "active": "Active",
       "history": "History"
     },
-    "period": {
-      "all": "Sent: any time",
-      "today": "Sent today",
-      "last7Days": "Last 7 days",
-      "thisMonth": "This month"
-    },
     "sortPendingFirst": "Pending first",
     "sortPickupSoonest": "Pickup soonest",
     "showHistory": "View history",
     "delivery": {
-      "estimated": "Delivery (estimate)",
+      "estimated": "Arrival at the restaurant",
       "address": "Delivery address",
       "fee": "Delivery price (estimate)",
-      "courierPickup": "Courier pickup (estimate)",
+      "courierPickup": "Courier arrives at the store",
       "cardLabel": "Delivery",
       "badge": "Delivery",
       "statusLabel": "Delivery status",
@@ -1930,7 +1923,7 @@
       "finalFee": "Delivery price",
       "cash": "Paid to the courier (goods + delivery)",
       "readyAt": "Ready for the courier",
-      "courierPickupFinal": "Courier pickup (estimate)",
+      "courierPickupFinal": "Courier arrives at the store",
       "courier": "Courier",
       "deliveredAt": "Delivered",
       "switchedToPickup": "The delivery failed, the order is picked up at the store"
@@ -2021,7 +2014,7 @@
       "backToCart": "Back to the cart",
       "toOffers": "Back to the offers",
       "viewOrder": "View the order",
-      "delivery": "Delivery today, around {{time}}. Estimated delivery price: {{fee}}; the final one comes when the store accepts the order."
+      "delivery": "Arrival at the restaurant: {{time}}. Estimated delivery price: {{fee}}; the final one comes when the store accepts the order."
     },
     "method": {
       "label": "How you get it",
@@ -2031,7 +2024,7 @@
     "delivery": {
       "checking": "Checking delivery…",
       "error": "We cannot check delivery right now. Try again.",
-      "arrives": "Delivery today, around {{time}}",
+      "arrives": "Arrival at the restaurant: {{time}}",
       "price": "Delivery (estimate)",
       "cash": "You pay the courier in cash",
       "estimateHint": "The delivery service sets the final price and time when the store accepts the order.",
@@ -2525,6 +2518,123 @@
       "empty": "You have not ordered from this store yet.",
       "emptyText": "When you send an order to this store, you will see it here.",
       "showMore": "Show more"
+    }
+  },
+  "myOrders": {
+    "filters": {
+      "search": "Product, store or code (#K7PM)",
+      "methodLabel": "Method",
+      "statusLabel": "Status",
+      "periodLabel": "Sent",
+      "method": {
+        "all": "All",
+        "pickup": "Pickup",
+        "delivery": "Delivery"
+      },
+      "status": {
+        "all": "All",
+        "Pending": "Pending",
+        "Confirmed": "Accepted",
+        "InDelivery": "Out for delivery",
+        "Completed": "Picked up / delivered",
+        "Rejected": "Rejected",
+        "Cancelled": "Cancelled"
+      },
+      "period": {
+        "all": "All",
+        "today": "Today",
+        "7d": "Last 7 days",
+        "month": "This month"
+      }
+    },
+    "method": {
+      "pickup": "Pickup",
+      "delivery": "Delivery"
+    },
+    "time": {
+      "todayAt": "today at {{time}}",
+      "yesterdayAt": "yesterday at {{time}}",
+      "tomorrowAt": "tomorrow at {{time}}",
+      "dateAt": "{{date}} at {{time}}"
+    },
+    "card": {
+      "order": "Order",
+      "sent": "sent {{when}} ({{ago}})",
+      "sentOn": "sent {{when}}",
+      "yesterday": "yesterday {{time}}",
+      "total": "Total",
+      "oldTotal": "Before:",
+      "failed": "Failed",
+      "failedNote": "Delivery failed: {{reason}}. On the order page, choose to pick it up yourself or cancel the order.",
+      "cancelLabel": "Cancel order {{code}}"
+    },
+    "showMore": "Show more",
+    "steps": {
+      "label": "Progress of order {{code}}",
+      "sent": "Sent",
+      "waiting": "Awaiting answer",
+      "accepted": "Accepted",
+      "pickup": "Pickup",
+      "pickedUp": "Picked up",
+      "courierAssigned": "Courier assigned",
+      "courierPickedUp": "Courier picked up",
+      "delivered": "Delivered",
+      "failed": "Delivery failed",
+      "until": "by {{time}}",
+      "waitingCourier": "Waiting for a courier",
+      "arrivesAt": "arrives at {{time}}",
+      "lateWas": "Late · was {{when}}"
+    },
+    "stepState": {
+      "done": "done",
+      "current": "current step",
+      "upcoming": "next",
+      "failed": "failed"
+    },
+    "info": {
+      "sentAt": "Sent {{when}}",
+      "partialAllowed": "Partial acceptance: allowed",
+      "partialNotAllowed": "Partial acceptance: not allowed",
+      "answerBy": "The store has to answer by {{time}}.",
+      "autoReject": "Without an answer, the order is rejected automatically.",
+      "acceptedAt": "Accepted {{when}}",
+      "acceptedPartial": "Accepted {{when}}: {{accepted}} of {{count}} items",
+      "itemRejected": "{{product}} rejected",
+      "itemReduced": "{{product}}: {{accepted}} instead of {{ordered}}",
+      "newTotal": "New total {{total}} (was {{old}})",
+      "readyAt": "Ready for the courier at {{time}}",
+      "deliveryCash": "Delivery {{price}} · you pay the courier {{cash}} in cash",
+      "pickupAt": "Pickup time: {{when}}",
+      "pickupWas_one": "The pickup was {{when}} ({{count}} day late).",
+      "pickupWas_other": "The pickup was {{when}} ({{count}} days late).",
+      "address": "Address: {{address}}",
+      "storeMayCancel": "The store may cancel the order if you do not pick it up.",
+      "courier": "Courier: {{name}}",
+      "assignedAt": "Assigned {{when}}",
+      "waitingCourier": "The delivery service is looking for a courier.",
+      "pickedUpAt": "Picked up the goods at {{time}}.",
+      "pickedUpReady": "Picked up the goods at {{time}} (ready at {{ready}}).",
+      "carries": "Carrying: {{items}}",
+      "cashOnArrival": "You pay the courier {{cash}} in cash on arrival.",
+      "failedAt": "Reported {{when}}",
+      "reason": "Reason: {{reason}}.",
+      "failedBeforeNext": "Pick it up yourself or cancel the order on the order page.",
+      "failedAfterNext": "The courier has the goods; an administrator is resolving the order and will contact you."
+    },
+    "history": {
+      "table": "Order history",
+      "order": "Order",
+      "store": "Store",
+      "products": "Products",
+      "method": "Method",
+      "total": "Total",
+      "status": "Status",
+      "accepted": "{{accepted}}/{{count}} accepted",
+      "notCharged": "Not charged:",
+      "count_one": "{{count}} order",
+      "count_other": "{{count}} orders",
+      "countMore_one": "{{count}}+ order",
+      "countMore_other": "{{count}}+ orders"
     }
   }
 }

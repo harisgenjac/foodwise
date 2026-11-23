@@ -32,7 +32,9 @@ const LINES = `JOIN LATERAL (
              'quantity', order_items.quantity::text,
              'ordered_quantity', order_items.ordered_quantity::text,
              'unit_price', order_items.unit_price::text,
-             'status', order_items.status
+             'status', order_items.status,
+             'change_reason', order_items.change_reason,
+             'change_note', order_items.change_note
            ) ORDER BY order_items.id) AS items
     FROM order_items
     JOIN products ON products.id = order_items.product_id
@@ -49,7 +51,9 @@ const ORDER_COLUMNS = `
        'estimated_pickup_at', deliveries.estimated_pickup_at, 'estimated_delivery_at', deliveries.estimated_delivery_at,
        'courier_name', deliveries.courier_name, 'courier_phone', deliveries.courier_phone,
        'tracking_url', deliveries.tracking_url, 'failure_reason', deliveries.failure_reason,
-       'picked_up_at', deliveries.picked_up_at, 'delivered_at', deliveries.delivered_at)
+       'picked_up_at', deliveries.picked_up_at, 'delivered_at', deliveries.delivered_at,
+       'ready_at', deliveries.ready_at, 'courier_assigned_at', deliveries.courier_assigned_at,
+       'failed_at', deliveries.failed_at)
      FROM deliveries WHERE deliveries.order_id = orders.id) AS delivery,
     orders.decided_at, orders.picked_up_at, orders.created_at, orders.updated_at,
     orders.store_id, orders.restaurant_id,
@@ -92,10 +96,13 @@ const MINE_SORTS: Record<string, string> = {
   pickup: "orders.pickup_at ASC, orders.id DESC",
 };
 
+const MINE_METHODS: Record<string, string> = { pickup: "PICKUP", delivery: "DELIVERY" };
+
 // FROM/WHERE shared by GET /orders/mine and /mine/summary: the restaurant's own orders with the
-// product name, store and period filters (and status for the list). Null for an invalid filter.
+// search (q: a product, the store's name or the code), product name, method, store and period
+// filters (and status for the list). Null for an invalid filter.
 const mineFilters = (query: Request["query"], restaurantId: number, includeStatus: boolean) => {
-  const { status, name, business_name, store_id } = query;
+  const { status, name, q, store_id } = query;
   let from = `FROM orders
     JOIN users AS stores ON stores.id = orders.store_id
     LEFT JOIN cities ON cities.id = stores.city_id
@@ -111,9 +118,25 @@ const mineFilters = (query: Request["query"], restaurantId: number, includeStatu
     values.push(`%${name}%`);
     from += ` AND ${productNameMatches(`$${values.length}`)}`;
   }
-  if (business_name) {
-    values.push(`%${business_name}%`);
-    from += ` AND stores.business_name ILIKE $${values.length}`;
+  if (typeof q === "string" && q.trim()) {
+    values.push(`%${q.trim()}%`);
+    const p = `$${values.length}`;
+    let match = `${productNameMatches(p)} OR stores.business_name ILIKE ${p}`;
+    // Text that can be a code (with or without #, any case) also finds the orders whose code starts with it.
+    const code = parseOrderCode(q);
+    if (code !== null) {
+      values.push(`${code}%`);
+      match += ` OR orders.code LIKE $${values.length}`;
+    }
+    from += ` AND (${match})`;
+  } else if (q !== undefined && typeof q !== "string") {
+    return null;
+  }
+  const method = optionalParam(query.method, MINE_METHODS);
+  if (method === null) return null;
+  if (method) {
+    values.push(method);
+    from += ` AND orders.fulfilment_method = $${values.length}`;
   }
   if (store_id) {
     const storeId = parseId(store_id);
@@ -137,8 +160,10 @@ export const listMineOrders = async (restaurantId: number, query: Request["query
   // "active" is what still needs the restaurant's attention.
   if (scope === "active") from += ` AND orders.status IN ('Pending', 'Confirmed', 'InDelivery')`;
   const { rows, total } = await listPage(
-    // party_logo_url: the other side's logo (a branch without one shows its company's).
-    `${ORDER_COLUMNS}, stores.business_name, cities.name AS city, ${storeLogo("stores")} AS party_logo_url`,
+    // party_logo_url: the other side's logo (a branch without one shows its company's);
+    // party_address: the store's address, for the pickup step.
+    `${ORDER_COLUMNS}, stores.business_name, cities.name AS city, stores.address AS party_address,
+     ${storeLogo("stores")} AS party_logo_url`,
     from,
     sort ?? MINE_SORTS.status!,
     filters.values,

@@ -198,7 +198,6 @@
   },
   "filters": {
     "searchByName": "Pretraga po imenu",
-    "searchByStore": "Pretraga po prodavnici",
     "allCategories": "-- Sve kategorije --",
     "selectStatus": "-- Status proizvoda --",
     "expiryDate": "-- Rok trajanja --",
@@ -1791,7 +1790,7 @@
     "title": "Narudžba {{code}}",
     "statusDelivered": "Dostavljeno",
     "myTitle": "Moje narudžbe",
-    "mySubtitle": "Pratite svoje narudžbe, odgovore prodavnica i termine preuzimanja.",
+    "mySubtitle": "Pratite narudžbe, odgovore prodavnica i termine preuzimanja.",
     "storeTitle": "Narudžbe",
     "storeSubtitle": "Odgovorite na nove narudžbe restorana i pratite prihvaćene.",
     "count_one": "{{count}} narudžba",
@@ -1939,20 +1938,14 @@
       "active": "Aktivne",
       "history": "Historija"
     },
-    "period": {
-      "all": "Poslano: sve",
-      "today": "Poslano danas",
-      "last7Days": "Zadnjih 7 dana",
-      "thisMonth": "Ovaj mjesec"
-    },
     "sortPendingFirst": "Prvo na čekanju",
     "sortPickupSoonest": "Najskorije preuzimanje",
     "showHistory": "Pogledaj historiju",
     "delivery": {
-      "estimated": "Dostava (okvirno)",
+      "estimated": "Dolazak u restoran",
       "address": "Adresa dostave",
       "fee": "Cijena dostave (okvirno)",
-      "courierPickup": "Kurir preuzima (okvirno)",
+      "courierPickup": "Kurir dolazi u prodavnicu",
       "cardLabel": "Dostava",
       "badge": "Dostava",
       "statusLabel": "Stanje dostave",
@@ -1976,7 +1969,7 @@
       "finalFee": "Cijena dostave",
       "cash": "Kuriru se plaća (roba + dostava)",
       "readyAt": "Spremno za kurira",
-      "courierPickupFinal": "Kurir preuzima (okvirno)",
+      "courierPickupFinal": "Kurir dolazi u prodavnicu",
       "courier": "Kurir",
       "deliveredAt": "Dostavljeno",
       "switchedToPickup": "Dostava nije uspjela, narudžba se preuzima u prodavnici"
@@ -2067,7 +2060,7 @@
       "backToCart": "Nazad u korpu",
       "toOffers": "Nazad na ponudu",
       "viewOrder": "Pogledaj narudžbu",
-      "delivery": "Dostava danas, okvirno oko {{time}}. Okvirna cijena dostave: {{fee}}; konačna stiže kad prodavnica prihvati narudžbu."
+      "delivery": "Dolazak u restoran: {{time}}. Okvirna cijena dostave: {{fee}}; konačna stiže kad prodavnica prihvati narudžbu."
     },
     "method": {
       "label": "Način preuzimanja",
@@ -2077,7 +2070,7 @@
     "delivery": {
       "checking": "Provjeravam dostavu…",
       "error": "Dostavu trenutno ne možemo provjeriti. Pokušajte ponovo.",
-      "arrives": "Dostava danas, okvirno oko {{time}}",
+      "arrives": "Dolazak u restoran: {{time}}",
       "price": "Dostava (okvirno)",
       "cash": "Kuriru plaćate u gotovini",
       "estimateHint": "Konačnu cijenu i vrijeme dostave određuje dostavna služba kad prodavnica prihvati narudžbu.",
@@ -2586,6 +2579,126 @@
       "empty": "Još niste naručivali od ove prodavnice.",
       "emptyText": "Kada pošaljete narudžbu ovoj prodavnici, vidjet ćete je ovdje.",
       "showMore": "Prikaži još"
+    }
+  },
+  "myOrders": {
+    "filters": {
+      "search": "Proizvod, prodavnica ili kod (#K7PM)",
+      "methodLabel": "Način",
+      "statusLabel": "Status",
+      "periodLabel": "Poslano",
+      "method": {
+        "all": "Sve",
+        "pickup": "Preuzimanje",
+        "delivery": "Dostava"
+      },
+      "status": {
+        "all": "Svi",
+        "Pending": "Na čekanju",
+        "Confirmed": "Prihvaćena",
+        "InDelivery": "U dostavi",
+        "Completed": "Preuzeto / isporučeno",
+        "Rejected": "Odbijeno",
+        "Cancelled": "Otkazano"
+      },
+      "period": {
+        "all": "Sve",
+        "today": "Danas",
+        "7d": "Zadnjih 7 dana",
+        "month": "Ovaj mjesec"
+      }
+    },
+    "method": {
+      "pickup": "Preuzimanje",
+      "delivery": "Dostava"
+    },
+    "time": {
+      "todayAt": "danas u {{time}}",
+      "yesterdayAt": "jučer u {{time}}",
+      "tomorrowAt": "sutra u {{time}}",
+      "dateAt": "{{date}} u {{time}}"
+    },
+    "card": {
+      "order": "Narudžba",
+      "sent": "poslano {{when}} ({{ago}})",
+      "sentOn": "poslano {{when}}",
+      "yesterday": "jučer {{time}}",
+      "total": "Ukupno",
+      "oldTotal": "Prije:",
+      "failed": "Nije uspjela",
+      "failedNote": "Dostava nije uspjela: {{reason}}. Na stranici narudžbe odaberite lično preuzimanje ili otkažite narudžbu.",
+      "cancelLabel": "Otkaži narudžbu {{code}}"
+    },
+    "showMore": "Prikaži još",
+    "steps": {
+      "label": "Tok narudžbe {{code}}",
+      "sent": "Poslano",
+      "waiting": "Čeka odgovor",
+      "accepted": "Prihvaćeno",
+      "pickup": "Preuzimanje",
+      "pickedUp": "Preuzeto",
+      "courierAssigned": "Kurir dodijeljen",
+      "courierPickedUp": "Kurir preuzeo",
+      "delivered": "Isporučeno",
+      "failed": "Dostava nije uspjela",
+      "until": "do {{time}}",
+      "waitingCourier": "Čeka kurira",
+      "arrivesAt": "dolazi u {{time}}",
+      "lateWas": "Kasni · bilo {{when}}"
+    },
+    "stepState": {
+      "done": "završeno",
+      "current": "trenutni korak",
+      "upcoming": "slijedi",
+      "failed": "nije uspjelo"
+    },
+    "info": {
+      "sentAt": "Poslano {{when}}",
+      "partialAllowed": "Djelimično prihvatanje: dozvoljeno",
+      "partialNotAllowed": "Djelimično prihvatanje: nije dozvoljeno",
+      "answerBy": "Prodavnica treba odgovoriti do {{time}}.",
+      "autoReject": "Ako ne odgovori, narudžba se automatski odbija.",
+      "acceptedAt": "Prihvaćeno {{when}}",
+      "acceptedPartial": "Prihvaćeno {{when}}: {{accepted}} od {{count}} stavki",
+      "itemRejected": "{{product}} odbijeno",
+      "itemReduced": "{{product}}: {{accepted}} umjesto {{ordered}}",
+      "newTotal": "Novi iznos {{total}} (bilo {{old}})",
+      "readyAt": "Spremno za kurira u {{time}}",
+      "deliveryCash": "Dostava {{price}} · kuriru plaćate {{cash}} gotovinom",
+      "pickupAt": "Termin preuzimanja: {{when}}",
+      "pickupWas_one": "Termin je bio {{when}} (kasni {{count}} dan).",
+      "pickupWas_few": "Termin je bio {{when}} (kasni {{count}} dana).",
+      "pickupWas_other": "Termin je bio {{when}} (kasni {{count}} dana).",
+      "address": "Adresa: {{address}}",
+      "storeMayCancel": "Prodavnica može otkazati narudžbu ako je ne preuzmete.",
+      "courier": "Kurir: {{name}}",
+      "assignedAt": "Dodijeljen {{when}}",
+      "waitingCourier": "Dostavna služba traži kurira.",
+      "pickedUpAt": "Preuzeo robu u {{time}}.",
+      "pickedUpReady": "Preuzeo robu u {{time}} (spremno je bilo u {{ready}}).",
+      "carries": "Nosi: {{items}}",
+      "cashOnArrival": "Pri dolasku kuriru plaćate {{cash}} gotovinom.",
+      "failedAt": "Javljeno {{when}}",
+      "reason": "Razlog: {{reason}}.",
+      "failedBeforeNext": "Preuzmite lično ili otkažite narudžbu na stranici narudžbe.",
+      "failedAfterNext": "Roba je kod kurira; administrator rješava narudžbu i javit će vam se."
+    },
+    "history": {
+      "table": "Historija narudžbi",
+      "order": "Narudžba",
+      "store": "Prodavnica",
+      "products": "Proizvodi",
+      "method": "Način",
+      "total": "Ukupno",
+      "status": "Status",
+      "accepted": "{{accepted}}/{{count}} prihvaćeno",
+      "notCharged": "Nije naplaćeno:",
+      "count_one": "{{count}} narudžba",
+      "count_few": "{{count}} narudžbe",
+      "count_other": "{{count}} narudžbi",
+      "countMore_one": "{{count}}+ narudžba",
+      "countMore_few": "{{count}}+ narudžbe",
+      "countMore_other": "{{count}}+ narudžbi"
     }
   }
 }

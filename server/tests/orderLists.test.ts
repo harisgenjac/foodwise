@@ -190,8 +190,67 @@ describe("order lists", () => {
       expect(page.body.total).toBe(5);
       expect(idsOf(page)).toEqual([ids.Pending, ids.Confirmed]);
 
-      const byStore = await restaurant.get("/api/orders/mine").query({ business_name: "druga" });
+      const byStore = await restaurant.get("/api/orders/mine").query({ q: "druga" });
       expect(byStore.body.total).toBe(1);
+    });
+  });
+
+  describe("GET /api/orders/mine search and method", () => {
+    it("q finds a product, the store's name or the order code", async () => {
+      await pool.query("UPDATE users SET business_name = 'Zeleni Market', address = 'Zmaja od Bosne 8' WHERE email = $1", [STORE_A]);
+      const chicken = await createProduct(store, { name: "Piletina" });
+      const milk = await createProduct(store, { name: "Mlijeko" });
+      const chickenOrder = await order(restaurant, chicken.id);
+      const milkOrder = await order(restaurant, milk.id);
+      const code = (await pool.query<{ code: string }>("SELECT code FROM orders WHERE id = $1", [milkOrder])).rows[0]!.code;
+
+      const ids = async (q: string) =>
+        (await restaurant.get("/api/orders/mine").query({ q, sort: "newest" })).body.orders.map((r: { id: number }) => r.id);
+      expect(await ids("pilet")).toEqual([chickenOrder]);
+      expect(await ids("zeleni")).toEqual([milkOrder, chickenOrder]);
+      // The code with or without #, in any case; the summary counts the same orders.
+      expect(await ids(`#${code.toLowerCase()}`)).toContain(milkOrder);
+      expect(await ids(code)).toContain(milkOrder);
+      expect(await ids("nema-takvog")).toEqual([]);
+      const summary = await restaurant.get("/api/orders/mine/summary").query({ q: "pilet" });
+      expect(summary.body.summary.total).toBe(1);
+
+      // The store's address comes with each row, for the pickup step.
+      const list = await restaurant.get("/api/orders/mine");
+      expect(list.body.orders[0]).toMatchObject({ business_name: "Zeleni Market", party_address: "Zmaja od Bosne 8" });
+    });
+
+    it("method filters by pickup or delivery and refuses anything else", async () => {
+      const product = await createProduct(store);
+      const pickup = await order(restaurant, product.id);
+      const delivery = await order(restaurant, product.id);
+      await pool.query(
+        `UPDATE orders SET fulfilment_method = 'DELIVERY', delivery_address = 'Butmirska cesta 2', delivery_latitude = 43.83,
+           delivery_longitude = 18.31, delivery_fee_estimate = 3, delivery_estimated_at = NOW() WHERE id = $1`,
+        [delivery],
+      );
+
+      const byPickup = await restaurant.get("/api/orders/mine").query({ method: "pickup" });
+      expect(byPickup.body.orders.map((r: { id: number }) => r.id)).toEqual([pickup]);
+      const byDelivery = await restaurant.get("/api/orders/mine").query({ method: "delivery", scope: "active" });
+      expect(byDelivery.body.orders.map((r: { id: number }) => r.id)).toEqual([delivery]);
+      expect((await restaurant.get("/api/orders/mine/summary").query({ method: "delivery" })).body.summary.total).toBe(1);
+      expect((await restaurant.get("/api/orders/mine").query({ method: "" })).body.total).toBe(2);
+
+      const invalid = await restaurant.get("/api/orders/mine").query({ method: "drone" });
+      expect(invalid.status).toBe(400);
+      expect(invalid.body.error).toBe("Invalid filter.");
+    });
+
+    it("lists each item's change reason after a partial acceptance", async () => {
+      const product = await createProduct(store, { name: "Tikvice", quantity: 10 });
+      const orderId = await order(restaurant, product.id, 4);
+      await pool.query(
+        "UPDATE order_items SET status = 'Rejected', change_reason = 'NOT_ENOUGH_STOCK' WHERE order_id = $1",
+        [orderId],
+      );
+      const list = await restaurant.get("/api/orders/mine");
+      expect(list.body.orders[0].items[0]).toMatchObject({ status: "Rejected", change_reason: "NOT_ENOUGH_STOCK", change_note: null });
     });
   });
 

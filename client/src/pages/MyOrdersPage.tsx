@@ -1,53 +1,33 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
-  ArrowRight,
-  CalendarClock,
-  CalendarRange,
-  CircleDot,
-  ReceiptText,
-  History,
-  Search,
-  SearchX,
-  ShoppingBasket,
-  Store,
-  X,
-} from "lucide-react";
+import { CalendarClock, CloudOff, ReceiptText, SearchX, ShoppingBag } from "lucide-react";
 import api from "../api/axios.js";
 import LoadingSpinner from "../components/LoadingSpinner.js";
-import OrderCard from "../components/order/OrderCard.js";
-import OrderHistoryRow from "../components/order/OrderHistoryRow.js";
-import ProductPageHeader, { CountPill } from "../components/product/ProductPageHeader.js";
-import FilterBar, { FilterField } from "../components/product/FilterBar.js";
-import SortSelect, {
-  MY_ORDERS_SORT_OPTIONS,
-  ResultsBar,
-  type MyOrdersSort,
-} from "../components/product/SortSelect.js";
-import EmptyState from "../components/product/EmptyState.js";
-import LoadErrorState from "../components/product/LoadErrorState.js";
-import { inputStyle } from "../components/form/FormField.js";
-import LoadMore from "../components/LoadMore.js";
+import EmptyCard from "../components/common/EmptyCard.js";
+import FilterBar, { type ActiveFilter } from "../components/filters/FilterBar.js";
+import FilterDrawer, { FilterPills } from "../components/filters/FilterDrawer.js";
+import SortField from "../components/filters/SortField.js";
+import { ScooterIcon } from "../components/dashboard/HomeIllustrations.js";
+import MyOrderCard from "../components/myOrders/MyOrderCard.js";
+import MyOrdersHistory from "../components/myOrders/MyOrdersHistory.js";
+import { MY_ORDERS_SORT_OPTIONS, type MyOrdersSort } from "../components/product/SortSelect.js";
 import { useLiveOrderRefresh } from "../context/LiveEventsContext.js";
+import { useCancelOrder } from "../hooks/useCancelOrder.js";
 import { useFetch } from "../hooks/useFetch.js";
 import { usePagedLimit } from "../hooks/usePagedLimit.js";
 import { CARD_PAGE_SIZE, HISTORY_PAGE_SIZE } from "../utils/pagination.js";
-import { groupByDay } from "../utils/dayGroups.js";
-import { useCancelOrder } from "../hooks/useCancelOrder.js";
-import type { Order } from "../types/index.js";
+import type { Order, OrderStatus } from "../types/index.js";
 
 type Tab = "active" | "history";
-type Status = Order["status"];
+type Method = "" | "pickup" | "delivery";
+type Period = "" | "today" | "7d" | "month";
 
-const STATUSES: Status[] = ["Pending", "Confirmed", "InDelivery", "Completed", "Rejected", "Cancelled"];
-// The statuses an order on the Active tab can have (InDelivery: the courier is on the way).
-const ACTIVE_STATUSES: Status[] = ["Pending", "Confirmed", "InDelivery"];
-const PERIODS = [
-  { value: "today", label: "orders.period.today" },
-  { value: "7d", label: "orders.period.last7Days" },
-  { value: "month", label: "orders.period.thisMonth" },
-];
+const DRAWER_ID = "my-orders-filters";
+const METHODS: Method[] = ["", "pickup", "delivery"];
+// The statuses an order on Active can have (InDelivery: the courier has the goods); History has all.
+const ACTIVE_STATUSES: OrderStatus[] = ["Pending", "Confirmed", "InDelivery"];
+const HISTORY_STATUSES: OrderStatus[] = [...ACTIVE_STATUSES, "Completed", "Rejected", "Cancelled"];
+const PERIODS: Period[] = ["", "today", "7d", "month"];
 
 // The tab counts: every order (History) and every active one (Active), without filters.
 interface OrderSummary {
@@ -55,39 +35,32 @@ interface OrderSummary {
   active: number;
 }
 
-// The restaurant's orders: Active (waiting for the store or for the pickup) and History.
+// My orders of a restaurant (design/my-orders/): the header with the Aktivne / Historija tabs (the
+// counts from /orders/mine/summary), the FilterBar (one search over the product, the store and the
+// code; "Filteri" opens the panel with the method, the status and, on History, the period), the
+// sort on Active, then one card per active order with its steps (MyOrderCard), or History's table
+// grouped by day (MyOrdersHistory), and "Prikaži još". Filters apply as they change; a tab switch
+// resets the search and the filters and keeps the sort.
 function MyOrdersPage() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>("active");
-  // Each tab has its own filters, so a tab switch resets them.
-  const [name, setName] = useState("");
-  const [businessName, setBusinessName] = useState("");
+  const [search, setSearch] = useState("");
+  const [method, setMethod] = useState<Method>("");
+  const [status, setStatus] = useState<"" | OrderStatus>("");
   // Only on History.
-  const [period, setPeriod] = useState("");
-  const [status, setStatus] = useState("");
+  const [period, setPeriod] = useState<Period>("");
   // Only on Active; History is always newest first.
   const [sort, setSort] = useState<MyOrdersSort>("newest");
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [summary, setSummary] = useState<OrderSummary | null>(null);
-  const { t } = useTranslation();
 
   const isHistory = tab === "history";
-  const filters = { name, business_name: businessName, status };
-  const query = isHistory
-    ? { scope: "all", sort: "newest", ...filters, period }
-    : { scope: "active", sort, ...filters };
+  const filters = { q: search.trim(), method, status };
+  const query = isHistory ? { scope: "all", sort: "newest", ...filters, period } : { scope: "active", sort, ...filters };
   // Active loads 12 cards at a time, History 20 rows; a tab, sort or filter change starts again
   // from the first page, a reload keeps the limit.
-  const { limit, loadMore } = usePagedLimit(
-    isHistory ? HISTORY_PAGE_SIZE : CARD_PAGE_SIZE,
-    JSON.stringify(query),
-  );
-  const {
-    data: orders,
-    total,
-    error,
-    loading,
-    fetching,
-    refetch,
-  } = useFetch<Order>(
+  const { limit, loadMore } = usePagedLimit(isHistory ? HISTORY_PAGE_SIZE : CARD_PAGE_SIZE, JSON.stringify(query));
+  const { data: orders, total, error, loading, fetching, refetch } = useFetch<Order>(
     "/orders/mine",
     "orders",
     { ...query, limit },
@@ -110,10 +83,10 @@ function MyOrdersPage() {
 
   // The tab and the sort are not filters, so they stay.
   const clearFilters = () => {
-    setName("");
-    setBusinessName("");
-    setPeriod("");
+    setSearch("");
+    setMethod("");
     setStatus("");
+    setPeriod("");
   };
 
   const switchTab = (next: Tab) => {
@@ -132,219 +105,182 @@ function MyOrdersPage() {
     fetchSummary();
   });
 
-  const hasActiveFilters = Boolean(name || businessName || status || period);
+  const methodLabel = (value: Method) => t(`myOrders.filters.method.${value || "all"}`);
+  const statusLabel = (value: "" | OrderStatus) => t(`myOrders.filters.status.${value || "all"}`);
+  const periodLabel = (value: Period) => t(`myOrders.filters.period.${value || "all"}`);
+  const removeLabel = (filter: string) => t("listFilters.remove", { filter });
+
+  const activeFilters: ActiveFilter[] = [];
+  if (method) {
+    activeFilters.push({ key: "method", label: methodLabel(method), removeLabel: removeLabel(t("myOrders.filters.methodLabel")), onRemove: () => setMethod("") });
+  }
+  if (status) {
+    activeFilters.push({ key: "status", label: statusLabel(status), removeLabel: removeLabel(t("myOrders.filters.statusLabel")), onRemove: () => setStatus("") });
+  }
+  if (period) {
+    activeFilters.push({ key: "period", label: periodLabel(period), removeLabel: removeLabel(t("myOrders.filters.periodLabel")), onRemove: () => setPeriod("") });
+  }
+  const hasFilters = search.trim() !== "" || activeFilters.length > 0;
   const totalCount = total ?? orders.length;
 
-  const tabs: { key: Tab; label: string; icon: typeof CalendarClock; count?: number }[] = [
-    { key: "active", label: t("orders.tabs.active"), icon: CalendarClock, ...(summary && { count: summary.active }) },
-    { key: "history", label: t("orders.tabs.history"), icon: History, ...(summary && { count: summary.total }) },
+  const tabs: { key: Tab; label: string; count?: number }[] = [
+    { key: "active", label: t("orders.tabs.active"), count: summary?.active },
+    { key: "history", label: t("orders.tabs.history"), count: summary?.total },
   ];
 
-  const noResults = (
-    <EmptyState
-      icon={SearchX}
-      title={t("orders.noResultsTitle")}
-      subtitle={t("orders.noResultsSubtitle")}
-    />
-  );
-
-  // The header, tabs and filters stay while a tab loads; only the list waits.
   let list;
   if (loading) {
     list = <LoadingSpinner />;
   } else if (error && orders.length === 0) {
-    list = <LoadErrorState />;
+    list = <EmptyCard testId="my-orders-error" icon={CloudOff} title={t("common.loadErrorTitle")} text={t("common.loadErrorSubtitle")} />;
   } else if (orders.length === 0) {
-    if (hasActiveFilters) {
-      list = noResults;
+    if (hasFilters) {
+      list = (
+        <EmptyCard
+          testId="my-orders-empty"
+          icon={SearchX}
+          title={t("orders.noResultsTitle")}
+          text={t("orders.noResultsSubtitle")}
+          action={{ label: t("filters.clear"), onClick: clearFilters }}
+        />
+      );
     } else if (isHistory) {
       list = (
-        <EmptyState
+        <EmptyCard
+          testId="my-orders-empty"
           icon={ReceiptText}
           title={t("orders.historyEmptyTitle")}
-          subtitle={t("orders.historyEmptySubtitle")}
-          action={{ to: "/search", label: t("dashboard.browseOffers") }}
+          text={t("orders.historyEmptySubtitle")}
+          link={{ to: "/search", label: t("dashboard.browseOffers") }}
         />
       );
     } else {
       list = (
-        <EmptyState
+        <EmptyCard
+          testId="my-orders-empty"
           icon={CalendarClock}
           title={t("orders.activeEmptyTitle")}
-          subtitle={t("orders.activeEmptySubtitle")}
-          action={{ to: "/search", label: t("dashboard.browseOffers") }}
-          secondaryAction={{ label: t("orders.showHistory"), onClick: () => switchTab("history") }}
+          text={t("orders.activeEmptySubtitle")}
+          action={{ label: t("orders.showHistory"), onClick: () => switchTab("history") }}
+          link={{ to: "/search", label: t("dashboard.browseOffers") }}
         />
       );
     }
   } else if (isHistory) {
-    list = groupByDay(orders, (r) => r.created_at, t).map((group) => (
-      <section key={group.key}>
-        {/* A day may continue on the next page, so the heading has no count. */}
-        <h2 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">{group.title}</h2>
-        <div className="divide-y divide-neutral-100 overflow-hidden rounded-2xl border border-neutral-100 bg-white shadow-sm">
-          {group.items.map((order) => (
-            <OrderHistoryRow key={order.id} order={order} />
-          ))}
-        </div>
-      </section>
-    ));
+    list = <MyOrdersHistory orders={orders} hasMore={orders.length < totalCount} />;
   } else {
     list = (
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="flex flex-col gap-4">
         {orders.map((order) => (
-          <OrderCard
+          <MyOrderCard
             key={order.id}
             order={order}
-            partyLabel={t("orders.seller")}
-            showCreatedAt
-            linkStore
-            actions={
-              order.status === "Pending" ? (
-                <>
-                  <Link
-                    to={`/orders/${order.id}`}
-                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-50 py-2.5 text-sm font-semibold text-brand-800 transition-colors hover:bg-brand-900 hover:text-white"
-                  >
-                    {t("dashboard.detailsButton")}
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      cancelOrder.request({ id: order.id, code: order.code, storeName: order.business_name ?? "" })
-                    }
-                    className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-neutral-200 py-2.5 text-sm font-semibold text-neutral-700 transition-colors hover:border-danger-200 hover:bg-danger-50 hover:text-danger-700"
-                  >
-                    <X className="h-4 w-4" />
-                    {t("orders.cancelShortButton")}
-                  </button>
-                </>
-              ) : undefined
-            }
+            onCancel={(item) => cancelOrder.request({ id: item.id, code: item.code, storeName: item.business_name ?? "" })}
           />
         ))}
       </div>
     );
   }
 
-  const countText = t("orders.count", { count: totalCount });
-
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-10">
-      <ProductPageHeader
-        title={t("orders.myTitle")}
-        subtitle={t("orders.mySubtitle")}
-        icon={ReceiptText}
-        action={{ to: "/search", label: t("dashboard.browseOffers"), icon: ShoppingBasket }}
-      />
-
-      <div role="tablist" className="inline-flex w-fit flex-wrap rounded-full border border-neutral-100 bg-white p-1 shadow-sm">
-        {tabs.map(({ key, label, icon: Icon, count }) => (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            aria-selected={tab === key}
-            onClick={() => switchTab(key)}
-            className={`inline-flex min-h-11 sm:min-h-0 cursor-pointer items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-              tab === key ? "bg-brand-800 text-white shadow-sm" : "text-neutral-600 hover:bg-neutral-50"
-            }`}
-          >
-            <Icon className="h-4 w-4" strokeWidth={1.8} />
-            {label}
-            {!!count && (
-              <span
-                className={`rounded-full px-1.5 text-xs font-semibold ${
-                  tab === key ? "bg-white/25 text-white" : "bg-brand-100 text-brand-800"
+    <div className="mx-auto flex max-w-[1136px] flex-col gap-6 pb-10 font-jakarta text-neutral-900">
+      <div className="flex flex-wrap items-center gap-4">
+        <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-brand-100 text-brand-800">
+          <ReceiptText className="h-6 w-6" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-[1_1_320px]">
+          <h1 className="text-[28px] font-extrabold tracking-[-0.02em]">{t("orders.myTitle")}</h1>
+          <p className="mt-1 text-[15px] text-neutral-600">{t("orders.mySubtitle")}</p>
+        </div>
+        <div role="tablist" aria-label={t("orders.myTitle")} className="flex shrink-0 gap-1 rounded-full border border-neutral-200 bg-white p-1">
+          {tabs.map(({ key, label, count }) => {
+            const selected = tab === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                id={`my-orders-tab-${key}`}
+                aria-selected={selected}
+                aria-controls="my-orders-panel"
+                onClick={() => switchTab(key)}
+                className={`flex h-11 cursor-pointer items-center gap-2 rounded-full border pr-3.5 pl-[18px] text-sm font-bold focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-brand-300 ${
+                  selected ? "border-brand-800 bg-brand-50 text-brand-800" : "border-transparent bg-white text-neutral-600 hover:bg-neutral-50"
                 }`}
               >
-                {count}
-              </span>
-            )}
-          </button>
-        ))}
+                {label}
+                {count !== undefined && (
+                  <span className="flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-brand-100 px-1.5 text-xs font-extrabold text-brand-800">
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <FilterBar
-        hasActiveFilters={hasActiveFilters}
-        activeCount={[businessName, status, period].filter(Boolean).length}
-        resultCount={total ?? undefined}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={t("myOrders.filters.search")}
+        activeFilters={activeFilters}
+        onOpenFilters={() => setDrawerOpen(true)}
+        filtersOpen={drawerOpen}
+        drawerId={DRAWER_ID}
         onClear={clearFilters}
-        columns={isHistory ? 4 : 3}
-        search={
-          <FilterField icon={Search}>
-            <input
-              type="text"
-              placeholder={t("orders.searchProduct")}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={inputStyle}
-            />
-          </FilterField>
-        }
-      >
-        <FilterField icon={Store}>
-          <input
-            type="text"
-            placeholder={t("filters.searchByStore")}
-            value={businessName}
-            onChange={(e) => setBusinessName(e.target.value)}
-            className={inputStyle}
-          />
-        </FilterField>
-        {isHistory && (
-          <FilterField icon={CalendarRange}>
-            <select
-              aria-label={t("orders.period.all")}
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              className={inputStyle}
+        canClear={hasFilters}
+      />
+
+      {!isHistory && <SortField id="my-orders-sort" value={sort} onChange={setSort} options={MY_ORDERS_SORT_OPTIONS} />}
+
+      <div id="my-orders-panel" role="tabpanel" aria-labelledby={`my-orders-tab-${tab}`} className="flex flex-col gap-6">
+        {list}
+        {!loading && orders.length < totalCount && (
+          <div className="flex flex-col items-center gap-2.5">
+            <p className="text-sm text-neutral-600">{t("common.showingOf", { shown: orders.length, total: totalCount })}</p>
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={fetching}
+              className="h-11 cursor-pointer rounded-full border border-brand-800 bg-white px-6 text-[15px] font-bold text-brand-800 hover:bg-brand-50 focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-brand-300 disabled:cursor-wait disabled:opacity-60"
             >
-              <option value="">{t("orders.period.all")}</option>
-              {PERIODS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {t(option.label)}
-                </option>
-              ))}
-            </select>
-          </FilterField>
+              {fetching ? t("common.loading") : t("myOrders.showMore")}
+            </button>
+          </div>
         )}
-        <FilterField icon={CircleDot}>
-          <select
-            aria-label={t("orders.selectStatus")}
+      </div>
+
+      {drawerOpen && (
+        <FilterDrawer id={DRAWER_ID} onClose={() => setDrawerOpen(false)} onClear={clearFilters} canClear={hasFilters}>
+          <FilterPills
+            label={t("myOrders.filters.methodLabel")}
+            options={METHODS.map((value) => ({
+              value,
+              label: methodLabel(value),
+              icon: value === "pickup" ? ShoppingBag : value === "delivery" ? ScooterIcon : undefined,
+            }))}
+            value={method}
+            onChange={setMethod}
+          />
+          <FilterPills
+            label={t("myOrders.filters.statusLabel")}
+            options={(["", ...(isHistory ? HISTORY_STATUSES : ACTIVE_STATUSES)] as ("" | OrderStatus)[]).map((value) => ({
+              value,
+              label: statusLabel(value),
+            }))}
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className={inputStyle}
-          >
-            <option value="">{t("orders.selectStatus")}</option>
-            {(isHistory ? STATUSES : ACTIVE_STATUSES).map((value) => (
-              <option key={value} value={value}>
-                {t(`orderStatus.${value}`)}
-              </option>
-            ))}
-          </select>
-        </FilterField>
-      </FilterBar>
-
-      {!loading &&
-        (isHistory ? (
-          <CountPill>{countText}</CountPill>
-        ) : (
-          <ResultsBar count={countText}>
-            <SortSelect value={sort} onChange={setSort} options={MY_ORDERS_SORT_OPTIONS} />
-          </ResultsBar>
-        ))}
-
-      {list}
-
-      {!loading && (
-        <LoadMore
-          shown={orders.length}
-          total={totalCount}
-          fetching={fetching}
-          onLoadMore={loadMore}
-        />
+            onChange={setStatus}
+          />
+          {isHistory && (
+            <FilterPills
+              label={t("myOrders.filters.periodLabel")}
+              options={PERIODS.map((value) => ({ value, label: periodLabel(value) }))}
+              value={period}
+              onChange={setPeriod}
+            />
+          )}
+        </FilterDrawer>
       )}
 
       {cancelOrder.modal}
