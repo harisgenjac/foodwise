@@ -16,6 +16,7 @@ import StoreProductsTab from "../components/storePage/StoreProductsTab.js";
 import StoreOrdersTab from "../components/storePage/StoreOrdersTab.js";
 import StoreCartBar from "../components/storePage/StoreCartBar.js";
 import { LIST_PAGE_SIZE } from "../utils/pagination.js";
+import { openState, storeUnavailable } from "../utils/storeHours.js";
 import type { Favorites, Order, Product, User } from "../types/index.js";
 
 type Tab = "products" | "orders";
@@ -142,6 +143,8 @@ function StoreDetailsPage() {
           fetching={products.fetching}
           onLoadMore={productPaging.loadMore}
           cart={cart}
+          // The same open state as the header (StoreHeaderCard), so the two always agree.
+          unavailable={storeUnavailable(store, openState(store.opening_schedule))}
         />
       </div>
       <div role="tabpanel" id="store-panel-orders" aria-labelledby="store-tab-orders" hidden={activeTab !== "orders"}>

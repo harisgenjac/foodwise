@@ -1,5 +1,7 @@
 import type { TFunction } from "i18next";
 import { WEEKDAYS, todayWeekday, type DayHours, type Schedule, type Weekday } from "./schedule.js";
+import type { SearchStore, StorePause } from "../types/index.js";
+import { isPaused } from "./orderPause.js";
 
 // Whether a store is open now by its weekly hours, and when that changes:
 // open until `closes`, or closed and opening at `opensAt` (today, tomorrow or on `day`), or closed
@@ -48,3 +50,18 @@ export function openStateText(state: OpenState, t: TFunction): string {
   const detail = openStateDetail(state, t);
   return detail ? `${label} · ${detail}` : label;
 }
+
+// The open state the server worked out for a list (Search's open_now, closes_at, opens_at,
+// opens_on), in the same shape; null without weekly hours.
+export function serverOpenState(store: Pick<SearchStore, "open_now" | "closes_at" | "opens_at" | "opens_on">): OpenState | null {
+  if (store.open_now == null) return null;
+  if (store.open_now) return { open: true, closes: store.closes_at ?? "" };
+  if (store.opens_at && store.opens_on) return { open: false, opensAt: store.opens_at, when: store.opens_on };
+  return { open: false, opensAt: null };
+}
+
+// Whether a store takes no orders right now: it paused them, or it is closed by its weekly hours
+// (`state` from openState or serverOpenState; null without hours never blocks). Its products then
+// show grayscale with a disabled "+" (Search, the store page, the restaurant home).
+export const storeUnavailable = (pause: Partial<StorePause> | null | undefined, state: OpenState | null) =>
+  isPaused(pause) || (state !== null && !state.open);

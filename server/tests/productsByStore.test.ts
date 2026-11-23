@@ -1,4 +1,5 @@
 import pool from "../src/config/db.js";
+import { WEEKDAYS } from "../src/utils/schedule.js";
 import { cityId, cleanupUsers, createProduct, futureDate, orderOne, registerAndLogin, type Agent } from "./helpers.js";
 
 const STORE_A = "bystore-store-a@test.com";
@@ -41,7 +42,7 @@ describe("GET /api/products/by-store (Search)", () => {
   const search = (query: Record<string, string | number> = {}) =>
     restaurant.get("/api/products/by-store").query({ name: NAME, radius: "all", ...query });
 
-  it("groups the matches by store with its first four products and the match count", async () => {
+  it("groups the matches by store with all its products and the match count", async () => {
     for (let i = 1; i <= 5; i += 1) await createProduct(storeA, { name: `${NAME} A${i}`, expiry_date: futureDate(i) });
     await createProduct(storeB, { name: `${NAME} B1` });
     await pool.query("UPDATE users SET logo_url = '/uploads/logos/a.png' WHERE email = $1", [STORE_A]);
@@ -53,7 +54,7 @@ describe("GET /api/products/by-store (Search)", () => {
     expect(stores.map((store) => store.match_count).sort()).toEqual([1, 5]);
     const big = stores.find((store) => store.match_count === 5)!;
     expect(big).toMatchObject({ logo_url: "/uploads/logos/a.png", city: "Visoko", distance_km: 0 });
-    expect(big.products.map((product) => product.name)).toEqual([`${NAME} A1`, `${NAME} A2`, `${NAME} A3`, `${NAME} A4`]);
+    expect(big.products.map((product) => product.name)).toEqual([1, 2, 3, 4, 5].map((i) => `${NAME} A${i}`));
     expect(big.products[0]).not.toHaveProperty("shop_shortage");
     expect(big.products[0]).not.toHaveProperty("rank_in_store");
   });
@@ -90,6 +91,26 @@ describe("GET /api/products/by-store (Search)", () => {
     const near = await search({ radius: 5 });
     expect(near.body.stores).toHaveLength(1);
     expect(near.body.outside_radius_count).toBe(1);
+  });
+
+  it("returns each store's order pause and open state from its weekly hours", async () => {
+    await createProduct(storeA, { name: `${NAME} A` });
+    await createProduct(storeB, { name: `${NAME} B` });
+    const allDay = { open: "00:00", close: "24:00" };
+    const always = Object.fromEntries(WEEKDAYS.map((day) => [day, allDay]));
+    const never = Object.fromEntries(WEEKDAYS.map((day) => [day, null]));
+    await pool.query("UPDATE users SET opening_schedule = $1, orders_paused = true WHERE email = $2", [always, STORE_A]);
+    await pool.query("UPDATE users SET opening_schedule = $1 WHERE email = $2", [never, STORE_B]);
+
+    const response = await search();
+    const byCity = (city: string) => response.body.stores.find((store: StoreRow) => store.city === city);
+    expect(byCity("Visoko")).toMatchObject({ orders_paused: true, open_now: true, closes_at: "24:00", opens_at: null });
+    expect(byCity("Breza")).toMatchObject({ orders_paused: false, open_now: false, closes_at: null, opens_at: null, opens_on: null });
+    expect(byCity("Visoko")).not.toHaveProperty("opening_schedule");
+
+    await pool.query("UPDATE users SET opening_schedule = NULL WHERE email = $1", [STORE_B]);
+    const noHours = await search();
+    expect(noHours.body.stores.find((store: StoreRow) => store.city === "Breza")).toMatchObject({ open_now: null });
   });
 
   it("leaves out fully ordered products and stores without matches", async () => {

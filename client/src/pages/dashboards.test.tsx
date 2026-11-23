@@ -376,6 +376,36 @@ describe("RestaurantDashboardPage", () => {
     expect(screen.queryByTestId("location")).not.toBeInTheDocument();
   });
 
+  it("marks a paused or closed store's row with a chip, grayscale cards and a disabled + that opens nothing", async () => {
+    const [bingo, zelena] = OFFERS.stores;
+    renderRestaurant({
+      offers: {
+        stores: [
+          { ...bingo, orders_paused: true, orders_paused_until: null, open_now: true, closes_at: "22:00", opens_at: null, opens_on: null },
+          { ...zelena, orders_paused: false, orders_paused_until: null, open_now: false, closes_at: null, opens_at: "08:00", opens_on: "tomorrow" },
+        ],
+      },
+    });
+    const [paused, closed] = await screen.findAllByTestId("home-store-row");
+    expect(within(paused!).getByTestId("store-paused-chip")).toHaveTextContent(t("storePage.paused", { until: t("orderPause.untilResumed") }));
+    expect(within(closed!).getByTestId("store-closed-chip")).toHaveTextContent("Zatvoreno · otvara sutra u 08:00");
+
+    const add = within(paused!).getByRole("button", { name: t("search.unavailableAdd", { name: "Hljeb bijeli" }) });
+    expect(add).toBeDisabled();
+    fireEvent.click(add);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(within(paused!).queryByRole("button", { name: t("stepper.add", { name: "Hljeb bijeli" }) })).not.toBeInTheDocument();
+    for (const card of within(closed!).getAllByTestId("home-offer")) expect(card.parentElement).toHaveClass("grayscale");
+  });
+
+  it("keeps an open store's row in colour without a chip", async () => {
+    renderRestaurant();
+    const [row] = await screen.findAllByTestId("home-store-row");
+    expect(within(row!).queryByTestId("store-paused-chip")).not.toBeInTheDocument();
+    expect(within(row!).queryByTestId("store-closed-chip")).not.toBeInTheDocument();
+    expect(within(row!).getAllByTestId("home-offer")[0]!.parentElement).not.toHaveClass("grayscale");
+  });
+
   it("hides Order now without stores with offers, and when they fail to load", async () => {
     const { unmount } = renderRestaurant({ offers: { stores: [] } });
     await waitFor(() => expect(statValues()[0]).toBe("873,9 kg"));

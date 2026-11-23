@@ -66,7 +66,7 @@ export const changeTemporaryPassword = async (page: Page, temporaryPassword: str
 // toBeVisible), never read it right away.
 export const searchMarketplace = async (page: Page, name: string) => {
   await open(page, "/search");
-  await page.getByPlaceholder("Pretraga po imenu").fill(name);
+  await page.getByPlaceholder("Pretraga po nazivu proizvoda").fill(name);
   return page.getByTestId("store-product-card").filter({ hasText: name });
 };
 
@@ -74,7 +74,7 @@ export const searchMarketplace = async (page: Page, name: string) => {
 // so waiting for the empty state (rather than toHaveCount(0)) proves the search really ran.
 export const expectNotInMarketplace = async (page: Page, name: string) => {
   const cards = await searchMarketplace(page, name);
-  await expect(page.getByText("Nema rezultata", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("search-empty")).toContainText("Nema ponuda za ove filtere");
   await expect(cards).toHaveCount(0);
 };
 

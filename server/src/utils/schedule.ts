@@ -63,3 +63,29 @@ export const isOpenAt = (schedule: Schedule | null | undefined, now = new Date()
   const hours = schedule[day];
   return hours ? hours.open <= time && time < hours.close : false;
 };
+
+// A store's open state for a list (Search): open now and until when today, or closed and when it
+// opens next ("today", "tomorrow" or the weekday within the coming week; null when it never
+// opens). All null without weekly hours (nothing to say, and nothing is blocked).
+export type OpenState = {
+  open_now: boolean | null;
+  closes_at: string | null;
+  opens_at: string | null;
+  opens_on: "today" | "tomorrow" | Weekday | null;
+};
+
+export const openStateAt = (schedule: Schedule | null | undefined, now = new Date()): OpenState => {
+  const state: OpenState = { open_now: null, closes_at: null, opens_at: null, opens_on: null };
+  if (!schedule) return state;
+  const { day, time } = localWeekdayAndTime(now);
+  const hours = schedule[day];
+  if (hours && hours.open <= time && time < hours.close) return { ...state, open_now: true, closes_at: hours.close };
+  if (hours && time < hours.open) return { ...state, open_now: false, opens_at: hours.open, opens_on: "today" };
+  const start = WEEKDAYS.indexOf(day);
+  for (let offset = 1; offset <= 7; offset += 1) {
+    const next = WEEKDAYS[(start + offset) % 7]!;
+    const nextHours = schedule[next];
+    if (nextHours) return { ...state, open_now: false, opens_at: nextHours.open, opens_on: offset === 1 ? "tomorrow" : next };
+  }
+  return { ...state, open_now: false };
+};

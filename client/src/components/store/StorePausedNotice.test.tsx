@@ -13,21 +13,13 @@ describe("StorePausedNotice", () => {
     );
   });
 
-  it("shows a small badge, and nothing without a pause or after it ended", async () => {
-    const { rerender } = renderWithProviders(
-      <StorePausedNotice pause={{ orders_paused: true, orders_paused_until: inAnHour() }} variant="badge" />,
-    );
-    expect(await screen.findByText(t("orderPause.badge"))).toBeInTheDocument();
-
-    rerender(<StorePausedNotice pause={{ orders_paused: false, orders_paused_until: null }} variant="badge" />);
-    expect(screen.queryByText(t("orderPause.badge"))).not.toBeInTheDocument();
-    rerender(
-      <StorePausedNotice
-        pause={{ orders_paused: true, orders_paused_until: new Date(Date.now() - 1000).toISOString() }}
-        variant="badge"
-      />,
-    );
-    expect(screen.queryByText(t("orderPause.badge"))).not.toBeInTheDocument();
+  it("shows nothing without a pause or after it ended", async () => {
+    const { container, rerender } = renderWithProviders(<StorePausedNotice pause={{ orders_paused: false, orders_paused_until: null }} />);
+    expect(container).toBeEmptyDOMElement();
+    rerender(<StorePausedNotice pause={{ orders_paused: true, orders_paused_until: new Date(Date.now() - 1000).toISOString() }} />);
+    expect(container).toBeEmptyDOMElement();
+    rerender(<StorePausedNotice pause={{ orders_paused: true, orders_paused_until: inAnHour() }} />);
+    expect(await screen.findByRole("status")).toBeInTheDocument();
   });
 
   it("stops the checkout while the store is paused", async () => {

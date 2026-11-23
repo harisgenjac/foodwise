@@ -225,7 +225,6 @@
   "radius": {
     "label": "Distance",
     "upTo": "Up to {{km}} km",
-    "all": "All cities",
     "km": "{{km}} km",
     "inYourCity": "in your city",
     "moreOffers_one": "{{count}} more offer is further than {{radius}} km.",
@@ -2116,10 +2115,23 @@
   },
   "search": {
     "title": "Search",
-    "subtitle": "Offers from stores nearby, grouped by store. An order always comes from one store.",
-    "storeCount_one": "{{count}} store",
-    "storeCount_other": "{{count}} stores",
-    "seeAll": "All ({{count}})"
+    "subtitle": "Offers from nearby stores, grouped by store. An order always comes from one store.",
+    "searchPlaceholder": "Search by product name",
+    "seeAll": "All ({{count}})",
+    "seeAllLabel": "All ({{count}}): all offers from {{store}}",
+    "category": "Category",
+    "allCategories": "All categories",
+    "expiry": "Best before",
+    "expiryAny": "Any time",
+    "expiryToday": "Today",
+    "expiryTomorrow": "By tomorrow",
+    "expiry3Days": "Within 3 days",
+    "expiresToday": "Expires today",
+    "expiresTomorrow": "Expires by tomorrow",
+    "expires3Days": "Expires within 3 days",
+    "unavailableAdd": "{{name}}: the store is not taking orders right now",
+    "noResultsTitle": "No offers match these filters",
+    "noResultsText": "Try another name or remove a filter."
   },
   "orderSettings": {
     "title": "Orders and delivery",
@@ -2152,7 +2164,6 @@
     "untilDate": "until {{date}} at {{time}}",
     "untilEndOfDay": "until the end of the day",
     "untilResumed": "until the store turns it off",
-    "badge": "Not taking orders",
     "notice": "This store is not taking orders right now ({{until}}). The products stay in your cart, so you can send the order later."
   },
   "home": {

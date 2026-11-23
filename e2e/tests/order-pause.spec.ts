@@ -23,6 +23,9 @@ test("a store pauses orders and a restaurant cannot send them meanwhile", async 
   const storeApi = await apiAs("store");
   const storeId = await myId(storeApi);
   const product = await createProduct(storeApi, { name: productName, category: "Dairy", unit: "kom", quantity: 5 });
+  // Not in the cart, so its card shows the "+" (disabled while the store is paused).
+  const otherName = uniqueName("E2E Pauza Kefir");
+  await createProduct(storeApi, { name: otherName, category: "Dairy", unit: "kom", quantity: 5 });
   await storeApi.dispose();
 
   const restaurantContext = await browser.newContext({ storageState: storageState("restaurant") });
@@ -52,6 +55,11 @@ test("a store pauses orders and a restaurant cannot send them meanwhile", async 
   await test.step("Restoran vidi pauzu i ne može poslati korpu", async () => {
     await open(restaurant, `/stores/${storeId}`);
     await expect(restaurant.getByTestId("info-delivery")).toContainText("Narudžbe pauzirane");
+    // The products are grayscale and their "+" cannot be clicked.
+    await restaurant.getByLabel("Pretraga u ovoj prodavnici").fill(otherName);
+    const card = restaurant.getByTestId("store-product-card").filter({ hasText: otherName });
+    await expect(card.getByRole("button", { name: `${otherName}: prodavnica trenutno ne prima narudžbe` })).toBeDisabled();
+    await expect(card.getByRole("button", { name: `Dodaj u korpu: ${otherName}` })).toHaveCount(0);
     await open(restaurant, "/cart");
     await expect(restaurant.getByText(productName)).toBeVisible();
     await expect(restaurant.getByRole("button", { name: "Pošalji narudžbu" })).toBeDisabled();

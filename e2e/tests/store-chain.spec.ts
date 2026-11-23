@@ -114,7 +114,7 @@ test("a chain's branch in Breza publishes a product that a restaurant in Visoko 
     const group = restaurant.getByTestId("search-store").filter({ hasText: productName });
     await expect(group.getByRole("heading", { name: branch })).toBeVisible();
     await expect(group.getByText(`dio ${company}`)).toBeVisible();
-    await expect(group.getByText("Breza · 7 km")).toBeVisible();
+    await expect(group.getByText("7 km · Breza")).toBeVisible();
   });
 
   for (const context of [adminContext, hqContext, branchContext, restaurantContext]) await context.close();

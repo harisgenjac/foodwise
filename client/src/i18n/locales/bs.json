@@ -229,7 +229,6 @@
   "radius": {
     "label": "Udaljenost",
     "upTo": "Do {{km}} km",
-    "all": "Svi gradovi",
     "km": "{{km}} km",
     "inYourCity": "u vašem gradu",
     "moreOffers_one": "Još {{count}} ponuda je dalje od {{radius}} km.",
@@ -2162,11 +2161,23 @@
   },
   "search": {
     "title": "Pretraga",
-    "subtitle": "Ponude prodavnica u blizini, po prodavnicama. Narudžba je uvijek iz jedne prodavnice.",
-    "storeCount_one": "{{count}} prodavnica",
-    "storeCount_few": "{{count}} prodavnice",
-    "storeCount_other": "{{count}} prodavnica",
-    "seeAll": "Sve ({{count}})"
+    "subtitle": "Ponude prodavnica u blizini, grupisane po prodavnici. Narudžba je uvijek iz jedne prodavnice.",
+    "searchPlaceholder": "Pretraga po nazivu proizvoda",
+    "seeAll": "Sve ({{count}})",
+    "seeAllLabel": "Sve ({{count}}): sve ponude prodavnice {{store}}",
+    "category": "Kategorija",
+    "allCategories": "Sve kategorije",
+    "expiry": "Rok trajanja",
+    "expiryAny": "Bilo kada",
+    "expiryToday": "Danas",
+    "expiryTomorrow": "Do sutra",
+    "expiry3Days": "Do 3 dana",
+    "expiresToday": "Ističe danas",
+    "expiresTomorrow": "Ističe do sutra",
+    "expires3Days": "Ističe do 3 dana",
+    "unavailableAdd": "{{name}}: prodavnica trenutno ne prima narudžbe",
+    "noResultsTitle": "Nema ponuda za ove filtere",
+    "noResultsText": "Pokušajte s drugim nazivom ili uklonite neki filter."
   },
   "orderSettings": {
     "title": "Narudžbe i dostava",
@@ -2200,7 +2211,6 @@
     "untilDate": "do {{date}} u {{time}}",
     "untilEndOfDay": "do kraja dana",
     "untilResumed": "dok je prodavnica ne isključi",
-    "badge": "Ne prima narudžbe",
     "notice": "Ova prodavnica trenutno ne prima narudžbe ({{until}}). Proizvodi ostaju u korpi pa narudžbu možete poslati kasnije."
   },
   "home": {
