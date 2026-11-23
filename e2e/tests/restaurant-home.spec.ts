@@ -108,7 +108,7 @@ test("the header search opens Search with the text in its name filter", async ({
   await field.fill("hljeb");
   await field.press("Enter");
   await expect(page).toHaveURL(/\/search\?q=hljeb$/);
-  await expect(page.getByPlaceholder("Pretraga po imenu")).toHaveValue("hljeb");
+  await expect(page.getByPlaceholder("Pretraga po nazivu proizvoda")).toHaveValue("hljeb");
 });
 
 test("the home page shows every section in order, ending with the donation band and the footer", async ({ page }) => {

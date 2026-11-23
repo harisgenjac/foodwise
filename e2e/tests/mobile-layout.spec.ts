@@ -473,8 +473,19 @@ test.describe("restaurant", () => {
     for (const path of [...RESTAURANT_PAGES, ...SHARED_PAGES, ...details]) await expectPhoneLayout(page, path);
   });
 
-  test("Search keeps the search field and puts the other filters behind the Filters button", async ({ page }) => {
-    await expectFilterPanel(page, "/search", "Pretraga po imenu");
+  test("Search opens its filters as a full-width panel with 44 px targets, and nothing scrolls sideways", async ({ page }) => {
+    await expectPhoneLayout(page, "/search");
+    await expect(page.getByPlaceholder("Pretraga po nazivu proizvoda")).toBeVisible();
+    await page.getByRole("button", { name: /^Filteri/ }).click();
+    const drawer = page.getByRole("dialog", { name: "Filteri" });
+    await expect(drawer).toBeVisible();
+    expect(Math.round((await drawer.boundingBox())!.width)).toBe(WIDTH);
+    await expectTapTargets(drawer, "search filters");
+    await drawer.getByRole("button", { name: "Danas" }).click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(WIDTH);
+    await page.keyboard.press("Escape");
+    await expect(drawer).toBeHidden();
+    await expect(page.getByTestId("active-filter").filter({ hasText: "Ističe danas" })).toBeVisible();
   });
 
   test("the home page stacks the hero text, the chef and the stats, the slider scrolls inside itself, the offer rows, steps and footer stack, and nothing scrolls the page sideways", async ({ page }) => {

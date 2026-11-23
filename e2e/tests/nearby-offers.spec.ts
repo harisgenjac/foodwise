@@ -19,32 +19,37 @@ test("the marketplace shows nearby offers first and the far ones on request", as
     await api.dispose();
   }
 
-  // Search groups the offers by store; each store's header has its city and distance.
+  // Search groups the offers by store; each store's header has its distance and city.
   const cards = await searchMarketplace(page, prefix);
   const card = (name: string) => page.getByTestId("search-store").filter({ hasText: name });
-  const radius = page.getByRole("combobox", { name: "Udaljenost" });
-  const hint = page.getByText("Još 1 ponuda je dalje od 10 km.");
+  const band = page.getByTestId("more-offers");
+  const drawer = page.getByRole("dialog", { name: "Filteri" });
+  const openFilters = () => page.getByRole("button", { name: /^Filteri/ }).click();
 
   await test.step("Do 10 km: samo Breza, uz napomenu o daljim ponudama", async () => {
-    await expect(radius).toHaveValue("10");
+    await expect(page.getByTestId("active-filter").filter({ hasText: "Do 10 km" })).toBeVisible();
     await expect(cards).toHaveCount(1);
-    await expect(card(brezaProduct).getByText("Breza · 7 km")).toBeVisible();
-    await expect(hint).toBeVisible();
-    await expect(page.getByRole("button", { name: "Prikaži do 20 km" })).toBeVisible();
+    await expect(card(brezaProduct).getByText("7 km · Breza")).toBeVisible();
+    await expect(band).toContainText("Još 1 ponuda je dalje od 10 km.");
+    await expect(band.getByRole("button", { name: "Prikaži do 20 km" })).toBeVisible();
   });
 
-  await test.step("Svi gradovi: i Tuzla", async () => {
-    await radius.selectOption({ label: "Svi gradovi" });
+  await test.step("Bez ograničenja: i Tuzla", async () => {
+    await openFilters();
+    await drawer.getByRole("button", { name: "Bez ograničenja" }).click();
     await expect(cards).toHaveCount(2);
-    await expect(card(tuzlaProduct).getByText("Tuzla · 73 km")).toBeVisible();
-    await expect(hint).toBeHidden();
+    await expect(card(tuzlaProduct).getByText("73 km · Tuzla")).toBeVisible();
+    await expect(band).toBeHidden();
   });
 
-  await test.step("Grad Tuzla: prikazuje se i uz mali radijus", async () => {
-    await radius.selectOption({ label: "Do 5 km" });
-    await page.getByRole("combobox", { name: "Grad" }).selectOption({ label: "Tuzla" });
+  await test.step("Grad Tuzla: udaljenost prelazi na bez ograničenja", async () => {
+    await drawer.getByRole("button", { name: "Do 5 km" }).click();
+    await drawer.getByLabel("Grad").selectOption({ label: "Tuzla" });
+    await expect(drawer.getByRole("button", { name: "Bez ograničenja" })).toHaveAttribute("aria-pressed", "true");
+    await drawer.getByRole("button", { name: "Zatvori", exact: true }).click();
     await expect(cards).toHaveCount(1);
-    await expect(card(tuzlaProduct).getByText("Tuzla · 73 km")).toBeVisible();
-    await expect(page.getByText(/ponud[ae] (je|su) dalje od/)).toBeHidden();
+    await expect(card(tuzlaProduct).getByText("73 km · Tuzla")).toBeVisible();
+    await expect(page.getByTestId("active-filter")).toHaveText(["Tuzla"]);
+    await expect(band).toBeHidden();
   });
 });

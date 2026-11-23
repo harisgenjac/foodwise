@@ -5,27 +5,16 @@ import { formatPauseEnd, isPaused } from "../../utils/orderPause.js";
 
 interface StorePausedNoticeProps {
   pause: Partial<StorePause> | null | undefined;
-  // "badge": a small label for store headers and cards; "notice": a line with the end time.
-  variant?: "badge" | "notice";
   className?: string;
 }
 
-// What a restaurant sees while a store has paused new orders: its products stay on offer and in
-// the cart, but nothing can be sent until the pause ends. Nothing without a pause.
-function StorePausedNotice({ pause, variant = "notice", className = "" }: StorePausedNoticeProps) {
+// What a restaurant sees at checkout while a store has paused new orders: a line with the end of
+// the pause. Its products stay on offer and in the cart, but nothing can be sent until the pause
+// ends. Nothing without a pause.
+function StorePausedNotice({ pause, className = "" }: StorePausedNoticeProps) {
   const { t } = useTranslation();
   if (!isPaused(pause)) return null;
 
-  if (variant === "badge") {
-    return (
-      <span
-        className={`inline-flex items-center gap-1 rounded-full bg-warning-50 px-2 py-0.5 text-xs font-semibold text-warning-800 ${className}`}
-      >
-        <PauseCircle className="h-3.5 w-3.5" aria-hidden="true" />
-        {t("orderPause.badge")}
-      </span>
-    );
-  }
   return (
     <p
       role="status"

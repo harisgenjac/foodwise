@@ -227,10 +227,10 @@ export interface OrderDetails extends Omit<Order, "business_name" | "city"> {
 // COMPANY = a store chain's headquarters login (see Company).
 export type Role = "STORE" | "RESTAURANT" | "ADMIN" | "COMPANY";
 
-import type { Schedule } from "../utils/schedule.js";
+import type { Schedule, Weekday } from "../utils/schedule.js";
 
 // One store on Search (GET /products/by-store): the store, how many of its offers match and its
-// first matches.
+// matches (all of them, up to the server's cap of 50).
 export interface SearchStore {
   id: number;
   business_name: string;
@@ -242,6 +242,12 @@ export interface SearchStore {
   // The store takes no orders now (see StorePause).
   orders_paused: boolean;
   orders_paused_until: string | null;
+  // Its open state from the weekly hours (the server's openStateAt), all null without hours:
+  // open now and until when today, or closed and when it opens next (null when it never opens).
+  open_now: boolean | null;
+  closes_at: string | null;
+  opens_at: string | null;
+  opens_on: "today" | "tomorrow" | Weekday | null;
   products: Product[];
 }
 

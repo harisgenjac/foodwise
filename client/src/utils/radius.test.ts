@@ -27,4 +27,18 @@ describe("radius helpers", () => {
     await i18n.changeLanguage("en");
     expect(formatCityDistance(t, "Visoko", 0)).toBe("Visoko · in your city");
   });
+
+  it("counts the offers and stores beyond the radius, in Bosnian and English", async () => {
+    expect(t("radius.moreOffers", { count: 1, radius: "10" })).toBe("Još 1 ponuda je dalje od 10 km.");
+    expect(t("radius.moreOffers", { count: 3, radius: "10" })).toBe("Još 3 ponude su dalje od 10 km.");
+    expect(t("radius.moreOffers", { count: 56, radius: "10" })).toBe("Još 56 ponuda je dalje od 10 km.");
+    expect(t("radius.moreStores", { count: 2, radius: "5" })).toBe("Još 2 prodavnice su dalje od 5 km.");
+    await i18n.changeLanguage("en");
+    try {
+      expect(t("radius.moreOffers", { count: 1, radius: "20" })).toBe("1 more offer is further than 20 km.");
+      expect(t("radius.moreStores", { count: 4, radius: "20" })).toBe("4 more stores are further than 20 km.");
+    } finally {
+      await i18n.changeLanguage("bs");
+    }
+  });
 });

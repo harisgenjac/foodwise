@@ -14,6 +14,7 @@ import { saveImage } from '../services/storage.js';
 import { parseProductImage, productImageNamePrefix, releaseProductImage } from '../utils/productImages.js';
 import { pauseColumns } from '../utils/orderSettings.js';
 import { getHomeOffers } from '../services/homeOffers.js';
+import { openStateAt, type Schedule } from '../utils/schedule.js';
 
 export const PRODUCT_STATUSES = ["Available", "Sold", "Expired", "Removed"];
 
@@ -290,12 +291,14 @@ const STORE_SORT_VALUES: Record<string, string> = {
   distance: "MIN(matched.distance_km) ASC NULLS LAST, MAX(matched.created_at) DESC",
 };
 
-// Products shown per store on Search; the rest is behind "see all" (the store page).
-const SEARCH_PRODUCTS_PER_STORE = 4;
+// Search shows every match of a store in its slider; this cap only keeps one store with a huge
+// offer from making the page heavy (the rest is behind "Sve (N)", the store page).
+const SEARCH_PRODUCTS_PER_STORE = 50;
 
 // Search (GET /products/by-store): the marketplace's matches grouped by store, paged by store
-// (default 12). Each row is a store (logo, name, chain, city, distance), how many of its offers
-// match and its first matches in the chosen sort. Same filters and rules as GET /products.
+// (default 12). Each row is a store (logo, name, chain, city, distance, the order pause and its
+// open state from the weekly hours), how many of its offers match and its matches in the chosen
+// sort (at most SEARCH_PRODUCTS_PER_STORE). Same filters and rules as GET /products.
 export const getProductsByStore = async (req: Request, res: Response) => {
   try {
     const page = parsePage(req.query, CARD_PAGE_SIZE);
@@ -336,12 +339,20 @@ export const getProductsByStore = async (req: Request, res: Response) => {
     );
     const stores = await pool.query(
       `SELECT users.id, users.business_name, ${storeLogo("users")} AS logo_url,
-              ${companyName("users")} AS company_name, cities.name AS city, ${pauseColumns("users")}
+              ${companyName("users")} AS company_name, cities.name AS city, ${pauseColumns("users")},
+              users.opening_schedule
        FROM users LEFT JOIN cities ON cities.id = users.city_id
        WHERE users.id = ANY($1::int[])`,
       [storeIds],
     );
-    const storeById = new Map(stores.rows.map((store) => [store.id, store]));
+    // The open state comes from the weekly hours this same query returned (no query per store).
+    const now = new Date();
+    const storeById = new Map(
+      stores.rows.map(({ opening_schedule, ...store }) => [
+        store.id,
+        { ...store, ...openStateAt(opening_schedule as Schedule | null, now) },
+      ]),
+    );
     const productRows = withoutShortage(products.rows).map(({ rank_in_store: _rank, ...product }) => product);
 
     return res.status(200).json({

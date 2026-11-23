@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 import { WEEKDAYS, todayWeekday, type DayHours, type Schedule, type Weekday } from "./schedule.js";
+import type { SearchStore } from "../types/index.js";
 
 // Whether a store is open now by its weekly hours, and when that changes:
 // open until `closes`, or closed and opening at `opensAt` (today, tomorrow or on `day`), or closed
@@ -47,4 +48,13 @@ export function openStateText(state: OpenState, t: TFunction): string {
   const label = state.open ? t("storeHours.open") : t("storeHours.closed");
   const detail = openStateDetail(state, t);
   return detail ? `${label} · ${detail}` : label;
+}
+
+// The open state the server worked out for a list (Search's open_now, closes_at, opens_at,
+// opens_on), in the same shape; null without weekly hours.
+export function serverOpenState(store: Pick<SearchStore, "open_now" | "closes_at" | "opens_at" | "opens_on">): OpenState | null {
+  if (store.open_now === null) return null;
+  if (store.open_now) return { open: true, closes: store.closes_at ?? "" };
+  if (store.opens_at && store.opens_on) return { open: false, opensAt: store.opens_at, when: store.opens_on };
+  return { open: false, opensAt: null };
 }

@@ -1,19 +1,17 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowUpDown, ChevronDown, Flame, PackageOpen, Plus, Search, SearchX } from "lucide-react";
-import DragCarousel from "../common/DragCarousel.js";
+import { ArrowUpDown, ChevronDown, Flame, PackageOpen, Search, SearchX } from "lucide-react";
 import EmptyCard from "../common/EmptyCard.js";
 import LoadMore from "../LoadMore.js";
 import LoadingSpinner from "../LoadingSpinner.js";
-import OfferCard, { discountPercent } from "../dashboard/OfferCard.js";
-import CartStepper, { minimumQuantity } from "./CartStepper.js";
+import { discountPercent } from "../dashboard/OfferCard.js";
+import CartOfferCard, { type CartActions } from "./CartOfferCard.js";
+import ProductTrack from "./ProductTrack.js";
 import { getDaysUntilExpiry } from "../../utils/expiry.js";
 import type { Product } from "../../types/index.js";
 
 // "Ističe uskoro": products that expire today or tomorrow.
 const SOON_DAYS = 1;
-// A row shows this many cards side by side; with more it becomes a slider.
-export const ROW_SIZE = 4;
 
 export const PRODUCT_SORTS = ["expiry", "discount", "priceAsc", "priceDesc", "name"] as const;
 export type ProductSort = (typeof PRODUCT_SORTS)[number];
@@ -33,12 +31,6 @@ const COMPARE: Record<ProductSort, (a: Product, b: Product) => number> = {
 export const sortProducts = (products: Product[], sort: ProductSort) =>
   products.map((product, index) => ({ product, index })).sort((a, b) => COMPARE[sort](a.product, b.product) || a.index - b.index).map(({ product }) => product);
 
-export interface CartActions {
-  quantityOf: (productId: number) => number;
-  setQuantity: (product: Pick<Product, "id" | "name">, quantity: number) => void;
-  busyId: number | null;
-}
-
 interface StoreProductsTabProps {
   products: Product[];
   total: number;
@@ -48,14 +40,8 @@ interface StoreProductsTabProps {
   cart: CartActions;
 }
 
-// The width of a card in a row: one and a bit on phones (so the next card peeks out and the row
-// reads as swipeable), two on tablets, four from lg up (20 px gaps).
-const ITEM = "w-[78%] flex-none snap-start sm:w-[calc(50%-10px)] lg:w-[calc(25%-15px)]";
-
-// One row: its heading and the cards. More than four cards: a DragCarousel with the lime arrows,
-// mouse drag, swipe and scroll snap. Four or fewer: four columns from lg up, a swipeable track below.
+// One row: its heading and the cards (a slider with more than four).
 function ProductRow({ id, title, soon = false, products, renderCard }: { id: string; title: string; soon?: boolean; products: Product[]; renderCard: (product: Product) => ReactNode }) {
-  const { t } = useTranslation();
   return (
     <section aria-labelledby={id} data-testid="product-row" className="flex flex-col gap-3.5">
       <h2
@@ -65,32 +51,7 @@ function ProductRow({ id, title, soon = false, products, renderCard }: { id: str
         {soon && <Flame className="h-5 w-5" aria-hidden="true" />}
         {title}
       </h2>
-      {products.length > ROW_SIZE ? (
-        // The carousel keeps 28 px on each side for its arrows from md up; pulling it out by the page's
-        // 24 px padding lines its cards up with the rows without a slider.
-        <div data-testid="product-slider" className="md:-mx-6">
-          <DragCarousel
-            previousLabel={t("storePage.previous")}
-            nextLabel={t("storePage.next")}
-            gapClassName="gap-5"
-            arrowPositionClassName="top-[70px]"
-          >
-            {products.map((product) => (
-              <li key={product.id} className={ITEM}>
-                {renderCard(product)}
-              </li>
-            ))}
-          </DragCarousel>
-        </div>
-      ) : (
-        <ul className="flex snap-x snap-mandatory gap-5 overflow-x-auto px-0.5 pt-1 pb-3 [scrollbar-width:none] lg:grid lg:grid-cols-4 lg:overflow-visible [&::-webkit-scrollbar]:hidden">
-          {products.map((product) => (
-            <li key={product.id} className={`${ITEM} lg:w-auto`}>
-              {renderCard(product)}
-            </li>
-          ))}
-        </ul>
-      )}
+      <ProductTrack products={products} renderCard={renderCard} />
     </section>
   );
 }
@@ -123,45 +84,7 @@ function StoreProductsTab({ products, total, loading, fetching, onLoadMore, cart
     (product) => (!category || product.category === category) && (!query || product.name.toLocaleLowerCase("bs").includes(query)),
   );
 
-  const renderCard = (product: Product) => {
-    const inCart = cart.quantityOf(product.id);
-    const max = parseFloat(product.available_quantity ?? product.quantity);
-    const busy = cart.busyId === product.id;
-    return (
-      <OfferCard
-        product={product}
-        testId="store-product-card"
-        selected={inCart > 0}
-        fromStore
-        stretchedLink={false}
-        action={
-          inCart > 0 ? undefined : (
-            <button
-              type="button"
-              disabled={busy || max <= 0}
-              onClick={() => cart.setQuantity(product, minimumQuantity(product.unit, max))}
-              aria-label={t("stepper.add", { name: product.name })}
-              className="relative z-10 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full bg-brand-800 text-white hover:bg-brand-900 focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-brand-300 disabled:cursor-wait disabled:opacity-60"
-            >
-              <Plus className="h-5 w-5" strokeWidth={2.4} aria-hidden="true" />
-            </button>
-          )
-        }
-        footer={
-          inCart > 0 ? (
-            <CartStepper
-              name={product.name}
-              unit={product.unit}
-              value={inCart}
-              max={max}
-              busy={busy}
-              onChange={(quantity) => cart.setQuantity(product, quantity)}
-            />
-          ) : undefined
-        }
-      />
-    );
-  };
+  const renderCard = (product: Product) => <CartOfferCard product={product} cart={cart} />;
 
   const soon = sorted.filter((product) => getDaysUntilExpiry(product) <= SOON_DAYS);
   const chip = (selected: boolean) =>
