@@ -13,6 +13,7 @@ import OrderDecisionModal from "../components/order/OrderDecisionModal.js";
 import OrderDetailsView from "../components/order/OrderDetailsView.js";
 import DeliveryFailedActions from "../components/order/DeliveryFailedActions.js";
 import MockCourierPanel from "../components/order/MockCourierPanel.js";
+import { DEV_TOOLS } from "../utils/devTools.js";
 import { usePickupActions } from "../hooks/usePickupActions.js";
 import { useCancelOrder } from "../hooks/useCancelOrder.js";
 import { deliveryFailedBeforePickup, formatOrderCode } from "../utils/orders.js";
@@ -89,8 +90,8 @@ function OrderDetailsPage() {
     <div className="mx-auto max-w-5xl space-y-6 pb-10">
       <Breadcrumbs items={[section, { label: code }]} />
 
-      {/* Development only: the mock provider's courier. */}
-      {import.meta.env.DEV && order.fulfilment_method === "DELIVERY" && order.delivery && (
+      {/* Development tools only (DEV_TOOLS): the mock provider's courier. */}
+      {DEV_TOOLS && order.fulfilment_method === "DELIVERY" && order.delivery && (
         <MockCourierPanel orderId={order.id} delivery={order.delivery} onDone={fetchOrder} />
       )}
 

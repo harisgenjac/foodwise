@@ -81,6 +81,9 @@ describe("server texts", () => {
     /^Branch 7 by the platform administrator: /,
     /^Your (product|donation) was removed by the platform administrator: /,
     /^Platform announcement: /,
+    // Problem report notifications (to the admins, and the reply or resolution to the restaurant).
+    /^A problem was reported with order 7.$/,
+    /^Your problem report for order 7 (was resolved|got a reply).$/,
     /^Your password was changed with a password reset link.$/,
     /\(KM\)$/,
     /^Food saved \(/,

@@ -13,6 +13,8 @@ import {
   getOrderPickups,
   getPackingList,
   getStoreOrders,
+  rateCourierRoute,
+  reportProblemRoute,
   switchToPickupRoute,
 } from "../controllers/orders.controller.js";
 import { authenticate, authorize } from "../middleware/auth.middleware.js";
@@ -32,6 +34,8 @@ router.post("/:id/complete", authenticate, authorize("STORE"), completeOrderRout
 router.post("/:id/cancel-overdue", authenticate, authorize("STORE"), cancelOverdueOrderRoute);
 router.post("/:id/switch-to-pickup", authenticate, authorize("RESTAURANT"), switchToPickupRoute);
 router.post("/:id/cancel-failed-delivery", authenticate, authorize("RESTAURANT"), cancelFailedDeliveryRoute);
+router.post("/:id/problems", authenticate, authorize("RESTAURANT"), reportProblemRoute);
+router.post("/:id/courier-rating", authenticate, authorize("RESTAURANT"), rateCourierRoute);
 router.get("/:id", authenticate, authorize("STORE", "RESTAURANT"), getOrder);
 
 export default router;

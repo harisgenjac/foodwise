@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { Ban, ListFilter, ReceiptText, Search, X } from "lucide-react";
+import { Ban, ListFilter, ReceiptText, Search, X, MessageSquareWarning } from "lucide-react";
 import api from "../../api/axios.js";
 import { useFetch } from "../../hooks/useFetch.js";
 import { useAdminPage, useAdminSort, useKeepPageInRange } from "../../hooks/useAdminPage.js";
@@ -146,6 +146,7 @@ function AdminOrdersPage() {
         subtitle={t("admin.orders.subtitle")}
         icon={ReceiptText}
         count={total === null ? undefined : t("admin.orders.count", { count: total })}
+        action={{ to: "/admin/problems", label: t("admin.orders.problemsLink"), icon: MessageSquareWarning }}
       />
 
       {userId && (

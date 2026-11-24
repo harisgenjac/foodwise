@@ -4,6 +4,7 @@ import { inTransaction } from "../utils/transaction.js";
 import { parseId } from "../utils/params.js";
 import { adminCancelOrder } from "../services/orders/actions.js";
 import { getOrderDetails, listAdminOrders } from "../services/orders/queries.js";
+import { listAdminProblems, updateProblem } from "../services/orderProblems.js";
 import { REASON_ERROR, logAdminAction, parseReason } from "./admin.controller.js";
 
 // The admin's orders (docs/product.md): every order on the platform, one order's
@@ -59,5 +60,40 @@ export const cancelAdminOrder = async (req: Request, res: Response) => {
     return res.status(200).json({ message: "Order cancelled.", order });
   } catch (error) {
     return sendError(res, error, "An error occurred while cancelling the order.", "Error while cancelling the order:");
+  }
+};
+
+// GET /admin/problems: the restaurants' problem reports, newest first (services/orderProblems.ts).
+export const getAdminProblems = async (req: Request, res: Response) => {
+  try {
+    const result = await listAdminProblems(req.query);
+    if (!result) return res.status(400).json({ error: "Invalid filter." });
+    return res.status(200).json({ message: "Problem reports fetched successfully.", ...result });
+  } catch (error) {
+    console.error("Error while fetching problem reports:", error);
+    return res.status(500).json({ error: "An error occurred while fetching problem reports." });
+  }
+};
+
+// PATCH /admin/problems/:id: a status and/or a reply, logged as UPDATE_ORDER_PROBLEM on the order.
+export const updateAdminProblem = async (req: Request, res: Response) => {
+  const problemId = parseId(req.params.id);
+  if (problemId === null) return res.status(404).json({ error: "Problem report not found." });
+  const adminId = req.user!.id;
+  try {
+    const problem = await inTransaction(async (client) => {
+      const updated = await updateProblem(client, adminId, problemId, req.body);
+      await logAdminAction(client, {
+        adminId,
+        action: "UPDATE_ORDER_PROBLEM",
+        targetUserId: updated.restaurant_id,
+        targetOrderId: updated.order_id,
+        reason: updated.status,
+      });
+      return updated;
+    });
+    return res.status(200).json({ message: "Problem report updated.", problem });
+  } catch (error) {
+    return sendError(res, error, "An error occurred while updating the problem report.");
   }
 };

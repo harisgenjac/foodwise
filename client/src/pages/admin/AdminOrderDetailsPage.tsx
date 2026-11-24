@@ -8,11 +8,12 @@ import Breadcrumbs from "../../components/Breadcrumbs.js";
 import EmptyState from "../../components/product/EmptyState.js";
 import OrderDetailsView from "../../components/order/OrderDetailsView.js";
 import AdminCancelOrderModal, { ADMIN_CANCELLABLE } from "../../components/admin/AdminCancelOrderModal.js";
+import AdminOrderFeedback from "../../components/admin/AdminOrderFeedback.js";
 import { formatOrderCode } from "../../utils/orders.js";
 import type { OrderDetails } from "../../types/index.js";
 
-// One order for the admin: both parties, the items with the store's changes, the history, and
-// cancelling it with a reason while it is open.
+// One order for the admin: both parties, the items with the store's changes, the history, the
+// restaurant's courier rating and problem reports, and cancelling it with a reason while it is open.
 function AdminOrderDetailsPage() {
   const { id } = useParams();
   const { t } = useTranslation();
@@ -83,6 +84,8 @@ function AdminOrderDetailsPage() {
           )
         }
       />
+
+      <AdminOrderFeedback order={order} />
 
       {cancelling && (
         <AdminCancelOrderModal

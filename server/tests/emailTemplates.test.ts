@@ -161,8 +161,8 @@ describe("ORDER_CREATED email", () => {
     expect(emailTemplate("ORDER_CREATED")).toBe(orderCreated);
     expect(emailTemplate("NO_SUCH_TEMPLATE")).toBeUndefined();
     expect(emailTemplate("toString")).toBeUndefined();
-    // 42 notification types and the system emails PASSWORD_RESET and INVITATION.
-    expect(Object.keys(EMAIL_TEMPLATES)).toHaveLength(44);
+    // 45 notification types and the system emails PASSWORD_RESET and INVITATION.
+    expect(Object.keys(EMAIL_TEMPLATES)).toHaveLength(47);
   });
 });
 
@@ -246,6 +246,9 @@ const FULL: Record<NotificationType, NotificationEmailData> = (() => {
     DELIVERY_DELIVERED: { ...order, fulfilmentMethod: "DELIVERY" },
     ORDER_SWITCHED_TO_PICKUP: order,
     ORDER_CANCELLED_DELIVERY_FAILED: order,
+    ORDER_PROBLEM_REPORTED: { ...order, recipientRole: "ADMIN", details: "Nedostaje jogurt." },
+    ORDER_PROBLEM_REPLIED: { ...order, details: "Javili smo se prodavnici." },
+    ORDER_PROBLEM_RESOLVED: order,
     PRODUCT_EXPIRED: product,
     PRODUCT_SOLD_OUT: product,
     PRODUCT_EXPIRING_SOON: product,
@@ -343,6 +346,8 @@ describe("every notification email", () => {
     expect(link("DONATION_REMOVED_BY_ADMIN")).toBe("/donate-food");
     expect(link("PLATFORM_ANNOUNCEMENT")).toBe("/dashboard");
     expect(link("CREDIT_REQUEST_CREATED")).toBe("/admin/credit-requests");
+    expect(link("ORDER_PROBLEM_REPORTED")).toBe("/admin/problems");
+    expect(link("ORDER_PROBLEM_REPLIED")).toBe("/orders/42");
     expect(link("CREDIT_REQUEST_APPROVED")).toBe("/credits");
     expect(link("CREDIT_REQUEST_EXPIRED")).toBe("/my-profile#topup");
     expect(link("CREDIT_REQUEST_EXPIRED", { creditRequestType: "SUBSCRIPTION" })).toBe("/my-profile#subscription");

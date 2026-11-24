@@ -197,11 +197,26 @@ export const completeOrder = async (api: APIRequestContext, orderId: number) =>
 // Plays the mock courier for an accepted delivery order (the server's dev-only route, which the
 // e2e server has: it does not run in production). The pickup makes the order InDelivery, the
 // delivery completes it.
+// The mock's courier is random (a name, a phone, a vehicle, a photo or none): read it from the
+// returned order. `options`: photo (courier_assigned), failure_code (failed), minutes (estimate).
+export interface SimulatedOrder {
+  order: {
+    delivery: {
+      status: string;
+      courier_name: string | null;
+      courier_phone: string | null;
+      courier_vehicle: string | null;
+      estimated_delivery_at: string | null;
+      tracking_url: string | null;
+    };
+  };
+}
 export const simulateCourier = async (
   api: APIRequestContext,
   orderId: number,
-  event: "courier_assigned" | "picked_up" | "delivered" | "failed" | "cancelled",
-) => ok(await api.post(`/api/delivery/mock/orders/${orderId}/simulate`, { data: { event } }));
+  event: "courier_assigned" | "picked_up" | "delivered" | "failed" | "cancelled" | "estimate",
+  options: { photo?: boolean; failure_code?: string; minutes?: number } = {},
+) => ok<SimulatedOrder>(await api.post(`/api/delivery/mock/orders/${orderId}/simulate`, { data: { event, ...options } }));
 
 // The restaurant withdraws its Pending order. For cleanup: the seeded restaurant is shared, and
 // orders left Pending count towards its limit of 10.

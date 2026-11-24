@@ -94,7 +94,7 @@ afterEach(async () => {
 
 it("every declared notification type has an email template", async () => {
   expect(Object.keys(NOTIFICATION_TEMPLATES).sort()).toEqual(await declaredTypes());
-  expect(Object.keys(NOTIFICATION_TEMPLATES)).toHaveLength(42);
+  expect(Object.keys(NOTIFICATION_TEMPLATES)).toHaveLength(45);
 });
 
 it("createNotification queues the email of every type, and each renders in both languages", async () => {
@@ -143,6 +143,9 @@ it("createNotification queues the email of every type, and each renders in both 
     DELIVERY_DELIVERED: [RESTAURANT, "order"],
     ORDER_SWITCHED_TO_PICKUP: [STORE, "order"],
     ORDER_CANCELLED_DELIVERY_FAILED: [STORE, "order"],
+    ORDER_PROBLEM_REPORTED: [ADMIN, "order"],
+    ORDER_PROBLEM_REPLIED: [RESTAURANT, "order"],
+    ORDER_PROBLEM_RESOLVED: [RESTAURANT, "order"],
     PRODUCT_EXPIRED: [STORE, "product"],
     PRODUCT_SOLD_OUT: [STORE, "product"],
     PRODUCT_EXPIRING_SOON: [STORE, "product"],
@@ -186,7 +189,7 @@ it("createNotification queues the email of every type, and each renders in both 
     expect(en.html, type).toContain(`href="${APP_URL}`);
   }
   // Every type was checked, which the Record type also enforces.
-  expect(Object.keys(cases)).toHaveLength(42);
+  expect(Object.keys(cases)).toHaveLength(45);
   expect(restaurantId).toBeGreaterThan(0);
 });
 

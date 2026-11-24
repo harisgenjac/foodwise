@@ -1,7 +1,11 @@
 import {
+  COURIER_VEHICLES,
   DELIVERY_EVENT_TYPES,
+  DELIVERY_FAILURE_CODES,
   DeliveryError,
   type Courier,
+  type CourierVehicle,
+  type DeliveryFailureCode,
   type DeliveryEvent,
   type DeliveryEventType,
   type DeliveryLocation,
@@ -66,11 +70,41 @@ export const requireDateTime = (value: unknown, field: string): Date => {
 
 const invalidEvent = () => new DeliveryError(400, "INVALID_EVENT", "Webhook body is not a valid delivery event.");
 
+const isHttpUrl = (value: unknown): value is string => {
+  if (!nonEmpty(value) || value.length > 2000) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+};
+
+// A nullable optional field: missing and null are both null; anything else must pass the check.
+const optional = <T>(value: unknown, check: (value: unknown) => value is T): T | null => {
+  if (value === undefined || value === null) return null;
+  if (!check(value)) throw invalidEvent();
+  return value;
+};
+
+const isVehicle = (value: unknown): value is CourierVehicle => (COURIER_VEHICLES as readonly unknown[]).includes(value);
+const isFailureCode = (value: unknown): value is DeliveryFailureCode =>
+  (DELIVERY_FAILURE_CODES as readonly unknown[]).includes(value);
+const isDateTime = (value: unknown): value is string => parseDateTime(value) !== null;
+
 const parseCourier = (value: unknown): Courier | null => {
   if (value === undefined || value === null) return null;
   const courier = value as Record<string, unknown>;
-  if (typeof value !== "object" || !nonEmpty(courier.name) || !nonEmpty(courier.phone)) throw invalidEvent();
-  return { name: courier.name, phone: courier.phone };
+  if (typeof value !== "object" || !nonEmpty(courier.id) || !nonEmpty(courier.name) || !nonEmpty(courier.phone)) {
+    throw invalidEvent();
+  }
+  return {
+    id: courier.id,
+    name: courier.name,
+    phone: courier.phone,
+    photo_url: optional(courier.photo_url, isHttpUrl),
+    vehicle: optional(courier.vehicle, isVehicle),
+  };
 };
 
 // The body of a webhook call (after its signature was checked) as a DeliveryEvent.
@@ -92,16 +126,29 @@ export const parseDeliveryEvent = (rawBody: string): DeliveryEvent => {
   ) {
     throw invalidEvent();
   }
+  const type = event.type as DeliveryEventType;
   const failureReason = event.failure_reason ?? null;
   if (failureReason !== null && typeof failureReason !== "string") throw invalidEvent();
-  if (event.type === "delivery.failed" && !nonEmpty(failureReason)) throw invalidEvent();
+  if (type === "delivery.failed" && !nonEmpty(failureReason)) throw invalidEvent();
+  const courier = parseCourier(event.courier);
+  const trackingUrl = optional(event.tracking_url, isHttpUrl);
+  // A courier is always assigned with the page where the delivery can be followed.
+  if (type === "delivery.courier_assigned" && (courier === null || trackingUrl === null)) throw invalidEvent();
+  let failureCode = optional(event.failure_code, isFailureCode);
+  if (type === "delivery.failed") failureCode ??= "OTHER";
+  else if (type === "delivery.cancelled") failureCode ??= "CANCELLED_BY_SERVICE";
+  else failureCode = null;
   return {
     event_id: event.event_id,
-    type: event.type as DeliveryEventType,
+    type,
     delivery_id: event.delivery_id,
     external_order_id: event.external_order_id as number,
     occurred_at: event.occurred_at as string,
-    courier: parseCourier(event.courier),
+    courier,
+    estimated_pickup_at: optional(event.estimated_pickup_at, isDateTime),
+    estimated_delivery_at: optional(event.estimated_delivery_at, isDateTime),
+    tracking_url: trackingUrl,
+    failure_code: failureCode,
     failure_reason: failureReason,
   };
 };

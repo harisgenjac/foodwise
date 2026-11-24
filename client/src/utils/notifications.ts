@@ -10,6 +10,8 @@ import {
   Clock,
   Hourglass,
   KeyRound,
+  MessageSquareReply,
+  MessageSquareWarning,
   PackageCheck,
   ShieldAlert,
   ShoppingBag,
@@ -41,6 +43,9 @@ export const NOTIFICATION_META: Record<NotificationType, { icon: LucideIcon; sty
   DELIVERY_DELIVERED: { icon: Truck, style: "bg-success-100 text-success-800" },
   ORDER_SWITCHED_TO_PICKUP: { icon: Store, style: "bg-info-50 text-info-700" },
   ORDER_CANCELLED_DELIVERY_FAILED: { icon: Ban, style: "bg-neutral-100 text-neutral-600" },
+  ORDER_PROBLEM_REPORTED: { icon: MessageSquareWarning, style: "bg-warning-50 text-warning-700" },
+  ORDER_PROBLEM_REPLIED: { icon: MessageSquareReply, style: "bg-info-50 text-info-700" },
+  ORDER_PROBLEM_RESOLVED: { icon: CircleCheck, style: "bg-success-100 text-success-800" },
   PRODUCT_EXPIRED: { icon: CalendarX, style: "bg-danger-50 text-danger-700" },
   PRODUCT_SOLD_OUT: { icon: PackageCheck, style: "bg-success-100 text-success-800" },
   PRODUCT_EXPIRING_SOON: { icon: Hourglass, style: "bg-warning-50 text-warning-700" },
@@ -97,6 +102,8 @@ export const getNotificationLink = (notification: Notification, role: User["role
   if (notification.type === "BRANCH_TOPUP_REQUESTED") return "/company/credits";
   if (notification.type === "PASSWORD_CHANGED") return "/my-profile";
   if (role === "COMPANY" && notification.branch_id) return `/company/branches/${notification.branch_id}`;
+  // The admin answers problem reports on its own page.
+  if (notification.type === "ORDER_PROBLEM_REPORTED") return "/admin/problems";
   if (notification.order_id) return `/orders/${notification.order_id}`;
   if (notification.product_id) return `/products/${notification.product_id}`;
   if (notification.donation_id) return "/donate-food";
@@ -146,9 +153,11 @@ export const getNotificationText = (notification: Notification, t: TFunction, la
           defaultValue: notification.message,
         })
       : notification.message;
-    return notification.details && !isDelivery
-      ? `${text} ${t("notifications.reason", { reason: notification.details })}`
-      : text;
+    if (!notification.details || isDelivery) return text;
+    // A problem report's text, or the admin's reply, is quoted rather than given as a reason.
+    return notification.type?.startsWith("ORDER_PROBLEM_")
+      ? `${text} ${t("notifications.quoted", { text: notification.details })}`
+      : `${text} ${t("notifications.reason", { reason: notification.details })}`;
   }
   const creditKeys = notification.type ? CREDIT_TEXT_KEYS[notification.type] : undefined;
   if (creditKeys) {

@@ -74,7 +74,8 @@ export default defineConfig({
       cwd: "../client",
       command: "npx vite build --outDir dist-e2e && npx vite preview --outDir dist-e2e --port 4173 --strictPort",
       url: APP_URL,
-      env: { VITE_API_URL: API_URL },
+      // VITE_DEV_TOOLS: the mock courier panel and tracking page (client/src/utils/devTools.ts).
+      env: { VITE_API_URL: API_URL, VITE_DEV_TOOLS: "true" },
       reuseExistingServer: false,
       timeout: 180_000,
     },

@@ -15,8 +15,8 @@ import { open, searchMarketplace, toast } from "../support/ui.js";
 // The whole delivery flow with the mock provider (delivery phase 2), after the store accepted the
 // order with a ready time: the courier's steps, a failure before the courier picked the goods up
 // (the restaurant picks the order up itself, or cancels it) and a failure after it (an admin
-// cancels). The e2e client is a production build without the order page's mock courier panel, so
-// the courier is played through the server's dev-only route (simulateCourier). The screens are
+// cancels). The courier is played through the server's dev-only route (simulateCourier; the
+// panel's buttons are covered by order-page-data.spec.ts). The screens are
 // not reloaded between the courier's steps: they follow the order live (SSE), also right after a
 // page load (the happy path's last step sends the event as soon as the store's page opened).
 //
@@ -105,11 +105,16 @@ test("the courier is assigned, picks the order up and delivers it, live on both 
   });
 
   await test.step("Kurir dodijeljen: oba ekrana ga vide bez osvježavanja", async () => {
-    await withSeeded("store", (api) => simulateCourier(api, id, "courier_assigned").then(() => undefined));
+    // The mock's courier is random.
+    let courier = { name: "", phone: "" };
+    await withSeeded("store", async (api) => {
+      const { order } = await simulateCourier(api, id, "courier_assigned");
+      courier = { name: order.delivery.courier_name!, phone: order.delivery.courier_phone! };
+    });
     await expect(restaurant.getByText("Kurir dodijeljen", { exact: true })).toBeVisible();
-    await expect(restaurant.getByText("Mock Kurir")).toBeVisible();
-    await expect(restaurant.getByRole("link", { name: "+38761000000" })).toBeVisible();
-    await expect(packingCard.getByText("Mock Kurir")).toBeVisible();
+    await expect(restaurant.getByText(courier.name)).toBeVisible();
+    await expect(restaurant.getByRole("link", { name: courier.phone })).toBeVisible();
+    await expect(packingCard.getByText(courier.name)).toBeVisible();
   });
 
   await test.step("Kurir preuzeo: narudžba je u dostavi i nestaje sa spiska za pakovanje", async () => {
@@ -137,7 +142,7 @@ test("after a failure before the pickup the restaurant picks the order up at the
 
   await test.step("Dostava ne uspijeva: restoran bira, prodavnica čeka", async () => {
     await withSeeded("store", (api) => simulateCourier(api, id, "failed").then(() => undefined));
-    await expect(restaurant.getByText("Dostava nije uspjela: kurir nije mogao preuzeti narudžbu.")).toBeVisible();
+    await expect(restaurant.getByText("Dostava nije uspjela: kurir nije mogao završiti dostavu.")).toBeVisible();
     await expect(restaurant.getByTestId("delivery-failed")).toBeVisible();
     await expect(store.getByTestId("delivery-failed")).toContainText("Restoran bira da li će narudžbu preuzeti sam ili je otkazati.");
   });

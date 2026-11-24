@@ -37,6 +37,12 @@ export type NotificationType =
   // To the store: after a failed delivery the restaurant picks the order up itself, or cancels it.
   | "ORDER_SWITCHED_TO_PICKUP"
   | "ORDER_CANCELLED_DELIVERY_FAILED"
+  // Problem reports, linked by order_id (services/orderProblems.ts): to every admin when a
+  // restaurant reports one (the report's text as details), and to the restaurant when an admin
+  // replies or resolves it (the reply as details).
+  | "ORDER_PROBLEM_REPORTED"
+  | "ORDER_PROBLEM_REPLIED"
+  | "ORDER_PROBLEM_RESOLVED"
   | "PRODUCT_EXPIRED"
   | "PRODUCT_SOLD_OUT"
   | "PRODUCT_EXPIRING_SOON"
@@ -184,6 +190,24 @@ export const notifyAdminsOfCreditRequest = async (db: Pool | PoolClient, request
      WHERE users.role = 'ADMIN' AND users.is_blocked = false
      RETURNING notifications.id`,
     [requestId, message],
+  );
+  await enqueueNotificationEmails(db, insertedIds(inserted));
+};
+
+// A restaurant reported a problem with an order: every active admin is told.
+export const notifyAdminsOfOrderProblem = async (
+  db: Pool | PoolClient,
+  orderId: number,
+  message: string,
+  details: string | null,
+) => {
+  const inserted = await db.query<{ id: number }>(
+    `INSERT INTO notifications (user_id, type, message, order_id, details)
+     SELECT users.id, 'ORDER_PROBLEM_REPORTED', $2, $1, $3
+     FROM users
+     WHERE users.role = 'ADMIN' AND users.is_blocked = false
+     RETURNING notifications.id`,
+    [orderId, message, details],
   );
   await enqueueNotificationEmails(db, insertedIds(inserted));
 };

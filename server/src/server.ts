@@ -8,6 +8,7 @@ import { EmailConfigError, loadEmailConfig, type EmailConfig } from './email/con
 import { startEmailWorker } from './email/queue.js';
 import { startLiveListener } from './live/listener.js';
 import { startAutoRejectJob } from './jobs/autoRejectOrders.js';
+import { startCourierRatingJob } from './jobs/courierRatings.js';
 import { DeliveryConfigError, loadDeliveryConfig, type DeliveryConfig } from './delivery/config.js';
 
 const PORT = process.env.PORT || 3000;
@@ -47,6 +48,7 @@ startCreditRenewalJob();
 startUploadCleanupJob();
 startEmailWorker(emailConfig);
 startAutoRejectJob();
+startCourierRatingJob();
 startLiveListener();
 
 app.listen(PORT, () => {

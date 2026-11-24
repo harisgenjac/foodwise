@@ -150,7 +150,7 @@ export const switchToPickup = async (client: PoolClient, restaurantId: number, o
   if (!range.rows[0]!.in_range) {
     throw new HttpError(400, "Pickup date must be between today and the products' expiry date.");
   }
-  await client.query("UPDATE orders SET fulfilment_method = 'PICKUP', pickup_at = $2 WHERE orders.id = $1", [
+  await client.query("UPDATE orders SET fulfilment_method = 'PICKUP', pickup_at = $2, switched_to_pickup_at = NOW() WHERE orders.id = $1", [
     order.id,
     pickupAt,
   ]);

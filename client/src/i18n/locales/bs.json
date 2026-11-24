@@ -319,7 +319,10 @@
       "DELIVERY_FAILED_AFTER_PICKUP": "Kurir je preuzeo narudžbu {{code}}, ali je nije mogao dostaviti.",
       "DELIVERY_DELIVERED": "Narudžba {{code}} je dostavljena.",
       "ORDER_SWITCHED_TO_PICKUP": "{{restaurant}} će narudžbu {{code}} preuzeti sam umjesto dostave.",
-      "ORDER_CANCELLED_DELIVERY_FAILED": "{{restaurant}} je otkazao narudžbu {{code}} nakon neuspjele dostave."
+      "ORDER_CANCELLED_DELIVERY_FAILED": "{{restaurant}} je otkazao narudžbu {{code}} nakon neuspjele dostave.",
+      "ORDER_PROBLEM_REPORTED": "{{restaurant}} je prijavio problem s narudžbom {{code}}.",
+      "ORDER_PROBLEM_REPLIED": "Administrator je odgovorio na vašu prijavu problema za narudžbu {{code}}.",
+      "ORDER_PROBLEM_RESOLVED": "Vaša prijava problema za narudžbu {{code}} je riješena."
     },
     "reason": "Razlog: {{reason}}",
     "credits": {
@@ -341,7 +344,8 @@
       "branchTopupRejected": "Zahtjev za dodatne kredite poslovnice {{branch}} je odbijen.",
       "branchSubscriptionExpired": "Zahtjev za pretplatu poslovnice {{branch}} je istekao prije odobrenja.",
       "branchTopupExpired": "Zahtjev za dodatne kredite poslovnice {{branch}} je istekao prije odobrenja."
-    }
+    },
+    "quoted": "„{{text}}”"
   },
   "store": {
     "addFavoriteError": "Greška prilikom dodavanja prodavnice u omiljene.",
@@ -920,7 +924,8 @@
       "ATTACH_BRANCH": "Prodavnica pripojena firmi",
       "SEND_INVITATION": "Poslana pozivnica",
       "RESEND_INVITATION": "Ponovo poslana pozivnica",
-      "SEND_PASSWORD_RESET_LINK": "Poslan link za novu lozinku"
+      "SEND_PASSWORD_RESET_LINK": "Poslan link za novu lozinku",
+      "UPDATE_ORDER_PROBLEM": "Prijava problema obrađena"
     },
     "accountEvents": {
       "PASSWORD_RESET_REQUESTED": "Zatražen link za novu lozinku",
@@ -1192,7 +1197,8 @@
       "showAll": "Prikaži sve",
       "count_one": "{{count}} narudžba",
       "count_few": "{{count}} narudžbe",
-      "count_other": "{{count}} narudžbi"
+      "count_other": "{{count}} narudžbi",
+      "problemsLink": "Prijave problema"
     },
     "announcements": {
       "title": "Obavještenja",
@@ -1388,6 +1394,48 @@
       "attachNone": "Nema prodavnica bez firme za ovu pretragu.",
       "attach": "Pripoji",
       "deactivateBranchText": "Poslovnica {{name}} nestaje za restorane i ne može se prijaviti. Narudžbe na čekanju se otkazuju, a centrala dobija obavještenje. Odbija se dok postoje prihvaćena preuzimanja."
+    },
+    "problems": {
+      "title": "Prijave problema",
+      "subtitle": "Problemi koje restorani prijave s narudžbama; odgovorite i označite kada su riješeni",
+      "count_one": "{{count}} prijava",
+      "count_few": "{{count}} prijave",
+      "count_other": "{{count}} prijava",
+      "columnOrder": "Narudžba",
+      "columnRestaurant": "Restoran",
+      "columnStore": "Prodavnica",
+      "columnReason": "Razlog",
+      "columnText": "Opis",
+      "columnStatus": "Status",
+      "columnTime": "Prijavljeno",
+      "allStatuses": "Svi statusi",
+      "emptyTitle": "Nema prijava",
+      "emptySubtitle": "Prijave problema s narudžbama pojavit će se ovdje.",
+      "noResultsTitle": "Nema rezultata",
+      "noResultsSubtitle": "Promijenite filter.",
+      "noText": "Bez opisa",
+      "handle": "Obradi",
+      "modalTitle": "Prijava problema za narudžbu {{code}}",
+      "reportedBy": "{{restaurant}} · {{time}}",
+      "status": "Status",
+      "reply": "Odgovor restoranu",
+      "replyHint": "Restoran vidi odgovor na narudžbi i dobija obavještenje kada odgovorite ili riješite prijavu.",
+      "save": "Sačuvaj",
+      "saved": "Prijava je sačuvana.",
+      "replied": "Odgovoreno {{time}}",
+      "resolvedBy": "Riješio {{email}} · {{time}}",
+      "method": {
+        "PICKUP": "Preuzimanje",
+        "DELIVERY": "Dostava"
+      }
+    },
+    "orderFeedback": {
+      "rating": "Ocjena kurira",
+      "ratingValue": "{{rating}}/5",
+      "ratingNotSent": "Još nije primljeno u dostavnoj službi (šalje se ponovo).",
+      "noComment": "Bez komentara",
+      "problems": "Prijave problema",
+      "openProblems": "Otvori prijave problema"
     }
   },
   "announcements": {
@@ -1964,7 +2012,11 @@
         "courier": "kurir nije mogao preuzeti narudžbu",
         "cancelled": "dostavna služba je otkazala dostavu",
         "admin": "administrator je otkazao dostavu",
-        "afterPickup": "kurir je preuzeo narudžbu, ali je nije mogao dostaviti"
+        "afterPickup": "kurir je preuzeo narudžbu, ali je nije mogao dostaviti",
+        "NO_COURIER": "nijedan kurir nije bio dostupan",
+        "CANCELLED_BY_SERVICE": "dostavna služba je otkazala dostavu",
+        "RECIPIENT_CLOSED": "restoran je bio zatvoren kada je kurir stigao",
+        "OTHER": "kurir nije mogao završiti dostavu"
       },
       "finalFee": "Cijena dostave",
       "cash": "Kuriru se plaća (roba + dostava)",
@@ -1972,7 +2024,12 @@
       "courierPickupFinal": "Kurir dolazi u prodavnicu",
       "courier": "Kurir",
       "deliveredAt": "Dostavljeno",
-      "switchedToPickup": "Dostava nije uspjela, narudžba se preuzima u prodavnici"
+      "switchedToPickup": "Dostava nije uspjela, narudžba se preuzima u prodavnici",
+      "vehicles": {
+        "BICYCLE": "Bicikl",
+        "SCOOTER": "Skuter",
+        "CAR": "Automobil"
+      }
     },
     "autoReject": {
       "storeDeadline": "Odbija se automatski u {{time}} ako ne odgovorite",
@@ -1994,9 +2051,67 @@
         "courier_assigned": "Kurir dodijeljen",
         "picked_up": "Kurir preuzeo",
         "delivered": "Dostavljeno",
+        "cancelled": "Služba otkazala",
+        "estimate_later": "Dolazak +5 min",
+        "estimate_earlier": "Dolazak −5 min"
+      },
+      "withPhoto": "Kurir sa slikom",
+      "failureCode": "Razlog neuspjeha",
+      "failBefore": "Nije uspjela prije preuzimanja",
+      "failAfter": "Nije uspjela nakon preuzimanja",
+      "tracking": "Stranica praćenja"
+    },
+    "problems": {
+      "reasons": {
+        "LATE": "Dostava kasni",
+        "MISSING_ITEM": "Nedostaje proizvod",
+        "DAMAGED": "Oštećena ili neispravna roba",
+        "COURIER": "Problem s kurirom",
+        "PAYMENT": "Problem s plaćanjem",
+        "PICKUP_TIME": "Problem s vremenom preuzimanja",
+        "STORE": "Problem s prodavnicom",
+        "OTHER": "Drugo"
+      },
+      "statuses": {
+        "OPEN": "Otvorena",
+        "IN_PROGRESS": "U obradi",
+        "RESOLVED": "Riješena"
+      }
+    },
+    "tracking": {
+      "title": "Praćenje dostave",
+      "devNote": "Razvojna stranica: zamjenjuje stranicu dostavne službe dok koristimo simulaciju.",
+      "order": "Narudžba {{code}}",
+      "route": "{{store}} → {{restaurant}}",
+      "status": "Status",
+      "courier": "Kurir",
+      "noCourier": "Kurir još nije dodijeljen.",
+      "vehicle": "Vozilo",
+      "phone": "Telefon",
+      "readyAt": "Spremno za kurira",
+      "pickupEstimate": "Kurir u prodavnici",
+      "deliveryEstimate": "Dolazak u restoran",
+      "assignedAt": "Kurir dodijeljen",
+      "pickedUpAt": "Kurir preuzeo",
+      "deliveredAt": "Dostavljeno",
+      "failedAt": "Nije uspjela",
+      "failure": "Razlog",
+      "history": "Historija dostave",
+      "noHistory": "Još nema događaja.",
+      "ignored": "zanemareno (stigao kasno)",
+      "events": {
+        "courier_assigned": "Kurir dodijeljen",
+        "estimate_updated": "Nova procjena",
+        "picked_up": "Kurir preuzeo",
+        "delivered": "Dostavljeno",
         "failed": "Dostava nije uspjela",
         "cancelled": "Služba otkazala"
-      }
+      },
+      "estimates": "Kurir u prodavnici {{pickup}} · dolazak {{delivery}}",
+      "ratings": "Ocjene kurira",
+      "noRatings": "Kurir još nije ocijenjen.",
+      "notFound": "Dostava nije pronađena",
+      "notFoundSubtitle": "Link je pogrešan ili dostava ne pripada vašim narudžbama."
     }
   },
   "cart": {

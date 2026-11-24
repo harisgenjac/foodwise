@@ -14,8 +14,9 @@ info:
        ready time and the cash the courier collects (goods + delivery), using the order as the
        idempotency key.
     3. The provider sends **webhooks** as the courier is assigned, picks the goods up, delivers or
-       fails. "Picked up" completes the order on Još vrijedi.
+       fails, and whenever its estimates change. Every event carries the current estimates.
     4. Before the pickup Još vrijedi may **cancel** the delivery.
+    5. After the delivery the restaurant may **rate the courier**; Još vrijedi passes the rating on.
 
     Conventions:
     - Money is a string with exactly two decimals in convertible marks (`"12.50"`, currency `BAM`).
@@ -145,6 +146,32 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
 
+  /deliveries/{deliveryId}/courier-rating:
+    post:
+      operationId: rateCourier
+      summary: The restaurant's rating of the courier who delivered the goods.
+      description: |
+        Sent once per delivery, after it was delivered (Još vrijedi accepts ratings for 7 days).
+        Još vrijedi retries a failed call later with the same body, so the provider should treat a
+        repeated rating of the same delivery as the same rating.
+      parameters:
+        - $ref: "#/components/parameters/DeliveryId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rating]
+              properties:
+                rating: { type: integer, minimum: 1, maximum: 5 }
+                comment: { type: [string, "null"], maxLength: 500 }
+      responses:
+        "204": { description: The rating was received. }
+        "400": { $ref: "#/components/responses/InvalidRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/DeliveryNotFound" }
+
 webhooks:
   deliveryEvent:
     post:
@@ -158,7 +185,14 @@ webhooks:
         already processed and a status change that would move a delivery backwards.
 
         Statuses: `CREATED → COURIER_ASSIGNED → PICKED_UP → DELIVERED`; `FAILED` from any open
-        status; `CANCELLED` (by the provider) before `PICKED_UP`.
+        status; `CANCELLED` (by the provider) before `PICKED_UP`. `delivery.estimate_updated`
+        changes no status: the estimates moved (any open status).
+
+        Every event carries the provider's current `estimated_pickup_at` and
+        `estimated_delivery_at`; Još vrijedi keeps each one in the delivery's history.
+        `delivery.courier_assigned` must carry the courier and the `tracking_url`.
+        `delivery.failed` and `delivery.cancelled` carry a `failure_code` and the provider's text
+        in `failure_reason`.
       parameters:
         - name: X-JosVrijedi-Timestamp
           in: header
@@ -286,10 +320,28 @@ components:
 
     Courier:
       type: object
-      required: [name, phone]
+      required: [id, name, phone]
       properties:
+        id: { type: string, description: "The provider's id of the courier (a rating names it)." }
         name: { type: string }
         phone: { type: string }
+        photo_url: { type: [string, "null"], format: uri, description: An absolute URL, or null without a photo. }
+        vehicle:
+          oneOf:
+            - $ref: "#/components/schemas/CourierVehicle"
+            - type: "null"
+
+    CourierVehicle:
+      type: string
+      enum: [BICYCLE, SCOOTER, CAR]
+
+    FailureCode:
+      type: string
+      description: |
+        Why a delivery failed or was cancelled on the provider's side: no courier was available, the
+        address is outside the zone, the provider cancelled it, the restaurant was closed when the
+        courier arrived, or something else (with the text in `failure_reason`).
+      enum: [NO_COURIER, OUT_OF_ZONE, CANCELLED_BY_SERVICE, RECIPIENT_CLOSED, OTHER]
 
     Delivery:
       type: object
@@ -303,6 +355,8 @@ components:
         - estimated_pickup_at
         - estimated_delivery_at
         - courier
+        - courier_assigned_at
+        - failure_code
         - failure_reason
         - tracking_url
       properties:
@@ -318,8 +372,19 @@ components:
           oneOf:
             - $ref: "#/components/schemas/Courier"
             - type: "null"
+        courier_assigned_at:
+          oneOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type: "null"
+        failure_code:
+          oneOf:
+            - $ref: "#/components/schemas/FailureCode"
+            - type: "null"
         failure_reason: { type: [string, "null"] }
-        tracking_url: { type: [string, "null"], format: uri }
+        tracking_url:
+          type: [string, "null"]
+          format: uri
+          description: Set once a courier is assigned; the page where the delivery can be followed.
 
     DeliveryEvent:
       type: object
@@ -330,6 +395,7 @@ components:
           type: string
           enum:
             - delivery.courier_assigned
+            - delivery.estimate_updated
             - delivery.picked_up
             - delivery.delivered
             - delivery.failed
@@ -341,9 +407,26 @@ components:
           oneOf:
             - $ref: "#/components/schemas/Courier"
             - type: "null"
+        estimated_pickup_at:
+          oneOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type: "null"
+        estimated_delivery_at:
+          oneOf:
+            - $ref: "#/components/schemas/DateTime"
+            - type: "null"
+        tracking_url:
+          type: [string, "null"]
+          format: uri
+          description: Required for `delivery.courier_assigned`.
+        failure_code:
+          oneOf:
+            - $ref: "#/components/schemas/FailureCode"
+            - type: "null"
+          description: "For `delivery.failed` (OTHER when missing) and `delivery.cancelled` (CANCELLED_BY_SERVICE when missing)."
         failure_reason:
           type: [string, "null"]
-          description: Required for `delivery.failed`.
+          description: The provider's text; required for `delivery.failed`.
 
     Error:
       type: object
