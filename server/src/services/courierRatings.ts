@@ -57,7 +57,7 @@ export const sendCourierRating = async (ratingId: number, provider: DeliveryProv
   if (!row) return false;
   try {
     if (row.provider !== provider.name || row.provider_delivery_id === null) {
-      throw new Error(`The delivery belongs to provider ${row.provider}, not ${provider.name}.`);
+      throw new Error(`provider mismatch: the delivery belongs to ${row.provider}, not ${provider.name}.`);
     }
     await provider.rateCourier(row.provider_delivery_id, { rating: row.rating, comment: row.comment });
     await pool.query(

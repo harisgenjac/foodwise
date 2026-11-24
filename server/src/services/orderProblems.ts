@@ -8,7 +8,7 @@ import { lockOrder } from "./orders/status.js";
 
 // Problem reports (docs/product.md): the restaurant of an order reports a problem with it, from
 // sending until PROBLEM_REPORT_HOURS after the order finished (several per order are fine), every
-// admin is told, and an admin answers in the admin's "Prijave problema" (a status and a reply). The
+// admin is told, and an admin answers on its problem reports page (a status and a reply). The
 // restaurant is told when its report gets a reply or is resolved. For now the admin handles them;
 // later the delivery service's customer support will (docs/development-plan.md).
 
