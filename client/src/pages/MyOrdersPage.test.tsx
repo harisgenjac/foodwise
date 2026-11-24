@@ -348,14 +348,20 @@ describe("MyOrdersPage", () => {
       expect(steps("K13PM").queryByRole("tooltip")).not.toBeInTheDocument();
 
       const pickedUp = steps("K12PM").getByRole("button", { name: /Kurir preuzeo/ });
-      await userEvent.hover(pickedUp);
+      // The line and the text do not open it; only the dot does.
+      await userEvent.hover(within(pickedUp).getByTestId("step-line"));
+      expect(steps("K12PM").queryByRole("tooltip")).not.toBeInTheDocument();
+      await userEvent.hover(within(pickedUp).getByText("Kurir preuzeo"));
+      expect(steps("K12PM").queryByRole("tooltip")).not.toBeInTheDocument();
+      const dot = within(pickedUp).getByTestId("step-marker");
+      await userEvent.hover(dot);
       const tip = steps("K12PM").getByRole("tooltip");
       expect(pickedUp).toHaveAttribute("aria-describedby", tip.id);
       expect(tip).toHaveTextContent("Preuzeo robu u 13:58 (spremno je bilo u 13:30).");
       expect(tip).toHaveTextContent("Nosi: Grožđe 2 kg");
       expect(tip).toHaveTextContent("Pri dolasku kuriru plaćate 12,90 KM gotovinom.");
       expect(tip).toHaveTextContent("Kurir: Amir Hodžić · 061 222 333");
-      await userEvent.unhover(pickedUp);
+      await userEvent.unhover(dot);
       expect(steps("K12PM").queryByRole("tooltip")).not.toBeInTheDocument();
       // The current step after the third (on the way) has no info.
       expect(steps("K12PM").getAllByRole("button")).toHaveLength(4);

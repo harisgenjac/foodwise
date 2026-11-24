@@ -105,7 +105,11 @@ test("a restaurant follows, filters and cancels its orders on My orders", async 
     const steps = card(names.delivery).getByRole("list", { name: `Tok narudžbe #${orders.delivery.code}` });
     await expect(steps.getByTestId("order-step")).toHaveCount(5);
     await expect(steps.getByText("Čeka kurira")).toBeVisible();
-    await steps.getByRole("button", { name: /Prihvaćeno/ }).hover();
+    const accepted = steps.getByRole("button", { name: /Prihvaćeno/ });
+    // Over the line nothing opens; over the dot the info does.
+    await accepted.getByTestId("step-line").hover();
+    await expect(steps.getByRole("tooltip")).toHaveCount(0);
+    await accepted.getByTestId("step-marker").hover();
     const tip = steps.getByRole("tooltip");
     await expect(tip).toBeVisible();
     await expect(tip).toContainText("Spremno za kurira u");

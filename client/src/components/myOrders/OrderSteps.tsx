@@ -113,9 +113,22 @@ function OrderSteps({ steps, label }: OrderStepsProps) {
         const content = (
           <>
             <span className="flex shrink-0 flex-col items-center sm:w-full sm:flex-row">
-              <StepMarker step={step} />
+              {/* A mouse opens the info only over the dot, not over the line or the text. */}
+              <span
+                data-testid="step-marker"
+                className={`flex shrink-0 ${hasInfo ? "cursor-help" : ""}`}
+                onPointerEnter={hasInfo ? (event: PointerEvent) => event.pointerType === "mouse" && setOpen(index) : undefined}
+                onPointerLeave={
+                  hasInfo
+                    ? (event: PointerEvent) => event.pointerType === "mouse" && setOpen((current) => (current === index ? null : current))
+                    : undefined
+                }
+              >
+                <StepMarker step={step} />
+              </span>
               {!last && (
                 <span
+                  data-testid="step-line"
                   aria-hidden="true"
                   className={`my-1 w-[3px] flex-1 rounded-[3px] sm:mx-1.5 sm:my-0 sm:h-[3px] sm:w-auto ${lineDone ? "bg-brand-800" : "bg-neutral-200"}`}
                 />
@@ -151,8 +164,6 @@ function OrderSteps({ steps, label }: OrderStepsProps) {
             data-testid="order-step"
             data-state={step.state}
             className="relative min-w-0 sm:flex-1"
-            onPointerEnter={hasInfo ? (event: PointerEvent) => event.pointerType === "mouse" && setOpen(index) : undefined}
-            onPointerLeave={hasInfo ? (event: PointerEvent) => event.pointerType === "mouse" && setOpen((current) => (current === index ? null : current)) : undefined}
           >
             {hasInfo ? (
               <button
@@ -175,7 +186,7 @@ function OrderSteps({ steps, label }: OrderStepsProps) {
                     setOpen(null);
                   }
                 }}
-                className={`${layout} cursor-help rounded-[10px] border-0 bg-transparent p-0 text-left text-inherit focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-brand-300 min-h-11 sm:min-h-0`}
+                className={`${layout} cursor-default rounded-[10px] border-0 bg-transparent p-0 text-left text-inherit focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-brand-300 min-h-11 sm:min-h-0`}
               >
                 {content}
               </button>
