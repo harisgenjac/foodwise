@@ -1,3 +1,4 @@
+import { allowedOrigins } from "../middleware/origin.middleware.js";
 import { MockProvider } from "./mock.js";
 import { DELIVERY_PROVIDERS, type DeliveryProvider, type DeliveryProviderName } from "./types.js";
 
@@ -43,7 +44,8 @@ export const loadDeliveryConfig = (env: NodeJS.ProcessEnv = process.env): Delive
 export const createDeliveryProvider = (config: DeliveryConfig): DeliveryProvider => {
   switch (config.provider) {
     case "mock":
-      return new MockProvider({ webhookSecret: config.webhookSecret });
+      // The courier photos and the tracking page are the client's (the first allowed origin).
+      return new MockProvider({ webhookSecret: config.webhookSecret, publicBaseUrl: allowedOrigins[0] ?? "http://localhost:5173" });
   }
 };
 

@@ -5,6 +5,8 @@ import { inTransaction } from "../utils/transaction.js";
 import { parseId } from "../utils/params.js";
 import { parseSendOrderBody, sendOrder } from "../services/orders/send.js";
 import { decideOrder } from "../services/orders/decision.js";
+import { reportProblem } from "../services/orderProblems.js";
+import { rateOrderCourier } from "../services/courierRatings.js";
 import {
   cancelFailedDelivery,
   cancelOrder,
@@ -163,3 +165,27 @@ export const cancelFailedDeliveryRoute = orderAction(
   "Order cancelled.",
   "An error occurred while cancelling the order.",
 );
+
+// POST /orders/:id/problems: the order's restaurant reports a problem (services/orderProblems.ts).
+export const reportProblemRoute = async (req: Request, res: Response) => {
+  const orderId = parseId(req.params.id);
+  if (orderId === null) return res.status(404).json({ error: "Order not found." });
+  try {
+    const problem = await inTransaction((client) => reportProblem(client, req.user!.id, orderId, req.body));
+    return res.status(201).json({ message: "Problem reported.", problem });
+  } catch (error) {
+    return sendError(res, error, "An error occurred while reporting the problem.");
+  }
+};
+
+// POST /orders/:id/courier-rating: the order's restaurant rates the courier (services/courierRatings.ts).
+export const rateCourierRoute = async (req: Request, res: Response) => {
+  const orderId = parseId(req.params.id);
+  if (orderId === null) return res.status(404).json({ error: "Order not found." });
+  try {
+    const rating = await rateOrderCourier(req.user!.id, orderId, req.body);
+    return res.status(201).json({ message: "Courier rated.", rating });
+  } catch (error) {
+    return sendError(res, error, "An error occurred while rating the courier.");
+  }
+};

@@ -182,6 +182,21 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
       heading: "Narudžba je otkazana",
       intro: [`Narudžba ${v.code} je otkazana jer prodavnica ${v.store} više nije aktivna.`],
     }),
+    ORDER_PROBLEM_REPORTED: (v) => ({
+      subject: `Prijava problema: narudžba ${v.code}`,
+      heading: "Nova prijava problema",
+      intro: [`Restoran ${v.restaurant} je prijavio problem s narudžbom ${v.code} (prodavnica ${v.store}).`],
+    }),
+    ORDER_PROBLEM_REPLIED: (v) => ({
+      subject: `Odgovor na prijavu problema: narudžba ${v.code}`,
+      heading: "Odgovor na vašu prijavu",
+      intro: [`Administrator platforme je odgovorio na vašu prijavu problema s narudžbom ${v.code}.`],
+    }),
+    ORDER_PROBLEM_RESOLVED: (v) => ({
+      subject: `Prijava problema je riješena: narudžba ${v.code}`,
+      heading: "Prijava je riješena",
+      intro: [`Vaša prijava problema s narudžbom ${v.code} je riješena.`],
+    }),
     PRODUCT_EXPIRED: (v) => ({
       subject: `Istekao rok trajanja: ${v.product}`,
       heading: "Proizvodu je istekao rok trajanja",
@@ -462,6 +477,21 @@ const COPY: Record<EmailLanguage, Record<NotificationType, CopyFn>> = {
         `The delivery of order ${v.code} failed, so ${v.restaurant} cancelled it. The products are back on offer.`,
       ],
     }),
+    ORDER_PROBLEM_REPORTED: (v) => ({
+      subject: `Problem report: order ${v.code}`,
+      heading: "A new problem report",
+      intro: [`${v.restaurant} reported a problem with order ${v.code} (store ${v.store}).`],
+    }),
+    ORDER_PROBLEM_REPLIED: (v) => ({
+      subject: `Reply to your problem report: order ${v.code}`,
+      heading: "A reply to your report",
+      intro: [`The platform administrator replied to your problem report for order ${v.code}.`],
+    }),
+    ORDER_PROBLEM_RESOLVED: (v) => ({
+      subject: `Problem report resolved: order ${v.code}`,
+      heading: "Your report was resolved",
+      intro: [`Your problem report for order ${v.code} was resolved.`],
+    }),
     ORDER_CANCELLED_STORE_CLOSED: (v) => ({
       subject: `Order ${v.code} was cancelled`,
       heading: "Order cancelled",
@@ -647,6 +677,7 @@ type LinkKind =
   | "requests"
   | "branch"
   | "profile"
+  | "problems"
   | "list";
 
 export const notificationLink = (type: NotificationType, d: NotificationEmailData): { path: string; kind: LinkKind } => {
@@ -655,6 +686,8 @@ export const notificationLink = (type: NotificationType, d: NotificationEmailDat
   if (d.recipientRole === "COMPANY" && d.branchId !== null) {
     return { path: `/company/branches/${d.branchId}`, kind: "branch" };
   }
+  // The admin answers problem reports on its own page (it has no /orders/:id).
+  if (type === "ORDER_PROBLEM_REPORTED") return { path: "/admin/problems", kind: "problems" };
   if (d.orderId !== null) return { path: `/orders/${d.orderId}`, kind: "order" };
   if (d.productId !== null) return { path: `/products/${d.productId}`, kind: "product" };
   if (d.donationId !== null) return { path: "/donate-food", kind: "donations" };
@@ -687,6 +720,7 @@ const BUTTONS: Record<EmailLanguage, Record<LinkKind, string>> = {
     requests: "Otvori zahtjeve",
     branch: "Otvori poslovnicu",
     profile: "Otvori profil",
+    problems: "Otvori prijave problema",
     list: "Otvori narudžbe",
   },
   en: {
@@ -698,6 +732,7 @@ const BUTTONS: Record<EmailLanguage, Record<LinkKind, string>> = {
     requests: "Open requests",
     branch: "Open branch",
     profile: "Open profile",
+    problems: "Open problem reports",
     list: "Open orders",
   },
 };
@@ -716,6 +751,8 @@ const LABELS: Record<EmailLanguage, Record<string, string>> = {
     credits: "Krediti",
     reason: "Razlog",
     note: "Napomena centrale",
+    problemText: "Opis problema",
+    reply: "Odgovor",
     order: "Narudžba",
     total: "Ukupno",
   },
@@ -732,6 +769,8 @@ const LABELS: Record<EmailLanguage, Record<string, string>> = {
     credits: "Credits",
     reason: "Reason",
     note: "Headquarters' note",
+    problemText: "Problem description",
+    reply: "Reply",
     order: "Order",
     total: "Total",
   },
@@ -776,7 +815,15 @@ const detailRows = (type: NotificationType, d: NotificationEmailData, lang: Emai
     if (d.credits !== null) rows.push({ label: label.credits!, value: String(d.credits) });
   }
   if (d.details) {
-    rows.push({ label: type === "CREDIT_TOPUP_COMPANY_REJECTED" ? label.note! : label.reason!, value: d.details });
+    const detailLabel =
+      type === "CREDIT_TOPUP_COMPANY_REJECTED"
+        ? label.note!
+        : type === "ORDER_PROBLEM_REPORTED"
+          ? label.problemText!
+          : type === "ORDER_PROBLEM_REPLIED" || type === "ORDER_PROBLEM_RESOLVED"
+            ? label.reply!
+            : label.reason!;
+    rows.push({ label: detailLabel, value: d.details });
   }
   return rows;
 };

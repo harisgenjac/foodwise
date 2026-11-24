@@ -1,9 +1,11 @@
-import { MOCK_COURIER, MockProvider } from "../src/delivery/mock.js";
+import { MockProvider } from "../src/delivery/mock.js";
 import { parseDeliveryEvent, parseMoney, formatMoney } from "../src/delivery/contract.js";
 import { haversineKm } from "../src/delivery/distance.js";
 import { signWebhook } from "../src/delivery/signature.js";
 import {
+  DELIVERY_FAILURE_CODES,
   DeliveryError,
+  type Courier,
   type CreateDeliveryRequest,
   type DeliveryLocation,
   type Quote,
@@ -63,10 +65,20 @@ const refusal = async (promise: Promise<unknown> | (() => unknown)): Promise<Del
 let clock: Date;
 let provider: MockProvider;
 
+const BASE = "http://localhost:5173";
+
 beforeEach(() => {
   clock = NOW;
-  provider = new MockProvider({ webhookSecret: SECRET, now: () => clock });
+  provider = new MockProvider({ webhookSecret: SECRET, now: () => clock, publicBaseUrl: BASE });
 });
+
+const COURIER: Courier = {
+  id: "c_1",
+  name: "Amar Hodžić",
+  phone: "+38761000000",
+  photo_url: "https://cdn.example/c1.jpg",
+  vehicle: "SCOOTER",
+};
 
 const quoteOf = async (request = quoteRequest()): Promise<Quote> => {
   const result = await provider.quote(request);
@@ -99,7 +111,36 @@ describe("contract helpers", () => {
       courier: null,
       failure_reason: "Store closed.",
     };
-    expect(parseDeliveryEvent(JSON.stringify(event))).toEqual(event);
+    // A failure without a code is OTHER; the new fields are null when missing.
+    expect(parseDeliveryEvent(JSON.stringify(event))).toEqual({
+      ...event,
+      estimated_pickup_at: null,
+      estimated_delivery_at: null,
+      tracking_url: null,
+      failure_code: "OTHER",
+    });
+    const cancelled = { ...event, type: "delivery.cancelled", failure_reason: null };
+    expect(parseDeliveryEvent(JSON.stringify(cancelled)).failure_code).toBe("CANCELLED_BY_SERVICE");
+    const assigned = {
+      ...event,
+      type: "delivery.courier_assigned",
+      failure_reason: null,
+      courier: COURIER,
+      tracking_url: "https://track.example/1",
+      estimated_pickup_at: "2026-11-16T10:30:00Z",
+      estimated_delivery_at: "2026-11-16T11:01:00Z",
+      failure_code: "NO_COURIER",
+    };
+    // A code only goes with a failure or a cancel.
+    expect(parseDeliveryEvent(JSON.stringify(assigned))).toEqual({ ...assigned, failure_code: null });
+    const withoutPhoto = { ...assigned, courier: { id: "c_2", name: "Kurir", phone: "+387" } };
+    expect(parseDeliveryEvent(JSON.stringify(withoutPhoto)).courier).toEqual({
+      id: "c_2",
+      name: "Kurir",
+      phone: "+387",
+      photo_url: null,
+      vehicle: null,
+    });
     const bad = [
       "not json",
       "[]",
@@ -108,6 +149,13 @@ describe("contract helpers", () => {
       JSON.stringify({ ...event, occurred_at: "yesterday" }),
       JSON.stringify({ ...event, failure_reason: null }),
       JSON.stringify({ ...event, courier: { name: "Kurir" } }),
+      JSON.stringify({ ...event, failure_code: "LOST" }),
+      JSON.stringify({ ...event, estimated_delivery_at: "soon" }),
+      JSON.stringify({ ...assigned, tracking_url: null }),
+      JSON.stringify({ ...assigned, courier: null }),
+      JSON.stringify({ ...assigned, courier: { ...COURIER, id: "" } }),
+      JSON.stringify({ ...assigned, courier: { ...COURIER, vehicle: "TRUCK" } }),
+      JSON.stringify({ ...assigned, courier: { ...COURIER, photo_url: "javascript:alert(1)" } }),
     ];
     for (const body of bad) {
       expect(() => parseDeliveryEvent(body)).toThrow("Webhook body is not a valid delivery event.");
@@ -249,9 +297,9 @@ describe("MockProvider simulated courier and webhooks", () => {
     const statuses = [];
     const eventIds = new Set<string>();
     for (const type of steps) {
-      const call = provider.simulate(delivery_id, type);
+      const call = provider.simulate(delivery_id, type, { courier: COURIER });
       const event = provider.parseWebhook(call.rawBody, call.headers);
-      expect(event).toMatchObject({ type, delivery_id, external_order_id: 42, courier: MOCK_COURIER });
+      expect(event).toMatchObject({ type, delivery_id, external_order_id: 42, courier: COURIER });
       eventIds.add(event.event_id);
       statuses.push((await provider.getDelivery(delivery_id)).status);
     }
@@ -265,11 +313,16 @@ describe("MockProvider simulated courier and webhooks", () => {
     expect(provider.parseWebhook(call.rawBody, call.headers)).toMatchObject({
       type: "delivery.failed",
       courier: null,
+      failure_code: "OTHER",
       failure_reason: "No courier available.",
     });
 
     const cancelled = await provider.createDelivery(deliveryRequest(), "k2");
-    provider.simulate(cancelled.delivery_id, "delivery.cancelled");
+    const cancel = provider.simulate(cancelled.delivery_id, "delivery.cancelled");
+    expect(provider.parseWebhook(cancel.rawBody, cancel.headers)).toMatchObject({
+      failure_code: "CANCELLED_BY_SERVICE",
+      failure_reason: "The delivery service cancelled the delivery.",
+    });
     expect((await provider.getDelivery(cancelled.delivery_id)).status).toBe("CANCELLED");
   });
 
@@ -305,9 +358,116 @@ describe("MockProvider simulated courier and webhooks", () => {
     });
   });
 
+  it("refuses an arrival estimate change that is not valid or would be too early", async () => {
+    const { delivery_id } = await provider.createDelivery(deliveryRequest(), "k1");
+    for (const minutes of [0, 1.5, 121, -121]) {
+      expect(await refusal(() => provider.simulate(delivery_id, "delivery.estimate_updated", { minutes }))).toMatchObject({
+        status: 400,
+        message: "The estimate change is not valid.",
+      });
+    }
+    // Pickup 10:35, arrival 11:06: 31 minutes earlier would be before the pickup.
+    expect(
+      await refusal(() => provider.simulate(delivery_id, "delivery.estimate_updated", { minutes: -31 })),
+    ).toMatchObject({ code: "INVALID_TRANSITION" });
+    provider.simulate(delivery_id, "delivery.estimate_updated", { minutes: -30 });
+    expect((await provider.getDelivery(delivery_id)).estimated_delivery_at).toBe("2026-11-16T10:36:00.000Z");
+  });
+
   it("refuses a correctly signed body that is not an event", () => {
     const rawBody = JSON.stringify({ hello: "world" });
     const headers = signWebhook(SECRET, rawBody, clock);
     expect(() => provider.parseWebhook(rawBody, headers)).toThrow("Webhook body is not a valid delivery event.");
+  });
+});
+
+describe("MockProvider couriers, estimates and ratings", () => {
+  // 0.5 picks the middle of each list: "Selma Mehmedović", the SCOOTER, photo 2.
+  const fixed = (value: number) =>
+    new MockProvider({ webhookSecret: SECRET, now: () => clock, random: () => value, publicBaseUrl: BASE });
+  const eventOf = (mock: MockProvider, deliveryId: string, ...args: Parameters<MockProvider["simulate"]> extends [string, ...infer R] ? R : never) => {
+    const call = mock.simulate(deliveryId, ...args);
+    return mock.parseWebhook(call.rawBody, call.headers);
+  };
+
+  it("assigns a random courier with a vehicle, a photo or none, and the tracking page", async () => {
+    const mock = fixed(0.5);
+    const { delivery_id } = await mock.createDelivery(deliveryRequest(), "k1");
+    const event = eventOf(mock, delivery_id, "delivery.courier_assigned", { photo: true });
+    expect(event.courier).toMatchObject({
+      name: "Selma Mehmedović",
+      vehicle: "SCOOTER",
+      photo_url: `${BASE}/dev/couriers/courier-2.svg`,
+    });
+    expect(event.courier!.id).toMatch(/^mock_courier_/);
+    expect(event.courier!.phone).toMatch(/^\+3876\d{8}$/);
+    expect(event.tracking_url).toBe(`${BASE}/dev/tracking/${delivery_id}`);
+    expect(await mock.getDelivery(delivery_id)).toMatchObject({
+      courier_assigned_at: NOW.toISOString(),
+      tracking_url: `${BASE}/dev/tracking/${delivery_id}`,
+    });
+
+    const other = await mock.createDelivery(deliveryRequest(), "k2");
+    expect(eventOf(mock, other.delivery_id, "delivery.courier_assigned", { photo: false }).courier!.photo_url).toBeNull();
+    // Without a choice the photo is random (0.9: none).
+    const late = fixed(0.9);
+    const third = await late.createDelivery(deliveryRequest(), "k3");
+    expect(eventOf(late, third.delivery_id, "delivery.courier_assigned").courier).toMatchObject({
+      photo_url: null,
+      vehicle: "CAR",
+    });
+  });
+
+  it("recalculates the exact estimates on every step and moves the arrival on request", async () => {
+    const { delivery_id } = await provider.createDelivery(deliveryRequest(), "k1");
+    // Ready 10:30: the courier comes at 10:30 (assigned at 10:00 + 5 minutes is earlier), 31 minutes to the restaurant.
+    expect(eventOf(provider, delivery_id, "delivery.courier_assigned")).toMatchObject({
+      estimated_pickup_at: "2026-11-16T10:30:00.000Z",
+      estimated_delivery_at: "2026-11-16T11:01:00.000Z",
+    });
+    clock = new Date("2026-11-16T10:40:00.000Z");
+    expect(eventOf(provider, delivery_id, "delivery.picked_up")).toMatchObject({
+      estimated_pickup_at: "2026-11-16T10:40:00.000Z",
+      estimated_delivery_at: "2026-11-16T11:11:00.000Z",
+    });
+    expect(eventOf(provider, delivery_id, "delivery.estimate_updated", { minutes: 5 })).toMatchObject({
+      type: "delivery.estimate_updated",
+      estimated_delivery_at: "2026-11-16T11:16:00.000Z",
+    });
+    expect(eventOf(provider, delivery_id, "delivery.estimate_updated", { minutes: -5 }).estimated_delivery_at).toBe(
+      "2026-11-16T11:11:00.000Z",
+    );
+    expect((await provider.getDelivery(delivery_id)).status).toBe("PICKED_UP");
+    clock = new Date("2026-11-16T11:05:00.000Z");
+    expect(eventOf(provider, delivery_id, "delivery.delivered").estimated_delivery_at).toBe("2026-11-16T11:05:00.000Z");
+  });
+
+  it("fails with every failure code, before and after the pickup", async () => {
+    for (const [index, code] of DELIVERY_FAILURE_CODES.entries()) {
+      const before = await provider.createDelivery(deliveryRequest(), `before-${index}`);
+      expect(eventOf(provider, before.delivery_id, "delivery.failed", { failureCode: code })).toMatchObject({
+        type: "delivery.failed",
+        failure_code: code,
+        failure_reason: expect.any(String),
+      });
+      const after = await provider.createDelivery(deliveryRequest(), `after-${index}`);
+      provider.simulate(after.delivery_id, "delivery.courier_assigned");
+      provider.simulate(after.delivery_id, "delivery.picked_up");
+      expect(eventOf(provider, after.delivery_id, "delivery.failed", { failureCode: code }).failure_code).toBe(code);
+      expect(await provider.getDelivery(after.delivery_id)).toMatchObject({ status: "FAILED", failure_code: code });
+    }
+  });
+
+  it("records courier ratings and can fail them like a provider that is down", async () => {
+    await provider.rateCourier("dlv_1", { rating: 5, comment: "Brz i ljubazan." });
+    expect(provider.ratingsFor("dlv_1")).toEqual([
+      { rating: 5, comment: "Brz i ljubazan.", received_at: NOW.toISOString() },
+    ]);
+    provider.failNextRatings(1);
+    expect(await refusal(provider.rateCourier("dlv_2", { rating: 3, comment: null }))).toMatchObject({ status: 503 });
+    await provider.rateCourier("dlv_2", { rating: 3, comment: null });
+    expect(provider.ratingsFor("dlv_2")).toHaveLength(1);
+    expect(await refusal(provider.rateCourier("dlv_3", { rating: 6, comment: null }))).toMatchObject({ status: 400 });
+    expect(provider.ratingsFor("dlv_3")).toEqual([]);
   });
 });

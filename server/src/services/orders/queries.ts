@@ -6,6 +6,8 @@ import { parseCityFilter } from "../../utils/cities.js";
 import { parseOrderCode } from "./codes.js";
 import { storeLogo } from "../../utils/branding.js";
 import { AUTO_REJECT_AT, IS_OVERDUE, ORDER_STATUSES } from "./status.js";
+import { PROBLEM_REPORT_HOURS } from "../orderProblems.js";
+import { COURIER_RATING_DAYS } from "../courierRatings.js";
 
 // The order lists and details of /api/orders: the order lists (filters, sorts, scopes,
 // paging) over orders. A list row is the order with its items and totals:
@@ -50,7 +52,10 @@ const ORDER_COLUMNS = `
        'cash_to_collect', deliveries.cash_to_collect::text,
        'estimated_pickup_at', deliveries.estimated_pickup_at, 'estimated_delivery_at', deliveries.estimated_delivery_at,
        'courier_name', deliveries.courier_name, 'courier_phone', deliveries.courier_phone,
-       'tracking_url', deliveries.tracking_url, 'failure_reason', deliveries.failure_reason,
+       'courier_photo_url', deliveries.courier_photo_url, 'courier_vehicle', deliveries.courier_vehicle,
+       'tracking_url', deliveries.tracking_url, 'failure_code', deliveries.failure_code,
+       'failure_reason', deliveries.failure_reason,
+       'failed_after_pickup', deliveries.status IN ('FAILED', 'CANCELLED') AND deliveries.picked_up_at IS NOT NULL,
        'picked_up_at', deliveries.picked_up_at, 'delivered_at', deliveries.delivered_at,
        'ready_at', deliveries.ready_at, 'courier_assigned_at', deliveries.courier_assigned_at,
        'failed_at', deliveries.failed_at)
@@ -487,15 +492,84 @@ const PARTY_COLUMNS = (alias: string, cityAlias: string) => `json_build_object(
     'logo_url', ${storeLogo(alias)}
   )`;
 
+// The order's last move to its closing status (Completed, Rejected, Cancelled) while it has one:
+// when it finished and who closed it.
+const FINISH = `(SELECT json_build_object('at', order_status_history.created_at, 'source', order_status_history.source)
+    FROM order_status_history
+    WHERE order_status_history.order_id = orders.id AND order_status_history.item_id IS NULL
+      AND order_status_history.to_status = orders.status::text
+      AND orders.status IN ('Completed', 'Rejected', 'Cancelled')
+    ORDER BY order_status_history.created_at DESC, order_status_history.id DESC LIMIT 1)`;
+
+// The automatic rejection (jobs/autoRejectOrders.ts): the order's move to Rejected by the system.
+const AUTO_REJECTED_AT = `(SELECT MIN(order_status_history.created_at) FROM order_status_history
+    WHERE order_status_history.order_id = orders.id AND order_status_history.item_id IS NULL
+      AND order_status_history.to_status = 'Rejected' AND order_status_history.source = 'SYSTEM')`;
+
+// The store's decision over the items it decided: all rejected, some rejected or reduced, or all
+// accepted in full (items cancelled later keep their decision). Null before a decision.
+const DECISION = `(SELECT CASE
+      WHEN COUNT(*) = 0 THEN NULL
+      WHEN BOOL_AND(order_items.status = 'Rejected') THEN 'REJECTED'
+      WHEN BOOL_OR(order_items.status = 'Rejected' OR order_items.quantity < order_items.ordered_quantity)
+        THEN 'PARTIALLY_ACCEPTED'
+      ELSE 'ACCEPTED' END
+    FROM order_items WHERE order_items.order_id = orders.id AND order_items.decided_at IS NOT NULL)`;
+
+// The restaurant's problem reports for the order, oldest first, with the admin's answer.
+const PROBLEMS = `COALESCE((SELECT json_agg(json_build_object(
+      'id', order_problems.id, 'fulfilment_method', order_problems.fulfilment_method,
+      'reason', order_problems.reason, 'text', order_problems.text, 'status', order_problems.status,
+      'admin_reply', order_problems.admin_reply, 'replied_at', order_problems.replied_at,
+      'resolved_at', order_problems.resolved_at, 'created_at', order_problems.created_at
+    ) ORDER BY order_problems.created_at, order_problems.id)
+    FROM order_problems WHERE order_problems.order_id = orders.id), '[]'::json)`;
+
+const COURIER_RATING = `(SELECT json_build_object(
+      'rating', courier_ratings.rating, 'comment', courier_ratings.comment,
+      'courier_name', courier_ratings.courier_name, 'created_at', courier_ratings.created_at,
+      'sent_at', courier_ratings.sent_at)
+    FROM courier_ratings WHERE courier_ratings.order_id = orders.id)`;
+
+const FINISHED_AT = `(${FINISH}->>'at')::timestamptz`;
+const CLOSED = "orders.status IN ('Completed', 'Rejected', 'Cancelled')";
+const DELIVERED = "orders.fulfilment_method = 'DELIVERY' AND deliveries.status = 'DELIVERED'";
+
 // One order for one of its two parties (null for anyone else), or for the admin (`userId` null):
-// the order, its items with the store's changes, both parties, the changes made at sending and
-// the history.
+// the order, its items with the store's changes, both parties, the changes made at sending, the
+// history, and (in the same order query) the times of its steps, the problem reports and the
+// courier rating. The reports, the rating and what the restaurant can still do are for the
+// restaurant and the admin only.
 export const getOrderDetails = async (orderId: number, userId: number | null) => {
   const result = await pool.query(
     `SELECT ${ORDER_COLUMNS}, orders.send_changes,
        ${PARTY_COLUMNS("stores", "store_cities")} AS store,
-       ${PARTY_COLUMNS("restaurants", "restaurant_cities")} AS restaurant
+       ${PARTY_COLUMNS("restaurants", "restaurant_cities")} AS restaurant,
+       json_build_object(
+         'sent_at', orders.created_at AT TIME ZONE current_setting('TimeZone'),
+         'decision', COALESCE(${DECISION}, CASE WHEN ${AUTO_REJECTED_AT} IS NOT NULL THEN 'AUTO_REJECTED' END),
+         'decided_at', COALESCE(orders.decided_at, ${AUTO_REJECTED_AT}),
+         'courier_assigned_at', deliveries.courier_assigned_at,
+         'courier_picked_up_at', deliveries.picked_up_at,
+         'delivered_at', deliveries.delivered_at,
+         'delivery_failed_at', deliveries.failed_at,
+         'switched_to_pickup_at', orders.switched_to_pickup_at,
+         'picked_up_at', CASE WHEN orders.fulfilment_method = 'PICKUP' AND orders.status = 'Completed'
+                              THEN orders.picked_up_at END,
+         'cancelled_at', CASE WHEN orders.status = 'Cancelled' THEN ${FINISHED_AT} END,
+         'cancelled_by', CASE WHEN orders.status = 'Cancelled' THEN ${FINISH}->>'source' END,
+         'finished_at', ${FINISHED_AT}
+       ) AS steps,
+       ${PROBLEMS} AS problems,
+       ${COURIER_RATING} AS courier_rating,
+       (NOT (${CLOSED}) OR ${FINISHED_AT} > NOW() - INTERVAL '${PROBLEM_REPORT_HOURS} hours') AS can_report_problem,
+       CASE WHEN ${CLOSED} THEN ${FINISHED_AT} + INTERVAL '${PROBLEM_REPORT_HOURS} hours' END AS problem_report_until,
+       (${DELIVERED} AND deliveries.delivered_at > NOW() - INTERVAL '${COURIER_RATING_DAYS} days'
+         AND NOT EXISTS (SELECT 1 FROM courier_ratings WHERE courier_ratings.order_id = orders.id)) AS can_rate_courier,
+       CASE WHEN ${DELIVERED} THEN deliveries.delivered_at + INTERVAL '${COURIER_RATING_DAYS} days' END
+         AS courier_rating_until
      FROM orders
+     LEFT JOIN deliveries ON deliveries.order_id = orders.id
      JOIN users AS stores ON stores.id = orders.store_id
      JOIN users AS restaurants ON restaurants.id = orders.restaurant_id
      LEFT JOIN cities AS store_cities ON store_cities.id = stores.city_id
@@ -532,5 +606,20 @@ export const getOrderDetails = async (orderId: number, userId: number | null) =>
   // What the store's till sold of the order's products is for the store (and the admin) only.
   const forStore = userId === null || userId === order.store_id;
   const lines = forStore ? items.rows : items.rows.map(({ shop_shortage: _shortage, ...item }) => item);
-  return { ...order, items: lines, history: history.rows };
+  if (userId !== null && userId === order.store_id) {
+    // Problem reports and the courier rating are between the restaurant and the platform.
+    const {
+      problems: _problems,
+      courier_rating: _rating,
+      can_report_problem: _canReport,
+      problem_report_until: _reportUntil,
+      can_rate_courier: _canRate,
+      courier_rating_until: _rateUntil,
+      ...forTheStore
+    } = order;
+    return { ...forTheStore, items: lines, history: history.rows };
+  }
+  // The admin only looks: it never reports or rates.
+  const actions = userId === null ? { can_report_problem: false, can_rate_courier: false } : {};
+  return { ...order, ...actions, items: lines, history: history.rows };
 };
