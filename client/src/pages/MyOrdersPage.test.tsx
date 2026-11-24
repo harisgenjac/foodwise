@@ -85,6 +85,9 @@ const card = (code: string) =>
   screen.getAllByTestId("my-order-card").find((element) => element.textContent?.includes(`#${code}`))!;
 const steps = (code: string) => within(within(card(code)).getByRole("list", { name: t("myOrders.steps.label", { code: `#${code}` }) }));
 const stepStates = (code: string) => steps(code).getAllByTestId("order-step").map((step) => step.getAttribute("data-state"));
+// How each dot is drawn, and which lines are green.
+const markers = (code: string) => steps(code).getAllByTestId("step-marker").map((marker) => marker.getAttribute("data-marker"));
+const lines = (code: string) => steps(code).getAllByTestId("step-line").map((line) => line.getAttribute("data-filled"));
 
 describe("MyOrdersPage", () => {
   beforeEach(() => {
@@ -198,6 +201,8 @@ describe("MyOrdersPage", () => {
       await screen.findByText("Šljive 2 kg");
 
       expect(stepStates("K1PM")).toEqual(["done", "current", "upcoming", "upcoming"]);
+      // Waiting for the store's answer keeps the green ring.
+      expect(markers("K1PM")).toEqual(["done", "ring", "upcoming", "upcoming"]);
       const waiting = steps("K1PM").getAllByTestId("order-step")[1]!;
       expect(within(waiting).getByRole("button")).toHaveTextContent(t("myOrders.steps.waiting"));
       expect(within(waiting).getByTestId("step-detail")).toHaveTextContent("do 15:02");
@@ -226,6 +231,9 @@ describe("MyOrdersPage", () => {
       await screen.findByText("Grožđe 2 kg");
 
       expect(stepStates("K3PM")).toEqual(["done", "done", "done", "done", "current"]);
+      // The line is green up to the seal, which stays grey until delivered.
+      expect(markers("K3PM")).toEqual(["done", "done", "done", "done", "pending"]);
+      expect(lines("K3PM")).toEqual(["true", "true", "true", "true"]);
       const last = steps("K3PM").getAllByTestId("order-step").at(-1)!;
       expect(last).toHaveTextContent(t("myOrders.steps.delivered"));
       expect(within(last).getByTestId("step-detail")).toHaveTextContent(/^14:40$/);
@@ -243,6 +251,9 @@ describe("MyOrdersPage", () => {
       await screen.findAllByText("Grožđe 2 kg");
 
       expect(stepStates("K4PM")).toEqual(["done", "done", "current", "upcoming", "upcoming"]);
+      // Waiting for a courier: a grey dot with the line green up to it, grey after it.
+      expect(markers("K4PM")).toEqual(["done", "done", "pending", "upcoming", "upcoming"]);
+      expect(lines("K4PM")).toEqual(["true", "true", "false", "false"]);
       expect(steps("K4PM").getByText(t("myOrders.steps.waitingCourier"))).toBeInTheDocument();
 
       expect(stepStates("K5PM")).toEqual(["done", "done", "done", "current", "upcoming"]);
@@ -319,6 +330,10 @@ describe("MyOrdersPage", () => {
       await screen.findByText("Jaja 2 kg");
 
       expect(within(card("K10PM")).queryByTestId("late-badge")).not.toBeInTheDocument();
+      // An accepted pickup on its day: a grey dot; a late one keeps the red ring.
+      expect(markers("K10PM")).toEqual(["done", "done", "pending", "upcoming"]);
+      expect(lines("K10PM")).toEqual(["true", "true", "false"]);
+      expect(markers("K11PM")).toEqual(["done", "done", "ringDanger", "upcoming"]);
       expect(within(card("K10PM")).getByTestId("order-when")).toHaveTextContent("Danas · 10:00");
       expect(within(card("K10PM")).getByTestId("order-when")).not.toHaveClass("text-danger-700");
 

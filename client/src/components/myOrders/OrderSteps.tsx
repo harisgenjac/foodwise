@@ -17,10 +17,19 @@ const DETAIL_TONE: Record<StepTone, string> = {
   danger: "font-bold text-danger-700",
 };
 
-// The success seal (lucide's badge-check drawn at 30 px): grey outline ahead, green outline when it
-// is the current step, filled green when done.
+// How a step's dot looks. The step on turn is a grey dot (the line is green up to it), so nothing
+// looks finished before it is; only waiting for the store's answer and a late pickup keep a ring.
+type MarkerKind = "done" | "failed" | "ring" | "ringDanger" | "pending" | "upcoming";
+
+const markerKind = (step: OrderStep): MarkerKind => {
+  if (step.state !== "current") return step.state;
+  if (step.tone === "danger") return "ringDanger";
+  return step.tone === "waiting" && step.key === "accepted" ? "ring" : "pending";
+};
+
+// The success seal (lucide's badge-check drawn at 30 px): grey until done, then filled green.
 function SuccessSeal({ state }: { state: OrderStep["state"] }) {
-  const stroke = state === "upcoming" ? "var(--color-neutral-300)" : "var(--color-brand-800)";
+  const stroke = state === "done" ? "var(--color-brand-800)" : "var(--color-neutral-300)";
   const fill = state === "done" ? "var(--color-brand-800)" : "var(--color-white)";
   const check = state === "done" ? "var(--color-white)" : stroke;
   return (
@@ -35,8 +44,9 @@ function SuccessSeal({ state }: { state: OrderStep["state"] }) {
   );
 }
 
-// The round marker: a green check (done), a green ring with a dot (current; red for a late
-// pickup), a grey ring (ahead), a red X (failed), or the seal on the last step.
+// The round marker: a green check (done), a green ring with a dot (waiting for the store's answer;
+// red for a late pickup), a grey ring (on turn or ahead), a red X (failed), or the seal on the last
+// step.
 function StepMarker({ step }: { step: OrderStep }) {
   if (step.final && step.state !== "failed") {
     return (
@@ -60,11 +70,12 @@ function StepMarker({ step }: { step: OrderStep }) {
       </span>
     );
   }
-  if (step.state === "current") {
-    const color = step.tone === "danger" ? "danger-700" : "brand-800";
+  const kind = markerKind(step);
+  if (kind === "ring" || kind === "ringDanger") {
+    const danger = kind === "ringDanger";
     return (
-      <span className={`${base} border-[3px] bg-white ${color === "danger-700" ? "border-danger-700" : "border-brand-800"}`}>
-        <span className={`h-2 w-2 rounded-full ${color === "danger-700" ? "bg-danger-700" : "bg-brand-800"}`} />
+      <span className={`${base} border-[3px] bg-white ${danger ? "border-danger-700" : "border-brand-800"}`}>
+        <span className={`h-2 w-2 rounded-full ${danger ? "bg-danger-700" : "bg-brand-800"}`} />
       </span>
     );
   }
@@ -116,6 +127,7 @@ function OrderSteps({ steps, label }: OrderStepsProps) {
               {/* A mouse opens the info only over the dot, not over the line or the text. */}
               <span
                 data-testid="step-marker"
+                data-marker={markerKind(step)}
                 className={`flex shrink-0 ${hasInfo ? "cursor-help" : ""}`}
                 onPointerEnter={hasInfo ? (event: PointerEvent) => event.pointerType === "mouse" && setOpen(index) : undefined}
                 onPointerLeave={
@@ -129,6 +141,7 @@ function OrderSteps({ steps, label }: OrderStepsProps) {
               {!last && (
                 <span
                   data-testid="step-line"
+                  data-filled={lineDone}
                   aria-hidden="true"
                   className={`my-1 w-[3px] flex-1 rounded-[3px] sm:mx-1.5 sm:my-0 sm:h-[3px] sm:w-auto ${lineDone ? "bg-brand-800" : "bg-neutral-200"}`}
                 />
