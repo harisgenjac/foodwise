@@ -65,9 +65,13 @@ function OrderHero({ order, headline, steps, actions }: OrderHeroProps) {
             <span
               aria-hidden="true"
               data-testid="hero-alert"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F2715C] text-xl font-extrabold text-white shadow-[0_0_0_6px_rgba(242,113,92,0.22)]"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#F2715C] text-white shadow-[0_0_0_6px_rgba(242,113,92,0.22)]"
             >
-              !
+              {/* An exclamation mark drawn, so it is not part of the heading's text. */}
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                <path d="M12 5v9" />
+                <path d="M12 19h.01" />
+              </svg>
             </span>
           )}
           <span className="min-w-0">{headline.title}</span>
