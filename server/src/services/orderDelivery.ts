@@ -153,8 +153,8 @@ const recordFailure = async (
   reason: string,
 ): Promise<DeliveryOutcome> => {
   await client.query(
-    `INSERT INTO deliveries (order_id, provider, status, ready_at, failure_reason)
-     VALUES ($1, $2, 'FAILED', $3, $4)`,
+    `INSERT INTO deliveries (order_id, provider, status, ready_at, failure_reason, failed_at)
+     VALUES ($1, $2, 'FAILED', $3, $4, NOW())`,
     [order.id, provider.name, readyAt.toISOString(), reason],
   );
   return { created: false, reason };
@@ -206,7 +206,7 @@ export const cancelOpenDelivery = async (
   } catch (error) {
     console.error(`Cancelling the delivery of order ${orderId} with the provider failed:`, error);
   }
-  await client.query("UPDATE deliveries SET status = 'CANCELLED', failure_reason = $2 WHERE deliveries.id = $1", [
+  await client.query("UPDATE deliveries SET status = 'CANCELLED', failure_reason = $2, failed_at = NOW() WHERE deliveries.id = $1", [
     delivery.id,
     "CANCELLED_BY_ADMIN",
   ]);

@@ -2,7 +2,6 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import OrderImage from "./OrderImage.js";
 import OrderCard from "./OrderCard.js";
-import OrderHistoryRow from "./OrderHistoryRow.js";
 import OrderDetailsView from "./OrderDetailsView.js";
 import PickupCard from "../pickup/PickupCard.js";
 import { assetUrl } from "../../api/axios.js";
@@ -62,18 +61,13 @@ describe("order views", () => {
     expect(screen.getByTestId("order-generic-image")).toBeInTheDocument();
   });
 
-  it("the history row and the pickup card show the logo", () => {
+  it("the pickup card shows the logo", () => {
     render(
       <MemoryRouter>
-        <OrderHistoryRow order={makeOrder({ party_logo_url: LOGO })} />
         <PickupCard order={makeOrder({ status: "Confirmed", party_logo_url: "/uploads/logos/9-1-cd.png" })} isStore />
       </MemoryRouter>,
     );
-    const logos = screen.getAllByTestId("order-logo");
-    expect(logos.map((logo) => logo.getAttribute("src"))).toEqual([
-      assetUrl(LOGO),
-      assetUrl("/uploads/logos/9-1-cd.png"),
-    ]);
+    expect(screen.getByTestId("order-logo")).toHaveAttribute("src", assetUrl("/uploads/logos/9-1-cd.png"));
   });
 
   it("the order page shows the other party's logo", () => {

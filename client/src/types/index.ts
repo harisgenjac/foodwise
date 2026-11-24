@@ -62,10 +62,11 @@ export interface OrderItem {
   ordered_quantity: string;
   unit_price: string;
   status: OrderStatus;
-  // Only on GET /orders/:id.
-  decided_at?: string | null;
+  // The store's reason for a rejected or reduced line (the lists and GET /orders/:id).
   change_reason?: ChangeReason | null;
   change_note?: string | null;
+  // Only on GET /orders/:id.
+  decided_at?: string | null;
   picked_up_at?: string | null;
   original_price?: string;
   expiry_date?: string;
@@ -93,7 +94,8 @@ export type DeliveryStatus = "CREATED" | "COURIER_ASSIGNED" | "PICKED_UP" | "DEL
 // The delivery of an accepted delivery order. FAILED: it could not be arranged (no price,
 // failure_reason is a code such as OUT_OF_ZONE) or the courier failed (failure_reason is the
 // provider's text); CANCELLED: the provider or an admin cancelled it. Status changes come from the
-// provider's webhooks; picked_up_at and delivered_at are the courier's times.
+// provider's webhooks; picked_up_at and delivered_at are the courier's times (picked_up_at set on a
+// failed delivery: it failed after the pickup).
 export interface OrderDelivery {
   status: DeliveryStatus;
   price: string | null;
@@ -106,6 +108,11 @@ export interface OrderDelivery {
   failure_reason: string | null;
   picked_up_at?: string | null;
   delivered_at?: string | null;
+  // When the goods are ready for the courier, when a courier was assigned, and when the delivery
+  // failed or was cancelled (the steps on My orders).
+  ready_at?: string | null;
+  courier_assigned_at?: string | null;
+  failed_at?: string | null;
 }
 
 // Why the cart cannot be delivered now (GET /cart/delivery, 409 DELIVERY_UNAVAILABLE).
@@ -170,7 +177,7 @@ export interface Order {
   city?: string | null;
   // The other party's logo (a branch without one: its company's); on the order lists and pickups.
   party_logo_url?: string | null;
-  // Only on GET /orders/pickups.
+  // Only on GET /orders/pickups (party_address also on GET /orders/mine: the store's address).
   days_overdue?: number;
   party_phone?: string | null;
   party_address?: string | null;

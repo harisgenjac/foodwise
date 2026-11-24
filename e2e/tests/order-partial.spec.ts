@@ -53,9 +53,10 @@ test("the store accepts part of an order with reasons, and the restaurant sees t
 
   await test.step("Restoran vidi djelimično prihvaćenu narudžbu s razlozima i novim iznosom", async () => {
     await open(restaurant, "/my-orders");
-    const card = restaurant.getByTestId("order-card").filter({ hasText: `Narudžba ${code}` });
-    await expect(card.getByText("1/2 prihvaćeno")).toBeVisible();
-    await card.getByRole("link", { name: "Detalji" }).click();
+    const card = restaurant.getByTestId("my-order-card").filter({ hasText: `Narudžba ${code}` });
+    await expect(card.getByTestId("order-status")).toHaveText("Djelimično prihvaćena");
+    await expect(card.getByTestId("old-total")).toHaveClass(/line-through/);
+    await card.getByRole("link", { name: `Detalji narudžbe ${code}` }).click();
 
     await expect(restaurant.getByRole("heading", { level: 1, name: `Narudžba ${code}` })).toBeVisible();
     await expect(restaurant.getByText("Djelimično prihvaćena")).toBeVisible();

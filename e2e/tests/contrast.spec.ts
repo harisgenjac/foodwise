@@ -8,12 +8,15 @@ const STORE_PAGE = "/stores/:store";
 
 // WCAG AA colour contrast (axe's color-contrast rule: 4.5:1 for text, 3:1 for large text) on the
 // main page of each role, on desktop. The page is checked once its data has loaded.
-const PAGES: { role: SeededRole; url: string; name: string }[] = [
+// `tab`: a tab to open first (by its name).
+const PAGES: { role: SeededRole; url: string; name: string; tab?: string }[] = [
   { role: "restaurant", url: "/dashboard", name: "restaurant home" },
   { role: "restaurant", url: "/search", name: "search" },
   { role: "restaurant", url: "/stores", name: "store list" },
   // The seeded store's page (STORE_PAGE is replaced by its id).
   { role: "restaurant", url: STORE_PAGE, name: "store page" },
+  { role: "restaurant", url: "/my-orders", name: "my orders (Active)" },
+  { role: "restaurant", url: "/my-orders", name: "my orders (History)", tab: "Historija" },
   { role: "store", url: "/dashboard", name: "store home" },
   { role: "store", url: "/my-profile", name: "store profile" },
   { role: "restaurant", url: "/my-profile", name: "restaurant profile" },
@@ -33,7 +36,7 @@ const checkContrast = async (page: Page) => {
   return { passes: results.passes.flatMap((rule) => rule.nodes).length, incomplete: results.incomplete.flatMap((rule) => rule.nodes).length };
 };
 
-for (const { role, url, name } of PAGES) {
+for (const { role, url, name, tab } of PAGES) {
   test.describe(() => {
     test.use({ storageState: storageState(role) });
     test.skip(({ isMobile }) => isMobile, "Checked on desktop");
@@ -47,6 +50,7 @@ for (const { role, url, name } of PAGES) {
         await open(page, url);
       }
       await expect(page.getByRole("main").getByRole("heading", { level: 1 }).first()).toBeVisible();
+      if (tab) await page.getByRole("tab", { name: new RegExp(tab) }).click();
       // Wait for the requests to finish and the spinners and placeholders to go.
       await page.waitForLoadState("networkidle");
       await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);

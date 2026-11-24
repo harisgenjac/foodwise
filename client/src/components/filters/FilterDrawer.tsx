@@ -1,4 +1,4 @@
-import { useId, useRef, type ReactNode } from "react";
+import { useId, useRef, type ComponentType, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Filter, Trash2, X } from "lucide-react";
 import { useOverlay } from "../../hooks/useOverlay.js";
@@ -102,13 +102,14 @@ export function FilterField({ label, htmlFor, children }: { label: string; htmlF
 
 interface FilterPillsProps<V extends string> {
   label: string;
-  options: { value: V; label: string }[];
+  // An optional icon before the label ("Preuzimanje" with the bag); decorative.
+  options: { value: V; label: string; icon?: ComponentType<{ className?: string }> }[];
   value: V;
   onChange: (value: V) => void;
 }
 
 // A one-of choice as pill buttons ("Udaljenost": Do 5 km … Bez ograničenja), each 44 px high with
-// aria-pressed.
+// aria-pressed, optionally with an icon.
 export function FilterPills<V extends string>({ label, options, value, onChange }: FilterPillsProps<V>) {
   const labelId = useId();
   return (
@@ -125,12 +126,13 @@ export function FilterPills<V extends string>({ label, options, value, onChange 
               type="button"
               aria-pressed={selected}
               onClick={() => onChange(option.value)}
-              className={`h-11 cursor-pointer rounded-full border px-4 text-sm font-bold focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-brand-300 ${
+              className={`inline-flex h-11 cursor-pointer items-center gap-1.5 rounded-full border px-4 text-sm font-bold focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-brand-300 ${
                 selected
                   ? "border-brand-800 bg-brand-800 text-white"
                   : "border-neutral-200 bg-white text-neutral-900 hover:border-brand-800"
               }`}
             >
+              {option.icon && <option.icon className="h-4 w-4 shrink-0" />}
               {option.label}
             </button>
           );

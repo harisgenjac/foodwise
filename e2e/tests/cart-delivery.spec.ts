@@ -57,7 +57,7 @@ test("a restaurant orders with delivery from the cart, and the store accepts it 
     await open(page, "/cart");
     await page.getByRole("group", { name: "Način preuzimanja" }).getByText("Dostava", { exact: true }).click();
     const estimate = page.getByTestId("delivery-estimate");
-    await expect(estimate.getByText(/Dostava danas, okvirno oko \d{2}:\d{2}/)).toBeVisible();
+    await expect(estimate.getByText(/Dolazak u restoran: \d{2}:\d{2}/)).toBeVisible();
     await expect(estimate.getByText("Kuriru plaćate u gotovini")).toBeVisible();
     await expect(page.getByText("Vrijeme preuzimanja")).toHaveCount(0);
   });
@@ -66,7 +66,7 @@ test("a restaurant orders with delivery from the cart, and the store accepts it 
     await page.getByRole("button", { name: "Pošalji narudžbu" }).click();
     const href = await page.getByRole("link", { name: "Pogledaj narudžbu" }).getAttribute("href");
     sentOrderId = Number(href?.split("/").pop());
-    await expect(page.getByText(/Dostava danas, okvirno oko \d{2}:\d{2}\. Okvirna cijena dostave/)).toBeVisible();
+    await expect(page.getByText(/Dolazak u restoran: \d{2}:\d{2}\. Okvirna cijena dostave/)).toBeVisible();
   });
 
   await test.step("Stranica narudžbe pokazuje dostavu", async () => {

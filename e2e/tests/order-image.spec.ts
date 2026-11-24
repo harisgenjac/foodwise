@@ -37,9 +37,10 @@ test("an order shows the other party's logo, or the generic image, and its first
 
     await test.step("Restoran vidi logo prodavnice i prva tri proizvoda", async () => {
       await open(page, "/my-orders");
-      await page.getByPlaceholder("Pretraga po proizvodu").fill(prefix);
-      const card = page.getByTestId("order-card").filter({ hasText: names[0]! });
-      await expect(card.getByTestId("order-logo")).toHaveAttribute("src", /\/uploads\/logos\//);
+      await page.getByPlaceholder("Proizvod, prodavnica ili kod (#K7PM)").fill(prefix);
+      const card = page.getByTestId("my-order-card").filter({ hasText: names[0]! });
+      // The store's avatar shows its logo.
+      await expect(card.locator('img[src*="/uploads/logos/"]')).toBeVisible();
       for (const name of names.slice(0, 3)) {
         await expect(card.getByRole("img", { name })).toHaveAttribute("src", /images\.unsplash\.com/);
       }
