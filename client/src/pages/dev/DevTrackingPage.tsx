@@ -12,7 +12,7 @@ import type { MockTracking } from "../../types/index.js";
 
 const time = (value: string | null) => (value ? formatOrderDateTime(value) : "–");
 
-// Development only (App.tsx mounts /dev/tracking/:deliveryId under import.meta.env.DEV): the page
+// Development tools only (App.tsx mounts /dev/tracking/:deliveryId under DEV_TOOLS): the page
 // the mock delivery's tracking_url points to, standing in for the delivery service's own tracking
 // page. It shows the courier with photo and vehicle, the status, the exact estimates, the history
 // of the delivery's events (with the estimates each one carried) and the ratings the service

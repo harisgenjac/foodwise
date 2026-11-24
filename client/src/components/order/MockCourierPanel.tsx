@@ -27,7 +27,7 @@ interface MockCourierPanelProps {
   onDone: () => void;
 }
 
-// Development only (the order page renders it under import.meta.env.DEV): plays the mock
+// Development tools only (the order page renders it under DEV_TOOLS, utils/devTools.ts): plays the mock
 // provider's courier through POST /delivery/mock/orders/:id/simulate, which sends the signed
 // webhook the real provider would: assigning a random courier (with a photo or without), the
 // pickup, the delivery, moving the arrival estimate by 5 minutes either way, failing with each of
