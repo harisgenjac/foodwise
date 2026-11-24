@@ -70,13 +70,13 @@ describe("order views", () => {
     expect(screen.getByTestId("order-logo")).toHaveAttribute("src", assetUrl("/uploads/logos/9-1-cd.png"));
   });
 
-  it("the order page shows the other party's logo", () => {
+  it("the order page shows the restaurant's logo to the store, the store's to the admin", () => {
     const order = makeOrderDetails();
     order.store.logo_url = "/uploads/logos/store.png";
     order.restaurant.logo_url = "/uploads/logos/restaurant.png";
     const { unmount } = render(
       <MemoryRouter>
-        <OrderDetailsView order={order} viewer="RESTAURANT" />
+        <OrderDetailsView order={order} viewer="ADMIN" />
       </MemoryRouter>,
     );
     expect(screen.getByTestId("order-logo")).toHaveAttribute("src", assetUrl("/uploads/logos/store.png"));

@@ -7,6 +7,8 @@ interface ModalProps {
   children: ReactNode;
   // Id of the element that names the dialog (its title).
   labelledBy?: string;
+  // The panel's width (default max-w-md).
+  widthClassName?: string;
 }
 
 // A dialog over the page. It is never taller than the visible screen (also with the keyboard open):
@@ -14,7 +16,7 @@ interface ModalProps {
 // buttons stay in view. A <form> around the body and footer takes `modalFormStyle`. Escape, a
 // backdrop click and Back close it; the page underneath does not scroll, Tab stays inside, and focus
 // returns to the button that opened it (useOverlay).
-function Modal({ onClose, children, labelledBy }: ModalProps) {
+function Modal({ onClose, children, labelledBy, widthClassName = "max-w-md" }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   useOverlay({ onClose, containerRef: panelRef });
   const visible = useVisibleViewport();
@@ -33,7 +35,7 @@ function Modal({ onClose, children, labelledBy }: ModalProps) {
         aria-labelledby={labelledBy}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-full w-full max-w-md flex-col overflow-y-auto rounded-2xl bg-white shadow-xl outline-none"
+        className={`flex max-h-full w-full ${widthClassName} flex-col overflow-y-auto rounded-2xl bg-white shadow-xl outline-none`}
       >
         {children}
       </div>

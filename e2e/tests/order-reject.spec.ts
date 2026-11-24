@@ -40,7 +40,8 @@ test("a rejected order puts the quantity back on offer, with no credits for the 
     const row = restaurant.getByRole("table", { name: "Historija narudžbi" }).getByRole("row").filter({ hasText: productName });
     await expect(row.getByTestId("order-status")).toHaveText("Odbijeno");
     await row.getByRole("link", { name: `Detalji narudžbe #${code}` }).click();
-    await expect(restaurant.getByRole("heading", { level: 1, name: `Narudžba #${code}` })).toBeVisible();
+    await expect(restaurant.getByTestId("order-hero")).toContainText(`Narudžba #${code}`);
+    await expect(restaurant.getByRole("heading", { level: 1, name: "Prodavnica je odbila narudžbu" })).toBeVisible();
     await expect(restaurant.getByTestId("order-item").getByText("Kvalitet")).toBeVisible();
     await open(restaurant, "/notifications");
     await expect(restaurant.getByText(`Vaša narudžba #${code} je odbijena.`)).toBeVisible();

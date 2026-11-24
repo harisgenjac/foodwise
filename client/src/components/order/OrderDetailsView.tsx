@@ -41,12 +41,13 @@ import { hoursText } from "../../utils/schedule.js";
 import AnswerDeadline from "./AnswerDeadline.js";
 
 
-type OrderViewer = "STORE" | "RESTAURANT" | "ADMIN";
+// The restaurant has its own page (components/orderPage/RestaurantOrderView).
+type OrderViewer = "STORE" | "ADMIN";
 
 interface OrderDetailsViewProps {
   order: OrderDetails;
-  // The store and the restaurant see the other party; the admin sees both (with links to their
-  // user pages instead of the product and store pages).
+  // The store sees the restaurant; the admin sees both (with links to their user pages instead of
+  // the product pages).
   viewer: OrderViewer;
   // The viewer's actions, under the items.
   actions?: ReactNode;
@@ -62,7 +63,7 @@ const sectionTitle = (Icon: typeof Store, title: string) => (
 );
 
 // One order: the items with the store's changes, the totals, the changes made at sending, the
-// parties and the history (the order page of both parties and the admin's order page).
+// parties and the history (the store's order page and the admin's order page).
 function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
   const { t } = useTranslation();
   const isAdmin = viewer === "ADMIN";
@@ -70,9 +71,9 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
   const totalChanged = Math.round(Number(order.total) * 100) !== Math.round(Number(order.ordered_total) * 100);
   const subtitle = isAdmin
     ? `${order.store.business_name ?? "-"} → ${order.restaurant.business_name ?? "-"}`
-    : (viewer === "STORE" ? order.restaurant : order.store).business_name;
-  // The other party's logo (the admin sees the store's).
-  const partyLogo = (viewer === "STORE" ? order.restaurant : order.store).logo_url;
+    : order.restaurant.business_name;
+  // The restaurant's logo (the admin sees the store's).
+  const partyLogo = (isAdmin ? order.store : order.restaurant).logo_url;
   const delivery = order.delivery ?? null;
   // No courier is coming any more (failed, or cancelled by the provider or an admin).
   const deliveryClosed = delivery?.status === "FAILED" || delivery?.status === "CANCELLED";
@@ -89,12 +90,8 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
   const partyCard = (party: OrderParty, kind: "STORE" | "RESTAURANT") => {
     const isStoreParty = kind === "STORE";
     const pickupHours = hoursText(party.pickup_schedule, t);
-    // The restaurant needs the store's pickup hours and its page; the admin opens the user page.
-    const link = isAdmin
-      ? { to: `/admin/users/${party.id}`, label: t("orders.viewUser") }
-      : isStoreParty
-        ? { to: `/stores/${order.store_id}`, label: t("orders.viewStore") }
-        : null;
+    // The admin opens the user page.
+    const link = isAdmin ? { to: `/admin/users/${party.id}`, label: t("orders.viewUser") } : null;
     return (
       <section key={kind} className="rounded-2xl border border-neutral-100 bg-white p-6 shadow-sm">
         {sectionTitle(isStoreParty ? Store : UtensilsCrossed, isStoreParty ? t("orders.seller") : t("orders.buyer"))}
@@ -136,7 +133,7 @@ function OrderDetailsView({ order, viewer, actions }: OrderDetailsViewProps) {
 
   const parties = isAdmin
     ? [partyCard(order.store, "STORE"), partyCard(order.restaurant, "RESTAURANT")]
-    : [viewer === "STORE" ? partyCard(order.restaurant, "RESTAURANT") : partyCard(order.store, "STORE")];
+    : [partyCard(order.restaurant, "RESTAURANT")];
 
   return (
     <>

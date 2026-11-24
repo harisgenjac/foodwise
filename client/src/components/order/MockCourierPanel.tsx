@@ -100,12 +100,12 @@ function MockCourierPanel({ orderId, delivery, onDone }: MockCourierPanelProps) 
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-1.5 text-sm text-info-800">
+            <label className="flex min-w-0 max-w-full items-center gap-1.5 text-sm text-info-800">
               {t("orders.mockCourier.failureCode")}
               <select
                 value={failureCode}
                 onChange={(event) => setFailureCode(event.target.value as DeliveryFailureCode)}
-                className="rounded-lg border border-info-200 bg-white px-2 py-1.5 text-sm text-neutral-900"
+                className="min-w-0 max-w-full rounded-lg border border-info-200 bg-white px-2 py-1.5 text-sm text-neutral-900"
               >
                 {FAILURE_CODES.map((code) => (
                   <option key={code} value={code}>

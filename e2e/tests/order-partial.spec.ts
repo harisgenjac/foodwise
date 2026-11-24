@@ -58,16 +58,17 @@ test("the store accepts part of an order with reasons, and the restaurant sees t
     await expect(card.getByTestId("old-total")).toHaveClass(/line-through/);
     await card.getByRole("link", { name: `Detalji narudžbe ${code}` }).click();
 
-    await expect(restaurant.getByRole("heading", { level: 1, name: `Narudžba ${code}` })).toBeVisible();
-    await expect(restaurant.getByText("Djelimično prihvaćena")).toBeVisible();
+    await expect(restaurant.getByTestId("order-hero")).toContainText(`Narudžba ${code}`);
+    await expect(restaurant.getByRole("heading", { level: 1, name: "Prihvaćeno djelimično" })).toBeVisible();
+    await expect(restaurant.getByTestId("order-status")).toHaveText("Djelimično prihvaćena");
     const chickenRow = restaurant.getByTestId("order-item").filter({ hasText: chicken });
-    await expect(chickenRow.getByText("6 kg")).toHaveClass(/line-through/);
-    await expect(chickenRow.getByText("4 kg")).toBeVisible();
-    await expect(chickenRow.getByText("Nema dovoljno na stanju")).toBeVisible();
+    await expect(chickenRow).toContainText("6 kg → 4 kg");
+    await expect(chickenRow.getByTestId("item-note")).toContainText("Nema dovoljno na stanju");
     const milkRow = restaurant.getByTestId("order-item").filter({ hasText: milk });
     await expect(milkRow.getByRole("link", { name: milk })).toHaveClass(/line-through/);
     await expect(milkRow.getByText("Kvalitet")).toBeVisible();
-    await expect(restaurant.getByText("20.00 KM")).toHaveClass(/line-through/);
+    await expect(restaurant.getByTestId("old-total")).toHaveClass(/line-through/);
+    await expect(restaurant.getByTestId("old-total")).toContainText("20,00 KM");
 
     await open(restaurant, "/notifications");
     await expect(restaurant.getByText(`Vaša narudžba ${code} je djelimično prihvaćena.`)).toBeVisible();

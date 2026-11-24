@@ -1,16 +1,17 @@
 import type { TFunction } from "i18next";
-import type { Order } from "../types/index.js";
+import type { Order, OrderDetails } from "../types/index.js";
 import { formatKm } from "../components/dashboard/OfferCard.js";
 import { formatClock } from "./delivery.js";
 import { dayTitle } from "./dayGroups.js";
 import { daysFromToday, toDateInput } from "./expiry.js";
 import { changeReasonText, deliveryFailureKey, formatAmount, isDropped, isReduced } from "./orders.js";
 
-// The progress of an order on the restaurant's My orders (design/my-orders/my-orders.html): four
-// steps for a pickup (Poslano → Prihvaćeno → Preuzimanje → Preuzeto) and five for a delivery
-// (Poslano → Prihvaćeno → Kurir dodijeljen → Kurir preuzeo → Isporučeno). The last step is the
-// success seal. A delivery that failed shows a red step: on "Kurir dodijeljen" before the courier
-// had the goods, on "Isporučeno" after.
+// The progress of an order on the restaurant's My orders (design/my-orders/my-orders.html) and its
+// order page (design/order-details/): four steps for a pickup (Poslano → Prihvaćeno → Preuzimanje →
+// Preuzeto) and five for a delivery (Poslano → Prihvaćeno → Kurir dodijeljen → Kurir preuzeo →
+// Isporučeno). The last step is the success seal. A delivery that failed shows a red step: on
+// "Kurir dodijeljen" before the courier had the goods, on "Isporučeno" after. A rejected or
+// cancelled order has two steps: Poslano → Odbijeno / Otkazano (red).
 
 export type StepState = "done" | "current" | "upcoming" | "failed";
 // The tone of a step's second line and of its tooltip's title.
@@ -47,8 +48,44 @@ export const dayAtTime = (value: string, t: TFunction) => {
 };
 
 // "15:02" today, otherwise as dayAtTime ("sutra u 10:00").
-const clockOrDay = (value: string, t: TFunction) =>
+export const clockOrDay = (value: string, t: TFunction) =>
   daysFromToday(toDateInput(new Date(value))) === 0 ? formatClock(value) : dayAtTime(value, t);
+
+// The time under a step: "14:02" today, "jučer 09:46", "sutra 10:00" or "18. 11. 14:02".
+export const stepClock = (value: string, t: TFunction) => {
+  const time = formatClock(value);
+  const offset = daysFromToday(toDateInput(new Date(value)));
+  if (offset === 0) return time;
+  if (offset === -1) return t("myOrders.card.yesterday", { time });
+  if (offset === 1) return t("myOrders.time.tomorrowShort", { time });
+  const date = new Date(value);
+  return `${date.getDate()}. ${date.getMonth() + 1}. ${time}`;
+};
+
+// Why the store rejected the whole order (its items share the reason), or null.
+export const rejectionReason = (order: Pick<Order, "items">, t: TFunction) => {
+  const item = order.items.find((line) => line.change_reason);
+  return item ? changeReasonText(item, t) : null;
+};
+
+// The order page's extra data for the steps (GET /orders/:id): the step times and the history.
+export type StepDetails = Pick<OrderDetails, "steps" | "history">;
+
+// The store did not answer in time (the job rejected the order).
+export const autoRejectedOrder = (order: Pick<Order, "status">, details?: StepDetails) =>
+  order.status === "Rejected" &&
+  (details?.steps.decision === "AUTO_REJECTED" ||
+    Boolean(details?.history.some((entry) => entry.item_id === null && entry.to_status === "Rejected" && entry.source === "SYSTEM")));
+
+// Who cancelled the order (RESTAURANT, STORE, ADMIN; SYSTEM when it is not known) and the reason
+// they gave (an admin's cancel), from the order page's data.
+export const cancelInfo = (details?: StepDetails) => {
+  const entry = details?.history
+    .filter((row) => row.item_id === null && row.to_status === "Cancelled")
+    .at(-1);
+  const by = details?.steps.cancelled_by ?? entry?.source ?? "SYSTEM";
+  return { by: by === "PROVIDER" ? "SYSTEM" : by, reason: entry?.reason ?? null };
+};
 
 // "Danas · 18:00", "Jučer · 13:30", "Srijeda, 18. novembar · 10:00".
 export const dayDotTime = (value: string, t: TFunction) => {
@@ -74,7 +111,8 @@ export const deliveryArrival = (order: Pick<Order, "delivery" | "delivery_estima
 export const deliveryFailureText = (order: Pick<Order, "delivery">, t: TFunction) =>
   order.delivery ? t(`orders.delivery.failure.${deliveryFailureKey(order.delivery)}`) : "";
 
-export const buildOrderSteps = (order: Order, t: TFunction, language: string): OrderStep[] => {
+// `details` (the order page) adds the real outcome of a rejected or cancelled order.
+export const buildOrderSteps = (order: Order, t: TFunction, language: string, details?: StepDetails): OrderStep[] => {
   const isDelivery = order.fulfilment_method === "DELIVERY";
   const delivery = order.delivery ?? null;
   const money = (value: string | number) => formatKm(Number(value), language);
@@ -101,10 +139,41 @@ export const buildOrderSteps = (order: Order, t: TFunction, language: string): O
   ];
   const steps: OrderStep[] = [
     step("sent", t("myOrders.steps.sent"), "done", {
-      detail: formatClock(order.created_at),
+      detail: stepClock(order.created_at, t),
       info: { title: t("myOrders.steps.sent"), tone: "default", lines: sentLines },
     }),
   ];
+
+  // A rejected or cancelled order: Poslano → Odbijeno / Otkazano.
+  if (closed) {
+    const rejected = order.status === "Rejected";
+    const at = rejected
+      ? (details?.steps.decided_at ?? order.decided_at ?? details?.steps.finished_at ?? order.updated_at)
+      : (details?.steps.cancelled_at ?? details?.steps.finished_at ?? order.updated_at);
+    const when = dayAtTime(at, t);
+    const label = t(rejected ? "myOrders.steps.rejected" : "myOrders.steps.cancelled");
+    let lines: string[];
+    if (rejected) {
+      const reason = rejectionReason(order, t);
+      lines = autoRejectedOrder(order, details)
+        ? [t("myOrders.info.autoRejected", { when })]
+        : [t("myOrders.info.rejectedAt", { when }), ...(reason ? [t("myOrders.info.reason", { reason })] : [])];
+    } else {
+      const cancel = cancelInfo(details);
+      lines = [
+        t(`myOrders.info.cancelledBy.${cancel.by}`, { when }),
+        ...(cancel.reason ? [t("myOrders.info.reason", { reason: cancel.reason })] : []),
+      ];
+    }
+    steps.push(
+      step("closed", label, "failed", {
+        tone: "danger",
+        detail: stepClock(at, t),
+        info: { title: label, tone: "danger", lines },
+      }),
+    );
+    return steps;
+  }
 
   // 2. Prihvaćeno (while Pending: "Čeka odgovor").
   if (pending) {
@@ -123,9 +192,6 @@ export const buildOrderSteps = (order: Order, t: TFunction, language: string): O
         },
       }),
     );
-  } else if (closed) {
-    // A rejected or cancelled order is not on the Active tab; its steps stop after sending.
-    steps.push(step("accepted", t("myOrders.steps.accepted"), "upcoming"));
   } else {
     const when = dayAtTime(order.decided_at ?? order.updated_at, t);
     const lines = [
@@ -154,7 +220,7 @@ export const buildOrderSteps = (order: Order, t: TFunction, language: string): O
     }
     steps.push(
       step("accepted", t("myOrders.steps.accepted"), "done", {
-        detail: order.decided_at ? formatClock(order.decided_at) : "",
+        detail: order.decided_at ? stepClock(order.decided_at, t) : "",
         info: { title: t("myOrders.steps.accepted"), tone: "default", lines },
       }),
     );
@@ -177,7 +243,7 @@ export const buildOrderSteps = (order: Order, t: TFunction, language: string): O
         ];
     const pickupInfo: StepInfo = { title: t("myOrders.steps.pickup"), tone: late ? "danger" : "default", lines: pickupLines };
     if (completed) {
-      steps.push(step("pickup", t("myOrders.steps.pickup"), "done", { detail: formatClock(order.pickup_at), info: pickupInfo }));
+      steps.push(step("pickup", t("myOrders.steps.pickup"), "done", { detail: stepClock(order.pickup_at, t), info: pickupInfo }));
     } else if (accepted && order.status === "Confirmed") {
       steps.push(
         step("pickup", t("myOrders.steps.pickup"), "current", {
@@ -189,11 +255,19 @@ export const buildOrderSteps = (order: Order, t: TFunction, language: string): O
     } else {
       steps.push(step("pickup", t("myOrders.steps.pickup"), "upcoming"));
     }
-    // 4. Preuzeto (the seal).
+    // 4. Preuzeto (the seal): once done, when the store confirmed the pickup.
+    const pickedUpAt = completed ? order.picked_up_at : null;
     steps.push(
       step("pickedUp", t("myOrders.steps.pickedUp"), completed ? "done" : "upcoming", {
         final: true,
-        detail: completed && order.picked_up_at ? formatClock(order.picked_up_at) : "",
+        detail: pickedUpAt ? stepClock(pickedUpAt, t) : "",
+        info: pickedUpAt
+          ? {
+              title: t("myOrders.steps.pickedUp"),
+              tone: "default",
+              lines: [t("myOrders.info.pickupConfirmed", { when: dayAtTime(pickedUpAt, t) })],
+            }
+          : null,
       }),
     );
     return steps;
@@ -215,7 +289,7 @@ export const buildOrderSteps = (order: Order, t: TFunction, language: string): O
     step(key, t("myOrders.steps.failed"), "failed", {
       final,
       tone: "danger",
-      detail: delivery?.failed_at ? formatClock(delivery.failed_at) : "",
+      detail: delivery?.failed_at ? stepClock(delivery.failed_at, t) : "",
       info: failedInfo(),
     });
   const courier = delivery?.courier_name
@@ -231,7 +305,7 @@ export const buildOrderSteps = (order: Order, t: TFunction, language: string): O
   } else if (assigned) {
     steps.push(
       step("courierAssigned", t("myOrders.steps.courierAssigned"), "done", {
-        detail: delivery?.courier_assigned_at ? formatClock(delivery.courier_assigned_at) : "",
+        detail: delivery?.courier_assigned_at ? stepClock(delivery.courier_assigned_at, t) : "",
         info: {
           title: t("myOrders.steps.courierAssigned"),
           tone: "default",
@@ -268,7 +342,7 @@ export const buildOrderSteps = (order: Order, t: TFunction, language: string): O
       .join(", ");
     steps.push(
       step("courierPickedUp", t("myOrders.steps.courierPickedUp"), "done", {
-        detail: formatClock(delivery!.picked_up_at!),
+        detail: stepClock(delivery!.picked_up_at!, t),
         info: {
           title: t("myOrders.steps.courierPickedUp"),
           tone: "default",
@@ -299,10 +373,22 @@ export const buildOrderSteps = (order: Order, t: TFunction, language: string): O
   if (afterPickup) {
     steps.push(failedStep("delivered", true));
   } else if (delivered) {
+    // When it arrived against the last announced time, and the cash paid.
+    const deliveredAt = delivery?.delivered_at ?? null;
+    const expected = delivery?.estimated_delivery_at ?? null;
+    const lines = deliveredAt
+      ? [
+          expected
+            ? t("myOrders.info.deliveredExpected", { when: dayAtTime(deliveredAt, t), expected: formatClock(expected) })
+            : t("myOrders.info.deliveredAt", { when: dayAtTime(deliveredAt, t) }),
+        ]
+      : [];
+    if (delivery?.cash_to_collect) lines.push(t("myOrders.info.cashPaid", { cash: money(delivery.cash_to_collect) }));
     steps.push(
       step("delivered", t("myOrders.steps.delivered"), "done", {
         final: true,
-        detail: delivery?.delivered_at ? formatClock(delivery.delivered_at) : "",
+        detail: deliveredAt ? stepClock(deliveredAt, t) : "",
+        info: lines.length > 0 ? { title: t("myOrders.steps.delivered"), tone: "default", lines } : null,
       }),
     );
   } else if (pickedUp) {

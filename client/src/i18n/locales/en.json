@@ -1990,7 +1990,6 @@
       "rejected": "Rejected automatically: the store did not answer in time"
     },
     "deliveryFailed": {
-      "prompt": "The delivery failed and no courier is coming. You can pick the order up yourself at {{store}} or cancel it.",
       "pickupButton": "I will pick it up",
       "pickupTitle": "Pickup instead of delivery",
       "pickupText": "Choose when you will pick up order {{code}} at {{store}}. You pay the store for the goods at pickup.",
@@ -2017,12 +2016,12 @@
     "problems": {
       "reasons": {
         "LATE": "Delivery is late",
-        "MISSING_ITEM": "A product is missing",
-        "DAMAGED": "Damaged or faulty goods",
+        "MISSING_ITEM": "An item is missing",
+        "DAMAGED": "Damaged or poor goods",
         "COURIER": "A problem with the courier",
         "PAYMENT": "A problem with the payment",
         "PICKUP_TIME": "A problem with the pickup time",
-        "STORE": "A problem with the store",
+        "STORE": "A problem at the store",
         "OTHER": "Other"
       },
       "statuses": {
@@ -2669,7 +2668,8 @@
       "todayAt": "today at {{time}}",
       "yesterdayAt": "yesterday at {{time}}",
       "tomorrowAt": "tomorrow at {{time}}",
-      "dateAt": "{{date}} at {{time}}"
+      "dateAt": "{{date}} at {{time}}",
+      "tomorrowShort": "tomorrow {{time}}"
     },
     "card": {
       "order": "Order",
@@ -2697,7 +2697,9 @@
       "until": "by {{time}}",
       "waitingCourier": "Waiting for a courier",
       "arrivesAt": "arrives at {{time}}",
-      "lateWas": "Late · was {{when}}"
+      "lateWas": "Late · was {{when}}",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
     },
     "stepState": {
       "done": "done",
@@ -2733,7 +2735,19 @@
       "failedAt": "Reported {{when}}",
       "reason": "Reason: {{reason}}.",
       "failedBeforeNext": "Pick it up yourself or cancel the order on the order page.",
-      "failedAfterNext": "The courier has the goods; an administrator is resolving the order and will contact you."
+      "failedAfterNext": "The courier has the goods; an administrator is resolving the order and will contact you.",
+      "autoRejected": "The store did not answer in time; the order was rejected automatically {{when}}.",
+      "rejectedAt": "The store rejected the order {{when}}.",
+      "cancelledBy": {
+        "RESTAURANT": "You cancelled the order {{when}}.",
+        "STORE": "The store cancelled the order {{when}}.",
+        "ADMIN": "An administrator cancelled the order {{when}}.",
+        "SYSTEM": "The order was cancelled {{when}}."
+      },
+      "pickupConfirmed": "The store confirmed the pickup {{when}}.",
+      "deliveredExpected": "Delivered {{when}} (announced for {{expected}}).",
+      "deliveredAt": "Delivered {{when}}.",
+      "cashPaid": "Paid the courier {{cash}} in cash."
     },
     "history": {
       "table": "Order history",
@@ -2749,6 +2763,148 @@
       "count_other": "{{count}} orders",
       "countMore_one": "{{count}}+ order",
       "countMore_other": "{{count}}+ orders"
+    }
+  },
+  "orderPage": {
+    "headline": {
+      "pending": "Waiting for the store to answer",
+      "pendingLine": "The store has to answer by {{time}}",
+      "pendingNoDeadline": "The store has not answered yet",
+      "rejected": "The store rejected the order",
+      "autoRejected": "The store did not answer in time",
+      "reason": "Reason: {{reason}}",
+      "rejectedAt": "Rejected {{when}}",
+      "cancelled": {
+        "RESTAURANT": "You cancelled the order",
+        "STORE": "The store cancelled the order",
+        "ADMIN": "An administrator cancelled the order",
+        "SYSTEM": "The order was cancelled"
+      },
+      "cancelledAt": "Cancelled {{when}}",
+      "delivered": "Delivered",
+      "deliveredLine": "The courier delivered the order {{when}}",
+      "pickedUp": "Picked up",
+      "pickedUpLine": "The store confirmed the pickup {{when}}",
+      "deliveryFailed": "The delivery failed",
+      "failedBefore": "{{reason}}. Choose what to do next.",
+      "failedAfter": "{{reason}}. An administrator is resolving the order and will contact you.",
+      "onTheWay": "The courier is on the way",
+      "arrivesIn": "Arrives in {{minutes}} min",
+      "arrivesNow": "Arriving any minute",
+      "arrivalAt": "at the restaurant at {{time}}",
+      "courierHasGoods": "The courier has the order",
+      "courierAssigned": "A courier is assigned",
+      "courierToStore": "The courier reaches the store at {{time}}",
+      "atRestaurantIn": "at the restaurant in {{minutes}} min ({{time}})",
+      "accepted": "Accepted",
+      "partial": "Partly accepted",
+      "itemsAccepted_one": "{{accepted}} of {{count}} item",
+      "itemsAccepted_other": "{{accepted}} of {{count}} items",
+      "findingCourier": "looking for a courier",
+      "findingCourierLong": "The delivery service is looking for a courier",
+      "readyAt": "ready for the courier at {{time}}",
+      "late": "The pickup is late",
+      "lateLine": "The pickup was {{when}}. The store may cancel the order.",
+      "switchedToPickup": "You pick it up at the store",
+      "pickupLine": "Pickup {{when}}",
+      "pickupLower": "pickup {{when}}"
+    },
+    "cards": {
+      "delivery": "Delivery",
+      "pickup": "Pickup",
+      "wontHappen": "Will not take place",
+      "delivered": "Delivered",
+      "pickedUp": "Picked up",
+      "pickedUpSub": "The store confirmed the pickup",
+      "ifAccepted": "If the store accepts",
+      "selfPickup": "Picking it up yourself",
+      "todayUntil": "Today until {{time}}",
+      "byStoreHours": "During the store's hours",
+      "ifYouChoose": "If you choose to pick it up",
+      "failed": "Failed",
+      "courierIn": "The courier arrives in",
+      "minutes": "{{minutes}} min",
+      "courierArriving": "The courier arrives",
+      "now": "Any minute now",
+      "arrivalAt": "Arrival at {{time}}",
+      "findingCourier": "Looking for a courier",
+      "late_one": "{{count}} day late",
+      "late_other": "{{count}} days late",
+      "pickupHours": "Pickup hours: {{hours}}",
+      "store": "Store",
+      "payCourier": "You pay the courier in cash",
+      "paidCourier": "Paid to the courier",
+      "goodsPlusDelivery": "Goods {{goods}} + delivery {{delivery}}",
+      "total": "Total",
+      "ordered": "Ordered {{total}}",
+      "was": "Was {{total}}",
+      "itemsPlusFee": "{{items}} + delivery about {{fee}}"
+    },
+    "items": {
+      "title": "Products",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled",
+      "reduced": "Fewer accepted: {{accepted}} of {{ordered}}",
+      "notCharged": "Not charged:",
+      "total": "Total"
+    },
+    "contact": {
+      "title": "Contact",
+      "callStore": "Call the store {{name}}",
+      "callCourier": "Call the courier {{name}}",
+      "courier": "Courier",
+      "courierPhoto": "Photo of the courier {{name}}",
+      "tracking": "tracking page, opens in a new window"
+    },
+    "problem": {
+      "open": "Report a problem",
+      "title": "Report a problem",
+      "subtitle": "Order {{code}} · {{store}}",
+      "question": "What happened?",
+      "description": "Description (optional)",
+      "placeholder": "E.g. 1 kg of potatoes is missing",
+      "cancel": "Cancel",
+      "send": "Send report",
+      "sentTitle": "Report sent",
+      "sentText": "Support will contact you as soon as possible. You will also get the answer in your notifications.",
+      "close": "Close",
+      "error": "The report was not sent. Please try again.",
+      "reportsTitle": "Your problem reports",
+      "reply": "Support's answer"
+    },
+    "rating": {
+      "title": "How did the delivery go?",
+      "text": "Rate the courier {{name}}. Your rating helps us make delivery better.",
+      "courier": "Courier · {{name}}",
+      "group": "Courier rating",
+      "star": "Courier rating: {{value}} of 5",
+      "comment": "Comment (optional)",
+      "placeholder": "What went well, what could be better?",
+      "send": "Send rating",
+      "thanksTitle": "Thank you for your rating!",
+      "thanksText": "Your courier rating was sent.",
+      "yourComment": "Your comment: {{comment}}",
+      "error": "The rating was not sent. Please try again."
+    },
+    "accordion": {
+      "deliveryDetails": "Delivery details",
+      "orderDetails": "Order details",
+      "store": "Store",
+      "history": "History",
+      "rows_one": "{{count}} detail",
+      "rows_other": "{{count}} details",
+      "changes_one": "{{count}} change",
+      "changes_other": "{{count}} changes",
+      "noHistory": "No changes yet."
+    },
+    "details": {
+      "pickedUp": "Picked up",
+      "courierPickedUp": "Courier picked up"
+    },
+    "store": {
+      "address": "Address",
+      "phone": "Phone",
+      "page": "Store page"
     }
   }
 }
