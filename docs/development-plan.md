@@ -11,6 +11,7 @@ Finished work, described in `product.md`:
 - **Orders and cart, delivery phase 1** (Nov 6–15, 2026): orders from one store with a short code, a server cart, per-item decisions with reasons and partial fulfilment, "Sold in shop", restaurants without credits, a pending-order limit, and the reservation era removed.
 - **Order and store UI** (Nov 15–16, 2026): product images, order images, the store page with weekly hours and a cover (the cover was dropped again with the profile redesign, Nov 2026), and Search.
 - **Delivery with a mock provider, phase 2** (Nov 16–18, 2026): pins on a map, store order settings and the pause, delivery in the cart, accepting with a ready time, the provider contract (`server/src/delivery/openapi.yaml`), webhooks and the InDelivery status, failure before and after the pickup, live updates (SSE; the missed-event gap on a fresh page load was fixed Nov 18), automatic rejection, the packing list and the e2e delivery flow.
+- **Order page data** (Nov 24, 2026): the delivery contract and the mock report the courier's photo and vehicle, exact estimates on every event (with their history), the tracking page and failure codes; problem reports with the admin's "Prijave problema", and courier ratings sent to the delivery service; the restaurant's order page shows them once it is redesigned.
 - **Cleanup before the next phase** (Nov 18, 2026): the free-text hour columns dropped, unused code, files and i18n keys removed, a targeted code cleanup, one TypeScript baseline migration instead of 54, `npm run db:reset`, the new seeds (`seed`, `seed:demo`) with account helpers shared with the e2e seed, and these four docs.
 
 ## Orders and delivery
@@ -25,7 +26,8 @@ A restaurant orders from a cart with one store and chooses delivery or pickup; J
 - Delivery: Korpa sets the price, the time and the courier. On delivery the courier collects cash for the goods and the delivery together. Card payments come later.
 - Pickup: the restaurant pays the store directly.
 - On accepting, the store enters when the goods will be ready, and this goes to Korpa.
-- Korpa builds the API to our specification (`server/src/delivery/openapi.yaml`: quote, creating a delivery with the ready time and the cash to collect, cancelling, status webhooks with an HMAC signature and idempotency). Later our own delivery app implements the same contract.
+- Korpa builds the API to our specification (`server/src/delivery/openapi.yaml`: quote, creating a delivery with the ready time and the cash to collect, cancelling, status webhooks with an HMAC signature and idempotency, the courier's photo and vehicle, exact estimates on every event, the tracking page, failure codes, and the restaurant's courier rating). Later our own delivery app implements the same contract.
+- Problem reports about orders are handled by the platform admin for now ("Prijave problema"); later they become the delivery service's customer support (decided Nov 24, 2026).
 
 ### Phase 0: Preparation
 
@@ -262,6 +264,5 @@ Older ideas moved here from `product.md`. Agreed as possible directions, not pla
 
 ## Decided against
 
-- **Problem reports in the admin role:** a support matter, not administration.
 - **Managing categories, units and allergens in the database:** they change rarely and are added in code.
 - **Store reliability score (accept versus reject ratio):** considered and declined for now.

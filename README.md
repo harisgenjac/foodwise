@@ -80,7 +80,7 @@ Create `server/.env.test` with the same variables, pointing `DATABASE_URL` at `f
 
 `server/.env.example` lists every variable with comments. A wrong email setting stops the server at startup with `Email configuration error: ...`, a wrong delivery setting with `Delivery configuration error: ...`.
 
-The client reads an optional `VITE_API_URL` (backend origin without `/api`, default `http://localhost:3000`), for example from `client/.env.local`.
+The client reads an optional `VITE_API_URL` (backend origin without `/api`, default `http://localhost:3000`), for example from `client/.env.local`. `VITE_DEV_TOOLS=true` turns on the mock delivery's development tools (the courier panel on the order page and the tracking page) in a build; the dev server always has them, and a production build must not set it.
 
 Never commit `.env` files.
 
