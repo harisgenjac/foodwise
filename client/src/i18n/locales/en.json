@@ -309,7 +309,10 @@
       "DELIVERY_FAILED_AFTER_PICKUP": "The courier picked up order {{code}} but could not deliver it.",
       "DELIVERY_DELIVERED": "Order {{code}} was delivered.",
       "ORDER_SWITCHED_TO_PICKUP": "{{restaurant}} will pick up order {{code}} itself instead of delivery.",
-      "ORDER_CANCELLED_DELIVERY_FAILED": "{{restaurant}} cancelled order {{code}} after the delivery failed."
+      "ORDER_CANCELLED_DELIVERY_FAILED": "{{restaurant}} cancelled order {{code}} after the delivery failed.",
+      "ORDER_PROBLEM_REPORTED": "{{restaurant}} reported a problem with order {{code}}.",
+      "ORDER_PROBLEM_REPLIED": "The administrator replied to your problem report for order {{code}}.",
+      "ORDER_PROBLEM_RESOLVED": "Your problem report for order {{code}} was resolved."
     },
     "reason": "Reason: {{reason}}",
     "credits": {
@@ -331,7 +334,8 @@
       "branchTopupRejected": "The extra credits request for branch {{branch}} was rejected.",
       "branchSubscriptionExpired": "The plan request for branch {{branch}} expired before it was approved.",
       "branchTopupExpired": "The extra credits request for branch {{branch}} expired before it was approved."
-    }
+    },
+    "quoted": "“{{text}}”"
   },
   "store": {
     "addFavoriteError": "Error adding store to favorites.",
@@ -898,7 +902,8 @@
       "ATTACH_BRANCH": "Store attached to a company",
       "SEND_INVITATION": "Invitation sent",
       "RESEND_INVITATION": "Invitation sent again",
-      "SEND_PASSWORD_RESET_LINK": "Password reset link sent"
+      "SEND_PASSWORD_RESET_LINK": "Password reset link sent",
+      "UPDATE_ORDER_PROBLEM": "Problem report handled"
     },
     "accountEvents": {
       "PASSWORD_RESET_REQUESTED": "Asked for a password reset link",
@@ -1162,7 +1167,8 @@
       "filteredByUser": "Showing the orders of one user.",
       "showAll": "Show all",
       "count_one": "{{count}} order",
-      "count_other": "{{count}} orders"
+      "count_other": "{{count}} orders",
+      "problemsLink": "Problem reports"
     },
     "announcements": {
       "title": "Announcements",
@@ -1353,6 +1359,47 @@
       "attachNone": "No stores without a company match this search.",
       "attach": "Attach",
       "deactivateBranchText": "The branch {{name}} disappears for restaurants and cannot sign in. Pending orders are cancelled and the headquarters is notified. Refused while accepted pickups wait."
+    },
+    "problems": {
+      "title": "Problem reports",
+      "subtitle": "Problems restaurants report with their orders; reply and mark them resolved",
+      "count_one": "{{count}} report",
+      "count_other": "{{count}} reports",
+      "columnOrder": "Order",
+      "columnRestaurant": "Restaurant",
+      "columnStore": "Store",
+      "columnReason": "Reason",
+      "columnText": "Description",
+      "columnStatus": "Status",
+      "columnTime": "Reported",
+      "allStatuses": "All statuses",
+      "emptyTitle": "No reports",
+      "emptySubtitle": "Problem reports about orders will appear here.",
+      "noResultsTitle": "No results",
+      "noResultsSubtitle": "Change the filter.",
+      "noText": "No description",
+      "handle": "Handle",
+      "modalTitle": "Problem report for order {{code}}",
+      "reportedBy": "{{restaurant}} · {{time}}",
+      "status": "Status",
+      "reply": "Reply to the restaurant",
+      "replyHint": "The restaurant sees the reply on the order and is notified when you reply or resolve the report.",
+      "save": "Save",
+      "saved": "The report was saved.",
+      "replied": "Replied {{time}}",
+      "resolvedBy": "Resolved by {{email}} · {{time}}",
+      "method": {
+        "PICKUP": "Pickup",
+        "DELIVERY": "Delivery"
+      }
+    },
+    "orderFeedback": {
+      "rating": "Courier rating",
+      "ratingValue": "{{rating}}/5",
+      "ratingNotSent": "Not received by the delivery service yet (it is sent again).",
+      "noComment": "No comment",
+      "problems": "Problem reports",
+      "openProblems": "Open problem reports"
     }
   },
   "announcements": {
@@ -1918,7 +1965,11 @@
         "courier": "the courier could not pick up the order",
         "cancelled": "the delivery service cancelled the delivery",
         "admin": "an administrator cancelled the delivery",
-        "afterPickup": "the courier picked up the order but could not deliver it"
+        "afterPickup": "the courier picked up the order but could not deliver it",
+        "NO_COURIER": "no courier was available",
+        "CANCELLED_BY_SERVICE": "the delivery service cancelled the delivery",
+        "RECIPIENT_CLOSED": "the restaurant was closed when the courier arrived",
+        "OTHER": "the courier could not complete the delivery"
       },
       "finalFee": "Delivery price",
       "cash": "Paid to the courier (goods + delivery)",
@@ -1926,7 +1977,12 @@
       "courierPickupFinal": "Courier arrives at the store",
       "courier": "Courier",
       "deliveredAt": "Delivered",
-      "switchedToPickup": "The delivery failed, the order is picked up at the store"
+      "switchedToPickup": "The delivery failed, the order is picked up at the store",
+      "vehicles": {
+        "BICYCLE": "Bicycle",
+        "SCOOTER": "Scooter",
+        "CAR": "Car"
+      }
     },
     "autoReject": {
       "storeDeadline": "Rejected automatically at {{time}} unless you answer",
@@ -1948,9 +2004,67 @@
         "courier_assigned": "Courier assigned",
         "picked_up": "Courier picked up",
         "delivered": "Delivered",
+        "cancelled": "Service cancelled",
+        "estimate_later": "Arrival +5 min",
+        "estimate_earlier": "Arrival −5 min"
+      },
+      "withPhoto": "Courier with a photo",
+      "failureCode": "Failure reason",
+      "failBefore": "Failed before the pickup",
+      "failAfter": "Failed after the pickup",
+      "tracking": "Tracking page"
+    },
+    "problems": {
+      "reasons": {
+        "LATE": "Delivery is late",
+        "MISSING_ITEM": "A product is missing",
+        "DAMAGED": "Damaged or faulty goods",
+        "COURIER": "A problem with the courier",
+        "PAYMENT": "A problem with the payment",
+        "PICKUP_TIME": "A problem with the pickup time",
+        "STORE": "A problem with the store",
+        "OTHER": "Other"
+      },
+      "statuses": {
+        "OPEN": "Open",
+        "IN_PROGRESS": "In progress",
+        "RESOLVED": "Resolved"
+      }
+    },
+    "tracking": {
+      "title": "Delivery tracking",
+      "devNote": "Development page: it stands in for the delivery service's page while we use the simulation.",
+      "order": "Order {{code}}",
+      "route": "{{store}} → {{restaurant}}",
+      "status": "Status",
+      "courier": "Courier",
+      "noCourier": "No courier assigned yet.",
+      "vehicle": "Vehicle",
+      "phone": "Phone",
+      "readyAt": "Ready for the courier",
+      "pickupEstimate": "Courier at the store",
+      "deliveryEstimate": "Arrival at the restaurant",
+      "assignedAt": "Courier assigned",
+      "pickedUpAt": "Courier picked up",
+      "deliveredAt": "Delivered",
+      "failedAt": "Failed",
+      "failure": "Reason",
+      "history": "Delivery history",
+      "noHistory": "No events yet.",
+      "ignored": "ignored (arrived late)",
+      "events": {
+        "courier_assigned": "Courier assigned",
+        "estimate_updated": "New estimate",
+        "picked_up": "Courier picked up",
+        "delivered": "Delivered",
         "failed": "Delivery failed",
         "cancelled": "Service cancelled"
-      }
+      },
+      "estimates": "Courier at the store {{pickup}} · arrival {{delivery}}",
+      "ratings": "Courier ratings",
+      "noRatings": "The courier has not been rated yet.",
+      "notFound": "Delivery not found",
+      "notFoundSubtitle": "The link is wrong or the delivery is not one of your orders."
     }
   },
   "cart": {

@@ -96,16 +96,33 @@ export type DeliveryStatus = "CREATED" | "COURIER_ASSIGNED" | "PICKED_UP" | "DEL
 // provider's text); CANCELLED: the provider or an admin cancelled it. Status changes come from the
 // provider's webhooks; picked_up_at and delivered_at are the courier's times (picked_up_at set on a
 // failed delivery: it failed after the pickup).
+// The courier's vehicle, as the delivery service reports it.
+export type CourierVehicle = "BICYCLE" | "SCOOTER" | "CAR";
+
+// Why the delivery service says a delivery failed or was cancelled (failure_reason is its text).
+export type DeliveryFailureCode = "NO_COURIER" | "OUT_OF_ZONE" | "CANCELLED_BY_SERVICE" | "RECIPIENT_CLOSED" | "OTHER";
+
 export interface OrderDelivery {
   status: DeliveryStatus;
   price: string | null;
   cash_to_collect: string | null;
+  // The delivery service's current exact estimates: the courier at the store, and at the restaurant.
   estimated_pickup_at: string | null;
   estimated_delivery_at: string | null;
   courier_name: string | null;
   courier_phone: string | null;
+  // The courier's photo (an absolute URL, or null) and vehicle, once one is assigned.
+  courier_photo_url?: string | null;
+  courier_vehicle?: CourierVehicle | null;
+  // Set once a courier is assigned: the delivery service's page (the dev tracking page with the mock).
   tracking_url: string | null;
+  // The service's code for a failure or cancel on its side; null for one that is ours (the delivery
+  // could not be booked: failure_reason holds our code, e.g. OUT_OF_ZONE; or an admin cancelled it:
+  // CANCELLED_BY_ADMIN).
+  failure_code?: DeliveryFailureCode | null;
   failure_reason: string | null;
+  // Failed or cancelled after the courier picked the goods up.
+  failed_after_pickup?: boolean;
   picked_up_at?: string | null;
   delivered_at?: string | null;
   // When the goods are ready for the courier, when a courier was assigned, and when the delivery
@@ -223,12 +240,123 @@ export interface OrderHistoryEntry {
   product_name: string | null;
 }
 
-// GET /orders/:id: the order with both parties, the changes made at sending and the history.
+// The store's decision as GET /orders/:id reports it (AUTO_REJECTED: the store did not answer in time).
+export type OrderDecision = "ACCEPTED" | "PARTIALLY_ACCEPTED" | "REJECTED" | "AUTO_REJECTED";
+
+// When each step of an order happened (GET /orders/:id), null for a step it has not reached.
+export interface OrderSteps {
+  sent_at: string;
+  decision: OrderDecision | null;
+  decided_at: string | null;
+  courier_assigned_at: string | null;
+  courier_picked_up_at: string | null;
+  delivered_at: string | null;
+  delivery_failed_at: string | null;
+  // The restaurant picked the order up itself after a failed delivery.
+  switched_to_pickup_at: string | null;
+  // A pickup order picked up at the store.
+  picked_up_at: string | null;
+  cancelled_at: string | null;
+  cancelled_by: OrderHistoryEntry["source"] | null;
+  // When the order became Completed, Rejected or Cancelled.
+  finished_at: string | null;
+}
+
+export type ProblemStatus = "OPEN" | "IN_PROGRESS" | "RESOLVED";
+export type DeliveryProblemReason = "LATE" | "MISSING_ITEM" | "DAMAGED" | "COURIER" | "PAYMENT" | "OTHER";
+export type PickupProblemReason = "PICKUP_TIME" | "MISSING_ITEM" | "DAMAGED" | "STORE" | "OTHER";
+export type ProblemReason = DeliveryProblemReason | PickupProblemReason;
+
+// A restaurant's problem report on an order, with the admin's answer.
+export interface OrderProblem {
+  id: number;
+  fulfilment_method: FulfilmentMethod;
+  reason: ProblemReason;
+  text: string | null;
+  status: ProblemStatus;
+  admin_reply: string | null;
+  replied_at: string | null;
+  resolved_at: string | null;
+  created_at: string;
+}
+
+// One report on the admin's "Prijave problema" (GET /admin/problems).
+export interface AdminOrderProblem extends OrderProblem {
+  order_id: number;
+  order_code: string;
+  restaurant_id: number;
+  restaurant_name: string | null;
+  restaurant_email: string;
+  store_id: number;
+  store_name: string | null;
+  store_email: string;
+  resolved_by_email: string | null;
+  updated_at: string;
+}
+
+export interface CourierRating {
+  rating: number;
+  comment: string | null;
+  courier_name: string | null;
+  created_at: string;
+  // When the delivery service received it (null while it is retried).
+  sent_at: string | null;
+}
+
+// GET /orders/:id: the order with both parties, the changes made at sending, the history and the
+// times of its steps. The problem reports, the courier rating and what the restaurant can still do
+// come only for the restaurant and the admin (whose can_* are always false).
 export interface OrderDetails extends Omit<Order, "business_name" | "city"> {
   send_changes: SendChange[];
   store: OrderParty;
   restaurant: OrderParty;
   history: OrderHistoryEntry[];
+  steps: OrderSteps;
+  problems?: OrderProblem[];
+  courier_rating?: CourierRating | null;
+  // A problem can be reported until 48 hours after the order finished (problem_report_until).
+  can_report_problem?: boolean;
+  problem_report_until?: string | null;
+  // A delivered delivery order's courier can be rated once, within 7 days (courier_rating_until).
+  can_rate_courier?: boolean;
+  courier_rating_until?: string | null;
+}
+
+// The mock delivery's tracking page in development (GET /delivery/mock/deliveries/:deliveryId).
+export interface MockTracking {
+  delivery: {
+    delivery_id: string;
+    order_id: number;
+    order_code: string;
+    delivery_address: string | null;
+    store_name: string | null;
+    restaurant_name: string | null;
+    status: DeliveryStatus;
+    ready_at: string;
+    estimated_pickup_at: string | null;
+    estimated_delivery_at: string | null;
+    courier_name: string | null;
+    courier_phone: string | null;
+    courier_photo_url: string | null;
+    courier_vehicle: CourierVehicle | null;
+    courier_assigned_at: string | null;
+    picked_up_at: string | null;
+    delivered_at: string | null;
+    failed_at: string | null;
+    failure_code: DeliveryFailureCode | null;
+    failure_reason: string | null;
+    tracking_url: string | null;
+  };
+  history: {
+    id: number;
+    type: string;
+    occurred_at: string;
+    applied: boolean;
+    estimated_pickup_at: string | null;
+    estimated_delivery_at: string | null;
+    failure_code: DeliveryFailureCode | null;
+  }[];
+  ratings: { rating: number; comment: string | null; received_at: string }[];
 }
 
 // COMPANY = a store chain's headquarters login (see Company).

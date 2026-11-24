@@ -227,6 +227,20 @@ export const makeOrderDetails = (overrides: Partial<OrderDetails> = {}): OrderDe
     store: { id: 2, business_name: "Market Centar", city: "Sarajevo", address: "Titova 1", phone: "033 111 222", pickup_schedule: null, logo_url: null },
     restaurant: { id: 1, business_name: "Restoran Ukus", city: "Sarajevo", address: "Ferhadija 2", phone: "061 222 333", pickup_schedule: null, logo_url: null },
     history: [],
+    steps: {
+      sent_at: "2030-01-01T00:00:00.000Z",
+      decision: null,
+      decided_at: null,
+      courier_assigned_at: null,
+      courier_picked_up_at: null,
+      delivered_at: null,
+      delivery_failed_at: null,
+      switched_to_pickup_at: null,
+      picked_up_at: null,
+      cancelled_at: null,
+      cancelled_by: null,
+      finished_at: null,
+    },
     ...overrides,
   };
 };

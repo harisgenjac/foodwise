@@ -25,6 +25,10 @@ export type NotificationType =
   | "DELIVERY_DELIVERED"
   | "ORDER_SWITCHED_TO_PICKUP"
   | "ORDER_CANCELLED_DELIVERY_FAILED"
+  // Problem reports: to admins (REPORTED), to the restaurant (a reply, a resolution).
+  | "ORDER_PROBLEM_REPORTED"
+  | "ORDER_PROBLEM_REPLIED"
+  | "ORDER_PROBLEM_RESOLVED"
   | "PRODUCT_EXPIRED"
   | "PRODUCT_SOLD_OUT"
   | "PRODUCT_EXPIRING_SOON"

@@ -36,6 +36,8 @@ import AdminProductsPage from './pages/admin/AdminProductsPage.js';
 import AdminDonationsPage from './pages/admin/AdminDonationsPage.js';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage.js';
 import AdminOrderDetailsPage from './pages/admin/AdminOrderDetailsPage.js';
+import AdminProblemsPage from './pages/admin/AdminProblemsPage.js';
+import DevTrackingPage from './pages/dev/DevTrackingPage.js';
 import AdminAnnouncementsPage from './pages/admin/AdminAnnouncementsPage.js';
 import AdminActionsPage from './pages/admin/AdminActionsPage.js';
 import AdminCreditsPage from './pages/admin/AdminCreditsPage.js';
@@ -100,6 +102,7 @@ function App() {
         <Route path="/admin/donations" element={<ProtectedRoute role="ADMIN"><AdminDonationsPage /></ProtectedRoute>} />
         <Route path="/admin/orders" element={<ProtectedRoute role="ADMIN"><AdminOrdersPage /></ProtectedRoute>} />
         <Route path="/admin/orders/:id" element={<ProtectedRoute role="ADMIN"><AdminOrderDetailsPage /></ProtectedRoute>} />
+        <Route path="/admin/problems" element={<ProtectedRoute role="ADMIN"><AdminProblemsPage /></ProtectedRoute>} />
         <Route path="/admin/announcements" element={<ProtectedRoute role="ADMIN"><AdminAnnouncementsPage /></ProtectedRoute>} />
         <Route path="/admin/actions" element={<ProtectedRoute role="ADMIN"><AdminActionsPage /></ProtectedRoute>} />
         <Route path="/admin/credits" element={<ProtectedRoute role="ADMIN"><AdminCreditsPage /></ProtectedRoute>} />
@@ -113,6 +116,13 @@ function App() {
         <Route path="/company/branches/:id" element={<ProtectedRoute role="COMPANY"><CompanyBranchDetailsPage /></ProtectedRoute>} />
         <Route path="/company/credits" element={<ProtectedRoute role="COMPANY"><CompanyCreditsPage /></ProtectedRoute>} />
         <Route path="/company/reports" element={<ProtectedRoute role="COMPANY"><CompanyReportsPage /></ProtectedRoute>} />
+        {/* Development only, like the order page's courier panel: the mock delivery's tracking page (its tracking_url). */}
+        {import.meta.env.DEV && (
+          <Route
+            path="/dev/tracking/:deliveryId"
+            element={<ProtectedRoute role={["STORE", "RESTAURANT", "ADMIN"]}><DevTrackingPage /></ProtectedRoute>}
+          />
+        )}
         </Route>
       </Routes>
     </BrowserRouter>

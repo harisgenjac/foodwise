@@ -89,10 +89,19 @@ export const deliveryFailedBeforePickup = (order: Pick<Order, "status" | "fulfil
   (order.delivery?.status === "FAILED" || order.delivery?.status === "CANCELLED") &&
   !order.delivery.picked_up_at;
 
-// The orders.delivery.failure.<key> that says why a delivery failed or was cancelled.
+// The orders.delivery.failure.<key> that says why a delivery failed or was cancelled:
+// - an admin's cancel;
+// - the delivery service's code (failure_code: NO_COURIER, OUT_OF_ZONE, CANCELLED_BY_SERVICE,
+//   RECIPIENT_CLOSED, OTHER), except a failure after the pickup without a specific reason, which
+//   says the courier had the goods;
+// - a delivery without a code (one that could not be booked, or from before the codes): our own
+//   reason in failure_reason, else the general texts.
 export const deliveryFailureKey = (delivery: OrderDelivery) => {
-  if (delivery.status === "CANCELLED") return delivery.failure_reason === "CANCELLED_BY_ADMIN" ? "admin" : "cancelled";
-  if (delivery.picked_up_at) return "afterPickup";
+  if (delivery.status === "CANCELLED" && delivery.failure_reason === "CANCELLED_BY_ADMIN") return "admin";
+  const code = delivery.failure_code ?? null;
+  if (delivery.picked_up_at && (code === null || code === "OTHER")) return "afterPickup";
+  if (code !== null) return code;
+  if (delivery.status === "CANCELLED") return "cancelled";
   if (delivery.failure_reason === "OUT_OF_ZONE") return "OUT_OF_ZONE";
   // Without a price it was never created; with one, the courier failed.
   return delivery.price ? "courier" : "other";
