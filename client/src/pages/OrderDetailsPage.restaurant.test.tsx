@@ -337,6 +337,10 @@ describe("OrderDetailsPage for a restaurant: the cards", () => {
       "href",
       "tel:033 111 222",
     );
+    // The store's line shows its phone, not the address (the store card above has the address).
+    const storeLine = within(contact).getByTestId("contact-store");
+    expect(storeLine).toHaveTextContent("033 111 222");
+    expect(storeLine).not.toHaveTextContent("Titova 1");
     const courier = within(contact).getByTestId("contact-courier");
     expect(within(courier).getByRole("img", { name: t("orderPage.contact.courierPhoto", { name: "Amir Hodžić" }) })).toHaveAttribute(
       "src",
@@ -397,6 +401,22 @@ describe("OrderDetailsPage for a restaurant: the cards", () => {
     await userEvent.click(history);
     expect(screen.getByTestId("order-history")).toHaveTextContent(t("orders.history.created", { who: t("orders.history.sources.RESTAURANT") }));
     expect(within(accordion).getByRole("button", { name: /Prodavnica/ })).toHaveTextContent("Market Centar");
+  });
+
+  it("keeps out of Detalji narudžbe what the top of the page already shows", async () => {
+    renderPage(deliveryOrder(COURIER));
+    const accordion = await screen.findByTestId("order-accordion");
+    const details = within(accordion).getByRole("button", { name: new RegExp(t("orderPage.accordion.orderDetails")) });
+    expect(details).toHaveTextContent(t("orderPage.accordion.rows", { count: 3 }));
+    await userEvent.click(details);
+    const panel = document.getElementById(details.getAttribute("aria-controls")!)!;
+    const labels = within(panel)
+      .getAllByTestId("detail-row")
+      .map((row) => row.querySelector("dt")?.textContent);
+    expect(labels).toEqual([t("orders.delivery.address"), t("orders.sentAt"), t("orders.partialSetting")]);
+    expect(panel).toHaveTextContent("Titova 20, Sarajevo");
+    expect(panel).not.toHaveTextContent(t("orders.delivery.cash"));
+    expect(panel).not.toHaveTextContent(t("orders.delivery.statusLabel"));
   });
 });
 

@@ -68,7 +68,7 @@ interface OrderContactCardProps {
   onReport?: () => void;
 }
 
-// "Kontakt" (design/order-details/): the store (logo, the name linking to its page, the address, a
+// "Kontakt" (design/order-details/): the store (logo, the name linking to its page, the phone, a
 // call button), the courier once one is assigned to a delivery (photo or initials with the vehicle,
 // the name linking to the delivery service's tracking page, "Kurir · Skuter · phone", a call
 // button) and "Prijavi problem".
@@ -103,9 +103,7 @@ function OrderContactCard({ order, onReport }: OrderContactCardProps) {
           <Link to={`/stores/${order.store_id}`} className={`${CARD_LINK} text-[15px] font-extrabold break-words text-brand-800`}>
             {storeName}
           </Link>
-          {(store.address || store.city) && (
-            <p className="text-xs text-neutral-600">{[store.address, store.city].filter(Boolean).join(", ")}</p>
-          )}
+          {store.phone && <p className="text-xs text-neutral-600">{store.phone}</p>}
         </div>
         {store.phone && (
           <a href={`tel:${store.phone}`} aria-label={t("orderPage.contact.callStore", { name: storeName })} className={CALL_BUTTON}>

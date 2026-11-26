@@ -2887,7 +2887,6 @@
       "error": "The rating was not sent. Please try again."
     },
     "accordion": {
-      "deliveryDetails": "Delivery details",
       "orderDetails": "Order details",
       "store": "Store",
       "history": "History",
@@ -2896,10 +2895,6 @@
       "changes_one": "{{count}} change",
       "changes_other": "{{count}} changes",
       "noHistory": "No changes yet."
-    },
-    "details": {
-      "pickedUp": "Picked up",
-      "courierPickedUp": "Courier picked up"
     },
     "store": {
       "address": "Address",

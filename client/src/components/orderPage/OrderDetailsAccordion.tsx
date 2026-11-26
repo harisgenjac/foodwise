@@ -3,9 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import SendChangesList from "../order/SendChangesList.js";
-import { formatKm } from "../dashboard/OfferCard.js";
-import { deliveryFailureKey, formatOrderDateTime, orderStatusLabel } from "../../utils/orders.js";
-import { deliveryArrival } from "../../utils/orderSteps.js";
+import { formatOrderDateTime, orderStatusLabel } from "../../utils/orders.js";
 import { hoursText } from "../../utils/schedule.js";
 import { CARD_LINK, PAGE_CARD } from "./styles.js";
 import type { OrderDetails, OrderProblem, ProblemStatus } from "../../types/index.js";
@@ -13,7 +11,6 @@ import type { OrderDetails, OrderProblem, ProblemStatus } from "../../types/inde
 interface Row {
   label: string;
   value: ReactNode;
-  danger?: boolean;
 }
 
 const PROBLEM_STATUS_STYLES: Record<ProblemStatus, string> = {
@@ -28,7 +25,7 @@ function Rows({ rows }: { rows: Row[] }) {
       {rows.map((row) => (
         <div key={row.label} data-testid="detail-row" className="min-w-0">
           <dt className="text-[13px] text-neutral-600">{row.label}</dt>
-          <dd className={`text-[15px] font-semibold break-words ${row.danger ? "text-danger-700" : "text-neutral-900"}`}>{row.value}</dd>
+          <dd className="text-[15px] font-semibold break-words text-neutral-900">{row.value}</dd>
         </div>
       ))}
     </dl>
@@ -70,63 +67,23 @@ function ProblemReports({ problems }: { problems: OrderProblem[] }) {
   );
 }
 
-// "Detalji dostave" / "Detalji narudžbe", "Prodavnica" and "Historija" (design/order-details/): one
+// "Detalji narudžbe", "Prodavnica" and "Historija" (design/order-details/): one
 // card of collapsible sections, all collapsed at first; each header shows a short summary on the
 // right and is a button with aria-expanded and aria-controls.
 function OrderDetailsAccordion({ order }: { order: OrderDetails }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const baseId = useId();
   const [open, setOpen] = useState<Record<string, boolean>>({});
-  const km = (value: number | string) => formatKm(Number(value), i18n.language);
-  const isDelivery = order.fulfilment_method === "DELIVERY";
-  const delivery = order.delivery ?? null;
-  const deliveryClosed = delivery?.status === "FAILED" || delivery?.status === "CANCELLED";
   const store = order.store;
 
-  // Detalji: what the old page's grid showed.
+  // Detalji narudžbe: only what the hero, the steps and the cards above do not show (the delivery's
+  // status, times, fee and cash are all up there).
   const rows: Row[] = [];
-  if (isDelivery) {
-    if (delivery) {
-      rows.push({
-        label: t("orders.delivery.statusLabel"),
-        value: deliveryClosed
-          ? t("orders.delivery.failed", { reason: t(`orders.delivery.failure.${deliveryFailureKey(delivery)}`) })
-          : t(`orders.delivery.status.${delivery.status}`),
-        danger: deliveryClosed,
-      });
-    }
+  if (order.fulfilment_method === "DELIVERY") {
     rows.push({ label: t("orders.delivery.address"), value: order.delivery_address ?? "–" });
-    const arrival = deliveryArrival(order);
-    if (arrival && !delivery?.delivered_at && !deliveryClosed) {
-      rows.push({ label: t("orders.delivery.estimated"), value: formatOrderDateTime(arrival) });
-    }
-    if (delivery?.delivered_at) rows.push({ label: t("orders.delivery.deliveredAt"), value: formatOrderDateTime(delivery.delivered_at) });
-    if (delivery?.price) {
-      rows.push({ label: t("orders.delivery.finalFee"), value: km(delivery.price) });
-      rows.push({ label: t("orders.delivery.cash"), value: km(delivery.cash_to_collect ?? 0) });
-    } else {
-      rows.push({ label: t("orders.delivery.fee"), value: km(order.delivery_fee_estimate ?? 0) });
-    }
-    if (order.ready_at) rows.push({ label: t("orders.delivery.readyAt"), value: formatOrderDateTime(order.ready_at) });
-    if (!deliveryClosed && !delivery?.picked_up_at && order.status !== "Rejected" && order.status !== "Cancelled") {
-      rows.push({
-        label: delivery ? t("orders.delivery.courierPickupFinal") : t("orders.delivery.courierPickup"),
-        value: formatOrderDateTime(delivery?.estimated_pickup_at ?? order.pickup_at),
-      });
-    }
-  } else {
-    rows.push({ label: t("orders.pickup"), value: formatOrderDateTime(order.pickup_at) });
-    // A delivery order the restaurant switched to pickup after the delivery failed.
-    if (delivery) rows.push({ label: t("orders.delivery.cardLabel"), value: t("orders.delivery.switchedToPickup") });
   }
   rows.push({ label: t("orders.sentAt"), value: formatOrderDateTime(order.created_at) });
   rows.push({ label: t("orders.partialSetting"), value: order.accept_partial ? t("orders.partialOn") : t("orders.partialOff") });
-  if (order.picked_up_at) {
-    rows.push({
-      label: isDelivery ? t("orderPage.details.courierPickedUp") : t("orderPage.details.pickedUp"),
-      value: formatOrderDateTime(order.picked_up_at),
-    });
-  }
   const problems = order.problems ?? [];
 
   // Prodavnica: address, phone, pickup hours, and its page.
@@ -158,7 +115,7 @@ function OrderDetailsAccordion({ order }: { order: OrderDetails }) {
   const sections: { key: string; title: string; summary: string; content: ReactNode }[] = [
     {
       key: "details",
-      title: isDelivery ? t("orderPage.accordion.deliveryDetails") : t("orderPage.accordion.orderDetails"),
+      title: t("orderPage.accordion.orderDetails"),
       summary: t("orderPage.accordion.rows", { count: rows.length }),
       content: (
         <div className="flex flex-col gap-4">

@@ -2954,7 +2954,6 @@
       "error": "Ocjena nije poslana. Pokušajte ponovo."
     },
     "accordion": {
-      "deliveryDetails": "Detalji dostave",
       "orderDetails": "Detalji narudžbe",
       "store": "Prodavnica",
       "history": "Historija",
@@ -2965,10 +2964,6 @@
       "changes_few": "{{count}} promjene",
       "changes_other": "{{count}} promjena",
       "noHistory": "Još nema promjena."
-    },
-    "details": {
-      "pickedUp": "Preuzeto",
-      "courierPickedUp": "Kurir preuzeo"
     },
     "store": {
       "address": "Adresa",
