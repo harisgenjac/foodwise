@@ -5,7 +5,14 @@ import { formatClock } from "./delivery.js";
 import { deliveryFailedBeforePickup } from "./orders.js";
 import { daysFromToday, toDateInput } from "./expiry.js";
 import {
+  arrivalForTiming,
   autoRejectedOrder,
+  courierTiming,
+  delayedArrival,
+  LATE_GRACE_MINUTES,
+  minutesSince,
+  minutesUntil,
+  type CourierTiming,
   cancelInfo,
   clockOrDay,
   dayAtTime,
@@ -40,34 +47,12 @@ export const listOrder = (order: OrderDetails): Order => ({
   party_logo_url: order.store.logo_url,
 });
 
-// Whole minutes until `iso` (rounded up, never below 0).
-export const minutesUntil = (iso: string, now: number) => Math.max(0, Math.ceil((new Date(iso).getTime() - now) / 60000));
-
-// Whole minutes since `iso` (rounded down, never below 0).
-export const minutesSince = (iso: string, now: number) => Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60000));
-
-// For this long after the estimate a courier still arrives "any minute"; after it the page says how
-// late the courier is (counted from the estimate).
-export const LATE_GRACE_MINUTES = 5;
-
-export type CourierTiming = { kind: "in"; minutes: number } | { kind: "now" } | { kind: "late"; minutes: number };
-
-// Where a coming courier stands against the arrival estimate.
-export const courierTiming = (arrival: string, now: number): CourierTiming => {
-  const until = minutesUntil(arrival, now);
-  if (until > 0) return { kind: "in", minutes: until };
-  const late = minutesSince(arrival, now);
-  return late > LATE_GRACE_MINUTES ? { kind: "late", minutes: late } : { kind: "now" };
-};
-
-// A late courier's arrival as the page shows it: the estimate moved by the delay, so it is never in
-// the past (the time card keeps the original estimate).
-export const delayedArrival = (arrival: string, minutesLate: number) =>
-  new Date(new Date(arrival).getTime() + minutesLate * 60000).toISOString();
+// The courier's timing lives in orderSteps.ts (the steps show it too); re-exported for the page.
+export { courierTiming, delayedArrival, LATE_GRACE_MINUTES, minutesSince, minutesUntil };
+export type { CourierTiming };
 
 // The arrival time to show next to the timing: the estimate, or the moved one once late.
-const shownArrival = (arrival: string, timing: CourierTiming) =>
-  formatClock(timing.kind === "late" ? delayedArrival(arrival, timing.minutes) : arrival);
+const shownArrival = (arrival: string, timing: CourierTiming) => formatClock(arrivalForTiming(arrival, timing));
 
 // "7 min", "2 h", "1 h 15 min".
 export const durationText = (minutes: number, t: TFunction) => {

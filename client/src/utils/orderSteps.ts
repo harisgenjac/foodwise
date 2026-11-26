@@ -102,6 +102,38 @@ export const deliveryFailed = (order: Pick<Order, "fulfilment_method" | "deliver
 
 const failedAfterPickup = (order: Pick<Order, "delivery">) => Boolean(order.delivery?.picked_up_at);
 
+// Whole minutes until `iso` (rounded up, never below 0).
+export const minutesUntil = (iso: string, now: number) => Math.max(0, Math.ceil((new Date(iso).getTime() - now) / 60000));
+
+// Whole minutes since `iso` (rounded down, never below 0).
+export const minutesSince = (iso: string, now: number) => Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60000));
+
+// For this long after the estimate a courier still arrives "any minute"; after it the page says how
+// late the courier is (counted from the estimate).
+export const LATE_GRACE_MINUTES = 5;
+
+export type CourierTiming = { kind: "in"; minutes: number } | { kind: "now" } | { kind: "late"; minutes: number };
+
+// Where a coming courier stands against the arrival estimate.
+export const courierTiming = (arrival: string, now: number): CourierTiming => {
+  const until = minutesUntil(arrival, now);
+  if (until > 0) return { kind: "in", minutes: until };
+  const late = minutesSince(arrival, now);
+  return late > LATE_GRACE_MINUTES ? { kind: "late", minutes: late } : { kind: "now" };
+};
+
+// A late courier's arrival as the order page and the steps show it: the estimate moved by the delay,
+// so it is never in the past (the order page's time card keeps the original estimate).
+export const delayedArrival = (arrival: string, minutesLate: number) =>
+  new Date(new Date(arrival).getTime() + minutesLate * 60000).toISOString();
+
+// The arrival next to a courier's timing: the estimate, or the moved one once late.
+export const arrivalForTiming = (arrival: string, timing: CourierTiming) =>
+  timing.kind === "late" ? delayedArrival(arrival, timing.minutes) : arrival;
+
+// The arrival to show for a coming courier at `now`.
+export const expectedArrival = (arrival: string, now: number) => arrivalForTiming(arrival, courierTiming(arrival, now));
+
 // When the restaurant is expected to receive a delivery: the courier's estimate once the store
 // accepted, the estimate at sending before that.
 export const deliveryArrival = (order: Pick<Order, "delivery" | "delivery_estimated_at">) =>
@@ -392,7 +424,13 @@ export const buildOrderSteps = (order: Order, t: TFunction, language: string, de
       }),
     );
   } else if (pickedUp) {
-    steps.push(step("delivered", t("myOrders.steps.delivered"), "current", { final: true, detail: arrival ? formatClock(arrival) : "" }));
+    // The arrival estimate, moved by the delay once the courier is late (as on the order page's hero).
+    steps.push(
+      step("delivered", t("myOrders.steps.delivered"), "current", {
+        final: true,
+        detail: arrival ? formatClock(expectedArrival(arrival, Date.now())) : "",
+      }),
+    );
   } else {
     steps.push(step("delivered", t("myOrders.steps.delivered"), "upcoming", { final: true }));
   }

@@ -171,6 +171,7 @@ describe("OrderDetailsPage for a restaurant: the hero", () => {
     renderPage(pickedUp(at(11, 57)));
     await screen.findByRole("heading", { level: 1, name: t("orderPage.headline.onTheWay") });
     expect(line()).toHaveTextContent("Stiže svakog trenutka · dolazak u restoran u 11:57");
+    expect(within(steps()[4]!).getByTestId("step-detail")).toHaveTextContent("11:57");
     expect(card("time-card")).toHaveTextContent(t("orderPage.cards.courierArriving"));
     expect(card("time-card")).toHaveTextContent(t("orderPage.cards.now"));
   });
@@ -183,6 +184,8 @@ describe("OrderDetailsPage for a restaurant: the hero", () => {
     expect(card("time-card")).toHaveTextContent(t("orderPage.cards.courierLate"));
     expect(card("time-card")).toHaveTextContent("7 min");
     expect(card("time-card")).toHaveTextContent("Trebao je doći u 11:53");
+    // The "Isporučeno" step shows the moved arrival too, not the past estimate.
+    expect(within(steps()[4]!).getByTestId("step-detail")).toHaveTextContent("12:00");
   });
 
   it("counts a long delay in hours", async () => {
