@@ -7,7 +7,7 @@ import { formatKm } from "../dashboard/OfferCard.js";
 import { formatClock } from "../../utils/delivery.js";
 import { deliveryFailedBeforePickup } from "../../utils/orders.js";
 import { daysLate, deliveryArrival, deliveryFailed, deliveryFailureText } from "../../utils/orderSteps.js";
-import { cardDayTime, courierComing, minutesUntil } from "../../utils/orderPage.js";
+import { cardDayTime, courierComing, courierTiming, durationText } from "../../utils/orderPage.js";
 import { hoursText } from "../../utils/schedule.js";
 import { openState, openStateDetail } from "../../utils/storeHours.js";
 import type { OrderDetails } from "../../types/index.js";
@@ -68,10 +68,12 @@ function timeTile(order: OrderDetails, t: TFunction, now: number): Tile {
     }
     if (deliveryFailed(order)) return tile(c("delivery"), c("failed"), capitalize(deliveryFailureText(order, t)));
     if (courierComing(order) && arrival) {
-      const minutes = minutesUntil(arrival, now);
-      return minutes > 0
-        ? tile(c("courierIn"), c("minutes", { minutes }), c("arrivalAt", { time: formatClock(arrival) }))
-        : tile(c("courierArriving"), c("now"), c("arrivalAt", { time: formatClock(arrival) }));
+      // Counts down to the estimate, "Svakog trenutka" for 5 minutes after it, then how late.
+      const timing = courierTiming(arrival, now);
+      const at = c("arrivalAt", { time: formatClock(arrival) });
+      if (timing.kind === "in") return tile(c("courierIn"), durationText(timing.minutes, t), at);
+      if (timing.kind === "late") return tile(c("courierLate"), durationText(timing.minutes, t), at);
+      return tile(c("courierArriving"), c("now"), at);
     }
     return tile(c("delivery"), arrival ? cardDayTime(arrival, t) : "–", c("findingCourier"));
   }

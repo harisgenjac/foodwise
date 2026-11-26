@@ -2854,13 +2854,16 @@
       "failedBefore": "{{reason}}. Odaberite kako dalje.",
       "failedAfter": "{{reason}}. Administrator rješava narudžbu i javit će vam se.",
       "onTheWay": "Kurir je na putu",
-      "arrivesIn": "Stiže za {{minutes}} min",
+      "arrivesIn": "Stiže za {{duration}}",
+      "courierLate": "Kasni {{duration}}",
       "arrivesNow": "Stiže svakog trenutka",
       "arrivalAt": "dolazak u restoran u {{time}}",
       "courierHasGoods": "Kurir je preuzeo narudžbu",
       "courierAssigned": "Kurir je dodijeljen",
       "courierToStore": "Kurir dolazi u prodavnicu u {{time}}",
-      "atRestaurantIn": "u restoranu za {{minutes}} min ({{time}})",
+      "atRestaurantIn": "u restoranu za {{duration}} ({{time}})",
+      "atRestaurantNow": "u restoranu svakog trenutka ({{time}})",
+      "atRestaurantLate": "u restoranu kasni {{duration}} ({{time}})",
       "accepted": "Prihvaćeno",
       "partial": "Prihvaćeno djelimično",
       "itemsAccepted_one": "{{accepted}} od {{count}} stavke",
@@ -2889,7 +2892,7 @@
       "ifYouChoose": "Ako odaberete preuzimanje",
       "failed": "Nije uspjela",
       "courierIn": "Kurir stiže za",
-      "minutes": "{{minutes}} min",
+      "courierLate": "Kurir kasni",
       "courierArriving": "Kurir stiže",
       "now": "Svakog trenutka",
       "arrivalAt": "Dolazak u {{time}}",
@@ -2964,6 +2967,11 @@
       "changes_few": "{{count}} promjene",
       "changes_other": "{{count}} promjena",
       "noHistory": "Još nema promjena."
+    },
+    "duration": {
+      "minutes": "{{minutes}} min",
+      "hours": "{{hours}} h",
+      "hoursMinutes": "{{hours}} h {{minutes}} min"
     },
     "details": {
       "orderedAt": "Naručeno"

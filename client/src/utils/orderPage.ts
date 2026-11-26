@@ -43,6 +43,31 @@ export const listOrder = (order: OrderDetails): Order => ({
 // Whole minutes until `iso` (rounded up, never below 0).
 export const minutesUntil = (iso: string, now: number) => Math.max(0, Math.ceil((new Date(iso).getTime() - now) / 60000));
 
+// Whole minutes since `iso` (rounded down, never below 0).
+export const minutesSince = (iso: string, now: number) => Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60000));
+
+// For this long after the estimate a courier still arrives "any minute"; after it the page says how
+// late the courier is (counted from the estimate).
+export const LATE_GRACE_MINUTES = 5;
+
+export type CourierTiming = { kind: "in"; minutes: number } | { kind: "now" } | { kind: "late"; minutes: number };
+
+// Where a coming courier stands against the arrival estimate.
+export const courierTiming = (arrival: string, now: number): CourierTiming => {
+  const until = minutesUntil(arrival, now);
+  if (until > 0) return { kind: "in", minutes: until };
+  const late = minutesSince(arrival, now);
+  return late > LATE_GRACE_MINUTES ? { kind: "late", minutes: late } : { kind: "now" };
+};
+
+// "7 min", "2 h", "1 h 15 min".
+export const durationText = (minutes: number, t: TFunction) => {
+  if (minutes < 60) return t("orderPage.duration.minutes", { minutes });
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? t("orderPage.duration.hours", { hours }) : t("orderPage.duration.hoursMinutes", { hours, minutes: rest });
+};
+
 // Renders again every minute, so a countdown computed from Date.now() stays current (a live update
 // renders it again at once with the new estimate).
 export function useMinuteTick() {
@@ -61,9 +86,21 @@ export const courierComing = (order: OrderDetails) => {
   return delivery.status === "COURIER_ASSIGNED" || delivery.status === "PICKED_UP";
 };
 
-// "Stiže za 12 min" / "Stiže svakog trenutka".
-const arrivesIn = (minutes: number, t: TFunction) =>
-  minutes > 0 ? t("orderPage.headline.arrivesIn", { minutes }) : t("orderPage.headline.arrivesNow");
+// "Stiže za 12 min" / "Stiže svakog trenutka" / "Kasni 7 min".
+const arrivesIn = (timing: CourierTiming, t: TFunction) => {
+  if (timing.kind === "in") return t("orderPage.headline.arrivesIn", { duration: durationText(timing.minutes, t) });
+  if (timing.kind === "late") return t("orderPage.headline.courierLate", { duration: durationText(timing.minutes, t) });
+  return t("orderPage.headline.arrivesNow");
+};
+
+// "u restoranu za 40 min (12:00)" / "u restoranu svakog trenutka (12:00)" / "u restoranu kasni 7 min (12:00)".
+const atRestaurant = (arrival: string, now: number, t: TFunction) => {
+  const timing = courierTiming(arrival, now);
+  const time = formatClock(arrival);
+  if (timing.kind === "in") return t("orderPage.headline.atRestaurantIn", { duration: durationText(timing.minutes, t), time });
+  if (timing.kind === "late") return t("orderPage.headline.atRestaurantLate", { duration: durationText(timing.minutes, t), time });
+  return t("orderPage.headline.atRestaurantNow", { time });
+};
 
 export const orderHeadline = (order: OrderDetails, t: TFunction, now: number): Headline => {
   const h = (key: string, values: Record<string, unknown> = {}) => t(`orderPage.headline.${key}`, values);
@@ -115,14 +152,14 @@ export const orderHeadline = (order: OrderDetails, t: TFunction, now: number): H
     const arrival = deliveryArrival(order);
     if (delivery?.picked_up_at || delivery?.status === "PICKED_UP") {
       const line = arrival
-        ? `${arrivesIn(minutesUntil(arrival, now), t)} · ${h("arrivalAt", { time: formatClock(arrival) })}`
+        ? `${arrivesIn(courierTiming(arrival, now), t)} · ${h("arrivalAt", { time: formatClock(arrival) })}`
         : h("courierHasGoods");
       return { title: h("onTheWay"), line, tone: "default" };
     }
     if (delivery?.status === "COURIER_ASSIGNED") {
       const parts = [
         ...(delivery.estimated_pickup_at ? [h("courierToStore", { time: formatClock(delivery.estimated_pickup_at) })] : []),
-        ...(arrival ? [h("atRestaurantIn", { minutes: minutesUntil(arrival, now), time: formatClock(arrival) })] : []),
+        ...(arrival ? [atRestaurant(arrival, now, t)] : []),
       ];
       return { title: h("courierAssigned"), line: parts.join(" · "), tone: "default" };
     }

@@ -2789,13 +2789,16 @@
       "failedBefore": "{{reason}}. Choose what to do next.",
       "failedAfter": "{{reason}}. An administrator is resolving the order and will contact you.",
       "onTheWay": "The courier is on the way",
-      "arrivesIn": "Arrives in {{minutes}} min",
+      "arrivesIn": "Arrives in {{duration}}",
+      "courierLate": "{{duration}} late",
       "arrivesNow": "Arriving any minute",
       "arrivalAt": "at the restaurant at {{time}}",
       "courierHasGoods": "The courier has the order",
       "courierAssigned": "A courier is assigned",
       "courierToStore": "The courier reaches the store at {{time}}",
-      "atRestaurantIn": "at the restaurant in {{minutes}} min ({{time}})",
+      "atRestaurantIn": "at the restaurant in {{duration}} ({{time}})",
+      "atRestaurantNow": "at the restaurant any minute ({{time}})",
+      "atRestaurantLate": "at the restaurant {{duration}} late ({{time}})",
       "accepted": "Accepted",
       "partial": "Partly accepted",
       "itemsAccepted_one": "{{accepted}} of {{count}} item",
@@ -2823,7 +2826,7 @@
       "ifYouChoose": "If you choose to pick it up",
       "failed": "Failed",
       "courierIn": "The courier arrives in",
-      "minutes": "{{minutes}} min",
+      "courierLate": "The courier is late",
       "courierArriving": "The courier arrives",
       "now": "Any minute now",
       "arrivalAt": "Arrival at {{time}}",
@@ -2895,6 +2898,11 @@
       "changes_one": "{{count}} change",
       "changes_other": "{{count}} changes",
       "noHistory": "No changes yet."
+    },
+    "duration": {
+      "minutes": "{{minutes}} min",
+      "hours": "{{hours}} h",
+      "hoursMinutes": "{{hours}} h {{minutes}} min"
     },
     "details": {
       "orderedAt": "Ordered"

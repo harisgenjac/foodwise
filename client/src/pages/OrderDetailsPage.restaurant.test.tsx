@@ -135,7 +135,7 @@ describe("OrderDetailsPage for a restaurant: the hero", () => {
   it("shows the courier on the way to the store with the exact times", async () => {
     renderPage(deliveryOrder(COURIER));
     expect(await screen.findByRole("heading", { level: 1, name: t("orderPage.headline.courierAssigned") })).toBeInTheDocument();
-    expect(line()).toHaveTextContent("Kurir dolazi u prodavnicu u 12:40 · u restoranu za 60 min (13:00)");
+    expect(line()).toHaveTextContent("Kurir dolazi u prodavnicu u 12:40 · u restoranu za 1 h (13:00)");
     expect(stepStates()).toEqual(["done", "done", "done", "current", "upcoming"]);
   });
 
@@ -158,6 +158,43 @@ describe("OrderDetailsPage for a restaurant: the hero", () => {
     });
     expect(card("time-card")).toHaveTextContent("11 min");
     expect(line()).toHaveTextContent("Stiže za 11 min");
+  });
+
+  // The clock is at 12:00; a courier who picked the order up at 10:00 and the given estimate.
+  const pickedUp = (estimate: string) =>
+    deliveryOrder(
+      { ...COURIER, status: "PICKED_UP", picked_up_at: at(10, 0), estimated_delivery_at: estimate },
+      { status: "InDelivery", picked_up_at: at(10, 0) },
+    );
+
+  it("says the courier arrives any minute for 5 minutes after the estimate", async () => {
+    renderPage(pickedUp(at(11, 57)));
+    await screen.findByRole("heading", { level: 1, name: t("orderPage.headline.onTheWay") });
+    expect(line()).toHaveTextContent("Stiže svakog trenutka · dolazak u restoran u 11:57");
+    expect(card("time-card")).toHaveTextContent(t("orderPage.cards.courierArriving"));
+    expect(card("time-card")).toHaveTextContent(t("orderPage.cards.now"));
+  });
+
+  it("says how late the courier is once 5 minutes past the estimate", async () => {
+    renderPage(pickedUp(at(11, 53)));
+    await screen.findByRole("heading", { level: 1, name: t("orderPage.headline.onTheWay") });
+    expect(line()).toHaveTextContent("Kasni 7 min · dolazak u restoran u 11:53");
+    expect(card("time-card")).toHaveTextContent(t("orderPage.cards.courierLate"));
+    expect(card("time-card")).toHaveTextContent("7 min");
+    expect(card("time-card")).toHaveTextContent("Dolazak u 11:53");
+  });
+
+  it("counts a long delay in hours", async () => {
+    renderPage(pickedUp(at(9, 45)));
+    await screen.findByRole("heading", { level: 1, name: t("orderPage.headline.onTheWay") });
+    expect(line()).toHaveTextContent("Kasni 2 h 15 min · dolazak u restoran u 09:45");
+    expect(card("time-card")).toHaveTextContent("2 h 15 min");
+  });
+
+  it("says how late an assigned courier is at the restaurant", async () => {
+    renderPage(deliveryOrder({ ...COURIER, estimated_pickup_at: at(11, 30), estimated_delivery_at: at(11, 50) }));
+    await screen.findByRole("heading", { level: 1, name: t("orderPage.headline.courierAssigned") });
+    expect(line()).toHaveTextContent("Kurir dolazi u prodavnicu u 11:30 · u restoranu kasni 10 min (11:50)");
   });
 
   it("offers pickup at the store or a cancel after a failed delivery", async () => {
