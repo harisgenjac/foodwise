@@ -68,8 +68,10 @@ const rowOf = (product: string) =>
   screen.getAllByTestId("order-item").find((row) => within(row).queryByText(product))!;
 
 describe("OrderDetailsPage", () => {
+  // The store's page (OrderDetailsView); the restaurant's page is tested in
+  // OrderDetailsPage.restaurant.test.tsx.
   it("shows the code, the changed lines with their reasons and the new total", async () => {
-    renderPage(RESTAURANT);
+    renderPage(STORE);
 
     expect(await screen.findByRole("heading", { level: 1, name: t("orders.title", { code: "#K7PM" }) })).toBeInTheDocument();
     expect(screen.getByText(t("orders.partiallyAccepted"))).toBeInTheDocument();
@@ -84,17 +86,18 @@ describe("OrderDetailsPage", () => {
   });
 
   it("lists the changes made at sending and the history", async () => {
-    renderPage(RESTAURANT);
+    renderPage(STORE);
     expect(await screen.findByText(t("orders.sendChangesTitle"))).toBeInTheDocument();
     expect(screen.getByText(/Hljeb/)).toBeInTheDocument();
     expect(screen.getAllByTestId("order-history")).toHaveLength(2);
     expect(screen.getByText(t("orders.history.created", { who: t("orders.history.sources.RESTAURANT") }))).toBeInTheDocument();
   });
 
-  it("shows the store to the restaurant and the restaurant to the store", async () => {
-    renderPage(RESTAURANT);
-    expect(await screen.findByText("Titova 1, Sarajevo")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: t("orders.viewStore") })).toHaveAttribute("href", "/stores/2");
+  it("shows the restaurant to the store, without a link", async () => {
+    renderPage(STORE);
+    expect(await screen.findByText("Ferhadija 2, Sarajevo")).toBeInTheDocument();
+    expect(screen.queryByText("Titova 1, Sarajevo")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: t("orders.viewStore") })).not.toBeInTheDocument();
   });
 
   it("lets the store hand over an accepted order", async () => {
@@ -114,28 +117,18 @@ describe("OrderDetailsPage", () => {
     expect(screen.getByRole("heading", { name: t("orders.decision.title", { code: "#K7PM" }) })).toBeInTheDocument();
   });
 
-  it("lets the restaurant cancel a Pending order", async () => {
-    apiMock.post.mockResolvedValue({ data: { message: "Order cancelled." } });
-    renderPage(RESTAURANT, makeOrderDetails({ id: 8 }));
-
-    await userEvent.click(await screen.findByRole("button", { name: t("orders.cancelButton") }));
-    const dialog = screen.getByRole("dialog");
-    expect(within(dialog).getByText(t("orders.cancelConfirmationText", { code: "#K7PM", business: "Market Centar" }))).toBeInTheDocument();
-    await userEvent.click(within(dialog).getByRole("button", { name: t("orders.cancelButton") }));
-    expect(apiMock.post).toHaveBeenCalledWith("/orders/8/cancel");
-    expect(screen.queryByRole("button", { name: t("orders.decideButton") })).not.toBeInTheDocument();
-  });
-
-  it("tells the store when an unanswered order is rejected, and the restaurant until when the store answers", async () => {
+  it("tells the store until when it answers", async () => {
+    // Midday, so the deadline an hour later is still today (only the time is shown).
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2030, 0, 1, 12, 0));
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
     const deadline = new Date(Date.now() + 60 * 60 * 1000);
     const time = deadline.toLocaleString(undefined, { timeStyle: "short", hourCycle: "h23" });
     const pending = makeOrderDetails({ id: 8, auto_reject_at: deadline.toISOString() });
-    const { unmount } = renderPage(STORE, pending);
+    renderPage(STORE, pending);
     expect(await screen.findByTestId("answer-deadline")).toHaveTextContent(t("orders.autoReject.storeDeadline", { time }));
-    unmount();
-
-    renderPage(RESTAURANT, pending);
-    expect(await screen.findByTestId("answer-deadline")).toHaveTextContent(t("orders.autoReject.deadline", { time }));
   });
 
   it("shows the deadline in amber when it is close, and none for a decided order", async () => {
@@ -159,7 +152,7 @@ describe("OrderDetailsPage", () => {
         { id: 2, item_id: null, from_status: "Pending", to_status: "Rejected", source: "SYSTEM", reason: null, created_at: "2030-01-01T08:15:00.000Z", product_name: null },
       ],
     });
-    renderPage(RESTAURANT, rejected);
+    renderPage(STORE, rejected);
     expect(await screen.findByTestId("auto-rejected")).toHaveTextContent(t("orders.autoReject.rejected"));
   });
 
@@ -172,7 +165,7 @@ describe("OrderDetailsPage", () => {
         { id: 2, item_id: null, from_status: "Pending", to_status: "Rejected", source: "STORE", reason: null, created_at: "2030-01-01T08:15:00.000Z", product_name: null },
       ],
     });
-    renderPage(RESTAURANT, rejected);
+    renderPage(STORE, rejected);
     await screen.findByRole("heading", { level: 1 });
     expect(screen.queryByTestId("auto-rejected")).not.toBeInTheDocument();
   });
@@ -210,7 +203,7 @@ describe("OrderDetailsPage delivery", () => {
   };
 
   it("says the courier has the goods, then that the order was delivered", async () => {
-    const { unmount } = renderPage(RESTAURANT, {
+    const { unmount } = renderPage(STORE, {
       ...delivered({ ...courierLeg, status: "PICKED_UP", delivered_at: null }),
       status: "InDelivery",
     });
@@ -218,7 +211,7 @@ describe("OrderDetailsPage delivery", () => {
     expect(pill).toBeInTheDocument();
     unmount();
 
-    renderPage(RESTAURANT, {
+    renderPage(STORE, {
       ...delivered({ ...courierLeg, status: "DELIVERED", delivered_at: "2026-11-16T12:30:00.000Z" }),
       status: "Completed",
     });
@@ -228,7 +221,7 @@ describe("OrderDetailsPage delivery", () => {
 
   it("shows the booked delivery with its final price and the cash for the courier", async () => {
     renderPage(
-      RESTAURANT,
+      STORE,
       delivered({
         status: "CREATED",
         price: "9.40",
@@ -303,59 +296,5 @@ describe("OrderDetailsPage delivery", () => {
     expect(within(panel).queryByRole("button", { name: t("orders.mockCourier.steps.courier_assigned") })).not.toBeInTheDocument();
     await userEvent.click(within(panel).getByRole("button", { name: t("orders.mockCourier.steps.picked_up") }));
     expect(apiMock.post).toHaveBeenCalledWith("/delivery/mock/orders/8/simulate", { event: "picked_up" });
-  });
-
-  describe("after a failed delivery", () => {
-    const failed = () =>
-      ({
-        ...delivered({ ...booked, status: "FAILED", failure_reason: "Courier could not reach the store." }),
-        items: PARTIAL.items.map((item) => ({ ...item, expiry_date: "2030-01-10" })),
-      }) as OrderDetails;
-
-    it("says the courier failed", async () => {
-      renderPage(RESTAURANT, failed());
-      expect(
-        await screen.findByText(t("orders.delivery.failed", { reason: t("orders.delivery.failure.courier") })),
-      ).toBeInTheDocument();
-      expect(screen.queryByTestId("mock-courier")).not.toBeInTheDocument();
-    });
-
-    it("lets the restaurant switch to pickup at a time it chooses", async () => {
-      apiMock.post.mockResolvedValue({ data: { message: "Order switched to pickup." } });
-      renderPage(RESTAURANT, failed());
-      const box = await screen.findByTestId("delivery-failed");
-      expect(within(box).getByText(t("orders.deliveryFailed.prompt", { store: "Market Centar" }))).toBeInTheDocument();
-      await userEvent.click(within(box).getByRole("button", { name: t("orders.deliveryFailed.pickupButton") }));
-
-      const dialog = screen.getByRole("dialog");
-      await userEvent.click(within(dialog).getByRole("button", { name: t("orders.deliveryFailed.pickupConfirm") }));
-      // Nothing is sent without a date and a time.
-      expect(apiMock.post).not.toHaveBeenCalled();
-      await userEvent.type(within(dialog).getByLabelText(t("orderForm.pickupDate")), "05/01/2030");
-      await userEvent.type(within(dialog).getByLabelText(t("orderForm.pickupTime")), "10:00");
-      await userEvent.click(within(dialog).getByRole("button", { name: t("orders.deliveryFailed.pickupConfirm") }));
-      expect(apiMock.post).toHaveBeenCalledWith("/orders/8/switch-to-pickup", { pickup_at: "2030-01-05T10:00" });
-    });
-
-    it("lets the restaurant cancel the order", async () => {
-      apiMock.post.mockResolvedValue({ data: { message: "Order cancelled." } });
-      renderPage(RESTAURANT, failed());
-      const box = await screen.findByTestId("delivery-failed");
-      await userEvent.click(within(box).getByRole("button", { name: t("orders.cancelButton") }));
-      const dialog = screen.getByRole("dialog");
-      expect(
-        within(dialog).getByText(t("orders.deliveryFailed.cancelText", { code: "#K7PM", store: "Market Centar" })),
-      ).toBeInTheDocument();
-      await userEvent.click(within(dialog).getByRole("button", { name: t("orders.cancelButton") }));
-      expect(apiMock.post).toHaveBeenCalledWith("/orders/8/cancel-failed-delivery", undefined);
-    });
-
-    it("has no choice once the courier had the goods", async () => {
-      renderPage(RESTAURANT, delivered({ ...booked, status: "FAILED", picked_up_at: "2026-11-16T12:06:00.000Z" }));
-      expect(
-        await screen.findByText(t("orders.delivery.failed", { reason: t("orders.delivery.failure.afterPickup") })),
-      ).toBeInTheDocument();
-      expect(screen.queryByTestId("delivery-failed")).not.toBeInTheDocument();
-    });
   });
 });

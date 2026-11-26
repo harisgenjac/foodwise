@@ -98,7 +98,8 @@ describe("Order details breadcrumbs", () => {
       get: { "/orders/7": { order } },
     });
 
-    await screen.findByRole("heading", { level: 1, name: t("orders.title", { code: "#K7PM" }) });
+    // The store's page has it as the h1, the restaurant's in the hero above its status sentence.
+    await screen.findByText(t("orders.title", { code: "#K7PM" }));
     await expectTrail([
       [t(labelKey), to],
       ["#K7PM", null],

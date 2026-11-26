@@ -67,10 +67,10 @@ test("the store sold part of an order at its till: it can accept only what is le
 
   await test.step("Restoran dobija 2 kg, a jabuke više nisu u ponudi", async () => {
     await open(restaurant, `/orders/${order.id}`);
-    await expect(restaurant.getByText("Djelimično prihvaćena")).toBeVisible();
+    await expect(restaurant.getByTestId("order-status")).toHaveText("Djelimično prihvaćena");
     const row = restaurant.getByTestId("order-item").filter({ hasText: apples });
-    await expect(row.getByText("2 kg")).toBeVisible();
-    await expect(row.getByText("Nema dovoljno na stanju")).toBeVisible();
+    await expect(row).toContainText("→ 2 kg");
+    await expect(row.getByTestId("item-note")).toContainText("Nema dovoljno na stanju");
     // 2 kg accepted + 8 kg sold in the shop: sold out.
     await open(store, `/products/${product.id}`);
     await expect(store.getByText("Prodano", { exact: true }).first()).toBeVisible();

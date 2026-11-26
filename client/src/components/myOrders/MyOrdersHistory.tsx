@@ -6,7 +6,7 @@ import { ScooterIcon } from "../dashboard/HomeIllustrations.js";
 import { formatKm } from "../dashboard/OfferCard.js";
 import { OrderStatusPill } from "../storePage/StoreOrdersTab.js";
 import { CARD_CLASS } from "./MyOrderCard.js";
-import { groupByDay } from "../../utils/dayGroups.js";
+import { fullDate, groupByDay, isRelativeDay, type DayGroup } from "../../utils/dayGroups.js";
 import { formatClock } from "../../utils/delivery.js";
 import { formatOrderCode, itemsSummary } from "../../utils/orders.js";
 import { storeTone } from "../../utils/storeTone.js";
@@ -20,6 +20,41 @@ interface MyOrdersHistoryProps {
 
 const LINK_CLASS =
   "inline-flex min-h-11 items-center gap-1 rounded-sm text-sm font-bold whitespace-nowrap text-brand-800 hover:text-brand-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-800";
+
+// A day's heading: a small calendar leaf (the short month over the day number), the day's title
+// ("Danas", "Jučer" or the date) and, under a relative title, the full date. The leaf is decoration:
+// the title says the same.
+function DayHeading({ group }: { group: DayGroup<Order> }) {
+  const { t } = useTranslation();
+  const date = new Date(`${group.key}T00:00:00`);
+  const months = t("myOrders.history.monthsShort", { returnObjects: true }) as string[];
+  return (
+    <span className="flex items-center gap-3">
+      <span
+        aria-hidden="true"
+        data-testid="day-leaf"
+        className="flex h-11 w-10 shrink-0 flex-col overflow-hidden rounded-lg border border-brand-100 bg-white text-center shadow-[0_1px_2px_rgba(28,25,23,0.06)]"
+      >
+        <span className="bg-brand-100 py-px text-[10px] leading-4 font-extrabold tracking-[0.04em] text-brand-800">
+          {months[date.getMonth()]}
+        </span>
+        <span className="flex flex-1 items-center justify-center text-[17px] leading-none font-extrabold text-neutral-900">
+          {date.getDate()}
+        </span>
+      </span>
+      <span className="flex min-w-0 flex-col">
+        <span data-testid="day-title" className="text-[15px] font-extrabold text-neutral-900">
+          {group.title}
+        </span>
+        {isRelativeDay(group.key) && (
+          <span data-testid="day-date" className="text-[13px] font-medium text-neutral-600">
+            {fullDate(group.key, t)}
+          </span>
+        )}
+      </span>
+    </span>
+  );
+}
 
 // The pieces of one history row, shared by the table and the phone cards.
 function useRowParts() {
@@ -113,7 +148,8 @@ function useRowParts() {
 }
 
 // History on My orders (design/my-orders/my-orders-history.html): one white card with a table grouped
-// by the day the orders were sent (a heading row with the day and its order count), each row the
+// by the day the orders were placed (a light green heading row with a calendar leaf, the day and its
+// order count), each row the
 // code and time, the store, the products (with "2/3 prihvaćeno" after a partial acceptance), the
 // method, the total, the status pill (a fixed width, never wraps) and "Detalji →". Below md the
 // same groups as cards.
@@ -145,11 +181,11 @@ function MyOrdersHistory({ orders, hasMore }: MyOrdersHistoryProps) {
           </thead>
           {groups.map((group, index) => (
             <tbody key={group.key} className="divide-y divide-sand">
-              <tr className="bg-neutral-50">
-                <th scope="colgroup" colSpan={5} className="px-6 py-2.5 text-xs font-bold tracking-[0.06em] text-neutral-700 uppercase">
-                  {group.title}
+              <tr data-testid="day-heading" className="border-t-2 border-brand-100 bg-brand-50">
+                <th scope="colgroup" colSpan={5} className="px-6 py-2.5 text-left font-normal">
+                  <DayHeading group={group} />
                 </th>
-                <td colSpan={2} className="px-6 py-2.5 text-right text-xs text-neutral-600">
+                <td colSpan={2} className="px-6 py-2.5 text-right text-[13px] font-semibold text-neutral-700">
                   {countText(group.items.length, index)}
                 </td>
               </tr>
@@ -178,9 +214,11 @@ function MyOrdersHistory({ orders, hasMore }: MyOrdersHistoryProps) {
       <div className="flex flex-col gap-5 md:hidden">
         {groups.map((group, index) => (
           <section key={group.key} aria-label={group.title}>
-            <div className="mb-2 flex items-baseline justify-between px-1">
-              <h2 className="text-xs font-bold tracking-[0.06em] text-neutral-700 uppercase">{group.title}</h2>
-              <span className="text-xs text-neutral-600">{countText(group.items.length, index)}</span>
+            <div data-testid="day-heading" className="mb-2.5 flex items-center justify-between gap-3 rounded-xl border border-brand-100 bg-brand-50 px-3 py-2">
+              <h2 className="min-w-0">
+                <DayHeading group={group} />
+              </h2>
+              <span className="shrink-0 text-[13px] font-semibold text-neutral-700">{countText(group.items.length, index)}</span>
             </div>
             <ul className="flex flex-col gap-3">
               {group.items.map((order) => (

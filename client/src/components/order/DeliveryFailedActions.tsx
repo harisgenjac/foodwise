@@ -1,8 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
-import axios from "axios";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, Clock, Store, XCircle } from "lucide-react";
+import { Clock, ShoppingBag, Store, X, XCircle } from "lucide-react";
 import api, { apiErrorMessage } from "../../api/axios.js";
 import ConfirmModal from "../common/ConfirmModal.js";
 import DateInput from "../form/DateInput.js";
@@ -11,6 +10,7 @@ import { useFormValidation } from "../../hooks/useFormValidation.js";
 import { isBlank, REQUIRED } from "../../utils/validation.js";
 import { formatDisplayDate, formatTimeTyping, parseTimeInput, toDateInput } from "../../utils/expiry.js";
 import { formatOrderCode } from "../../utils/orders.js";
+import { HERO_CANCEL_BUTTON, HERO_PRIMARY_BUTTON } from "../orderPage/styles.js";
 import type { OrderDetails } from "../../types/index.js";
 
 interface DeliveryFailedActionsProps {
@@ -20,9 +20,9 @@ interface DeliveryFailedActionsProps {
 
 type Pending = "pickup" | "cancel" | null;
 
-// After a failed delivery (deliveryFailedBeforePickup) the restaurant chooses: pick the order up
-// at the store at a time it sets (today up to the earliest expiry of the accepted products, as when
-// sending), or cancel it.
+// After a failed delivery (deliveryFailedBeforePickup) the restaurant chooses, with the two buttons in
+// the order page's hero: pick the order up at the store at a time it sets (today up to the earliest
+// expiry of the accepted products, as when sending), or cancel it.
 function DeliveryFailedActions({ order, onDone }: DeliveryFailedActionsProps) {
   const { t } = useTranslation();
   const [pending, setPending] = useState<Pending>(null);
@@ -78,29 +78,15 @@ function DeliveryFailedActions({ order, onDone }: DeliveryFailedActionsProps) {
   const store = order.store.business_name ?? "";
 
   return (
-    <div data-testid="delivery-failed" className="space-y-3 rounded-xl border border-warning-200 bg-warning-50 p-4">
-      <p className="flex items-start gap-2 text-sm text-warning-800">
-        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-        {t("orders.deliveryFailed.prompt", { store })}
-      </p>
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <button
-          type="button"
-          onClick={() => setPending("pickup")}
-          className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-brand-800 py-2.5 font-semibold text-white shadow-sm shadow-brand-800/20 transition-colors hover:bg-brand-900"
-        >
-          <Store className="h-4 w-4" />
-          {t("orders.deliveryFailed.pickupButton")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setPending("cancel")}
-          className="inline-flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-neutral-200 bg-white py-2.5 font-semibold text-neutral-700 transition-colors hover:border-danger-200 hover:bg-danger-50 hover:text-danger-700"
-        >
-          <XCircle className="h-4 w-4" />
-          {t("orders.cancelButton")}
-        </button>
-      </div>
+    <div data-testid="delivery-failed" className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
+      <button type="button" onClick={() => setPending("pickup")} className={HERO_PRIMARY_BUTTON}>
+        <ShoppingBag className="h-[18px] w-[18px]" aria-hidden="true" />
+        {t("orders.deliveryFailed.pickupButton")}
+      </button>
+      <button type="button" onClick={() => setPending("cancel")} className={HERO_CANCEL_BUTTON}>
+        <X className="h-[18px] w-[18px]" aria-hidden="true" />
+        {t("orders.cancelButton")}
+      </button>
 
       {pending === "pickup" && (
         <ConfirmModal

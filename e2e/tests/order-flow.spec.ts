@@ -62,7 +62,7 @@ test("a store publishes a product, a restaurant orders it and the store hands it
   await expect(pickupCard(restaurant, productName).getByText(/^Preuzeto /)).toBeVisible();
   await open(restaurant, "/notifications");
   await restaurant.getByText(`Preuzimanje narudžbe #${code} je potvrđeno.`).click();
-  await expect(restaurant.getByRole("heading", { level: 1, name: `Narudžba #${code}` })).toBeVisible();
+  await expect(restaurant.getByTestId("order-hero").getByText(`Narudžba #${code}`, { exact: true })).toBeVisible();
   await expect(restaurant.getByText("Preuzeto", { exact: true }).first()).toBeVisible();
 
   await storeContext.close();

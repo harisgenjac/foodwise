@@ -87,7 +87,9 @@ const acceptedDelivery = async (browser: Browser, productPrefix: string): Promis
   const restaurant = await (await browser.newContext({ storageState: fresh.storageState })).newPage();
   const store = await (await browser.newContext({ storageState: storageState("store") })).newPage();
   await open(restaurant, `/orders/${order.id}`);
-  await expect(restaurant.getByText("Dostava naručena, čeka kurira")).toBeVisible();
+  // The restaurant's order page (design/order-details/): the hero says what happens now.
+  await expect(restaurant.getByTestId("hero-title")).toHaveText("Prihvaćeno");
+  await expect(restaurant.getByTestId("hero-line")).toContainText("Dostavna služba traži kurira");
   return { productName, productId, orderId: order.id, code: `#${order.code}`, restaurant, store };
 };
 
@@ -111,24 +113,25 @@ test("the courier is assigned, picks the order up and delivers it, live on both 
       const { order } = await simulateCourier(api, id, "courier_assigned");
       courier = { name: order.delivery.courier_name!, phone: order.delivery.courier_phone! };
     });
-    await expect(restaurant.getByText("Kurir dodijeljen", { exact: true })).toBeVisible();
-    await expect(restaurant.getByText(courier.name)).toBeVisible();
-    await expect(restaurant.getByRole("link", { name: courier.phone })).toBeVisible();
+    await expect(restaurant.getByTestId("hero-title")).toHaveText("Kurir je dodijeljen");
+    const contact = restaurant.getByTestId("contact-courier");
+    await expect(contact).toContainText(courier.name);
+    await expect(contact.getByRole("link", { name: `Pozovi kurira ${courier.name}` })).toHaveAttribute("href", `tel:${courier.phone}`);
     await expect(packingCard.getByText(courier.name)).toBeVisible();
   });
 
   await test.step("Kurir preuzeo: narudžba je u dostavi i nestaje sa spiska za pakovanje", async () => {
     await withSeeded("store", (api) => simulateCourier(api, id, "picked_up").then(() => undefined));
-    await expect(restaurant.getByText("Kurir je preuzeo narudžbu")).toBeVisible();
-    await expect(restaurant.getByText("Kurir preuzeo", { exact: true }).first()).toBeVisible();
+    await expect(restaurant.getByTestId("hero-title")).toHaveText("Kurir je na putu");
+    await expect(restaurant.getByTestId("order-status")).toHaveText("Kurir preuzeo");
     await expect(packingCard).toHaveCount(0);
   });
 
   await test.step("Dostavljeno: narudžba je završena za obje strane", async () => {
     await open(store, `/orders/${id}`);
     await withSeeded("store", (api) => simulateCourier(api, id, "delivered").then(() => undefined));
-    await expect(restaurant.getByText("Kurir je preuzeo narudžbu")).toHaveCount(0);
-    await expect(restaurant.getByText("Dostavljeno", { exact: true }).first()).toBeVisible();
+    await expect(restaurant.getByTestId("hero-title")).toHaveText("Isporučeno");
+    await expect(restaurant.getByTestId("order-status")).toHaveText("Dostavljeno");
     await expect(store.getByText("Dostavljeno", { exact: true }).first()).toBeVisible();
     await expect(store.getByRole("button", { name: "Označi kao preuzeto" })).toHaveCount(0);
   });
@@ -142,7 +145,8 @@ test("after a failure before the pickup the restaurant picks the order up at the
 
   await test.step("Dostava ne uspijeva: restoran bira, prodavnica čeka", async () => {
     await withSeeded("store", (api) => simulateCourier(api, id, "failed").then(() => undefined));
-    await expect(restaurant.getByText("Dostava nije uspjela: kurir nije mogao završiti dostavu.")).toBeVisible();
+    await expect(restaurant.getByTestId("hero-title")).toHaveText("Dostava nije uspjela");
+    await expect(restaurant.getByTestId("hero-line")).toHaveText("Kurir nije mogao završiti dostavu. Odaberite kako dalje.");
     await expect(restaurant.getByTestId("delivery-failed")).toBeVisible();
     await expect(store.getByTestId("delivery-failed")).toContainText("Restoran bira da li će narudžbu preuzeti sam ili je otkazati.");
   });
@@ -156,7 +160,8 @@ test("after a failure before the pickup the restaurant picks the order up at the
     await dialog.getByLabel("Vrijeme preuzimanja").fill("12:00");
     await dialog.getByRole("button", { name: "Preuzet ću je" }).click();
     await expect(toast(restaurant, "Narudžba je prebačena na preuzimanje.")).toBeVisible();
-    await expect(restaurant.getByText("Dostava nije uspjela, narudžba se preuzima u prodavnici")).toBeVisible();
+    await expect(restaurant.getByTestId("hero-title")).toHaveText("Preuzimate u prodavnici");
+    await expect(restaurant.getByTestId("hero-line")).toHaveText("Preuzimanje sutra u 12:00");
     await expect(restaurant.getByTestId("delivery-failed")).toHaveCount(0);
   });
 
@@ -182,7 +187,7 @@ test("after a failure before the pickup the restaurant cancels and the goods go 
     await expect(dialog.getByText(`Narudžba ${code} će biti otkazana`)).toBeVisible();
     await dialog.getByRole("button", { name: "Otkaži narudžbu" }).click();
     await expect(toast(restaurant, "Narudžba je otkazana.")).toBeVisible();
-    await expect(restaurant.getByText("Otkazano", { exact: true }).first()).toBeVisible();
+    await expect(restaurant.getByTestId("hero-title")).toHaveText("Otkazali ste narudžbu");
     await expect(restaurant.getByTestId("delivery-failed")).toHaveCount(0);
   });
 
@@ -207,9 +212,10 @@ test("a failure after the pickup keeps the order with the courier until the admi
       await simulateCourier(api, id, "failed");
     });
     const reason = "Dostava nije uspjela: kurir je preuzeo narudžbu, ali je nije mogao dostaviti.";
-    await expect(restaurant.getByText(reason)).toBeVisible();
+    await expect(restaurant.getByTestId("hero-line")).toContainText("Kurir je preuzeo narudžbu, ali je nije mogao dostaviti.");
     await expect(store.getByText(reason)).toBeVisible();
-    await expect(restaurant.getByText("Kurir preuzeo", { exact: true }).first()).toBeVisible();
+    // The failure is on the last step: the courier had the goods.
+    await expect(restaurant.getByTestId("order-step").last()).toHaveAttribute("data-state", "failed");
     // The restaurant has no choice to make: the goods left the store.
     await expect(restaurant.getByTestId("delivery-failed")).toHaveCount(0);
   });

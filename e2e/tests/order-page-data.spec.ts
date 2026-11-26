@@ -108,19 +108,19 @@ test("the courier panel plays a delivery with a vehicle and a moved estimate, an
     const { delivery } = await orderOf(restaurant.api, order.id);
     expect(["BICYCLE", "SCOOTER", "CAR"]).toContain(delivery.courier_vehicle);
     expect(delivery.tracking_url).toContain(`/dev/tracking/`);
-    await expect(page.getByText(delivery.courier_name!)).toBeVisible();
+    await expect(page.getByTestId("contact-courier")).toContainText(delivery.courier_name!);
   });
 
   await test.step("Kurir preuzeo, dolazak +5 min, dostavljeno", async () => {
     await panel.getByRole("button", { name: "Kurir preuzeo" }).click();
-    await expect(page.getByText("Kurir je preuzeo narudžbu")).toBeVisible();
+    await expect(page.getByTestId("hero-title")).toHaveText("Kurir je na putu");
     const before = (await orderOf(restaurant.api, order.id)).delivery.estimated_delivery_at!;
     await panel.getByRole("button", { name: "Dolazak +5 min" }).click();
     await expect
       .poll(async () => new Date((await orderOf(restaurant.api, order.id)).delivery.estimated_delivery_at!).getTime())
       .toBe(new Date(before).getTime() + 5 * 60_000);
     await panel.getByRole("button", { name: "Dostavljeno" }).click();
-    await expect(page.getByText("Dostavljeno", { exact: true }).first()).toBeVisible();
+    await expect(page.getByTestId("order-status")).toHaveText("Dostavljeno");
     await expect(panel.getByRole("button")).toHaveCount(0);
   });
 
@@ -156,7 +156,7 @@ test("a problem report sent through the API is resolved by the admin with a repl
   await admin.getByRole("link", { name: "Prijave problema" }).click();
   const row = admin.getByRole("row").filter({ hasText: text });
   await expect(row.getByRole("link", { name: `#${order.code}` })).toHaveAttribute("href", `/admin/orders/${order.id}`);
-  await expect(row.getByText("Problem s vremenom preuzimanja")).toBeVisible();
+  await expect(row.getByText("Problem s terminom preuzimanja")).toBeVisible();
   await expect(row.getByText("Otvorena")).toBeVisible();
 
   await row.getByRole("button", { name: "Obradi" }).click();

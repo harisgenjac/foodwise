@@ -75,8 +75,8 @@ describe("Input validation", () => {
       ["/api/orders/mine?status=Unknown"],
       ["/api/orders/mine?scope=open"],
       ["/api/orders/mine?sort=oldest"],
-      ["/api/orders/mine?period=year"],
-      ["/api/orders/mine/summary?period=30d"],
+      ["/api/orders/mine?from=2026-02-31"],
+      ["/api/orders/mine/summary?from=2026-03-12&to=2026-03-10"],
       ["/api/orders/mine/summary?store_id=abc"],
     ])("returns 400 for %s", async (url) => {
       const response = await restaurant.get(url);

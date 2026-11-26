@@ -131,17 +131,23 @@ test("a restaurant follows, filters and cancels its orders on My orders", async 
     await page.getByRole("tab", { name: /Historija/ }).click();
     await page.getByRole("button", { name: /Filteri/ }).click();
     const panel = page.getByRole("dialog", { name: "Filteri" });
-    await panel.getByRole("group", { name: "Poslano" }).getByRole("button", { name: "Danas" }).click();
+    // Ordered today: Od and Do both today (dd/mm/yyyy, the field adds the slashes).
+    const today = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Sarajevo" }).format(new Date());
+    const range = panel.getByRole("group", { name: "Naručeno" });
+    await range.getByRole("textbox", { name: "Od", exact: true }).fill(today);
+    await range.getByRole("textbox", { name: "Od", exact: true }).press("Enter");
+    await range.getByRole("textbox", { name: "Do", exact: true }).fill(today);
+    await range.getByRole("textbox", { name: "Do", exact: true }).press("Enter");
     await panel.getByRole("group", { name: "Status" }).getByRole("button", { name: "Otkazano" }).click();
     await page.keyboard.press("Escape");
-    await expect(page.getByTestId("active-filter")).toHaveText(["Otkazano", "Danas"]);
+    await expect(page.getByTestId("active-filter")).toHaveText(["Otkazano", `Naručeno: ${today} – ${today}`]);
 
     const table = page.getByRole("table", { name: "Historija narudžbi" });
     const rows = table.getByRole("row").filter({ hasText: names.pending });
     await expect(rows).toHaveCount(1);
     await expect(rows.getByTestId("order-status")).toHaveText("Otkazano");
     await rows.getByRole("link", { name: `Detalji narudžbe #${orders.pending.code}` }).click();
-    await expect(page.getByRole("heading", { level: 1, name: `Narudžba #${orders.pending.code}` })).toBeVisible();
+    await expect(page.getByTestId("order-hero").getByText(`Narudžba #${orders.pending.code}`, { exact: true })).toBeVisible();
   });
 
   await test.step("Na 375 px ništa ne izlazi u stranu", async () => {
