@@ -370,7 +370,7 @@ describe("order lists and details", () => {
     const todayList = await store.get("/api/orders/pickups?scope=today");
     expect(todayList.body.orders.map((order: { id: number }) => order.id)).toEqual([late.orderId, today.orderId]);
     expect(todayList.body.orders[0]).toMatchObject({ is_overdue: true, days_overdue: 2 });
-    const upcomingList = await restaurant.get("/api/orders/pickups?scope=upcoming");
+    const upcomingList = await store.get("/api/orders/pickups?scope=upcoming");
     expect(upcomingList.body.orders.map((order: { id: number }) => order.id)).toEqual([upcoming.orderId]);
     expect((await store.get("/api/orders/pickups/counts")).body.counts).toEqual({
       today: 2,

@@ -64,7 +64,7 @@ describe("order views", () => {
   it("the pickup card shows the logo", () => {
     render(
       <MemoryRouter>
-        <PickupCard order={makeOrder({ status: "Confirmed", party_logo_url: "/uploads/logos/9-1-cd.png" })} isStore />
+        <PickupCard order={makeOrder({ status: "Confirmed", party_logo_url: "/uploads/logos/9-1-cd.png" })} />
       </MemoryRouter>,
     );
     expect(screen.getByTestId("order-logo")).toHaveAttribute("src", assetUrl("/uploads/logos/9-1-cd.png"));

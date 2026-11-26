@@ -10,7 +10,7 @@ describe("PickupCard", () => {
     const order = makeOrder({ status: "Confirmed", pickup_at: new Date(2030, 2, 15, 14, 5).toISOString() });
     render(
       <MemoryRouter>
-        <PickupCard order={order} isStore />
+        <PickupCard order={order} />
       </MemoryRouter>,
     );
     expect(screen.getByText("14:05")).toBeInTheDocument();

@@ -154,7 +154,7 @@ describe("Pagination", () => {
       const completed = await store.get("/api/orders/pickups").query({ scope: "completed", limit: 3 });
       expect(completed.body.total).toBe(4);
       expect(completed.body.orders).toHaveLength(3);
-      await expectStablePages(restaurant, "/api/orders/pickups", "orders", { scope: "completed" });
+      await expectStablePages(store, "/api/orders/pickups", "orders", { scope: "completed" });
 
       const upcoming = await store.get("/api/orders/pickups").query({ scope: "upcoming", limit: 1 });
       expect(upcoming.status).toBe(200);
@@ -232,7 +232,7 @@ describe("Pagination", () => {
     "/api/donations/mine",
     "/api/credits/requests",
   ])("%s rejects an invalid limit or offset", async (url) => {
-    const agent = url.startsWith("/api/products/mine") || url.startsWith("/api/orders/store") || url.startsWith("/api/donations") || url.startsWith("/api/credits")
+    const agent = url.startsWith("/api/products/mine") || url.startsWith("/api/orders/store") || url.startsWith("/api/orders/pickups") || url.startsWith("/api/donations") || url.startsWith("/api/credits")
       ? store
       : restaurant;
     for (const page of ["limit=0", "limit=101", "limit=abc", "offset=-1", "offset=1.5"]) {

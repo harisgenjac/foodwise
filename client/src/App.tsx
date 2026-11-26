@@ -83,7 +83,8 @@ function App() {
         <Route path="/stores/:id" element={<ProtectedRoute role="RESTAURANT"><StoreDetailsPage /></ProtectedRoute>} />
         <Route path="/my-orders" element={<ProtectedRoute role="RESTAURANT"><MyOrdersPage /></ProtectedRoute>} />
         <Route path="/cart" element={<ProtectedRoute role="RESTAURANT"><CartPage /></ProtectedRoute>} />
-        <Route path="/pickups" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><PickupsPage /></ProtectedRoute>} />
+        {/* Pickups is the store's page; a restaurant follows its orders on My orders. */}
+        <Route path="/pickups" element={<ProtectedRoute role="STORE" redirectTo={{ RESTAURANT: "/my-orders" }}><PickupsPage /></ProtectedRoute>} />
         <Route path="/packing" element={<ProtectedRoute role="STORE"><PackingListPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute role={["STORE", "RESTAURANT"]}><ReportsPage /></ProtectedRoute>} />
         <Route path="/credits" element={<ProtectedRoute role="STORE"><CreditsPage /></ProtectedRoute>} />

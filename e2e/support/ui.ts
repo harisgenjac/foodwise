@@ -173,6 +173,9 @@ export const sentOrderId = async (page: Page) => {
 // A pickup card on Preuzimanja, found by a product in it.
 export const pickupCard = (page: Page, productName: string) => page.getByTestId("pickup-card").filter({ hasText: productName });
 
+// An order card on the restaurant's Moje narudžbe, found by a product in it.
+export const myOrderCard = (page: Page, productName: string) => page.getByTestId("my-order-card").filter({ hasText: productName });
+
 // The restaurant orders one product: an empty cart, the product added from its marketplace card,
 // and the checkout (pickup tomorrow at `time`). Returns the order's code.
 export const orderFromMarketplace = async (

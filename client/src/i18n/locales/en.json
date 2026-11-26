@@ -62,7 +62,8 @@
     "pickups": "Pickups",
     "more": "More",
     "orders": "Orders",
-    "search": "Search"
+    "search": "Search",
+    "stores": "Stores"
   },
   "auth": {
     "welcomeBack": "Welcome back",
@@ -600,7 +601,6 @@
   "pickups": {
     "title": "Pickups",
     "storeSubtitle": "Hand food over to restaurants and keep track of today's and upcoming pickups.",
-    "restaurantSubtitle": "Your accepted pickups for today and the days ahead.",
     "tabs": {
       "today": "Today",
       "upcoming": "Upcoming",
@@ -617,10 +617,8 @@
     "overdueDays_other": "{{count}} days late",
     "todayCount_one": "{{count}} pickup today",
     "todayCount_other": "{{count}} pickups today",
-    "readyForPickup": "Ready for pickup",
     "pickedUpAt": "Picked up {{date}}",
     "total": "Total",
-    "pickupHours": "Pickup",
     "completeButton": "Mark as picked up",
     "cancelOverdueButton": "Cancel",
     "details": "Details",
@@ -634,7 +632,6 @@
     "empty": {
       "todayTitle": "No pickups today",
       "todayStoreSubtitle": "Accepted orders with a pickup today will appear here.",
-      "todayRestaurantSubtitle": "When a store accepts an order with a pickup today, you will see it here.",
       "upcomingTitle": "No upcoming pickups",
       "upcomingSubtitle": "Accepted orders with a later pickup date will appear here.",
       "completedTitle": "Nothing picked up yet",
@@ -644,9 +641,6 @@
     },
     "courierCollects": "Courier collects",
     "courierPickedUpAt": "Courier picked up {{date}}",
-    "deliveredAt": "Delivered {{date}}",
-    "onTheWay": "Picked up by the courier, on the way",
-    "deliveryFailedOnTheWay": "Delivery failed after the pickup",
     "packingLink": "Packing list"
   },
   "packing": {

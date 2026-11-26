@@ -6,21 +6,17 @@ import {
   CalendarX,
   CircleCheck,
   Clock,
-  MapPin,
   PackageCheck,
   Phone,
-  Store,
   Truck,
   UtensilsCrossed,
 } from "lucide-react";
 import OrderImage from "../order/OrderImage.js";
-import { hoursText } from "../../utils/schedule.js";
 import { formatMoney, formatOrderCode, itemsSummary, TIME_OF_DAY } from "../../utils/orders.js";
 import type { Order } from "../../types/index.js";
 
 interface PickupCardProps {
   order: Order;
-  isStore: boolean;
   onComplete?: (order: Order) => void;
   onCancelOverdue?: (order: Order) => void;
 }
@@ -31,22 +27,17 @@ const shortDate = (date: Date) =>
 
 // One handover of a whole order: the time on the left (brand, danger when overdue, success once
 // picked up), the order and the other party in the middle, the actions on the right.
-function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardProps) {
+function PickupCard({ order, onComplete, onCancelOverdue }: PickupCardProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
   const isDelivery = order.fulfilment_method === "DELIVERY";
-  const inDelivery = order.status === "InDelivery";
-  // The goods left the store: picked up, delivered, or (for the store) taken by the courier.
-  const isCompleted = order.status === "Completed" || (isStore && inDelivery);
-  const deliveredAt = new Date(order.delivery?.delivered_at ?? order.updated_at);
-  const failedOnTheWay = inDelivery && order.delivery?.status === "FAILED";
+  // The goods left the store: picked up, or taken by the courier.
+  const isCompleted = order.status === "Completed" || order.status === "InDelivery";
   const isOverdue = Boolean(order.is_overdue);
   const pickup = new Date(order.pickup_at);
   const pickedUpAt = new Date(order.picked_up_at ?? order.updated_at);
-  const PartyIcon = isStore ? UtensilsCrossed : Store;
   const daysOverdue = order.days_overdue ?? 0;
-  const pickupHours = hoursText(order.party_pickup_schedule, t);
 
   const tone = isCompleted
     ? "bg-success-100 text-success-800"
@@ -104,7 +95,7 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-600">
             <span className="inline-flex min-w-0 items-center gap-1.5">
-              <PartyIcon className="h-4 w-4 shrink-0 text-neutral-500" />
+              <UtensilsCrossed className="h-4 w-4 shrink-0 text-neutral-500" />
               <span className="truncate font-medium text-neutral-800">{order.business_name}</span>
               {order.city && <span className="text-neutral-500">· {order.city}</span>}
             </span>
@@ -118,18 +109,6 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
                 {order.party_phone}
               </a>
             )}
-            {!isStore && order.party_address && (
-              <span className="inline-flex items-center gap-1.5">
-                <MapPin className="h-4 w-4 shrink-0 text-neutral-500" />
-                {order.party_address}
-              </span>
-            )}
-            {!isStore && pickupHours && (
-              <span className="inline-flex items-center gap-1.5">
-                <Clock className="h-4 w-4 shrink-0 text-neutral-500" />
-                {t("pickups.pickupHours")}: {pickupHours}
-              </span>
-            )}
           </div>
         </div>
       </div>
@@ -138,24 +117,9 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
         {isCompleted ? (
           <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-800">
             <PackageCheck className="h-4 w-4" />
-            {isDelivery && !isStore && order.status === "Completed"
-              ? t("pickups.deliveredAt", {
-                  date: `${shortDate(deliveredAt)} ${deliveredAt.toLocaleTimeString(i18n.language, TIME_OF_DAY)}`,
-                })
-              : t(isDelivery ? "pickups.courierPickedUpAt" : "pickups.pickedUpAt", {
-                  date: `${shortDate(pickedUpAt)} ${pickedUpAt.toLocaleTimeString(i18n.language, TIME_OF_DAY)}`,
-                })}
-          </span>
-        ) : failedOnTheWay ? (
-          // The courier had the goods and could not deliver them; an admin settles it.
-          <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-danger-50 px-3 py-1 text-xs font-semibold text-danger-700">
-            <AlertTriangle className="h-4 w-4" />
-            {t("pickups.deliveryFailedOnTheWay")}
-          </span>
-        ) : inDelivery ? (
-          <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-info-50 px-3 py-1 text-xs font-semibold text-info-700">
-            <Truck className="h-4 w-4" />
-            {t("pickups.onTheWay")}
+            {t(isDelivery ? "pickups.courierPickedUpAt" : "pickups.pickedUpAt", {
+              date: `${shortDate(pickedUpAt)} ${pickedUpAt.toLocaleTimeString(i18n.language, TIME_OF_DAY)}`,
+            })}
           </span>
         ) : isDelivery ? (
           // The courier collects a delivery order; its delivery completes it.
@@ -163,7 +127,7 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
             <Truck className="h-4 w-4" />
             {t("pickups.courierCollects")}
           </span>
-        ) : isStore ? (
+        ) : (
           <>
             <button
               type="button"
@@ -190,13 +154,6 @@ function PickupCard({ order, isStore, onComplete, onCancelOverdue }: PickupCardP
               </button>
             )}
           </>
-        ) : (
-          !isOverdue && (
-            <span className="inline-flex items-center justify-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-800">
-              <CircleCheck className="h-4 w-4" />
-              {t("pickups.readyForPickup")}
-            </span>
-          )
         )}
         <Link
           to={`/orders/${order.id}`}

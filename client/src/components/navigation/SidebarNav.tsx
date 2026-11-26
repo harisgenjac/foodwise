@@ -116,7 +116,6 @@ function SidebarNav({ expanded, locked = false, onNavigate, replace = false }: S
     { to: "/stores", label: t("sidebar.stores"), icon: Store },
     { to: "/search", label: t("sidebar.search"), icon: Search },
     { to: "/my-orders", label: t("sidebar.myOrders"), icon: ReceiptText },
-    { to: "/pickups", label: t("sidebar.pickups"), icon: PackageCheck },
     { to: "/reports", label: t("sidebar.reports"), icon: FileChartColumn },
   ];
 

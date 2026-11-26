@@ -34,6 +34,13 @@ describe("App routes", () => {
     expect(screen.getByRole("link", { name: t("notFound.toLogin") })).toHaveAttribute("href", "/login");
   });
 
+  it("sends a restaurant from the store's Pickups page to My orders", async () => {
+    // My orders and the layout load more than this test answers; only the address matters here.
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    openApp("/pickups", makeUser({ role: "RESTAURANT", business_name: "Bistro" }));
+    await waitFor(() => expect(window.location.pathname).toBe("/my-orders"));
+  });
+
   it("links a logged-in user to the dashboard from the page-not-found page", async () => {
     openApp("/nesto/drugo", makeUser({ role: "STORE", business_name: "Market" }));
     expect(await screen.findByRole("heading", { name: t("notFound.title") })).toBeInTheDocument();

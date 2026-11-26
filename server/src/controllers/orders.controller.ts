@@ -73,7 +73,7 @@ export const getStoreOrders = async (req: Request, res: Response) => {
 
 export const getOrderPickups = async (req: Request, res: Response) => {
   try {
-    const result = await listPickupOrders(req.user!.id, req.user!.role, req.query);
+    const result = await listPickupOrders(req.user!.id, req.query);
     if (!result) return res.status(400).json({ error: "Invalid filter." });
     return res.status(200).json({ message: "Pickups fetched successfully.", ...result });
   } catch (error) {
@@ -83,7 +83,7 @@ export const getOrderPickups = async (req: Request, res: Response) => {
 
 export const getOrderPickupCounts = async (req: Request, res: Response) => {
   try {
-    const counts = await countPickupOrders(req.user!.id, req.user!.role);
+    const counts = await countPickupOrders(req.user!.id);
     return res.status(200).json({ message: "Pickups fetched successfully.", counts });
   } catch (error) {
     return sendError(res, error, "An error occurred while fetching pickups.");
