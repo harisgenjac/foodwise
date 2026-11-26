@@ -2638,7 +2638,12 @@
       "search": "Product, store or code (#K7PM)",
       "methodLabel": "Method",
       "statusLabel": "Status",
-      "periodLabel": "Sent",
+      "periodLabel": "Ordered",
+      "from": "From",
+      "to": "To",
+      "range": "Ordered: {{from}} – {{to}}",
+      "fromOnly": "From {{date}}",
+      "toOnly": "Until {{date}}",
       "method": {
         "all": "All",
         "pickup": "Pickup",
@@ -2652,12 +2657,6 @@
         "Completed": "Picked up / delivered",
         "Rejected": "Rejected",
         "Cancelled": "Cancelled"
-      },
-      "period": {
-        "all": "All",
-        "today": "Today",
-        "7d": "Last 7 days",
-        "month": "This month"
       }
     },
     "method": {
@@ -2673,8 +2672,8 @@
     },
     "card": {
       "order": "Order",
-      "sent": "sent {{when}} ({{ago}})",
-      "sentOn": "sent {{when}}",
+      "sent": "ordered {{when}} ({{ago}})",
+      "sentOn": "ordered {{when}}",
       "yesterday": "yesterday {{time}}",
       "total": "Total",
       "oldTotal": "Before:",
@@ -2685,7 +2684,7 @@
     "showMore": "Show more",
     "steps": {
       "label": "Progress of order {{code}}",
-      "sent": "Sent",
+      "sent": "Ordered",
       "waiting": "Awaiting answer",
       "accepted": "Accepted",
       "pickup": "Pickup",
@@ -2708,7 +2707,7 @@
       "failed": "failed"
     },
     "info": {
-      "sentAt": "Sent {{when}}",
+      "sentAt": "Ordered {{when}}",
       "partialAllowed": "Partial acceptance: allowed",
       "partialNotAllowed": "Partial acceptance: not allowed",
       "answerBy": "The store has to answer by {{time}}.",
@@ -2750,6 +2749,7 @@
       "cashPaid": "Paid the courier {{cash}} in cash."
     },
     "history": {
+      "monthsShort": ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
       "table": "Order history",
       "order": "Order",
       "store": "Store",

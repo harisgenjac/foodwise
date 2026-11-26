@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import MyOrdersPage from "./MyOrdersPage.js";
 import { apiMock, axiosError, makeOrder, makeOrderItem, makeUser, renderWithProviders, t } from "../test/utils.js";
 import type { Order, OrderDelivery } from "../types/index.js";
+import { fullDate } from "../utils/dayGroups.js";
 
 // A fixed midday clock, so "today" and "yesterday" never cross midnight while the suite runs.
 const NOW = new Date(2026, 9, 20, 12, 0);
@@ -104,7 +105,8 @@ describe("MyOrdersPage", () => {
     expect(screen.getByRole("tablist")).toBeInTheDocument();
     expect(tab("active")).toHaveAttribute("aria-selected", "true");
     expect(lastListParams()).toMatchObject({ scope: "active", sort: "newest", q: "", method: "", status: "", limit: 12 });
-    expect(lastListParams()).not.toHaveProperty("period");
+    expect(lastListParams()).not.toHaveProperty("from");
+    expect(lastListParams()).not.toHaveProperty("to");
     await waitFor(() => expect(within(tab("history")).getByText("65")).toBeInTheDocument());
     expect(within(tab("active")).getByText("6")).toBeInTheDocument();
     expect(summaryCalls()).toEqual([["/orders/mine/summary"]]);
@@ -133,7 +135,7 @@ describe("MyOrdersPage", () => {
 
     expect(pillNames(t("myOrders.filters.methodLabel"))).toEqual(["Sve", "Preuzimanje", "Dostava"]);
     expect(pillNames(t("myOrders.filters.statusLabel"))).toEqual(["Svi", "Na čekanju", "Prihvaćena", "U dostavi"]);
-    expect(within(panel()).queryByRole("group", { name: t("myOrders.filters.periodLabel") })).not.toBeInTheDocument();
+    expect(within(panel()).queryByTestId("date-range")).not.toBeInTheDocument();
 
     await userEvent.click(pill(t("myOrders.filters.methodLabel"), "Dostava"));
     await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "active", method: "delivery" }));
@@ -166,12 +168,12 @@ describe("MyOrdersPage", () => {
     await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "active", sort: "pickup", q: "pile", method: "pickup" }));
 
     await userEvent.click(tab("history"));
-    await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all", sort: "newest", q: "", method: "", status: "", period: "" }));
+    await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all", sort: "newest", q: "", method: "", status: "", from: "", to: "" }));
     expect(searchField()).toHaveValue("");
     expect(chips()).toEqual([]);
     expect(sortSelect()).not.toBeInTheDocument();
 
-    // History has every status and the period.
+    // History has every status and the order dates Od/Do.
     await openFilters();
     expect(pillNames(t("myOrders.filters.statusLabel"))).toEqual([
       "Svi",
@@ -182,17 +184,52 @@ describe("MyOrdersPage", () => {
       "Odbijeno",
       "Otkazano",
     ]);
-    expect(pillNames(t("myOrders.filters.periodLabel"))).toEqual(["Sve", "Danas", "Zadnjih 7 dana", "Ovaj mjesec"]);
-    await userEvent.click(pill(t("myOrders.filters.periodLabel"), "Zadnjih 7 dana"));
+    expect(within(panel()).getByRole("group", { name: t("myOrders.filters.periodLabel") })).toBeInTheDocument();
     await userEvent.click(pill(t("myOrders.filters.statusLabel"), "Odbijeno"));
-    await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all", period: "7d", status: "Rejected" }));
+    await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all", status: "Rejected" }));
     await userEvent.keyboard("{Escape}");
-    expect(chips()).toEqual(["Odbijeno", "Zadnjih 7 dana"]);
+    expect(chips()).toEqual(["Odbijeno"]);
 
     await userEvent.click(tab("active"));
     await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "active", sort: "pickup", status: "" }));
-    expect(lastListParams()).not.toHaveProperty("period");
+    expect(lastListParams()).not.toHaveProperty("from");
     expect(sortSelect()).toHaveValue("pickup");
+  });
+
+  it("filters History by the order dates Od and Do, with one chip", async () => {
+    renderPage((params) => (params.scope === "all" ? [order(9, "Jogurt", { status: "Completed" })] : [order(1)]));
+    await screen.findByText("Piletina 2 kg");
+    await userEvent.click(tab("history"));
+    await openFilters();
+    const range = within(panel()).getByRole("group", { name: t("myOrders.filters.periodLabel") });
+    await userEvent.type(within(range).getByLabelText(t("myOrders.filters.from")), "01102026");
+    await userEvent.tab();
+    await waitFor(() => expect(lastListParams()).toMatchObject({ scope: "all", from: "2026-10-01", to: "" }));
+    await userEvent.type(within(range).getByLabelText(t("myOrders.filters.to")), "15102026");
+    await userEvent.tab();
+    await waitFor(() => expect(lastListParams()).toMatchObject({ from: "2026-10-01", to: "2026-10-15" }));
+    await userEvent.keyboard("{Escape}");
+    expect(chips()).toEqual(["Naručeno: 01/10/2026 – 15/10/2026"]);
+
+    // The chip's × clears both dates.
+    await userEvent.click(screen.getByRole("button", { name: t("listFilters.remove", { filter: t("myOrders.filters.periodLabel") }) }));
+    await waitFor(() => expect(lastListParams()).toMatchObject({ from: "", to: "" }));
+    expect(chips()).toEqual([]);
+  });
+
+  it("filters by one date only, and a start after the end drops the end", async () => {
+    renderPage((params) => (params.scope === "all" ? [order(9, "Jogurt", { status: "Completed" })] : [order(1)]));
+    await screen.findByText("Piletina 2 kg");
+    await userEvent.click(tab("history"));
+    await openFilters();
+    await userEvent.type(within(panel()).getByLabelText(t("myOrders.filters.to")), "10102026");
+    await userEvent.tab();
+    await waitFor(() => expect(lastListParams()).toMatchObject({ from: "", to: "2026-10-10" }));
+    await userEvent.type(within(panel()).getByLabelText(t("myOrders.filters.from")), "12102026");
+    await userEvent.tab();
+    await waitFor(() => expect(lastListParams()).toMatchObject({ from: "2026-10-12", to: "" }));
+    await userEvent.keyboard("{Escape}");
+    expect(chips()).toEqual(["Od 12/10/2026"]);
   });
 
   describe("the order card", () => {
@@ -207,7 +244,7 @@ describe("MyOrdersPage", () => {
       expect(within(waiting).getByRole("button")).toHaveTextContent(t("myOrders.steps.waiting"));
       expect(within(waiting).getByTestId("step-detail")).toHaveTextContent("do 15:02");
       expect(within(card("K1PM")).getByTestId("answer-deadline")).toHaveTextContent("Prodavnica treba odgovoriti do 15:02");
-      expect(within(card("K1PM")).getByText(/poslano 11:48/)).toBeInTheDocument();
+      expect(within(card("K1PM")).getByText(/naručeno 11:48/)).toBeInTheDocument();
       expect(within(card("K1PM")).getByTestId("order-when")).toHaveTextContent("Danas · 18:00");
       expect(within(card("K1PM")).getByRole("button", { name: t("myOrders.card.cancelLabel", { code: "#K1PM" }) })).toBeInTheDocument();
       expect(within(card("K1PM")).getByRole("link", { name: t("storePage.orders.detailsLabel", { code: "#K1PM" }) })).toHaveAttribute(
@@ -358,7 +395,7 @@ describe("MyOrdersPage", () => {
       ]);
       await screen.findByText("Grožđe 2 kg");
 
-      // The pending order: Poslano and Čeka odgovor are buttons, the steps ahead are not.
+      // The pending order: Naručeno and Čeka odgovor are buttons, the steps ahead are not.
       expect(steps("K13PM").getAllByRole("button")).toHaveLength(2);
       expect(steps("K13PM").queryByRole("tooltip")).not.toBeInTheDocument();
 
@@ -391,7 +428,7 @@ describe("MyOrdersPage", () => {
       act(() => waiting.focus());
       expect(steps("K13PM").getByRole("tooltip")).toHaveTextContent("Prodavnica treba odgovoriti do 15:02.");
       expect(steps("K13PM").getByRole("tooltip")).toHaveTextContent("Ako ne odgovori, narudžba se automatski odbija.");
-      const sent = steps("K13PM").getByRole("button", { name: /Poslano/ });
+      const sent = steps("K13PM").getByRole("button", { name: /Naručeno/ });
       act(() => sent.focus());
       expect(steps("K13PM").getByRole("tooltip")).toHaveTextContent("Djelimično prihvatanje: dozvoljeno");
     });
@@ -454,6 +491,16 @@ describe("MyOrdersPage", () => {
       expect(within(table()).getByText(t("notifications.groups.yesterday"))).toBeInTheDocument();
       expect(within(table()).getByText("1 narudžba")).toBeInTheDocument();
       expect(within(table()).getByText("2 narudžbe")).toBeInTheDocument();
+
+      // Each day's heading: a calendar leaf (month and day), the title, and the full date under "Jučer".
+      const days = within(table()).getAllByTestId("day-heading");
+      expect(days).toHaveLength(2);
+      expect(within(days[0]!).getByTestId("day-leaf")).toHaveTextContent("OKT19");
+      expect(within(days[0]!).getByTestId("day-title")).toHaveTextContent(t("notifications.groups.yesterday"));
+      expect(within(days[0]!).getByTestId("day-date")).toHaveTextContent(fullDate("2026-10-19", t));
+      expect(within(days[1]!).getByTestId("day-leaf")).toHaveTextContent("OKT18");
+      expect(within(days[1]!).getByTestId("day-title")).toHaveTextContent(fullDate("2026-10-18", t));
+      expect(within(days[1]!).queryByTestId("day-date")).not.toBeInTheDocument();
 
       // A rejected order: the sent total struck through, not 0.00.
       const rejected = within(screen.getByTestId("history-row-31"));

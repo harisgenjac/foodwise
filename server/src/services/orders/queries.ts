@@ -8,6 +8,7 @@ import { storeLogo } from "../../utils/branding.js";
 import { AUTO_REJECT_AT, IS_OVERDUE, ORDER_STATUSES } from "./status.js";
 import { PROBLEM_REPORT_HOURS } from "../orderProblems.js";
 import { COURIER_RATING_DAYS } from "../courierRatings.js";
+import { isValidDate } from "../../utils/dates.js";
 
 // The order lists and details of /api/orders: the order lists (filters, sorts, scopes,
 // paging) over orders. A list row is the order with its items and totals:
@@ -84,11 +85,10 @@ const optionalParam = (value: unknown, allowed: Record<string, string>): string 
 const isOrderStatus = (value: unknown): value is string =>
   typeof value === "string" && (ORDER_STATUSES as readonly string[]).includes(value);
 
-// Periods by created_at, a timestamp in the session time zone, so CURRENT_DATE is local midnight.
-const MINE_PERIODS: Record<string, string> = {
-  today: "orders.created_at >= CURRENT_DATE",
-  "7d": "orders.created_at >= CURRENT_DATE - 6",
-  month: "orders.created_at >= date_trunc('month', CURRENT_DATE)",
+// The order date range: YYYY-MM-DD or empty (not set). Null for a date that is not valid.
+const optionalDate = (value: unknown) => {
+  if (value === undefined || value === "") return undefined;
+  return isValidDate(value) ? value : null;
 };
 
 const STATUS_ORDER = `CASE orders.status
@@ -104,8 +104,8 @@ const MINE_SORTS: Record<string, string> = {
 const MINE_METHODS: Record<string, string> = { pickup: "PICKUP", delivery: "DELIVERY" };
 
 // FROM/WHERE shared by GET /orders/mine and /mine/summary: the restaurant's own orders with the
-// search (q: a product, the store's name or the code), product name, method, store and period
-// filters (and status for the list). Null for an invalid filter.
+// search (q: a product, the store's name or the code), product name, method, store and order date
+// range (from/to, whole local days) filters (and status for the list). Null for an invalid filter.
 const mineFilters = (query: Request["query"], restaurantId: number, includeStatus: boolean) => {
   const { status, name, q, store_id } = query;
   let from = `FROM orders
@@ -149,9 +149,18 @@ const mineFilters = (query: Request["query"], restaurantId: number, includeStatu
     values.push(storeId);
     from += ` AND orders.store_id = $${values.length}`;
   }
-  const period = optionalParam(query.period, MINE_PERIODS);
-  if (period === null) return null;
-  if (period) from += ` AND ${period}`;
+  // created_at is a timestamp in the session time zone, so a date compares as local midnight.
+  const dateFrom = optionalDate(query.from);
+  const dateTo = optionalDate(query.to);
+  if (dateFrom === null || dateTo === null || (dateFrom && dateTo && dateFrom > dateTo)) return null;
+  if (dateFrom) {
+    values.push(dateFrom);
+    from += ` AND orders.created_at >= $${values.length}::date`;
+  }
+  if (dateTo) {
+    values.push(dateTo);
+    from += ` AND orders.created_at < $${values.length}::date + 1`;
+  }
   return { from, values };
 };
 

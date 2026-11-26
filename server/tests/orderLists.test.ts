@@ -78,7 +78,7 @@ describe("order lists", () => {
     });
   });
 
-  describe("GET /api/orders/mine scope, sort and period", () => {
+  describe("GET /api/orders/mine scope, sort and date range", () => {
     // Five orders, one per status, sent one hour apart (Pending newest) unless moved.
     const seed = async () => {
       const product = await createProduct(store, { name: "Piletina", quantity: 50 });
@@ -150,27 +150,43 @@ describe("order lists", () => {
       expect(idsOf(allByPickup)).toEqual([ids.Cancelled, ids.Completed, ids.Rejected, ids.Confirmed, ids.Pending]);
     });
 
-    it.each([
-      ["today", "CURRENT_DATE", "CURRENT_DATE - interval '1 minute'"],
-      ["7d", "CURRENT_DATE - 6", "CURRENT_DATE - interval '6 days 1 minute'"],
-      ["month", "date_trunc('month', CURRENT_DATE)", "date_trunc('month', CURRENT_DATE) - interval '1 minute'"],
-    ])("period=%s counts from the local midnight", async (period, inside, outside) => {
+    it("filters by the order date range, whole local days from midnight to midnight", async () => {
       const product = await createProduct(store);
-      const kept = await order(restaurant, product.id);
-      const dropped = await order(restaurant, product.id);
-      await setCreatedAt(kept, inside);
-      await setCreatedAt(dropped, outside);
+      const before = await order(restaurant, product.id);
+      const first = await order(restaurant, product.id);
+      const last = await order(restaurant, product.id);
+      const after = await order(restaurant, product.id);
+      await setCreatedAt(before, "DATE '2026-03-10' - interval '1 minute'");
+      await setCreatedAt(first, "DATE '2026-03-10'");
+      await setCreatedAt(last, "DATE '2026-03-12' + interval '23 hours 59 minutes'");
+      await setCreatedAt(after, "DATE '2026-03-13'");
 
-      const response = await restaurant.get("/api/orders/mine").query({ period });
-      expect(idsOf(response)).toEqual([kept]);
-      expect(response.body.total).toBe(1);
-      const summary = await restaurant.get("/api/orders/mine/summary").query({ period });
-      expect(summary.body.summary.total).toBe(1);
+      const both = await restaurant.get("/api/orders/mine").query({ from: "2026-03-10", to: "2026-03-12" });
+      expect(idsOf(both)).toEqual([last, first]);
+      expect(both.body.total).toBe(2);
+      const summary = await restaurant.get("/api/orders/mine/summary").query({ from: "2026-03-10", to: "2026-03-12" });
+      expect(summary.body.summary.total).toBe(2);
+      // One day: from and to the same date.
+      expect(idsOf(await restaurant.get("/api/orders/mine").query({ from: "2026-03-10", to: "2026-03-10" }))).toEqual([first]);
+      // Only one bound.
+      expect(idsOf(await restaurant.get("/api/orders/mine").query({ from: "2026-03-12" }))).toEqual([after, last]);
+      expect(idsOf(await restaurant.get("/api/orders/mine").query({ to: "2026-03-10" }))).toEqual([first, before]);
     });
 
-    it("treats an empty period, scope and sort as not set", async () => {
+    it.each([
+      [{ from: "2026-13-01" }],
+      [{ to: "2026-02-31" }],
+      [{ from: "abc" }],
+      [{ from: "2026-03-12", to: "2026-03-10" }],
+    ])("refuses the date range %o", async (query) => {
+      const response = await restaurant.get("/api/orders/mine").query(query);
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Invalid filter.");
+    });
+
+    it("treats an empty date range, scope and sort as not set", async () => {
       await seed();
-      const response = await restaurant.get("/api/orders/mine").query({ period: "", scope: "", sort: "" });
+      const response = await restaurant.get("/api/orders/mine").query({ from: "", to: "", scope: "", sort: "" });
       expect(response.status).toBe(200);
       expect(response.body.total).toBe(5);
     });
@@ -186,7 +202,7 @@ describe("order lists", () => {
 
       const page = await restaurant
         .get("/api/orders/mine")
-        .query({ scope: "all", sort: "newest", name: "pilet", store_id: other.store_id, period: "7d", limit: 2 });
+        .query({ scope: "all", sort: "newest", name: "pilet", store_id: other.store_id, from: "2000-01-01", limit: 2 });
       expect(page.body.total).toBe(5);
       expect(idsOf(page)).toEqual([ids.Pending, ids.Confirmed]);
 

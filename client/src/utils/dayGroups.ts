@@ -7,12 +7,8 @@ export interface DayGroup<T> {
   items: T[];
 }
 
-// "Today", "Tomorrow", "Yesterday" or "Wednesday, 22 October" (names from i18n, browsers lack Bosnian ones).
-export const dayTitle = (dateInput: string, t: TFunction) => {
-  const offset = daysFromToday(dateInput);
-  if (offset === 0) return t("notifications.groups.today");
-  if (offset === 1) return t("pickups.sections.tomorrow");
-  if (offset === -1) return t("notifications.groups.yesterday");
+// "Wednesday, 22 October" (names from i18n, browsers lack Bosnian ones).
+export const fullDate = (dateInput: string, t: TFunction) => {
   const date = new Date(`${dateInput}T00:00:00`);
   const weekdays = t("dashboard.weekdays", { returnObjects: true }) as string[];
   const months = t("dashboard.months", { returnObjects: true }) as string[];
@@ -21,6 +17,18 @@ export const dayTitle = (dateInput: string, t: TFunction) => {
     day: date.getDate(),
     month: months[date.getMonth()],
   });
+};
+
+// Today, tomorrow or yesterday: the title is a word, not the date.
+export const isRelativeDay = (dateInput: string) => Math.abs(daysFromToday(dateInput)) <= 1;
+
+// "Today", "Tomorrow", "Yesterday" or "Wednesday, 22 October".
+export const dayTitle = (dateInput: string, t: TFunction) => {
+  const offset = daysFromToday(dateInput);
+  if (offset === 0) return t("notifications.groups.today");
+  if (offset === 1) return t("pickups.sections.tomorrow");
+  if (offset === -1) return t("notifications.groups.yesterday");
+  return fullDate(dateInput, t);
 };
 
 // Groups an already sorted list by local day, keeping the server order inside each day.

@@ -312,11 +312,11 @@ describe("OrderDetailsPage for a restaurant: the hero", () => {
   it("has step info only on the steps reached, on focus and hover", async () => {
     renderPage(pickupOrder({ auto_reject_at: at(15, 0) }));
     await screen.findByTestId("order-hero");
-    expect(within(hero()).getAllByRole("button", { name: /Poslano|Čeka odgovor/ })).toHaveLength(2);
+    expect(within(hero()).getAllByRole("button", { name: /Naručeno|Čeka odgovor/ })).toHaveLength(2);
     expect(within(steps()[2]!).queryByRole("button")).not.toBeInTheDocument();
     const dot = within(steps()[0]!).getByTestId("step-marker");
     fireEvent.pointerEnter(dot, { pointerType: "mouse" });
-    expect(within(hero()).getByRole("tooltip")).toHaveTextContent("Poslano danas u 09:30");
+    expect(within(hero()).getByRole("tooltip")).toHaveTextContent("Naručeno danas u 09:30");
     fireEvent.pointerLeave(dot, { pointerType: "mouse" });
     expect(within(hero()).queryByRole("tooltip")).not.toBeInTheDocument();
   });

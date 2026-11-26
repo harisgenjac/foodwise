@@ -34,6 +34,11 @@ function DateInput({ label, value, onChange, min, max, required = false, error, 
 
   const commit = () => {
     if (draft === null) return;
+    if (draft.trim() === "") {
+      if (value) onChange("");
+      setDraft(null);
+      return;
+    }
     const parsed = parseDisplayDate(draft);
     if (parsed && parsed !== value) onChange(parsed);
     setDraft(null);

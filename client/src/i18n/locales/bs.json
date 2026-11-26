@@ -2700,7 +2700,12 @@
       "search": "Proizvod, prodavnica ili kod (#K7PM)",
       "methodLabel": "Način",
       "statusLabel": "Status",
-      "periodLabel": "Poslano",
+      "periodLabel": "Naručeno",
+      "from": "Od",
+      "to": "Do",
+      "range": "Naručeno: {{from}} – {{to}}",
+      "fromOnly": "Od {{date}}",
+      "toOnly": "Do {{date}}",
       "method": {
         "all": "Sve",
         "pickup": "Preuzimanje",
@@ -2714,12 +2719,6 @@
         "Completed": "Preuzeto / isporučeno",
         "Rejected": "Odbijeno",
         "Cancelled": "Otkazano"
-      },
-      "period": {
-        "all": "Sve",
-        "today": "Danas",
-        "7d": "Zadnjih 7 dana",
-        "month": "Ovaj mjesec"
       }
     },
     "method": {
@@ -2735,8 +2734,8 @@
     },
     "card": {
       "order": "Narudžba",
-      "sent": "poslano {{when}} ({{ago}})",
-      "sentOn": "poslano {{when}}",
+      "sent": "naručeno {{when}} ({{ago}})",
+      "sentOn": "naručeno {{when}}",
       "yesterday": "jučer {{time}}",
       "total": "Ukupno",
       "oldTotal": "Prije:",
@@ -2747,7 +2746,7 @@
     "showMore": "Prikaži još",
     "steps": {
       "label": "Tok narudžbe {{code}}",
-      "sent": "Poslano",
+      "sent": "Naručeno",
       "waiting": "Čeka odgovor",
       "accepted": "Prihvaćeno",
       "pickup": "Preuzimanje",
@@ -2770,7 +2769,7 @@
       "failed": "nije uspjelo"
     },
     "info": {
-      "sentAt": "Poslano {{when}}",
+      "sentAt": "Naručeno {{when}}",
       "partialAllowed": "Djelimično prihvatanje: dozvoljeno",
       "partialNotAllowed": "Djelimično prihvatanje: nije dozvoljeno",
       "answerBy": "Prodavnica treba odgovoriti do {{time}}.",
@@ -2813,6 +2812,7 @@
       "cashPaid": "Kuriru plaćeno {{cash}} gotovinom."
     },
     "history": {
+      "monthsShort": ["JAN", "FEB", "MAR", "APR", "MAJ", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEC"],
       "table": "Historija narudžbi",
       "order": "Narudžba",
       "store": "Prodavnica",
