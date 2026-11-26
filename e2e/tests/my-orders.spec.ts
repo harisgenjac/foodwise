@@ -141,7 +141,7 @@ test("a restaurant follows, filters and cancels its orders on My orders", async 
     await expect(rows).toHaveCount(1);
     await expect(rows.getByTestId("order-status")).toHaveText("Otkazano");
     await rows.getByRole("link", { name: `Detalji narudžbe #${orders.pending.code}` }).click();
-    await expect(page.getByRole("heading", { level: 1, name: `Narudžba #${orders.pending.code}` })).toBeVisible();
+    await expect(page.getByTestId("order-hero").getByText(`Narudžba #${orders.pending.code}`, { exact: true })).toBeVisible();
   });
 
   await test.step("Na 375 px ništa ne izlazi u stranu", async () => {

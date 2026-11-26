@@ -71,9 +71,11 @@ test("a restaurant orders with delivery from the cart, and the store accepts it 
 
   await test.step("Stranica narudžbe pokazuje dostavu", async () => {
     await page.getByRole("link", { name: "Pogledaj narudžbu" }).click();
+    await expect(page.getByTestId("money-card")).toContainText("+ dostava okvirno");
+    // The address is under "Detalji narudžbe" (collapsed at first).
+    await page.getByRole("button", { name: /Detalji narudžbe/ }).click();
     await expect(page.getByText("Adresa dostave")).toBeVisible();
     await expect(page.getByText("Branilaca 2, Visoko")).toBeVisible();
-    await expect(page.getByText("Cijena dostave (okvirno)")).toBeVisible();
   });
 
   await test.step("Prodavnica prihvata s vremenom spremnosti, dostava se naručuje", async () => {
@@ -98,8 +100,10 @@ test("a restaurant orders with delivery from the cart, and the store accepts it 
 
   await test.step("Restoran vidi konačnu cijenu i iznos za kurira", async () => {
     await reload(page);
-    await expect(page.getByText("Dostava naručena, čeka kurira")).toBeVisible();
-    await expect(page.getByText("Cijena dostave", { exact: true })).toBeVisible();
-    await expect(page.getByText("Kuriru se plaća (roba + dostava)")).toBeVisible();
+    await expect(page.getByTestId("hero-title")).toHaveText("Prihvaćeno");
+    await expect(page.getByTestId("hero-line")).toHaveText(/^Dostavna služba traži kurira · spremno za kurira u \d{2}:\d{2}$/);
+    const money = page.getByTestId("money-card");
+    await expect(money).toContainText("Kuriru plaćate gotovinom");
+    await expect(money).toContainText(/Roba .+ \+ dostava .+/);
   });
 });

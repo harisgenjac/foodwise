@@ -41,7 +41,7 @@ test("a store cancels a pickup the restaurant missed and the food is offered aga
   await test.step("Restoran dobija obavijest, a narudžba je otkazana", async () => {
     await open(restaurant, "/notifications");
     await restaurant.getByText(`Narudžba #${code} je otkazana jer nije preuzeta na vrijeme.`).click();
-    await expect(restaurant.getByRole("heading", { level: 1, name: `Narudžba #${code}` })).toBeVisible();
+    await expect(restaurant.getByTestId("order-hero").getByText(`Narudžba #${code}`, { exact: true })).toBeVisible();
     await expect(restaurant.getByText("Otkazano", { exact: true }).first()).toBeVisible();
   });
 
