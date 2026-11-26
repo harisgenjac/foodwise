@@ -68,11 +68,14 @@ function timeTile(order: OrderDetails, t: TFunction, now: number): Tile {
     }
     if (deliveryFailed(order)) return tile(c("delivery"), c("failed"), capitalize(deliveryFailureText(order, t)));
     if (courierComing(order) && arrival) {
-      // Counts down to the estimate, "Svakog trenutka" for 5 minutes after it, then how late.
+      // Counts down to the estimate, "Svakog trenutka" for 5 minutes after it, then how late with the
+      // original estimate (the hero shows the moved arrival time).
       const timing = courierTiming(arrival, now);
       const at = c("arrivalAt", { time: formatClock(arrival) });
       if (timing.kind === "in") return tile(c("courierIn"), durationText(timing.minutes, t), at);
-      if (timing.kind === "late") return tile(c("courierLate"), durationText(timing.minutes, t), at);
+      if (timing.kind === "late") {
+        return tile(c("courierLate"), durationText(timing.minutes, t), c("dueAt", { time: formatClock(arrival) }));
+      }
       return tile(c("courierArriving"), c("now"), at);
     }
     return tile(c("delivery"), arrival ? cardDayTime(arrival, t) : "–", c("findingCourier"));

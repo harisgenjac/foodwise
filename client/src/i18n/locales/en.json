@@ -2827,6 +2827,7 @@
       "failed": "Failed",
       "courierIn": "The courier arrives in",
       "courierLate": "The courier is late",
+      "dueAt": "Was due at {{time}}",
       "courierArriving": "The courier arrives",
       "now": "Any minute now",
       "arrivalAt": "Arrival at {{time}}",

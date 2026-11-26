@@ -60,6 +60,15 @@ export const courierTiming = (arrival: string, now: number): CourierTiming => {
   return late > LATE_GRACE_MINUTES ? { kind: "late", minutes: late } : { kind: "now" };
 };
 
+// A late courier's arrival as the page shows it: the estimate moved by the delay, so it is never in
+// the past (the time card keeps the original estimate).
+export const delayedArrival = (arrival: string, minutesLate: number) =>
+  new Date(new Date(arrival).getTime() + minutesLate * 60000).toISOString();
+
+// The arrival time to show next to the timing: the estimate, or the moved one once late.
+const shownArrival = (arrival: string, timing: CourierTiming) =>
+  formatClock(timing.kind === "late" ? delayedArrival(arrival, timing.minutes) : arrival);
+
 // "7 min", "2 h", "1 h 15 min".
 export const durationText = (minutes: number, t: TFunction) => {
   if (minutes < 60) return t("orderPage.duration.minutes", { minutes });
@@ -93,10 +102,10 @@ const arrivesIn = (timing: CourierTiming, t: TFunction) => {
   return t("orderPage.headline.arrivesNow");
 };
 
-// "u restoranu za 40 min (12:00)" / "u restoranu svakog trenutka (12:00)" / "u restoranu kasni 7 min (12:00)".
+// "u restoranu za 40 min (12:00)" / "u restoranu svakog trenutka (12:00)" / "u restoranu kasni 7 min (12:07)".
 const atRestaurant = (arrival: string, now: number, t: TFunction) => {
   const timing = courierTiming(arrival, now);
-  const time = formatClock(arrival);
+  const time = shownArrival(arrival, timing);
   if (timing.kind === "in") return t("orderPage.headline.atRestaurantIn", { duration: durationText(timing.minutes, t), time });
   if (timing.kind === "late") return t("orderPage.headline.atRestaurantLate", { duration: durationText(timing.minutes, t), time });
   return t("orderPage.headline.atRestaurantNow", { time });
@@ -151,9 +160,11 @@ export const orderHeadline = (order: OrderDetails, t: TFunction, now: number): H
     }
     const arrival = deliveryArrival(order);
     if (delivery?.picked_up_at || delivery?.status === "PICKED_UP") {
-      const line = arrival
-        ? `${arrivesIn(courierTiming(arrival, now), t)} · ${h("arrivalAt", { time: formatClock(arrival) })}`
-        : h("courierHasGoods");
+      const timing = arrival ? courierTiming(arrival, now) : null;
+      const line =
+        arrival && timing
+          ? `${arrivesIn(timing, t)} · ${h("arrivalAt", { time: shownArrival(arrival, timing) })}`
+          : h("courierHasGoods");
       return { title: h("onTheWay"), line, tone: "default" };
     }
     if (delivery?.status === "COURIER_ASSIGNED") {
