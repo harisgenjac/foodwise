@@ -2965,6 +2965,9 @@
       "changes_other": "{{count}} promjena",
       "noHistory": "Još nema promjena."
     },
+    "details": {
+      "orderedAt": "Naručeno"
+    },
     "store": {
       "address": "Adresa",
       "phone": "Telefon",

@@ -2896,6 +2896,9 @@
       "changes_other": "{{count}} changes",
       "noHistory": "No changes yet."
     },
+    "details": {
+      "orderedAt": "Ordered"
+    },
     "store": {
       "address": "Address",
       "phone": "Phone",

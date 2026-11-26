@@ -413,7 +413,7 @@ describe("OrderDetailsPage for a restaurant: the cards", () => {
     const labels = within(panel)
       .getAllByTestId("detail-row")
       .map((row) => row.querySelector("dt")?.textContent);
-    expect(labels).toEqual([t("orders.delivery.address"), t("orders.sentAt"), t("orders.partialSetting")]);
+    expect(labels).toEqual([t("orders.delivery.address"), t("orderPage.details.orderedAt"), t("orders.partialSetting")]);
     expect(panel).toHaveTextContent("Titova 20, Sarajevo");
     expect(panel).not.toHaveTextContent(t("orders.delivery.cash"));
     expect(panel).not.toHaveTextContent(t("orders.delivery.statusLabel"));

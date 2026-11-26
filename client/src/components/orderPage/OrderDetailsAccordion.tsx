@@ -82,7 +82,7 @@ function OrderDetailsAccordion({ order }: { order: OrderDetails }) {
   if (order.fulfilment_method === "DELIVERY") {
     rows.push({ label: t("orders.delivery.address"), value: order.delivery_address ?? "–" });
   }
-  rows.push({ label: t("orders.sentAt"), value: formatOrderDateTime(order.created_at) });
+  rows.push({ label: t("orderPage.details.orderedAt"), value: formatOrderDateTime(order.created_at) });
   rows.push({ label: t("orders.partialSetting"), value: order.accept_partial ? t("orders.partialOn") : t("orders.partialOff") });
   const problems = order.problems ?? [];
 
