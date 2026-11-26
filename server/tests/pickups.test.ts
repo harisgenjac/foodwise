@@ -16,7 +16,6 @@ import {
 const STORE_A = "pickups-store-a@test.com";
 const STORE_B = "pickups-store-b@test.com";
 const RESTAURANT_A = "pickups-restaurant-a@test.com";
-const RESTAURANT_B = "pickups-restaurant-b@test.com";
 
 let store: Agent;
 let restaurant: Agent;
@@ -76,7 +75,7 @@ describe("Pickups", () => {
   });
 
   afterEach(async () => {
-    await cleanupUsers([STORE_A, STORE_B, RESTAURANT_A, RESTAURANT_B]);
+    await cleanupUsers([STORE_A, STORE_B, RESTAURANT_A]);
   });
 
   describe("GET /api/orders/pickups", () => {
@@ -105,30 +104,28 @@ describe("Pickups", () => {
       expect(done.body.orders[0].picked_up_at).not.toBeNull();
     });
 
-    it("returns the other party: the restaurant to the store and the store to the restaurant", async () => {
+    it("returns the restaurant on the other side of the handover", async () => {
       await pool.query("UPDATE users SET business_name = 'Bistro A', phone = '061111111' WHERE email = $1", [RESTAURANT_A]);
-      await pool.query("UPDATE users SET business_name = 'Market A' WHERE email = $1", [STORE_A]);
       const product = await createProduct(store);
       await insertItem(product.id, RESTAURANT_A);
 
       const storeView = await store.get("/api/orders/pickups?scope=today");
       expect(storeView.body.orders[0]).toMatchObject({ business_name: "Bistro A", party_phone: "061111111" });
-
-      const restaurantView = await restaurant.get("/api/orders/pickups?scope=today");
-      expect(restaurantView.body.orders[0]).toMatchObject({
-        business_name: "Market A",
-      });
     });
 
-    it("shows only the caller's own pickups", async () => {
+    it("shows only the store's own pickups", async () => {
       const otherStore = await registerAndLogin(STORE_B, "STORE");
-      const otherRestaurant = await registerAndLogin(RESTAURANT_B, "RESTAURANT");
       const product = await createProduct(store);
       await insertItem(product.id, RESTAURANT_A);
 
       expect((await otherStore.get("/api/orders/pickups?scope=today")).body.orders).toEqual([]);
-      expect((await otherRestaurant.get("/api/orders/pickups?scope=today")).body.orders).toEqual([]);
-      expect((await restaurant.get("/api/orders/pickups?scope=today")).body.orders).toHaveLength(1);
+      expect((await store.get("/api/orders/pickups?scope=today")).body.orders).toHaveLength(1);
+    });
+
+    it("is the store's page: a restaurant gets 403", async () => {
+      const response = await restaurant.get("/api/orders/pickups?scope=today");
+      expect(response.status).toBe(403);
+      expect(response.body.error).toBe("You do not have the required role for this action.");
     });
 
     it("filters by product name", async () => {
@@ -149,18 +146,22 @@ describe("Pickups", () => {
   });
 
   describe("GET /api/orders/pickups/counts", () => {
-    it("counts today, overdue, upcoming and completed pickups for both sides", async () => {
+    it("counts today, overdue, upcoming and completed pickups", async () => {
       const product = await createProduct(store, { quantity: 20 });
       await insertItem(product.id, RESTAURANT_A, { days: -1 });
       await insertItem(product.id, RESTAURANT_A, { days: 0, time: "00:00:01" });
       await insertItem(product.id, RESTAURANT_A, { days: 3 });
       await insertItem(product.id, RESTAURANT_A, { status: "Completed", days: -1 });
 
-      const expected = { today: 2, overdue: 1, upcoming: 1, completed: 1 };
       const storeCounts = await store.get("/api/orders/pickups/counts");
       expect(storeCounts.status).toBe(200);
-      expect(storeCounts.body.counts).toEqual(expected);
-      expect((await restaurant.get("/api/orders/pickups/counts")).body.counts).toEqual(expected);
+      expect(storeCounts.body.counts).toEqual({ today: 2, overdue: 1, upcoming: 1, completed: 1 });
+    });
+
+    it("is the store's: a restaurant gets 403", async () => {
+      const response = await restaurant.get("/api/orders/pickups/counts");
+      expect(response.status).toBe(403);
+      expect(response.body.error).toBe("You do not have the required role for this action.");
     });
   });
 

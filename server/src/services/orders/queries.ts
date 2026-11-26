@@ -313,53 +313,34 @@ export const listAdminOrders = async (query: Request["query"]) => {
 
 const PICKUP_SCOPES =["today", "upcoming", "completed"];
 
-// The pickups page: the caller's orders through orders.store_id (store) or restaurant_id;
-// `parties` is the other side of the handover.
-// An InDelivery order (the courier has the goods) is the store's history at once, and the
-// restaurant's Today until it is delivered.
-const pickupOwnership = (role: string) => {
-  const due = "(orders.status = 'Confirmed' AND orders.pickup_at::date <= CURRENT_DATE)";
-  return role === "STORE"
-    ? {
-        owner: "orders.store_id = $1",
-        partyJoin: "orders.restaurant_id = parties.id",
-        today: due,
-        completed: "orders.status IN ('InDelivery', 'Completed')",
-      }
-    : {
-        owner: "orders.restaurant_id = $1",
-        partyJoin: "orders.store_id = parties.id",
-        today: `(${due} OR orders.status = 'InDelivery')`,
-        completed: "orders.status = 'Completed'",
-      };
-};
+// The store's pickups page: its orders through orders.store_id; `parties` is the restaurant on the
+// other side of the handover. An InDelivery order (the courier has the goods) is history at once.
+const PICKUP_TODAY = "orders.status = 'Confirmed' AND orders.pickup_at::date <= CURRENT_DATE";
+const PICKUP_COMPLETED = "orders.status IN ('InDelivery', 'Completed')";
 
 // Today (and late ones from earlier days), upcoming, or picked up (the only paged scope: an open
 // or late pickup must never hide on a later page). Null for an invalid filter.
-export const listPickupOrders = async (userId: number, role: string, query: Request["query"]) => {
+export const listPickupOrders = async (storeId: number, query: Request["query"]) => {
   const { scope, name } = query;
   if (typeof scope !== "string" || !PICKUP_SCOPES.includes(scope)) return null;
   const page = scope === "completed" ? parsePage(query, CARD_PAGE_SIZE) : null;
   if (scope === "completed" && !page) return null;
-  const { owner, partyJoin, today, completed } = pickupOwnership(role);
   const columns = `${ORDER_COLUMNS},
     CASE WHEN orders.fulfilment_method = 'PICKUP' THEN GREATEST(CURRENT_DATE - orders.pickup_at::date, 0) ELSE 0 END AS days_overdue,
     parties.business_name, cities.name AS city, parties.phone AS party_phone,
-    parties.address AS party_address,
-    parties.pickup_schedule AS party_pickup_schedule,
     ${storeLogo("parties")} AS party_logo_url`;
   let from = `FROM orders
-    JOIN users AS parties ON ${partyJoin}
+    JOIN users AS parties ON orders.restaurant_id = parties.id
     LEFT JOIN cities ON cities.id = parties.city_id
     ${LINES}
-    WHERE ${owner}`;
-  const values: (string | number)[] = [userId];
+    WHERE orders.store_id = $1`;
+  const values: (string | number)[] = [storeId];
   if (scope === "today") {
-    from += ` AND ${today}`;
+    from += ` AND ${PICKUP_TODAY}`;
   } else if (scope === "upcoming") {
     from += ` AND orders.status = 'Confirmed' AND orders.pickup_at::date > CURRENT_DATE`;
   } else {
-    from += ` AND ${completed}`;
+    from += ` AND ${PICKUP_COMPLETED}`;
   }
   if (name) {
     values.push(`%${name}%`);
@@ -380,17 +361,16 @@ export const listPickupOrders = async (userId: number, role: string, query: Requ
   return { orders: result.rows };
 };
 
-export const countPickupOrders = async (userId: number, role: string) => {
-  const { owner, today, completed } = pickupOwnership(role);
+export const countPickupOrders = async (storeId: number) => {
   const result = await pool.query(
     `SELECT
-       COUNT(*) FILTER (WHERE ${today}) AS today,
+       COUNT(*) FILTER (WHERE ${PICKUP_TODAY}) AS today,
        COUNT(*) FILTER (WHERE ${IS_OVERDUE}) AS overdue,
        COUNT(*) FILTER (WHERE orders.status = 'Confirmed' AND orders.pickup_at::date > CURRENT_DATE) AS upcoming,
-       COUNT(*) FILTER (WHERE ${completed}) AS completed
+       COUNT(*) FILTER (WHERE ${PICKUP_COMPLETED}) AS completed
      FROM orders
-     WHERE ${owner}`,
-    [userId],
+     WHERE orders.store_id = $1`,
+    [storeId],
   );
   const row = result.rows[0];
   return {

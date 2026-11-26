@@ -396,8 +396,6 @@ describe("order lists", () => {
       await acceptItem(store, itemId);
       const pickups = await store.get("/api/orders/pickups").query({ scope: "upcoming" });
       expect(pickups.body.orders[0].party_logo_url).toBe("/uploads/logos/restaurant.png");
-      const restaurantPickups = await restaurant.get("/api/orders/pickups").query({ scope: "upcoming" });
-      expect(restaurantPickups.body.orders[0].party_logo_url).toBe("/uploads/logos/store.png");
     });
 
     it("are null without a logo or an image", async () => {

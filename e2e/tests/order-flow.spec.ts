@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ACCOUNTS, runId, storageState } from "../support/accounts.js";
-import { open, orderFromMarketplace, pickupCard, reload, storeOrderCard, toast } from "../support/ui.js";
+import { myOrderCard, open, orderFromMarketplace, pickupCard, reload, storeOrderCard, toast } from "../support/ui.js";
 
 test("a store publishes a product, a restaurant orders it and the store hands it over", async ({ browser }) => {
   const productName = `E2E Mlijeko ${runId()}`;
@@ -36,17 +36,18 @@ test("a store publishes a product, a restaurant orders it and the store hands it
   await decision.getByRole("button", { name: "Sačuvaj odluku" }).click();
   await expect(toast(store, "Odluka o narudžbi je sačuvana.")).toBeVisible();
 
-  // Both see it under Pickups, tomorrow.
-  for (const [page, otherParty] of [
-    [store, ACCOUNTS.restaurant.businessName],
-    [restaurant, ACCOUNTS.store.businessName],
-  ] as const) {
-    await open(page, "/pickups");
-    await page.getByRole("tab", { name: /Nadolazeće/ }).click();
-    await expect(page.getByRole("heading", { level: 2, name: "Sutra" })).toBeVisible();
-    await expect(pickupCard(page, productName).getByText(otherParty)).toBeVisible();
-  }
-  await expect(pickupCard(restaurant, productName).getByText("Spremno za preuzimanje")).toBeVisible();
+  // The store sees it under Pickups, tomorrow.
+  await open(store, "/pickups");
+  await store.getByRole("tab", { name: /Nadolazeće/ }).click();
+  await expect(store.getByRole("heading", { level: 2, name: "Sutra" })).toBeVisible();
+  await expect(pickupCard(store, productName).getByText(ACCOUNTS.restaurant.businessName)).toBeVisible();
+
+  // The restaurant follows it on My orders: accepted, picked up tomorrow at 14:30.
+  await open(restaurant, "/my-orders");
+  const myOrder = myOrderCard(restaurant, productName);
+  await expect(myOrder.getByText(ACCOUNTS.store.businessName)).toBeVisible();
+  await expect(myOrder.getByTestId("order-status")).toHaveText("Potvrđeno");
+  await expect(myOrder.getByTestId("order-when")).toHaveText("Sutra · 14:30");
 
   // The store marks the whole order picked up.
   await pickupCard(store, productName).getByRole("button", { name: "Označi kao preuzeto" }).click();
@@ -56,10 +57,11 @@ test("a store publishes a product, a restaurant orders it and the store hands it
     .click();
   await expect(toast(store, "Narudžba je označena kao preuzeta.")).toBeVisible();
 
-  // The restaurant sees it as picked up and gets the notification, which opens the order.
+  // The restaurant finds it picked up in its history and gets the notification, which opens the order.
   await reload(restaurant);
-  await restaurant.getByRole("tab", { name: /Preuzeto/ }).click();
-  await expect(pickupCard(restaurant, productName).getByText(/^Preuzeto /)).toBeVisible();
+  await restaurant.getByRole("tab", { name: /Historija/ }).click();
+  const historyRow = restaurant.getByRole("table", { name: "Historija narudžbi" }).getByRole("row").filter({ hasText: productName });
+  await expect(historyRow.getByRole("cell", { name: "Preuzeto", exact: true })).toBeVisible();
   await open(restaurant, "/notifications");
   await restaurant.getByText(`Preuzimanje narudžbe #${code} je potvrđeno.`).click();
   await expect(restaurant.getByTestId("order-hero").getByText(`Narudžba #${code}`, { exact: true })).toBeVisible();

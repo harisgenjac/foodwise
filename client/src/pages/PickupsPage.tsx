@@ -19,7 +19,6 @@ import { FilterField } from "../components/product/FilterBar.js";
 import { inputStyle } from "../components/form/FormField.js";
 import PickupCard from "../components/pickup/PickupCard.js";
 import PickupConfirmModal from "../components/pickup/PickupConfirmModal.js";
-import { useAuth } from "../context/AuthContext.js";
 import LoadMore from "../components/LoadMore.js";
 import { useLiveOrderRefresh } from "../context/LiveEventsContext.js";
 import { useFetch } from "../hooks/useFetch.js";
@@ -43,9 +42,7 @@ interface PickupGroup extends DayGroup<Order> {
 }
 
 function PickupsPage() {
-  const { user } = useAuth();
   const { t } = useTranslation();
-  const isStore = user?.role === "STORE";
   const [scope, setScope] = useState<Scope>("today");
   const [name, setName] = useState("");
   const [counts, setCounts] = useState<PickupCounts | null>(null);
@@ -87,7 +84,7 @@ function PickupsPage() {
     fetchCounts();
   });
 
-  // The other side's pickup or the courier's progress updates the list and the counts live.
+  // A new order, a cancellation or the courier's progress updates the list and the counts live.
   useLiveOrderRefresh(() => {
     refetch();
     fetchCounts();
@@ -117,7 +114,7 @@ function PickupsPage() {
     today: {
       icon: CalendarClock,
       title: t("pickups.empty.todayTitle"),
-      subtitle: isStore ? t("pickups.empty.todayStoreSubtitle") : t("pickups.empty.todayRestaurantSubtitle"),
+      subtitle: t("pickups.empty.todayStoreSubtitle"),
     },
     upcoming: { icon: CalendarDays, title: t("pickups.empty.upcomingTitle"), subtitle: t("pickups.empty.upcomingSubtitle") },
     completed: { icon: PackageOpen, title: t("pickups.empty.completedTitle"), subtitle: t("pickups.empty.completedSubtitle") },
@@ -127,10 +124,10 @@ function PickupsPage() {
     <div className="mx-auto max-w-5xl space-y-6 pb-10">
       <ProductPageHeader
         title={t("pickups.title")}
-        subtitle={isStore ? t("pickups.storeSubtitle") : t("pickups.restaurantSubtitle")}
+        subtitle={t("pickups.storeSubtitle")}
         icon={PackageCheck}
         {...(counts && { count: t("pickups.todayCount", { count: counts.today }) })}
-        {...(isStore && { action: { to: "/packing", label: t("pickups.packingLink"), icon: ClipboardList } })}
+        action={{ to: "/packing", label: t("pickups.packingLink"), icon: ClipboardList }}
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -214,7 +211,6 @@ function PickupsPage() {
                 <PickupCard
                   key={order.id}
                   order={order}
-                  isStore={isStore}
                   onComplete={(o) => actions.request("complete", o)}
                   onCancelOverdue={(o) => actions.request("cancel-overdue", o)}
                 />

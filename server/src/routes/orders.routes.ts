@@ -24,9 +24,9 @@ router.post("/", authenticate, authorize("RESTAURANT"), createOrder);
 router.get("/mine", authenticate, authorize("RESTAURANT"), getMineOrders);
 router.get("/mine/summary", authenticate, authorize("RESTAURANT"), getMineOrdersSummary);
 router.get("/store", authenticate, authorize("STORE"), getStoreOrders);
-router.get("/pickups", authenticate, authorize("STORE", "RESTAURANT"), getOrderPickups);
+router.get("/pickups", authenticate, authorize("STORE"), getOrderPickups);
 router.get("/packing", authenticate, authorize("STORE"), getPackingList);
-router.get("/pickups/counts", authenticate, authorize("STORE", "RESTAURANT"), getOrderPickupCounts);
+router.get("/pickups/counts", authenticate, authorize("STORE"), getOrderPickupCounts);
 // Actions are POST /orders/:id/<action>: an action with a body, not a field update.
 router.post("/:id/decision", authenticate, authorize("STORE"), decideOrderRoute);
 router.post("/:id/cancel", authenticate, authorize("RESTAURANT"), cancelOrderRoute);

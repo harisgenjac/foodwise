@@ -161,8 +161,10 @@ describe("BottomNav", () => {
   it("shows the restaurant's pages from the config", async () => {
     renderLayout(restaurant);
     await waitFor(() => expect(bottomBar()).toBeInTheDocument());
-    expect(itemLinks()).toEqual(["/dashboard", "/search", "/my-orders", "/pickups"]);
+    // Pickups is the store's page; the restaurant gets Stores in its place.
+    expect(itemLinks()).toEqual(["/dashboard", "/search", "/my-orders", "/stores"]);
     expect(within(bottomBar()!).getByRole("link", { name: t("bottomNav.search") })).toBeInTheDocument();
+    expect(within(bottomBar()!).getByRole("link", { name: t("bottomNav.stores") })).toHaveAttribute("href", "/stores");
   });
 
   it("marks only the current page as active", async () => {

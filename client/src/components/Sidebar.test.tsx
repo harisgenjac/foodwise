@@ -84,6 +84,12 @@ describe("Sidebar", () => {
     expect(apiMock.get).not.toHaveBeenCalledWith("/orders/store", expect.anything());
   });
 
+  it("gives restaurants no Pickups page: they follow their orders on My orders", async () => {
+    renderSidebar(makeUser({ role: "RESTAURANT" }));
+    expect(await screen.findByRole("link", { name: t("sidebar.myOrders") })).toBeInTheDocument();
+    expect(links()).not.toContain("/pickups");
+  });
+
   it("gives restaurants no credits page: they pay no credits", async () => {
     renderSidebar(makeUser({ role: "RESTAURANT" }));
     expect(await screen.findByRole("link", { name: t("sidebar.search") })).toBeInTheDocument();

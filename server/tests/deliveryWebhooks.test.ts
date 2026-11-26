@@ -153,9 +153,7 @@ describe("POST /api/delivery/webhooks/:provider", () => {
     expect(order.delivery.picked_up_at).not.toBeNull();
     expect(order.items[0].status).toBe("InDelivery");
     expect(order.history.at(-1)).toMatchObject({ from_status: "Confirmed", to_status: "InDelivery", source: "PROVIDER" });
-    // Still the restaurant's open order, already the store's history.
-    const restaurantToday = await restaurant.get("/api/orders/pickups?scope=today");
-    expect(restaurantToday.body.orders.map((o: { id: number }) => o.id)).toContain(orderId);
+    // Already the store's history, still the restaurant's active order.
     const storeHistory = await store.get("/api/orders/pickups?scope=completed");
     expect(storeHistory.body.orders.map((o: { id: number }) => o.id)).toContain(orderId);
     expect((await restaurant.get("/api/orders/mine?scope=active")).body.orders.map((o: { id: number }) => o.id)).toContain(orderId);

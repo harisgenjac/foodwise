@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import toast from "react-hot-toast";
 import PickupsPage from "./PickupsPage.js";
 import { apiMock, axiosError, makeOrder, makeOrderItem, makeUser, renderWithProviders, t } from "../test/utils.js";
-import type { Order, User } from "../types/index.js";
+import type { Order } from "../types/index.js";
 
 // An order of one product, named on its card ("Piletina 2 kg").
 const pickup = ({ product_name = "Piletina", ...overrides }: Partial<Order> & { product_name?: string }) =>
@@ -12,15 +12,12 @@ const pickup = ({ product_name = "Piletina", ...overrides }: Partial<Order> & { 
 const COUNTS = { today: 2, overdue: 1, upcoming: 1, completed: 3 };
 
 // Answers each scope with its own list and records the scopes asked for.
-const renderPage = (
-  lists: Partial<Record<"today" | "upcoming" | "completed", Order[]>>,
-  role: User["role"] = "STORE",
-) => {
+const renderPage = (lists: Partial<Record<"today" | "upcoming" | "completed", Order[]>>) => {
   const scopes: string[] = [];
   renderWithProviders(<PickupsPage />, {
     route: "/pickups",
     path: "/pickups",
-    user: makeUser({ role }),
+    user: makeUser({ role: "STORE" }),
     get: {
       "/orders/pickups": (params: unknown) => {
         const { scope } = params as { scope: "today" | "upcoming" | "completed" };
@@ -55,18 +52,12 @@ describe("PickupsPage", () => {
     expect(screen.getByText(/Mlijeko/)).toBeInTheDocument();
   });
 
-  it("links a store, not a restaurant, to the packing list", async () => {
+  it("links to the packing list", async () => {
     renderPage({ today: [onTime] });
     expect(await screen.findByRole("link", { name: new RegExp(t("pickups.packingLink")) })).toHaveAttribute(
       "href",
       "/packing",
     );
-  });
-
-  it("has no packing list link for a restaurant", async () => {
-    renderPage({ today: [onTime] }, "RESTAURANT");
-    expect(await screen.findByText(/Mlijeko/)).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: new RegExp(t("pickups.packingLink")) })).not.toBeInTheDocument();
   });
 
   it("loads another scope when a tab is chosen", async () => {
@@ -125,22 +116,11 @@ describe("PickupsPage", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  it("gives the restaurant no store actions", async () => {
-    renderPage({ today: [overdue, onTime] }, "RESTAURANT");
+  it("shows that the courier collects a delivery order instead of the pickup buttons", async () => {
+    renderPage({ today: [pickup({ id: 3, status: "Confirmed", fulfilment_method: "DELIVERY", product_name: "Sir" })] });
 
-    expect(await screen.findByText(/Piletina/)).toBeInTheDocument();
+    expect(await screen.findByText(t("pickups.courierCollects"))).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: t("pickups.completeButton") })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: t("pickups.cancelOverdueButton") })).not.toBeInTheDocument();
-    expect(screen.getByText(t("pickups.readyForPickup"))).toBeInTheDocument();
-  });
-
-  it("keeps a delivery the courier took on the restaurant's Today, on the way or failed", async () => {
-    const onTheWay = pickup({ id: 3, status: "InDelivery", fulfilment_method: "DELIVERY", product_name: "Sir", delivery: { status: "PICKED_UP" } as Order["delivery"] });
-    const failed = pickup({ id: 4, status: "InDelivery", fulfilment_method: "DELIVERY", product_name: "Jogurt", delivery: { status: "FAILED" } as Order["delivery"] });
-    renderPage({ today: [onTheWay, failed] }, "RESTAURANT");
-
-    expect(await screen.findByText(t("pickups.onTheWay"))).toBeInTheDocument();
-    expect(screen.getByText(t("pickups.deliveryFailedOnTheWay"))).toBeInTheDocument();
   });
 
   it("shows the store when the courier took a delivery", async () => {

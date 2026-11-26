@@ -194,11 +194,12 @@ export interface Order {
   city?: string | null;
   // The other party's logo (a branch without one: its company's); on the order lists and pickups.
   party_logo_url?: string | null;
-  // Only on GET /orders/pickups (party_address also on GET /orders/mine: the store's address).
+  // Only on the store's GET /orders/pickups.
   days_overdue?: number;
+  // The restaurant's phone, on the store's pickups and packing list.
   party_phone?: string | null;
+  // Only on GET /orders/mine: the store's address.
   party_address?: string | null;
-  party_pickup_schedule?: Schedule | null;
 }
 
 // An order on the store's packing list (GET /orders/packing): ready_time is local time, the ready

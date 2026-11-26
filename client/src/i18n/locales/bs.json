@@ -63,7 +63,8 @@
     "pickups": "Preuzimanja",
     "more": "Više",
     "orders": "Narudžbe",
-    "search": "Pretraga"
+    "search": "Pretraga",
+    "stores": "Prodavnice"
   },
   "auth": {
     "welcomeBack": "Dobrodošli nazad",
@@ -616,7 +617,6 @@
   "pickups": {
     "title": "Preuzimanja",
     "storeSubtitle": "Predajte robu restoranima i pratite današnja i buduća preuzimanja.",
-    "restaurantSubtitle": "Vaša prihvaćena preuzimanja za danas i naredne dane.",
     "tabs": {
       "today": "Danas",
       "upcoming": "Nadolazeće",
@@ -635,10 +635,8 @@
     "todayCount_one": "{{count}} preuzimanje danas",
     "todayCount_few": "{{count}} preuzimanja danas",
     "todayCount_other": "{{count}} preuzimanja danas",
-    "readyForPickup": "Spremno za preuzimanje",
     "pickedUpAt": "Preuzeto {{date}}",
     "total": "Ukupno",
-    "pickupHours": "Preuzimanje",
     "completeButton": "Označi kao preuzeto",
     "cancelOverdueButton": "Otkaži",
     "details": "Detalji",
@@ -652,7 +650,6 @@
     "empty": {
       "todayTitle": "Danas nema preuzimanja",
       "todayStoreSubtitle": "Prihvaćene narudžbe s preuzimanjem danas pojavit će se ovdje.",
-      "todayRestaurantSubtitle": "Kada prodavnica prihvati narudžbu s preuzimanjem danas, vidjet ćete je ovdje.",
       "upcomingTitle": "Nema nadolazećih preuzimanja",
       "upcomingSubtitle": "Prihvaćene narudžbe s budućim datumom preuzimanja pojavit će se ovdje.",
       "completedTitle": "Još nema preuzete robe",
@@ -662,9 +659,6 @@
     },
     "courierCollects": "Preuzima kurir",
     "courierPickedUpAt": "Kurir preuzeo {{date}}",
-    "deliveredAt": "Dostavljeno {{date}}",
-    "onTheWay": "Kurir je preuzeo, na putu",
-    "deliveryFailedOnTheWay": "Dostava nije uspjela nakon preuzimanja",
     "packingLink": "Spisak za pakovanje"
   },
   "packing": {

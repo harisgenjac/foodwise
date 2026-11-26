@@ -5,11 +5,13 @@ import type { Role } from "../types/index.js";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  // When set, users with another role are sent to their dashboard.
+  // When set, users with another role are sent to their dashboard, or to the page redirectTo
+  // names for their role.
   role?: Role | Role[];
+  redirectTo?: Partial<Record<Role, string>>;
 }
 
-function ProtectedRoute({ children, role }: ProtectedRouteProps) {
+function ProtectedRoute({ children, role, redirectTo }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -21,7 +23,7 @@ function ProtectedRoute({ children, role }: ProtectedRouteProps) {
   }
 
   if (role && !(Array.isArray(role) ? role : [role]).includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={redirectTo?.[user.role] ?? "/dashboard"} replace />;
   }
 
   return children;

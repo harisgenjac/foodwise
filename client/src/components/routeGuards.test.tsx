@@ -26,6 +26,16 @@ describe("ProtectedRoute", () => {
     expect(await screen.findByTestId("location")).toHaveTextContent("/dashboard");
   });
 
+  it("sends a role to the page the guard names for it instead of the dashboard", async () => {
+    renderWithProviders(<ProtectedRoute role="STORE" redirectTo={{ RESTAURANT: "/my-orders" }}>Secret</ProtectedRoute>, {
+      route: "/pickups",
+      path: "/pickups",
+      user: makeUser({ role: "RESTAURANT" }),
+    });
+    expect(await screen.findByTestId("location")).toHaveTextContent("/my-orders");
+    expect(screen.queryByText("Secret")).not.toBeInTheDocument();
+  });
+
   it("accepts any of several roles", async () => {
     const guarded = <ProtectedRoute role={["STORE", "RESTAURANT"]}>Secret</ProtectedRoute>;
     renderWithProviders(guarded, { user: makeUser({ role: "STORE" }) });
