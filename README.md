@@ -2,17 +2,20 @@
 
 [![CI](https://github.com/harisgenjac/foodwise/actions/workflows/ci.yml/badge.svg)](https://github.com/harisgenjac/foodwise/actions/workflows/ci.yml)
 
-A B2B marketplace where **stores** sell food that is close to its expiry date at a discount to **restaurants**. Stores recover some revenue, restaurants get cheaper ingredients, and less food is thrown away. A humanitarian donation module is planned.
+A B2B marketplace where **stores** sell food that is close to its expiry date at a discount to **restaurants**. Stores recover some revenue, restaurants get cheaper ingredients, and less food is thrown away. A humanitarian layer is being built on top of it, starting with donation offers.
 
 ## Features
 
-- **Stores** list near-expiry products (price, discounted price, quantity, expiry date), accept (in full or in part) or reject orders, and see their statistics.
-- **Restaurants** browse and filter offers, view store profiles, save favorite stores, collect offers of one store in a cart and send it as an order with a pickup time, and track order status.
-- **Admins** create store, restaurant and admin accounts, block and unblock accounts, remove offers that break the rules, and see platform statistics and an audit log. There is no public registration for stores and restaurants.
-- Partial orders, with available quantity calculated so two restaurants can never order more than exists.
-- In-app notifications for every order change.
-- A daily job marks expired products and cancels their pending orders.
-- Bosnian and English UI.
+- **Stores** publish near-expiry products (one by one, from saved templates or by CSV import), accept orders in full, in part or per item with a reason, prepare them from a daily packing list, hand them over at pickup or to a courier, and download sales and impact reports.
+- **Restaurants** search offers grouped by store and sorted by distance, browse store pages and favourites, fill a one-store cart and send it as an order for **pickup or delivery**, follow every order live, report problems and rate the courier.
+- **Store chains**: a company headquarters creates and manages its branches, chooses and pays their plans and credits, and sees an overview and reports for the whole chain.
+- **Admins** create every account by invitation (there is no public registration for businesses), block accounts, moderate products and donations, settle order disputes, answer problem reports, send announcements, and see platform statistics and an audit log.
+- **Credits**: stores pay with monthly credits (a subscription plus top-ups, approved by an admin); ordering is free for restaurants.
+- **Donation offers**: stores and restaurants publish free or donor-paid donations, including ready meals with allergens.
+- Stock is calculated so two restaurants can never order more than exists; expired products and unanswered orders are handled automatically.
+- Live updates, in-app notifications and emails for every order change.
+- Delivery runs through a `DeliveryProvider` interface, with a simulated provider until a real delivery service is connected.
+- Bosnian and English UI, with a phone layout for every role.
 
 ## Tech stack
 
@@ -20,16 +23,12 @@ A B2B marketplace where **stores** sell food that is close to its expiry date at
 |---|---|
 | Backend (`server/`) | Node.js 24, Express 5, TypeScript, PostgreSQL (raw `pg`, `node-pg-migrate`), JWT in an httpOnly cookie, `multer`, `node-cron` |
 | Frontend (`client/`) | React 19, Vite, TypeScript, Tailwind CSS, React Router 7, axios, react-i18next, lucide-react |
-| Tests | Server: Vitest + supertest against a real PostgreSQL database. Client: Vitest + Testing Library (jsdom) |
-
-## Requirements
-
-- Node.js 24
-- PostgreSQL
+| Tests | Server: Vitest + supertest against a real PostgreSQL database. Client: Vitest + Testing Library. End-to-end: Playwright |
+| CI | GitHub Actions: typecheck, tests, build and the e2e suite on every pull request |
 
 ## Getting started
 
-### 1. Clone and install
+Requirements: Node.js 24 and PostgreSQL.
 
 ```bash
 git clone https://github.com/harisgenjac/foodwise.git
@@ -37,20 +36,7 @@ cd foodwise
 npm run install:all
 ```
 
-`install:all` installs the dependencies in the root, `server/`, `client/` and `e2e/`.
-
-### 2. Create the databases
-
-```sql
-CREATE DATABASE food_saver_db;
-CREATE DATABASE food_saver_test_db;
-```
-
-The database names are only examples; the app uses whatever `DATABASE_URL` points to. The test database is needed only for running tests.
-
-### 3. Configure the environment
-
-Create `server/.env`:
+Create a database (for example `food_saver_db`) and `server/.env`:
 
 ```env
 DATABASE_URL=postgres://<user>:<password>@localhost:5432/food_saver_db
@@ -58,175 +44,42 @@ JWT_SECRET=<a long random string>
 PORT=3000
 ```
 
-Create `server/.env.test` with the same variables, pointing `DATABASE_URL` at `food_saver_test_db`.
+Every other variable is optional; `server/.env.example` lists them all with comments. Never commit `.env` files.
 
-| Variable | Required | Description |
-|---|---|---|
-| `DATABASE_URL` | yes | PostgreSQL connection string |
-| `JWT_SECRET` | yes | Secret used to sign auth tokens |
-| `PORT` | no | API port, default `3000` |
-| `NODE_ENV` | no | `production` makes the auth cookie `secure` |
-| `CLIENT_ORIGIN` | no | Frontend origin(s) allowed by CORS and the origin check (comma-separated list allowed), default `http://localhost:5173` |
-| `TRUST_PROXY` | no | Number of proxies in front of the server, so rate limits see the client's IP; off by default, `1` on Render |
-| `APP_TIMEZONE` | no | Business time zone for expiry dates and the scheduled jobs, default `Europe/Sarajevo` |
-| `UPLOADS_DIR` | no | Folder for uploaded logos and product images, default `uploads` (the tests and the e2e server set their own) |
-| `EMAIL_PROVIDER` | no | `log` (default: emails are only written to the console), `smtp` (Mailpit locally) or `resend` |
-| `EMAIL_FROM` | for `resend` | Sender, e.g. `Još vrijedi <no-reply@example.com>`; default `Još vrijedi <no-reply@josvrijedi.local>` |
-| `EMAIL_REDIRECT_TO` | for `resend` outside production | Sends every email to this address instead, with `[to: real@address]` in front of the subject |
-| `RESEND_API_KEY` | for `resend` | Resend API key |
-| `SMTP_HOST` / `SMTP_PORT` | no | SMTP server for `smtp`, default `localhost` / `1025` (Mailpit) |
-| `DELIVERY_PROVIDER` | no | Delivery provider, only `mock` (the default) for now |
-| `DELIVERY_WEBHOOK_SECRET` | in production | Shared secret for the delivery webhook signatures (at least 16 characters); the mock uses a built-in development secret when it is not set |
-
-`server/.env.example` lists every variable with comments. A wrong email setting stops the server at startup with `Email configuration error: ...`, a wrong delivery setting with `Delivery configuration error: ...`.
-
-The client reads an optional `VITE_API_URL` (backend origin without `/api`, default `http://localhost:3000`), for example from `client/.env.local`. `VITE_DEV_TOOLS=true` turns on the mock delivery's development tools (the courier panel on the order page and the tracking page) in a build; the dev server always has them, and a production build must not set it.
-
-Never commit `.env` files.
-
-### 4. Run the migrations
+Run the migrations and create the first admin:
 
 ```bash
 cd server
 npm run migrate up
-```
-
-### 5. Create the first admin
-
-```bash
-cd server
 npm run create-admin -- <email> <password> [first name] [last name]
 ```
 
-Stores, restaurants and further admins are then created by an admin in the app (**Novi korisnik** / **New user**), with only an email: by default the user gets an invitation email with a link to set their own password (with Mailpit running locally the email is at http://localhost:8025), or the admin sets a temporary password instead. The user fills in the rest of the profile after the first login.
-
-### 6. Start the app
-
-From the root:
+Then start everything from the root:
 
 ```bash
 npm run dev
 ```
 
-This builds the server once, then runs the backend and frontend together:
-
 - Frontend: http://localhost:5173
 - API: http://localhost:3000/api
 
-## Emails in development
-
-No real email is ever sent from development or tests. Without any email variables the server uses the `log` transport and only prints each email to its console. To see the emails as they would look, run [Mailpit](https://mailpit.axllent.org), which catches every email:
-
-1. Start Mailpit, either with Docker: `docker compose up -d mailpit` (from the root, see `docker-compose.yml`), or without Docker: install it (`winget install axllent.mailpit` on Windows, `brew install mailpit` on macOS, or download a binary from its releases page) and run `mailpit`.
-2. Add to `server/.env`:
-   ```env
-   EMAIL_PROVIDER=smtp
-   SMTP_HOST=localhost
-   SMTP_PORT=1025
-   ```
-3. Restart the server (`npm run dev`); it logs `Emails: smtp`.
-4. Send an order as a restaurant and open the inbox at http://localhost:8025: the store's "Nova narudžba" email is there within a few seconds.
-
-Emails go through a queue in the database (`email_queue`), sent by a background worker every 5 seconds with retries, so a failing email service never breaks an order. Every in-app notification also creates an email (all in Bosnian for now).
-
-## Enabling Resend later
-
-The Resend transport is built and tested but not configured. Going live is a change of environment variables only:
-
-1. **Domain:** in the Resend dashboard, Domains → Add domain (a domain or subdomain you own, e.g. `mail.example.com`; the EU region is closest).
-2. **DNS:** add the records Resend shows at your DNS provider: the DKIM `TXT` record (`resend._domainkey`), the SPF `MX` and `TXT` records on the `send` subdomain, and the recommended DMARC `TXT` record (`_dmarc`, e.g. `v=DMARC1; p=none;`). Wait until Resend shows the domain as Verified.
-3. **API key:** API Keys → Create API key with "Sending access" limited to that domain. Store it only in the host's environment variables (never in a file in the repository).
-4. **Try it first with the safety redirect** (locally or on a staging server):
-   ```env
-   EMAIL_PROVIDER=resend
-   EMAIL_FROM=Još vrijedi <no-reply@mail.example.com>
-   RESEND_API_KEY=re_...
-   EMAIL_REDIRECT_TO=you@example.com
-   ```
-   Every email then goes to `you@example.com`, its subject starting with `[to: <real recipient>]`. Outside production the server refuses to start with `resend` unless `EMAIL_REDIRECT_TO` is set.
-5. **Production:** on the host set `NODE_ENV=production`, `EMAIL_PROVIDER=resend`, `EMAIL_FROM`, `RESEND_API_KEY` and `CLIENT_ORIGIN` (the deployed frontend, used for the links in emails), and remove `EMAIL_REDIRECT_TO`. After a restart the server logs `Emails: resend` with no redirect.
-
-## Scripts
-
-### Root
-
-| Command | Description |
-|---|---|
-| `npm run dev` | Builds the server, then runs the server and client dev servers together |
-| `npm run build` | Builds the server and then the client |
-| `npm run install:all` | Installs dependencies in the root, `server/`, `client/` and `e2e/` |
-
-### Server (`cd server`)
-
-| Command | Description |
-|---|---|
-| `npm run dev` | Compiles in watch mode and restarts the server on changes (needs one `npm run build` first) |
-| `npm run build` | Compiles TypeScript to `dist/` |
-| `npm start` | Runs the compiled server |
-| `npm run migrate up` / `down` | Applies or rolls back migrations |
-| `npm run migrate:create -- <name>` | Creates a new TypeScript migration |
-| `npm run db:reset` | Builds, then drops and recreates the local schema, runs the migrations, empties the local uploads and runs the seed (refused in production) |
-| `npm test` | Runs the tests against the test database (apply its schema first with `npx dotenv run -q -f .env.test -- node-pg-migrate up`) |
-| `npm run test:watch` | Runs the tests in watch mode |
-| `npm run typecheck` | Type-checks the source and the tests |
-| `npm run seed` | Builds, then replaces all data with the demo accounts only (fast) |
-| `npm run seed:demo` | Builds, then replaces all data with the demo accounts plus two months of activity |
-| `npm run create-admin -- <email> <password> [first] [last]` | Builds, then creates an admin account |
-
-### Client (`cd client`)
-
-| Command | Description |
-|---|---|
-| `npm run dev` | Starts the Vite dev server |
-| `npm run build` | Builds for production |
-| `npm run lint` | Runs ESLint |
-| `npm test` | Runs the component and unit tests (no server needed) |
-| `npm run test:watch` | Runs the tests in watch mode |
-| `npm run typecheck` | Type-checks |
-
-## Demo accounts
-
-After `npm run seed` or `npm run seed:demo`, every demo account uses the password `To12345678` (`SEED_PASSWORD` in `server/.env` changes it):
-
-| Role | Email |
-|---|---|
-| Store (10) | `market.centar@demo.com`, `zeleni.market@demo.com`, `mesnica.bosna@demo.com`, `pekara.dobra@demo.com`, `mljekara.vrelo@demo.com`, `ribarnica.neretva@demo.com`, `market.neretva@demo.com`, `vocarna.butmir@demo.com`, `pekara.somun@demo.com`, `bio.kutak@demo.com` |
-| Restaurant (10) | `restoran.ukus@demo.com`, `bistro.avlija@demo.com`, `pizzeria.roma@demo.com`, `restoran.starigrad@demo.com`, `kafana.most@demo.com`, `restoran.panorama@demo.com`, `bistro.zelenikutak@demo.com`, `pizzeria.napoli@demo.com`, `restoran.tvrdjava@demo.com`, `ascinica.sofra@demo.com` |
-| Admin | `admin@demo.com`, `admin2@demo.com` |
-| Company HQ (Bingo d.o.o.) | `bingo@demo.com` |
-| Bingo branches (5) | `bingo.sarajevo@demo.com`, `bingo.visoko@demo.com`, `bingo.kakanj@demo.com`, `bingo.zenica@demo.com`, `bingo.tuzla@demo.com` |
-
-Both seeds delete all existing data. `npm run seed` creates the accounts above with complete profiles and this month's plan for every store; `npm run seed:demo` adds the last two months of activity: products, orders in every status (pickup and delivery), donations, subscriptions and credits, notifications and announcements.
+The admin then creates stores, restaurants and companies in the app. To fill the app with sample businesses and two months of activity instead, run `npm run seed:demo` in `server/` (it deletes all existing data).
 
 ## Project structure
 
 ```
 foodwise/
-├── package.json     root scripts (dev, build, install:all)
+├── package.json        root scripts (dev, build, install:all)
 ├── docker-compose.yml  Mailpit for local emails
-├── docs/            detailed documentation
-├── server/          Express API (src/, migrations/, tests/, uploads/)
-├── client/          React app (src/)
-└── e2e/             Playwright end-to-end tests
+├── docs/               detailed documentation
+├── server/             Express API (src/, migrations/, tests/)
+├── client/             React app (src/)
+└── e2e/                Playwright end-to-end tests
 ```
 
 ## Documentation
 
 - [`docs/product.md`](docs/product.md): the app today: users and roles, business rules
 - [`docs/development-plan.md`](docs/development-plan.md): roadmap, ideas backlog, open questions
-- [`docs/backend.md`](docs/backend.md): API endpoints, database schema, auth, tests
-- [`docs/frontend.md`](docs/frontend.md): routes, components, hooks, i18n, UI conventions
-- [`docs/frontend.md`](docs/frontend.md), section E2E tests: end-to-end tests (Playwright), their database and seed, CI traces
-
-## E2E tests
-
-Playwright tests in `e2e/` run the built frontend in Chromium (and the phone layout spec also in WebKit with iPhone emulation) against the real API, on a separate database `food_saver_e2e_db` that is emptied and seeded on every run. One-time setup: create that database and `e2e/.env.e2e` (contents in the E2E tests section of [`docs/frontend.md`](docs/frontend.md)), start Mailpit for the email test (it is skipped locally without `MAILPIT_URL`), then `cd e2e && npx playwright install chromium webkit`. Run one file with `npm run e2e -- tests/<file>.spec.ts` or open the UI mode with `npm run e2e:ui`. The full suite runs in CI.
-
-## CI
-
-GitHub Actions (`.github/workflows/ci.yml`) runs the typecheck, tests and build of the changed side (server, client or both) and the Playwright e2e suite on every pull request to `main` and every push to `main`. The `CI passed` check sums up the run. Dependabot opens weekly dependency update PRs (minor and patch grouped), and new PRs start from a template with a checklist. Details: the CI section in [`docs/backend.md`](docs/backend.md).
-
-## Known limitations
-
-- Notifications use polling, not push.
-- Deployment is not set up yet: the auth cookie uses `sameSite: "strict"` (frontend and backend need a shared domain) and logos are stored on local disk.
+- [`docs/backend.md`](docs/backend.md): API, database schema, auth, emails, environment variables, scripts, tests, seed, CI
+- [`docs/frontend.md`](docs/frontend.md): routes, components, hooks, i18n, UI conventions, end-to-end tests
