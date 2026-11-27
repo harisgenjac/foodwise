@@ -1,11 +1,11 @@
-// Generates the favicon and the app icons in public/ from design/brand/app-icon.svg.
+// Generates the favicon and the app icons in public/ from client/brand/app-icon.svg.
 // Run after the icon changes: `npm run icons` (in client/). The outputs are committed.
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Resvg } from "@resvg/resvg-js";
 
 const here = (path) => fileURLToPath(new URL(path, import.meta.url));
-const source = readFileSync(here("../../design/brand/app-icon.svg"), "utf8");
+const source = readFileSync(here("../brand/app-icon.svg"), "utf8");
 
 // The browser favicon: the same SVG without the content-credential metadata and its namespace.
 const svg = source

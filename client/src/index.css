@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* The design system's colours (see docs/frontend.md, "Design system", and design/brand/README.md).
+/* The design system's colours (see docs/frontend.md, "Design system", and client/brand/README.md).
    Tailwind's own palette is switched off, so components can only use these tokens:
    - brand (green): primary buttons, active navigation, links, focus rings, key headings (800, hover 900)
    - accent (orange): prices, discounts, highlights only (text 700, soft backgrounds 100/200)
