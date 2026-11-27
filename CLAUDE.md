@@ -33,9 +33,9 @@ food-saver-app/
 ├── package.json     root scripts only (dev/build/install:all for both sides)
 ├── docker-compose.yml  Mailpit (catches local and e2e emails)
 ├── docs/            backend.md, frontend.md, product.md, development-plan.md (only these four; each fact lives in one)
-├── design/          approved design references, one subfolder per page; components match them (see design/README.md)
+├── design/          local only (git-ignored): approved design references, one subfolder per page; components match them (see design/README.md)
 ├── server/          Express 5 + TypeScript + PostgreSQL (src/, migrations/, tests/, uploads/)
-├── client/          React 19 + Vite + TypeScript + Tailwind + react-i18next (src/)
+├── client/          React 19 + Vite + TypeScript + Tailwind + react-i18next (src/, brand/ = logo files and palette)
 └── e2e/             Playwright end-to-end tests (own package, own database)
 ```
 

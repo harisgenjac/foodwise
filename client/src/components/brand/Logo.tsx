@@ -1,6 +1,6 @@
 import { BRAND_NAME } from "../../utils/brand.js";
 
-// The app's logo (design/brand/):
+// The app's logo (client/brand/):
 // - "mark": the full mark (logo.svg): the green arrow over the produce in a hand
 // - "full": the mark plus the name as real text, "Još" in brand-800 and "vrijedi" in accent-700
 //   (like logo-horizontal.svg, whose SVG text is only a reference)
